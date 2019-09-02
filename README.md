@@ -30,6 +30,6 @@ It's under development!
 - [ ] save - Map save.
 - [ ] say - Server chat.
 - [ ] nick - Set nickname.
-- [ ] time - Show server time.
+- [x] time - Show server time.
 - [ ] team - Set PvP team.
 - [ ] banlist - Show server ban list.
