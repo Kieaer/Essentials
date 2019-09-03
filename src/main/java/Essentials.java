@@ -11,6 +11,7 @@ import io.anuke.mindustry.game.EventType.*;
 import io.anuke.mindustry.game.*;
 import io.anuke.mindustry.gen.*;
 import io.anuke.mindustry.plugin.Plugin;
+
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.maps.Map;
 import io.anuke.mindustry.maps.*;
@@ -20,7 +21,16 @@ import java.time.format.DateTimeFormatter;
 
 public class Essentials extends Plugin{
     public Essentials(){
-        
+        //startup
+        Core.settings.getDataDirectory().child("motd.txt").writeString("");
+
+        /*
+        Events.on(PlayerJoin.class, player -> {
+            String motd = Core.settings.getDataDirectory().child("motd.txt").readString();
+            player.sendMessage("adfs");
+        });
+        */
+        // error: non-static method sendMessage(String) cannot be referenced from a static context
     }
 
     @Override
@@ -31,7 +41,6 @@ public class Essentials extends Plugin{
     @Override
     public void registerClientCommands(CommandHandler handler){
         handler.<Player>register("motd", "Show server motd.", (args, player) -> {
-            Core.settings.getDataDirectory().child("motd.txt").writeString("");
             String motd = Core.settings.getDataDirectory().child("motd.txt").readString();
             player.sendMessage(motd);
         });
@@ -82,7 +91,13 @@ public class Essentials extends Plugin{
             if(player.isAdmin == false){
                 player.sendMessage("[green]Notice: [] You're not admin!");
             } else {
-                player.sendMessage("source here");
+                /*
+                netServer.admins.banPlayerIP(other.con.address);
+                netServer.kick(other.con.id, KickReason.banned);
+                Core.settings.getDataDirectory().child("bans.txt").writeString(other.name+"/"+other.ip+"/"+time);
+                String motd = Core.settings.getDataDirectory().child("motd.txt").readString();
+                */
+                // copied from ServerControl.java
             }
         });
 
@@ -142,7 +157,14 @@ public class Essentials extends Plugin{
         });
 
         handler.<Player>register("save", "Map save", (args, player) -> {
-            //source
+            /*
+            Core.app.post(() -> {
+                int slot = Strings.parseInt(arg[0]);
+                SaveIO.saveToSlot(slot);
+                info("Saved to slot {0}.", slot);
+            });
+            */
+            // copied from ServerControl.java
         });
 
         handler.<Player>register("time", "Show server time", (args, player) -> {
@@ -152,13 +174,44 @@ public class Essentials extends Plugin{
             player.sendMessage("[green]Server time[white]: "+nowString);
         });
 
+        // PvP Team source from https://github.com/J-VdS/PVPPlugin
+        // Full copied.
         handler.<Player>register("team", "<team...>", "Set team", (args, player) -> {
-            //source
+            //change team
+            if (!Vars.state.rules.pvp){
+                player.sendMessage("Only available in pvp.");
+                return;
+            }
+            int index = player.getTeam().ordinal()+1;
+            while (index != player.getTeam().ordinal()){
+                if (index >= Team.all.length){
+                    index = 0;
+                }
+                if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
+                    player.setTeam(Team.all[index]);
+                    break;
+                }
+                index++;
+            }
+            //kill player
+            Call.onPlayerDeath(player);
         });
 
         handler.<Player>register("banlist", "Show banlist", (args, player) -> {
-            //source
+            /*
+            for(PlayerInfo info : bans){
+                info(" &ly {0} / Last known name: '{1}'", info.id, info.lastName);
+            }
+            for(String string : ipbans){
+                PlayerInfo info = netServer.admins.findByIP(string);
+                if(info != null){
+                    info(" &lm '{0}' / Last known name: '{1}' / ID: '{2}'", string, info.lastName, info.id);
+                }else{
+                    info(" &lm '{0}' (No known name or info)", string);
+                }
+            }
+            */
+            //copied from ServerControl.java
         });
     }
 }
-
