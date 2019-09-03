@@ -2,7 +2,41 @@
 ### Features
 
 Provides various commands to the server.
+
 It's under development!
+
+### Installation
+
+Put this plugin in the ``<server folder location>/config/plugins`` folder.
+
+### Commands
+
+| Command | Parameter | Description |
+|---------|:-------------:|---------------------------|
+| tp | &lt;player name&gt; | Teleport to other players |
+| me | &lt;msg&gt; | Show special chat format |
+| motd |  | Show server motd |
+| getpos |  | Show your current position position |
+| info |  | Show player information |
+| suicide |  | Kill yourself |
+| kill | &lt;player name&gt; | Kill other players |
+| time |  | Show server local time |
+| team | &lt;team&gt; | Change team (Only avaliable on PvP mode) |
+<!--
+| kickall |  | Kick all players without you. |
+| spawnmob |  | Spawn mob |
+| tempban |  | Timer ban |
+| difficulty |  | Set server difficulty |
+| effect |  | make effect |
+| gamerule |  | Edit gamerule |
+| vote | &lt;map name&gt; | Vote map |
+| save |  | Save current map |
+| banlist |  | Show ban list |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+-->
 
 ### Pinned plan
 
@@ -21,12 +55,18 @@ It's under development!
 - [ ] tempban player time - Timer ban.
 - [ ] info - Show player info.
   - [x] Player name and UUID
-  - [ ] Show IP and Location
+  - [x] Show IP and GeoLocation
+  - [ ] Show destroy/placed block count
+  - [ ] Show destroy enemies count
+  - [ ] Show dead count
+  - [ ] Rank system
 - [ ] difficulty - Set difficulty.
 - [ ] effect - Make effect.
 - [ ] gamerule - Set gamerule.
 - [ ] vote - Map vote.
-- [ ] kill - Other player or self-destruct
+  - [ ] Map list
+- [x] suicide - self-destruct.
+- [x] kill - Kill other player.
 - [ ] save - Map save.
 - [ ] say - Server chat.
 - [ ] nick - Set nickname.
