@@ -21,16 +21,15 @@ import java.time.format.DateTimeFormatter;
 
 public class Essentials extends Plugin{
     public Essentials(){
-        //startup
-        Core.settings.getDataDirectory().child("motd.txt").writeString("");
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
+            String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/plugins/Essentials/[] folder.";
+            Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
+        }
 
-        /*
-        Events.on(PlayerJoin.class, player -> {
-            String motd = Core.settings.getDataDirectory().child("motd.txt").readString();
-            player.sendMessage("adfs");
+        Events.on(PlayerJoin.class, event -> {
+            String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+            event.player.sendMessage(motd);
         });
-        */
-        // error: non-static method sendMessage(String) cannot be referenced from a static context
     }
 
     @Override
@@ -41,7 +40,7 @@ public class Essentials extends Plugin{
     @Override
     public void registerClientCommands(CommandHandler handler){
         handler.<Player>register("motd", "Show server motd.", (args, player) -> {
-            String motd = Core.settings.getDataDirectory().child("motd.txt").readString();
+            String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
             player.sendMessage(motd);
         });
 
