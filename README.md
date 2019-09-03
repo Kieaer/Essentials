@@ -31,5 +31,5 @@ It's under development!
 - [ ] say - Server chat.
 - [ ] nick - Set nickname.
 - [x] time - Show server time.
-- [ ] team - Set PvP team.
+- [x] team - Set PvP team.
 - [ ] banlist - Show server ban list.
