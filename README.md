@@ -7,7 +7,7 @@ It's under development!
 ### Pinned plan
 
 - [ ] Kickall - Kick all players.
-- [ ] Exclude who entered the command
+  - [ ] Exclude who entered the command
 - [ ] Teleport
   - [ ] tp playername playername - Teleport from Player to Player
   - [x] tp playername - Teleport to Player.
