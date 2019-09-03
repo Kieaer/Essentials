@@ -1,15 +1,15 @@
-
-### Features
-
-Provides various commands to the server.
-
+# Essentials
+Add more commands to the server.  
 It's under development!
 
-### Installation
+I'm getting a lot of suggestions.  
+Please submit your idea to this repository issues or Mindustry official discord!
+
+## Installation
 
 Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
-### Commands
+## Commands
 
 | Command | Parameter | Description |
 |---------|:-------------:|---------------------------|
@@ -38,7 +38,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 |  |  |  |
 -->
 
-### Pinned plan
+## Pinned plan
 
 - [ ] Kickall - Kick all players.
   - [ ] Exclude who entered the command
