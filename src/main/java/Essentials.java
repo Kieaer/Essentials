@@ -103,6 +103,9 @@ public class Essentials extends Plugin{
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
+				//strict off
+				Call.onPositionSet(player.con.id, other.x, other.y);
+				//strict on and player is local
 				player.setNet(other.x, other.y);
 			}
 		});
@@ -182,7 +185,7 @@ public class Essentials extends Plugin{
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
 			if(player.isAdmin == false){
-				player.onPlayerDeath(player);
+				Call.onPlayerDeath(player);
 				Call.sendMessage(player.name+"[] used [green]suicide[] command.");
 			}
 		});
@@ -194,7 +197,7 @@ public class Essentials extends Plugin{
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
-				other.onPlayerDeath(other);
+				Call.onPlayerDeath(other);
 			}
 		});
 
