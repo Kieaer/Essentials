@@ -103,6 +103,9 @@ public class Essentials extends Plugin{
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
+				//strict off
+				Call.onPositionSet(player.con.id, other.x, other.y);
+				//strict on and player is local
 				player.setNet(other.x, other.y);
 			}
 		});
@@ -182,7 +185,7 @@ public class Essentials extends Plugin{
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
 			if(player.isAdmin == false){
-				player.onPlayerDeath(player);
+				Call.onPlayerDeath(player);
 				Call.sendMessage(player.name+"[] used [green]suicide[] command.");
 			}
 		});
@@ -194,7 +197,7 @@ public class Essentials extends Plugin{
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
-				other.onPlayerDeath(other);
+				Call.onPlayerDeath(other);
 			}
 		});
 
@@ -218,7 +221,7 @@ public class Essentials extends Plugin{
 
 		// PvP Team source from https://github.com/J-VdS/PVPPlugin
 		// Full copied.
-		handler.<Player>register("team", "<team...>", "Set team", (args, player) -> {
+		handler.<Player>register("team", "", "Set team", (args, player) -> {
 			//change team
 			if (!Vars.state.rules.pvp){
 				player.sendMessage("Only available in pvp.");
