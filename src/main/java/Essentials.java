@@ -216,29 +216,6 @@ public class Essentials extends Plugin{
 			player.sendMessage("[green]Server time[white]: "+nowString);
 		});
 
-		// PvP Team source from https://github.com/J-VdS/PVPPlugin
-		// Full copied.
-		handler.<Player>register("team", "<team...>", "Set team", (args, player) -> {
-			//change team
-			if (!Vars.state.rules.pvp){
-				player.sendMessage("Only available in pvp.");
-				return;
-			}
-			int index = player.getTeam().ordinal()+1;
-			while (index != player.getTeam().ordinal()){
-				if (index >= Team.all.length){
-					index = 0;
-				}
-				if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
-					player.setTeam(Team.all[index]);
-					break;
-				}
-				index++;
-			}
-			//kill player
-			Call.onPlayerDeath(player);
-		});
-
 		handler.<Player>register("banlist", "Show banlist", (args, player) -> {
 			/*
 			for(PlayerInfo info : bans){

@@ -21,7 +21,6 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | suicide |  | Kill yourself |
 | kill | &lt;player name&gt; | Kill other players |
 | time |  | Show server local time |
-| team | &lt;team&gt; | Change team (Only avaliable on PvP mode) |
 <!--
 | kickall |  | Kick all players without you. |
 | spawnmob |  | Spawn mob |
