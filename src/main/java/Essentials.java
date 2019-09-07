@@ -13,6 +13,8 @@ import io.anuke.mindustry.gen.*;
 import io.anuke.mindustry.plugin.Plugin;
 
 import io.anuke.mindustry.net.Packets.KickReason;
+import io.anuke.mindustry.net.Net;
+import io.anuke.mindustry.net.NetConnection;
 import io.anuke.mindustry.maps.Map;
 import io.anuke.mindustry.maps.*;
 
@@ -162,7 +164,9 @@ public class Essentials extends Plugin{
 			if(player.isAdmin == false){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
-				// Call.onKick(other.con.id, KickReason.kick);
+				for(NetConnection con : Net.getConnections()){
+        		    Call.onKick(con.id, KickReason.kick);
+        		}
 			}
 		});
 

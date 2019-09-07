@@ -40,8 +40,8 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
 ## Pinned plan
 
-- [ ] Kickall - Kick all players.
-  - [ ] Exclude who entered the command
+- [x] Kickall - Kick all players.
+  - [ ] ~~Exclude who entered the command~~
 - [ ] Teleport
   - [ ] tp playername playername - Teleport from Player to Player
   - [x] tp playername - Teleport to Player.
