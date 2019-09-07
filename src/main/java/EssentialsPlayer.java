@@ -15,6 +15,9 @@ import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.Vars;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 public class EssentialsPlayer extends Plugin{
 	
 	public String chat;
@@ -60,7 +63,7 @@ public class EssentialsPlayer extends Plugin{
 		boolean isLocal = player.isLocal;
 		return isLocal;
 	}
-	
+	/*
 	public static int placecount(){
 		int placecount = playerinfo().result[0];
 		return placecount;
@@ -80,7 +83,7 @@ public class EssentialsPlayer extends Plugin{
 		int deathcount = playerinfo().result[3];
 		return deathcount;
 	}
-	
+	*/
 	public static int joincount(Player player){
 		int joincount = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
 		return joincount;
@@ -94,23 +97,34 @@ public class EssentialsPlayer extends Plugin{
 	//public static String rank(Player player){
 	//	//source
 	//}
-	
+/*
 	public static String playerinfo(Player player){
 		//EventType event = new EventType();
 		if(!Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.name+".txt").exists()){
+			try{
+				String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+				player.sendMessage("[green][INFO][] Getting information...");
+				String connUrl = "http://ipapi.co/"+ip+"/country_name";
+				Document doc = Jsoup.connect(connUrl).get();
+				String geo = doc.text();
+				return geo;
+			} catch (Exception e){
+				
+			}
 			String name = player.name;
 			String uuid = player.uuid;
 			String lastIP = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 			String lastText = player.lastText;
 			boolean isAdmin = player.isAdmin;
 			boolean isLocal = player.isLocal;
+			String geo = "KR";
 			int joincount = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
 			int kickcount = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 			int pce = 0;
 			int bce = 0;
 			int kce = 0;
 			int dce = 0;
-			String text = "Name: "+name+"\nUUID: "+uuid+"\nIP: "+lastIP+"\nlastText: "+lastText+"\nAdmin: "+isAdmin+"\nLocal: "+isLocal+"\njoincount: "+joincount+"\nkickcount: "+kickcount+"\nplacecount: "+pce+"\nbreakcount: "+bce+"\nkillcount: "+kce+"\ndeathcount: "+dce;
+			String text = "Name: "+name+"\nUUID: "+uuid+"\nIP: "+lastIP+"\nlastText: "+lastText+"\ncountry: "+geo+"\nAdmin: "+isAdmin+"\nLocal: "+isLocal+"\njoincount: "+joincount+"\nkickcount: "+kickcount+"\nplacecount: "+pce+"\nbreakcount: "+bce+"\nkillcount: "+kce+"\ndeathcount: "+dce;
 			Core.settings.getDataDirectory().child("plugins/Essentials/player/"+name+".txt").writeString(text);
 		}
 		String info = Core.settings.getDataDirectory().child("plugins/Essentials/player/"+player.name+".txt").readString();
@@ -139,4 +153,5 @@ public class EssentialsPlayer extends Plugin{
 		    }
 		}
 	}
+	*/
 }

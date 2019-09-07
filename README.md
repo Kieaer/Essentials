@@ -31,7 +31,6 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | gamerule |  | Edit gamerule |
 | vote | &lt;map name&gt; | Vote map |
 | save |  | Save current map |
-| banlist |  | Show ban list |
 | ch | msg | Cross server chat |
 | tpmouse | player | teleport player to follow mouse pointer |
 |  |  |  |
@@ -42,11 +41,11 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
 - [x] Kickall - Kick all players.
   - [ ] ~~Exclude who entered the command~~
-- [ ] Teleport
-  - [ ] tp playername playername - Teleport from Player to Player
+- [x] Teleport
+  - [x] tp playername playername - Teleport from Player to Player
   - [x] tp playername - Teleport to Player.
 - [ ] spawnmob mob amount - Spawn enemies or mob.
-- [ ] status - Show server status.
+- [x] status - Show server status.
 - [ ] realname player - Show real name.
 - [x] me msg - Special chat format
 - [ ] firework player - Show Firework with players.
@@ -73,4 +72,3 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] nick - Set nickname.
 - [x] time - Show server time.
 - [x] team - Set PvP team.
-- [ ] banlist - Show server ban list.

@@ -3,6 +3,8 @@ package essential;
 import io.anuke.arc.*;
 import io.anuke.arc.util.*;
 import io.anuke.mindustry.*;
+import io.anuke.arc.collection.*;
+import io.anuke.arc.collection.Array.*;
 import io.anuke.mindustry.core.*;
 import io.anuke.mindustry.core.GameState.*;
 import io.anuke.mindustry.content.*;
@@ -24,6 +26,8 @@ import java.time.format.DateTimeFormatter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import io.anuke.mindustry.net.Administration.*;
+
 import essential.EssentialsPlayer;
 
 public class Essentials extends Plugin{
@@ -36,7 +40,7 @@ public class Essentials extends Plugin{
 		Events.on(PlayerJoin.class, e -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			e.player.sendMessage(motd);
-			e.player.sendMessage(EssentialsPlayer.playerinfo(e.player));
+			//e.player.sendMessage(EssentialsPlayer.playerinfo(e.player));
 		});
 		
 		// Block destroy/buildit count source (under development)
@@ -115,7 +119,24 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("status", "Show server status", (args, player) -> {
+			float fps = Math.round((int)60f / Time.delta());
+			float memory = Core.app.getJavaHeap() / 1024 / 1024;
+			player.sendMessage(fps+"TPS "+memory+"MB");
+			player.sendMessage(Vars.playerGroup.size()+" players online.");
+			int idb = 0;
+			int ipb = 0;
 
+			Array<PlayerInfo> bans = Vars.netServer.admins.getBanned();
+			for(PlayerInfo info : bans){
+				idb++;
+			}
+
+			Array<String> ipbans = Vars.netServer.admins.getBannedIPs();
+            for(String string : ipbans){
+				ipb++;
+            }
+            int bancount = idb + ipb;
+            player.sendMessage(bancount+" players banned.");
 		});
 
 		// Teleport source from https://github.com/J-VdS/locationplugin
@@ -214,7 +235,7 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("me", "<text>", "broadcast * message", (args, player) -> {
-			Call.sendMessage("[orange]*[] "+player.name+"[orange][] : "+args[0]);
+			Call.sendMessage("[orange]*[] "+player.name+"[orange][white] : "+args[0]);
 		});
 
 		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (args, player) -> {
