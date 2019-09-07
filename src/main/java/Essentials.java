@@ -36,6 +36,7 @@ public class Essentials extends Plugin{
 		Events.on(PlayerJoin.class, e -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			e.player.sendMessage(motd);
+			e.player.sendMessage(EssentialsPlayer.playerinfo(e.player));
 		});
 		
 		// Block destroy/buildit count source (under development)
@@ -90,6 +91,8 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("info", "Show your information", (args, player) -> {
+			// This command must be executed on a different thread.
+			// Otherwise, the server will lag when this command is run.
             Thread thread1 = new Thread(new Runnable() {
             	public void run(){
 					try{
@@ -111,8 +114,12 @@ public class Essentials extends Plugin{
             thread1.start();
 		});
 
+		handler.<Player>register("status", "Show server status", (args, player) -> {
+
+		});
+
 		// Teleport source from https://github.com/J-VdS/locationplugin
-		handler.<Player>register("tp", "<player...>", "Teleport to other players", (args, player) -> {
+		handler.<Player>register("tp", "<player>", "Teleport to other players", (args, player) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 			if(player.isAdmin == false){
 				player.sendMessage("[green]Notice:[] You're not admin!");
@@ -124,9 +131,23 @@ public class Essentials extends Plugin{
 				player.setNet(other.x, other.y);
 			}
 		});
+
+		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (args, player) -> {
+			Player other1 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
+			Player other2 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[1]));
+			if(player.isAdmin == false){
+				player.sendMessage("[green]Notice:[] You're not admin!");
+			} else {
+				if(other1 == null || other2 == null){
+					player.sendMessage("[scarlet]No player by that name found!");
+					return;
+				}
+				other1.setNet(other2.x, other2.y);
+			}
+		});
 		
 		/*
-		handler.<Player>register("tpmouse", "<player...>", "Teleport to other players", (args, player) -> {
+		handler.<Player>register("tpmouse", "<player>", "Teleport to other players", (args, player) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 			if(player.isAdmin == false){
 				player.sendMessage("[green]Notice:[] You're not admin!");
@@ -192,11 +213,11 @@ public class Essentials extends Plugin{
 			}
 		});
 
-		handler.<Player>register("me", "<text...>", "broadcast * message", (args, player) -> {
+		handler.<Player>register("me", "<text>", "broadcast * message", (args, player) -> {
 			Call.sendMessage("[orange]*[] "+player.name+"[orange][] : "+args[0]);
 		});
 
-		handler.<Player>register("difficulty", "<difficulty...>", "Set server difficulty", (args, player) -> {
+		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (args, player) -> {
 			
 			if(player.isAdmin == false){
 				player.sendMessage("[green]Notice: [] You're not admin!");
@@ -210,15 +231,15 @@ public class Essentials extends Plugin{
 			}
 		});
 
-		handler.<Player>register("effect", "<effect...>", "make effect", (args, player) -> {
+		handler.<Player>register("effect", "<effect>", "make effect", (args, player) -> {
 			//source
 		});
 
-		handler.<Player>register("gamerule", "<gamerule...>", "Set gamerule", (args, player) -> {
+		handler.<Player>register("gamerule", "<gamerule>", "Set gamerule", (args, player) -> {
 			//source
 		});
 
-		handler.<Player>register("vote", "<vote...>", "Votemap", (args, player) -> {
+		handler.<Player>register("vote", "<vote>", "Votemap", (args, player) -> {
 			/*
 			if(!Maps.all().isEmpty()){
 				player.sendMessage("Maps:");
@@ -239,7 +260,7 @@ public class Essentials extends Plugin{
 			}
 		});
 
-		handler.<Player>register("kill", "<player...>", "Kill player.", (args, player) -> {
+		handler.<Player>register("kill", "<player>", "Kill player.", (args, player) -> {
 			if(player.isAdmin == true){
 				Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 				if(other == null){
