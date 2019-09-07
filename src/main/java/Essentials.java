@@ -22,6 +22,8 @@ import java.time.format.DateTimeFormatter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import essential.EssentialsPlayer;
+
 public class Essentials extends Plugin{
 	public Essentials(){
 		if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
@@ -67,6 +69,15 @@ public class Essentials extends Plugin{
 
 	@Override
 	public void registerClientCommands(CommandHandler handler){
+		/*
+		handler.<Player>register("test", "test command", (args, player) -> {
+			player.sendMessage(EssentialsPlayer.chat(player));
+			player.sendMessage(EssentialsPlayer.ip(player));
+			player.sendMessage(EssentialsPlayer.name(player));
+			player.sendMessage(EssentialsPlayer.uuid(player));
+		});
+		*/
+
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			player.sendMessage(motd);
@@ -77,20 +88,37 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("info", "Show your information", (args, player) -> {
-			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-			try{
-				player.sendMessage("Getting information...");
-				String connUrl = "http://ipapi.co/"+ip+"/country_name";
-				Document doc = Jsoup.connect(connUrl).get();
-				String geo = doc.text();
-				player.sendMessage("[green]Name[]: "+player.name);
-				player.sendMessage("[green]UUID[]: "+player.uuid);
-				player.sendMessage("[green]Mobile[]: "+player.isMobile);
-				player.sendMessage("[green]IP[]: "+ip);
-				player.sendMessage("[green]Country[]: "+geo);
-			} catch (Exception e){
-				player.sendMessage("Load failed!");
-			}
+			
+			/*
+			Runnable r1 = new thread1();
+            Thread t1 = new Thread(r1);
+            t1.start();
+            try{
+                t1.join();
+            } catch (Exception e){
+                Log.info(e);
+            }
+            */
+            Thread t = new Thread(new Runnable() {
+            	public void run(){
+					try{
+						String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+						player.sendMessage("[green][INFO][] Getting information...");
+						String connUrl = "http://ipapi.co/"+ip+"/country_name";
+						Document doc = Jsoup.connect(connUrl).get();
+						String geo = doc.text();
+						player.sendMessage("[green]Name[]: "+player.name);
+						player.sendMessage("[green]UUID[]: "+player.uuid);
+						player.sendMessage("[green]Mobile[]: "+player.isMobile);
+						player.sendMessage("[green]IP[]: "+ip);
+						player.sendMessage("[green]Country[]: "+geo);
+					} catch (Exception e){
+						player.sendMessage("Load failed!");
+					}
+				}
+            });
+            t.start();
+            //String geo = r1.result();
 		});
 
 		// Teleport source from https://github.com/J-VdS/locationplugin
@@ -103,10 +131,11 @@ public class Essentials extends Plugin{
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
-				//strict off
-				Call.onPositionSet(player.con.id, other.x, other.y);
-				//strict on and player is local
+				// strict on
 				player.setNet(other.x, other.y);
+				player.set(other.x, other.y);
+				// strict off
+				Call.onPositionSet(player.con.id, other.x, other.y);
 			}
 		});
 		
@@ -185,19 +214,21 @@ public class Essentials extends Plugin{
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
 			if(player.isAdmin == false){
-				Call.onPlayerDeath(player);
+				player.onPlayerDeath(player);
 				Call.sendMessage(player.name+"[] used [green]suicide[] command.");
 			}
 		});
 
 		handler.<Player>register("kill", "<player...>", "Kill player.", (args, player) -> {
-			if(player.isAdmin == false){
+			if(player.isAdmin == true){
 				Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 				if(other == null){
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
-				Call.onPlayerDeath(other);
+				other.onPlayerDeath(other);
+			} else {
+				player.sendMessage("You're not admin!");
 			}
 		});
 
@@ -237,3 +268,22 @@ public class Essentials extends Plugin{
 		});
 	}
 }
+
+/*
+class thread1 implements Runnable{
+
+    public void run(){
+		try{
+			String connUrl = "http://ipapi.co/"+ip+"/country_name";
+			Document doc = Jsoup.connect(connUrl).get();
+			String geo = doc.text();
+		} catch (Exception e){}
+	}
+
+	public String result(){
+		return geo;
+	}
+}
+*/
+// cross server chat
+// Tau 힐링 버프
