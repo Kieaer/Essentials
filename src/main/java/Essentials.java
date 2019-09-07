@@ -88,18 +88,7 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("info", "Show your information", (args, player) -> {
-			
-			/*
-			Runnable r1 = new thread1();
-            Thread t1 = new Thread(r1);
-            t1.start();
-            try{
-                t1.join();
-            } catch (Exception e){
-                Log.info(e);
-            }
-            */
-            Thread t = new Thread(new Runnable() {
+            Thread thread1 = new Thread(new Runnable() {
             	public void run(){
 					try{
 						String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
@@ -117,8 +106,7 @@ public class Essentials extends Plugin{
 					}
 				}
             });
-            t.start();
-            //String geo = r1.result();
+            thread1.start();
 		});
 
 		// Teleport source from https://github.com/J-VdS/locationplugin
@@ -131,20 +119,50 @@ public class Essentials extends Plugin{
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
-				// strict on
 				player.setNet(other.x, other.y);
-				player.set(other.x, other.y);
-				// strict off
-				Call.onPositionSet(player.con.id, other.x, other.y);
 			}
 		});
 		
+		/*
+		handler.<Player>register("tpmouse", "<player...>", "Teleport to other players", (args, player) -> {
+			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
+			if(player.isAdmin == false){
+				player.sendMessage("[green]Notice:[] You're not admin!");
+			} else {
+				if(other == null){
+					player.sendMessage("[scarlet]No player by that name found!");
+					return;
+				}
+				boolean status = false;
+				if(status = false){
+					status = true;
+				} else {
+					status = false;
+				}
+				Thread thread2 = new Thread(new Runnable() {
+            		public void run(){
+						try{
+							while(true){
+								other.setNet(player.pointerX, player.pointerY);
+								other.set(player.pointerX, player.pointerY);
+								//Call.onPositionSet(other.con.id, player.pointerX, player.pointerY);
+								if(other == null){
+									break;
+								}
+							}
+						} catch (Exception e){}
+					}
+            	});
+            	thread2.start();
+			}
+		});
+		*/
 
 		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
 			if(player.isAdmin == false){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
-				// Call.onKick(other, KickReason.kick);
+				// Call.onKick(other.con.id, KickReason.kick);
 			}
 		});
 
@@ -175,19 +193,17 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("difficulty", "<difficulty...>", "Set server difficulty", (args, player) -> {
-			/*
+			
 			if(player.isAdmin == false){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
 				try{
-					GameState.rules.waveSpacing = Difficulty.valueOf(args[0]).waveTime * 60 * 60 * 2;
+					Difficulty.valueOf(args[0]);
 					player.sendMessage("Difficulty set to '"+args[0]+"'.");
 				}catch(IllegalArgumentException e){
 					player.sendMessage("No difficulty with name '"+args[0]+"' found.");
 				}
 			}
-			*/
-			// error: non-static method all() cannot be referenced from a static context
 		});
 
 		handler.<Player>register("effect", "<effect...>", "make effect", (args, player) -> {
@@ -245,7 +261,7 @@ public class Essentials extends Plugin{
 
 		handler.<Player>register("time", "Show server time", (args, player) -> {
 			LocalDateTime now = LocalDateTime.now();
-			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-M-d a h:m.ss");
+			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
 			String nowString = now.format(dateTimeFormatter);
 			player.sendMessage("[green]Server time[white]: "+nowString);
 		});
@@ -268,22 +284,3 @@ public class Essentials extends Plugin{
 		});
 	}
 }
-
-/*
-class thread1 implements Runnable{
-
-    public void run(){
-		try{
-			String connUrl = "http://ipapi.co/"+ip+"/country_name";
-			Document doc = Jsoup.connect(connUrl).get();
-			String geo = doc.text();
-		} catch (Exception e){}
-	}
-
-	public String result(){
-		return geo;
-	}
-}
-*/
-// cross server chat
-// Tau 힐링 버프

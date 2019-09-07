@@ -21,6 +21,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | suicide |  | Kill yourself |
 | kill | &lt;player name&gt; | Kill other players |
 | time |  | Show server local time |
+| difficulty | &lt;difficulty&gt; | Set server difficulty |
 <!--
 | kickall |  | Kick all players without you. |
 | spawnmob |  | Spawn mob |
@@ -31,8 +32,8 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | vote | &lt;map name&gt; | Vote map |
 | save |  | Save current map |
 | banlist |  | Show ban list |
-|  |  |  |
-|  |  |  |
+| ch | msg | Cross server chat |
+| tpmouse | player | teleport player to follow mouse pointer |
 |  |  |  |
 |  |  |  |
 -->
@@ -59,7 +60,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [ ] Show destroy enemies count
   - [ ] Show dead count
   - [ ] Rank system
-- [ ] difficulty - Set difficulty.
+- [x] difficulty - Set difficulty.
 - [ ] effect - Make effect.
 - [ ] gamerule - Set gamerule.
 - [ ] vote - Map vote.
@@ -68,6 +69,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [x] kill - Kill other player.
 - [ ] save - Map save.
 - [ ] say - Server chat.
+- [ ] ch - Cross server chat.
 - [ ] nick - Set nickname.
 - [x] time - Show server time.
 - [x] team - Set PvP team.
