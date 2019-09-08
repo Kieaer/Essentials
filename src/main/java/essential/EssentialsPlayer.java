@@ -3,53 +3,53 @@ package essential;
 import io.anuke.arc.Core;
 import io.anuke.arc.files.FileHandle;
 import io.anuke.arc.util.Log;
+import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 
 import java.sql.*;
 
+import static io.anuke.mindustry.Vars.player;
+
 public class EssentialsPlayer{
-	public static void createNewDatabase(String filename){
-		FileHandle url = Core.settings.getDataDirectory().child("plugins/Essentials/database.db");
-		try(Connection conn = DriverManager.getConnection(String.valueOf(url))){
-			if(conn != null){
-				DatabaseMetaData meta = conn.getMetaData();
-			}
-		} catch (SQLException e) {
+	static void createNewDatabase(){
+		try {
+			Class.forName("org.sqlite.JDBC");
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-	}
+		String url = "jdbc:sqlite:config/plugins/Essentials/database.db";
 
-	public static void createNewTable(){
-		String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/")+"database.db";
-		String sql = "CREATE TABLE `players`.`players` ( " +
-				"`id` INT NOT NULL," +
-				"`name` TINYTEXT NOT NULL," +
-				"`uuid` TINYTEXT NOT NULL," +
-				"`isAdmin` BOOLEAN NOT NULL," +
-				"`isLocal` BOOLEAN NOT NULL," +
-				"`placecount` MEDIUMINT NOT NULL," +
-				"`breakcount` MEDIUMINT NOT NULL," +
-				"`killcount` MEDIUMINT NOT NULL," +
-				"`deathcount` MEDIUMINT NOT NULL," +
-				"`joincount` MEDIUMINT NOT NULL," +
-				"`kickcount` MEDIUMINT NOT NULL," +
-				"`rank` TINYTEXT NOT NULL," +
-				"`firstdate` DATE NOT NULL," +
-				"`lastdate` DATE NOT NULL," +
-				"`lastblockplace` TINYTEXT NOT NULL," +
-				"`lastblockbreak` TINYTEXT NOT NULL," +
-				"`playtime` MEDIUMINT NOT NULL," +
-				"`lastchat` TEXT NULL DEFAULT NULL," +
-				"`attackclear` SMALLINT NOT NULL," +
-				"`pvpwincount` SMALLINT NOT NULL," +
-				"`pvplosecount` SMALLINT NOT NULL," +
-				"`pvpbreakout` SMALLINT NOT NULL," +
-				"`reactorcount` SMALLINT NOT NULL," +
-				"PRIMARY KEY (`id`)) ENGINE = InnoDB CHARSET=utf8 COLLATE utf8_general_ci;";
+		try(Connection conn = DriverManager.getConnection("config/plugins/Essentials/database.db")){
+			DatabaseMetaData meta = conn.getMetaData();
+		} catch (SQLException ignored) {}
+
+		String sql = "CREATE TABLE 'player' (" +
+				"'id'	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
+				"'name'	TEXT," +
+				"'uuid'	TEXT," +
+				"'isAdmin'	TEXT," +
+				"'isLocal'	TEXT," +
+				"'placecount'	INTEGER," +
+				"'breakcount'	INTEGER," +
+				"'killcount'	INTEGER," +
+				"'deathcount'	INTEGER," +
+				"'joincount'	INTEGER," +
+				"'kickcount'	INTEGER," +
+				"'rank'	TEXT," +
+				"'firstdate'	TEXT," +
+				"'lastdate'	TEXT," +
+				"'lastplacename'	TEXT," +
+				"'lastbreakname'	TEXT," +
+				"'playtime'	INTEGER," +
+				"'lastchat'	TEXT," +
+				"'attackclear'	INTEGER," +
+				"'pvpwincount'	INTEGER," +
+				"'pvplosecount'	INTEGER," +
+				"'pvpbreakcount'	INTEGER," +
+				"'reactorcount'	INTEGER)";
 
 		try (Connection conn = DriverManager.getConnection(url);
 			 Statement stmt = conn.createStatement()) {
-			// create a new table
 			stmt.execute(sql);
 		} catch (SQLException e) {
 			Log.info("SQL ERROR! "+e);
@@ -57,7 +57,13 @@ public class EssentialsPlayer{
 	}
 
 	private Connection connect(){
-		String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/")+"database.db";
+		try {
+			Class.forName("org.sqlite.JDBC");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		String url = "jdbc:sqlite:config/plugins/Essentials/database.db";
+		//FileHandle url = Core.settings.getDataDirectory().child("plugins/Essentials/database.db");
 		Connection conn = null;
 		try {
 			conn = DriverManager.getConnection(url);
@@ -67,9 +73,8 @@ public class EssentialsPlayer{
 		return conn;
 	}
 
-	public void insert(String name, String uuid, boolean isAdmin, boolean isLocal, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastblockplace, String lastblockbreak, int playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount){
-		String sql = "INSERT INTO players(name, uuid, isAdmin, isLocal, placecount, breakcount, killcount, deathcount, joincount, kickcount, rank, firstdate, lastdate, lastblockplace, lastblockbreak, playtime, lastchat, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
+	public void insert(String name, String uuid, boolean isAdmin, boolean isLocal, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, int playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount){
+		String sql = "INSERT INTO 'main'.'player' ('name', 'uuid', 'isAdmin', 'isLocal', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'rank', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'playtime', 'lastchat', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakcount', 'reactorcount') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 		try(Connection conn = this.connect();
 			PreparedStatement pstmt = conn.prepareStatement(sql)){
 			pstmt.setString(1, name);
@@ -85,8 +90,8 @@ public class EssentialsPlayer{
 			pstmt.setString(11, rank);
 			pstmt.setString(12, firstdate);
 			pstmt.setString(13, lastdate);
-			pstmt.setString(14, lastblockplace);
-			pstmt.setString(15, lastblockbreak);
+			pstmt.setString(14, lastplacename);
+			pstmt.setString(15, lastbreakname);
 			pstmt.setInt(16, playtime);
 			pstmt.setString(17, lastchat);
 			pstmt.setInt(18, attackclear);
@@ -101,21 +106,22 @@ public class EssentialsPlayer{
 	}
 
 	public void selectAll(){
-		String sql = "SELECT name, uuid, isAdmin, isLocal, placecount, breakcount, killcount, deathcount, joincount, kickcount, rank, firstdate, lastdate, lastblockplace, lastblockbreak, playtime, lastchat, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount FROM players";
+		String query = "SELECT uuid, isAdmin, isLocal, placecount, breakcount, killcount, deathcount, joincount, kickcount, rank, firstdate, lastdate, lastblockplace, lastblockbreak, playtime, lastchat, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount FROM players";
 
 		try (Connection conn = this.connect();
 		Statement stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery(sql)){
+		ResultSet rs = stmt.executeQuery(query)){
 			while(rs.next()){
-				Log.info(rs.getInt("name")+" / "+
-						rs.getString("uuid"));
+				rs.getInt("name");
+				rs.getString("uuid");
+
 			}
 		} catch (SQLException e){
 			Log.info("SQL ERROR! "+e);
 		}
 	}
 
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 
 	}
 /*

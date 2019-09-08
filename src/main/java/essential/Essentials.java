@@ -4,11 +4,11 @@ import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
 import io.anuke.arc.util.CommandHandler;
+import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
-import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.EventType.PlayerJoin;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static essential.EssentialsPlayer.createNewDatabase;
-import static essential.EssentialsPlayer.createNewTable;
 import static io.anuke.mindustry.Vars.player;
 
 
@@ -32,18 +31,20 @@ public class Essentials extends Plugin{
 		if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
 			String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/plugins/Essentials/[] folder.";
 			Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
+			Log.info("[Essentials] motd file created.");
 		}
 
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/database.db").exists()) {
-            createNewDatabase("database.db");
-            createNewTable();
+            createNewDatabase();
+            Log.info("[Essentials] Database file created.");
         }
-        Events.on(EventType.PlayerJoin.class, e -> {
-            EssentialsPlayer db = new EssentialsPlayer();
+        Events.on(PlayerJoin.class, e -> {
+        	EssentialsPlayer essentialsPlayer = new EssentialsPlayer();
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
             String nowString = now.format(dateTimeFormatter);
-            db.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0,0,0,0, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, "F", "2019-09-08 PM 5:03:00", "2019-09-08 PM 5:03:00", "none","none",0,"none",0,0,0,0,0);
+            essentialsPlayer.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0, 0, 0, 0, 0, 0, "F", nowString, nowString, "none", "none", 0, "none", 0, 0, 0, 0, 0);
+			//EssentialsPlayer.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0,0,0,0, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, "F", nowString, nowString, "none","none",0,"none",0,0,0,0,0);
         });
 		
 		// Block destroy/buildit count source (under development)
