@@ -1,34 +1,31 @@
 package essential;
 
-import io.anuke.arc.*;
-import io.anuke.arc.util.*;
-import io.anuke.mindustry.*;
-import io.anuke.arc.collection.*;
-import io.anuke.arc.collection.Array.*;
-import io.anuke.mindustry.core.*;
-import io.anuke.mindustry.core.GameState.*;
-import io.anuke.mindustry.content.*;
-import io.anuke.mindustry.entities.type.*;
-import io.anuke.mindustry.game.EventType.*;
-import io.anuke.mindustry.game.*;
-import io.anuke.mindustry.gen.*;
-import io.anuke.mindustry.plugin.Plugin;
-
-import io.anuke.mindustry.net.Packets.KickReason;
+import io.anuke.arc.Core;
+import io.anuke.arc.Events;
+import io.anuke.arc.collection.Array;
+import io.anuke.arc.util.CommandHandler;
+import io.anuke.arc.util.Time;
+import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Difficulty;
+import io.anuke.mindustry.game.EventType;
+import io.anuke.mindustry.game.EventType.PlayerJoin;
+import io.anuke.mindustry.gen.Call;
+import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Net;
 import io.anuke.mindustry.net.NetConnection;
-import io.anuke.mindustry.maps.Map;
-import io.anuke.mindustry.maps.*;
+import io.anuke.mindustry.net.Packets.KickReason;
+import io.anuke.mindustry.plugin.Plugin;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import static essential.EssentialsPlayer.createNewDatabase;
+import static essential.EssentialsPlayer.createNewTable;
+import static io.anuke.mindustry.Vars.player;
 
-import io.anuke.mindustry.net.Administration.*;
-
-import essential.EssentialsPlayer;
 
 public class Essentials extends Plugin{
 	public Essentials(){
@@ -37,11 +34,17 @@ public class Essentials extends Plugin{
 			Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
 		}
 
-		Events.on(PlayerJoin.class, e -> {
-			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
-			e.player.sendMessage(motd);
-			//e.player.sendMessage(EssentialsPlayer.playerinfo(e.player));
-		});
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/database.db").exists()) {
+            createNewDatabase("database.db");
+            createNewTable();
+        }
+        Events.on(EventType.PlayerJoin.class, e -> {
+            EssentialsPlayer db = new EssentialsPlayer();
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
+            String nowString = now.format(dateTimeFormatter);
+            db.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0,0,0,0, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, "F", "2019-09-08 PM 5:03:00", "2019-09-08 PM 5:03:00", "none","none",0,"none",0,0,0,0,0);
+        });
 		
 		// Block destroy/buildit count source (under development)
 		/*
@@ -142,7 +145,7 @@ public class Essentials extends Plugin{
 		// Teleport source from https://github.com/J-VdS/locationplugin
 		handler.<Player>register("tp", "<player>", "Teleport to other players", (args, player) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
-			if(player.isAdmin == false){
+			if(!player.isAdmin){
 				player.sendMessage("[green]Notice:[] You're not admin!");
 			} else {
 				if(other == null){
@@ -156,7 +159,7 @@ public class Essentials extends Plugin{
 		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (args, player) -> {
 			Player other1 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 			Player other2 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[1]));
-			if(player.isAdmin == false){
+			if(!player.isAdmin){
 				player.sendMessage("[green]Notice:[] You're not admin!");
 			} else {
 				if(other1 == null || other2 == null){
@@ -203,7 +206,7 @@ public class Essentials extends Plugin{
 		*/
 
 		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
-			if(player.isAdmin == false){
+			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
 				for(NetConnection con : Net.getConnections()){
@@ -213,7 +216,7 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("spawnmob", "Spawn mob", (args, player) -> {
-			if(player.isAdmin == false){
+			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
 				player.sendMessage("source here");
@@ -221,7 +224,7 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("tempban", "timer ban", (args, player) -> {
-			if(player.isAdmin == false){
+			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
 				/*
@@ -240,7 +243,7 @@ public class Essentials extends Plugin{
 
 		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (args, player) -> {
 			
-			if(player.isAdmin == false){
+			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
 				try{
@@ -275,14 +278,14 @@ public class Essentials extends Plugin{
 		});
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
-			if(player.isAdmin == false){
+			if(!player.isAdmin){
 				player.onPlayerDeath(player);
 				Call.sendMessage(player.name+"[] used [green]suicide[] command.");
 			}
 		});
 
 		handler.<Player>register("kill", "<player>", "Kill player.", (args, player) -> {
-			if(player.isAdmin == true){
+			if(player.isAdmin){
 				Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 				if(other == null){
 					player.sendMessage("[scarlet]No player by that name found!");
