@@ -21,6 +21,7 @@ import org.jsoup.nodes.Document;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import static essential.EssentialsPlayer.createNewDatabase;
 import static io.anuke.mindustry.Vars.player;
@@ -43,8 +44,14 @@ public class Essentials extends Plugin{
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
             String nowString = now.format(dateTimeFormatter);
-            essentialsPlayer.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0, 0, 0, 0, 0, 0, "F", nowString, nowString, "none", "none", 0, "none", 0, 0, 0, 0, 0);
-			//EssentialsPlayer.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0,0,0,0, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, "F", nowString, nowString, "none","none",0,"none",0,0,0,0,0);
+            if(essentialsPlayer.selectAll(e.player.uuid) == null){
+            	essentialsPlayer.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0, 0, 0, 0, 0, 0, "F", nowString, nowString, "none", "none", 0, "none", 0, 0, 0, 0, 0);
+            	Log.info("failed");
+            } else {
+				List<String> db = essentialsPlayer.selectAll(e.player.uuid);
+			}
+
+            //EssentialsPlayer.insert(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, 0,0,0,0, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, "F", nowString, nowString, "none","none",0,"none",0,0,0,0,0);
         });
 		
 		// Block destroy/buildit count source (under development)
@@ -114,6 +121,7 @@ public class Essentials extends Plugin{
 						player.sendMessage("[green]Mobile[]: "+player.isMobile);
 						player.sendMessage("[green]IP[]: "+ip);
 						player.sendMessage("[green]Country[]: "+geo);
+
 					} catch (Exception e){
 						player.sendMessage("Load failed!");
 					}

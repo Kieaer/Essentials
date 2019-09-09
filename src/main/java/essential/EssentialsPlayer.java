@@ -1,16 +1,15 @@
 package essential;
 
-import io.anuke.arc.Core;
-import io.anuke.arc.files.FileHandle;
 import io.anuke.arc.util.Log;
-import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 
 import java.sql.*;
-
-import static io.anuke.mindustry.Vars.player;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EssentialsPlayer{
+	Connection conn = null;
+
 	static void createNewDatabase(){
 		try {
 			Class.forName("org.sqlite.JDBC");
@@ -104,21 +103,43 @@ public class EssentialsPlayer{
 			Log.info("SQL ERROR! "+e);
 		}
 	}
+	public List<String> selectAll(String uuid){
+		List<String> players = new ArrayList<>();
+		//String query = "SELECT uuid, isAdmin, isLocal, placecount, breakcount, killcount, deathcount, joincount, kickcount, rank, firstdate, lastdate, lastblockplace, lastblockbreak, playtime, lastchat, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount FROM players";
+		String query = "SELECT * FROM player WHERE uuid = '?'";
 
-	public void selectAll(){
-		String query = "SELECT uuid, isAdmin, isLocal, placecount, breakcount, killcount, deathcount, joincount, kickcount, rank, firstdate, lastdate, lastblockplace, lastblockbreak, playtime, lastchat, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount FROM players";
-
-		try (Connection conn = this.connect();
-		Statement stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery(query)){
-			while(rs.next()){
-				rs.getInt("name");
-				rs.getString("uuid");
-
+		try{
+			Connection conn = this.connect();
+			PreparedStatement pstm = conn.prepareStatement(query);
+			ResultSet rs = pstm.executeQuery();
+			if (rs.next()){
+				players.set(0, rs.getString("name"));
+				players.set(1, rs.getString("uuid"));
+				players.set(2, String.valueOf(rs.getBoolean("isAdmin")));
+				players.set(3, String.valueOf(rs.getBoolean("isLocal")));
+				players.set(4, String.valueOf(rs.getInt("placecount")));
+				players.set(5, String.valueOf(rs.getInt("breakcount")));
+				players.set(6, String.valueOf(rs.getInt("killcount")));
+				players.set(7, String.valueOf(rs.getInt("deathcount")));
+				players.set(8, String.valueOf(rs.getInt("joincount")));
+				players.set(9, String.valueOf(rs.getInt("kickcount")));
+				players.set(10, rs.getString("rank"));
+				players.set(11, rs.getString("firstdate"));
+				players.set(12, rs.getString("lastdate"));
+				players.set(13, rs.getString("lastplacename"));
+				players.set(14, rs.getString("lastbreakname"));
+				players.set(15, String.valueOf(rs.getInt("playtime")));
+				players.set(16, rs.getString("lastchat"));
+				players.set(17, String.valueOf(rs.getInt("attackclear")));
+				players.set(18, String.valueOf(rs.getInt("pvpwincount")));
+				players.set(19, String.valueOf(rs.getInt("pvplosecount")));
+				players.set(20, String.valueOf(rs.getInt("pvpbreakout")));
+				players.set(21, String.valueOf(rs.getInt("reactorcount")));
 			}
 		} catch (SQLException e){
 			Log.info("SQL ERROR! "+e);
 		}
+		return players;
 	}
 
 	/*public static void main(String[] args) {
