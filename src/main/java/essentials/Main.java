@@ -7,25 +7,23 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
+import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.EventType.PlayerJoin;
 import io.anuke.mindustry.gen.Call;
+import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.Date;
 
 import static essentials.EssentialPlayer.createNewDatabase;
 import static essentials.EssentialPlayer.getData;
@@ -55,8 +53,8 @@ public class Main extends Plugin{
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
             String nowString = now.format(dateTimeFormatter);
-			if (Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.uuid+".json").exists()) {
-				String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+			String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+			if (!Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.uuid+".json").exists()) {
 				Runnable r1 = new thread1(ip);
 				Thread t1 = new Thread(r1);
 				t1.start();
@@ -74,6 +72,14 @@ public class Main extends Plugin{
 				Log.info("[Essentials] "+e.player.name+" Database file loaded.");
 			}
         });
+
+        //copied from ExamplePlugin
+		Events.on(EventType.BuildSelectEvent.class, event -> {
+			if (!event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder.buildRequest().block == Blocks.thoriumReactor && event.builder instanceof Player) {
+				Call.sendMessage("[scarlet][WARN][] " + ((Player) event.builder).name + " has begun building a [green]Thorium reactor[]!");
+			}
+		});
+
 		/*
 		Events.on(EventType.BlockBuildEndEvent.class, e -> {
 			Player player = new Player();
@@ -342,7 +348,9 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("effect", "<effect>", "make effect", (args, player) -> {
+		handler.<Player>register("effect", "make effect", (args, player) -> {
+			//Time.run(20f, () -> Effects.effect(Fx.spawnShockwave, player.x, player.y, 10));
+			// Failed lol
 			player.sendMessage("Not avaliable now!");
 		});
 
@@ -386,15 +394,14 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("save", "Map save", (args, player) -> {
-			/*
-			Core.app.post(() -> {
-				int slot = Strings.parseInt(arg[0]);
-				SaveIO.saveToSlot(slot);
-				info("Saved to slot {0}.", slot);
-			});
-			*/
-			// copied from ServerControl.java
-			player.sendMessage("Not avaliable now!");
+			if(player.isAdmin) {
+				Core.app.post(() -> {
+					SaveIO.saveToSlot(1);
+					player.sendMessage("Map saved.");
+				});
+			} else {
+				player.sendMessage("You're not admin!");
+			}
 		});
 
 		handler.<Player>register("time", "Show server time", (args, player) -> {

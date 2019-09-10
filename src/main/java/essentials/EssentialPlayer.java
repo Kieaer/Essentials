@@ -1,17 +1,8 @@
 package essentials;
 
 import io.anuke.arc.Core;
-import io.anuke.arc.files.FileHandle;
-import jdk.nashorn.internal.parser.JSONParser;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
 
 class EssentialPlayer{
 	public static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, int playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime) {

@@ -47,11 +47,12 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] spawnmob mob amount - Spawn enemies or mob.
 - [x] status - Show server status.
 - [ ] realname player - Show real name.
+  - [ ] make info command (dependence)
 - [x] me msg - Special chat format
-- [ ] firework player - Show Firework with players.
 - [x] motd - Show server motd.
 - [x] getpos - Show current position.
 - [ ] tempban player time - Timer ban.
+  - [ ] make info command (dependence)
 - [ ] info - Show player info.
   - [x] Player name and UUID
   - [x] Show IP and GeoLocation
@@ -66,7 +67,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [ ] Map list
 - [x] suicide - self-destruct.
 - [x] kill - Kill other player.
-- [ ] save - Map save.
+- [x] save - Map save.
 - [ ] say - Server chat.
 - [ ] ch - Cross server chat.
 - [ ] nick - Set nickname.
