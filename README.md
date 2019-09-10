@@ -55,9 +55,9 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] info - Show player info.
   - [x] Player name and UUID
   - [x] Show IP and GeoLocation
-  - [ ] Show destroy/placed block count
-  - [ ] Show destroy enemies count
-  - [ ] Show dead count
+  - [x] Show destroy/placed block count
+  - [x] Show destroy enemies count
+  - [x] Show dead count
   - [ ] Rank system
 - [x] difficulty - Set difficulty.
 - [ ] effect - Make effect.

@@ -1,7 +1,7 @@
 {
   "name": "Essentials",
   "author": "Kieaer",
-  "main": "essential.Essentials",
+  "main": "essentials.Main",
   "description": "More commands and features.",
-  "version": 1.1
+  "version": 1.0
 }
