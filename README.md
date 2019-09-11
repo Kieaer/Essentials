@@ -12,8 +12,9 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 ## Commands
 
 | Command | Parameter | Description |
-|---------|:-------------:|---------------------------|
-| tp | &lt;player name&gt; | Teleport to other players |
+|:--|:--|:--|
+| tp | &lt;player name&gt; | Teleport to players |
+| tp | &lt;player name&gt; &lt;another player name&gt; | Teleport player to other players |
 | me | &lt;msg&gt; | Show special chat format |
 | motd |  | Show server motd |
 | getpos |  | Show your current position position |
@@ -22,15 +23,15 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | kill | &lt;player name&gt; | Kill other players |
 | time |  | Show server local time |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
-<!--
 | kickall |  | Kick all players without you. |
+| difficulty | &lt;difficulty&gt; | Set server difficulty |
+| save |  | Save current map |
+<!--
 | spawnmob |  | Spawn mob |
 | tempban |  | Timer ban |
-| difficulty |  | Set server difficulty |
 | effect |  | make effect |
 | gamerule |  | Edit gamerule |
 | vote | &lt;map name&gt; | Vote map |
-| save |  | Save current map |
 | ch | msg | Cross server chat |
 | tpmouse | player | teleport player to follow mouse pointer |
 |  |  |  |
@@ -72,4 +73,3 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] ch - Cross server chat.
 - [ ] nick - Set nickname.
 - [x] time - Show server time.
-- [x] team - Set PvP team.
