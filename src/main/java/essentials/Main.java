@@ -140,13 +140,14 @@ public class Main extends Plugin{
 
 		// Count unit destory
 		Events.on(EventType.UnitDestroyEvent.class, event -> {
-			if(playerGroup.size() > 0){
-				for(Player p : playerGroup.all()){
-					JSONObject db = getData(p.uuid);
+			if(playerGroup != null && playerGroup.size() > 0){
+				for(int i=0;i<playerGroup.size();i++){
+					Player player = playerGroup.all().get(i);
+					JSONObject db = getData(player.uuid);
 					int data = db.getInt("killcount");
 					data++;
 					db.put("killcount", data);
-					Core.settings.getDataDirectory().child("plugins/Essentials/players/"+p.uuid+".json").writeString(String.valueOf(db));
+					Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.uuid+".json").writeString(String.valueOf(db));
 				}
 			}
 		});
