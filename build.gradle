@@ -13,6 +13,7 @@ dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:-SNAPSHOT"
     compileOnly "com.github.Anuken.Mindustry:core:-SNAPSHOT"
     compile 'org.jsoup:jsoup:1.12.1'
+    compile 'org.json'
 }
 
 jar{
