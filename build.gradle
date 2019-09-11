@@ -7,11 +7,12 @@ sourceCompatibility = 1.8
 repositories{
     mavenCentral()
     maven{ url 'https://jitpack.io' }
+
 }
 
 dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:-SNAPSHOT"
-    compileOnly "com.github.Anuken.Mindustry:core:-SNAPSHOT"
+    compileOnly "com.github.Anuken.Arc:arc-core:master-SNAPSHOT"
+    compileOnly "com.github.Anuken.Mindustry:core:master-SNAPSHOT"
     compile 'org.jsoup:jsoup:1.12.1'
     compile 'org.json:json:20190722'
 }

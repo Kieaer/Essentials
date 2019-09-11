@@ -5,13 +5,14 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 class EssentialPlayer{
-	public static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, int playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime) {
+	public static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime) {
 		JSONObject data = new JSONObject();
 		data.put("name", name);
 		data.put("uuid", uuid);
 		data.put("isAdmin", isAdmin);
 		data.put("isLocal", isLocal);
-		data.put("Country", country);
+		data.put("country", country);
+		data.put("country_code", country_code);
 		data.put("placecount", placecount);
 		data.put("breakcount", breakcount);
 		data.put("killcount", killcount);
@@ -32,9 +33,7 @@ class EssentialPlayer{
 		data.put("reactorcount", reactorcount);
 		data.put("bantimeset", bantimeset);
 		data.put("bantime", bantime);
-		JSONObject response = new JSONObject();
-		response.put("data", data);
-		String json = response.toString();
+		String json = data.toString();
 		Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(json);
 	}
 
@@ -42,10 +41,18 @@ class EssentialPlayer{
 		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
 		JSONTokener parser = new JSONTokener(db);
 		JSONObject object = new JSONObject(parser);
-		JSONObject response = (JSONObject) object.get("data");
-		return response;
+		return object;
 	}
 /*
+	public static JSONObject writeData(String uuid, String data){
+		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
+		JSONTokener parser = new JSONTokener(db);
+		JSONObject object = new JSONObject(parser);
+		JSONObject response = (JSONObject) object.get("data");
+		//JSONObject write = object.put(data);
+		return response;
+	}
+
 	public static JSONObject getAll() throws FileNotFoundException {
 		File dir = new File("plugins/Essentials/players");
 		for (File file : dir.listFiles()) {
