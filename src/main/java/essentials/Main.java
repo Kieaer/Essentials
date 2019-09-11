@@ -20,13 +20,23 @@ import io.anuke.mindustry.plugin.Plugin;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static essentials.EssentialPlayer.createNewDatabase;
 import static essentials.EssentialPlayer.getData;
+import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
 	public Main(){
@@ -36,26 +46,25 @@ public class Main extends Plugin{
 			Log.info("[Essentials] motd file created.");
 		}
 
-		/*
-		Runnable timeban = new TimeThread();
-		Thread t2 = new Thread(timeban);
-		t2.start();
-		try {
-			t2.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		t2.start();
-		*/
-
         Events.on(PlayerJoin.class, e -> {
-        	Player player = new Player();
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
-            String nowString = now.format(dateTimeFormatter);
+			// Show motd
+			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+			e.player.sendMessage(motd);
+
+			// Database read/write
+			LocalDateTime now = LocalDateTime.now();
+			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+			String nowString = now.format(dateTimeFormatter);
 			String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-			if (!Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.uuid+".json").exists()) {
-				Runnable r1 = new thread1(ip);
+
+			if (Core.settings.getDataDirectory().child("plugins/Essentials/players/" + e.player.uuid + ".json").exists()) {
+				JSONObject db = getData(e.player.uuid);
+				db.put("lastdate", nowString);
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+e.player.uuid+".json").writeString(String.valueOf(db));
+				Log.info("[Essentials] " + e.player.name + " Database file loaded.");
+			} else {
+				e.player.sendMessage("[green]Database creating... Please wait");
+				thread1 r1 = new thread1(ip);
 				Thread t1 = new Thread(r1);
 				t1.start();
 				try {
@@ -63,56 +72,89 @@ public class Main extends Plugin{
 				} catch (InterruptedException f) {
 					f.printStackTrace();
 				}
-				String geo = ((thread1) r1).getValue();
-
-				createNewDatabase(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, geo, 0,0, 0, 0, 0, 0, "F", nowString, nowString, "none", "none", 0, "none", 0, 0, 0, 0, 0, "none", 0);
-				Log.info("[Essentials] "+e.player.name+"/"+e.player.uuid+" Database file created.");
-			} else {
-				getData(e.player.uuid);
-				Log.info("[Essentials] "+e.player.name+" Database file loaded.");
+				String geo = r1.getgeo();
+				String geocode = r1.getgeocode();
+				createNewDatabase(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, geo, geocode, 0, 0, 0, 0, Vars.netServer.admins.getInfo(e.player.uuid).timesJoined, Vars.netServer.admins.getInfo(e.player.uuid).timesKicked, "F", nowString, nowString, "none", "none", "00:00.00", "none", 0, 0, 0, 0, 0, "none", 0);
+				Log.info("[Essentials] " + e.player.name + "/" + e.player.uuid + " Database file created.");
+				e.player.sendMessage("[green]Database created!");
 			}
-        });
+
+			Runnable playtime = new Runnable(){
+				@Override
+				public void run() {
+					if(playerGroup.size() > 0){
+						for(Player p : playerGroup.all()) {
+							JSONObject db = getData(p.uuid);
+							String data = db.getString("playtime");
+							SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+							Date d1;
+							Calendar cal;
+							String newTime = null;
+							try {
+								d1 = format.parse(data);
+								cal = Calendar.getInstance();
+								cal.setTime(d1);
+								cal.add(Calendar.SECOND, 1);
+								newTime = format.format(cal.getTime());
+							} catch (ParseException e1) {
+								e1.printStackTrace();
+							}
+							db.put("playtime", newTime);
+							Core.settings.getDataDirectory().child("plugins/Essentials/players/" + p.uuid + ".json").writeString(String.valueOf(db));
+						}
+					}
+				}
+			};
+
+			ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+			service.scheduleWithFixedDelay(playtime, 0, 1, TimeUnit.SECONDS);
+
+			// Check previous nickname
+			//String test = (String) db.get("uuid");
+
+
+		});
 
         //copied from ExamplePlugin
 		Events.on(EventType.BuildSelectEvent.class, event -> {
 			if (!event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder.buildRequest().block == Blocks.thoriumReactor && event.builder instanceof Player) {
-				Call.sendMessage("[scarlet][WARN][] " + ((Player) event.builder).name + " has begun building a [green]Thorium reactor[]!");
+				Call.sendMessage("[scarlet][NOTICE][] " + ((Player) event.builder).name + "[white] has begun building a [green]Thorium reactor[]!");
+			}
+
+			if(!event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
+				JSONObject db = getData(((Player) event.builder).uuid);
+				int data = db.getInt("placecount");
+				data++;
+				db.put("placecount", data);
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
+			}
+
+			if(event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
+				JSONObject db = getData(((Player) event.builder).uuid);
+				int data = db.getInt("breakcount");
+				data++;
+				db.put("breakcount", data);
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
 			}
 		});
 
-		/*
-		Events.on(EventType.BlockBuildEndEvent.class, e -> {
-			Player player = new Player();
-			if(e.team == player.getTeam()){
-				if(e.breaking){
-					JSONObject db = getData(player.uuid);
-					int count = (int) db.get("breakcount");
-					count++;
-					db.put("breakcount", count);
-				}else{
-					JSONObject db = getData(player.uuid);
-					int count = (int) db.get("placecount");
-					count++;
-					db.put("placecount", count);
+		// Count unit destory
+		Events.on(EventType.UnitDestroyEvent.class, event -> {
+			if(playerGroup.size() > 0){
+				for(Player p : playerGroup.all()){
+					JSONObject db = getData(p.uuid);
+					int data = db.getInt("killcount");
+					data++;
+					db.put("killcount", data);
+					Core.settings.getDataDirectory().child("plugins/Essentials/players/"+p.uuid+".json").writeString(String.valueOf(db));
 				}
 			}
 		});
-
-		Events.on(EventType.UnitDestroyEvent.class, e -> {
-			Player player = new Player();
-			if(e.unit.getTeam() != player.getTeam()){
-				JSONObject db = getData(player.uuid);
-				int count = (int) db.get("killcount");
-				count++;
-				db.put("killcount", count);
-			}
-		});
-		*/
 	}
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
-		
+
 	}
 
 	@Override
@@ -131,9 +173,7 @@ public class Main extends Plugin{
 			player.sendMessage(motd);
 		});
 
-		handler.<Player>register("getpos", "Get your current position info", (args, player) -> {
-			player.sendMessage("X: "+Math.round(player.x)+" Y: "+Math.round(player.y));
-		});
+		handler.<Player>register("getpos", "Get your current position info", (args, player) -> player.sendMessage("X: "+Math.round(player.x)+" Y: "+Math.round(player.y)));
 
 		handler.<Player>register("info","Show your information", (args, player) -> {
 			// Geolocation thread
@@ -160,24 +200,25 @@ public class Main extends Plugin{
 					"[green]UUID[]			: "+player.uuid+"\n" +
 					"[green]Mobile[]		: "+player.isMobile+"\n" +
 					"[green]IP[]			: "+ip+"\n" +
-					//"[green]Country[]		: "+geo+"\n" +
-					"[green]Block place[]	: "+(int)db.get("placecount")+"\n" +
-					"[green]Block break[]	: "+(int)db.get("breakcount")+"\n" +
-					"[green]Kill units[]	: "+(int)db.get("killcount")+"\n" +
-					"[green]Death count[]	: "+(int)db.get("deathcount")+"\n" +
-					"[green]Join count[]	: "+(int)db.get("joincount")+"\n" +
-					"[green]Kick count[]	: "+(int)db.get("kickcount")+"\n" +
+					"[green]Country[]		: "+db.get("country")+"\n" +
+					"[green]Block place[]	: "+db.get("placecount")+"\n" +
+					"[green]Block break[]	: "+db.get("breakcount")+"\n" +
+					"[green]Kill units[]	: "+db.get("killcount")+"\n" +
+					"[green]Death count[]	: "+db.get("deathcount")+"\n" +
+					"[green]Join count[]	: "+db.get("joincount")+"\n" +
+					"[green]Kick count[]	: "+db.get("kickcount")+"\n" +
 					"[green]Rank[]			: "+db.get("rank")+"\n" +
-					"[green]First joindate[]: "+db.get("firstdate")+"\n" +
-					"[green]Playtime[]		: "+(int)db.get("playtime")+"\n" +
-					"[green]Attack clear[]	: " +(int)db.get("attackclear")+"\n" +
-					"[green]PvP Win[]		: "+(int)db.get("pvpwincount")+"\n" +
-					"[green]PvP Lose[]		: "+(int)db.get("pvplosecount")+"\n" +
-					"[green]PvP Surrender[]	: "+(int)db.get("pvpbreakout");
+					"[green]First join[]	: "+db.get("firstdate")+"\n" +
+					"[green]Last join[]		: "+db.get("lastdate")+"\n" +
+					"[green]Playtime[]		: "+db.get("playtime")+"\n" +
+					"[green]Attack clear[]	: "+db.get("attackclear")+"\n" +
+					"[green]PvP Win[]		: "+db.get("pvpwincount")+"\n" +
+					"[green]PvP Lose[]		: "+db.get("pvplosecount")+"\n" +
+					"[green]PvP Surrender[]	: "+db.get("pvpbreakout");
 			// Call.onInfoMessage(player.con, datatext);
 			player.sendMessage(datatext);
 			/*
-			//player.sendMessage("[green]lastdate[]: "+db.get("lastdate"));
+			//
 			//player.sendMessage("[green]lastplacename[]: "+db.get("lastplacename"));
 			//player.sendMessage("[green]lastbreakname[]:" +db.get("lastbreakname"));
 			//player.sendMessage("[green]lastchat[]: "+db.get("lastchat"));
@@ -194,16 +235,30 @@ public class Main extends Plugin{
 			int ipb = 0;
 
 			Array<PlayerInfo> bans = Vars.netServer.admins.getBanned();
-			for(PlayerInfo info : bans){
+			for(PlayerInfo ignored : bans){
 				idb++;
 			}
 
 			Array<String> ipbans = Vars.netServer.admins.getBannedIPs();
-            for(String string : ipbans){
+            for(String ignored : ipbans){
 				ipb++;
             }
             int bancount = idb + ipb;
-            player.sendMessage(bancount+" players banned.");
+            player.sendMessage("Total [scarlet]"+bancount+"[]("+idb+"/"+ipb+") players banned.");
+		});
+
+		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (args, player) -> {
+			Player other1 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
+			Player other2 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[1]));
+			if(!player.isAdmin){
+				player.sendMessage("[green]Notice:[] You're not admin!");
+			} else {
+				if(other1 == null || other2 == null){
+					player.sendMessage("[scarlet]No player by that name found!");
+					return;
+				}
+				other1.setNet(other2.x, other2.y);
+			}
 		});
 
 		// Teleport source from https://github.com/J-VdS/locationplugin
@@ -233,7 +288,7 @@ public class Main extends Plugin{
 				other1.setNet(other2.x, other2.y);
 			}
 		});
-		
+
 		/*
 		handler.<Player>register("tpmouse", "<player>", "Teleport to other players", (args, player) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
@@ -330,12 +385,9 @@ public class Main extends Plugin{
 			player.sendMessage("Not avaliable now!");
 		});
 
-		handler.<Player>register("me", "<text>", "broadcast * message", (args, player) -> {
-			Call.sendMessage("[orange]*[] "+player.name+"[orange][white] : "+args[0]);
-		});
+		handler.<Player>register("me", "<text>", "broadcast * message", (args, player) -> Call.sendMessage("[orange]*[] "+player.name+"[white] : "+args[0]));
 
 		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (args, player) -> {
-			
 			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
@@ -354,9 +406,7 @@ public class Main extends Plugin{
 			player.sendMessage("Not avaliable now!");
 		});
 
-		handler.<Player>register("gamerule", "<gamerule>", "Set gamerule", (args, player) -> {
-			player.sendMessage("Not avaliable now!");
-		});
+		handler.<Player>register("gamerule", "<gamerule>", "Set gamerule", (args, player) -> player.sendMessage("Not avaliable now!"));
 
 		handler.<Player>register("vote", "<vote>", "Votemap", (args, player) -> {
 			/*
@@ -374,10 +424,8 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
-			if(!player.isAdmin){
-				player.onPlayerDeath(player);
-				Call.sendMessage(player.name+"[] used [green]suicide[] command.");
-			}
+			player.onPlayerDeath(player);
+			Call.sendMessage(player.name+"[] used [green]suicide[] command.");
 		});
 
 		handler.<Player>register("kill", "<player>", "Kill player.", (args, player) -> {
@@ -416,6 +464,7 @@ public class Main extends Plugin{
 class thread1 implements Runnable{
 	private String ip;
 	private String geo;
+	private String geocode;
 
 	thread1(String ip) {
 		this.ip = ip;
@@ -423,25 +472,69 @@ class thread1 implements Runnable{
 
 	@Override
 	public void run() {
-		Player player = new Player();
 		Thread.currentThread().setName("Get geolocation thread");
-		//String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-		// Get IP Geolocation
-		String connUrl = "http://ipapi.co/" + ip + "/country_name";
-		Document doc = null;
 		try {
-			doc = Jsoup.connect(connUrl).get();
+			String connUrl = "http://ipapi.co/" + ip + "/country_name";
+			Element web = Jsoup.connect(connUrl).get().body();
+			Document doc = Jsoup.parse(String.valueOf(web));
+			geo = doc.text();
+			connUrl = "http://ipapi.co/" + ip + "/country";
+			web = Jsoup.connect(connUrl).get().body();
+			doc = Jsoup.parse(String.valueOf(web));
+			geocode = doc.text();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		geo = doc.text();
-		return;
+		Log.info(geo+"/"+geocode);
 	}
-
-	public String getValue(){
+	String getgeo(){
 		return geo;
 	}
+	String getgeocode(){
+		return geocode;
+	}
 }
+/*
+class APIExamTranslateNMT {
+	public static void main(String[] args) {
+		String clientId = "RNOXzFalw7FMFjBe2mbq";
+		String clientSecret = "6k0TWLFmPN";
+		try {
+			String text = URLEncoder.encode(args[0], "UTF-8");
+			String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
+			URL url = new URL(apiURL);
+			HttpURLConnection con = (HttpURLConnection)url.openConnection();
+			con.setRequestMethod("POST");
+			con.setRequestProperty("X-Naver-Client-Id", clientId);
+			con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
+
+			String postParams = "source=ko&target=en&text=" + text;
+			con.setDoOutput(true);
+			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+			wr.writeBytes(postParams);
+			wr.flush();
+			wr.close();
+			int responseCode = con.getResponseCode();
+			BufferedReader br;
+			if(responseCode==200) {
+				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			} else {
+				br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+			}
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+			while ((inputLine = br.readLine()) != null) {
+				response.append(inputLine);
+			}
+			br.close();
+			Call.sendMessage(response.toString());
+		} catch (Exception e) {
+			Log.info(e);
+		}
+	}
+}
+*/
+
 /*
 class TimeThread implements Runnable {
 	LocalDateTime now = LocalDateTime.now();
