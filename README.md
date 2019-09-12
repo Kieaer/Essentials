@@ -26,6 +26,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | kickall |  | Kick all players without you. |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
 | save |  | Save current map |
+| tr |  | Enable/disable auto translate |
 <!--
 | spawnmob |  | Spawn mob |
 | tempban |  | Timer ban |
@@ -73,3 +74,4 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] ch - Cross server chat.
 - [ ] nick - Set nickname.
 - [x] time - Show server time.
+- [x] translate - Enable/disable auto translate

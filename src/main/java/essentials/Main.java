@@ -7,7 +7,6 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -18,21 +17,23 @@ import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 import static essentials.EssentialPlayer.createNewDatabase;
 import static essentials.EssentialPlayer.getData;
@@ -74,53 +75,110 @@ public class Main extends Plugin{
 				}
 				String geo = r1.getgeo();
 				String geocode = r1.getgeocode();
-				createNewDatabase(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, geo, geocode, 0, 0, 0, 0, Vars.netServer.admins.getInfo(e.player.uuid).timesJoined, Vars.netServer.admins.getInfo(e.player.uuid).timesKicked, "F", nowString, nowString, "none", "none", "00:00.00", "none", 0, 0, 0, 0, 0, "none", 0);
+				int timesjoined = Vars.netServer.admins.getInfo(e.player.uuid).timesJoined;
+				int timeskicked = Vars.netServer.admins.getInfo(e.player.uuid).timesKicked;
+				createNewDatabase(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, geo, geocode,
+						0, 0, 0, 0, timesjoined,
+						timeskicked, "F", nowString, nowString, "none",
+						"none", "00:00.00", "none", 0, 0, 0,
+						0, 0, "none", 0, false);
 				Log.info("[Essentials] " + e.player.name + "/" + e.player.uuid + " Database file created.");
 				e.player.sendMessage("[green]Database created!");
 			}
-
-			Runnable playtime = new Runnable(){
-				@Override
-				public void run() {
-					if(playerGroup.size() > 0){
-						for(Player p : playerGroup.all()) {
-							JSONObject db = getData(p.uuid);
-							String data = db.getString("playtime");
-							SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-							Date d1;
-							Calendar cal;
-							String newTime = null;
-							try {
-								d1 = format.parse(data);
-								cal = Calendar.getInstance();
-								cal.setTime(d1);
-								cal.add(Calendar.SECOND, 1);
-								newTime = format.format(cal.getTime());
-							} catch (ParseException e1) {
-								e1.printStackTrace();
-							}
-							db.put("playtime", newTime);
-							Core.settings.getDataDirectory().child("plugins/Essentials/players/" + p.uuid + ".json").writeString(String.valueOf(db));
-						}
-					}
-				}
-			};
-
-			ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-			service.scheduleWithFixedDelay(playtime, 0, 1, TimeUnit.SECONDS);
-
 			// Check previous nickname
 			//String test = (String) db.get("uuid");
-
-
 		});
 
-        //copied from ExamplePlugin
-		Events.on(EventType.BuildSelectEvent.class, event -> {
-			if (!event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder.buildRequest().block == Blocks.thoriumReactor && event.builder instanceof Player) {
-				Call.sendMessage("[scarlet][NOTICE][] " + ((Player) event.builder).name + "[white] has begun building a [green]Thorium reactor[]!");
-			}
+		Events.on(EventType.PlayerChatEvent.class, e -> {
+			String check = String.valueOf(e.message.charAt(0));
+			//check if command
+			if(!check.equals("/")) {
+				boolean valid = e.message.matches("\\w+");
+				JSONObject db = getData(e.player.uuid);
+				boolean translate = (boolean) db.get("translate");
+				// check if enable translate
+				if (!valid && translate) {
+					String clientId = "RNOXzFalw7FMFjBe2mbq";
+					String clientSecret = "6k0TWLFmPN";
+					try {
+						String text = URLEncoder.encode(e.message, "UTF-8");
+						String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
+						URL url = new URL(apiURL);
+						HttpURLConnection con = (HttpURLConnection) url.openConnection();
+						con.setRequestMethod("POST");
+						con.setRequestProperty("X-Naver-Client-Id", clientId);
+						con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
 
+						String postParams = "source=ko&target=en&text=" + text;
+						con.setDoOutput(true);
+						DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+						wr.writeBytes(postParams);
+						wr.flush();
+						wr.close();
+						int responseCode = con.getResponseCode();
+						BufferedReader br;
+						if (responseCode == 200) {
+							br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+						} else {
+							br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+						}
+						String inputLine;
+						StringBuilder response = new StringBuilder();
+						while ((inputLine = br.readLine()) != null) {
+							response.append(inputLine);
+						}
+						br.close();
+						JSONTokener parser = new JSONTokener(response.toString());
+						JSONObject object = new JSONObject(parser);
+						JSONObject v1 = (JSONObject) object.get("message");
+						JSONObject v2 = (JSONObject) v1.get("result");
+						String v3 = String.valueOf(v2.get("translatedText"));
+						e.player.sendMessage("[" + e.player.name + "]: [#F5FF6B]" + v3);
+					} catch (Exception f) {
+						f.getStackTrace();
+					}
+				}
+			}
+		});
+
+		TimerTask playtime = new TimerTask(){
+			@Override
+			public synchronized void run() {
+				// Player playtimer counting
+				if(playerGroup.size() > 0){
+					for(Player p : playerGroup.all()) {
+						JSONObject db = getData(p.uuid);
+						String data = db.getString("playtime");
+						SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+						Date d1;
+						Calendar cal;
+						String newTime = null;
+						try {
+							d1 = format.parse(data);
+							cal = Calendar.getInstance();
+							cal.setTime(d1);
+							cal.add(Calendar.SECOND, 1);
+							newTime = format.format(cal.getTime());
+						} catch (ParseException e1) {
+							e1.printStackTrace();
+						}
+						db.put("playtime", newTime);
+						Core.settings.getDataDirectory().child("plugins/Essentials/players/" + p.uuid + ".json").writeString(String.valueOf(db));
+					}
+				}
+			}
+		};
+
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(playtime, 0, 1000);
+		/*
+		ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+		service.scheduleWithFixedDelay(playtime, 0, 1, TimeUnit.SECONDS);
+		*/
+
+        //copied from ExamplePlugin
+		/*
+		Events.on(EventType.BuildSelectEvent.class, event -> {
 			if(!event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
 				JSONObject db = getData(((Player) event.builder).uuid);
 				int data = db.getInt("placecount");
@@ -137,9 +195,11 @@ public class Main extends Plugin{
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
 			}
 		});
+		*/
 
-		// Count unit destory
-		Events.on(EventType.UnitDestroyEvent.class, event -> {
+		// Count unit destory (Temporary disabled)
+		/*
+		Events.on(EventType.BlockBuildEndEvent.class, event -> {
 			if(playerGroup != null && playerGroup.size() > 0){
 				for(int i=0;i<playerGroup.size();i++){
 					Player player = playerGroup.all().get(i);
@@ -151,6 +211,7 @@ public class Main extends Plugin{
 				}
 			}
 		});
+		*/
 	}
 
 	@Override
@@ -216,8 +277,7 @@ public class Main extends Plugin{
 					"[green]PvP Win[]		: "+db.get("pvpwincount")+"\n" +
 					"[green]PvP Lose[]		: "+db.get("pvplosecount")+"\n" +
 					"[green]PvP Surrender[]	: "+db.get("pvpbreakout");
-			// Call.onInfoMessage(player.con, datatext);
-			player.sendMessage(datatext);
+			Call.onInfoMessage(player.con, datatext);
 			/*
 			//
 			//player.sendMessage("[green]lastplacename[]: "+db.get("lastplacename"));
@@ -459,6 +519,23 @@ public class Main extends Plugin{
 			String nowString = now.format(dateTimeFormatter);
 			player.sendMessage("[green]Server time[white]: "+nowString);
 		});
+
+		handler.<Player>register("tr", "Enable/disable Translate all chat", (args, player) -> {
+			JSONObject db = getData(player.uuid);
+			boolean value = (boolean) db.get("translate");
+			if(!value){
+				db.put("translate", true);
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + player.uuid + ".json").writeString((String.valueOf(db)));
+				player.sendMessage("[green][INFO] [] Auto-translate enabled.");
+				player.sendMessage("Note: Translated letters are marked with [#F5FF6B]this[white] color.");
+			} else if(value) {
+				db.put("translate", false);
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + player.uuid + ".json").writeString((String.valueOf(db)));
+				player.sendMessage("[green][INFO] [] Auto-translate disabled.");
+			} else {
+				Log.info("Unknown error.");
+			}
+		});
 	}
 }
 
@@ -495,46 +572,6 @@ class thread1 implements Runnable{
 		return geocode;
 	}
 }
-/*
-class APIExamTranslateNMT {
-	public static void main(String[] args) {
-		String clientId = "RNOXzFalw7FMFjBe2mbq";
-		String clientSecret = "6k0TWLFmPN";
-		try {
-			String text = URLEncoder.encode(args[0], "UTF-8");
-			String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
-			URL url = new URL(apiURL);
-			HttpURLConnection con = (HttpURLConnection)url.openConnection();
-			con.setRequestMethod("POST");
-			con.setRequestProperty("X-Naver-Client-Id", clientId);
-			con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
-
-			String postParams = "source=ko&target=en&text=" + text;
-			con.setDoOutput(true);
-			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-			wr.writeBytes(postParams);
-			wr.flush();
-			wr.close();
-			int responseCode = con.getResponseCode();
-			BufferedReader br;
-			if(responseCode==200) {
-				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			} else {
-				br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
-			}
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-			while ((inputLine = br.readLine()) != null) {
-				response.append(inputLine);
-			}
-			br.close();
-			Call.sendMessage(response.toString());
-		} catch (Exception e) {
-			Log.info(e);
-		}
-	}
-}
-*/
 
 /*
 class TimeThread implements Runnable {

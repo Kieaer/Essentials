@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 class EssentialPlayer{
-	public static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime) {
+	public static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate) {
 		JSONObject data = new JSONObject();
 		data.put("name", name);
 		data.put("uuid", uuid);
@@ -33,6 +33,7 @@ class EssentialPlayer{
 		data.put("reactorcount", reactorcount);
 		data.put("bantimeset", bantimeset);
 		data.put("bantime", bantime);
+		data.put("translate", translate);
 		String json = data.toString();
 		Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(json);
 	}
