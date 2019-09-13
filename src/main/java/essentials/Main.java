@@ -1,5 +1,6 @@
 package essentials;
 
+import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
@@ -7,6 +8,7 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -16,6 +18,7 @@ import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.jsoup.Jsoup;
@@ -41,6 +44,17 @@ import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
 	public Main(){
+		Runnable chatserver = new EssentialChatServer();
+		Thread chat2 = new Thread(chatserver);
+		chat2.start();
+
+		// Startup
+		if(!Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").exists()){
+			JSONObject data = new JSONObject();
+			String json = data.toString();
+			Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(json);
+		}
+
 		if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
 			String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/plugins/Essentials/[] folder.";
 			Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
@@ -141,12 +155,14 @@ public class Main extends Plugin{
 			}
 		});
 
+		Timer timer = new Timer();
 		TimerTask playtime = new TimerTask(){
 			@Override
 			public synchronized void run() {
-				// Player playtimer counting
+				// Player playtime counting
 				if(playerGroup.size() > 0){
-					for(Player p : playerGroup.all()) {
+					for(int i = 0; i < playerGroup.size(); i++){
+						Player p = playerGroup.all().get(i);
 						JSONObject db = getData(p.uuid);
 						String data = db.getString("playtime");
 						SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
@@ -166,27 +182,78 @@ public class Main extends Plugin{
 						Core.settings.getDataDirectory().child("plugins/Essentials/players/" + p.uuid + ".json").writeString(String.valueOf(db));
 					}
 				}
+
+				// Temporarily ban players time counting
+
+				String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
+				JSONTokener parser = new JSONTokener(db);
+				JSONObject object = new JSONObject(parser);
+
+				LocalDateTime now = LocalDateTime.now();
+				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+				String myTime = now.format(dateTimeFormatter);
+
+				int i = 0;
+				while(i < object.length()){
+					JSONArray array = new JSONArray(object);
+					object = array.getJSONObject(i);
+					//System.out.println(myJsonObject.getString("txt"));
+					JSONArray t = object.getJSONArray(String.valueOf(i));
+					Log.info(t);
+					JSONObject curr = t.getJSONObject(i);
+					String uuid = curr.getString("uuid");
+					String date = curr.getString("date");
+					Log.info(uuid+"/"+date);
+					if(date.equals(myTime)){
+						Log.info(myTime);
+						object.remove(String.valueOf(i));
+						Log.info(uuid+" player unbanned!");
+					}
+					i++;
+				}
+
+				/*
+				String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
+				JSONTokener parse1 = new JSONTokener(db);
+				JSONObject object = new JSONObject(parse1);
+
+				JSONParser jsonParse = new JSONParser();
+				JSONObject jsonObj = (JSONObject) jsonParse.parse(jsonData)
+				JSONArray personArray = (JSONArray) jsonObj.get(String.valueOf(object));
+				for(int i=0; i < personArray.length(); i++) {
+					System.out.println("======== person : " + i + " ========");
+					JSONObject personObject = (JSONObject) personArray.get(i);
+					System.out.println(personObject.get[1]);
+					System.out.println(personObject.get("age"));
+				}
+
+				JSONTokener parserd = new JSONTokener(db);
+				JSONObject object = new JSONObject(parserd);
+				JSONParser parser = new JSONParser;
+				Object obj = parser.parse(b);
+				JSONArray jsonArray = (JSONArray)obj;
+				for(int i=0;i<jsonArray.size();i++){
+					JSONObject jsonObj = (JSONObject)jsonArray.get(i);
+					Log.info(jsonObj.get("1"));
+				}
+				*/
 			}
 		};
 
-		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(playtime, 0, 1000);
-		/*
-		ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-		service.scheduleWithFixedDelay(playtime, 0, 1, TimeUnit.SECONDS);
-		*/
+		Log.info("[Essentials] Playtime counting thread started.");
 
-        //copied from ExamplePlugin
-		/*
-		Events.on(EventType.BuildSelectEvent.class, event -> {
-			if(!event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
-				JSONObject db = getData(((Player) event.builder).uuid);
+		Events.on(EventType.BlockBuildEndEvent.class, event -> {
+			if (!event.breaking && event.player != null && event.player.buildRequest() != null) {
+				JSONObject db = getData(event.player.uuid);
 				int data = db.getInt("placecount");
 				data++;
 				db.put("placecount", data);
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + event.player.uuid + ".json").writeString(String.valueOf(db));
 			}
+		});
 
+		/*
 			if(event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
 				JSONObject db = getData(((Player) event.builder).uuid);
 				int data = db.getInt("breakcount");
@@ -212,6 +279,30 @@ public class Main extends Plugin{
 			}
 		});
 		*/
+
+		// Set if shutdown
+		Core.app.addListener(new ApplicationListener(){
+			public void dispose(){
+				// Kill timer thread
+				try{
+					timer.cancel();
+					Log.info("[Essentials] Playtime counting thread disabled.");
+				} catch (Exception e){
+					Log.err("[Essentials] Failure to disable Playtime counting thread!");
+					e.printStackTrace();
+				}
+
+				// Kill Chat server thread
+				try {
+					EssentialChatServer.active = false;
+					EssentialChatServer.serverSocket.close();
+					Log.info("[EssentialsChat] Chat server thread disabled.");
+				} catch (Exception e){
+					Log.err("[Essentials] Failure to disable Playtime counting thread!");
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	@Override
@@ -221,15 +312,6 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerClientCommands(CommandHandler handler){
-		/*
-		handler.<Player>register("test", "test command", (args, player) -> {
-			player.sendMessage(EssentialsPlayer.chat(player));
-			player.sendMessage(EssentialsPlayer.ip(player));
-			player.sendMessage(EssentialsPlayer.name(player));
-			player.sendMessage(EssentialsPlayer.uuid(player));
-		});
-		*/
-
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			player.sendMessage(motd);
@@ -238,24 +320,8 @@ public class Main extends Plugin{
 		handler.<Player>register("getpos", "Get your current position info", (args, player) -> player.sendMessage("X: "+Math.round(player.x)+" Y: "+Math.round(player.y)));
 
 		handler.<Player>register("info","Show your information", (args, player) -> {
-			// Geolocation thread
-			player.sendMessage("[green][INFO][] Getting information...");
 			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-			/*
-			Runnable r1 = new thread1(ip);
-			Thread t1 = new Thread(r1);
-			t1.start();
-			try {
-				t1.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			String geo = ((thread1) r1).getValue();
-			*/
-
-			// Get Player information from local storage
 			JSONObject db = getData(player.uuid);
-
 			String datatext =
 					"Player Information[]\n" +
 					"[green]Name[]			: "+player.name+"\n" +
@@ -279,11 +345,10 @@ public class Main extends Plugin{
 					"[green]PvP Surrender[]	: "+db.get("pvpbreakout");
 			Call.onInfoMessage(player.con, datatext);
 			/*
-			//
-			//player.sendMessage("[green]lastplacename[]: "+db.get("lastplacename"));
-			//player.sendMessage("[green]lastbreakname[]:" +db.get("lastbreakname"));
-			//player.sendMessage("[green]lastchat[]: "+db.get("lastchat"));
-			//player.sendMessage("[green]reactorcount[]: "+(int)db.get("reactorcount"));
+			player.sendMessage("[green]lastplacename[]: "+db.get("lastplacename"));
+			player.sendMessage("[green]lastbreakname[]:" +db.get("lastbreakname"));
+			player.sendMessage("[green]lastchat[]: "+db.get("lastchat"));
+			player.sendMessage("[green]reactorcount[]: "+(int)db.get("reactorcount"));
 			*/
 		});
 
@@ -401,49 +466,15 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("tempban", "<player> <time>", "timer ban", (args, player) -> {
-			/*
+		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (args, player) -> {
 			if(!player.isAdmin){
-
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
-				JSONObject db = getData(player.uuid);
-				Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
-				Vars.netServer.admins.banPlayer(other.uuid);
+				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(args[0]));
+				int bantimeset = Integer.parseInt(args[1]);
 
-				LocalDateTime now = LocalDateTime.now();
-				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
-				String myTime = now.format(dateTimeFormatter);
-				db.put("bantime", myTime);
-
-				SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd a hh:mm.ss");
-				Date d = null;
-				try {
-					d = df.parse(myTime);
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
-				Calendar cal = Calendar.getInstance();
-				cal.setTime(d);
-				cal.add(Calendar.DATE, Integer.parseInt(args[1]));
-				String newTime = df.format(cal.getTime());
-
-				db.put("bantimeset", newTime);
-
-				String list = Core.settings.getDataDirectory().child("plugins/Essentials/players/banned.json").readString();
-				JSONTokener parser = new JSONTokener(list);
-				JSONObject object = new JSONObject(parser);
-				JSONObject response = (JSONObject) object.get("data");
-
-				JSONObject data = new JSONObject();
-				data.put("uuid", other.uuid);
-				JSONObject response = new JSONObject();
-				response.put("ban", data);
-				String json = response.toString();
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/banned.json").writeString(json);
+				EssentialPlayer.addtimeban(other.uuid, bantimeset);
 			}
-			*/
-			player.sendMessage("Not avaliable now!");
 		});
 
 		handler.<Player>register("me", "<text>", "broadcast * message", (args, player) -> Call.sendMessage("[orange]*[] "+player.name+"[white] : "+args[0]));
@@ -528,13 +559,23 @@ public class Main extends Plugin{
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + player.uuid + ".json").writeString((String.valueOf(db)));
 				player.sendMessage("[green][INFO] [] Auto-translate enabled.");
 				player.sendMessage("Note: Translated letters are marked with [#F5FF6B]this[white] color.");
-			} else if(value) {
+			} else {
 				db.put("translate", false);
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + player.uuid + ".json").writeString((String.valueOf(db)));
 				player.sendMessage("[green][INFO] [] Auto-translate disabled.");
-			} else {
-				Log.info("Unknown error.");
 			}
+		});
+
+		handler.<Player>register("ch", "<chat>", "Send chat to another server.", (args, player) -> {
+			Thread chatclient = new Thread(new Runnable() {
+				@Override
+				public synchronized void run() {
+					String message = "["+NetClient.colorizeName(player.id, player.name)+"[white]: "+"] "+args[0];
+					EssentialChatClient.main(message);
+					Call.sendMessage("sented!");
+				}
+			});
+			chatclient.start();
 		});
 	}
 }
@@ -572,6 +613,8 @@ class thread1 implements Runnable{
 		return geocode;
 	}
 }
+
+
 
 /*
 class TimeThread implements Runnable {

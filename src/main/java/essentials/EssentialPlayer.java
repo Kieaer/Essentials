@@ -1,8 +1,17 @@
 package essentials;
 
 import io.anuke.arc.Core;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 class EssentialPlayer{
 	public static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate) {
@@ -38,12 +47,65 @@ class EssentialPlayer{
 		Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(json);
 	}
 
-	public static JSONObject getData(String uuid){
+	static JSONObject getData(String uuid){
 		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
 		JSONTokener parser = new JSONTokener(db);
 		JSONObject object = new JSONObject(parser);
 		return object;
 	}
+	
+	public static void addtimeban(String uuid, int bantimeset){
+	    // Write ban data
+        String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
+        JSONTokener parser = new JSONTokener(db);
+        JSONObject object = new JSONObject(parser);
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+        String myTime = now.format(dateTimeFormatter);
+
+        SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+        Date d1;
+        Calendar cal;
+        String newTime = null;
+        try {
+            d1 = format.parse(myTime);
+            cal = Calendar.getInstance();
+            cal.setTime(d1);
+            cal.add(Calendar.SECOND, bantimeset);
+            newTime = format.format(cal.getTime());
+        } catch (ParseException e1) {
+            e1.printStackTrace();
+        }
+
+        JSONObject data1 = new JSONObject();
+        data1.put("uuid", uuid);
+        data1.put("date", newTime);
+
+        JSONArray arr = new JSONArray();
+        arr.put(data1);
+
+        JSONObject result = new JSONObject();
+        int max = 0;
+        for (int i=1;i<object.length();i++) {
+            max = i;
+        }
+        result.put(String.valueOf(max), arr);
+
+        String json = result.toString();
+        Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(json);
+
+        // Write player data
+        String playerdb = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
+        JSONTokener pparse = new JSONTokener(playerdb);
+        JSONObject db2 = new JSONObject(pparse);
+
+        db2.put("bantime", newTime);
+        db2.put("bantimeset", bantimeset);
+
+        String pjson = db2.toString();
+        Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(pjson);
+    }
 /*
 	public static JSONObject writeData(String uuid, String data){
 		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();

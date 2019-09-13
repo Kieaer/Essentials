@@ -16,7 +16,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | tp | &lt;player name&gt; | Teleport to players |
 | tp | &lt;player name&gt; &lt;another player name&gt; | Teleport player to other players |
 | me | &lt;msg&gt; | Show special chat format |
-| motd |  | Show server motd |
+| motd |  | Show server motd \\ Can modify from ``config/plugins/Essentials/motd.txt`` |
 | getpos |  | Show your current position position |
 | info |  | Show player information |
 | suicide |  | Kill yourself |
@@ -26,10 +26,11 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | kickall |  | Kick all players without you. |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
 | save |  | Save current map |
-| tr |  | Enable/disable auto translate |
+| tr |  | Enable/disable auto translate \\ Currently only support Korean to English. |
+| ch | &lt;message&gt; | Send chat to another server () \\ You must modify the settings in ``config/plugins/Essentials/config.txt`` |
 <!--
+| tempban |  | Temporarily ban player. time unit: 1 hours |
 | spawnmob |  | Spawn mob |
-| tempban |  | Timer ban |
 | effect |  | make effect |
 | gamerule |  | Edit gamerule |
 | vote | &lt;map name&gt; | Vote map |
@@ -49,18 +50,18 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] spawnmob mob amount - Spawn enemies or mob.
 - [x] status - Show server status.
 - [ ] realname player - Show real name.
-  - [ ] make info command (dependence)
+  - [x] make info command (dependence)
 - [x] me msg - Special chat format
 - [x] motd - Show server motd.
 - [x] getpos - Show current position.
 - [ ] tempban player time - Timer ban.
-  - [ ] make info command (dependence)
+  - [x] make info command (dependence)
 - [ ] info - Show player info.
   - [x] Player name and UUID
   - [x] Show IP and GeoLocation
   - [x] Show destroy/placed block count
   - [x] Show destroy enemies count
-  - [x] Show dead count
+  - [] Show dead count
   - [ ] Rank system
 - [x] difficulty - Set difficulty.
 - [ ] effect - Make effect.
