@@ -14,7 +14,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | Command | Parameter | Description |
 |:--|:--|:--|
 | tp | &lt;player name&gt; | Teleport to players |
-| tp | &lt;player name&gt; &lt;another player name&gt; | Teleport player to other players |
+| tpp | &lt;player name&gt; &lt;another player name&gt; | Teleport player to other players |
 | me | &lt;msg&gt; | Show special chat format |
 | motd |  | Show server motd <br> Can modify from ``config/plugins/Essentials/motd.txt`` |
 | getpos |  | Show your current position position |
@@ -24,10 +24,10 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | time |  | Show server local time |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
 | kickall |  | Kick all players without you. |
-| difficulty | &lt;difficulty&gt; | Set server difficulty |
 | save |  | Save current map |
 | tr |  | Enable/disable auto translate <br> Currently only support Korean to English. |
 | ch | &lt;message&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
+| status |  | Show currently server status (TPS, RAM, Players/ban count)
 <!--
 | tempban |  | Temporarily ban player. time unit: 1 hours |
 | spawnmob |  | Spawn mob |
