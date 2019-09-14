@@ -49,25 +49,26 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] tp playername - Teleport to Player.
 - [ ] spawnmob mob amount - Spawn enemies or mob.
 - [x] status - Show server status.
-- [ ] realname player - Show real name.
+- [x] realname player - Show real name.
   - [x] make info command (dependence)
 - [x] me msg - Special chat format
 - [x] motd - Show server motd.
 - [x] getpos - Show current position.
-- [ ] tempban player time - Timer ban.
+- [x] tempban player time - Timer ban.
   - [x] make info command (dependence)
 - [ ] info - Show player info.
   - [x] Player name and UUID
   - [x] Show IP and GeoLocation
   - [x] Show destroy/placed block count
   - [x] Show destroy enemies count
-  - [] Show dead count
+  - [ ] Show dead count
   - [ ] Rank system
 - [x] difficulty - Set difficulty.
 - [ ] effect - Make effect.
 - [ ] gamerule - Set gamerule.
 - [ ] vote - Map vote.
   - [ ] Map list
+  - [ ] surrender vote
 - [x] suicide - self-destruct.
 - [x] kill - Kill other player.
 - [x] save - Map save.
@@ -76,3 +77,4 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] nick - Set nickname.
 - [x] time - Show server time.
 - [x] translate - Enable/disable auto translate
+- [ ] prefix - Set player prefix

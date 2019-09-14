@@ -1,7 +1,6 @@
 package essentials;
 
 import io.anuke.arc.Core;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -14,7 +13,7 @@ import java.util.Date;
 import java.util.Locale;
 
 class EssentialPlayer{
-	public static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate) {
+	static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate) {
 		JSONObject data = new JSONObject();
 		data.put("name", name);
 		data.put("uuid", uuid);
@@ -50,11 +49,10 @@ class EssentialPlayer{
 	static JSONObject getData(String uuid){
 		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
 		JSONTokener parser = new JSONTokener(db);
-		JSONObject object = new JSONObject(parser);
-		return object;
+        return new JSONObject(parser);
 	}
 	
-	public static void addtimeban(String uuid, int bantimeset){
+	static void addtimeban(String name, String uuid, int bantimeset){
 	    // Write ban data
         String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);
@@ -72,7 +70,7 @@ class EssentialPlayer{
             d1 = format.parse(myTime);
             cal = Calendar.getInstance();
             cal.setTime(d1);
-            cal.add(Calendar.SECOND, bantimeset);
+            cal.add(Calendar.HOUR, bantimeset);
             newTime = format.format(cal.getTime());
         } catch (ParseException e1) {
             e1.printStackTrace();
@@ -81,19 +79,16 @@ class EssentialPlayer{
         JSONObject data1 = new JSONObject();
         data1.put("uuid", uuid);
         data1.put("date", newTime);
+        data1.put("name", name);
 
-        JSONArray arr = new JSONArray();
-        arr.put(data1);
-
-        JSONObject result = new JSONObject();
-        int max = 0;
-        for (int i=1;i<object.length();i++) {
-            max = i;
+        int i = 0;
+        while(i<object.length()){
+            i++;
         }
-        result.put(String.valueOf(max), arr);
 
-        String json = result.toString();
-        Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(json);
+        object.put(String.valueOf(i), data1);
+
+        Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
 
         // Write player data
         String playerdb = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();

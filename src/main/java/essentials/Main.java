@@ -18,7 +18,6 @@ import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.jsoup.Jsoup;
@@ -40,6 +39,9 @@ import java.util.*;
 
 import static essentials.EssentialPlayer.createNewDatabase;
 import static essentials.EssentialPlayer.getData;
+import static io.anuke.arc.util.Log.err;
+import static io.anuke.arc.util.Log.info;
+import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
@@ -62,6 +64,15 @@ public class Main extends Plugin{
 		}
 
         Events.on(PlayerJoin.class, e -> {
+			JSONObject config = EssentialConfig.main();
+			boolean realname = (boolean) config.get("realname");
+
+        	// Set realname
+			JSONObject db = getData(e.player.uuid);
+			if(realname){
+				e.player.name = (String) db.get("name");
+			}
+
 			// Show motd
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			e.player.sendMessage(motd);
@@ -73,7 +84,6 @@ public class Main extends Plugin{
 			String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
 
 			if (Core.settings.getDataDirectory().child("plugins/Essentials/players/" + e.player.uuid + ".json").exists()) {
-				JSONObject db = getData(e.player.uuid);
 				db.put("lastdate", nowString);
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+e.player.uuid+".json").writeString(String.valueOf(db));
 				Log.info("[Essentials] " + e.player.name + " Database file loaded.");
@@ -193,25 +203,19 @@ public class Main extends Plugin{
 				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
 				String myTime = now.format(dateTimeFormatter);
 
-				int i = 0;
-				while(i < object.length()){
-					JSONArray array = new JSONArray(object);
-					object = array.getJSONObject(i);
-					//System.out.println(myJsonObject.getString("txt"));
-					JSONArray t = object.getJSONArray(String.valueOf(i));
-					Log.info(t);
-					JSONObject curr = t.getJSONObject(i);
-					String uuid = curr.getString("uuid");
-					String date = curr.getString("date");
-					Log.info(uuid+"/"+date);
-					if(date.equals(myTime)){
-						Log.info(myTime);
-						object.remove(String.valueOf(i));
-						Log.info(uuid+" player unbanned!");
-					}
-					i++;
-				}
+					for (int i = 0; i < object.length(); i++) {
+						JSONObject value1 = (JSONObject) object.get(String.valueOf(i));
+						String date = (String) value1.get("date");
+						String uuid = (String) value1.get("uuid");
+						String name = (String) value1.get("name");
 
+						if(date.equals(myTime)){
+							Log.info(myTime);
+							object.remove(String.valueOf(i));
+							Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
+							Log.info("[Essentials] "+name+"/"+uuid+" player unbanned!");
+						}
+					}
 				/*
 				String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
 				JSONTokener parse1 = new JSONTokener(db);
@@ -307,7 +311,33 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
-
+		//
+		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
+			int bantimeset = Integer.parseInt(arg[1]);
+			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
+			switch (arg[0]) {
+				case "id":
+					netServer.admins.banPlayerID(arg[1]);
+					break;
+				case "name":
+					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+					if (target != null) {
+						netServer.admins.banPlayer(target.uuid);
+						Log.info("[Essentials] banned the "+other.name+" player for "+arg[1]+" hour.");
+					} else {
+						err("No matches found.");
+					}
+					break;
+				case "ip":
+					netServer.admins.banPlayerIP(arg[1]);
+					Log.info("[Essentials] banned the "+other.name+" player for "+arg[1]+" hour.");
+					break;
+				default:
+					err("Invalid type.");
+					break;
+			}
+		});
 	}
 
 	@Override
@@ -354,7 +384,7 @@ public class Main extends Plugin{
 
 		handler.<Player>register("status", "Show server status", (args, player) -> {
 			float fps = Math.round((int)60f / Time.delta());
-			float memory = Core.app.getJavaHeap() / 1024 / 1024;
+			float memory = Core.app.getJavaHeap()/ 1024 / 1024;
 			player.sendMessage(fps+"TPS "+memory+"MB");
 			player.sendMessage(Vars.playerGroup.size()+" players online.");
 			int idb = 0;
@@ -471,9 +501,12 @@ public class Main extends Plugin{
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
 				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(args[0]));
-				int bantimeset = Integer.parseInt(args[1]);
-
-				EssentialPlayer.addtimeban(other.uuid, bantimeset);
+				if(other != null){
+					int bantimeset = Integer.parseInt(args[1]);
+					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
+				} else {
+					player.sendMessage("No match player found!");
+				}
 			}
 		});
 
@@ -516,7 +549,7 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
-			player.onPlayerDeath(player);
+			Player.onPlayerDeath(player);
 			Call.sendMessage(player.name+"[] used [green]suicide[] command.");
 		});
 
@@ -527,7 +560,7 @@ public class Main extends Plugin{
 					player.sendMessage("[scarlet]No player by that name found!");
 					return;
 				}
-				other.onPlayerDeath(other);
+				Player.onPlayerDeath(other);
 			} else {
 				player.sendMessage("You're not admin!");
 			}
