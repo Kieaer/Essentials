@@ -9,7 +9,7 @@ Please submit your idea to this repository issues or Mindustry official discord!
 
 Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
-## Commands
+## Client commands
 
 | Command | Parameter | Description |
 |:--|:--|:--|
@@ -28,7 +28,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | tr |  | Enable/disable auto translate <br> Currently only support Korean to English. |
 | ch | &lt;message&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
 | status |  | Show currently server status (TPS, RAM, Players/ban count) |
-| tempban |  | Temporarily ban player. time unit: 1 hours |
+| tempban | &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 <!--
 | spawnmob |  | Spawn mob |
 | effect |  | make effect |
@@ -38,6 +38,12 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 |  |  |  |
 |  |  |  |
 -->
+
+## Console commands
+
+| Command | Parameter | Description |
+|:--|:--|:--|
+| tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 
 ## Pinned plan
 
