@@ -27,14 +27,13 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | save |  | Save current map |
 | tr |  | Enable/disable auto translate <br> Currently only support Korean to English. |
 | ch | &lt;message&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
-| status |  | Show currently server status (TPS, RAM, Players/ban count)
-<!--
+| status |  | Show currently server status (TPS, RAM, Players/ban count) |
 | tempban |  | Temporarily ban player. time unit: 1 hours |
+<!--
 | spawnmob |  | Spawn mob |
 | effect |  | make effect |
 | gamerule |  | Edit gamerule |
 | vote | &lt;map name&gt; | Vote map |
-| ch | msg | Cross server chat |
 | tpmouse | player | teleport player to follow mouse pointer |
 |  |  |  |
 |  |  |  |
@@ -43,7 +42,6 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 ## Pinned plan
 
 - [x] Kickall - Kick all players.
-  - [ ] ~~Exclude who entered the command~~
 - [x] Teleport
   - [x] tp playername playername - Teleport from Player to Player
   - [x] tp playername - Teleport to Player.
@@ -73,8 +71,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [x] kill - Kill other player.
 - [x] save - Map save.
 - [ ] say - Server chat.
-- [ ] ch - Cross server chat.
-- [ ] nick - Set nickname.
+- [x] ch - Cross server chat.
 - [x] time - Show server time.
 - [x] translate - Enable/disable auto translate
 - [ ] prefix - Set player prefix
