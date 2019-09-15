@@ -23,13 +23,7 @@ import io.anuke.mindustry.plugin.Plugin;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -40,6 +34,7 @@ import static essentials.EssentialConfig.detectreactor;
 import static essentials.EssentialConfig.realname;
 import static essentials.EssentialPlayer.createNewDatabase;
 import static essentials.EssentialPlayer.getData;
+import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -110,8 +105,10 @@ public class Main extends Plugin{
 
 					String geo = GeoThread.getgeo();
 					String geocode = GeoThread.getgeocode();
+					String languages = GeoThread.getlang();
 					db.put("country", geo);
 					db.put("country_code", geocode);
+					db.put("languages", languages);
 				}
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+e.player.uuid+".json").writeString(String.valueOf(db));
 
@@ -135,13 +132,14 @@ public class Main extends Plugin{
 
 				String geo = GeoThread.getgeo();
 				String geocode = GeoThread.getgeocode();
+				String lang = GeoThread.getlang();
 				int timesjoined = Vars.netServer.admins.getInfo(e.player.uuid).timesJoined;
 				int timeskicked = Vars.netServer.admins.getInfo(e.player.uuid).timesKicked;
 				createNewDatabase(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, geo, geocode,
 						0, 0, 0, 0, timesjoined,
 						timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
 						"none", "00:00.00", "none", 0, 0, 0,
-						0, 0, "none", 0, false);
+						0, 0, "none", 0, false, lang);
 				Log.info("[Essentials] " + e.player.name + "/" + e.player.uuid + " Database file created.");
 				e.player.sendMessage("[green]Database created!");
 			}
@@ -154,50 +152,12 @@ public class Main extends Plugin{
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
 			if(!check.equals("/")) {
-				boolean valid = e.message.matches("\\w+");
+				//boolean valid = e.message.matches("\\w+");
 				JSONObject db = getData(e.player.uuid);
 				boolean translate = (boolean) db.get("translate");
 				// check if enable translate
-				if (!valid && translate) {
-					String clientId = "RNOXzFalw7FMFjBe2mbq";
-					String clientSecret = "6k0TWLFmPN";
-					try {
-						String text = URLEncoder.encode(e.message, "UTF-8");
-						String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
-						URL url = new URL(apiURL);
-						HttpURLConnection con = (HttpURLConnection) url.openConnection();
-						con.setRequestMethod("POST");
-						con.setRequestProperty("X-Naver-Client-Id", clientId);
-						con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
-
-						String postParams = "source=ko&target=en&text=" + text;
-						con.setDoOutput(true);
-						DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-						wr.writeBytes(postParams);
-						wr.flush();
-						wr.close();
-						int responseCode = con.getResponseCode();
-						BufferedReader br;
-						if (responseCode == 200) {
-							br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-						} else {
-							br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
-						}
-						String inputLine;
-						StringBuilder response = new StringBuilder();
-						while ((inputLine = br.readLine()) != null) {
-							response.append(inputLine);
-						}
-						br.close();
-						JSONTokener parser = new JSONTokener(response.toString());
-						JSONObject object = new JSONObject(parser);
-						JSONObject v1 = (JSONObject) object.get("message");
-						JSONObject v2 = (JSONObject) v1.get("result");
-						String v3 = String.valueOf(v2.get("translatedText"));
-						e.player.sendMessage("["+NetClient.colorizeName(e.player.id, e.player.name)+"[white]: [#F5FF6B]" + v3);
-					} catch (Exception f) {
-						f.getStackTrace();
-					}
+				if (translate) {
+					detectlang(e.player, e.message);
 				}
 			}
 		});

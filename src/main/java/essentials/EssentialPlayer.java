@@ -12,8 +12,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-class EssentialPlayer{
-	static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate) {
+public class EssentialPlayer{
+	static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language) {
 		JSONObject data = new JSONObject();
 		data.put("name", name);
 		data.put("uuid", uuid);
@@ -45,13 +45,14 @@ class EssentialPlayer{
 		data.put("bantimeset", bantimeset);
 		data.put("bantime", bantime);
 		data.put("translate", translate);
+		data.put("language", language);
 		String json = data.toString();
 		Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(json);
 	}
 
-	static JSONObject getData(String uuid){
+	public static JSONObject getData(String uuid){
 		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
-		JSONTokener parser = new JSONTokener(db);
+        JSONTokener parser = new JSONTokener(db);
         return new JSONObject(parser);
 	}
 

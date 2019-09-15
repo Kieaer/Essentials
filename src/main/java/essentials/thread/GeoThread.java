@@ -1,6 +1,9 @@
 package essentials.thread;
 
+import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,6 +14,7 @@ public class GeoThread implements Runnable{
     private String ip;
     private static String geo;
     private static String geocode;
+    private static String lang;
 
     public GeoThread(String ip) {
         this.ip = ip;
@@ -20,23 +24,27 @@ public class GeoThread implements Runnable{
     public void run() {
         Thread.currentThread().setName("Get geolocation thread");
         try {
-            String connUrl = "http://ipapi.co/" + ip + "/country_name";
-            Element web = Jsoup.connect(connUrl).get().body();
-            Document doc = Jsoup.parse(String.valueOf(web));
-            geo = doc.text();
-            connUrl = "http://ipapi.co/" + ip + "/country";
-            web = Jsoup.connect(connUrl).get().body();
-            doc = Jsoup.parse(String.valueOf(web));
-            geocode = doc.text();
+            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).execute().body();
+            JSONTokener parser = new JSONTokener(json);
+            JSONObject result = new JSONObject(parser);
+            if(parser == null || (boolean) result.get("reserved")){
+                geo = "invalid";
+                geocode = "invalid";
+                lang = "ko";
+            } else {
+                geo = (String) result.get("country_name");
+                geocode = (String) result.get("country");
+                lang = ((String) result.get("languages")).substring(0, 1);
+            }
         } catch (IOException e) {
             geo = "invalid";
             geocode = "invalid";
+            lang = "en";
         }
     }
     public static String getgeo(){
         return geo;
     }
-    public static String getgeocode(){
-        return geocode;
-    }
+    public static String getgeocode(){ return geocode; }
+    public static String getlang(){ return lang; }
 }
