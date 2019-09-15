@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.Locale;
 
 class EssentialPlayer{
-	static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, String rank, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate) {
+	static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate) {
 		JSONObject data = new JSONObject();
 		data.put("name", name);
 		data.put("uuid", uuid);
@@ -27,7 +27,10 @@ class EssentialPlayer{
 		data.put("deathcount", deathcount);
 		data.put("joincount", joincount);
 		data.put("kickcount", kickcount);
-		data.put("rank", rank);
+		data.put("level", level);
+		data.put("exp", exp);
+        data.put("reqexp", reqexp);
+        data.put("reqtotalexp", reqtotalexp);
 		data.put("firstdate", firstdate);
 		data.put("lastdate", lastdate);
 		data.put("lastplacename", lastplacename);
@@ -51,7 +54,7 @@ class EssentialPlayer{
 		JSONTokener parser = new JSONTokener(db);
         return new JSONObject(parser);
 	}
-	
+
 	static void addtimeban(String name, String uuid, int bantimeset){
 	    // Write ban data
         String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
@@ -101,7 +104,9 @@ class EssentialPlayer{
         String pjson = db2.toString();
         Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(pjson);
     }
-/*
+
+    // todo make writedata function
+    /*
 	public static JSONObject writeData(String uuid, String data){
 		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
 		JSONTokener parser = new JSONTokener(db);
@@ -111,6 +116,7 @@ class EssentialPlayer{
 		return response;
 	}
 
+    // todo make getall function
 	public static JSONObject getAll() throws FileNotFoundException {
 		File dir = new File("plugins/Essentials/players");
 		for (File file : dir.listFiles()) {

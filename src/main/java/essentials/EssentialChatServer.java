@@ -2,7 +2,6 @@ package essentials;
 
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.gen.Call;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,8 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 class EssentialChatServer implements Runnable {
-    private static JSONObject config = EssentialConfig.main();
-    private static int port = Integer.parseInt((String) config.get("port"));
+    private static int port = EssentialConfig.port;
     private static Socket socket;
     static boolean active = true;
     static ServerSocket serverSocket;

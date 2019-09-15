@@ -1,5 +1,6 @@
 package essentials;
 
+import essentials.thread.GeoThread;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -13,6 +14,7 @@ import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.EventType.PlayerJoin;
+import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
@@ -20,9 +22,6 @@ import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -37,15 +36,22 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static essentials.EssentialConfig.detectreactor;
+import static essentials.EssentialConfig.realname;
 import static essentials.EssentialPlayer.createNewDatabase;
 import static essentials.EssentialPlayer.getData;
 import static io.anuke.arc.util.Log.err;
-import static io.anuke.arc.util.Log.info;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
 	public Main(){
+		try {
+			EssentialConfig.main();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 		Runnable chatserver = new EssentialChatServer();
 		Thread chat2 = new Thread(chatserver);
 		chat2.start();
@@ -63,14 +69,20 @@ public class Main extends Plugin{
 			Log.info("[Essentials] motd file created.");
 		}
 
-        Events.on(PlayerJoin.class, e -> {
-			JSONObject config = EssentialConfig.main();
-			boolean realname = (boolean) config.get("realname");
+		if(realname){
+			Log.info("[Essentials] Realname enabled.");
+		}
 
-        	// Set realname
-			JSONObject db = getData(e.player.uuid);
-			if(realname){
-				e.player.name = (String) db.get("name");
+		if(detectreactor){
+			Log.info("[Essentials] Thorium reactor overheat detect enabled.");
+		}
+
+        Events.on(PlayerJoin.class, e -> {
+			JSONObject db = null;
+			try{
+				db = getData(e.player.uuid);
+			} catch (Exception error){
+				Log.info(e.player.name+" data not found!");
 			}
 
 			// Show motd
@@ -85,32 +97,57 @@ public class Main extends Plugin{
 
 			if (Core.settings.getDataDirectory().child("plugins/Essentials/players/" + e.player.uuid + ".json").exists()) {
 				db.put("lastdate", nowString);
+				String checkgeo = (String) db.get("country");
+				if(checkgeo.equals("invalid")){
+					Runnable georun = new GeoThread(ip);
+					Thread geothread = new Thread(georun);
+					try {
+						geothread.start();
+						geothread.join();
+					} catch (InterruptedException ex) {
+						ex.printStackTrace();
+					}
+
+					String geo = GeoThread.getgeo();
+					String geocode = GeoThread.getgeocode();
+					db.put("country", geo);
+					db.put("country_code", geocode);
+				}
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+e.player.uuid+".json").writeString(String.valueOf(db));
+
+				// Set realname
+				if(realname){
+					e.player.name = (String) db.get("name");
+				}
+
 				Log.info("[Essentials] " + e.player.name + " Database file loaded.");
 			} else {
 				e.player.sendMessage("[green]Database creating... Please wait");
-				thread1 r1 = new thread1(ip);
-				Thread t1 = new Thread(r1);
-				t1.start();
+
+				Runnable georun = new GeoThread(ip);
+				Thread geothread = new Thread(georun);
 				try {
-					t1.join();
-				} catch (InterruptedException f) {
-					f.printStackTrace();
+					geothread.start();
+					geothread.join();
+				} catch (InterruptedException ex) {
+					ex.printStackTrace();
 				}
-				String geo = r1.getgeo();
-				String geocode = r1.getgeocode();
+
+				String geo = GeoThread.getgeo();
+				String geocode = GeoThread.getgeocode();
 				int timesjoined = Vars.netServer.admins.getInfo(e.player.uuid).timesJoined;
 				int timeskicked = Vars.netServer.admins.getInfo(e.player.uuid).timesKicked;
 				createNewDatabase(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, geo, geocode,
 						0, 0, 0, 0, timesjoined,
-						timeskicked, "F", nowString, nowString, "none",
+						timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
 						"none", "00:00.00", "none", 0, 0, 0,
 						0, 0, "none", 0, false);
 				Log.info("[Essentials] " + e.player.name + "/" + e.player.uuid + " Database file created.");
 				e.player.sendMessage("[green]Database created!");
 			}
-			// Check previous nickname
-			//String test = (String) db.get("uuid");
+
+			// Give join exp
+			EssentialExp.joinexp(e.player.uuid);
 		});
 
 		Events.on(EventType.PlayerChatEvent.class, e -> {
@@ -157,10 +194,46 @@ public class Main extends Plugin{
 						JSONObject v1 = (JSONObject) object.get("message");
 						JSONObject v2 = (JSONObject) v1.get("result");
 						String v3 = String.valueOf(v2.get("translatedText"));
-						e.player.sendMessage("[" + e.player.name + "]: [#F5FF6B]" + v3);
+						e.player.sendMessage("["+NetClient.colorizeName(e.player.id, e.player.name)+"[white]: [#F5FF6B]" + v3);
 					} catch (Exception f) {
 						f.getStackTrace();
 					}
+				}
+			}
+		});
+
+		Events.on(EventType.BlockBuildEndEvent.class, event -> {
+			if (!event.breaking && event.player != null && event.player.buildRequest() != null) {
+				JSONObject db = getData(event.player.uuid);
+				int data = db.getInt("placecount");
+				data++;
+				db.put("placecount", data);
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + event.player.uuid + ".json").writeString(String.valueOf(db));
+			}
+		});
+
+		// todo make block break count
+		/*Events.on(EventType.BlockBuildEndEvent.class, event -> {})
+			if(event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
+				JSONObject db = getData(((Player) event.builder).uuid);
+				int data = db.getInt("breakcount");
+				data++;
+				db.put("breakcount", data);
+				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
+			}
+		});
+		*/
+
+		// Count unit destory (Temporary disabled)
+		Events.on(EventType.UnitDestroyEvent.class, event -> {
+			if(playerGroup != null && playerGroup.size() > 0){
+				for(int i=0;i<playerGroup.size();i++){
+					Player player = playerGroup.all().get(i);
+					JSONObject db = getData(player.uuid);
+					int data = db.getInt("killcount");
+					data++;
+					db.put("killcount", data);
+					Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.uuid+".json").writeString(String.valueOf(db));
 				}
 			}
 		});
@@ -189,12 +262,18 @@ public class Main extends Plugin{
 							e1.printStackTrace();
 						}
 						db.put("playtime", newTime);
+
+						// Exp caculating
+						int exp = (int) db.get("exp");
+						db.put("exp", exp+(int)(Math.random()*5)+(int)db.get("level"));
+
 						Core.settings.getDataDirectory().child("plugins/Essentials/players/" + p.uuid + ".json").writeString(String.valueOf(db));
+
+						EssentialExp.exp(p.name, p.uuid);
 					}
 				}
 
 				// Temporarily ban players time counting
-
 				String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONObject object = new JSONObject(parser);
@@ -203,86 +282,41 @@ public class Main extends Plugin{
 				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
 				String myTime = now.format(dateTimeFormatter);
 
-					for (int i = 0; i < object.length(); i++) {
-						JSONObject value1 = (JSONObject) object.get(String.valueOf(i));
-						String date = (String) value1.get("date");
-						String uuid = (String) value1.get("uuid");
-						String name = (String) value1.get("name");
+				for (int i = 0; i < object.length(); i++) {
+					JSONObject value1 = (JSONObject) object.get(String.valueOf(i));
+					String date = (String) value1.get("date");
+					String uuid = (String) value1.get("uuid");
+					String name = (String) value1.get("name");
 
-						if(date.equals(myTime)){
-							Log.info(myTime);
-							object.remove(String.valueOf(i));
-							Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
-							Log.info("[Essentials] "+name+"/"+uuid+" player unbanned!");
-						}
+					if (date.equals(myTime)) {
+						Log.info(myTime);
+						object.remove(String.valueOf(i));
+						Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
+						Log.info("[Essentials] " + name + "/" + uuid + " player unbanned!");
 					}
-				/*
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
-				JSONTokener parse1 = new JSONTokener(db);
-				JSONObject object = new JSONObject(parse1);
-
-				JSONParser jsonParse = new JSONParser();
-				JSONObject jsonObj = (JSONObject) jsonParse.parse(jsonData)
-				JSONArray personArray = (JSONArray) jsonObj.get(String.valueOf(object));
-				for(int i=0; i < personArray.length(); i++) {
-					System.out.println("======== person : " + i + " ========");
-					JSONObject personObject = (JSONObject) personArray.get(i);
-					System.out.println(personObject.get[1]);
-					System.out.println(personObject.get("age"));
 				}
 
-				JSONTokener parserd = new JSONTokener(db);
-				JSONObject object = new JSONObject(parserd);
-				JSONParser parser = new JSONParser;
-				Object obj = parser.parse(b);
-				JSONArray jsonArray = (JSONArray)obj;
-				for(int i=0;i<jsonArray.size();i++){
-					JSONObject jsonObj = (JSONObject)jsonArray.get(i);
-					Log.info(jsonObj.get("1"));
-				}
-				*/
+				// todo make dynamp for mindustry (extreme hard work)
+				//Dynmap.takeMapScreenshot();
 			}
 		};
 
+		// Alarm if thorium reactor explode
+        Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
+            if(detectreactor){
+                Call.sendMessage("[scarlet]WARNING WARNING WARNING");
+                Call.sendMessage("[scarlet]Thorium Reactor Exploded");
+                Log.info("Thorium Reactor explode detected!!");
+            }
+        });
+
+        Events.on(EventType.Trigger.impactPower, () -> {
+            Call.sendMessage("[scarlet]power!");
+            Log.info("[scarlet]power!");
+        });
+
 		timer.scheduleAtFixedRate(playtime, 0, 1000);
-		Log.info("[Essentials] Playtime counting thread started.");
-
-		Events.on(EventType.BlockBuildEndEvent.class, event -> {
-			if (!event.breaking && event.player != null && event.player.buildRequest() != null) {
-				JSONObject db = getData(event.player.uuid);
-				int data = db.getInt("placecount");
-				data++;
-				db.put("placecount", data);
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + event.player.uuid + ".json").writeString(String.valueOf(db));
-			}
-		});
-
-		/*
-			if(event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
-				JSONObject db = getData(((Player) event.builder).uuid);
-				int data = db.getInt("breakcount");
-				data++;
-				db.put("breakcount", data);
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
-			}
-		});
-		*/
-
-		// Count unit destory (Temporary disabled)
-		/*
-		Events.on(EventType.BlockBuildEndEvent.class, event -> {
-			if(playerGroup != null && playerGroup.size() > 0){
-				for(int i=0;i<playerGroup.size();i++){
-					Player player = playerGroup.all().get(i);
-					JSONObject db = getData(player.uuid);
-					int data = db.getInt("killcount");
-					data++;
-					db.put("killcount", data);
-					Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.uuid+".json").writeString(String.valueOf(db));
-				}
-			}
-		});
-		*/
+		Log.info("[Essentials] Play/bantime counting thread started.");
 
 		// Set if shutdown
 		Core.app.addListener(new ApplicationListener(){
@@ -290,7 +324,7 @@ public class Main extends Plugin{
 				// Kill timer thread
 				try{
 					timer.cancel();
-					Log.info("[Essentials] Playtime counting thread disabled.");
+					Log.info("[Essentials] Play/bantime counting thread disabled.");
 				} catch (Exception e){
 					Log.err("[Essentials] Failure to disable Playtime counting thread!");
 					e.printStackTrace();
@@ -353,7 +387,8 @@ public class Main extends Plugin{
 			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 			JSONObject db = getData(player.uuid);
 			String datatext =
-					"Player Information[]\n" +
+					"[#DEA82A]Player Information[]\n" +
+					"[#2B60DE]========================================[]\n" +
 					"[green]Name[]			: "+player.name+"\n" +
 					"[green]UUID[]			: "+player.uuid+"\n" +
 					"[green]Mobile[]		: "+player.isMobile+"\n" +
@@ -365,7 +400,8 @@ public class Main extends Plugin{
 					"[green]Death count[]	: "+db.get("deathcount")+"\n" +
 					"[green]Join count[]	: "+db.get("joincount")+"\n" +
 					"[green]Kick count[]	: "+db.get("kickcount")+"\n" +
-					"[green]Rank[]			: "+db.get("rank")+"\n" +
+					"[green]Level[]			: "+db.get("level")+"\n" +
+					"[green]XP[]			: "+db.get("reqtotalexp")+"\n" +
 					"[green]First join[]	: "+db.get("firstdate")+"\n" +
 					"[green]Last join[]		: "+db.get("lastdate")+"\n" +
 					"[green]Playtime[]		: "+db.get("playtime")+"\n" +
@@ -374,17 +410,11 @@ public class Main extends Plugin{
 					"[green]PvP Lose[]		: "+db.get("pvplosecount")+"\n" +
 					"[green]PvP Surrender[]	: "+db.get("pvpbreakout");
 			Call.onInfoMessage(player.con, datatext);
-			/*
-			player.sendMessage("[green]lastplacename[]: "+db.get("lastplacename"));
-			player.sendMessage("[green]lastbreakname[]:" +db.get("lastbreakname"));
-			player.sendMessage("[green]lastchat[]: "+db.get("lastchat"));
-			player.sendMessage("[green]reactorcount[]: "+(int)db.get("reactorcount"));
-			*/
 		});
 
 		handler.<Player>register("status", "Show server status", (args, player) -> {
 			float fps = Math.round((int)60f / Time.delta());
-			float memory = Core.app.getJavaHeap()/ 1024 / 1024;
+			float memory = Core.app.getJavaHeap() / 1024 / 1024;
 			player.sendMessage(fps+"TPS "+memory+"MB");
 			player.sendMessage(Vars.playerGroup.size()+" players online.");
 			int idb = 0;
@@ -445,41 +475,6 @@ public class Main extends Plugin{
 			}
 		});
 
-		/*
-		handler.<Player>register("tpmouse", "<player>", "Teleport to other players", (args, player) -> {
-			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
-			if(player.isAdmin == false){
-				player.sendMessage("[green]Notice:[] You're not admin!");
-			} else {
-				if(other == null){
-					player.sendMessage("[scarlet]No player by that name found!");
-					return;
-				}
-				boolean status = false;
-				if(status = false){
-					status = true;
-				} else {
-					status = false;
-				}
-				Thread thread2 = new Thread(new Runnable() {
-            		public void run(){
-						try{
-							while(true){
-								other.setNet(player.pointerX, player.pointerY);
-								other.set(player.pointerX, player.pointerY);
-								//Call.onPositionSet(other.con.id, player.pointerX, player.pointerY);
-								if(other == null){
-									break;
-								}
-							}
-						} catch (Exception e){}
-					}
-            	});
-            	thread2.start();
-			}
-		});
-		*/
-
 		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
 			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
@@ -526,6 +521,7 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("effect", "make effect", (args, player) -> {
+			// todo make effect on in-game
 			//Time.run(20f, () -> Effects.effect(Fx.spawnShockwave, player.x, player.y, 10));
 			// Failed lol
 			player.sendMessage("Not avaliable now!");
@@ -533,19 +529,38 @@ public class Main extends Plugin{
 
 		handler.<Player>register("gamerule", "<gamerule>", "Set gamerule", (args, player) -> player.sendMessage("Not avaliable now!"));
 
-		handler.<Player>register("vote", "<vote>", "Votemap", (args, player) -> {
-			/*
-			if(!Maps.all().isEmpty()){
-				player.sendMessage("Maps:");
-				for(Map m : Maps.all()){
-					player.sendMessage(m.name()+"/"+m.width+"x"+m.height);
-				}
-			}else{
-				player.sendMessage("No maps found.");
+		handler.<Player>register("vote", "<gameover/map>", "Vote surrender or maps.", (args, player) -> {
+			double per = 0.75;
+			HashSet<Player> votes = new HashSet<>();
+			votes.add(player);
+
+			switch(args[0]){
+				case "gameover":
+					int v1 = votes.size();
+					int v2 = (int) Math.ceil(per * Vars.playerGroup.size());
+					Call.sendMessage("Game over vote [orange]"+v1+"[]/[green]"+v2+"[] required");
+					if (v1<v2){return;}
+					votes.clear();
+					Events.fire(new EventType.GameOverEvent(Team.crux));;
+					break;
+				case "map":
+					player.sendMessage("Not available map vote features now!");
+					// todo make map votes
+					/*
+					if(!Maps.all().isEmpty()){
+						player.sendMessage("Maps:");
+						for(Map m : Maps.all()){
+							player.sendMessage(m.name()+"/"+m.width+"x"+m.height);
+						}
+					}else{
+						player.sendMessage("No maps found.");
+					}
+					 */
+					break;
+				default:
+					player.sendMessage("Invalid option!");
+					break;
 			}
-			*/
-			// error: non-static method all() cannot be referenced from a static context
-			player.sendMessage("Not avaliable now!");
 		});
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
@@ -612,54 +627,3 @@ public class Main extends Plugin{
 		});
 	}
 }
-
-class thread1 implements Runnable{
-	private String ip;
-	private String geo;
-	private String geocode;
-
-	thread1(String ip) {
-		this.ip = ip;
-	}
-
-	@Override
-	public void run() {
-		Thread.currentThread().setName("Get geolocation thread");
-		try {
-			String connUrl = "http://ipapi.co/" + ip + "/country_name";
-			Element web = Jsoup.connect(connUrl).get().body();
-			Document doc = Jsoup.parse(String.valueOf(web));
-			geo = doc.text();
-			connUrl = "http://ipapi.co/" + ip + "/country";
-			web = Jsoup.connect(connUrl).get().body();
-			doc = Jsoup.parse(String.valueOf(web));
-			geocode = doc.text();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Log.info(geo+"/"+geocode);
-	}
-	String getgeo(){
-		return geo;
-	}
-	String getgeocode(){
-		return geocode;
-	}
-}
-
-
-
-/*
-class TimeThread implements Runnable {
-	LocalDateTime now = LocalDateTime.now();
-	DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
-	String myTime = now.format(dateTimeFormatter);
-
-	String uuid = "test";
-	JSONObject db = EssentialPlayer.getData(uuid);
-
-	public void run() {
-		SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd a hh:mm.ss");
-	}
-}
-*/

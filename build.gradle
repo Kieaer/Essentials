@@ -11,10 +11,12 @@ repositories{
 }
 
 dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:master-SNAPSHOT"
-    compileOnly "com.github.Anuken.Mindustry:core:master-SNAPSHOT"
+    compileOnly "com.github.Anuken.Arc:arc-core:master"
+    compileOnly "com.github.Anuken.Mindustry:core:master"
     compile 'org.jsoup:jsoup:1.12.1'
-    compile 'org.json:json:20190722'
+    compile group: 'org.json', name: 'json', version: '20190722'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.0.pr2'
+    compile group: 'org.yaml', name: 'snakeyaml', version: '1.25'
 }
 
 jar{

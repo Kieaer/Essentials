@@ -1,10 +1,7 @@
 package essentials;
 
 import io.anuke.arc.util.Log;
-import io.anuke.mindustry.core.NetClient;
-import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
-import org.json.JSONObject;
 
 import java.io.BufferedWriter;
 import java.io.OutputStream;
@@ -14,9 +11,8 @@ import java.net.Socket;
 
 class EssentialChatClient {
     private static Socket socket;
-    private static JSONObject config = EssentialConfig.main();
-    private static int port = Integer.parseInt((String) config.get("port"));
-    private static String host = (String) config.get("host");
+    private static String host = EssentialConfig.host;
+    private static int port = EssentialConfig.port;
     static void main(String msg) {
         Thread t = new Thread(new Runnable() {
             @Override
