@@ -60,19 +60,19 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [x] getpos - Show current position.
 - [x] tempban player time - Timer ban.
   - [x] make info command (dependence)
-- [ ] info - Show player info.
+- [x] info - Show player info.
   - [x] Player name and UUID
   - [x] Show IP and GeoLocation
   - [x] Show destroy/placed block count
   - [x] Show destroy enemies count
-  - [ ] Show dead count
-  - [ ] Rank system
+  - [x] Show dead count
+  - [x] Rank system
 - [x] difficulty - Set difficulty.
 - [ ] effect - Make effect.
 - [ ] gamerule - Set gamerule.
 - [ ] vote - Map vote.
   - [ ] Map list
-  - [ ] surrender vote
+  - [x] surrender vote (NOT TESTED)
 - [x] suicide - self-destruct.
 - [x] kill - Kill other player.
 - [x] save - Map save.
