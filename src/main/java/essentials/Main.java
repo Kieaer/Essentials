@@ -43,8 +43,11 @@ import static io.anuke.arc.util.Log.err;
 import static io.anuke.arc.util.Log.info;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
+import static essentials.Googletranslate.*;
 
 public class Main extends Plugin{
+	private boolean translateo=false;
+	Googletranslate googletranslate = new Googletranslate ();
 	public Main(){
 		Runnable chatserver = new EssentialChatServer();
 		Thread chat2 = new Thread(chatserver);
@@ -118,48 +121,95 @@ public class Main extends Plugin{
 			//check if command
 			if(!check.equals("/")) {
 				boolean valid = e.message.matches("\\w+");
-				JSONObject db = getData(e.player.uuid);
-				boolean translate = (boolean) db.get("translate");
+				//JSONObject db = getData(e.player.uuid);
+				//boolean translate = (boolean) db.get("translate");
 				// check if enable translate
+				boolean translate=true;
 				if (!valid && translate) {
-					String clientId = "RNOXzFalw7FMFjBe2mbq";
-					String clientSecret = "6k0TWLFmPN";
-					try {
-						String text = URLEncoder.encode(e.message, "UTF-8");
-						String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
-						URL url = new URL(apiURL);
-						HttpURLConnection con = (HttpURLConnection) url.openConnection();
-						con.setRequestMethod("POST");
-						con.setRequestProperty("X-Naver-Client-Id", clientId);
-						con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
+				/*
+				Exception in thread "Timer-0" org.json.JSONException: Expected a ':' after a key at 19 [character 12 line 3]
+        		at org.json.JSONTokener.syntaxError(JSONTokener.java:507)
+        		at org.json.JSONObject.<init>(JSONObject.java:240)
+        		at org.json.JSONTokener.nextValue(JSONTokener.java:431)
+        		at org.json.JSONObject.<init>(JSONObject.java:233)
+        		at essentials.EssentialPlayer.getData(EssentialPlayer.java:52)
+        		at essentials.Main$1.run(Main.java:191)
+        		at java.util.TimerThread.mainLoop(Unknown Source)
+        		at java.util.TimerThread.run(Unknown Source)
+				java.lang.RuntimeException: Failed to to read remote method 'sendChatMessage'!
+        		at io.anuke.mindustry.gen.RemoteReadServer.readPacket(RemoteReadServer.java:137)
+        		at io.anuke.mindustry.core.NetServer.lambda$new$3(NetServer.java:192)
+        		at io.anuke.mindustry.net.Net.handleServerReceived(Net.java:255)
+        		at io.anuke.mindustry.net.ArcNetImpl$2.lambda$received$2(ArcNetImpl.java:115)
+        		at io.anuke.arc.backends.headless.HeadlessApplication.executeRunnables(HeadlessApplication.java:126)
+        		at io.anuke.arc.backends.headless.HeadlessApplication.mainLoop(HeadlessApplication.java:95)
+        		at io.anuke.arc.backends.headless.HeadlessApplication$1.run(HeadlessApplication.java:64)
+				Caused by: org.json.JSONException: Expected a ':' after a key at 19 [character 12 line 3]
+        		at org.json.JSONTokener.syntaxError(JSONTokener.java:507)
+        		at org.json.JSONObject.<init>(JSONObject.java:240)
+        		at org.json.JSONTokener.nextValue(JSONTokener.java:431)
+        		at org.json.JSONObject.<init>(JSONObject.java:233)
+        		at essentials.EssentialPlayer.getData(EssentialPlayer.java:52)
+        		at essentials.Main.lambda$registerClientCommands$33(Main.java:603)
+        		at io.anuke.arc.util.CommandHandler.handleMessage(CommandHandler.java:81)
+        		at io.anuke.mindustry.core.NetClient.sendChatMessage(NetClient.java:162)
+        		at io.anuke.mindustry.gen.RemoteReadServer.readPacket(RemoteReadServer.java:135)
+        		... 6 more
+				JSON reported wrong
+				Annotations because I'm testing :)
+        		*/
+					if (translateo ==false) {
+						String clientId = "RNOXzFalw7FMFjBe2mbq";
+						String clientSecret = "6k0TWLFmPN";
+						try {
+							String text = URLEncoder.encode(e.message, "UTF-8");
+							String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
+							URL url = new URL(apiURL);
+							HttpURLConnection con = (HttpURLConnection) url.openConnection();
+							con.setRequestMethod("POST");
+							con.setRequestProperty("X-Naver-Client-Id", clientId);
+							con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
 
-						String postParams = "source=ko&target=en&text=" + text;
-						con.setDoOutput(true);
-						DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-						wr.writeBytes(postParams);
-						wr.flush();
-						wr.close();
-						int responseCode = con.getResponseCode();
-						BufferedReader br;
-						if (responseCode == 200) {
-							br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-						} else {
-							br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+							String postParams = "source=ko&target=en&text=" + text;
+							con.setDoOutput(true);
+							DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+							wr.writeBytes(postParams);
+							wr.flush();
+							wr.close();
+							int responseCode = con.getResponseCode();
+							BufferedReader br;
+							if (responseCode == 200) {
+								br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+							} else {
+								br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+							}
+							String inputLine;
+							StringBuilder response = new StringBuilder();
+							while ((inputLine = br.readLine()) != null) {
+								response.append(inputLine);
+							}
+							br.close();
+							JSONTokener parser = new JSONTokener(response.toString());
+							JSONObject object = new JSONObject(parser);
+							JSONObject v1 = (JSONObject) object.get("message");
+							JSONObject v2 = (JSONObject) v1.get("result");
+							String v3 = String.valueOf(v2.get("translatedText"));
+							e.player.sendMessage("[" + e.player.name + "]: [#F5FF6B]" + v3);
+						} catch (Exception f) {
+							f.getStackTrace();
 						}
-						String inputLine;
-						StringBuilder response = new StringBuilder();
-						while ((inputLine = br.readLine()) != null) {
-							response.append(inputLine);
+					}else{
+
+						try{
+						Thread.currentThread().sleep(2000);
+						//Don't be less than 2000 here
+						String translationa = googletranslate.translate(e.message,"en");
+						Call.sendMessage(e.player.name+"[green] say[]: "+translationa);
+						}catch(InterruptedException ie){
+							ie.printStackTrace();
+						}catch(Exception ie){
+							return;
 						}
-						br.close();
-						JSONTokener parser = new JSONTokener(response.toString());
-						JSONObject object = new JSONObject(parser);
-						JSONObject v1 = (JSONObject) object.get("message");
-						JSONObject v2 = (JSONObject) v1.get("result");
-						String v3 = String.valueOf(v2.get("translatedText"));
-						e.player.sendMessage("[" + e.player.name + "]: [#F5FF6B]" + v3);
-					} catch (Exception f) {
-						f.getStackTrace();
 					}
 				}
 			}
@@ -596,6 +646,20 @@ public class Main extends Plugin{
 				db.put("translate", false);
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + player.uuid + ".json").writeString((String.valueOf(db)));
 				player.sendMessage("[green][INFO] [] Auto-translate disabled.");
+			}
+		});
+
+		handler.<Player>register("trr","<on/off>","Whether on/off launches Google Translation is not the default", (args, player) -> {
+			if(!player.isAdmin){
+				player.sendMessage("[green]Careful:[] You're not admin!");
+			} else {
+				if (args[0] != "on") {
+					translateo=true;
+					player.sendMessage("[green]Careful:[] true");
+				}else{
+					translateo=false;
+					player.sendMessage("[green]Careful:[] false");
+				}
 			}
 		});
 
