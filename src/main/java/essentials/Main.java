@@ -252,6 +252,7 @@ public class Main extends Plugin{
 						Log.info(myTime);
 						object.remove(String.valueOf(i));
 						Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
+						netServer.admins.unbanPlayerID(uuid);
 						Log.info("[Essentials] " + name + "/" + uuid + " player unbanned!");
 					}
 				}
