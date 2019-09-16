@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 class EssentialChatServer implements Runnable {
     private static int port = EssentialConfig.serverport;
@@ -19,6 +20,7 @@ class EssentialChatServer implements Runnable {
     static {
         try {
             serverSocket = new ServerSocket(port);
+            Log.info("[Essentials] Chat server listening to the port " + port);
         } catch (IOException e) {
             Log.err("[Essentials] Failure to open port "+port+"!!!1");
         }
@@ -28,12 +30,10 @@ class EssentialChatServer implements Runnable {
     public synchronized void run() {
         Thread.currentThread().setName("Chat server thread");
         try {
-            Log.info("[Essentials] Chat server listening to the port " + port);
             while (active) {
                 socket = serverSocket.accept();
-                InputStream is = socket.getInputStream();
-                InputStreamReader isr = new InputStreamReader(is);
-                BufferedReader br = new BufferedReader(isr);
+                BufferedReader br;
+                br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                 String message = br.readLine();
                 Call.sendMessage("[#C77E36][RC] " + message);
                 Log.info("[RC] "+message);

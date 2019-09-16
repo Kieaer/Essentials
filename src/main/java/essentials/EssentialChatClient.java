@@ -4,11 +4,10 @@ import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.entities.type.Player;
 
-import java.io.BufferedWriter;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -28,7 +27,8 @@ class EssentialChatClient {
 
                     OutputStream os = socket.getOutputStream();
                     OutputStreamWriter osw = new OutputStreamWriter(os);
-                    BufferedWriter bw = new BufferedWriter(osw);
+                    BufferedWriter bw;
+                    bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
 
                     bw.write(msg);
                     bw.flush();
