@@ -51,7 +51,6 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [x] Teleport
   - [x] tp playername playername - Teleport from Player to Player
   - [x] tp playername - Teleport to Player.
-- [ ] spawnmob mob amount - Spawn enemies or mob.
 - [x] status - Show server status.
 - [x] realname player - Show real name.
   - [x] make info command (dependence)
@@ -68,8 +67,6 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] Show dead count
   - [x] Rank system
 - [x] difficulty - Set difficulty.
-- [ ] effect - Make effect.
-- [ ] gamerule - Set gamerule.
 - [ ] vote - Map vote.
   - [ ] Map list
   - [x] surrender vote (NOT TESTED)
@@ -80,4 +77,3 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [x] ch - Cross server chat.
 - [x] time - Show server time.
 - [x] translate - Enable/disable auto translate
-- [ ] prefix - Set player prefix
