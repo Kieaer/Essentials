@@ -1,9 +1,14 @@
 package essentials;
 
+import essentials.thread.GeoThread;
 import io.anuke.arc.Core;
+import io.anuke.arc.util.Log;
+import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -13,50 +18,178 @@ import java.util.Date;
 import java.util.Locale;
 
 public class EssentialPlayer{
-	static void createNewDatabase(String name, String uuid, boolean isAdmin, boolean isLocal, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language) {
-		JSONObject data = new JSONObject();
-		data.put("name", name);
-		data.put("uuid", uuid);
-		data.put("isAdmin", isAdmin);
-		data.put("isLocal", isLocal);
-		data.put("country", country);
-		data.put("country_code", country_code);
-		data.put("placecount", placecount);
-		data.put("breakcount", breakcount);
-		data.put("killcount", killcount);
-		data.put("deathcount", deathcount);
-		data.put("joincount", joincount);
-		data.put("kickcount", kickcount);
-		data.put("level", level);
-		data.put("exp", exp);
-        data.put("reqexp", reqexp);
-        data.put("reqtotalexp", reqtotalexp);
-		data.put("firstdate", firstdate);
-		data.put("lastdate", lastdate);
-		data.put("lastplacename", lastplacename);
-		data.put("lastbreakname", lastbreakname);
-		data.put("playtime", playtime);
-		data.put("lastchat", lastchat);
-		data.put("attackclear", attackclear);
-		data.put("pvpwincount", pvpwincount);
-		data.put("pvplosecount", pvplosecount);
-		data.put("pvpbreakout", pvpbreakout);
-		data.put("reactorcount", reactorcount);
-		data.put("bantimeset", bantimeset);
-		data.put("bantime", bantime);
-		data.put("translate", translate);
-		data.put("language", language);
-		String json = data.toString();
-		Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(json);
+    static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+    static void main(Player player){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+        String nowString = now.format(dateTimeFormatter);
+        String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+
+        boolean isLocal = player.isLocal;
+
+        Runnable georun = new GeoThread(ip, isLocal);
+        Thread geothread = new Thread(georun);
+        try {
+            geothread.start();
+            geothread.join();
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+
+        String geo = GeoThread.getgeo();
+        String geocode = GeoThread.getgeocode();
+        String languages = GeoThread.getlang();
+
+        int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
+        int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
+
+        try {
+            createNewDatabase(player.name, player.uuid, geo, geocode,
+                    0, 0, 0, 0, timesjoined,
+                    timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
+                    "none", "00:00.00", "none", 0, 0, 0,
+                    0, 0, "none", 0, false, languages, false);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat) {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            Connection conn = DriverManager.getConnection(url);
+            if(conn != null){
+                String sql = "CREATE TABLE IF NOT EXISTS players (\n" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                        "name TEXT,\n" +
+                        "uuid TEXT,\n" +
+                        "country TEXT,\n" +
+                        "country_code TEXT,\n" +
+                        "language TEXT,\n" +
+                        "placecount INTEGER,\n" +
+                        "breakcount INTEGER,\n" +
+                        "killcount INTEGER,\n" +
+                        "deathcount INTEGER,\n" +
+                        "joincount INTEGER,\n" +
+                        "kickcount INTEGER,\n" +
+                        "level INTEGER,\n" +
+                        "exp INTEGER,\n" +
+                        "reqexp INTEGER,\n" +
+                        "reqtotalexp TEXT,\n" +
+                        "firstdate TEXT,\n" +
+                        "lastdate TEXT,\n" +
+                        "lastplacename TEXT,\n" +
+                        "lastbreakname TEXT,\n" +
+                        "lastchat TEXT,\n" +
+                        "playtime TEXT,\n" +
+                        "attackclear INTEGER,\n" +
+                        "pvpwincount INTEGER,\n" +
+                        "pvplosecount INTEGER,\n" +
+                        "pvpbreakout INTEGER,\n" +
+                        "reactorcount INTEGER,\n" +
+                        "bantimeset TEXT,\n" +
+                        "bantime INTEGER,\n" +
+                        "translate TEXT,\n" +
+                        "crosschat TEXT\n" +
+                        ");";
+                Statement stmt = conn.createStatement();
+                stmt.execute(sql);
+                stmt.close();
+                Log.info("[Essentials] Player database created!");
+            }
+            String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            assert conn != null;
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, name);
+            pstmt.setString(2, uuid);
+            pstmt.setString(3, country);
+            pstmt.setString(4, country_code);
+            pstmt.setString(5, language);
+            pstmt.setInt(6, placecount);
+            pstmt.setInt(7, breakcount);
+            pstmt.setInt(8, killcount);
+            pstmt.setInt(9, deathcount);
+            pstmt.setInt(10, joincount);
+            pstmt.setInt(11, kickcount);
+            pstmt.setInt(12, level);
+            pstmt.setInt(13, exp);
+            pstmt.setInt(14, reqexp);
+            pstmt.setString(15, reqtotalexp);
+            pstmt.setString(16, firstdate);
+            pstmt.setString(17, lastdate);
+            pstmt.setString(18, lastplacename);
+            pstmt.setString(19, lastbreakname);
+            pstmt.setString(20, lastchat);
+            pstmt.setString(21, playtime);
+            pstmt.setInt(22, attackclear);
+            pstmt.setInt(23, pvpwincount);
+            pstmt.setInt(24, pvplosecount);
+            pstmt.setInt(25, pvpbreakout);
+            pstmt.setInt(26, reactorcount);
+            pstmt.setString(27, bantimeset);
+            pstmt.setInt(28, bantime);
+            pstmt.setBoolean(29, translate);
+            pstmt.setBoolean(30, crosschat);
+            pstmt.executeUpdate();
+            pstmt.close();
+            conn.close();
+        } catch (Exception e){
+            Log.info(e.getMessage());
+        }
 	}
 
 	public static JSONObject getData(String uuid){
-		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
-        JSONTokener parser = new JSONTokener(db);
-        return new JSONObject(parser);
-	}
+        String sql = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
+        JSONObject json = new JSONObject();
+
+        try{
+            Class.forName("org.sqlite.JDBC");
+            Connection conn = DriverManager.getConnection(url);
+            Statement stmt  = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while(rs.next()){
+                json.put("name", rs.getString("name"));
+                json.put("uuid", rs.getString("uuid"));
+                json.put("country", rs.getString("country"));
+                json.put("country_code", rs.getString("country_code"));
+                json.put("language", rs.getString("language"));
+                json.put("placecount", rs.getInt("placecount"));
+                json.put("breakcount", rs.getInt("breakcount"));
+                json.put("killcount", rs.getInt("killcount"));
+                json.put("deathcount", rs.getInt("deathcount"));
+                json.put("joincount", rs.getInt("joincount"));
+                json.put("kickcount", rs.getInt("kickcount"));
+                json.put("level", rs.getInt("level"));
+                json.put("exp", rs.getInt("exp"));
+                json.put("reqexp", rs.getInt("reqexp"));
+                json.put("reqtotalexp", rs.getString("reqtotalexp"));
+                json.put("firstdate", rs.getString("firstdate"));
+                json.put("lastdate", rs.getString("lastdate"));
+                json.put("lastplacename", rs.getString("lastplacename"));
+                json.put("lastbreakname", rs.getString("lastbreakname"));
+                json.put("lastchat", rs.getString("lastchat"));
+                json.put("playtime", rs.getString("playtime"));
+                json.put("attackclear", rs.getInt("attackclear"));
+                json.put("pvpwincount", rs.getInt("pvpwincount"));
+                json.put("pvplosecount", rs.getInt("pvplosecount"));
+                json.put("pvpbreakout", rs.getInt("pvpbreakout"));
+                json.put("reactorcount", rs.getInt("reactorcount"));
+                json.put("bantimeset", rs.getString("bantimeset"));
+                json.put("bantime", rs.getInt("bantime"));
+                json.put("translate", rs.getString("translate"));
+                json.put("crosschat", rs.getString("crosschat"));
+            }
+            rs.close();
+            stmt.close();
+            conn.close();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return json;
+    }
 
 	static void addtimeban(String name, String uuid, int bantimeset){
+
 	    // Write ban data
         String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);
@@ -95,15 +228,22 @@ public class EssentialPlayer{
         Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
 
         // Write player data
-        String playerdb = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
-        JSONTokener pparse = new JSONTokener(playerdb);
-        JSONObject db2 = new JSONObject(pparse);
 
-        db2.put("bantime", newTime);
-        db2.put("bantimeset", bantimeset);
+        String sql = "UPDATE players SET bantime = ?, bantimeset = ?, WHERE uuid = ?";
+        try{
+            Class.forName("org.sqlite.JDBC");
+            Connection conn = DriverManager.getConnection(url);
 
-        String pjson = db2.toString();
-        Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(pjson);
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, myTime);
+            pstmt.setInt(2, bantimeset);
+            pstmt.setString(3, uuid);
+            pstmt.executeUpdate();
+            conn.close();
+            pstmt.close();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     // todo make writedata function

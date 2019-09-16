@@ -1,6 +1,5 @@
 package essentials;
 
-import essentials.thread.GeoThread;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -21,18 +20,18 @@ import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static essentials.EssentialConfig.detectreactor;
 import static essentials.EssentialConfig.realname;
-import static essentials.EssentialPlayer.createNewDatabase;
 import static essentials.EssentialPlayer.getData;
 import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
@@ -41,127 +40,69 @@ import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
 	public Main(){
-		try {
-			EssentialConfig.main();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	    // Start config file
+	    EssentialConfig.main();
 
+	    // Start chat server
 		Runnable chatserver = new EssentialChatServer();
 		Thread chat2 = new Thread(chatserver);
 		chat2.start();
 
-		// Startup
-		if(!Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").exists()){
-			JSONObject data = new JSONObject();
-			String json = data.toString();
-			Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(json);
-		}
+        // Set if thorium rector explode
+        Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
+            if(detectreactor){
+                Call.sendMessage("[scarlet]WARNING WARNING WARNING");
+                Call.sendMessage("[scarlet]Thorium Reactor Exploded");
+                Log.info("Thorium Reactor explode detected!!");
+            }
+        });
 
-		if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
-			String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/plugins/Essentials/[] folder.";
-			Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
-			Log.info("[Essentials] motd file created.");
-		}
-
-		if(realname){
-			Log.info("[Essentials] Realname enabled.");
-		}
-
-		if(detectreactor){
-			Log.info("[Essentials] Thorium reactor overheat detect enabled.");
-		}
-
+		// Set if player join event
         Events.on(PlayerJoin.class, e -> {
-			JSONObject db = null;
-			try{
-				db = getData(e.player.uuid);
-			} catch (Exception error){
-				Log.info(e.player.name+" data not found!");
-			}
-
 			// Show motd
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			e.player.sendMessage(motd);
 
 			// Database read/write
-			LocalDateTime now = LocalDateTime.now();
-			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-			String nowString = now.format(dateTimeFormatter);
-			String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-
-			if (Core.settings.getDataDirectory().child("plugins/Essentials/players/" + e.player.uuid + ".json").exists()) {
-				db.put("lastdate", nowString);
-				String checkgeo = (String) db.get("country");
-				if(checkgeo.equals("invalid")){
-					Runnable georun = new GeoThread(ip);
-					Thread geothread = new Thread(georun);
-					try {
-						geothread.start();
-						geothread.join();
-					} catch (InterruptedException ex) {
-						ex.printStackTrace();
-					}
-
-					String geo = GeoThread.getgeo();
-					String geocode = GeoThread.getgeocode();
-					String languages = GeoThread.getlang();
-					db.put("country", geo);
-					db.put("country_code", geocode);
-					db.put("languages", languages);
-				}
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+e.player.uuid+".json").writeString(String.valueOf(db));
-
-				// Set realname
-				if(realname){
-					e.player.name = (String) db.get("name");
-				}
-
-				Log.info("[Essentials] " + e.player.name + " Database file loaded.");
-			} else {
-				e.player.sendMessage("[green]Database creating... Please wait");
-
-				Runnable georun = new GeoThread(ip);
-				Thread geothread = new Thread(georun);
-				try {
-					geothread.start();
-					geothread.join();
-				} catch (InterruptedException ex) {
-					ex.printStackTrace();
-				}
-
-				String geo = GeoThread.getgeo();
-				String geocode = GeoThread.getgeocode();
-				String lang = GeoThread.getlang();
-				int timesjoined = Vars.netServer.admins.getInfo(e.player.uuid).timesJoined;
-				int timeskicked = Vars.netServer.admins.getInfo(e.player.uuid).timesKicked;
-				createNewDatabase(e.player.name, e.player.uuid, e.player.isAdmin, e.player.isLocal, geo, geocode,
-						0, 0, 0, 0, timesjoined,
-						timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
-						"none", "00:00.00", "none", 0, 0, 0,
-						0, 0, "none", 0, false, lang);
-				Log.info("[Essentials] " + e.player.name + "/" + e.player.uuid + " Database file created.");
-				e.player.sendMessage("[green]Database created!");
-			}
+			EssentialPlayer.main(e.player);
 
 			// Give join exp
-			EssentialExp.joinexp(e.player.uuid);
+            Thread expthread = new Thread(new Runnable() {
+                @Override
+                public synchronized void run() {
+                    EssentialExp.joinexp(e.player.uuid);
+                }
+            });
+            expthread.start();
 		});
 
+		// Set if player chat event
 		Events.on(EventType.PlayerChatEvent.class, e -> {
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
 			if(!check.equals("/")) {
 				//boolean valid = e.message.matches("\\w+");
 				JSONObject db = getData(e.player.uuid);
-				boolean translate = (boolean) db.get("translate");
+				boolean translate = Boolean.parseBoolean(String.valueOf(db.get("translate")));
+				boolean crosschat = Boolean.parseBoolean(String.valueOf(db.get("crosschat")));
 				// check if enable translate
 				if (translate) {
 					detectlang(e.player, e.message);
 				}
+				if (crosschat) {
+					Thread chatclient = new Thread(new Runnable() {
+						@Override
+						public synchronized void run() {
+							String message = NetClient.colorizeName(e.player.id, e.player.name)+" [white]: "+e.message;
+							EssentialChatClient.main(message, e.player);
+						}
+					});
+					chatclient.start();
+				}
 			}
 		});
 
+		// Set if player build block event
 		Events.on(EventType.BlockBuildEndEvent.class, event -> {
 			if (!event.breaking && event.player != null && event.player.buildRequest() != null) {
 				JSONObject db = getData(event.player.uuid);
@@ -182,9 +123,9 @@ public class Main extends Plugin{
 				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
 			}
 		});
-		*/
 
-		// Count unit destory (Temporary disabled)
+
+		// Count unit destory
 		Events.on(EventType.UnitDestroyEvent.class, event -> {
 			if(playerGroup != null && playerGroup.size() > 0){
 				for(int i=0;i<playerGroup.size();i++){
@@ -197,82 +138,15 @@ public class Main extends Plugin{
 				}
 			}
 		});
+		*/
 
 		Timer timer = new Timer();
 		TimerTask playtime = new TimerTask(){
 			@Override
-			public synchronized void run() {
-				// Player playtime counting
-				if(playerGroup.size() > 0){
-					for(int i = 0; i < playerGroup.size(); i++){
-						Player p = playerGroup.all().get(i);
-						JSONObject db = getData(p.uuid);
-						String data = db.getString("playtime");
-						SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-						Date d1;
-						Calendar cal;
-						String newTime = null;
-						try {
-							d1 = format.parse(data);
-							cal = Calendar.getInstance();
-							cal.setTime(d1);
-							cal.add(Calendar.SECOND, 1);
-							newTime = format.format(cal.getTime());
-						} catch (ParseException e1) {
-							e1.printStackTrace();
-						}
-						db.put("playtime", newTime);
-
-						// Exp caculating
-						int exp = (int) db.get("exp");
-						db.put("exp", exp+(int)(Math.random()*5)+(int)db.get("level"));
-
-						Core.settings.getDataDirectory().child("plugins/Essentials/players/" + p.uuid + ".json").writeString(String.valueOf(db));
-
-						EssentialExp.exp(p.name, p.uuid);
-					}
-				}
-
-				// Temporarily ban players time counting
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
-				JSONTokener parser = new JSONTokener(db);
-				JSONObject object = new JSONObject(parser);
-
-				LocalDateTime now = LocalDateTime.now();
-				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-				String myTime = now.format(dateTimeFormatter);
-
-				for (int i = 0; i < object.length(); i++) {
-					JSONObject value1 = (JSONObject) object.get(String.valueOf(i));
-					String date = (String) value1.get("date");
-					String uuid = (String) value1.get("uuid");
-					String name = (String) value1.get("name");
-
-					if (date.equals(myTime)) {
-						Log.info(myTime);
-						object.remove(String.valueOf(i));
-						Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
-						netServer.admins.unbanPlayerID(uuid);
-						Log.info("[Essentials] " + name + "/" + uuid + " player unbanned!");
-					}
-				}
-
-				// todo make dynamp for mindustry (extreme hard work)
-				//Dynmap.takeMapScreenshot();
+			public void run() {
+			    EssentialTimer.main();
 			}
 		};
-
-		// Alarm if thorium reactor explode
-        Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
-            if(detectreactor){
-                Call.sendMessage("[scarlet]WARNING WARNING WARNING");
-                Call.sendMessage("[scarlet]Thorium Reactor Exploded");
-                Log.info("Thorium Reactor explode detected!!");
-            }
-        });
-
-		timer.scheduleAtFixedRate(playtime, 0, 1000);
-		Log.info("[Essentials] Play/bantime counting thread started.");
 
 		// Set if shutdown
 		Core.app.addListener(new ApplicationListener(){
@@ -297,11 +171,23 @@ public class Main extends Plugin{
 				}
 			}
 		});
+
+        // Alert Realname event
+        if(realname){
+            Log.info("[Essentials] Realname enabled.");
+        }
+
+        // Alert thorium reactor explode detect event
+        if(detectreactor){
+            Log.info("[Essentials] Thorium reactor overheat detect enabled.");
+        }
+
+        timer.scheduleAtFixedRate(playtime, 0, 1000);
+        Log.info("[Essentials] Play/bantime counting thread started.");
 	}
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
-		//
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
@@ -332,6 +218,8 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerClientCommands(CommandHandler handler){
+		String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			player.sendMessage(motd);
@@ -369,6 +257,8 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("status", "Show server status", (args, player) -> {
+			player.sendMessage("[#DEA82A]Server status[]");
+			player.sendMessage("[#2B60DE]========================================[]");
 			float fps = Math.round((int)60f / Time.delta());
 			float memory = Core.app.getJavaHeap() / 1024 / 1024;
 			player.sendMessage(fps+"TPS "+memory+"MB");
@@ -439,14 +329,6 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("spawnmob", "Spawn mob", (args, player) -> {
-			if(!player.isAdmin){
-				player.sendMessage("[green]Notice: [] You're not admin!");
-			} else {
-				player.sendMessage("source here");
-			}
-		});
-
 		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (args, player) -> {
 			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
@@ -475,15 +357,6 @@ public class Main extends Plugin{
 				}
 			}
 		});
-
-		handler.<Player>register("effect", "make effect", (args, player) -> {
-			// todo make effect on in-game
-			//Time.run(20f, () -> Effects.effect(Fx.spawnShockwave, player.x, player.y, 10));
-			// Failed lol
-			player.sendMessage("Not avaliable now!");
-		});
-
-		handler.<Player>register("gamerule", "<gamerule>", "Set gamerule", (args, player) -> player.sendMessage("Not avaliable now!"));
 
 		handler.<Player>register("vote", "<gameover/map>", "Vote surrender or maps.", (args, player) -> {
 			double per = 0.75;
@@ -557,29 +430,60 @@ public class Main extends Plugin{
 
 		handler.<Player>register("tr", "Enable/disable Translate all chat", (args, player) -> {
 			JSONObject db = getData(player.uuid);
-			boolean value = (boolean) db.get("translate");
-			if(!value){
-				db.put("translate", true);
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + player.uuid + ".json").writeString((String.valueOf(db)));
-				player.sendMessage("[green][INFO] [] Auto-translate enabled.");
+			String value = String.valueOf(db.get("translate"));
+			String set;
+			String sql = "UPDATE players SET translate = ? WHERE uuid = ?";
+			if(value.equals("false")){
+				set = "true";
+				player.sendMessage("[green][INFO] [] translate enabled.");
 				player.sendMessage("Note: Translated letters are marked with [#F5FF6B]this[white] color.");
 			} else {
-				db.put("translate", false);
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + player.uuid + ".json").writeString((String.valueOf(db)));
-				player.sendMessage("[green][INFO] [] Auto-translate disabled.");
+				set = "false";
+				player.sendMessage("[green][INFO] [] translate disabled.");
+			}
+
+			try{
+				Class.forName("org.sqlite.JDBC");
+				Connection conn = DriverManager.getConnection(url);
+
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				pstmt.setString(1, set);
+				pstmt.setString(2, player.uuid);
+				pstmt.executeUpdate();
+				conn.close();
+				pstmt.close();
+			} catch (Exception e){
+				e.printStackTrace();
 			}
 		});
 
-		handler.<Player>register("ch", "<chat>", "Send chat to another server.", (args, player) -> {
-			Thread chatclient = new Thread(new Runnable() {
-				@Override
-				public synchronized void run() {
-					String message = "["+NetClient.colorizeName(player.id, player.name)+"[white]: "+"] "+args[0];
-					EssentialChatClient.main(message);
-					Call.sendMessage("sented!");
-				}
-			});
-			chatclient.start();
+		handler.<Player>register("ch", "Send chat to another server.", (args, player) -> {
+			JSONObject db = getData(player.uuid);
+			String value = String.valueOf(db.get("crosschat"));
+			String set;
+			String sql = "UPDATE players SET crosschat = ? WHERE uuid = ?";
+			if(value.equals("false")){
+				set = "true";
+				player.sendMessage("[green][INFO] [] Crosschat enabled.");
+				player.sendMessage("[yellow]Note[]: [#357EC7][SC][] prefix is 'Send Chat', [#C77E36][RC][] prefix is 'Received Chat'.");
+			} else {
+				set = "false";
+				player.sendMessage("[green][INFO] [] Crosschat disabled.");
+			}
+
+			try{
+				Class.forName("org.sqlite.JDBC");
+				Connection conn = DriverManager.getConnection(url);
+
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				pstmt.setString(1, set);
+				pstmt.setString(2, player.uuid);
+				pstmt.executeUpdate();
+				conn.close();
+				pstmt.close();
+			} catch (Exception e){
+				e.printStackTrace();
+			}
 		});
 	}
 }

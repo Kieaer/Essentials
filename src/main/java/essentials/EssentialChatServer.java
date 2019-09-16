@@ -11,7 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 class EssentialChatServer implements Runnable {
-    private static int port = EssentialConfig.port;
+    private static int port = EssentialConfig.serverport;
     private static Socket socket;
     static boolean active = true;
     static ServerSocket serverSocket;
@@ -20,7 +20,7 @@ class EssentialChatServer implements Runnable {
         try {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
-            Log.err("[EssentialsChat] Failure to open port "+port+"!!!1");
+            Log.err("[Essentials] Failure to open port "+port+"!!!1");
         }
     }
 
@@ -28,18 +28,17 @@ class EssentialChatServer implements Runnable {
     public synchronized void run() {
         Thread.currentThread().setName("Chat server thread");
         try {
-            Log.info("[EssentialsChat] Chat server listening to the port " + port);
+            Log.info("[Essentials] Chat server listening to the port " + port);
             while (active) {
                 socket = serverSocket.accept();
                 InputStream is = socket.getInputStream();
                 InputStreamReader isr = new InputStreamReader(is);
                 BufferedReader br = new BufferedReader(isr);
                 String message = br.readLine();
-                Call.sendMessage("[#C77E36][RC][white] " + message);
-                Log.info("[RC]"+message);
+                Call.sendMessage("[#C77E36][RC] " + message);
+                Log.info("[RC] "+message);
             }
         } catch (Exception ignored) {
-            //e.printStackTrace();
         } finally {
             try {
                 socket.close();

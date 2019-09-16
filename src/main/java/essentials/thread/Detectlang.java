@@ -1,7 +1,6 @@
 package essentials.thread;
 
 import io.anuke.arc.util.Log;
-import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -17,19 +16,17 @@ import java.nio.charset.StandardCharsets;
 import static essentials.EssentialPlayer.getData;
 
 public class Detectlang {
-    private static JSONObject lang;
-
     public static void detectlang(Player player, String message) {
-        String clientId1 = "Ujx3Ysdxfg7FY2wQn2ES";
-        String clientSecret1 = "iHAb6PF3SK";
+        String clientId = "Ujx3Ysdxfg7FY2wQn2ES";
+        String clientSecret = "iHAb6PF3SK";
         try {
             String query = URLEncoder.encode(message, "UTF-8");
             String apiURL = "https://openapi.naver.com/v1/papago/detectLangs";
             URL url = new URL(apiURL);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
-            con.setRequestProperty("X-Naver-Client-Id", clientId1);
-            con.setRequestProperty("X-Naver-Client-Secret", clientSecret1);
+            con.setRequestProperty("X-Naver-Client-Id", clientId);
+            con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
 
             String postParams = "query=" + query;
             con.setDoOutput(true);
@@ -51,12 +48,13 @@ public class Detectlang {
             }
             br.close();
             JSONTokener result = new JSONTokener(response.toString());
-            lang = new JSONObject(result);
+            JSONObject lang = new JSONObject(result);
             translate(player, lang, message);
         } catch (Exception e) {
             Log.err(e);
         }
     }
+
     public static void translate(Player player, JSONObject lang, String message){
         JSONObject db = getData(player.uuid);
 
@@ -64,7 +62,6 @@ public class Detectlang {
         String clientSecret = "6k0TWLFmPN";
         try {
             String text = URLEncoder.encode(message, "UTF-8");
-            Log.info(text);
             String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
             URL url = new URL(apiURL);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -96,8 +93,7 @@ public class Detectlang {
             JSONObject v1 = (JSONObject) object.get("message");
             JSONObject v2 = (JSONObject) v1.get("result");
             String v3 = String.valueOf(v2.get("translatedText"));
-            Log.info(v3);
-            player.sendMessage("["+ NetClient.colorizeName(player.id, player.name)+"[white]: [#F5FF6B]" + v3);
+            player.sendMessage("[orange]["+player.name+"][white]: [#F5FF6B]" + v3);
         } catch (Exception f) {
             f.getStackTrace();
         }

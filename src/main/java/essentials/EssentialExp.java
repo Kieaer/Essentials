@@ -3,11 +3,15 @@ package essentials;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
-import org.json.JSONTokener;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 
 public class EssentialExp {
     private static final double BASE_XP = 500;
     private static final double EXPONENT = 1.08f;
+    static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
 
     public static void exp(String name, String uuid) {
         JSONObject db = EssentialPlayer.getData(uuid);
@@ -20,19 +24,28 @@ public class EssentialExp {
         int level = calculateLevel(xp);
         String reqtotalexp = xp+"("+(int) Math.floor(levelXp)+") / "+(int) Math.floor(max);
 
-        String playerdb = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
-        JSONTokener pparse = new JSONTokener(playerdb);
-        JSONObject db2 = new JSONObject(pparse);
+        String sql = "UPDATE players SET exp = ?, reqexp = ?, level = ?, reqtotalexp = ? WHERE uuid = ?";
 
-        db2.put("xp", xp);
-        db2.put("reqexp", (int) Math.floor(max));
-        db2.put("level", level);
-        db2.put("reqtotalexp", reqtotalexp);
+        try{
+            Class.forName("org.sqlite.JDBC");
+            Connection conn = DriverManager.getConnection(url);
+
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, xp);
+            pstmt.setInt(2, (int) Math.floor(max));
+            pstmt.setInt(3, level);
+            pstmt.setString(4, reqtotalexp);
+            pstmt.setString(5, uuid);
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
         int curlevel = (int) db.get("level");
         if(curlevel < level){
-            Call.sendMessage("[green]Congratulations! "+name+"[green] achieved level "+level+"!");
+            Call.sendMessage("[yellow]Congratulations![white] "+name+"[white] achieved level [green]"+level+"!");
         }
-        Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(String.valueOf(db2));
     }
 
     private static double calcXpForLevel(int level) {

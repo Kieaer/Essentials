@@ -1,6 +1,6 @@
 apply plugin: "java"
 
-version '1.0'
+version '2.1'
 
 sourceCompatibility = 1.8
 
@@ -17,6 +17,7 @@ dependencies{
     compile group: 'org.json', name: 'json', version: '20190722'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.0.pr2'
     compile group: 'org.yaml', name: 'snakeyaml', version: '1.25'
+    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
 }
 
 jar{
