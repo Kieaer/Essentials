@@ -270,11 +270,6 @@ public class Main extends Plugin{
             }
         });
 
-        Events.on(EventType.Trigger.impactPower, () -> {
-            Call.sendMessage("[scarlet]power!");
-            Log.info("[scarlet]power!");
-        });
-
 		timer.scheduleAtFixedRate(playtime, 0, 1000);
 		Log.info("[Essentials] Play/bantime counting thread started.");
 
