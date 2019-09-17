@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import static essentials.EssentialPlayer.getData;
 
 public class Detectlang {
-    public static void detectlang(Player player, String message) {
+    public static void detectlang(boolean translate, Player player, String message) {
         String clientId = "Ujx3Ysdxfg7FY2wQn2ES";
         String clientSecret = "iHAb6PF3SK";
         try {
@@ -49,13 +49,13 @@ public class Detectlang {
             br.close();
             JSONTokener result = new JSONTokener(response.toString());
             JSONObject lang = new JSONObject(result);
-            translate(player, lang, message);
+            translate(translate, player, lang, message);
         } catch (Exception e) {
             Log.err(e);
         }
     }
 
-    public static void translate(Player player, JSONObject lang, String message){
+    public static void translate(boolean translate, Player player, JSONObject lang, String message){
         JSONObject db = getData(player.uuid);
 
         String clientId = "RNOXzFalw7FMFjBe2mbq";
@@ -93,7 +93,9 @@ public class Detectlang {
             JSONObject v1 = (JSONObject) object.get("message");
             JSONObject v2 = (JSONObject) v1.get("result");
             String v3 = String.valueOf(v2.get("translatedText"));
-            player.sendMessage("[orange]["+player.name+"][white]: [#F5FF6B]" + v3);
+            if(translate){
+                player.sendMessage("[orange]["+player.name+"][white]: [#F5FF6B]" + v3);
+            }
         } catch (Exception f) {
             f.getStackTrace();
         }

@@ -38,6 +38,7 @@ public class EssentialExp {
             pstmt.setString(5, uuid);
             pstmt.executeUpdate();
             pstmt.close();
+            conn.close();
         } catch (Exception e){
             e.printStackTrace();
         }

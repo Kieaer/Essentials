@@ -85,10 +85,8 @@ public class Main extends Plugin{
 				JSONObject db = getData(e.player.uuid);
 				boolean translate = Boolean.parseBoolean(String.valueOf(db.get("translate")));
 				boolean crosschat = Boolean.parseBoolean(String.valueOf(db.get("crosschat")));
-				// check if enable translate
-				if (translate) {
-					detectlang(e.player, e.message);
-				}
+
+				detectlang(translate, e.player, e.message);
 				if (crosschat) {
 					Thread chatclient = new Thread(new Runnable() {
 						@Override
@@ -450,8 +448,8 @@ public class Main extends Plugin{
 				pstmt.setString(1, set);
 				pstmt.setString(2, player.uuid);
 				pstmt.executeUpdate();
-				conn.close();
 				pstmt.close();
+				conn.close();
 			} catch (Exception e){
 				e.printStackTrace();
 			}
@@ -479,8 +477,8 @@ public class Main extends Plugin{
 				pstmt.setString(1, set);
 				pstmt.setString(2, player.uuid);
 				pstmt.executeUpdate();
-				conn.close();
 				pstmt.close();
+				conn.close();
 			} catch (Exception e){
 				e.printStackTrace();
 			}

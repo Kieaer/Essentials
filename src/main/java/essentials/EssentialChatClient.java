@@ -49,8 +49,8 @@ class EssentialChatClient {
                         pstmt.setString(1, "false");
                         pstmt.setString(2, player.uuid);
                         pstmt.executeUpdate();
-                        conn.close();
                         pstmt.close();
+                        conn.close();
                     } catch (Exception e){
                         e.printStackTrace();
                     }
