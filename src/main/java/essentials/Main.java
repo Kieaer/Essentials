@@ -23,12 +23,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.awt.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -54,7 +57,7 @@ public class Main extends Plugin{
         // Set if thorium rector explode
         Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
             if(detectreactor){
-                Call.sendMessage("[scarlet]WARNING WARNING WARNING");
+                Call.sendMessage("[scarlet]= WARNING WARNING WARNING =");
                 Call.sendMessage("[scarlet]Thorium Reactor Exploded");
                 Log.info("Thorium Reactor explode detected!!");
             }
@@ -62,6 +65,12 @@ public class Main extends Plugin{
 
 		// Set if player join event
         Events.on(PlayerJoin.class, e -> {
+        	// Check if realname enabled
+			if(realname){
+				JSONObject db = getData(e.player.uuid);
+				e.player.name = String.valueOf(db.get("name"));
+			}
+
 			// Check if blacklisted nickname
 			String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
 			JSONTokener parser = new JSONTokener(db);
@@ -178,13 +187,15 @@ public class Main extends Plugin{
 				}
 
 				// Kill Chat server thread
-				try {
-					EssentialChatServer.active = false;
-					EssentialChatServer.serverSocket.close();
-					Log.info("[EssentialsChat] Chat server thread disabled.");
-				} catch (Exception e){
-					Log.err("[Essentials] Failure to disable Playtime counting thread!");
-					e.printStackTrace();
+				if(serverenable){
+					try {
+						EssentialChatServer.active = false;
+						EssentialChatServer.serverSocket.close();
+						Log.info("[EssentialsChat] Chat server thread disabled.");
+					} catch (Exception e){
+						Log.err("[Essentials] Failure to disable Chat server thread!");
+						e.printStackTrace();
+					}
 				}
 			}
 		});
