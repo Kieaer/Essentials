@@ -19,7 +19,9 @@ import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -30,8 +32,7 @@ import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static essentials.EssentialConfig.detectreactor;
-import static essentials.EssentialConfig.realname;
+import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
@@ -44,9 +45,11 @@ public class Main extends Plugin{
 	    EssentialConfig.main();
 
 	    // Start chat server
-		Runnable chatserver = new EssentialChatServer();
-		Thread chat2 = new Thread(chatserver);
-		chat2.start();
+		if(serverenable){
+			Runnable chatserver = new EssentialChatServer();
+			Thread chat2 = new Thread(chatserver);
+			chat2.start();
+		}
 
         // Set if thorium rector explode
         Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
@@ -59,6 +62,18 @@ public class Main extends Plugin{
 
 		// Set if player join event
         Events.on(PlayerJoin.class, e -> {
+			// Check if blacklisted nickname
+			String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+			JSONTokener parser = new JSONTokener(db);
+			JSONArray array = new JSONArray(parser);
+
+			for (int i = 0; i < array.length(); i++){
+				if (array.getString(i).equals(e.player.name)){
+					e.player.con.kick(KickReason.idInUse);
+					Log.info(e.player.name+" nickname is blacklisted.");
+				}
+			};
+
 			// Show motd
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			e.player.sendMessage(motd);
@@ -67,13 +82,13 @@ public class Main extends Plugin{
 			EssentialPlayer.main(e.player);
 
 			// Give join exp
-            Thread expthread = new Thread(new Runnable() {
-                @Override
-                public synchronized void run() {
-                    EssentialExp.joinexp(e.player.uuid);
-                }
-            });
-            expthread.start();
+			Thread expthread = new Thread(new Runnable() {
+				@Override
+				public synchronized void run() {
+					EssentialExp.joinexp(e.player.uuid);
+				}
+			});
+			expthread.start();
 		});
 
 		// Set if player chat event
@@ -88,14 +103,18 @@ public class Main extends Plugin{
 
 				detectlang(translate, e.player, e.message);
 				if (crosschat) {
-					Thread chatclient = new Thread(new Runnable() {
-						@Override
-						public synchronized void run() {
-							String message = NetClient.colorizeName(e.player.id, e.player.name)+" [white]: "+e.message;
-							EssentialChatClient.main(message, e.player);
-						}
-					});
-					chatclient.start();
+					if(clientenable){
+						Thread chatclient = new Thread(new Runnable() {
+							@Override
+							public synchronized void run() {
+								String message = NetClient.colorizeName(e.player.id, e.player.name)+" [white]: "+e.message;
+								EssentialChatClient.main(message, e.player);
+							}
+						});
+						chatclient.start();
+					} else {
+						e.player.sendMessage("Currently server isn't enable cross-server client!");
+					}
 				}
 			}
 		});
@@ -212,6 +231,16 @@ public class Main extends Plugin{
 					break;
 			}
 		});
+
+        handler.register("blacklist", "<nickname>", "Block special nickname.", arg -> {
+        	// todo add remove option
+            String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+            JSONTokener parser = new JSONTokener(db);
+            JSONArray object = new JSONArray(parser);
+            object.put(arg[0]);
+			Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
+			Log.info("[Essentials] "+arg[0]+" nickname is registered in blacklist.");
+        });
 	}
 
 	@Override
