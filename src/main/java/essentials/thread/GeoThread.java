@@ -5,6 +5,9 @@ import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 
 public class GeoThread implements Runnable{
     private String ip;
@@ -18,11 +21,28 @@ public class GeoThread implements Runnable{
         this.isLocal = isLocal;
     }
 
+    public static boolean ifip(InetAddress addr) {
+        if (addr.isAnyLocalAddress() || addr.isLoopbackAddress())
+            return true;
+        try {
+            return NetworkInterface.getByInetAddress(addr) != null;
+        } catch (SocketException e) {
+            return false;
+        }
+    }
+
     @Override
     public void run() {
         Thread.currentThread().setName("Get geolocation thread");
+        boolean isLocal = false;
+        try {
+            isLocal = ifip(InetAddress.getByName(ip));
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
 
-        if(isLocal || ip.matches("^192.168.") || ip.matches("^127.0.0.1")) {
+        if(isLocal) {
             geo = "Local IP";
             geocode = "LC";
             lang = "en";

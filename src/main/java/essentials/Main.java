@@ -65,6 +65,9 @@ public class Main extends Plugin{
 
 		// Set if player join event
         Events.on(PlayerJoin.class, e -> {
+			// Database read/write
+			EssentialPlayer.main(e.player);
+
         	// Check if realname enabled
 			if(realname){
 				JSONObject db = getData(e.player.uuid);
@@ -86,9 +89,6 @@ public class Main extends Plugin{
 			// Show motd
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			e.player.sendMessage(motd);
-
-			// Database read/write
-			EssentialPlayer.main(e.player);
 
 			// Give join exp
 			Thread expthread = new Thread(new Runnable() {
@@ -132,10 +132,12 @@ public class Main extends Plugin{
 		Events.on(EventType.BlockBuildEndEvent.class, event -> {
 			if (!event.breaking && event.player != null && event.player.buildRequest() != null) {
 				JSONObject db = getData(event.player.uuid);
-				int data = db.getInt("placecount");
-				data++;
-				db.put("placecount", data);
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/" + event.player.uuid + ".json").writeString(String.valueOf(db));
+				try{
+					int data = db.getInt("placecount");
+					data++;
+					db.put("placecount", data);
+					Core.settings.getDataDirectory().child("plugins/Essentials/players/" + event.player.uuid + ".json").writeString(String.valueOf(db));
+				} catch (Exception ignored){}
 			}
 		});
 

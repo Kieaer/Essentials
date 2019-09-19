@@ -48,12 +48,15 @@ class EssentialConfig {
                 e.printStackTrace();
             }
             yaml.dump(data, writer);
+
+            Log.info("[Essentials] config file created!");
         }
 
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").exists()){
             JSONObject ban = new JSONObject();
             String json = ban.toString();
             Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(json);
+            Log.info("[Essentials] banned file created!");
         }
 
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
@@ -66,9 +69,8 @@ class EssentialConfig {
             JSONArray blacklist = new JSONArray();
             String json = blacklist.toString();
             Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(json);
+            Log.info("[Essentials] blacklist file created!");
         }
-
-        Log.info("[Essentials] config file created!");
 
         if (Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()){
             Yaml yaml = new Yaml();
