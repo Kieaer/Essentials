@@ -43,17 +43,22 @@ public class EssentialPlayer{
         int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
         int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
-        createNewDatabase(player.name, player.uuid, geo, geocode,
-                0, 0, 0, 0, timesjoined,
-                timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
-                "none", "00:00.00", "none", 0, 0, 0,
-                0, 0, "none", 0, false, languages, false);
+        try {
+            createNewDatabase(player.name, player.uuid, geo, geocode,
+                    0, 0, 0, 0, timesjoined,
+                    timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
+                    "none", "00:00.00", "none", 0, 0, 0,
+                    0, 0, "none", 0, false, languages, false);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat) {
         try {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
-            String sql = "CREATE TABLE IF NOT EXISTS players (\n" +
+            if(conn != null){
+                String sql = "CREATE TABLE IF NOT EXISTS players (\n" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
                         "name TEXT,\n" +
                         "uuid TEXT,\n" +
@@ -86,16 +91,18 @@ public class EssentialPlayer{
                         "translate TEXT,\n" +
                         "crosschat TEXT\n" +
                         ");";
-            Statement stmt = conn.createStatement();
-            stmt.execute(sql);
+                Statement stmt = conn.createStatement();
+                stmt.execute(sql);
+                stmt.close();
+            }
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
-            //Class.forName("org.sqlite.JDBC");
-            //assert conn != null;
-            //Statement stmt  = conn.createStatement();
+            Class.forName("org.sqlite.JDBC");
+            assert conn != null;
+            Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
-                String sql1 = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                PreparedStatement pstmt = conn.prepareStatement(sql1);
+                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
                 pstmt.setString(3, country);
@@ -134,8 +141,8 @@ public class EssentialPlayer{
             rs.close();
             stmt.close();
             conn.close();
-        } catch (SQLException | ClassNotFoundException e){
-            e.getStackTrace();
+        } catch (Exception e){
+            e.printStackTrace();
         }
 	}
 

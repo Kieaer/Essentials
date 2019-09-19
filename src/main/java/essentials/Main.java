@@ -23,15 +23,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.awt.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -44,6 +39,8 @@ import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
 	public Main(){
+		String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+
 	    // Start config file
 	    EssentialConfig.main();
 
@@ -129,15 +126,31 @@ public class Main extends Plugin{
 		});
 
 		// Set if player build block event
-		Events.on(EventType.BlockBuildEndEvent.class, event -> {
-			if (!event.breaking && event.player != null && event.player.buildRequest() != null) {
-				JSONObject db = getData(event.player.uuid);
+		Events.on(EventType.BlockBuildEndEvent.class, e -> {
+			if (!e.breaking && e.player != null && e.player.buildRequest() != null) {
+				JSONObject db = getData(e.player.uuid);
 				try{
 					int data = db.getInt("placecount");
 					data++;
-					db.put("placecount", data);
-					Core.settings.getDataDirectory().child("plugins/Essentials/players/" + event.player.uuid + ".json").writeString(String.valueOf(db));
-				} catch (Exception ignored){}
+
+					String sql = "UPDATE players SET placecount = ? WHERE uuid = ?";
+
+					try{
+						Class.forName("org.sqlite.JDBC");
+						Connection conn = DriverManager.getConnection(url);
+
+						PreparedStatement pstmt = conn.prepareStatement(sql);
+						pstmt.setInt(1, data);
+						pstmt.setString(2, e.player.uuid);
+						pstmt.executeUpdate();
+						pstmt.close();
+						conn.close();
+					} catch (Exception ex){
+						ex.printStackTrace();
+					}
+				} catch (Exception ex){
+					ex.printStackTrace();
+				}
 			}
 		});
 

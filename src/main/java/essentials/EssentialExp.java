@@ -76,10 +76,23 @@ public class EssentialExp {
         int exp = (int) db.get("exp");
         int joincount = (int) db.get("joincount");
 
-        db.put("exp", exp+joincount);
+        int result = exp+joincount;
 
-        String json = db.toString();
-        Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").writeString(json);
+        String sql = "UPDATE players SET exp = ? WHERE uuid = ?";
+
+        try{
+            Class.forName("org.sqlite.JDBC");
+            Connection conn = DriverManager.getConnection(url);
+
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, result);
+            pstmt.setString(2, uuid);
+            pstmt.executeUpdate();
+            pstmt.close();
+            conn.close();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     };
 }
 
