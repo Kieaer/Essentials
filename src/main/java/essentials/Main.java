@@ -4,8 +4,9 @@ import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
-import io.anuke.arc.util.CommandHandler;
-import io.anuke.arc.util.Log;
+import io.anuke.arc.graphics.Pixmap;
+import io.anuke.arc.graphics.PixmapIO;
+import io.anuke.arc.util.*;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.core.NetClient;
@@ -34,8 +35,7 @@ import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
-import static io.anuke.mindustry.Vars.netServer;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin{
 	public Main(){
@@ -272,7 +272,6 @@ public class Main extends Plugin{
 	@Override
 	public void registerClientCommands(CommandHandler handler){
 		String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
-
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			player.sendMessage(motd);
@@ -489,6 +488,7 @@ public class Main extends Plugin{
 			if(value.equals("false")){
 				set = "true";
 				player.sendMessage("[green][INFO] [] translate enabled.");
+				player.sendMessage("This translation uses the papago API, some languages may not be supported. (Google is paid)");
 				player.sendMessage("Note: Translated letters are marked with [#F5FF6B]this[white] color.");
 			} else {
 				set = "false";

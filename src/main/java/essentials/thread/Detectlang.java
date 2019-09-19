@@ -90,11 +90,18 @@ public class Detectlang {
             br.close();
             JSONTokener parser = new JSONTokener(response.toString());
             JSONObject object = new JSONObject(parser);
+
             JSONObject v1 = (JSONObject) object.get("message");
             JSONObject v2 = (JSONObject) v1.get("result");
             String v3 = String.valueOf(v2.get("translatedText"));
             if(translate){
-                player.sendMessage("[orange]["+player.name+"][white]: [#F5FF6B]" + v3);
+                if(responseCode == 400){
+                    JSONObject e1 = (JSONObject) object.get("errorCode");
+                    JSONObject e2 = (JSONObject) object.get("errorMessage");
+                    player.sendMessage(e1+"/ ErrorCode:"+e2);
+                } else {
+                    player.sendMessage("[orange][" + player.name + "][white]: [#F5FF6B]" + v3);
+                }
             }
         } catch (Exception f) {
             f.getStackTrace();
