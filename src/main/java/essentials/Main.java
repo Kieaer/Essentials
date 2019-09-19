@@ -538,5 +538,14 @@ public class Main extends Plugin{
 				e.printStackTrace();
 			}
 		});
+
+		handler.<Player>register("login", "<id> <password>", "Login account", (args, player) -> {
+			player.sendMessage("This command isn't avaliable now!");
+		});
+
+		handler.<Player>register("ch", "<id> <password> <password_repeat>", "Register account", (args, player) -> {
+			// todo Must use id/password save algorithm is SHA-512 or higher
+			player.sendMessage("This command isn't avaliable now!");
+		});
 	}
 }

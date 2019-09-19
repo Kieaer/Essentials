@@ -7,7 +7,7 @@ import org.json.JSONObject;
 public class EssentialRPG {
     public EssentialRPG(){
         Events.on(EventType.PlayerJoin.class, e -> {
-            
+            JSONObject db = EssentialPlayer.getData(e.player.uuid);
         });
     }
 }
