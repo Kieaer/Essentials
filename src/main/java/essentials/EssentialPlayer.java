@@ -19,7 +19,7 @@ import java.util.Locale;
 
 public class EssentialPlayer{
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
-    static void main(Player player){
+    static void main(Player player, String id, String pw){
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
@@ -48,12 +48,12 @@ public class EssentialPlayer{
                     0, 0, 0, 0, timesjoined,
                     timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
                     "none", "00:00.00", "none", 0, 0, 0,
-                    0, 0, "none", 0, false, languages, false);
+                    0, 0, "none", 0, false, languages, false, id, pw);
         } catch (Exception e){
             e.printStackTrace();
         }
     }
-	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat) {
+	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat, String id, String pw) {
         try {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
@@ -90,6 +90,8 @@ public class EssentialPlayer{
                         "bantime INTEGER,\n" +
                         "translate TEXT,\n" +
                         "crosschat TEXT\n" +
+                        "id TEXT\n" +
+                        "pw TEXT\n" +
                         ");";
                 Statement stmt = conn.createStatement();
                 stmt.execute(sql);
@@ -101,7 +103,7 @@ public class EssentialPlayer{
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
-                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'id', 'pw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
@@ -133,6 +135,8 @@ public class EssentialPlayer{
                 pstmt.setInt(28, bantime);
                 pstmt.setBoolean(29, translate);
                 pstmt.setBoolean(30, crosschat);
+                pstmt.setString(31, id);
+                pstmt.setString(32, pw);
                 pstmt.executeUpdate();
                 pstmt.close();
                 conn.close();

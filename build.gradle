@@ -11,6 +11,8 @@ repositories{
 }
 
 dependencies{
+    compile group: 'at.favre.lib', name: 'bcrypt', version: '0.8.0'
+
     compileOnly "com.github.Anuken.Arc:arc-core:master"
     compileOnly "com.github.Anuken.Mindustry:core:master"
     compile 'org.jsoup:jsoup:1.12.1'

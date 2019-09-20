@@ -1,12 +1,12 @@
 package essentials;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
-import io.anuke.arc.graphics.Pixmap;
-import io.anuke.arc.graphics.PixmapIO;
-import io.anuke.arc.util.*;
+import io.anuke.arc.util.CommandHandler;
+import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.core.NetClient;
@@ -35,7 +35,8 @@ import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
-import static io.anuke.mindustry.Vars.*;
+import static io.anuke.mindustry.Vars.netServer;
+import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
 	public Main(){
@@ -63,7 +64,10 @@ public class Main extends Plugin{
 		// Set if player join event
         Events.on(PlayerJoin.class, e -> {
 			// Database read/write
-			EssentialPlayer.main(e.player);
+			// Debug only
+			String id = "";
+			String pw = "";
+			EssentialPlayer.main(e.player, id, pw);
 
         	// Check if realname enabled
 			if(realname){
@@ -540,12 +544,78 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("login", "<id> <password>", "Login account", (args, player) -> {
+			/*
+			String sql = "SELECT * FROM players WHERE id = '"+args[0]+"' AND pw = '"+args[1]+"'";
+
+			String id = args[0];
+			String value = BCrypt.withDefaults().hashToString(20, args[1].toCharArray());
+			BCrypt.Result result = BCrypt.verifyer().verify(args[1].toCharArray(), value);
+
+			try {
+				Class.forName("org.sqlite.JDBC");
+				Connection conn = DriverManager.getConnection(url);
+				PreparedStatement pstm = conn.prepareStatement("SELECT * FROM login WHERE login = ? AND password = ?");
+				pstm.setString(1, id);
+				pstm.setString(2, value);
+				pstm.executeUpdate();
+
+				ResultSet rs = pstm.executeQuery();
+				if (rs.next()){
+					//set uuid and IP
+					pstm = conn.prepareStatement("UPDATE players SET lastdate = ?, WHERE uuid = ?");
+					pstm.setString(1, uuid);
+					pstm.setString(2, login);
+					pstm.setString(3, pwd);
+					pstm.executeUpdate();
+					return true;
+				} else {
+					return false;
+				}
+				return true;
+			} catch (Exception e){
+				e.printStackTrace();
+			}
+
+
+			/*
+			String sql = "SELECT * FROM players WHERE id = '"+args[0]+"' AND pw = '"+args[1]+"'";
+			JSONObject json = new JSONObject();
+
+			try {
+				Class.forName("org.sqlite.JDBC");
+				Connection conn = DriverManager.getConnection(url);
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				ResultSet rs = pstmt.executeQuery(sql);
+				if (rs.next()){
+					//set uuid and IP
+					pstm = conn.prepareStatement("UPDATE players SET lastdate = ?, WHERE uuid = ?");
+					pstm.setString(1, uuid);
+					pstm.setString(2, login);
+					pstm.setString(3, pwd);
+					pstm.executeUpdate();
+					return true;
+				} else {
+					return false;
+				}
+			} catch (Exception e){
+				e.printStackTrace();
+			}
+			*/
 			player.sendMessage("This command isn't avaliable now!");
 		});
 
-		handler.<Player>register("ch", "<id> <password> <password_repeat>", "Register account", (args, player) -> {
-			// todo Must use id/password save algorithm is SHA-512 or higher
+		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (args, player) -> {
 			player.sendMessage("This command isn't avaliable now!");
+			/*
+			// todo Must use id/password save algorithm is SHA-512 or higher
+			if(!args[0].equals(args[1])){
+				player.sendMessage("The password you entered is not the same.");
+			} else {
+				String value = args[0];
+				player.sendMessage("Encrypting...");
+				String result = BCrypt.withDefaults().hashToString(20, value.toCharArray());
+			}
+			*/
 		});
 	}
 }
