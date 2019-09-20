@@ -1,6 +1,5 @@
 package essentials;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -24,7 +23,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
@@ -363,20 +364,6 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (args, player) -> {
-			Player other1 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
-			Player other2 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[1]));
-			if(!player.isAdmin){
-				player.sendMessage("[green]Notice:[] You're not admin!");
-			} else {
-				if(other1 == null || other2 == null){
-					player.sendMessage("[scarlet]No player by that name found!");
-					return;
-				}
-				other1.setNet(other2.x, other2.y);
-			}
-		});
-
 		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
 			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
@@ -541,81 +528,6 @@ public class Main extends Plugin{
 			} catch (Exception e){
 				e.printStackTrace();
 			}
-		});
-
-		handler.<Player>register("login", "<id> <password>", "Login account", (args, player) -> {
-			/*
-			String sql = "SELECT * FROM players WHERE id = '"+args[0]+"' AND pw = '"+args[1]+"'";
-
-			String id = args[0];
-			String value = BCrypt.withDefaults().hashToString(20, args[1].toCharArray());
-			BCrypt.Result result = BCrypt.verifyer().verify(args[1].toCharArray(), value);
-
-			try {
-				Class.forName("org.sqlite.JDBC");
-				Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstm = conn.prepareStatement("SELECT * FROM login WHERE login = ? AND password = ?");
-				pstm.setString(1, id);
-				pstm.setString(2, value);
-				pstm.executeUpdate();
-
-				ResultSet rs = pstm.executeQuery();
-				if (rs.next()){
-					//set uuid and IP
-					pstm = conn.prepareStatement("UPDATE players SET lastdate = ?, WHERE uuid = ?");
-					pstm.setString(1, uuid);
-					pstm.setString(2, login);
-					pstm.setString(3, pwd);
-					pstm.executeUpdate();
-					return true;
-				} else {
-					return false;
-				}
-				return true;
-			} catch (Exception e){
-				e.printStackTrace();
-			}
-
-
-			/*
-			String sql = "SELECT * FROM players WHERE id = '"+args[0]+"' AND pw = '"+args[1]+"'";
-			JSONObject json = new JSONObject();
-
-			try {
-				Class.forName("org.sqlite.JDBC");
-				Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(sql);
-				ResultSet rs = pstmt.executeQuery(sql);
-				if (rs.next()){
-					//set uuid and IP
-					pstm = conn.prepareStatement("UPDATE players SET lastdate = ?, WHERE uuid = ?");
-					pstm.setString(1, uuid);
-					pstm.setString(2, login);
-					pstm.setString(3, pwd);
-					pstm.executeUpdate();
-					return true;
-				} else {
-					return false;
-				}
-			} catch (Exception e){
-				e.printStackTrace();
-			}
-			*/
-			player.sendMessage("This command isn't avaliable now!");
-		});
-
-		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (args, player) -> {
-			player.sendMessage("This command isn't avaliable now!");
-			/*
-			// todo Must use id/password save algorithm is SHA-512 or higher
-			if(!args[0].equals(args[1])){
-				player.sendMessage("The password you entered is not the same.");
-			} else {
-				String value = args[0];
-				player.sendMessage("Encrypting...");
-				String result = BCrypt.withDefaults().hashToString(20, value.toCharArray());
-			}
-			*/
 		});
 	}
 }

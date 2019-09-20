@@ -48,12 +48,12 @@ public class EssentialPlayer{
                     0, 0, 0, 0, timesjoined,
                     timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
                     "none", "00:00.00", "none", 0, 0, 0,
-                    0, 0, "none", 0, false, languages, false, id, pw);
+                    0, 0, "none", 0, false, languages, false);
         } catch (Exception e){
             e.printStackTrace();
         }
     }
-	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat, String id, String pw) {
+	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat) {
         try {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
@@ -90,8 +90,6 @@ public class EssentialPlayer{
                         "bantime INTEGER,\n" +
                         "translate TEXT,\n" +
                         "crosschat TEXT\n" +
-                        "id TEXT\n" +
-                        "pw TEXT\n" +
                         ");";
                 Statement stmt = conn.createStatement();
                 stmt.execute(sql);
@@ -135,8 +133,6 @@ public class EssentialPlayer{
                 pstmt.setInt(28, bantime);
                 pstmt.setBoolean(29, translate);
                 pstmt.setBoolean(30, crosschat);
-                pstmt.setString(31, id);
-                pstmt.setString(32, pw);
                 pstmt.executeUpdate();
                 pstmt.close();
                 conn.close();
