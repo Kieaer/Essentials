@@ -22,6 +22,7 @@ import io.anuke.mindustry.plugin.Plugin;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.yaml.snakeyaml.Yaml;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -29,6 +30,7 @@ import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -45,6 +47,9 @@ public class Main extends Plugin{
 
 	    // Start config file
 	    EssentialConfig.main();
+
+	    // Start log
+		//EssentialLog.main();
 
 	    // Start chat server
 		if(serverenable){
@@ -65,10 +70,7 @@ public class Main extends Plugin{
 		// Set if player join event
         Events.on(PlayerJoin.class, e -> {
 			// Database read/write
-			// Debug only
-			String id = "";
-			String pw = "";
-			EssentialPlayer.main(e.player, id, pw);
+			EssentialPlayer.main(e.player);
 
         	// Check if realname enabled
 			if(realname){
@@ -86,7 +88,7 @@ public class Main extends Plugin{
 					e.player.con.kick(KickReason.idInUse);
 					Log.info(e.player.name+" nickname is blacklisted.");
 				}
-			};
+			}
 
 			// Show motd
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
@@ -136,9 +138,15 @@ public class Main extends Plugin{
 				JSONObject db = getData(e.player.uuid);
 				try{
 					int data = db.getInt("placecount");
+					int exp = db.getInt("exp");
+
+					Yaml yaml = new Yaml();
+					Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
+					int blockexp = Integer.parseInt(String.valueOf(obj.get(e.tile.block().name)));
+					int newexp = exp + blockexp;
 					data++;
 
-					String sql = "UPDATE players SET placecount = ? WHERE uuid = ?";
+					String sql = "UPDATE players SET placecount = ?, exp = ? WHERE uuid = ?";
 
 					try{
 						Class.forName("org.sqlite.JDBC");
@@ -146,7 +154,8 @@ public class Main extends Plugin{
 
 						PreparedStatement pstmt = conn.prepareStatement(sql);
 						pstmt.setInt(1, data);
-						pstmt.setString(2, e.player.uuid);
+						pstmt.setInt(2, newexp);
+						pstmt.setString(3, e.player.uuid);
 						pstmt.executeUpdate();
 						pstmt.close();
 						conn.close();
@@ -159,32 +168,32 @@ public class Main extends Plugin{
 			}
 		});
 
-		// todo make block break count
-		/*Events.on(EventType.BlockBuildEndEvent.class, event -> {})
-			if(event.breaking && event.builder != null && event.builder.buildRequest() != null && event.builder instanceof Player) {
-				JSONObject db = getData(((Player) event.builder).uuid);
-				int data = db.getInt("breakcount");
-				data++;
-				db.put("breakcount", data);
-				Core.settings.getDataDirectory().child("plugins/Essentials/players/"+((Player) event.builder).uuid+".json").writeString(String.valueOf(db));
-			}
-		});
-
-
-		// Count unit destory
 		Events.on(EventType.UnitDestroyEvent.class, event -> {
 			if(playerGroup != null && playerGroup.size() > 0){
 				for(int i=0;i<playerGroup.size();i++){
 					Player player = playerGroup.all().get(i);
 					JSONObject db = getData(player.uuid);
-					int data = db.getInt("killcount");
-					data++;
-					db.put("killcount", data);
-					Core.settings.getDataDirectory().child("plugins/Essentials/players/"+player.uuid+".json").writeString(String.valueOf(db));
+					int killcount = (int) db.get("killcount");
+					killcount++;
+
+					String sql = "UPDATE players SET breakcount = ? WHERE uuid = ?";
+
+					try{
+						Class.forName("org.sqlite.JDBC");
+						Connection conn = DriverManager.getConnection(url);
+
+						PreparedStatement pstmt = conn.prepareStatement(sql);
+						pstmt.setInt(1, killcount);
+						pstmt.setString(2, player.uuid);
+						pstmt.executeUpdate();
+						pstmt.close();
+						conn.close();
+					} catch (Exception ex){
+						ex.printStackTrace();
+					}
 				}
 			}
 		});
-		*/
 
 		Timer timer = new Timer();
 		TimerTask playtime = new TimerTask(){
@@ -272,6 +281,34 @@ public class Main extends Plugin{
 			Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
 			Log.info("[Essentials] "+arg[0]+" nickname is registered in blacklist.");
         });
+
+		handler.<Player>register("allinfo", "<name>", "Show player information", (args, player) -> {
+			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
+			JSONObject db = getData(other.uuid);
+			String datatext =
+					"\nPlayer Information\n" +
+							"========================================\n" +
+							"Name: "+other.name+"\n" +
+							"UUID: "+other.uuid+"\n" +
+							"Mobile: "+other.isMobile+"\n" +
+							"Country: "+db.get("country")+"\n" +
+							"Block place: "+db.get("placecount")+"\n" +
+							"Block break: "+db.get("breakcount")+"\n" +
+							"Kill units: "+db.get("killcount")+"\n" +
+							"Death count: "+db.get("deathcount")+"\n" +
+							"Join count: "+db.get("joincount")+"\n" +
+							"Kick count: "+db.get("kickcount")+"\n" +
+							"Level: "+db.get("level")+"\n" +
+							"XP: "+db.get("reqtotalexp")+"\n" +
+							"First join: "+db.get("firstdate")+"\n" +
+							"Last join: "+db.get("lastdate")+"\n" +
+							"Playtime: "+db.get("playtime")+"\n" +
+							"Attack clear: "+db.get("attackclear")+"\n" +
+							"PvP Win: "+db.get("pvpwincount")+"\n" +
+							"PvP Lose: "+db.get("pvplosecount")+"\n" +
+							"PvP Surrender: "+db.get("pvpbreakout");
+			Log.info(datatext);
+		});
 	}
 
 	@Override
@@ -413,7 +450,7 @@ public class Main extends Plugin{
 					Call.sendMessage("Game over vote [orange]"+v1+"[]/[green]"+v2+"[] required");
 					if (v1<v2){return;}
 					votes.clear();
-					Events.fire(new EventType.GameOverEvent(Team.crux));;
+					Events.fire(new EventType.GameOverEvent(Team.crux));
 					break;
 				case "map":
 					player.sendMessage("Not available map vote features now!");

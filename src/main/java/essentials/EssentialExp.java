@@ -8,9 +8,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
+import static essentials.EssentialConfig.basexp;
+import static essentials.EssentialConfig.exponent;
+
 public class EssentialExp {
-    private static final double BASE_XP = 500;
-    private static final double EXPONENT = 1.08f;
+    private static final double BASE_XP = basexp;
+    private static final double EXPONENT = exponent;
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
 
     public static void exp(String name, String uuid) {
@@ -93,6 +96,6 @@ public class EssentialExp {
         } catch (Exception e){
             e.printStackTrace();
         }
-    };
+    }
 }
 
