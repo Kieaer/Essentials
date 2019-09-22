@@ -29,6 +29,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | ch | &lt;message&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
 | status |  | Show currently server status (TPS, RAM, Players/ban count) |
 | tempban | &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
+| color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 <!--
 | spawnmob |  | Spawn mob |
 | effect |  | make effect |
