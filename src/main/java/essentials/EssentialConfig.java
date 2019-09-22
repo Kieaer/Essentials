@@ -4,15 +4,11 @@ import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-class EssentialConfig {
+public class EssentialConfig {
     static String clienthost;
     static int clientport;
     static int serverport;
@@ -22,12 +18,12 @@ class EssentialConfig {
     static boolean clientenable;
     static double basexp;
     static double exponent;
+    public static int cupdatei;
 
     static void main() {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
-            String text =
-                   "# server to server chat config\n" +
+            String text = "# server to server chat config\n" +
                     "server-enable: false\n" +
                     "server-port: 25000\n\n" +
                     "client-port: 20000\n" +
@@ -35,7 +31,11 @@ class EssentialConfig {
                     "client-host: localhost\n\n" +
 
                     "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
+                    "# If you want colornick features, must enable this.\n" +
                     "realname: true\n\n" +
+
+                    "# Color nickname update interval. 1sec = 1000\n" +
+                    "colornick update interval: 1000\n\n" +
 
                     "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
                     "detectreactor: true\n\n" +
@@ -214,6 +214,7 @@ class EssentialConfig {
             clientenable = Boolean.parseBoolean(String.valueOf(obj.get("client-enable")));
             basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
             exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
+            cupdatei = Integer.parseInt(String.valueOf(obj.get("colornick update interval")));
             Log.info("[Essentials] config file loaded!");
         }
     }

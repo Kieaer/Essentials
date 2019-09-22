@@ -1,5 +1,6 @@
 package essentials;
 
+import essentials.special.ColorNick;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -33,6 +34,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
@@ -71,22 +74,40 @@ public class Main extends Plugin{
         Events.on(PlayerJoin.class, e -> {
 			// Database read/write
 			EssentialPlayer.main(e.player);
+			JSONObject db = getData(e.player.uuid);
+
+			// if player has color nickname
+
+			// Write player connected
+			try{
+				String sql = "UPDATE players SET connected = ? WHERE uuid = ?";
+				Class.forName("org.sqlite.JDBC");
+				Connection conn = DriverManager.getConnection(url);
+
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				pstmt.setBoolean(1, true);
+				pstmt.setString(2, e.player.uuid);
+				pstmt.executeUpdate();
+				pstmt.close();
+				conn.close();
+			} catch (Exception ex){
+				ex.printStackTrace();
+			}
 
         	// Check if realname enabled
 			if(realname){
-				JSONObject db = getData(e.player.uuid);
-				e.player.name = String.valueOf(db.get("name"));
+				e.player.name = db.getString("name");
 			}
 
 			// Check if blacklisted nickname
-			String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
-			JSONTokener parser = new JSONTokener(db);
+			String blacklist = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+			JSONTokener parser = new JSONTokener(blacklist);
 			JSONArray array = new JSONArray(parser);
 
 			for (int i = 0; i < array.length(); i++){
 				if (array.getString(i).equals(e.player.name)){
 					e.player.con.kick(KickReason.idInUse);
-					Log.info(e.player.name+" nickname is blacklisted.");
+					Log.info("[Essentials]"+e.player.name+" nickname is blacklisted.");
 				}
 			}
 
@@ -102,6 +123,51 @@ public class Main extends Plugin{
 				}
 			});
 			expthread.start();
+
+			// Color nickname
+			int colornick = Integer.parseInt(db.getString("colornick"));
+			if(realname && colornick == 1){
+				ColorNick.main(e.player);
+			} else if(!realname && colornick == 0){
+				Log.warn("[Essentials] Color nickname must be enabled before 'realname' can be enabled.");
+
+				String sql = "UPDATE players SET colornick = ? WHERE uuid = ?";
+
+				try{
+					Class.forName("org.sqlite.JDBC");
+					Connection conn = DriverManager.getConnection(url);
+
+					PreparedStatement pstmt = conn.prepareStatement(sql);
+					pstmt.setBoolean(1, false);
+					pstmt.setString(2, e.player.uuid);
+					pstmt.executeUpdate();
+					pstmt.close();
+					conn.close();
+				} catch (Exception ex){
+					ex.printStackTrace();
+				}
+			}
+		});
+
+		Events.on(EventType.PlayerLeave.class, e -> {
+			JSONObject db = getData(e.player.uuid);
+			e.player.name = db.getString("name");
+
+			String sql = "UPDATE players SET connected = ? WHERE uuid = ?";
+
+			try{
+				Class.forName("org.sqlite.JDBC");
+				Connection conn = DriverManager.getConnection(url);
+
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				pstmt.setBoolean(1, false);
+				pstmt.setString(2, e.player.uuid);
+				pstmt.executeUpdate();
+				pstmt.close();
+				conn.close();
+			} catch (Exception ex){
+				ex.printStackTrace();
+			}
 		});
 
 		// Set if player chat event
@@ -111,8 +177,8 @@ public class Main extends Plugin{
 			if(!check.equals("/")) {
 				//boolean valid = e.message.matches("\\w+");
 				JSONObject db = getData(e.player.uuid);
-				boolean translate = Boolean.parseBoolean(String.valueOf(db.get("translate")));
-				boolean crosschat = Boolean.parseBoolean(String.valueOf(db.get("crosschat")));
+				boolean translate = Boolean.parseBoolean(db.getString("translate"));
+				boolean crosschat = Boolean.parseBoolean(db.getString("crosschat"));
 
 				detectlang(translate, e.player, e.message);
 				if (crosschat) {
@@ -173,7 +239,7 @@ public class Main extends Plugin{
 				for(int i=0;i<playerGroup.size();i++){
 					Player player = playerGroup.all().get(i);
 					JSONObject db = getData(player.uuid);
-					int killcount = (int) db.get("killcount");
+					int killcount = db.getInt("killcount");
 					killcount++;
 
 					String sql = "UPDATE players SET breakcount = ? WHERE uuid = ?";
@@ -285,8 +351,7 @@ public class Main extends Plugin{
 		handler.<Player>register("allinfo", "<name>", "Show player information", (args, player) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 			JSONObject db = getData(other.uuid);
-			String datatext =
-					"\nPlayer Information\n" +
+			String datatext = "\nPlayer Information\n" +
 							"========================================\n" +
 							"Name: "+other.name+"\n" +
 							"UUID: "+other.uuid+"\n" +
@@ -390,15 +455,11 @@ public class Main extends Plugin{
 		// Teleport source from https://github.com/J-VdS/locationplugin
 		handler.<Player>register("tp", "<player>", "Teleport to other players", (args, player) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
-			if(!player.isAdmin){
-				player.sendMessage("[green]Notice:[] You're not admin!");
-			} else {
-				if(other == null){
-					player.sendMessage("[scarlet]No player by that name found!");
-					return;
-				}
-				player.setNet(other.x, other.y);
+			if(other == null){
+				player.sendMessage("[scarlet]No player by that name found!");
+				return;
 			}
+			player.setNet(other.x, other.y);
 		});
 
 		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
@@ -510,16 +571,16 @@ public class Main extends Plugin{
 
 		handler.<Player>register("tr", "Enable/disable Translate all chat", (args, player) -> {
 			JSONObject db = getData(player.uuid);
-			String value = String.valueOf(db.get("translate"));
-			String set;
+			int value = Integer.parseInt(db.getString("translate"));
+			boolean set;
 			String sql = "UPDATE players SET translate = ? WHERE uuid = ?";
-			if(value.equals("false")){
-				set = "true";
+			if(value == 0){
+				set = true;
 				player.sendMessage("[green][INFO] [] translate enabled.");
 				player.sendMessage("This translation uses the papago API, some languages may not be supported. (Google is paid)");
 				player.sendMessage("Note: Translated letters are marked with [#F5FF6B]this[white] color.");
 			} else {
-				set = "false";
+				set = false;
 				player.sendMessage("[green][INFO] [] translate disabled.");
 			}
 
@@ -528,7 +589,7 @@ public class Main extends Plugin{
 				Connection conn = DriverManager.getConnection(url);
 
 				PreparedStatement pstmt = conn.prepareStatement(sql);
-				pstmt.setString(1, set);
+				pstmt.setBoolean(1, set);
 				pstmt.setString(2, player.uuid);
 				pstmt.executeUpdate();
 				pstmt.close();
@@ -540,15 +601,15 @@ public class Main extends Plugin{
 
 		handler.<Player>register("ch", "Send chat to another server.", (args, player) -> {
 			JSONObject db = getData(player.uuid);
-			String value = String.valueOf(db.get("crosschat"));
-			String set;
+			int value = Integer.parseInt(db.getString("crosschat"));
+			boolean set;
 			String sql = "UPDATE players SET crosschat = ? WHERE uuid = ?";
-			if(value.equals("false")){
-				set = "true";
+			if(value == 0){
+				set = true;
 				player.sendMessage("[green][INFO] [] Crosschat enabled.");
 				player.sendMessage("[yellow]Note[]: [#357EC7][SC][] prefix is 'Send Chat', [#C77E36][RC][] prefix is 'Received Chat'.");
 			} else {
-				set = "false";
+				set = false;
 				player.sendMessage("[green][INFO] [] Crosschat disabled.");
 			}
 
@@ -557,13 +618,47 @@ public class Main extends Plugin{
 				Connection conn = DriverManager.getConnection(url);
 
 				PreparedStatement pstmt = conn.prepareStatement(sql);
-				pstmt.setString(1, set);
+				pstmt.setBoolean(1, set);
 				pstmt.setString(2, player.uuid);
 				pstmt.executeUpdate();
 				pstmt.close();
 				conn.close();
 			} catch (Exception e){
 				e.printStackTrace();
+			}
+		});
+
+		handler.<Player>register("color", "Enable color nickname", (args, player) -> {
+			if(!player.isAdmin){
+				player.sendMessage("[green]Notice:[] You're not admin!");
+			} else {
+				JSONObject db = getData(player.uuid);
+				int value = Integer.parseInt(db.getString("colornick"));
+				boolean set;
+				String sql = "UPDATE players SET colornick = ? WHERE uuid = ?";
+				if(value == 0){
+					set = true;
+					player.sendMessage("[green][INFO] [] colornick enabled.");
+					player.sendMessage("[yellow]Note[]: This's a test function and can be forced to change the nickname.");
+					player.sendMessage("[yellow]Note[]: Reconnect to apply color nickname effect.");
+				} else {
+					set = false;
+					player.sendMessage("[green][INFO] [] colornick disabled.");
+				}
+
+				try{
+					Class.forName("org.sqlite.JDBC");
+					Connection conn = DriverManager.getConnection(url);
+
+					PreparedStatement pstmt = conn.prepareStatement(sql);
+					pstmt.setBoolean(1, set);
+					pstmt.setString(2, player.uuid);
+					pstmt.executeUpdate();
+					pstmt.close();
+					conn.close();
+				} catch (Exception e){
+					e.printStackTrace();
+				}
 			}
 		});
 	}

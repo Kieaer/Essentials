@@ -16,6 +16,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class EssentialPlayer{
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
@@ -43,17 +45,23 @@ public class EssentialPlayer{
         int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
         int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
+        // Remove color nickname
+        String changedname = player.name.replaceAll("\\[(.*?)]", "");
+
+        // Set non-color nickname
+        player.name = changedname;
+
         try {
-            createNewDatabase(player.name, player.uuid, geo, geocode,
+            createNewDatabase(changedname, player.uuid, geo, geocode,
                     0, 0, 0, 0, timesjoined,
                     timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
                     "none", "00:00.00", "none", 0, 0, 0,
-                    0, 0, "none", 0, false, languages, false);
+                    0, 0, "none", 0, false, languages, false, false, true);
         } catch (Exception e){
             e.printStackTrace();
         }
     }
-	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat) {
+	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat, boolean colornick, boolean connected) {
         try {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
@@ -89,7 +97,9 @@ public class EssentialPlayer{
                         "bantimeset TEXT,\n" +
                         "bantime INTEGER,\n" +
                         "translate TEXT,\n" +
-                        "crosschat TEXT\n" +
+                        "crosschat TEXT,\n" +
+                        "colornick TEXT,\n" +
+                        "connected TEXT\n" +
                         ");";
                 Statement stmt = conn.createStatement();
                 stmt.execute(sql);
@@ -101,7 +111,7 @@ public class EssentialPlayer{
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
-                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
@@ -133,6 +143,8 @@ public class EssentialPlayer{
                 pstmt.setInt(28, bantime);
                 pstmt.setBoolean(29, translate);
                 pstmt.setBoolean(30, crosschat);
+                pstmt.setBoolean(31, colornick);
+                pstmt.setBoolean(32, connected);
                 pstmt.executeUpdate();
                 pstmt.close();
                 conn.close();
@@ -187,6 +199,8 @@ public class EssentialPlayer{
                 json.put("bantime", rs.getInt("bantime"));
                 json.put("translate", rs.getString("translate"));
                 json.put("crosschat", rs.getString("crosschat"));
+                json.put("colornick", rs.getString("colornick"));
+                json.put("connected", rs.getString("connected"));
             }
             rs.close();
             stmt.close();
