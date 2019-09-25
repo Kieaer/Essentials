@@ -28,7 +28,10 @@ public class EssentialTimer {
         if(playerGroup.size() > 0){
             for(int i = 0; i < playerGroup.size(); i++){
                 Player p = playerGroup.all().get(i);
-                JSONObject db = getData(p.uuid);
+                JSONObject db = new JSONObject();
+                try {
+                    db = getData(p.uuid);
+                }catch (Exception ignored){}
 
                 String data;
                 if(db.has("playtime")){
