@@ -28,18 +28,9 @@ public class EssentialPlayer{
 
         boolean isLocal = player.isLocal;
 
-        Runnable georun = new GeoThread(ip, isLocal);
-        Thread geothread = new Thread(georun);
-        try {
-            geothread.start();
-            geothread.join();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-        }
-
-        String geo = GeoThread.getgeo();
-        String geocode = GeoThread.getgeocode();
-        String languages = GeoThread.getlang();
+        String geo = "Getting data...";
+        String geocode = "US";
+        String languages = "en";
 
         int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
         int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
@@ -59,6 +50,7 @@ public class EssentialPlayer{
         } catch (Exception e){
             e.printStackTrace();
         }
+        GeoThread.start(ip, isLocal, player.uuid);
     }
 	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat, boolean colornick, boolean connected) {
         try {

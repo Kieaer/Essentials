@@ -63,14 +63,14 @@ public class EssentialConfig {
         }
 
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").exists()) {
-            String text =
-                    "# crafting\n" +
+            String text = "# crafting\n" +
                     "graphite-press: 5\n" +
                     "multi-press: 15\n" +
                     "silicon-smelter: 5\n" +
                     "kiln: 8\n" +
                     "plastanium-compressor: 20\n" +
                     "phase-weaver: 35\n" +
+                    "alloy-smelter: 30\n" +
                     "cryofluidmixer: 15\n" +
                     "blast-mixer: 8\n" +
                     "pyratite-mixer: 12\n" +
@@ -81,7 +81,20 @@ public class EssentialConfig {
                     "coal-centrifuge: 3\n" +
                     "incinerator: 2\n\n" +
 
+                    "# Sandbox\n" +
+                    "power-void: 0\n" +
+                    "power-source: 0\n" +
+                    "item-source: 0\n" +
+                    "item-void: 0\n" +
+                    "liquid-source: 0\n" +
+                    "message: 0\n\n" +
+
                     "# Defence\n" +
+                    "scrap-wall: 0\n" +
+                    "scrap-wall-large: 0\n" +
+                    "scrap-wall-huge: 0\n" +
+                    "scrap-wall-gigantic: 0\n" +
+                    "thruster: 0\n" +
                     "copper-wall: 1\n" +
                     "copper-wall-large: 4\n" +
                     "titanium-wall: 2\n" +
@@ -103,6 +116,7 @@ public class EssentialConfig {
                     "# Distribution\n" +
                     "conveyor: 1\n" +
                     "titanium-conveyor: 2\n" +
+                    "armored-conveyor: 3\n" +
                     "junction: 1\n" +
                     "bridge-conveyor: 1\n" +
                     "phase-conveyor: 5\n" +
@@ -133,6 +147,7 @@ public class EssentialConfig {
                     "combustion-generator: 5\n" +
                     "thermal-generator: 8\n" +
                     "turbine-generator: 12\n" +
+                    "differential-generator: 20\n" +
                     "rtg-generator: 15\n" +
                     "solar-panel: 6\n" +
                     "solar-panel-large: 18\n" +

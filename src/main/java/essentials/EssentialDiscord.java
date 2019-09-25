@@ -12,10 +12,10 @@ import static essentials.EssentialConfig.webhookenable;
 public class EssentialDiscord {
     public static void main(){
         Events.on(EventType.PlayerChatEvent.class, e -> {
-            if(webhookenable){
+            if(!e.message.equals("/") && webhookenable) {
                 JSONObject db = EssentialPlayer.getData(e.player.uuid);
                 TemmieWebhook temmie = new TemmieWebhook(discordurl);
-                DiscordMessage dm = new DiscordMessage(db.getString("name"), e.player.lastText, "http://img06.deviantart.net/a35d/i/2016/056/c/3/temmie___undertale_by_tartifondue-d9t3h1h.png");
+                DiscordMessage dm = new DiscordMessage(db.getString("name"), e.message, "http://img06.deviantart.net/a35d/i/2016/056/c/3/temmie___undertale_by_tartifondue-d9t3h1h.png");
                 temmie.sendMessage(dm);
             }
         });

@@ -87,85 +87,19 @@ public class Main extends Plugin{
 		// Set if player join event
         Events.on(PlayerJoin.class, e -> {
 			// Database read/write
-			EssentialPlayer.main(e.player);
-			JSONObject db = getData(e.player.uuid);
+			Thread playerthread = new Thread(() -> {
+				Thread.currentThread().setName("PlayerJoin Thread");
+				EssentialPlayer.main(e.player);
+				JSONObject db = getData(e.player.uuid);
 
-			// if player has color nickname
-
-			// Write player connected
-			try{
-				String sql = "UPDATE players SET connected = ? WHERE uuid = ?";
-				Class.forName("org.sqlite.JDBC");
-				Connection conn = DriverManager.getConnection(url);
-
-				PreparedStatement pstmt = conn.prepareStatement(sql);
-				pstmt.setBoolean(1, true);
-				pstmt.setString(2, e.player.uuid);
-				pstmt.executeUpdate();
-				pstmt.close();
-				conn.close();
-			} catch (Exception ex){
-				ex.printStackTrace();
-			}
-
-        	// Check if realname enabled
-			if(realname){
-				e.player.name = db.getString("name");
-			}
-
-			// Check if blacklisted nickname
-			String blacklist = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
-			JSONTokener parser = new JSONTokener(blacklist);
-			JSONArray array = new JSONArray(parser);
-
-			for (int i = 0; i < array.length(); i++){
-				if (array.getString(i).equals(e.player.name)){
-					e.player.con.kick(KickReason.idInUse);
-					Log.info("[Essentials]"+e.player.name+" nickname is blacklisted.");
-				}
-			}
-
-			// Check VPN
-			if(antivpn){
-				String ipToLookup = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-				try {
-					boolean isHostingorVPN = new VPNDetection().getResponse(ipToLookup).hostip;
-					if(isHostingorVPN){
-						e.player.con.kick(KickReason.customClient);
-					}
-				} catch (IOException error) {
-					error.printStackTrace();
-				}
-			}
-
-			// Show motd
-			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
-			e.player.sendMessage(motd);
-
-			// Give join exp
-			Thread expthread = new Thread(new Runnable() {
-				@Override
-				public synchronized void run() {
-					EssentialExp.joinexp(e.player.uuid);
-				}
-			});
-			expthread.start();
-
-			// Color nickname
-			int colornick = Integer.parseInt(db.getString("colornick"));
-			if(realname && colornick == 1){
-				ColorNick.main(e.player);
-			} else if(!realname && colornick == 0){
-				Log.warn("[Essentials] Color nickname must be enabled before 'realname' can be enabled.");
-
-				String sql = "UPDATE players SET colornick = ? WHERE uuid = ?";
-
+				// Write player connected
 				try{
+					String sql = "UPDATE players SET connected = ? WHERE uuid = ?";
 					Class.forName("org.sqlite.JDBC");
 					Connection conn = DriverManager.getConnection(url);
 
 					PreparedStatement pstmt = conn.prepareStatement(sql);
-					pstmt.setBoolean(1, false);
+					pstmt.setBoolean(1, true);
 					pstmt.setString(2, e.player.uuid);
 					pstmt.executeUpdate();
 					pstmt.close();
@@ -173,7 +107,70 @@ public class Main extends Plugin{
 				} catch (Exception ex){
 					ex.printStackTrace();
 				}
-			}
+
+				// Check if realname enabled
+				if(realname){
+					e.player.name = db.getString("name");
+				}
+
+				// Check if blacklisted nickname
+				String blacklist = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				JSONTokener parser = new JSONTokener(blacklist);
+				JSONArray array = new JSONArray(parser);
+
+				for (int i = 0; i < array.length(); i++){
+					if (array.getString(i).equals(e.player.name)){
+						e.player.con.kick(KickReason.idInUse);
+						Log.info("[Essentials]"+e.player.name+" nickname is blacklisted.");
+					}
+				}
+
+				// Check VPN
+				if(antivpn){
+					String ipToLookup = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+					try {
+						boolean isHostingorVPN = new VPNDetection().getResponse(ipToLookup).hostip;
+						if(isHostingorVPN){
+							e.player.con.kick(KickReason.customClient);
+						}
+					} catch (IOException error) {
+						error.printStackTrace();
+					}
+				}
+
+				// Show motd
+				String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+				e.player.sendMessage(motd);
+
+				// Give join exp
+				Thread expthread = new Thread(() -> EssentialExp.joinexp(e.player.uuid));
+				expthread.start();
+
+				// Color nickname
+				int colornick = Integer.parseInt(db.getString("colornick"));
+				if(realname && colornick == 1){
+					ColorNick.main(e.player);
+				} else if(!realname && colornick == 0){
+					Log.warn("[Essentials] Color nickname must be enabled before 'realname' can be enabled.");
+
+					String sql = "UPDATE players SET colornick = ? WHERE uuid = ?";
+
+					try{
+						Class.forName("org.sqlite.JDBC");
+						Connection conn = DriverManager.getConnection(url);
+
+						PreparedStatement pstmt = conn.prepareStatement(sql);
+						pstmt.setBoolean(1, false);
+						pstmt.setString(2, e.player.uuid);
+						pstmt.executeUpdate();
+						pstmt.close();
+						conn.close();
+					} catch (Exception ex){
+						ex.printStackTrace();
+					}
+				}
+			});
+			playerthread.start();
 		});
 
 		Events.on(EventType.PlayerLeave.class, e -> {
@@ -238,6 +235,8 @@ public class Main extends Plugin{
 					int blockexp = 0;
 					if(String.valueOf(obj.get(e.tile.block().name)) != null) {
 						blockexp = Integer.parseInt(String.valueOf(obj.get(e.tile.block().name)));
+					} else {
+						blockexp = 5;
 					}
 					int newexp = exp + blockexp;
 					data++;
