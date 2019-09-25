@@ -55,7 +55,7 @@ public class EssentialConfig {
                     "antivpn: true\n\n" +
 
                     "# Use Discord webbook to send server conversations to Discord.\n" +
-                    "webhookenable: false" +
+                    "webhookenable: false\n" +
                     "discordurl: none";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
