@@ -29,7 +29,13 @@ public class EssentialTimer {
             for(int i = 0; i < playerGroup.size(); i++){
                 Player p = playerGroup.all().get(i);
                 JSONObject db = getData(p.uuid);
-                String data = db.getString("playtime");
+
+                String data;
+                if(db.has("playtime")){
+                    data = db.getString("playtime");
+                } else {
+                    return;
+                }
                 SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
                 Date d1;
                 Calendar cal;
