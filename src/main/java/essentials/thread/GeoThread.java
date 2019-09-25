@@ -42,9 +42,9 @@ public class GeoThread implements Runnable{
                 String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).execute().body();
                 JSONTokener parser = new JSONTokener(json);
                 JSONObject result = new JSONObject(parser);
-                geo = (String) result.get("country_name");
-                geocode = (String) result.get("country");
-                lang = ((String) result.get("languages")).substring(0, 1);
+                geo = result.getString("country_name");
+                geocode = result.getString("country");
+                lang = result.getString("languages").substring(0, 1);
             } catch (IOException e) {
                 geo = "invalid";
                 geocode = "invalid";

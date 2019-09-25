@@ -19,6 +19,10 @@ public class EssentialConfig {
     static double basexp;
     static double exponent;
     public static int cupdatei;
+    static boolean banshare;
+    static boolean antivpn;
+    static boolean webhookenable;
+    static String discordurl;
 
     static void main() {
         Map<String, Object> obj;
@@ -42,7 +46,17 @@ public class EssentialConfig {
 
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n" +
                     "basexp: 1000\n" +
-                    "exponent: 1.12f\n";
+                    "exponent: 1.12f\n\n" +
+
+                    "# [NOT WORKING NOW] Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
+                    "banshare: false\n\n" +
+
+                    "# Enable Anti-VPN service.\n" +
+                    "antivpn: true\n\n" +
+
+                    "# Use Discord webbook to send server conversations to Discord.\n" +
+                    "webhookenable: false" +
+                    "discordurl: none";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Log.info("[Essentials] config file created!");
@@ -215,6 +229,10 @@ public class EssentialConfig {
             basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
             exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
             cupdatei = Integer.parseInt(String.valueOf(obj.get("colornick update interval")));
+            banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
+            antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
+            webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
+            discordurl = (String) obj.get("discordurl");
             Log.info("[Essentials] config file loaded!");
         }
     }

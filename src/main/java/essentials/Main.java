@@ -1,6 +1,7 @@
 package essentials;
 
 import essentials.special.ColorNick;
+import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -25,6 +26,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -34,8 +36,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
@@ -54,11 +54,25 @@ public class Main extends Plugin{
 	    // Start log
 		//EssentialLog.main();
 
+		// Start discord bot
+		EssentialDiscord.main();
+
+		// Start ban sharing server
+		if(banshare){
+			Runnable banserver = new EssentialBanClient();
+			Thread bant = new Thread(banserver);
+			bant.start();
+		}
+
 	    // Start chat server
 		if(serverenable){
 			Runnable chatserver = new EssentialChatServer();
 			Thread chat2 = new Thread(chatserver);
 			chat2.start();
+		}
+
+		if(antivpn){
+			Log.info("[Essentials] Anti-VPN enabled.");
 		}
 
         // Set if thorium rector explode
@@ -108,6 +122,19 @@ public class Main extends Plugin{
 				if (array.getString(i).equals(e.player.name)){
 					e.player.con.kick(KickReason.idInUse);
 					Log.info("[Essentials]"+e.player.name+" nickname is blacklisted.");
+				}
+			}
+
+			// Check VPN
+			if(antivpn){
+				String ipToLookup = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+				try {
+					boolean isHostingorVPN = new VPNDetection().getResponse(ipToLookup).hostip;
+					if(isHostingorVPN){
+						e.player.con.kick(KickReason.customClient);
+					}
+				} catch (IOException error) {
+					error.printStackTrace();
 				}
 			}
 
@@ -208,7 +235,10 @@ public class Main extends Plugin{
 
 					Yaml yaml = new Yaml();
 					Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
-					int blockexp = Integer.parseInt(String.valueOf(obj.get(e.tile.block().name)));
+					int blockexp = 0;
+					if(String.valueOf(obj.get(e.tile.block().name)) != null) {
+						blockexp = Integer.parseInt(String.valueOf(obj.get(e.tile.block().name)));
+					}
 					int newexp = exp + blockexp;
 					data++;
 

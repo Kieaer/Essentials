@@ -16,11 +16,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class EssentialPlayer{
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+    private static int dbversion = 1;
     static void main(Player player){
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
@@ -104,6 +103,19 @@ public class EssentialPlayer{
                 Statement stmt = conn.createStatement();
                 stmt.execute(sql);
                 stmt.close();
+            }
+            if(dbversion < 2){
+                /*
+                try{
+                    String sql = "ALTER TABLE players ADD COLUMN columnname TEXT";
+                    assert conn != null;
+                    Statement stmt = conn.createStatement();
+                    stmt.execute(sql);
+                    stmt.close();
+                } catch (SQLException e){
+                    e.printStackTrace();
+                }
+                */
             }
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Class.forName("org.sqlite.JDBC");
