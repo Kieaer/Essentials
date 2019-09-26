@@ -41,7 +41,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | Command | Parameter | Description |
 |:--|:--|:--|
 | tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
-| allinfo | %lt;player name&gt; | Show player information |
+| allinfo | &lt;player name&gt; | Show player information |
 
 ## Pinned plan
 
@@ -71,7 +71,6 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [x] suicide - self-destruct.
 - [x] kill - Kill other player.
 - [x] save - Map save.
-- [ ] say - Server chat.
 - [x] ch - Cross server chat.
 - [x] time - Show server time.
 - [x] translate - Enable/disable auto translate
