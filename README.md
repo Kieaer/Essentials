@@ -42,6 +42,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 |:--|:--|:--|
 | tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | allinfo | &lt;player name&gt; | Show player information |
+| bansync |   | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
 
 ## Pinned plan
 
