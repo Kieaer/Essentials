@@ -24,7 +24,6 @@ public class EssentialPlayer{
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
     private static int dbversion = 1;
     static void main(Player player){
-        player.sendMessage("[green]Please wait...");
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
@@ -32,7 +31,6 @@ public class EssentialPlayer{
 
         boolean isLocal = player.isLocal;
 
-        player.sendMessage("[green]Getting Geolocation");
         Runnable georun = new GeoThread(ip, isLocal);
         Thread geothread = new Thread(georun);
         try {
@@ -54,17 +52,16 @@ public class EssentialPlayer{
 
         // Set non-color nickname
         player.name = changedname;
-        player.sendMessage("[green]Nickname set. Your nickname is [white]"+changedname+".");
+        player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
 
         try {
-            player.sendMessage("[green]Database creating..");
             createNewDatabase(changedname, player.uuid, geo, geocode,
                     0, 0, 0, 0, timesjoined,
                     timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
                     "none", "00:00.00", "none", 0, 0, 0,
                     0, 0, "none", 0, false, languages, false, false, true);
         } catch (Exception e){
-            Call.onInfoMessage(player.con, "Player database create failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
+            Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
             player.con.kick(Packets.KickReason.kick);
         }
     }
