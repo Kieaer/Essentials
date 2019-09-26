@@ -100,8 +100,5 @@ public class EssentialTimer {
                 Log.info("[Essentials] " + name + "/" + uuid + " player unbanned!");
             }
         }
-
-        // todo make dynmap for mindustry (extreme hard work)
-        //Dynmap.takeMapScreenshot();
     }
 }

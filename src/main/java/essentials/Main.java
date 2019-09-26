@@ -45,7 +45,7 @@ import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
-	public Main(){
+	public Main() throws IOException {
 		String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
 
 	    // Start config file
@@ -59,9 +59,15 @@ public class Main extends Plugin{
 
 		// Start ban sharing server
 		if(banshare){
-			Runnable banserver = new EssentialBanClient();
-			Thread bant = new Thread(banserver);
+			Runnable banclient = new EssentialBanClient();
+			Thread bant = new Thread(banclient);
 			bant.start();
+		}
+
+		if(banshareserver){
+			Runnable banserver = new EssentialBanServer();
+			Thread banse = new Thread(banserver);
+			banse.start();
 		}
 
 	    // Start chat server
@@ -326,6 +332,17 @@ public class Main extends Plugin{
 						e.printStackTrace();
 					}
 				}
+
+				// Kill Ban list server thread
+				if(banshare){
+					try {
+						EssentialBanServer.active = false;
+						EssentialBanServer.serverSocket.close();
+						EssentialBanClient.active = false;
+						EssentialBanClient.socket.close();
+					} catch (Exception ignored){}
+					Log.info("[EssentialsBan] Ban list server/client thread disabled.");
+				}
 			}
 		});
 
@@ -382,31 +399,48 @@ public class Main extends Plugin{
 			Log.info("[Essentials] "+arg[0]+" nickname is registered in blacklist.");
         });
 
-		handler.<Player>register("allinfo", "<name>", "Show player information", (args, player) -> {
+		handler.register("allinfo", "<name>", "Show player information", (args) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
-			JSONObject db = getData(other.uuid);
-			String datatext = "\nPlayer Information\n" +
-							"========================================\n" +
-							"Name: "+other.name+"\n" +
-							"UUID: "+other.uuid+"\n" +
-							"Mobile: "+other.isMobile+"\n" +
-							"Country: "+db.get("country")+"\n" +
-							"Block place: "+db.get("placecount")+"\n" +
-							"Block break: "+db.get("breakcount")+"\n" +
-							"Kill units: "+db.get("killcount")+"\n" +
-							"Death count: "+db.get("deathcount")+"\n" +
-							"Join count: "+db.get("joincount")+"\n" +
-							"Kick count: "+db.get("kickcount")+"\n" +
-							"Level: "+db.get("level")+"\n" +
-							"XP: "+db.get("reqtotalexp")+"\n" +
-							"First join: "+db.get("firstdate")+"\n" +
-							"Last join: "+db.get("lastdate")+"\n" +
-							"Playtime: "+db.get("playtime")+"\n" +
-							"Attack clear: "+db.get("attackclear")+"\n" +
-							"PvP Win: "+db.get("pvpwincount")+"\n" +
-							"PvP Lose: "+db.get("pvplosecount")+"\n" +
-							"PvP Surrender: "+db.get("pvpbreakout");
-			Log.info(datatext);
+			if(other != null) {
+				JSONObject db = getData(other.uuid);
+				String datatext = "\nPlayer Information\n" +
+						"========================================\n" +
+						"Name: " + other.name + "\n" +
+						"UUID: " + other.uuid + "\n" +
+						"Mobile: " + other.isMobile + "\n" +
+						"Country: " + db.get("country") + "\n" +
+						"Block place: " + db.get("placecount") + "\n" +
+						"Block break: " + db.get("breakcount") + "\n" +
+						"Kill units: " + db.get("killcount") + "\n" +
+						"Death count: " + db.get("deathcount") + "\n" +
+						"Join count: " + db.get("joincount") + "\n" +
+						"Kick count: " + db.get("kickcount") + "\n" +
+						"Level: " + db.get("level") + "\n" +
+						"XP: " + db.get("reqtotalexp") + "\n" +
+						"First join: " + db.get("firstdate") + "\n" +
+						"Last join: " + db.get("lastdate") + "\n" +
+						"Playtime: " + db.get("playtime") + "\n" +
+						"Attack clear: " + db.get("attackclear") + "\n" +
+						"PvP Win: " + db.get("pvpwincount") + "\n" +
+						"PvP Lose: " + db.get("pvplosecount") + "\n" +
+						"PvP Surrender: " + db.get("pvpbreakout");
+				Log.info(datatext);
+			} else {
+				Log.info("[Essentials] Player not found!");
+			}
+		});
+
+		handler.register("bansync", "Ban list synchronization from master server", (args) -> {
+			if(banshare){
+				String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+				JSONTokener parser = new JSONTokener(db);
+				JSONObject object = new JSONObject(parser);
+				object.put("banall", "true");
+				Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+				Runnable banclient = new EssentialBanClient();
+				Thread bant = new Thread(banclient);
+				bant.start();
+			}
 		});
 	}
 

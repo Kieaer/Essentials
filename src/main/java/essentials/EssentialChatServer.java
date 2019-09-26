@@ -5,6 +5,7 @@ import io.anuke.mindustry.gen.Call;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -31,11 +32,21 @@ class EssentialChatServer implements Runnable {
         try {
             while (active) {
                 socket = serverSocket.accept();
-                BufferedReader br;
-                br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                InputStream is = socket.getInputStream();
+                InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
+                BufferedReader br = new BufferedReader(isr);
+
                 String message = br.readLine();
-                Call.sendMessage("[#C77E36][RC] " + message);
-                Log.info("[RC] "+message);
+                String remoteip = socket.getRemoteSocketAddress().toString();
+
+                Log.info("[RC] Received message from "+remoteip+": "+message);
+
+                if(!remoteip.equals(EssentialConfig.clienthost)) {
+                    Log.warn("[EssentialsChat] ALERT! This message isn't received from "+EssentialConfig.clienthost+"!!");
+                    Log.warn("[EssentialsChat] Message is "+message);
+                } else {
+                    Call.sendMessage("[#C77E36][RC] " + message);
+                }
             }
         } catch (Exception ignored) {
         } finally {

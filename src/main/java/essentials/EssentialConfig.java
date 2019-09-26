@@ -23,6 +23,10 @@ public class EssentialConfig {
     static boolean antivpn;
     static boolean webhookenable;
     static String discordurl;
+    static int banserverport;
+    static String banclienthost;
+    static int banclientport;
+    static boolean banshareserver;
 
     static void main() {
         Map<String, Object> obj;
@@ -48,8 +52,12 @@ public class EssentialConfig {
                     "basexp: 1000\n" +
                     "exponent: 1.12f\n\n" +
 
-                    "# [NOT WORKING NOW] Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
-                    "banshare: false\n\n" +
+                    "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n# banshare - enable client / banshare-server - host ban list server\n" +
+                    "banshare: false\n" +
+                    "banclient-host: mindustry.kr\n" +
+                    "banclient-port: 6501\n" +
+                    "banshare-server: false\n" +
+                    "banserver-port: 6500\n\n" +
 
                     "# Enable Anti-VPN service.\n" +
                     "antivpn: true\n\n" +
@@ -211,6 +219,12 @@ public class EssentialConfig {
             Log.info("[Essentials] Exp config file created!");
         }
 
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/data.json").exists()) {
+            JSONObject object = new JSONObject();
+            object.put("banall", "true");
+            Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+        }
+
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").exists()){
             JSONObject ban = new JSONObject();
             String json = ban.toString();
@@ -248,6 +262,10 @@ public class EssentialConfig {
             antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
             webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
             discordurl = (String) obj.get("discordurl");
+            banserverport = Integer.parseInt(String.valueOf(obj.get("banserver-port")));
+            banclienthost = (String) obj.get("banclient-host");
+            banclientport = Integer.parseInt(String.valueOf(obj.get("banclient-port")));
+            banshareserver = Boolean.parseBoolean(String.valueOf(obj.get("banshare-server")));
             Log.info("[Essentials] config file loaded!");
         }
     }
