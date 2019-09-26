@@ -268,7 +268,12 @@ public class Main extends Plugin{
 				for(int i=0;i<playerGroup.size();i++){
 					Player player = playerGroup.all().get(i);
 					JSONObject db = getData(player.uuid);
-					int killcount = db.getInt("killcount");
+					int killcount;
+					if(db.has("killcount")) {
+						killcount = db.getInt("killcount");
+					} else {
+						return;
+					}
 					killcount++;
 
 					String sql = "UPDATE players SET breakcount = ? WHERE uuid = ?";
