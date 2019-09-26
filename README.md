@@ -31,11 +31,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | tempban | &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 <!--
-| spawnmob |  | Spawn mob |
-| effect |  | make effect |
-| gamerule |  | Edit gamerule |
 | vote | &lt;map name&gt; | Vote map |
-| tpmouse | player | teleport player to follow mouse pointer |
 |  |  |  |
 |  |  |  |
 -->
@@ -45,6 +41,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | Command | Parameter | Description |
 |:--|:--|:--|
 | tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
+| allinfo | %lt;player name&gt; | Show player information |
 
 ## Pinned plan
 
