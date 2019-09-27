@@ -1,6 +1,5 @@
 # Essentials
 Add more commands to the server.  
-It's under development!
 
 I'm getting a lot of suggestions.  
 Please submit your idea to this repository issues or Mindustry official discord!
@@ -44,34 +43,56 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | allinfo | &lt;player name&gt; | Show player information |
 | bansync |   | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
 
-## Pinned plan
+## 4.0 version plans
+- [ ] Use all network communications with a single port
+  - [ ] Ban share
+    - [ ] Server
+    - [ ] Client
+  - [ ] Server as Server chat
+    - [ ] Server
+    - [ ] Client
+  - [ ] Add server query
+    - [ ] Player counting
+    - [ ] Player list
+    - [ ] Server version
+    - [ ] Server description
+    - [ ] Server map playtime
+    - [ ] difficulty
+    - [ ] Core resources status
+  - [ ] Discord bot
+- [ ] Optimize
+  - [ ] Player DB
+    - [ ] Read/write source integration
+    - [ ] DB Upgrade possible
+  - [ ] Config file upgrade possible
+  - [ ] All internal plugin log in file
 
-- [x] Kickall - Kick all players.
-- [x] Teleport
-  - [x] tp playername playername - Teleport from Player to Player
-  - [x] tp playername - Teleport to Player.
-- [x] status - Show server status.
-- [x] realname player - Show real name.
-  - [x] make info command (dependence)
-- [x] me msg - Special chat format
-- [x] motd - Show server motd.
-- [x] getpos - Show current position.
-- [x] tempban player time - Timer ban.
-  - [x] make info command (dependence)
-- [x] info - Show player info.
-  - [x] Player name and UUID
-  - [x] Show IP and GeoLocation
-  - [x] Show destroy/placed block count
-  - [x] Show destroy enemies count
-  - [x] Show dead count
-  - [x] Rank system
-- [x] difficulty - Set difficulty.
-- [ ] vote - Map vote.
-  - [ ] Map list
-  - [x] surrender vote (NOT TESTED)
-- [x] suicide - self-destruct.
-- [x] kill - Kill other player.
-- [x] save - Map save.
-- [x] ch - Cross server chat.
-- [x] time - Show server time.
-- [x] translate - Enable/disable auto translate
+## 5.0 version plans
+- [ ] Vote
+  - [ ] Surrender
+  - [ ] Next wave
+  - [ ] Skip many waves
+  - [ ] Ban griefer
+- [ ] PvP mode rule
+  - [ ] Anti coal in mech
+  - [ ] Attackable timer
+  - [ ] Team switching
+- [ ] Ban share
+  - [ ] Auto share ban list to other clients
+  - [ ] ban to sent info
+- [ ] Cross-chat
+  - [ ] Show remote IP
+- [ ] Auto-translate
+  - [ ] Fix translate not working
+- [ ] Teleport
+  - [ ] using ID
+  - [ ] Detect some nickname
+- [ ] Nickname prefix
+- [ ] Anti-Explode
+
+## 6.0 version plans
+- [ ] Make RPG using player DB
+  - [ ] Lock blocks
+- [ ] Monitoring resource consumption
+  - [ ] Alarm when resource consumption is fast
+  - [ ] Alarm when resource bank is full
