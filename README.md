@@ -89,6 +89,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [ ] Detect some nickname
 - [ ] Nickname prefix
 - [ ] Anti-Explode
+- [ ] Translatable all messages using bundle
 
 ## 6.0 version plans
 - [ ] Make RPG using player DB
