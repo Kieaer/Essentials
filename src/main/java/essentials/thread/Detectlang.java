@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import static essentials.EssentialPlayer.getData;
 
 public class Detectlang {
-    public static void detectlang(boolean translate, Player player, String message) {
+    public static void detectlang(int translate, Player player, String message) {
         String clientId = "Ujx3Ysdxfg7FY2wQn2ES";
         String clientSecret = "iHAb6PF3SK";
         try {
@@ -55,7 +55,7 @@ public class Detectlang {
         }
     }
 
-    public static void translate(boolean translate, Player player, JSONObject lang, String message){
+    public static void translate(int translate, Player player, JSONObject lang, String message){
         JSONObject db = getData(player.uuid);
 
         String clientId = "RNOXzFalw7FMFjBe2mbq";
@@ -94,7 +94,7 @@ public class Detectlang {
             JSONObject v1 = (JSONObject) object.get("message");
             JSONObject v2 = (JSONObject) v1.get("result");
             String v3 = String.valueOf(v2.get("translatedText"));
-            if(translate){
+            if(translate == 1){
                 if(responseCode == 400){
                     JSONObject e1 = (JSONObject) object.get("errorCode");
                     JSONObject e2 = (JSONObject) object.get("errorMessage");

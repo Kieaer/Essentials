@@ -9,9 +9,9 @@ import org.yaml.snakeyaml.Yaml;
 import java.util.Map;
 
 public class EssentialConfig {
-    static String clienthost;
-    static int clientport;
-    static int serverport;
+    public static String clienthost;
+    public static int clientport;
+    public static int serverport;
     static boolean realname;
     static boolean detectreactor;
     static boolean serverenable;
@@ -23,20 +23,17 @@ public class EssentialConfig {
     static boolean antivpn;
     static boolean webhookenable;
     static String discordurl;
-    static int banserverport;
-    static String banclienthost;
-    static int banclientport;
-    static boolean banshareserver;
 
     static void main() {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
-            String text = "# server to server chat config\n" +
+            String text = "# Server / client port settings\n" +
                     "server-enable: false\n" +
                     "server-port: 25000\n\n" +
-                    "client-port: 20000\n" +
+
                     "client-enable: false\n" +
-                    "client-host: localhost\n\n" +
+                    "client-port: 20000\n" +
+                    "client-host: mindustry.kr\n\n" +
 
                     "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
                     "# If you want colornick features, must enable this.\n" +
@@ -49,15 +46,11 @@ public class EssentialConfig {
                     "detectreactor: true\n\n" +
 
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n" +
-                    "basexp: 1000\n" +
+                    "basexp: 500\n" +
                     "exponent: 1.12f\n\n" +
 
-                    "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n# banshare - enable client / banshare-server - host ban list server\n" +
-                    "banshare: false\n" +
-                    "banclient-host: mindustry.kr\n" +
-                    "banclient-port: 6501\n" +
-                    "banshare-server: false\n" +
-                    "banserver-port: 6500\n\n" +
+                    "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
+                    "banshare: false\n\n" +
 
                     "# Enable Anti-VPN service.\n" +
                     "antivpn: true\n\n" +
@@ -262,10 +255,6 @@ public class EssentialConfig {
             antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
             webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
             discordurl = (String) obj.get("discordurl");
-            banserverport = Integer.parseInt(String.valueOf(obj.get("banserver-port")));
-            banclienthost = (String) obj.get("banclient-host");
-            banclientport = Integer.parseInt(String.valueOf(obj.get("banclient-port")));
-            banshareserver = Boolean.parseBoolean(String.valueOf(obj.get("banshare-server")));
             Log.info("[Essentials] config file loaded!");
         }
     }

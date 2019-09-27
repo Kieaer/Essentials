@@ -1,5 +1,7 @@
 package essentials;
 
+import essentials.net.Client;
+import essentials.net.Server;
 import essentials.special.ColorNick;
 import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
@@ -10,7 +12,6 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -45,11 +46,11 @@ import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
-	public Main() throws IOException {
+	public Main() {
 		String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
 
 	    // Start config file
-	    EssentialConfig.main();
+	    main();
 
 	    // Start log
 		//EssentialLog.main();
@@ -57,24 +58,11 @@ public class Main extends Plugin{
 		// Start discord bot
 		EssentialDiscord.main();
 
-		// Start ban sharing server
+		// Start ban/chat server
 		if(banshare){
-			Runnable banclient = new EssentialBanClient();
-			Thread bant = new Thread(banclient);
-			bant.start();
-		}
-
-		if(banshareserver){
-			Runnable banserver = new EssentialBanServer();
-			Thread banse = new Thread(banserver);
-			banse.start();
-		}
-
-	    // Start chat server
-		if(serverenable){
-			Runnable chatserver = new EssentialChatServer();
-			Thread chat2 = new Thread(chatserver);
-			chat2.start();
+			Runnable server = new Server();
+			Thread t = new Thread(server);
+			t.start();
 		}
 
 		if(antivpn){
@@ -133,7 +121,7 @@ public class Main extends Plugin{
 
 				// Check VPN
 				if(antivpn){
-					String ipToLookup = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+					String ipToLookup = netServer.admins.getInfo(e.player.uuid).lastIP;
 					try {
 						boolean isHostingorVPN = new VPNDetection().getResponse(ipToLookup).hostip;
 						if(isHostingorVPN){
@@ -207,23 +195,20 @@ public class Main extends Plugin{
 			if(!check.equals("/")) {
 				//boolean valid = e.message.matches("\\w+");
 				JSONObject db = getData(e.player.uuid);
-				boolean translate = Boolean.parseBoolean(db.getString("translate"));
-				boolean crosschat = Boolean.parseBoolean(db.getString("crosschat"));
+				int translate = Integer.parseInt(db.getString("translate"));
+				int crosschat = Integer.parseInt(db.getString("crosschat"));
 
 				detectlang(translate, e.player, e.message);
-				if (crosschat) {
-					if(clientenable){
-						Thread chatclient = new Thread(new Runnable() {
-							@Override
-							public synchronized void run() {
-								String message = NetClient.colorizeName(e.player.id, e.player.name)+" [white]: "+e.message;
-								EssentialChatClient.main(message, e.player);
-							}
-						});
-						chatclient.start();
-					} else {
-						e.player.sendMessage("Currently server isn't enable cross-server client!");
-					}
+				Log.info("cross chat is "+crosschat);
+				Log.info("clientenable is "+clientenable);
+				if (crosschat == 1 && clientenable) {
+					Thread chatclient = new Thread(() -> {
+						String message = e.player.name+": "+e.message;
+						Client.main("chat", message, e.player);
+					});
+					chatclient.start();
+				} else {
+					e.player.sendMessage("Currently server isn't enable cross-server client!");
 				}
 			}
 		});
@@ -238,7 +223,7 @@ public class Main extends Plugin{
 
 					Yaml yaml = new Yaml();
 					Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
-					int blockexp = 0;
+					int blockexp;
 					if(String.valueOf(obj.get(e.tile.block().name)) != null) {
 						blockexp = Integer.parseInt(String.valueOf(obj.get(e.tile.block().name)));
 					} else {
@@ -317,31 +302,19 @@ public class Main extends Plugin{
 					timer.cancel();
 					Log.info("[Essentials] Play/bantime counting thread disabled.");
 				} catch (Exception e){
-					Log.err("[Essentials] Failure to disable Playtime counting thread!");
+					err("[Essentials] Failure to disable Playtime counting thread!");
 					e.printStackTrace();
 				}
 
-				// Kill Chat server thread
+				// Kill Ban/chat server thread
 				if(serverenable){
 					try {
-						EssentialChatServer.active = false;
-						EssentialChatServer.serverSocket.close();
+						Server.active = false;
+						Server.serverSocket.close();
 						Log.info("[EssentialsChat] Chat server thread disabled.");
-					} catch (Exception e){
-						Log.err("[Essentials] Failure to disable Chat server thread!");
-						e.printStackTrace();
+					} catch (Exception ignored){
+						err("[Essentials] Failure to disable Chat server thread!");
 					}
-				}
-
-				// Kill Ban list server thread
-				if(banshare){
-					try {
-						EssentialBanServer.active = false;
-						EssentialBanServer.serverSocket.close();
-						EssentialBanClient.active = false;
-						EssentialBanClient.socket.close();
-					} catch (Exception ignored){}
-					Log.info("[EssentialsBan] Ban list server/client thread disabled.");
 				}
 			}
 		});
@@ -437,9 +410,8 @@ public class Main extends Plugin{
 				JSONObject object = new JSONObject(parser);
 				object.put("banall", "true");
 				Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
-				Runnable banclient = new EssentialBanClient();
-				Thread bant = new Thread(banclient);
-				bant.start();
+				Thread banthread = new Thread(() -> Client.main("ban", "", null));
+				banthread.start();
 			}
 		});
 	}

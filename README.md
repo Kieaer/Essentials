@@ -45,12 +45,12 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
 ## 4.0 version plans
 - [ ] Use all network communications with a single port
-  - [ ] Ban share
-    - [ ] Server
-    - [ ] Client
-  - [ ] Server as Server chat
-    - [ ] Server
-    - [ ] Client
+  - [x] Ban share
+    - [x] Server
+    - [x] Client
+  - [x] Server as Server chat
+    - [x] Server
+    - [x] Client
   - [ ] Add server query
     - [ ] Player counting
     - [ ] Player list
