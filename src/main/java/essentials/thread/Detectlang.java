@@ -100,7 +100,7 @@ public class Detectlang {
                     JSONObject e2 = (JSONObject) object.get("errorMessage");
                     player.sendMessage(e1+"/ ErrorCode:"+e2);
                 } else {
-                    player.sendMessage("[orange][" + player.name + "][white]: [#F5FF6B]" + v3);
+                    player.sendMessage("[orange][" + player.name.replaceAll("\\[(.*?)]", "") + "][white]: [#F5FF6B]" + v3);
                 }
             }
         } catch (Exception f) {

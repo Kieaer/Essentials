@@ -286,7 +286,7 @@ public class EssentialPlayer{
         }
     }
 
-    // todo make writedata function
+    // TODO make writedata function
     /*
 	public static JSONObject writeData(String uuid, String data){
 		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
@@ -297,7 +297,7 @@ public class EssentialPlayer{
 		return response;
 	}
 
-    // todo make getall function
+    // TODO make getall function
 	public static JSONObject getAll() throws FileNotFoundException {
 		File dir = new File("plugins/Essentials/players");
 		for (File file : dir.listFiles()) {

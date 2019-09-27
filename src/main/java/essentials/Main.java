@@ -72,6 +72,11 @@ public class Main extends Plugin{
 			Log.info("[Essentials] Anti-VPN enabled.");
 		}
 
+		// TODO Make PvP winner count
+		Events.on(EventType.GameOverEvent.class, e -> {
+			//e.winner.name();
+		});
+
 		Events.on(EventType.WorldLoadEvent.class, () -> EssentialTimer.playtime = "00:00.00");
 
         // Set if thorium rector explode
@@ -207,7 +212,7 @@ public class Main extends Plugin{
 				if (clientenable) {
 					if(crosschat == 1) {
 						Thread chatclient = new Thread(() -> {
-							String message = e.player.name + ": " + e.message;
+							String message = e.player.name.replaceAll("\\[(.*?)]", "") + ": " + e.message;
 							Client.main("chat", message, e.player);
 						});
 						chatclient.start();
@@ -368,7 +373,7 @@ public class Main extends Plugin{
 		});
 
         handler.register("blacklist", "<nickname>", "Block special nickname.", arg -> {
-        	// todo add remove option
+        	// TODO add remove option
             String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
             JSONTokener parser = new JSONTokener(db);
             JSONArray object = new JSONArray(parser);
@@ -437,7 +442,7 @@ public class Main extends Plugin{
 			String datatext =
 					"[#DEA82A]Player Information[]\n" +
 					"[#2B60DE]========================================[]\n" +
-					"[green]Name[]			: "+player.name+"\n" +
+					"[green]Name[]			: "+player.name+"[white]\n" +
 					"[green]UUID[]			: "+player.uuid+"\n" +
 					"[green]Mobile[]		: "+player.isMobile+"\n" +
 					"[green]IP[]			: "+ip+"\n" +
@@ -560,7 +565,7 @@ public class Main extends Plugin{
 					break;
 				case "map":
 					player.sendMessage("Not available map vote features now!");
-					// todo make map votes
+					// TODO make map votes
 					/*
 					if(!Maps.all().isEmpty()){
 						player.sendMessage("Maps:");
