@@ -19,15 +19,16 @@ public class EssentialConfig {
     static double basexp;
     static double exponent;
     public static int cupdatei;
-    static boolean banshare;
+    public static boolean banshare;
     static boolean antivpn;
     static boolean webhookenable;
     static String discordurl;
+    public static boolean query;
 
     static void main() {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
-            String text = "# Server / client port settings\n" +
+            String text = "# Server / client port settings\n#It will enable server as server chat function.\n" +
                     "server-enable: false\n" +
                     "server-port: 25000\n\n" +
 
@@ -51,6 +52,9 @@ public class EssentialConfig {
 
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
                     "banshare: false\n\n" +
+
+                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n" +
+                    "query: false\n\n" +
 
                     "# Enable Anti-VPN service.\n" +
                     "antivpn: true\n\n" +
@@ -255,6 +259,8 @@ public class EssentialConfig {
             antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
             webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
             discordurl = (String) obj.get("discordurl");
+            banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
+            query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
             Log.info("[Essentials] config file loaded!");
         }
     }

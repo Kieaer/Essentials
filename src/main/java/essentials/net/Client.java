@@ -82,7 +82,7 @@ public class Client{
             bw.write(msg);
             bw.flush();
             Call.sendMessage("[#357EC7][SC] " + chat);
-            Global.log("Message sent to " + clienthost + ": " + msg);
+            Global.chatc("Message sent to " + clienthost + " - "+chat+"");
         } catch (Exception e) {
             String url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
             player.sendMessage("Server is not responding! Cross-chat disabled!");

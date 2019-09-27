@@ -1,11 +1,18 @@
 package essentials.net;
 
 import essentials.Global;
+import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Difficulty;
+import io.anuke.mindustry.game.Team;
+import io.anuke.mindustry.game.Version;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.net.Administration;
+import io.anuke.mindustry.type.Item;
+import io.anuke.mindustry.type.ItemType;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -13,8 +20,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.EssentialConfig.serverport;
-import static io.anuke.mindustry.Vars.netServer;
+import static essentials.EssentialConfig.*;
+import static essentials.EssentialTimer.playtime;
+import static io.anuke.mindustry.Vars.*;
 
 public class Server implements Runnable{
     public static ServerSocket serverSocket;
@@ -77,8 +85,9 @@ public class Server implements Runnable{
 
     private static void chat(String data, String remoteip){
         try{
-            Global.chats("Received message from "+remoteip+": "+data);
-            Call.sendMessage("[#C77E36][RC] " + data.replaceAll("\n", ""));
+            String msg = data.replaceAll("\n", "");
+            Global.chats("Received message from "+remoteip+": "+msg);
+            Call.sendMessage("[#C77E36][RC] "+msg);
             /*
             if(!remoteip.equals(EssentialConfig.clienthost)) {
                 Global.chatsw("[EssentialsChat] ALERT! This message isn't received from "+EssentialConfig.clienthost+"!!");
@@ -88,6 +97,39 @@ public class Server implements Runnable{
             }
             */
         }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void query(){
+        JSONObject json = new JSONObject();
+        JSONObject items = new JSONObject();
+        JSONArray array = new JSONArray();
+        for(Player p : playerGroup.all()){
+            array.put(p.name);
+        }
+
+        for(Item item : content.items()) {
+            if(item.type == ItemType.material){
+                items.put(item.name, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+            }
+        }
+
+        json.put("players", playerGroup.size());
+        json.put("playerlist", array);
+        json.put("version", Version.build);
+        json.put("name", Core.settings.getString("servername"));
+        json.put("playtime", playtime);
+        json.put("difficulty", Difficulty.values());
+        json.put("resource",items);
+
+        try{
+            OutputStream os = socket.getOutputStream();
+            OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+            BufferedWriter bw = new BufferedWriter(osw);
+            bw.write(String.valueOf(json));
+            bw.flush();
+        } catch (Exception e){
             e.printStackTrace();
         }
     }
@@ -105,7 +147,13 @@ public class Server implements Runnable{
                 String remoteip = socket.getRemoteSocketAddress().toString();
 
                 if(data.matches("(.*)\\|(.*)")){
-                    ban(data, remoteip);
+                    if(banshare) {
+                        ban(data, remoteip);
+                    }
+                } else if(data.equals("hi")) {
+                    if(query){
+                        query();
+                    }
                 } else {
                     chat(data, remoteip);
                 }

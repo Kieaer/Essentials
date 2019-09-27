@@ -52,13 +52,13 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
     - [x] Server
     - [x] Client
   - [ ] Add server query
-    - [ ] Player counting
-    - [ ] Player list
-    - [ ] Server version
-    - [ ] Server description
-    - [ ] Server map playtime
+    - [x] Player counting
+    - [x] Player list
+    - [x] Server version
+    - [x] Server description
+    - [x] Server map playtime
     - [ ] difficulty
-    - [ ] Core resources status
+    - [x] Core resources status
   - [ ] Discord bot
 - [ ] Optimize
   - [ ] Player DB

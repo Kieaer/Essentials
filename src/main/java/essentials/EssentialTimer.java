@@ -3,6 +3,9 @@ package essentials;
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Team;
+import io.anuke.mindustry.type.Item;
+import io.anuke.mindustry.type.ItemType;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -18,11 +21,13 @@ import java.util.Date;
 import java.util.Locale;
 
 import static essentials.EssentialPlayer.getData;
-import static io.anuke.mindustry.Vars.netServer;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static io.anuke.mindustry.Vars.*;
+import static io.anuke.mindustry.content.Items.copper;
 
 public class EssentialTimer {
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+    public static String playtime;
+
     static void main(){
         // Player playtime counting
         if(playerGroup.size() > 0){
@@ -100,5 +105,16 @@ public class EssentialTimer {
                 Log.info("[Essentials] " + name + "/" + uuid + " player unbanned!");
             }
         }
+
+        // Map playtime counting
+        try{
+            SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+            Calendar cal1;
+            Date d2 = format.parse(playtime);
+            cal1 = Calendar.getInstance();
+            cal1.setTime(d2);
+            cal1.add(Calendar.SECOND, 1);
+            playtime = format.format(cal1.getTime());
+        }catch (Exception ignored){}
     }
 }

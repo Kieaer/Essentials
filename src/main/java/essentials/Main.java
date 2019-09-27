@@ -17,11 +17,14 @@ import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.EventType.PlayerJoin;
 import io.anuke.mindustry.game.Team;
+import io.anuke.mindustry.game.Version;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
+import io.anuke.mindustry.type.Item;
+import io.anuke.mindustry.type.ItemType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -40,10 +43,10 @@ import java.util.TimerTask;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
+import static essentials.EssentialTimer.playtime;
 import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
-import static io.anuke.mindustry.Vars.netServer;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin{
 	public Main() {
@@ -68,6 +71,32 @@ public class Main extends Plugin{
 		if(antivpn){
 			Log.info("[Essentials] Anti-VPN enabled.");
 		}
+
+		Events.on(EventType.WorldLoadEvent.class, () -> {
+			EssentialTimer.playtime = "00:00.00";
+
+			JSONObject json = new JSONObject();
+			JSONObject items = new JSONObject();
+			JSONArray array = new JSONArray();
+			for(Player p : playerGroup.all()){
+				array.put(p.name);
+			}
+
+			for(Item item : content.items()) {
+				if(item.type == ItemType.material){
+					items.put(item.name, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+				}
+			}
+
+			json.put("players", playerGroup.size());
+			json.put("playerlist", array);
+			json.put("version", Version.build);
+			json.put("name", Core.settings.getString("servername"));
+			json.put("playtime", playtime);
+			//json.put("difficulty", Difficulty.values());
+			json.put("resource",items);
+			Log.info(json);
+		});
 
         // Set if thorium rector explode
         Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
@@ -199,8 +228,6 @@ public class Main extends Plugin{
 				int crosschat = Integer.parseInt(db.getString("crosschat"));
 
 				detectlang(translate, e.player, e.message);
-				Log.info("cross chat is "+crosschat);
-				Log.info("clientenable is "+clientenable);
 				if (crosschat == 1 && clientenable) {
 					Thread chatclient = new Thread(() -> {
 						String message = e.player.name+": "+e.message;
