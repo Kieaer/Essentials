@@ -72,31 +72,7 @@ public class Main extends Plugin{
 			Log.info("[Essentials] Anti-VPN enabled.");
 		}
 
-		Events.on(EventType.WorldLoadEvent.class, () -> {
-			EssentialTimer.playtime = "00:00.00";
-
-			JSONObject json = new JSONObject();
-			JSONObject items = new JSONObject();
-			JSONArray array = new JSONArray();
-			for(Player p : playerGroup.all()){
-				array.put(p.name);
-			}
-
-			for(Item item : content.items()) {
-				if(item.type == ItemType.material){
-					items.put(item.name, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
-				}
-			}
-
-			json.put("players", playerGroup.size());
-			json.put("playerlist", array);
-			json.put("version", Version.build);
-			json.put("name", Core.settings.getString("servername"));
-			json.put("playtime", playtime);
-			//json.put("difficulty", Difficulty.values());
-			json.put("resource",items);
-			Log.info(json);
-		});
+		Events.on(EventType.WorldLoadEvent.class, () -> EssentialTimer.playtime = "00:00.00");
 
         // Set if thorium rector explode
         Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
@@ -228,13 +204,15 @@ public class Main extends Plugin{
 				int crosschat = Integer.parseInt(db.getString("crosschat"));
 
 				detectlang(translate, e.player, e.message);
-				if (crosschat == 1 && clientenable) {
-					Thread chatclient = new Thread(() -> {
-						String message = e.player.name+": "+e.message;
-						Client.main("chat", message, e.player);
-					});
-					chatclient.start();
-				} else {
+				if (clientenable) {
+					if(crosschat == 1) {
+						Thread chatclient = new Thread(() -> {
+							String message = e.player.name + ": " + e.message;
+							Client.main("chat", message, e.player);
+						});
+						chatclient.start();
+					}
+				} else if(crosschat == 1){
 					e.player.sendMessage("Currently server isn't enable cross-server client!");
 				}
 			}
