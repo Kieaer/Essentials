@@ -51,18 +51,18 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] Server as Server chat
     - [x] Server
     - [x] Client
-  - [ ] Add server query
+  - [x] Add server query
     - [x] Player counting
     - [x] Player list
     - [x] Server version
     - [x] Server description
     - [x] Server map playtime
-    - [ ] difficulty
+    - [ ] ~~difficulty~~ (impossible)
     - [x] Core resources status
   - [x] Discord bot
 - [ ] Optimize
-  - [ ] Player DB
-    - [ ] Read/write source integration
+  - [x] Player DB
+    - [x] Read/write source integration
     - [x] DB Upgrade possible
   - [ ] Config file upgrade possible
   - [x] All internal plugin log in file

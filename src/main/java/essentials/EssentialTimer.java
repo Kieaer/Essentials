@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import static essentials.EssentialPlayer.getData;
+import static essentials.EssentialPlayer.writeData;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
@@ -29,10 +30,10 @@ public class EssentialTimer {
         // Player playtime counting
         if(playerGroup.size() > 0){
             for(int i = 0; i < playerGroup.size(); i++){
-                Player p = playerGroup.all().get(i);
+                Player player = playerGroup.all().get(i);
                 JSONObject db = new JSONObject();
                 try {
-                    db = getData(p.uuid);
+                    db = getData(player.uuid);
                 }catch (Exception ignored){}
 
                 String data;
@@ -59,23 +60,9 @@ public class EssentialTimer {
                 int exp = (int) db.get("exp");
                 int newexp = exp+(int)(Math.random()*5)+(int)db.get("level");
 
-                String sql = "UPDATE players SET exp = ?, playtime = ? WHERE uuid = ?";
-                try{
-                    Class.forName("org.sqlite.JDBC");
-                    Connection conn = DriverManager.getConnection(url);
+                writeData("UPDATE players SET exp = '"+newexp+"', playtime = '"+newTime+"' WHERE uuid = '"+player.uuid+"'");
 
-                    PreparedStatement pstmt = conn.prepareStatement(sql);
-                    pstmt.setInt(1, newexp);
-                    pstmt.setString(2, newTime);
-                    pstmt.setString(3, p.uuid);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    conn.close();
-                } catch (Exception e){
-                    e.printStackTrace();
-                }
-
-                EssentialExp.exp(p.name, p.uuid);
+                EssentialExp.exp(player.name, player.uuid);
             }
         }
 

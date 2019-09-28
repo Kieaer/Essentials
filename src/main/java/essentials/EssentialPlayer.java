@@ -2,6 +2,7 @@ package essentials;
 
 import essentials.thread.GeoThread;
 import io.anuke.arc.Core;
+import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
@@ -9,7 +10,6 @@ import io.anuke.mindustry.net.Packets;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.awt.*;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -161,7 +161,6 @@ public class EssentialPlayer{
                 pstmt.setBoolean(32, connected);
                 pstmt.executeUpdate();
                 pstmt.close();
-                conn.close();
                 Global.log(name +" Player database created!");
             }
             rs.close();
@@ -287,6 +286,7 @@ public class EssentialPlayer{
     //private static final String v2sql = "ALTER TABLE players ADD COLUMN string;";
 
     public static void Upgrade() {
+        /*
         if(dbversion < 2){
             try {
                 Class.forName("org.sqlite.JDBC");
@@ -300,19 +300,24 @@ public class EssentialPlayer{
                 e.printStackTrace();
             }
         }
+
+         */
     }
 
-    // TODO make writedata function
-    /*
-	public static JSONObject writeData(String uuid, String data){
-		String db = Core.settings.getDataDirectory().child("plugins/Essentials/players/"+uuid+".json").readString();
-		JSONTokener parser = new JSONTokener(db);
-		JSONObject object = new JSONObject(parser);
-		JSONObject response = (JSONObject) object.get("data");
-		//JSONObject write = object.put(data);
-		return response;
+	public static void writeData(String sql){
+        try {
+            Class.forName("org.sqlite.JDBC");
+            Connection conn = DriverManager.getConnection(url);
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.executeUpdate();
+            pstmt.close();
+            conn.close();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
 	}
 
+	/*
     // TODO make getall function
 	public static JSONObject getAll() throws FileNotFoundException {
 		File dir = new File("plugins/Essentials/players");

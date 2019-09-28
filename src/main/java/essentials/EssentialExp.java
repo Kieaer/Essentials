@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 
 import static essentials.EssentialConfig.basexp;
 import static essentials.EssentialConfig.exponent;
+import static essentials.EssentialPlayer.writeData;
 
 public class EssentialExp {
     private static final double BASE_XP = basexp;
@@ -25,29 +26,13 @@ public class EssentialExp {
         int xp = (int) db.get("exp");
         int levelXp = max - xp;
         int level = calculateLevel(xp);
+        int reqexp = (int)Math.floor(max);
         String reqtotalexp = xp+"("+(int) Math.floor(levelXp)+") / "+(int) Math.floor(max);
 
-        String sql = "UPDATE players SET exp = ?, reqexp = ?, level = ?, reqtotalexp = ? WHERE uuid = ?";
-
-        try{
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, xp);
-            pstmt.setInt(2, (int) Math.floor(max));
-            pstmt.setInt(3, level);
-            pstmt.setString(4, reqtotalexp);
-            pstmt.setString(5, uuid);
-            pstmt.executeUpdate();
-            pstmt.close();
-            conn.close();
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+        writeData("UPDATE players SET exp = '"+xp+"', reqexp = '"+reqexp+"', level = '"+level+"', reqtotalexp = '"+reqtotalexp+"' WHERE uuid = '"+uuid+"'");
 
         int curlevel = (int) db.get("level");
-        if(curlevel < level){
+        if(curlevel < level && curlevel > 20){
             Call.sendMessage("[yellow]Congratulations![white] "+name+"[white] achieved level [green]"+level+"!");
         }
     }
@@ -81,21 +66,7 @@ public class EssentialExp {
 
         int result = exp+joincount;
 
-        String sql = "UPDATE players SET exp = ? WHERE uuid = ?";
-
-        try{
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, result);
-            pstmt.setString(2, uuid);
-            pstmt.executeUpdate();
-            pstmt.close();
-            conn.close();
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+        writeData("UPDATE players SET exp = '"+result+"' WHERE uuid = '"+uuid+"'");
     }
 }
 
