@@ -4,10 +4,6 @@ import io.anuke.arc.Core;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-
 import static essentials.EssentialConfig.basexp;
 import static essentials.EssentialConfig.exponent;
 import static essentials.EssentialPlayer.writeData;

@@ -1,7 +1,6 @@
 package essentials;
 
 import io.anuke.arc.Core;
-import io.anuke.arc.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
@@ -24,11 +23,15 @@ public class EssentialConfig {
     static boolean webhookenable;
     static String discordurl;
     public static boolean query;
+    private static int version;
 
     static void main() {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
-            String text = "# Server / client port settings\n#It will enable server as server chat function.\n" +
+            String text = "# Config version (Don't touch this!)\n" +
+                    "version: 1\n\n" +
+
+                    "# Server / client port settings\n#It will enable server as server chat function.\n" +
                     "server-enable: false\n" +
                     "server-port: 25000\n\n" +
 
@@ -245,23 +248,80 @@ public class EssentialConfig {
         if (Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()){
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").readString()));
+            // Config version
+            version = Integer.parseInt(String.valueOf(obj.get("version")));
+
+            serverenable = Boolean.parseBoolean(String.valueOf(obj.get("server-enable")));
+            serverport = Integer.parseInt(String.valueOf(obj.get("server-port")));
+
+            clientenable = Boolean.parseBoolean(String.valueOf(obj.get("client-enable")));
             clienthost = (String) obj.get("client-host");
             clientport = Integer.parseInt(String.valueOf(obj.get("client-port")));
-            serverport = Integer.parseInt(String.valueOf(obj.get("server-port")));
+
             realname = Boolean.parseBoolean(String.valueOf(obj.get("realname")));
+
+            cupdatei = Integer.parseInt(String.valueOf(obj.get("colornick update interval")));
+
             detectreactor = Boolean.parseBoolean(String.valueOf(obj.get("detectreactor")));
-            serverenable = Boolean.parseBoolean(String.valueOf(obj.get("server-enable")));
-            clientenable = Boolean.parseBoolean(String.valueOf(obj.get("client-enable")));
+
             basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
             exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
-            cupdatei = Integer.parseInt(String.valueOf(obj.get("colornick update interval")));
+
             banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
+
+            query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
+
             antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
+
             webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
             discordurl = (String) obj.get("discordurl");
-            banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
-            query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
+
+
+
             Global.log("config file loaded!");
+        }
+
+        if(version <= 2){
+            String text = "# Config version (Don't touch this!)\n" +
+                    "version: 2\n\n" +
+
+                    "# Server / client port settings\n#It will enable server as server chat function.\n" +
+                    "server-enable: "+serverenable+"\n" +
+                    "server-port: "+serverport+"\n\n" +
+
+                    "client-enable: "+clientenable+"\n" +
+                    "client-port: "+clientport+"\n" +
+                    "client-host: "+clienthost+"\n\n" +
+
+                    "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
+                    "# If you want colornick features, must enable this.\n" +
+                    "realname: "+realname+"\n\n" +
+
+                    "# Color nickname update interval. 1sec = 1000\n" +
+                    "colornick update interval: "+cupdatei+"\n\n" +
+
+                    "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
+                    "detectreactor: "+detectreactor+"\n\n" +
+
+                    "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n" +
+                    "basexp: "+basexp+"\n" +
+                    "exponent: "+exponent+"\n\n" +
+
+                    "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
+                    "banshare: "+banshare+"\n\n" +
+
+                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n" +
+                    "query: "+query+"\n\n" +
+
+                    "# Enable Anti-VPN service.\n" +
+                    "antivpn: "+antivpn+"\n\n" +
+
+                    "# Use Discord webbook to send server conversations to Discord.\n" +
+                    "webhookenable: "+webhookenable+"\n" +
+                    "discordurl: "+discordurl;
+
+            Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
+            Global.log("config file updated!");
         }
     }
 }

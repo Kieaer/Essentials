@@ -44,7 +44,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | bansync |   | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
 
 ## 4.0 version plans
-- [ ] Use all network communications with a single port
+- [x] Use all network communications with a single port
   - [x] Ban share
     - [x] Server
     - [x] Client
@@ -60,11 +60,11 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
     - [ ] ~~difficulty~~ (impossible)
     - [x] Core resources status
   - [x] Discord bot
-- [ ] Optimize
+- [x] Optimize
   - [x] Player DB
     - [x] Read/write source integration
     - [x] DB Upgrade possible
-  - [ ] Config file upgrade possible
+  - [x] Config file upgrade possible
   - [x] All internal plugin log in file
 
 ## 5.0 version plans

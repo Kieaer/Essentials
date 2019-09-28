@@ -2,7 +2,6 @@ package essentials;
 
 import essentials.thread.GeoThread;
 import io.anuke.arc.Core;
-import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;

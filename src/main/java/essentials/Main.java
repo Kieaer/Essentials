@@ -28,9 +28,6 @@ import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;

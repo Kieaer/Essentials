@@ -2,7 +2,6 @@ package essentials;
 
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
-import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.game.EventType;
 import org.json.JSONObject;
@@ -97,7 +96,7 @@ public class EssentialLog {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
-                String text = e.player.name+" has change mech to "+e.mech.name+".";
+                String text = e.player.name+" has change mech to "+e.mech.name+".\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
@@ -148,7 +147,7 @@ public class EssentialLog {
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = e.player.name+"/"+e.player.uuid+"/"+ip+" Player connected.";
+                String text = e.player.name+"/"+e.player.uuid+"/"+ip+" Player connected.\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
