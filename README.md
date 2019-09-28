@@ -29,6 +29,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | status |  | Show currently server status (TPS, RAM, Players/ban count) |
 | tempban | &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
+| vote | &lt;gameover/skipwave/kick&gt; [player name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 <!--
 | vote | &lt;map name&gt; | Vote map |
 |  |  |  |
@@ -68,11 +69,10 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] All internal plugin log in file
 
 ## 5.0 version plans
-- [ ] Vote
-  - [ ] Surrender
-  - [ ] Next wave
-  - [ ] Skip many waves
-  - [ ] Ban griefer
+- [x] Vote
+  - [x] Surrender
+  - [x] Next wave
+  - [x] Ban
 - [ ] PvP mode rule
   - [ ] Anti coal in mech
   - [ ] Attackable timer

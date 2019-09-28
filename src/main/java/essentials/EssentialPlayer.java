@@ -19,59 +19,67 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import static io.anuke.mindustry.Vars.netServer;
+
 public class EssentialPlayer{
     private static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
     private static int dbversion = 1;
+    static boolean queryresult;
+
     static void main(Player player){
-        if(!getData(player.uuid).has("uuid")){
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = now.format(dateTimeFormatter);
-            String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+        try {
+            if(!getData(player.uuid).has("uuid") || DriverManager.getConnection(url) == null){
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = now.format(dateTimeFormatter);
+                String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 
-            boolean isLocal = player.isLocal;
+                boolean isLocal = player.isLocal;
 
-            Runnable georun = new GeoThread(ip, isLocal);
-            Thread geothread = new Thread(georun);
-            try {
-                geothread.start();
-                geothread.join();
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
+                Runnable georun = new GeoThread(ip, isLocal);
+                Thread geothread = new Thread(georun);
+                try {
+                    geothread.start();
+                    geothread.join();
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+
+                String geo = GeoThread.getGeo();
+                String geocode = GeoThread.getGeocode();
+                String languages = GeoThread.getLang();
+
+                int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
+                int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
+
+                // Remove color nickname
+                String changedname = player.name.replaceAll("\\[(.*?)]", "");
+
+                // Set non-color nickname
+                player.name = changedname;
+                player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
+
+                try {
+                    createNewDatabase(changedname, player.uuid, geo, geocode,
+                            0, 0, 0, 0, timesjoined,
+                            timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
+                            "none", "00:00.00", "none", 0, 0, 0,
+                            0, 0, "none", 0, false, languages, false, false, true);
+                } catch (Exception e){
+                    Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
+                    player.con.kick(Packets.KickReason.kick);
+                }
+            } else {
+                // Remove color nickname
+                String changedname = player.name.replaceAll("\\[(.*?)]", "");
+
+                // Set non-color nickname
+                player.name = changedname;
+                player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
             }
-
-            String geo = GeoThread.getGeo();
-            String geocode = GeoThread.getGeocode();
-            String languages = GeoThread.getLang();
-
-            int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
-            int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
-
-            // Remove color nickname
-            String changedname = player.name.replaceAll("\\[(.*?)]", "");
-
-            // Set non-color nickname
-            player.name = changedname;
-            player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
-
-            try {
-                createNewDatabase(changedname, player.uuid, geo, geocode,
-                        0, 0, 0, 0, timesjoined,
-                        timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
-                        "none", "00:00.00", "none", 0, 0, 0,
-                        0, 0, "none", 0, false, languages, false, false, true);
-            } catch (Exception e){
-                Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
-                player.con.kick(Packets.KickReason.kick);
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        // Remove color nickname
-        String changedname = player.name.replaceAll("\\[(.*?)]", "");
-
-        // Set non-color nickname
-        player.name = changedname;
-        player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
     }
 	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat, boolean colornick, boolean connected) {
         try {
@@ -179,6 +187,7 @@ public class EssentialPlayer{
             Connection conn = DriverManager.getConnection(url);
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
+            queryresult = true;
 
             while(rs.next()){
                 json.put("name", rs.getString("name"));
@@ -218,7 +227,7 @@ public class EssentialPlayer{
             stmt.close();
             conn.close();
         } catch (Exception e){
-            e.printStackTrace();
+            queryresult = false;
         }
         return json;
     }
@@ -263,22 +272,8 @@ public class EssentialPlayer{
         Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
 
         // Write player data
-
-        String sql = "UPDATE players SET bantime = ?, bantimeset = ?, WHERE uuid = ?";
-        try{
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, myTime);
-            pstmt.setInt(2, bantimeset);
-            pstmt.setString(3, uuid);
-            pstmt.executeUpdate();
-            pstmt.close();
-            conn.close();
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+        writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"', WHERE uuid = '"+uuid+"'");
+        netServer.admins.banPlayer(uuid);
     }
 
     private static final String v1sql = "ALTER TABLE players ADD COLUMN string;";

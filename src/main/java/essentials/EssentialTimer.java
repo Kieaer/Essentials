@@ -20,7 +20,6 @@ import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class EssentialTimer {
-    static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
     public static String playtime;
 
     static void main(){

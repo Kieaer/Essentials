@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import static essentials.EssentialPlayer.getData;
+import static essentials.EssentialPlayer.queryresult;
 
 public class EssentialLog {
     public static void main(){
@@ -37,7 +38,8 @@ public class EssentialLog {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
-                String text = e.player.name+": "+e.message+"\n";
+                JSONObject db = getData(e.player.uuid);
+                String text = db.get("name")+": "+e.message+"\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
@@ -58,6 +60,7 @@ public class EssentialLog {
         });
 
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
+            /*
             Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
@@ -73,6 +76,8 @@ public class EssentialLog {
             }catch (IOException error) {
                 error.printStackTrace();
             }
+
+             */
         });
 
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
@@ -108,37 +113,39 @@ public class EssentialLog {
         Events.on(EventType.PlayerJoin.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            try {
-                JSONObject db = getData(e.player.uuid);
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text =   e.player.name+" player joined.\n" +
-                                "========================================\n" +
-                                "Name: "+e.player.name+"\n" +
-                                "UUID: "+e.player.uuid+"\n" +
-                                "Mobile: "+e.player.isMobile+"\n" +
-                                "IP: "+ip+"\n" +
-                                "Country: "+db.get("country")+"\n" +
-                                "Block place: "+db.get("placecount")+"\n" +
-                                "Block break: "+db.get("breakcount")+"\n" +
-                                "Kill units: "+db.get("killcount")+"\n" +
-                                "Death count: "+db.get("deathcount")+"\n" +
-                                "Join count: "+db.get("joincount")+"\n" +
-                                "Kick count: "+db.get("kickcount")+"\n" +
-                                "Level: "+db.get("level")+"\n" +
-                                "XP: "+db.get("reqtotalexp")+"\n" +
-                                "First join: "+db.get("firstdate")+"\n" +
-                                "Last join: "+db.get("lastdate")+"\n" +
-                                "Playtime: "+db.get("playtime")+"\n" +
-                                "Attack clear: "+db.get("attackclear")+"\n" +
-                                "PvP Win: "+db.get("pvpwincount")+"\n" +
-                                "PvP Lose: "+db.get("pvplosecount")+"\n" +
-                                "PvP Surrender: "+db.get("pvpbreakout")+"\n" +
-                                "========================================\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            }catch (IOException error) {
-                error.printStackTrace();
+            JSONObject db = getData(e.player.uuid);
+            if(queryresult){
+                try {
+                    String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+                    String text = e.player.name + " player joined.\n" +
+                            "========================================\n" +
+                            "Name: " + e.player.name + "\n" +
+                            "UUID: " + e.player.uuid + "\n" +
+                            "Mobile: " + e.player.isMobile + "\n" +
+                            "IP: " + ip + "\n" +
+                            "Country: " + db.get("country") + "\n" +
+                            "Block place: " + db.get("placecount") + "\n" +
+                            "Block break: " + db.get("breakcount") + "\n" +
+                            "Kill units: " + db.get("killcount") + "\n" +
+                            "Death count: " + db.get("deathcount") + "\n" +
+                            "Join count: " + db.get("joincount") + "\n" +
+                            "Kick count: " + db.get("kickcount") + "\n" +
+                            "Level: " + db.get("level") + "\n" +
+                            "XP: " + db.get("reqtotalexp") + "\n" +
+                            "First join: " + db.get("firstdate") + "\n" +
+                            "Last join: " + db.get("lastdate") + "\n" +
+                            "Playtime: " + db.get("playtime") + "\n" +
+                            "Attack clear: " + db.get("attackclear") + "\n" +
+                            "PvP Win: " + db.get("pvpwincount") + "\n" +
+                            "PvP Lose: " + db.get("pvplosecount") + "\n" +
+                            "PvP Surrender: " + db.get("pvpbreakout") + "\n" +
+                            "========================================\n";
+                    byte[] result = text.getBytes();
+                    Files.write(path, result, StandardOpenOption.APPEND);
+                    Files.write(total, result, StandardOpenOption.APPEND);
+                } catch (Exception ex){
+                    ex.printStackTrace();
+                }
             }
         });
 
