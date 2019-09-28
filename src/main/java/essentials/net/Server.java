@@ -158,8 +158,6 @@ public class Server implements Runnable{
                     chat(data, remoteip);
                 }
             }
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+        } catch (Exception ignored){}
     }
 }

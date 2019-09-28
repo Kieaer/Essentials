@@ -3,6 +3,7 @@ package essentials;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.ColorNick;
+import essentials.thread.Update;
 import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
@@ -52,6 +53,9 @@ public class Main extends Plugin{
 
 	    // Start log
 		EssentialLog.main();
+
+		// Update check
+		Update.main();
 
 		// Start discord bot
 		EssentialDiscord.main();
@@ -249,7 +253,7 @@ public class Main extends Plugin{
 					try {
 						Server.active = false;
 						Server.serverSocket.close();
-						Global.chats("Chat server thread disabled.");
+						Global.log("Chat/Ban server thread disabled.");
 					} catch (Exception ignored){
 						err("[Essentials] Failure to disable Chat server thread!");
 					}
