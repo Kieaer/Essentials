@@ -24,12 +24,16 @@ public class EssentialConfig {
     static String discordurl;
     public static boolean query;
     private static int version;
+    static String language;
 
-    static void main() {
+    public static void main() {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
             String text = "# Config version (Don't touch this!)\n" +
                     "version: 1\n\n" +
+
+                    "# Plugin language\n" +
+                    "language: en\n\n" +
 
                     "# Server / client port settings\n#It will enable server as server chat function.\n" +
                     "server-enable: false\n" +
@@ -251,6 +255,8 @@ public class EssentialConfig {
             // Config version
             version = Integer.parseInt(String.valueOf(obj.get("version")));
 
+            language = (String) obj.get("language");
+
             serverenable = Boolean.parseBoolean(String.valueOf(obj.get("server-enable")));
             serverport = Integer.parseInt(String.valueOf(obj.get("server-port")));
 
@@ -276,14 +282,15 @@ public class EssentialConfig {
             webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
             discordurl = (String) obj.get("discordurl");
 
-
-
             Global.log("config file loaded!");
         }
 
         if(version < 2){
             String text = "# Config version (Don't touch this!)\n" +
                     "version: 2\n\n" +
+
+                    "# Plugin language\n" +
+                    "language: en\n\n" +
 
                     "# Server / client port settings\n#It will enable server as server chat function.\n" +
                     "server-enable: "+serverenable+"\n" +

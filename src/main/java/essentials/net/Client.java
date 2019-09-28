@@ -27,13 +27,12 @@ public class Client{
 
     private static void ban(BufferedWriter bw) {
         Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
+        Global.banc("Ban list senting...");
         for (Administration.PlayerInfo info : bans) {
             try {
                 String msg = info.id + "|" + info.lastIP + "\n";
                 bw.write(msg);
                 bw.flush();
-
-                Global.banc(info.id + "/" + info.lastIP + " sented to " + clienthost);
 
                 InputStream is = socket.getInputStream();
                 InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);

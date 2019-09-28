@@ -5,7 +5,6 @@ import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
-import io.anuke.mindustry.net.Packets;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -67,7 +66,7 @@ public class EssentialPlayer{
                             0, 0, "none", 0, false, languages, false, false, true);
                 } catch (Exception e){
                     Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
-                    player.con.kick(Packets.KickReason.kick);
+                    player.con.kick("You have been kicked due to a plugin error.");
                 }
             } else {
                 // Remove color nickname
@@ -131,6 +130,8 @@ public class EssentialPlayer{
             assert conn != null;
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
+            assert country != null;
+            assert country_code != null;
             if(!rs.next()){
                 String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -187,7 +188,6 @@ public class EssentialPlayer{
             Connection conn = DriverManager.getConnection(url);
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
-            queryresult = true;
 
             while(rs.next()){
                 json.put("name", rs.getString("name"));
@@ -226,6 +226,7 @@ public class EssentialPlayer{
             rs.close();
             stmt.close();
             conn.close();
+            queryresult = true;
         } catch (Exception e){
             queryresult = false;
         }

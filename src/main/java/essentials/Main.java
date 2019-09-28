@@ -49,16 +49,31 @@ import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin{
 	private boolean voteactive;
+	// Note
+	//Blocks.message = new MessageBlock(){ /**override methods **/};
+	//Vars.plugins.getPlugin(getClass()).zipRoot.child("bundle.properties")
+	//mods.getMod(getClass()).<stuff>
+	//Connection#kick(String reason)
 
 	public Main() {
 		// Start config file
-	    main();
+	    EssentialConfig.main();
 
 	    // Start log
 		EssentialLog.main();
 
 		// Update check
-		Update.main();
+		Thread update = new Thread(() -> {
+			try {
+				Global.log("Update checking...");
+				Thread.sleep(1500);
+				Update.main();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		});
+		update.start();
+
 
 		// Start discord bot
 		EssentialDiscord.main();
@@ -116,7 +131,7 @@ public class Main extends Plugin{
 
 				for (int i = 0; i < array.length(); i++){
 					if (array.getString(i).equals(e.player.name)){
-						e.player.con.kick(KickReason.idInUse);
+						e.player.con.kick("Server isn't allow blacklisted nickname.");
 						Global.log(e.player.name+" nickname is blacklisted.");
 					}
 				}
@@ -127,7 +142,7 @@ public class Main extends Plugin{
 					try {
 						boolean isHostingorVPN = new VPNDetection().getResponse(ipToLookup).hostip;
 						if(isHostingorVPN){
-							e.player.con.kick(KickReason.customClient);
+							e.player.con.kick("Server isn't allow VPN connection.");
 						}
 					} catch (IOException error) {
 						error.printStackTrace();
@@ -359,6 +374,22 @@ public class Main extends Plugin{
 				banthread.start();
 			}
 		});
+
+		handler.register("pvp", "<anticoal/timer> [time...]", "Set gamerule with PvP mode.", arg -> {
+			/*
+			if(Vars.state.rules.pvp){
+				switch(arg[0]){
+					case "anticoal":
+						break;
+					case "timer":
+						break;
+					default:
+						break;
+				}
+			}
+			*/
+			Global.log("Currently not supported!");
+		});
 	}
 
 	@Override
@@ -565,7 +596,7 @@ public class Main extends Plugin{
 						int require = (int) Math.ceil(0.6 * Vars.playerGroup.size());
 						Player target = playerGroup.find(p -> p.name.equals(args[1]));
 						if(target != null){
-							target.con.kick(KickReason.kick);
+							target.con.kick("You have been kicked by voting.");
 						} else {
 							player.sendMessage("[green]Player not found!");
 							voteactive = false;
