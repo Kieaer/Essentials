@@ -64,7 +64,7 @@ public class EssentialConfig {
                     "discordurl: none";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
-            Log.info("[Essentials] config file created!");
+            Global.log("config file created!");
         }
 
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").exists()) {
@@ -213,7 +213,7 @@ public class EssentialConfig {
                     "glaive-ship-pad: 150";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").writeString(text);
-            Log.info("[Essentials] Exp config file created!");
+            Global.log("Exp config file created!");
         }
 
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/data.json").exists()) {
@@ -226,20 +226,20 @@ public class EssentialConfig {
             JSONObject ban = new JSONObject();
             String json = ban.toString();
             Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(json);
-            Log.info("[Essentials] banned file created!");
+            Global.log("banned file created!");
         }
 
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
             String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/plugins/Essentials/[] folder.";
             Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
-            Log.info("[Essentials] motd file created.");
+            Global.log("motd file created.");
         }
 
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").exists()){
             JSONArray blacklist = new JSONArray();
             String json = blacklist.toString();
             Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(json);
-            Log.info("[Essentials] blacklist file created!");
+            Global.log("blacklist file created!");
         }
 
         if (Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()){
@@ -261,7 +261,7 @@ public class EssentialConfig {
             discordurl = (String) obj.get("discordurl");
             banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
             query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
-            Log.info("[Essentials] config file loaded!");
+            Global.log("config file loaded!");
         }
     }
 }

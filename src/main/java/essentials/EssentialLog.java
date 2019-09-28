@@ -19,19 +19,19 @@ public class EssentialLog {
     public static void main(){
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log").exists()) {
             Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log").writeString("");
-            Log.info("[Essentials] Block.log created.");
+            Global.log("Block.log created.");
         }
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log").exists()) {
             Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log").writeString("");
-            Log.info("[Essentials] Player.log created.");
+            Global.log("Player.log created.");
         }
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log").exists()) {
             Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log").writeString("");
-            Log.info("[Essentials] Total.log created.");
+            Global.log("Total.log created.");
         }
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Griefer.log").exists()) {
             Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Griefer.log").writeString("");
-            Log.info("[Essentials] Griefer.log created.");
+            Global.log("Griefer.log created.");
         }
 
         Events.on(EventType.PlayerChatEvent.class, e -> {
@@ -58,19 +58,23 @@ public class EssentialLog {
             }
         });
 
-        /*
-        Events.on(EventType.BlockBuildBeginEvent.class, e -> {
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
+        Events.on(EventType.BlockBuildEndEvent.class, e -> {
+            Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
-                String text = e.tile.entity.block.name+"\n";
+                String text = "";
+                if(!e.breaking){
+                    text = e.player.name + "Player break " +e.tile.entity.block.name+".\n";
+                } else {
+                    text = e.player.name + "Player made " +e.tile.entity.block.name+".\n";
+                }
                 byte[] result = text.getBytes();
+                Files.write(block, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
             }catch (IOException error) {
                 error.printStackTrace();
             }
         });
-        */
 
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
@@ -89,7 +93,6 @@ public class EssentialLog {
             }
         });
 
-        /* NOT WORKING
         Events.on(EventType.MechChangeEvent.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
@@ -102,7 +105,6 @@ public class EssentialLog {
                 error.printStackTrace();
             }
         });
-        */
 
         Events.on(EventType.PlayerJoin.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
@@ -141,7 +143,6 @@ public class EssentialLog {
             }
         });
 
-        /* NOT WORKING
         Events.on(EventType.PlayerConnect.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
@@ -155,7 +156,6 @@ public class EssentialLog {
                 error.printStackTrace();
             }
         });
-         */
 
         Events.on(EventType.PlayerLeave.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));

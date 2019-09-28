@@ -7,6 +7,14 @@ public class Global {
         Log.info("[Essentials] "+msg);
     }
 
+    public static void logw(String msg){
+        Log.warn("[Essentials] "+msg);
+    }
+
+    public static void loge(String msg){
+        Log.err("[Essentials] "+msg);
+    }
+
     public static void banc(String msg){
         Log.info("[EssentialsBanClient] "+msg);
     }

@@ -2,7 +2,6 @@ package essentials;
 
 import essentials.thread.GeoThread;
 import io.anuke.arc.Core;
-import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
@@ -10,6 +9,7 @@ import io.anuke.mindustry.net.Packets;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.awt.*;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,31 +21,51 @@ import java.util.Date;
 import java.util.Locale;
 
 public class EssentialPlayer{
-    static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+    private static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
     private static int dbversion = 1;
     static void main(Player player){
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-        String nowString = now.format(dateTimeFormatter);
-        String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+        if(!getData(player.uuid).has("uuid")){
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+            String nowString = now.format(dateTimeFormatter);
+            String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 
-        boolean isLocal = player.isLocal;
+            boolean isLocal = player.isLocal;
 
-        Runnable georun = new GeoThread(ip, isLocal);
-        Thread geothread = new Thread(georun);
-        try {
-            geothread.start();
-            geothread.join();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            Runnable georun = new GeoThread(ip, isLocal);
+            Thread geothread = new Thread(georun);
+            try {
+                geothread.start();
+                geothread.join();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+
+            String geo = GeoThread.getGeo();
+            String geocode = GeoThread.getGeocode();
+            String languages = GeoThread.getLang();
+
+            int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
+            int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
+
+            // Remove color nickname
+            String changedname = player.name.replaceAll("\\[(.*?)]", "");
+
+            // Set non-color nickname
+            player.name = changedname;
+            player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
+
+            try {
+                createNewDatabase(changedname, player.uuid, geo, geocode,
+                        0, 0, 0, 0, timesjoined,
+                        timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
+                        "none", "00:00.00", "none", 0, 0, 0,
+                        0, 0, "none", 0, false, languages, false, false, true);
+            } catch (Exception e){
+                Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
+                player.con.kick(Packets.KickReason.kick);
+            }
         }
-
-        String geo = GeoThread.getGeo();
-        String geocode = GeoThread.getGeocode();
-        String languages = GeoThread.getLang();
-
-        int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
-        int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
         // Remove color nickname
         String changedname = player.name.replaceAll("\\[(.*?)]", "");
@@ -53,17 +73,6 @@ public class EssentialPlayer{
         // Set non-color nickname
         player.name = changedname;
         player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
-
-        try {
-            createNewDatabase(changedname, player.uuid, geo, geocode,
-                    0, 0, 0, 0, timesjoined,
-                    timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
-                    "none", "00:00.00", "none", 0, 0, 0,
-                    0, 0, "none", 0, false, languages, false, false, true);
-        } catch (Exception e){
-            Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
-            player.con.kick(Packets.KickReason.kick);
-        }
     }
 	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat, boolean colornick, boolean connected) {
         try {
@@ -109,19 +118,7 @@ public class EssentialPlayer{
                 stmt.execute(sql);
                 stmt.close();
             }
-            if(dbversion < 2){
-                /*
-                try{
-                    String sql = "ALTER TABLE players ADD COLUMN columnname TEXT";
-                    assert conn != null;
-                    Statement stmt = conn.createStatement();
-                    stmt.execute(sql);
-                    stmt.close();
-                } catch (SQLException e){
-                    e.printStackTrace();
-                }
-                */
-            }
+
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Class.forName("org.sqlite.JDBC");
             assert conn != null;
@@ -165,7 +162,7 @@ public class EssentialPlayer{
                 pstmt.executeUpdate();
                 pstmt.close();
                 conn.close();
-                Log.info("[Essentials] Player database created!");
+                Global.log(name +" Player database created!");
             }
             rs.close();
             stmt.close();
@@ -283,6 +280,25 @@ public class EssentialPlayer{
             conn.close();
         } catch (Exception e){
             e.printStackTrace();
+        }
+    }
+
+    private static final String v1sql = "ALTER TABLE players ADD COLUMN string;";
+    //private static final String v2sql = "ALTER TABLE players ADD COLUMN string;";
+
+    public static void Upgrade() {
+        if(dbversion < 2){
+            try {
+                Class.forName("org.sqlite.JDBC");
+                Connection conn = DriverManager.getConnection(url);
+                Statement stmt = conn.createStatement();
+                if(dbversion < 2){
+                    stmt.execute(v1sql);
+                }
+                stmt.close();
+            } catch (ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 

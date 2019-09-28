@@ -17,14 +17,11 @@ import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.EventType.PlayerJoin;
 import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.game.Version;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
-import io.anuke.mindustry.type.Item;
-import io.anuke.mindustry.type.ItemType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -43,10 +40,10 @@ import java.util.TimerTask;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
-import static essentials.EssentialTimer.playtime;
 import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
-import static io.anuke.mindustry.Vars.*;
+import static io.anuke.mindustry.Vars.netServer;
+import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Main extends Plugin{
 	public Main() {
@@ -56,10 +53,13 @@ public class Main extends Plugin{
 	    main();
 
 	    // Start log
-		//EssentialLog.main();
+		EssentialLog.main();
 
 		// Start discord bot
 		EssentialDiscord.main();
+
+		// DB Upgrade check
+		EssentialPlayer.Upgrade();
 
 		// Start ban/chat server
 		if(banshare){
@@ -69,7 +69,7 @@ public class Main extends Plugin{
 		}
 
 		if(antivpn){
-			Log.info("[Essentials] Anti-VPN enabled.");
+			Global.log("Anti-VPN enabled.");
 		}
 
 		// TODO Make PvP winner count
@@ -84,7 +84,7 @@ public class Main extends Plugin{
             if(detectreactor){
                 Call.sendMessage("[scarlet]= WARNING WARNING WARNING =");
                 Call.sendMessage("[scarlet]Thorium Reactor Exploded");
-                Log.info("Thorium Reactor explode detected!!");
+                Global.log("Thorium Reactor explode detected!!");
             }
         });
 
@@ -125,7 +125,7 @@ public class Main extends Plugin{
 				for (int i = 0; i < array.length(); i++){
 					if (array.getString(i).equals(e.player.name)){
 						e.player.con.kick(KickReason.idInUse);
-						Log.info("[Essentials]"+e.player.name+" nickname is blacklisted.");
+						Global.log(e.player.name+" nickname is blacklisted.");
 					}
 				}
 
@@ -155,7 +155,7 @@ public class Main extends Plugin{
 				if(realname && colornick == 1){
 					ColorNick.main(e.player);
 				} else if(!realname && colornick == 0){
-					Log.warn("[Essentials] Color nickname must be enabled before 'realname' can be enabled.");
+					Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
 
 					String sql = "UPDATE players SET colornick = ? WHERE uuid = ?";
 
@@ -310,7 +310,7 @@ public class Main extends Plugin{
 				// Kill timer thread
 				try{
 					timer.cancel();
-					Log.info("[Essentials] Play/bantime counting thread disabled.");
+					Global.log("Play/bantime counting thread disabled.");
 				} catch (Exception e){
 					err("[Essentials] Failure to disable Playtime counting thread!");
 					e.printStackTrace();
@@ -321,7 +321,7 @@ public class Main extends Plugin{
 					try {
 						Server.active = false;
 						Server.serverSocket.close();
-						Log.info("[EssentialsChat] Chat server thread disabled.");
+						Global.chats("Chat server thread disabled.");
 					} catch (Exception ignored){
 						err("[Essentials] Failure to disable Chat server thread!");
 					}
@@ -331,16 +331,16 @@ public class Main extends Plugin{
 
         // Alert Realname event
         if(realname){
-            Log.info("[Essentials] Realname enabled.");
+			Global.log("Realname enabled.");
         }
 
         // Alert thorium reactor explode detect event
         if(detectreactor){
-            Log.info("[Essentials] Thorium reactor overheat detect enabled.");
+			Global.log("Thorium reactor overheat detect enabled.");
         }
 
         timer.scheduleAtFixedRate(playtime, 0, 1000);
-        Log.info("[Essentials] Play/bantime counting thread started.");
+		Global.log("Play/bantime counting thread started.");
 	}
 
 	@Override
@@ -357,14 +357,14 @@ public class Main extends Plugin{
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						Log.info("[Essentials] banned the "+other.name+" player for "+arg[1]+" hour.");
+						Global.log("banned the "+other.name+" player for "+arg[1]+" hour.");
 					} else {
 						err("No matches found.");
 					}
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					Log.info("[Essentials] banned the "+other.name+" player for "+arg[1]+" hour.");
+					Global.log("banned the "+other.name+" player for "+arg[1]+" hour.");
 					break;
 				default:
 					err("Invalid type.");
@@ -379,7 +379,7 @@ public class Main extends Plugin{
             JSONArray object = new JSONArray(parser);
             object.put(arg[0]);
 			Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
-			Log.info("[Essentials] "+arg[0]+" nickname is registered in blacklist.");
+			Global.log(""+arg[0]+" nickname is registered in blacklist.");
         });
 
 		handler.register("allinfo", "<name>", "Show player information", (args) -> {
@@ -409,7 +409,7 @@ public class Main extends Plugin{
 						"PvP Surrender: " + db.get("pvpbreakout");
 				Log.info(datatext);
 			} else {
-				Log.info("[Essentials] Player not found!");
+				Global.log("Player not found!");
 			}
 		});
 

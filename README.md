@@ -59,13 +59,13 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
     - [x] Server map playtime
     - [ ] difficulty
     - [x] Core resources status
-  - [ ] Discord bot
+  - [x] Discord bot
 - [ ] Optimize
   - [ ] Player DB
     - [ ] Read/write source integration
-    - [ ] DB Upgrade possible
+    - [x] DB Upgrade possible
   - [ ] Config file upgrade possible
-  - [ ] All internal plugin log in file
+  - [x] All internal plugin log in file
 
 ## 5.0 version plans
 - [ ] Vote

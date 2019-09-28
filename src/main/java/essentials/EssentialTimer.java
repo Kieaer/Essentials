@@ -3,9 +3,6 @@ package essentials;
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.type.Item;
-import io.anuke.mindustry.type.ItemType;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -21,8 +18,8 @@ import java.util.Date;
 import java.util.Locale;
 
 import static essentials.EssentialPlayer.getData;
-import static io.anuke.mindustry.Vars.*;
-import static io.anuke.mindustry.content.Items.copper;
+import static io.anuke.mindustry.Vars.netServer;
+import static io.anuke.mindustry.Vars.playerGroup;
 
 public class EssentialTimer {
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
@@ -102,7 +99,7 @@ public class EssentialTimer {
                 object.remove(String.valueOf(i));
                 Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
                 netServer.admins.unbanPlayerID(uuid);
-                Log.info("[Essentials] " + name + "/" + uuid + " player unbanned!");
+                Global.log(name + "/" + uuid + " player unbanned!");
             }
         }
 
