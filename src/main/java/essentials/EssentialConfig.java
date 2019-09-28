@@ -281,7 +281,7 @@ public class EssentialConfig {
             Global.log("config file loaded!");
         }
 
-        if(version <= 2){
+        if(version < 2){
             String text = "# Config version (Don't touch this!)\n" +
                     "version: 2\n\n" +
 
