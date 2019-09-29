@@ -2,7 +2,9 @@ package essentials;
 
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
+import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -14,10 +16,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import static essentials.EssentialConfig.antirushtime;
+import static essentials.EssentialConfig.enableantirush;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
-import static io.anuke.mindustry.Vars.netServer;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static io.anuke.mindustry.Vars.*;
 
 public class EssentialTimer {
     public static String playtime;
@@ -87,14 +90,24 @@ public class EssentialTimer {
         }
 
         // Map playtime counting
-        try{
-            SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-            Calendar cal1;
-            Date d2 = format.parse(playtime);
-            cal1 = Calendar.getInstance();
-            cal1.setTime(d2);
-            cal1.add(Calendar.SECOND, 1);
-            playtime = format.format(cal1.getTime());
-        }catch (Exception ignored){}
+        if(playtime != null){
+            try{
+                Calendar cal1;
+                SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+                Date d2 = format.parse(playtime);
+                cal1 = Calendar.getInstance();
+                cal1.setTime(d2);
+                cal1.add(Calendar.SECOND, 1);
+                playtime = format.format(cal1.getTime());
+                // Anti PvP rushing timer
+                if(enableantirush && Vars.state.rules.pvp && cal1.equals(antirushtime)) {
+                    Call.sendMessage("Peace time is over!");
+                    state.rules.playerDamageMultiplier = 1f;
+                    state.rules.playerHealthMultiplier = 1f;
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 }

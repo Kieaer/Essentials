@@ -98,7 +98,9 @@ public class Main extends Plugin{
 			//e.winner.name();
 		});
 
-		Events.on(EventType.WorldLoadEvent.class, () -> EssentialTimer.playtime = "00:00.00");
+		Events.on(EventType.WorldLoadEvent.class, e -> {
+			EssentialTimer.playtime = "00:00.00";
+		});
 
         // Set if thorium rector explode
         Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
@@ -169,6 +171,12 @@ public class Main extends Plugin{
 				}
 			});
 			playerthread.start();
+
+			// PvP placetime (WorldLoadEvent isn't work.)
+			if(enableantirush && Vars.state.rules.pvp) {
+				state.rules.playerDamageMultiplier = 0f;
+				state.rules.playerHealthMultiplier = 0.001f;
+			}
 		});
 
 		Events.on(EventType.PlayerLeave.class, e -> {
@@ -292,6 +300,28 @@ public class Main extends Plugin{
 
         timer.scheduleAtFixedRate(playtime, 0, 1000);
 		Global.log("Play/bantime counting thread started.");
+
+		/*
+		Position p = new Position() {
+			public float getX() {
+				return 0;
+			}
+
+			public float getY() {
+				return 0;
+			}
+		};
+		int coreProtectrange = 30 * tilesize;
+		if(Vars.state.rules.pvp){
+			if(player.getTeam() != Team.sharded){
+				for(Tile spawn : spawner.getGroundSpawns()){
+					if(p.withinDst(spawn.worldx(), spawn.worldy(), (float) coreProtectrange)){
+						player.kill();
+					}
+				}
+			}
+		}
+		*/
 	}
 
 	@Override

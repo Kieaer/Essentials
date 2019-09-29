@@ -26,6 +26,7 @@ dependencies{
 }
 
 jar{
+    version = null
     from{
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }

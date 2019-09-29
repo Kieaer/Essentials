@@ -5,6 +5,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
 
 public class EssentialConfig {
@@ -24,13 +27,15 @@ public class EssentialConfig {
     static String discordurl;
     public static boolean query;
     private static int version;
-    static String language;
+    private static String language;
+    static boolean enableantirush;
+    static Calendar antirushtime;
 
     public static void main() {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
             String text = "# Config version (Don't touch this!)\n" +
-                    "version: 1\n\n" +
+                    "version: 2\n\n" +
 
                     "# Plugin language\n" +
                     "language: en\n\n" +
@@ -68,7 +73,11 @@ public class EssentialConfig {
 
                     "# Use Discord webbook to send server conversations to Discord.\n" +
                     "webhookenable: false\n" +
-                    "discordurl: none";
+                    "discordurl: none\n" +
+
+                    "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
+                    "enableantirush: true\n" +
+                    "antirushtime: 10.00";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -282,6 +291,22 @@ public class EssentialConfig {
             webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
             discordurl = (String) obj.get("discordurl");
 
+            enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
+            Global.log(String.valueOf(obj.get("antirushtime")));
+
+            try{
+                SimpleDateFormat format = new SimpleDateFormat("mm.ss");
+                Calendar cal;
+                Date d = format.parse(String.valueOf(obj.get("antirushtime")));
+                cal = Calendar.getInstance();
+                cal.setTime(d);
+                antirushtime = cal;
+            } catch (Exception e){
+                e.printStackTrace();
+                Global.loge("Invalid settings! - antirushtime");
+                Global.loge("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
+            }
+
             Global.log("config file loaded!");
         }
 
@@ -325,7 +350,11 @@ public class EssentialConfig {
 
                     "# Use Discord webbook to send server conversations to Discord.\n" +
                     "webhookenable: "+webhookenable+"\n" +
-                    "discordurl: "+discordurl;
+                    "discordurl: "+discordurl+"\n\n" +
+
+                    "# Enable Anti PvP early time rushing\n" +
+                    "enableantirush: "+enableantirush+"\n" +
+                    "antirushtime: "+antirushtime;
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
