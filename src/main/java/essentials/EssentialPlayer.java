@@ -1,6 +1,5 @@
 package essentials;
 
-import essentials.thread.GeoThread;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -8,6 +7,11 @@ import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,6 +21,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.anuke.mindustry.Vars.netServer;
 
@@ -35,18 +41,76 @@ public class EssentialPlayer{
 
                 boolean isLocal = player.isLocal;
 
-                Runnable georun = new GeoThread(ip, isLocal);
-                Thread geothread = new Thread(georun);
+                // Geolocation
+                String geo;
+                String geocode;
+                String lang;
+                Pattern p = null;
                 try {
-                    geothread.start();
-                    geothread.join();
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    p = Pattern.compile(
+                            "(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+                assert p != null;
+                Matcher m = p.matcher(ip);
 
-                String geo = GeoThread.getGeo();
-                String geocode = GeoThread.getGeocode();
-                String languages = GeoThread.getLang();
+                if(m.find()){
+                    isLocal = true;
+                }
+                if(isLocal) {
+                    geo = "Local IP";
+                    geocode = "LC";
+                    lang = "en";
+                } else {
+                    try {
+                        String apiURL = "http://ipapi.co/" + ip + "/json";
+                        URL url = new URL(apiURL);
+                        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                        con.setReadTimeout(5000);
+                        con.setRequestMethod("POST");
+
+                        boolean redirect = false;
+
+                        int status = con.getResponseCode();
+                        if (status != HttpURLConnection.HTTP_OK) {
+                            if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER) redirect = true;
+                        }
+
+                        if (redirect) {
+                            String newUrl = con.getHeaderField("Location");
+                            String cookies = con.getHeaderField("Set-Cookie");
+
+                            con = (HttpURLConnection) new URL(newUrl).openConnection();
+                            con.setRequestProperty("Cookie", cookies);
+                        }
+
+                        BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                        String inputLine;
+                        StringBuffer response = new StringBuffer();
+                        while ((inputLine = br.readLine()) != null) {
+                            response.append(inputLine);
+                        }
+                        br.close();
+                        JSONTokener parser = new JSONTokener(response.toString());
+                        JSONObject result = new JSONObject(parser);
+
+                        if(result.has("reserved")){
+                            geo = "Local IP";
+                            geocode = "LC";
+                            lang = "en";
+                        } else {
+                            geo = result.getString("country_name");
+                            geocode = result.getString("country");
+                            lang = result.getString("languages").substring(0, 1);
+                        }
+                    } catch (IOException e) {
+                        geo = "invalid";
+                        geocode = "invalid";
+                        lang = "en";
+                    }
+                }
+                // Geolocation end
 
                 int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
                 int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
@@ -59,11 +123,11 @@ public class EssentialPlayer{
                 player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
 
                 try {
-                    createNewDatabase(changedname, player.uuid, geo, geocode,
+                    createNewDatabase(changedname, player.uuid, geo, geocode, lang,
                             0, 0, 0, 0, timesjoined,
                             timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
                             "none", "00:00.00", "none", 0, 0, 0,
-                            0, 0, "none", 0, false, languages, false, false, true);
+                            0, 0, "none", 0, false, false, false, true);
                 } catch (Exception e){
                     Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
                     player.con.kick("You have been kicked due to a plugin error.");
@@ -80,7 +144,7 @@ public class EssentialPlayer{
             e.printStackTrace();
         }
     }
-	public static void createNewDatabase(String name, String uuid, String country, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, String language, boolean crosschat, boolean colornick, boolean connected) {
+	public static void createNewDatabase(String name, String uuid, String country, String language, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, boolean crosschat, boolean colornick, boolean connected) {
         try {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
@@ -130,8 +194,6 @@ public class EssentialPlayer{
             assert conn != null;
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
-            assert country != null;
-            assert country_code != null;
             if(!rs.next()){
                 String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);

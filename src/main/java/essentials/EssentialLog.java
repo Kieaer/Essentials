@@ -13,7 +13,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import static essentials.EssentialPlayer.getData;
-import static essentials.EssentialPlayer.queryresult;
 
 public class EssentialLog {
     public static void main(){
@@ -111,9 +110,11 @@ public class EssentialLog {
         });
 
         Events.on(EventType.PlayerJoin.class, e -> {
+            /*
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             JSONObject db = getData(e.player.uuid);
+
             if(queryresult){
                 try {
                     String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
@@ -147,6 +148,7 @@ public class EssentialLog {
                     ex.printStackTrace();
                 }
             }
+            */
         });
 
         Events.on(EventType.PlayerConnect.class, e -> {

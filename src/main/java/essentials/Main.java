@@ -48,7 +48,9 @@ import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin{
+	private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
+
 	// Note
 	//Blocks.message = new MessageBlock(){ /**override methods **/};
 	//Vars.plugins.getPlugin(getClass()).zipRoot.child("bundle.properties")
@@ -394,8 +396,6 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerClientCommands(CommandHandler handler){
-		ArrayList<String> vote = new ArrayList<>();
-
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			player.sendMessage(motd);
@@ -518,120 +518,126 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (args, player) -> {
-			switch(args[0]){
+			switch(args[0]) {
 				case "gameover":
-					if(!voteactive){
-						voteactive = true;
+					if(!this.voteactive) {
+						this.voteactive = true;
 						vote.add(player.name);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.6 * Vars.playerGroup.size());
-						Call.sendMessage("[green]Gameover vote started! Use '/vote y' to agree.");
+						Call.sendMessage("[green][Essentials] Gameover vote started! Use '/vote y' to agree.");
+						Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
-								Thread.sleep(30000);
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 20 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 10 seconds remaining");
+								Thread.sleep(10000);
+								if (current >= require) {
+									Call.sendMessage("[green][Essentials] Gameover vote passed!");
+									Events.fire(new EventType.GameOverEvent(Team.sharded));
+									Thread.sleep(15000);
+								} else {
+									Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
+								}
+								vote.clear();
+								this.voteactive = false;
 							} catch (InterruptedException e) {
 								e.printStackTrace();
-							}
-							if(current < require){
-								Call.sendMessage("[green]Gameover vote passed!");
-								Events.fire(new EventType.GameOverEvent(Team.sharded));
-								vote.clear();
-								voteactive = false;
-							} else {
-								Call.sendMessage("[red]Gameover vote failed.");
-								vote.clear();
-								voteactive = false;
 							}
 						});
 						t.start();
 					} else {
-						player.sendMessage("[green]Vote in processing!");
+						player.sendMessage("[green][Essentials] Vote in processing!");
 					}
 					break;
 				case "skipwave":
-					// TODO add 5 minute cooltime
-					if(!voteactive){
-						voteactive = true;
+					if(!this.voteactive){
+						this.voteactive = true;
 						vote.add(player.name);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.6 * Vars.playerGroup.size());
-						Call.sendMessage("[green]skipwave vote started! Use '/vote y' to agree.");
+						Call.sendMessage("[green][Essentials] skipwave vote started! Use '/vote y' to agree.");
+						Call.sendMessage("[green][Essentials] Require [scarlet]"+require+"[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
-								Thread.sleep(30000);
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 20 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 10 seconds remaining");
+								Thread.sleep(10000);
+								if (current >= require) {
+									Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
+									for (int i = 0; i < 10; i++) {
+										logic.runWave();
+									}
+								} else {
+									Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
+								}
+								vote.clear();
+								this.voteactive = false;
 							} catch (InterruptedException e) {
 								e.printStackTrace();
-							}
-							if(current < require){
-								Call.sendMessage("[green]Skip 10 wave vote passed!");
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								logic.runWave();
-								vote.clear();
-								voteactive = false;
-							} else {
-								Call.sendMessage("[red]Skip 10 wave vote failed.");
-								vote.clear();
-								voteactive = false;
 							}
 						});
 						t.start();
 					} else {
-						player.sendMessage("[green]Vote in processing!");
+						player.sendMessage("[green][Essentials] Vote in processing!");
 					}
 					break;
 				case "ban":
-					if(!voteactive){
+					if(!this.voteactive){
+						this.voteactive = true;
 						vote.add(player.name);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.6 * Vars.playerGroup.size());
 						Player target = playerGroup.find(p -> p.name.equals(args[1]));
-						if(target != null){
+						if (target != null) {
 							target.con.kick("You have been kicked by voting.");
 						} else {
-							player.sendMessage("[green]Player not found!");
-							voteactive = false;
+							player.sendMessage("[scarlet]Player not found!");
+							this.voteactive = false;
+							return;
 						}
 
-						Call.sendMessage("[green]ban vote started! Use '/vote y' to agree.");
+						Call.sendMessage("[green][Essentials] ban vote started! Use '/vote y' to agree.");
+						Call.sendMessage("[green][Essentials] Require [white]" + require + "[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
-								Thread.sleep(30000);
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 20 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 10 seconds remaining");
+								Thread.sleep(10000);
+								if (current >= require) {
+									Call.sendMessage("[green][Essentials] Player ban vote success!");
+									EssentialPlayer.addtimeban(target.name, target.uuid, 4);
+									Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. "+current+"/"+require);
+
+									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
+									Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+									try {
+										JSONObject db = getData(target.uuid);
+										String text = db.get("name") + " / " + target.uuid + " Player has banned due to voting. "+current+"/"+require+"\n";
+										byte[] result = text.getBytes();
+										Files.write(path, result, StandardOpenOption.APPEND);
+										Files.write(total, result, StandardOpenOption.APPEND);
+									} catch (IOException error) {
+										error.printStackTrace();
+									}
+
+									netServer.admins.banPlayer(target.uuid);
+								} else {
+									Call.sendMessage("[green][Essentials][red] Player ban vote failed.");
+								}
+								vote.clear();
+								this.voteactive = false;
 							} catch (InterruptedException e) {
 								e.printStackTrace();
-							}
-							if(current < require){
-								Call.sendMessage("[green][Essentials] Player ban vote success!");
-								EssentialPlayer.addtimeban(target.name, target.uuid, 4);
-								Global.log(target.name+" / "+target.uuid+" Player has banned due to voting.");
-
-								Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-								Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-								try {
-									JSONObject db = getData(target.uuid);
-									String text = db.get("name")+" / "+target.uuid+" Player has banned due to voting.\n";
-									byte[] result = text.getBytes();
-									Files.write(path, result, StandardOpenOption.APPEND);
-									Files.write(total, result, StandardOpenOption.APPEND);
-								}catch (IOException error) {
-									error.printStackTrace();
-								}
-
-								netServer.admins.banPlayer(target.uuid);
-								vote.clear();
-							} else {
-								Call.sendMessage("[green][Essentials][red] Player ban vote failed.");
-								vote.clear();
 							}
 						});
 						t.start();
@@ -640,21 +646,21 @@ public class Main extends Plugin{
 					}
 					break;
 				case "y":
-					if(voteactive) {
+					if(this.voteactive) {
 						if (vote.contains(player.name)) {
 							player.sendMessage("[green][Essentials][scarlet] You're already voted!");
 						} else {
 							vote.add(player.name);
 							int current = vote.size();
 							int require = (int) Math.ceil(0.6 * Vars.playerGroup.size()) - current;
-							Call.sendMessage("[green]" + current + " players voted. need " + require + " more players.");
+							Call.sendMessage("[green][Essentials] " + current + " players voted. need " + require + " more players.");
 						}
 					} else {
-						player.sendMessage("[green]Vote not processing!");
+						player.sendMessage("[green][Essentials] Vote not processing!");
 					}
 					break;
 				default:
-					player.sendMessage("Invalid option!");
+					player.sendMessage("[Essentials] Invalid option!");
 					break;
 			}
 		});
