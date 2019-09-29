@@ -722,7 +722,6 @@ public class Main extends Plugin{
 			JSONObject db = getData(player.uuid);
 			int value = Integer.parseInt(db.getString("crosschat"));
 			int set;
-			String sql = "UPDATE players SET crosschat = ? WHERE uuid = ?";
 			if(value == 0){
 				set = 1;
 				player.sendMessage("[green][INFO] [] Crosschat enabled.");
@@ -742,7 +741,6 @@ public class Main extends Plugin{
 				JSONObject db = getData(player.uuid);
 				int value = Integer.parseInt(db.getString("colornick"));
 				int set;
-				String sql = "UPDATE players SET colornick = ? WHERE uuid = ?";
 				if(value == 0){
 					set = 1;
 					player.sendMessage("[green][INFO] [] colornick enabled.");
