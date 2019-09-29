@@ -781,7 +781,23 @@ public class Main extends Plugin{
 				}
 
 				writeData("UPDATE players SET colornick = '"+set+"' WHERE uuid = '"+player.uuid+"'");
+			}
+		});
 
+		handler.<Player>register("team", "Change team (PvP only)", (args, player) -> {
+			if(player.isAdmin){
+				int i = player.getTeam().ordinal()+1;
+				while (i != player.getTeam().ordinal()){
+					if (i >= Team.all.length) i = 0;
+					if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()){
+						player.setTeam(Team.all[i]);
+						break;
+					}
+					i++;
+				}
+				player.kill();
+			} else {
+				player.sendMessage("You're not admin!");
 			}
 		});
 	}

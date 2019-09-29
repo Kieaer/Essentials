@@ -76,7 +76,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] PvP mode rule
   - [ ] ~~Anti coal in mech~~ (Impossible. No event.)
   - [x] Attackable timer
-  - [ ] Team switching
+  - [x] Team switching
 - [ ] Ban share
   - [ ] Auto share ban list to other clients
   - [ ] ban to sent info
