@@ -23,11 +23,9 @@ dependencies{
     compile 'com.github.MrPowerGamerBR:TemmieWebhook:59de40c3b6'
     compile 'org.projectlombok:lombok:1.18.10'
     compile 'com.github.kevinsawicki:http-request:http-request-6.0'
-
 }
 
 jar{
-    version = null
     from{
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }

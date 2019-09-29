@@ -76,7 +76,6 @@ public class Main extends Plugin{
 		});
 		update.start();
 
-
 		// Start discord bot
 		EssentialDiscord.main();
 

@@ -11,7 +11,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 ## Client commands
 
 | Command | Parameter | Description |
-|:--|:--|:--|
+|:---|:---|:--- |
 | tp | &lt;player name&gt; | Teleport to players |
 | tpp | &lt;player name&gt; &lt;another player name&gt; | Teleport player to other players |
 | me | &lt;msg&gt; | Show special chat format |
@@ -39,7 +39,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 ## Console commands
 
 | Command | Parameter | Description |
-|:--|:--|:--|
+|:---|:---|:---|
 | tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | allinfo | &lt;player name&gt; | Show player information |
 | bansync |   | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
@@ -58,7 +58,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
     - [x] Server version
     - [x] Server description
     - [x] Server map playtime
-    - [ ] ~~difficulty~~ (impossible)
+    - [ ] ~~difficulty~~ (impossible. Game source limit.)
     - [x] Core resources status
   - [x] Discord bot
 - [x] Optimize
@@ -74,7 +74,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] Next wave
   - [x] Ban
 - [ ] PvP mode rule
-  - [ ] Anti coal in mech
+  - [ ] ~~Anti coal in mech~~ (Impossible. No event.)
   - [ ] Attackable timer
   - [ ] Team switching
 - [ ] Ban share
@@ -89,7 +89,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [ ] Detect some nickname
 - [ ] Nickname prefix
 - [ ] Anti-Explode
-- [ ] Translatable all messages using bundle
+- [ ] ~~Translatable all messages using bundle~~ (impossible. java limit.)
 
 ## 6.0 version plans
 - [ ] Make RPG using player DB
