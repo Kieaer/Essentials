@@ -1,8 +1,6 @@
 package essentials.thread;
 
 import essentials.Global;
-import essentials.Main;
-import io.anuke.mindustry.Vars;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -14,7 +12,7 @@ import java.net.URL;
 
 public class Update {
     public static void main(){
-        HttpURLConnection con = null;
+        HttpURLConnection con;
         try {
             String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
             URL url = new URL(apiURL);
@@ -45,7 +43,8 @@ public class Update {
             JSONObject object = new JSONObject(parser);
 
             DefaultArtifactVersion latest = new DefaultArtifactVersion((String) object.get("tag_name"));
-            DefaultArtifactVersion current = new DefaultArtifactVersion(Vars.mods.getMod(Main.class).meta.version);
+            DefaultArtifactVersion current = new DefaultArtifactVersion("5.0");
+            //Vars.mods.getMod(Main.class).meta.version
 
             if(latest.compareTo(current) > 0){
                 Global.log("New version found!");

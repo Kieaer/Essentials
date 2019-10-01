@@ -30,7 +30,7 @@ import static io.anuke.mindustry.Vars.*;
 public class Server implements Runnable{
     public static ServerSocket serverSocket;
     public static boolean active = true;
-    static Socket socket;
+    private static Socket socket;
     public static Player player;
 
     private static void ban(String data, String remoteip){
@@ -172,6 +172,10 @@ public class Server implements Runnable{
                 String data = br.readLine();
                 String remoteip = socket.getRemoteSocketAddress().toString();
 
+                // If connect invalid data
+                if(data == null){
+                    return;
+                }
                 if(data.matches("(.*)\\|(.*)")){
                     if(banshare) {
                         ban(data, remoteip);

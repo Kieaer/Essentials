@@ -73,7 +73,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] Surrender
   - [x] Next wave
   - [x] Ban
-- [ ] PvP mode rule
+- [x] PvP mode rule
   - [ ] ~~Anti coal in mech~~ (Impossible. No event.)
   - [x] Attackable timer
   - [x] Team switching
@@ -86,7 +86,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [ ] Fix translate not working
 - [ ] Teleport
   - [ ] using ID
-  - [ ] Detect some nickname
+  - [x] Detect some nickname
 - [ ] Nickname prefix
 - [ ] Anti-Explode
 - [ ] ~~Translatable all messages using bundle~~ (impossible. java limit.)
