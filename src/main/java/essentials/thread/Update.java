@@ -45,7 +45,7 @@ public class Update {
             JSONObject object = new JSONObject(parser);
 
             DefaultArtifactVersion latest = new DefaultArtifactVersion((String) object.get("tag_name"));
-            DefaultArtifactVersion current = new DefaultArtifactVersion(Vars.plugins.getPlugin(Main.class).meta.version);
+            DefaultArtifactVersion current = new DefaultArtifactVersion(Vars.mods.getMod(Main.class).meta.version);
 
             if(latest.compareTo(current) > 0){
                 Global.log("New version found!");

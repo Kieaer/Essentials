@@ -19,6 +19,9 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialTimer.playtime;
@@ -101,7 +104,7 @@ public class Server implements Runnable{
         }
     }
 
-    private void query(){
+    private static String query(){
         JSONObject json = new JSONObject();
         JSONObject items = new JSONObject();
         JSONArray array = new JSONArray();
@@ -122,13 +125,36 @@ public class Server implements Runnable{
         json.put("playtime", playtime);
         json.put("difficulty", Difficulty.values());
         json.put("resource",items);
+        return json.toString();
+    }
 
+    private void httpserver(){
         try{
+            String data = query();
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+            String time = now.format(dateTimeFormatter);
+
             OutputStream os = socket.getOutputStream();
             OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
             BufferedWriter bw = new BufferedWriter(osw);
-            bw.write(String.valueOf(json));
-            bw.flush();
+            if(query){
+                bw.write("HTTP/1.1 200 OK\r\n");
+                bw.write("Date: "+time+"\r\n");
+                bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                bw.write("Content-Type: application/json; charset=UTF-8\r\n");
+                bw.write("Content-Length: "+data.getBytes().length+1+"\r\n");
+                bw.write("\r\n");
+                bw.write(query());
+            } else {
+                bw.write("HTTP/1.1 403 Forbidden\r\n");
+                bw.write("Date: "+time+"\r\n");
+                bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                bw.write("\r\n");
+                bw.write("<TITLE>403 Forbidden</TITLE>");
+                bw.write("<p>This server isn't allowed query!</p>");
+            }
+            bw.close();
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -150,14 +176,14 @@ public class Server implements Runnable{
                     if(banshare) {
                         ban(data, remoteip);
                     }
-                } else if(data.equals("hi")) {
-                    if(query){
-                        query();
-                    }
+                } else if (data.equals("GET / HTTP/1.1")) {
+                    httpserver();
                 } else {
                     chat(data, remoteip);
                 }
             }
-        } catch (Exception ignored){}
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

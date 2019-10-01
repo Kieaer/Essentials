@@ -293,7 +293,6 @@ public class EssentialConfig {
 
             enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
             Global.log(String.valueOf(obj.get("antirushtime")));
-
             try{
                 SimpleDateFormat format = new SimpleDateFormat("mm.ss");
                 Calendar cal;

@@ -485,8 +485,18 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (args, player) -> {
-			Player other1 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
-			Player other2 = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[1]));
+			Player other1 = null;
+			Player other2 = null;
+			for(Player p : playerGroup.all()){
+				boolean result1 = p.name.contains(args[0]);
+				if(result1){
+					other1 = p;
+				}
+				boolean result2 = p.name.contains(args[1]);
+				if (result2) {
+					other2 = p;
+				}
+			}
 			if(!player.isAdmin){
 				player.sendMessage("[green]Notice:[] You're not admin!");
 			} else {
@@ -495,17 +505,28 @@ public class Main extends Plugin{
 					return;
 				}
 				other1.setNet(other2.x, other2.y);
+				other1.setX(other2.x);
+				other1.setY(other2.y);
 			}
 		});
 
-		// Teleport source from https://github.com/J-VdS/locationplugin
 		handler.<Player>register("tp", "<player>", "Teleport to other players", (args, player) -> {
-			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
+			Player other = null;
+			for(Player p : playerGroup.all()){
+				boolean result = p.name.contains(args[0]);
+				if(result){
+					other = p;
+				}
+			}
 			if(other == null){
 				player.sendMessage("[scarlet]No player by that name found!");
 				return;
 			}
-			player.setNet(other.x, other.y);
+			if(!other.isMobile){
+				player.setNet(other.x, other.y);
+			} else {
+				player.sendMessage("[scarlet]This player is playing on Mobile! Mobile user teleport isn't supported.");
+			}
 		});
 
 		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
@@ -520,7 +541,13 @@ public class Main extends Plugin{
 			if(!player.isAdmin){
 				player.sendMessage("[green]Notice: [] You're not admin!");
 			} else {
-				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(args[0]));
+				Player other = null;
+				for(Player p : playerGroup.all()){
+					boolean result = p.name.contains(args[0]);
+					if(result){
+						other = p;
+					}
+				}
 				if(other != null){
 					int bantimeset = Integer.parseInt(args[1]);
 					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
