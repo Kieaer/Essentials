@@ -35,10 +35,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
@@ -120,8 +117,12 @@ public class Main extends Plugin{
 				EssentialPlayer.main(e.player);
 				JSONObject db = getData(e.player.uuid);
 
+				LocalDateTime now = LocalDateTime.now();
+				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+				String nowString = now.format(dateTimeFormatter);
+
 				// Write player connected
-				writeData("UPDATE players SET connected = '1' WHERE uuid = '"+e.player.uuid+"'");
+				writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"' WHERE uuid = '"+e.player.uuid+"'");
 
 				// Check if realname enabled
 				if(realname){

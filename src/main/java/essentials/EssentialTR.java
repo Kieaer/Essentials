@@ -17,7 +17,6 @@ import static io.anuke.mindustry.Vars.playerGroup;
 
 class EssentialTR {
     static void main(Player player, String message) {
-        Global.log("STARTED");
         String clientId = "Ujx3Ysdxfg7FY2wQn2ES";
         String clientSecret = "iHAb6PF3SK";
         try {
@@ -57,7 +56,6 @@ class EssentialTR {
     }
 
     private static void translate(Player player, JSONObject lang, String message){
-        Global.log("translate");
         JSONObject db = getData(player.uuid);
 
         String clientId = "RNOXzFalw7FMFjBe2mbq";
@@ -96,16 +94,12 @@ class EssentialTR {
             JSONObject v1 = (JSONObject) object.get("message");
             JSONObject v2 = (JSONObject) v1.get("result");
             String result = String.valueOf(v2.get("translatedText"));
-
-            Global.log(String.valueOf(object));
             if(playerGroup != null && playerGroup.size() > 0) {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player p = playerGroup.all().get(i);
                     JSONObject db2 = getData(p.uuid);
                     boolean value = (boolean) db2.get("translate");
-                    Global.log(result);
                     if (value) {
-                        Global.log(result);
                         p.sendMessage("[orange][" + player.name.replaceAll("\\[(.*?)]", "") + "][white]: [#F5FF6B]" + result);
                     }
                 }

@@ -57,7 +57,7 @@ public class EssentialTimer {
 
                 // Exp caculating
                 int exp = (int) db.get("exp");
-                int newexp = exp+(int)(Math.random()*5)+(int)db.get("level");
+                int newexp = exp+(int)(Math.random()*5);
 
                 writeData("UPDATE players SET exp = '"+newexp+"', playtime = '"+newTime+"' WHERE uuid = '"+player.uuid+"'");
 
