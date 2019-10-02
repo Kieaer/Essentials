@@ -232,6 +232,154 @@ public class EssentialConfig {
             Global.log("Exp config file created!");
         }
 
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/BlockReqExp.txt").exists()) {
+            String text = "# crafting\n" +
+                    "graphite-press: 5\n" +
+                    "multi-press: 35\n" +
+                    "silicon-smelter: 10\n" +
+                    "kiln: 20\n" +
+                    "plastanium-compressor: 35\n" +
+                    "phase-weaver: 50\n" +
+                    "alloy-smelter: 65\n" +
+                    "cryofluidmixer: 65\n" +
+                    "blast-mixer: 20\n" +
+                    "pyratite-mixer: 10\n" +
+                    "melter: 50\n" +
+                    "separator: 65\n" +
+                    "spore-press: 20\n" +
+                    "pulverizer: 75\n" +
+                    "coal-centrifuge: 35\n" +
+                    "incinerator: 35\n\n" +
+
+                    "# Sandbox\n" +
+                    "power-void: 65\n" +
+                    "power-source: 65\n" +
+                    "item-source: 65\n" +
+                    "item-void: 65\n" +
+                    "liquid-source: 65\n" +
+                    "message: 5\n\n" +
+
+                    "# Defence\n" +
+                    "scrap-wall: 65\n" +
+                    "scrap-wall-large: 65\n" +
+                    "scrap-wall-huge: 65\n" +
+                    "scrap-wall-gigantic: 65\n" +
+                    "thruster: 65\n" +
+                    "copper-wall: 5\n" +
+                    "copper-wall-large: 10\n" +
+                    "titanium-wall: 10\n" +
+                    "titanium-wall-large: 20\n" +
+                    "thorium-wall: 20\n" +
+                    "thorium-wall-large: 35\n" +
+                    "phase-wall: 50\n" +
+                    "phase-wall-large: 65\n" +
+                    "surge-wall: 35\n" +
+                    "surge-wall-large: 50\n" +
+                    "door: 20\n" +
+                    "door-large: 35\n" +
+                    "mender: 20\n" +
+                    "mend-projector: 35\n" +
+                    "overdrive-projector: 65\n" +
+                    "force-projector: 50\n" +
+                    "shock-mine: 35\n\n" +
+
+                    "# Distribution\n" +
+                    "conveyor: 1\n" +
+                    "titanium-conveyor: 20\n" +
+                    "armored-conveyor: 35\n" +
+                    "junction: 5\n" +
+                    "bridge-conveyor: 10\n" +
+                    "phase-conveyor: 35\n" +
+                    "sorter: 20\n" +
+                    "router: 10\n" +
+                    "distributor: 20\n" +
+                    "overflow-gate: 35\n" +
+                    "mass-driver: 50\n\n" +
+
+                    "# Liquid\n" +
+                    "mechanical-pump: 5\n" +
+                    "rotary-pump: 50\n" +
+                    "thermal-pump: 65\n" +
+                    "conduit: 10\n" +
+                    "pulse-conduit: 50\n" +
+                    "liquid-router: 35\n" +
+                    "liquid-tank: 50\n" +
+                    "liquid-junction: 65\n" +
+                    "bridge-conduit: 35\n" +
+                    "phase-conduit: 65\n\n" +
+
+                    "# Power\n" +
+                    "power-node: 10\n" +
+                    "power-node-large: 20\n" +
+                    "surge-tower: 35\n" +
+                    "battery: 20\n" +
+                    "battery-large: 35\n" +
+                    "combustion-generator: 5\n" +
+                    "thermal-generator: 35\n" +
+                    "turbine-generator: 20\n" +
+                    "differential-generator: 50\n" +
+                    "rtg-generator: 75\n" +
+                    "solar-panel: 20\n" +
+                    "solar-panel-large: 35\n" +
+                    "thorium-reactor: 65\n" +
+                    "impact-reactor: 75\n\n" +
+
+                    "# Production\n" +
+                    "mechanical-drill: 1\n" +
+                    "pneumatic-drill: 10\n" +
+                    "laser-drill: 20\n" +
+                    "blast-drill: 35\n" +
+                    "water-extractor: 35\n" +
+                    "cultivator: 20\n" +
+                    "oil-extractor: 50\n\n" +
+
+                    "# Storage\n" +
+                    "vault: 35\n" +
+                    "container: 20\n" +
+                    "unloader: 65\n\n" +
+
+                    "# Turrets\n" +
+                    "duo: 1\n" +
+                    "scatter: 5\n" +
+                    "scorch: 5\n" +
+                    "hail: 10\n" +
+                    "wave: 20\n" +
+                    "lancer: 20\n" +
+                    "arc: 10\n" +
+                    "swarmer: 35\n" +
+                    "salvo: 20\n" +
+                    "fuse: 50\n" +
+                    "ripple: 35\n" +
+                    "cyclone: 50\n" +
+                    "spectre: 65\n" +
+                    "meltdown: 70\n\n" +
+
+                    "# Units\n" +
+                    "draug-factory: 10\n" +
+                    "spirit-factory: 20\n" +
+                    "phantom-factory: 35\n" +
+                    "command-center: 35\n" +
+                    "wraith-factory: 35\n" +
+                    "ghoul-factory: 50\n" +
+                    "revenant-factory: 65\n" +
+                    "dagger-factory: 20\n" +
+                    "crawler-factory: 35\n" +
+                    "titan-factory: 50\n" +
+                    "fortress-factory: 65\n" +
+                    "repair-point: 50\n\n" +
+
+                    "# Upgrade\n" +
+                    "dart-mech-pad: 10\n" +
+                    "delta-mech-pad: 20\n" +
+                    "tau-mech-pad: 35\n" +
+                    "omega-mech-pad: 50\n" +
+                    "javelin-ship-pad: 35\n" +
+                    "trident-ship-pad: 50\n" +
+                    "glaive-ship-pad: 65";
+            Core.settings.getDataDirectory().child("plugins/Essentials/BlockReqExp.txt").writeString(text);
+            Global.log("BlockReqExp config file created!");
+        }
+
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/data.json").exists()) {
             JSONObject object = new JSONObject();
             object.put("banall", "true");

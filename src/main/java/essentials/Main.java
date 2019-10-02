@@ -41,8 +41,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static essentials.EssentialConfig.*;
-import static essentials.EssentialPlayer.getData;
-import static essentials.EssentialPlayer.writeData;
+import static essentials.EssentialPlayer.*;
 import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
@@ -58,6 +57,9 @@ public class Main extends Plugin{
 	//Connection#kick(String reason)
 
 	public Main() {
+		// Make player DB
+		createNewDataFile();
+
 		// Start config file
 	    EssentialConfig.main();
 
@@ -92,6 +94,9 @@ public class Main extends Plugin{
 		if(antivpn){
 			Global.log("Anti-VPN enabled.");
 		}
+
+		// Essentials EPG Features
+        EssentialEPG.main();
 
 		// TODO Make PvP winner count
 		Events.on(EventType.GameOverEvent.class, e -> {
@@ -226,6 +231,7 @@ public class Main extends Plugin{
 						blockexp = Integer.parseInt(String.valueOf(obj.get(e.tile.block().name)));
 					} else {
 						blockexp = 5;
+						Global.loge(e.tile.block().name+" block isn't found!");
 					}
 					int newexp = exp + blockexp;
 					data++;

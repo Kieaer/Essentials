@@ -29,7 +29,7 @@ import static io.anuke.mindustry.Vars.netServer;
 public class EssentialPlayer{
     private static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
     private static int dbversion = 1;
-    static boolean queryresult;
+    private static boolean queryresult;
 
     static void main(Player player){
         try {
@@ -144,8 +144,8 @@ public class EssentialPlayer{
             e.printStackTrace();
         }
     }
-	public static void createNewDatabase(String name, String uuid, String country, String language, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, boolean crosschat, boolean colornick, boolean connected) {
-        try {
+    static void createNewDataFile(){
+        try{
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
             if(conn != null){
@@ -188,10 +188,15 @@ public class EssentialPlayer{
                 stmt.execute(sql);
                 stmt.close();
             }
-
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, boolean crosschat, boolean colornick, boolean connected) {
+        try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Class.forName("org.sqlite.JDBC");
-            assert conn != null;
+            Connection conn = DriverManager.getConnection(url);
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
@@ -342,7 +347,7 @@ public class EssentialPlayer{
     private static final String v1sql = "ALTER TABLE players ADD COLUMN string;";
     //private static final String v2sql = "ALTER TABLE players ADD COLUMN string;";
 
-    public static void Upgrade() {
+    static void Upgrade() {
         /*
         if(dbversion < 2){
             try {
@@ -361,7 +366,7 @@ public class EssentialPlayer{
          */
     }
 
-	public static void writeData(String sql){
+	static void writeData(String sql){
         try {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
