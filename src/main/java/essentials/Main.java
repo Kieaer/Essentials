@@ -42,7 +42,6 @@ import java.util.TimerTask;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
-import static essentials.thread.Detectlang.detectlang;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
@@ -77,9 +76,6 @@ public class Main extends Plugin{
 			}
 		});
 		update.start();
-
-		// Start discord bot
-		EssentialDiscord.main();
 
 		// DB Upgrade check
 		EssentialPlayer.Upgrade();
@@ -166,10 +162,10 @@ public class Main extends Plugin{
 				expthread.start();
 
 				// Color nickname
-				int colornick = Integer.parseInt(db.getString("colornick"));
-				if(realname && colornick == 1){
+				boolean colornick = (boolean) db.get("colornick");
+				if(realname && colornick){
 					ColorNick.main(e.player);
-				} else if(!realname && colornick == 0){
+				} else if(!realname && colornick){
 					Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
 
 					writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+e.player.uuid+"'");
@@ -198,19 +194,19 @@ public class Main extends Plugin{
 			if(!check.equals("/")) {
 				//boolean valid = e.message.matches("\\w+");
 				JSONObject db = getData(e.player.uuid);
-				int translate = Integer.parseInt(db.getString("translate"));
-				int crosschat = Integer.parseInt(db.getString("crosschat"));
+				boolean crosschat = (boolean) db.get("crosschat");
 
-				detectlang(translate, e.player, e.message);
+				EssentialTR.main(e.player, e.message);
+
 				if (clientenable) {
-					if(crosschat == 1) {
+					if(crosschat) {
 						Thread chatclient = new Thread(() -> {
 							String message = e.player.name.replaceAll("\\[(.*?)]", "") + ": " + e.message;
 							Client.main("chat", message, e.player);
 						});
 						chatclient.start();
 					}
-				} else if(crosschat == 1){
+				} else if(crosschat){
 					e.player.sendMessage("Currently server isn't enable cross-server client!");
 				}
 			}
@@ -220,6 +216,7 @@ public class Main extends Plugin{
 		Events.on(EventType.BlockBuildEndEvent.class, e -> {
 			if (!e.breaking && e.player != null && e.player.buildRequest() != null) {
 				JSONObject db = getData(e.player.uuid);
+				String name = e.tile.block().name;
 				try{
 					int data = db.getInt("placecount");
 					int exp = db.getInt("exp");
@@ -227,11 +224,10 @@ public class Main extends Plugin{
 					Yaml yaml = new Yaml();
 					Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
 					int blockexp;
-					if(String.valueOf(obj.get(e.tile.block().name)) != null) {
-						blockexp = Integer.parseInt(String.valueOf(obj.get(e.tile.block().name)));
+					if(obj.get(name) != null) {
+						blockexp = (int) obj.get(name);
 					} else {
-						blockexp = 5;
-						Global.loge(e.tile.block().name+" block isn't found!");
+						blockexp = 0;
 					}
 					int newexp = exp + blockexp;
 					data++;
@@ -433,7 +429,12 @@ public class Main extends Plugin{
 	public void registerClientCommands(CommandHandler handler){
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
-			player.sendMessage(motd);
+			int count = motd.split("\r\n|\r|\n").length;
+			if(count > 10){
+				Call.onInfoMessage(player.con, motd);
+			} else {
+				player.sendMessage(motd);
+			}
 		});
 
 		handler.<Player>register("getpos", "Get your current position info", (args, player) -> player.sendMessage("X: "+Math.round(player.x)+" Y: "+Math.round(player.y)));
@@ -564,7 +565,7 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("me", "<text>", "broadcast * message", (args, player) -> Call.sendMessage("[orange]*[] "+player.name+"[white] : "+args[0]));
+		handler.<Player>register("me", "[text...]", "broadcast * message", (args, player) -> Call.sendMessage("[orange]*[] "+player.name+"[white] : "+args[0]));
 
 		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (args, player) -> {
 			if(!player.isAdmin){
@@ -765,9 +766,9 @@ public class Main extends Plugin{
 
 		handler.<Player>register("tr", "Enable/disable Translate all chat", (args, player) -> {
 			JSONObject db = getData(player.uuid);
-			int value = Integer.parseInt(db.getString("translate"));
+			boolean value = (boolean) db.get("translate");
 			int set;
-			if(value == 0){
+			if(!value){
 				set = 1;
 				player.sendMessage("[green][INFO] [] translate enabled.");
 				player.sendMessage("This translation uses the papago API, some languages may not be supported. (Google is paid)");
@@ -782,9 +783,9 @@ public class Main extends Plugin{
 
 		handler.<Player>register("ch", "Send chat to another server.", (args, player) -> {
 			JSONObject db = getData(player.uuid);
-			int value = Integer.parseInt(db.getString("crosschat"));
+			boolean value = (boolean) db.get("crosschat");
 			int set;
-			if(value == 0){
+			if(!value){
 				set = 1;
 				player.sendMessage("[green][INFO] [] Crosschat enabled.");
 				player.sendMessage("[yellow]Note[]: [#357EC7][SC][] prefix is 'Send Chat', [#C77E36][RC][] prefix is 'Received Chat'.");
@@ -801,9 +802,9 @@ public class Main extends Plugin{
 				player.sendMessage("[green]Notice:[] You're not admin!");
 			} else {
 				JSONObject db = getData(player.uuid);
-				int value = Integer.parseInt(db.getString("colornick"));
+				boolean value = (boolean) db.get("colornick");
 				int set;
-				if(value == 0){
+				if(!value){
 					set = 1;
 					player.sendMessage("[green][INFO] [] colornick enabled.");
 					player.sendMessage("[yellow]Note[]: This's a test function and can be forced to change the nickname.");

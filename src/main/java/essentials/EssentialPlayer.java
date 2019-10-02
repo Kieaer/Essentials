@@ -285,10 +285,10 @@ public class EssentialPlayer{
                 json.put("reactorcount", rs.getInt("reactorcount"));
                 json.put("bantimeset", rs.getString("bantimeset"));
                 json.put("bantime", rs.getInt("bantime"));
-                json.put("translate", rs.getString("translate"));
-                json.put("crosschat", rs.getString("crosschat"));
-                json.put("colornick", rs.getString("colornick"));
-                json.put("connected", rs.getString("connected"));
+                json.put("translate", rs.getBoolean("translate"));
+                json.put("crosschat", rs.getBoolean("crosschat"));
+                json.put("colornick", rs.getBoolean("colornick"));
+                json.put("connected", rs.getBoolean("connected"));
             }
             rs.close();
             stmt.close();

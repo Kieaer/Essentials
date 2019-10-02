@@ -23,8 +23,8 @@ public class EssentialConfig {
     public static int cupdatei;
     public static boolean banshare;
     static boolean antivpn;
-    static boolean webhookenable;
-    static String discordurl;
+    private static boolean webhookenable;
+    private static String discordurl;
     public static boolean query;
     private static int version;
     private static String language;
@@ -35,7 +35,7 @@ public class EssentialConfig {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
             String text = "# Config version (Don't touch this!)\n" +
-                    "version: 2\n\n" +
+                    "version: 3\n\n" +
 
                     "# Plugin language\n" +
                     "language: en\n\n" +
@@ -70,10 +70,6 @@ public class EssentialConfig {
 
                     "# Enable Anti-VPN service.\n" +
                     "antivpn: true\n\n" +
-
-                    "# Use Discord webbook to send server conversations to Discord.\n" +
-                    "webhookenable: false\n" +
-                    "discordurl: none\n" +
 
                     "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
                     "enableantirush: true\n" +
@@ -440,7 +436,7 @@ public class EssentialConfig {
             discordurl = (String) obj.get("discordurl");
 
             enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
-            Global.log(String.valueOf(obj.get("antirushtime")));
+
             try{
                 SimpleDateFormat format = new SimpleDateFormat("mm.ss");
                 Calendar cal;
@@ -457,9 +453,12 @@ public class EssentialConfig {
             Global.log("config file loaded!");
         }
 
-        if(version < 2){
+        if(version < 3){
+            Yaml yaml = new Yaml();
+            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").readString()));
+
             String text = "# Config version (Don't touch this!)\n" +
-                    "version: 2\n\n" +
+                    "version: 3\n\n" +
 
                     "# Plugin language\n" +
                     "language: en\n\n" +
@@ -495,14 +494,9 @@ public class EssentialConfig {
                     "# Enable Anti-VPN service.\n" +
                     "antivpn: "+antivpn+"\n\n" +
 
-                    "# Use Discord webbook to send server conversations to Discord.\n" +
-                    "webhookenable: "+webhookenable+"\n" +
-                    "discordurl: "+discordurl+"\n\n" +
-
                     "# Enable Anti PvP early time rushing\n" +
                     "enableantirush: "+enableantirush+"\n" +
-                    "antirushtime: "+antirushtime;
-
+                    "antirushtime: "+obj.get("antirushtime");
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }

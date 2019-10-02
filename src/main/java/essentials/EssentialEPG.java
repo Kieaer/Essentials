@@ -19,18 +19,17 @@ public class EssentialEPG {
                 String name = e.tile.block().name;
                 int level = (int) db.get("level");
                 Yaml yaml = new Yaml();
-                Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
-                int blockreqlevel;
+                Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/BlockReqExp.txt").readString()));
+                int blockreqlevel = 100;
                 if(String.valueOf(obj.get(name)) != null) {
                     blockreqlevel = Integer.parseInt(String.valueOf(obj.get(name)));
-                } else {
-                    blockreqlevel = 100;
+                } else if(e.tile.block().name.equals("air")){
                     Global.loge(name+" block require level data isn't found!");
                 }
 
                 if(level < blockreqlevel){
                     Call.onDeconstructFinish(e.tile, e.tile.block(), e.player.id);
-                    Global.log(name+" is cleared!");
+                    e.player.sendMessage(name+" block requires "+blockreqlevel+" level.");
                 }
             }
         });

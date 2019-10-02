@@ -1,6 +1,5 @@
-package essentials.thread;
+package essentials;
 
-import io.anuke.arc.util.Log;
 import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -14,9 +13,11 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 import static essentials.EssentialPlayer.getData;
+import static io.anuke.mindustry.Vars.playerGroup;
 
-public class Detectlang {
-    public static void detectlang(int translate, Player player, String message) {
+class EssentialTR {
+    static void main(Player player, String message) {
+        Global.log("STARTED");
         String clientId = "Ujx3Ysdxfg7FY2wQn2ES";
         String clientSecret = "iHAb6PF3SK";
         try {
@@ -49,13 +50,14 @@ public class Detectlang {
             br.close();
             JSONTokener result = new JSONTokener(response.toString());
             JSONObject lang = new JSONObject(result);
-            translate(translate, player, lang, message);
+            translate(player, lang, message);
         } catch (Exception e) {
-            Log.err(e);
+            e.printStackTrace();
         }
     }
 
-    public static void translate(int translate, Player player, JSONObject lang, String message){
+    private static void translate(Player player, JSONObject lang, String message){
+        Global.log("translate");
         JSONObject db = getData(player.uuid);
 
         String clientId = "RNOXzFalw7FMFjBe2mbq";
@@ -93,14 +95,19 @@ public class Detectlang {
 
             JSONObject v1 = (JSONObject) object.get("message");
             JSONObject v2 = (JSONObject) v1.get("result");
-            String v3 = String.valueOf(v2.get("translatedText"));
-            if(translate == 1){
-                if(responseCode == 400){
-                    JSONObject e1 = (JSONObject) object.get("errorCode");
-                    JSONObject e2 = (JSONObject) object.get("errorMessage");
-                    player.sendMessage(e1+"/ ErrorCode:"+e2);
-                } else {
-                    player.sendMessage("[orange][" + player.name.replaceAll("\\[(.*?)]", "") + "][white]: [#F5FF6B]" + v3);
+            String result = String.valueOf(v2.get("translatedText"));
+
+            Global.log(String.valueOf(object));
+            if(playerGroup != null && playerGroup.size() > 0) {
+                for (int i = 0; i < playerGroup.size(); i++) {
+                    Player p = playerGroup.all().get(i);
+                    JSONObject db2 = getData(p.uuid);
+                    boolean value = (boolean) db2.get("translate");
+                    Global.log(result);
+                    if (value) {
+                        Global.log(result);
+                        p.sendMessage("[orange][" + player.name.replaceAll("\\[(.*?)]", "") + "][white]: [#F5FF6B]" + result);
+                    }
                 }
             }
         } catch (Exception f) {

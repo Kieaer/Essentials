@@ -85,15 +85,15 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] Auto-translate
   - [ ] Fix translate not working
 - [ ] Teleport
-  - [ ] using ID
+  - [ ] ~~using ID~~ (some nickname is better)
   - [x] Detect some nickname
 - [ ] Nickname prefix
 - [ ] Anti-Explode
 - [ ] ~~Translatable all messages using bundle~~ (impossible. java limit.)
 
 ## 6.0 version plans
-- [ ] Make RPG using player DB
-  - [ ] Lock blocks
+- [x] Make RPG using player DB
+  - [x] Lock blocks
 - [ ] Monitoring resource consumption
   - [ ] Alarm when resource consumption is fast
   - [ ] Alarm when resource bank is full

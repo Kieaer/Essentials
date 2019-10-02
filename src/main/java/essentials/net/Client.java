@@ -106,7 +106,7 @@ public class Client{
         }
     }
 
-    public static void main(String request, String chat, Player player) {
+    public static void main(String request, final String chat, final Player player) {
         try{
             InetAddress address = InetAddress.getByName(clienthost);
             socket = new Socket(address, clientport);
