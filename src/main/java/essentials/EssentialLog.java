@@ -85,7 +85,7 @@ public class EssentialLog {
             if(!e.breaking){
                 try {
                     if(e.tile.block() != null){
-                        String text = e.tile.block()+" placed by "+e.player.name+".\n";
+                        String text = e.tile.block().name+" placed by "+e.player.name+".\n";
                         byte[] result = text.getBytes();
                         Files.write(path, result, StandardOpenOption.APPEND);
                         Files.write(total, result, StandardOpenOption.APPEND);

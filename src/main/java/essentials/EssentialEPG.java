@@ -25,6 +25,8 @@ public class EssentialEPG {
                     blockreqlevel = Integer.parseInt(String.valueOf(obj.get(name)));
                 } else if(e.tile.block().name.equals("air")){
                     Global.loge(name+" block require level data isn't found!");
+                } else {
+                    return;
                 }
 
                 if(level < blockreqlevel){

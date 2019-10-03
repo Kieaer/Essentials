@@ -156,7 +156,12 @@ public class Main extends Plugin{
 
 				// Show motd
 				String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
-				e.player.sendMessage(motd);
+				int count = motd.split("\r\n|\r|\n").length;
+				if(count > 10){
+					Call.onInfoMessage(e.player.con, motd);
+				} else {
+					e.player.sendMessage(motd);
+				}
 
 				// Give join exp
 				Thread expthread = new Thread(() -> EssentialExp.joinexp(e.player.uuid));
@@ -303,28 +308,6 @@ public class Main extends Plugin{
 
         timer.scheduleAtFixedRate(playtime, 0, 1000);
 		Global.log("Play/bantime counting thread started.");
-
-		/*
-		Position p = new Position() {
-			public float getX() {
-				return 0;
-			}
-
-			public float getY() {
-				return 0;
-			}
-		};
-		int coreProtectrange = 30 * tilesize;
-		if(Vars.state.rules.pvp){
-			if(player.getTeam() != Team.sharded){
-				for(Tile spawn : spawner.getGroundSpawns()){
-					if(p.withinDst(spawn.worldx(), spawn.worldy(), (float) coreProtectrange)){
-						player.kill();
-					}
-				}
-			}
-		}
-		*/
 	}
 
 	@Override
@@ -366,7 +349,7 @@ public class Main extends Plugin{
 			Global.log(""+arg[0]+" nickname is registered in blacklist.");
         });
 
-		handler.register("allinfo", "<name>", "Show player information", (args) -> {
+		handler.register("allinfo", "[name]", "Show player information", (args) -> {
 			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 			if(other != null) {
 				JSONObject db = getData(other.uuid);
@@ -424,10 +407,17 @@ public class Main extends Plugin{
 			*/
 			Global.log("Currently not supported!");
 		});
+
+		handler.register("nick", "<name> <newname...>", "Show player information", (args) -> {
+			//writeData("UPDATE players SET name='"+args[1]+"', WHERE name = '"+args[0]+"'");
+			Global.log("This command isn't supported now!");
+		});
 	}
 
 	@Override
 	public void registerClientCommands(CommandHandler handler){
+		handler.removeCommand("votekick");
+
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
 			int count = motd.split("\r\n|\r|\n").length;
@@ -588,12 +578,18 @@ public class Main extends Plugin{
 						this.voteactive = true;
 						vote.add(player.name);
 						int current = vote.size();
-						int require = (int) Math.ceil(0.6 * Vars.playerGroup.size());
+						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
 						Call.sendMessage("[green][Essentials] Gameover vote started! Use '/vote y' to agree.");
 						Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 50 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 40 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 30 seconds remaining");
 								Thread.sleep(10000);
 								Call.sendMessage("[green][Essentials] 20 seconds remaining");
 								Thread.sleep(10000);
@@ -622,12 +618,18 @@ public class Main extends Plugin{
 						this.voteactive = true;
 						vote.add(player.name);
 						int current = vote.size();
-						int require = (int) Math.ceil(0.6 * Vars.playerGroup.size());
+						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
 						Call.sendMessage("[green][Essentials] skipwave vote started! Use '/vote y' to agree.");
 						Call.sendMessage("[green][Essentials] Require [scarlet]"+require+"[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 50 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 40 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 30 seconds remaining");
 								Thread.sleep(10000);
 								Call.sendMessage("[green][Essentials] 20 seconds remaining");
 								Thread.sleep(10000);
@@ -652,12 +654,12 @@ public class Main extends Plugin{
 						player.sendMessage("[green][Essentials] Vote in processing!");
 					}
 					break;
-				case "ban":
+				case "kick":
 					if(!this.voteactive){
 						this.voteactive = true;
 						vote.add(player.name);
 						int current = vote.size();
-						int require = (int) Math.ceil(0.6 * Vars.playerGroup.size());
+						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
 						Player target = playerGroup.find(p -> p.name.equals(args[1]));
 						if (target != null) {
 							target.con.kick("You have been kicked by voting.");
@@ -672,6 +674,12 @@ public class Main extends Plugin{
 
 						Thread t = new Thread(() -> {
 							try {
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 50 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 40 seconds remaining");
+								Thread.sleep(10000);
+								Call.sendMessage("[green][Essentials] 30 seconds remaining");
 								Thread.sleep(10000);
 								Call.sendMessage("[green][Essentials] 20 seconds remaining");
 								Thread.sleep(10000);
@@ -716,7 +724,7 @@ public class Main extends Plugin{
 						} else {
 							vote.add(player.name);
 							int current = vote.size();
-							int require = (int) Math.ceil(0.6 * Vars.playerGroup.size()) - current;
+							int require = (int) Math.ceil(0.5 * Vars.playerGroup.size()) - current;
 							Call.sendMessage("[green][Essentials] " + current + " players voted. need " + require + " more players.");
 						}
 					} else {
