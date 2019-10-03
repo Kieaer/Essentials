@@ -30,6 +30,9 @@ public class EssentialConfig {
     private static String language;
     static boolean enableantirush;
     static Calendar antirushtime;
+    static boolean explimit;
+    static boolean logging;
+    static boolean update;
 
     public static void main() {
         Map<String, Object> obj;
@@ -59,6 +62,7 @@ public class EssentialConfig {
                     "detectreactor: true\n\n" +
 
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n" +
+                    "explimit: false\n" +
                     "basexp: 500\n" +
                     "exponent: 1.12f\n\n" +
 
@@ -73,7 +77,13 @@ public class EssentialConfig {
 
                     "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
                     "enableantirush: true\n" +
-                    "antirushtime: 10.00";
+                    "antirushtime: 10.00\n\n" + 
+                    
+                    "# Logging enable\n" +
+                    "logging: false\n\n" +
+
+                    "# update check enable\n" +
+                    "update: true";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -423,6 +433,7 @@ public class EssentialConfig {
 
             detectreactor = Boolean.parseBoolean(String.valueOf(obj.get("detectreactor")));
 
+            explimit = Boolean.parseBoolean(String.valueOf(obj.get("explimit")));
             basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
             exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
 
@@ -436,6 +447,10 @@ public class EssentialConfig {
             discordurl = (String) obj.get("discordurl");
 
             enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
+
+            logging = Boolean.parseBoolean(String.valueOf(obj.get("logging")));
+
+            update = Boolean.parseBoolean(String.valueOf(obj.get("update")));
 
             try{
                 SimpleDateFormat format = new SimpleDateFormat("mm.ss");
@@ -481,7 +496,8 @@ public class EssentialConfig {
                     "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
                     "detectreactor: "+detectreactor+"\n\n" +
 
-                    "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n" +
+                    "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n\n" +
+                    "explimit: "+explimit+"\n" +
                     "basexp: "+basexp+"\n" +
                     "exponent: "+exponent+"\n\n" +
 
@@ -496,7 +512,13 @@ public class EssentialConfig {
 
                     "# Enable Anti PvP early time rushing\n" +
                     "enableantirush: "+enableantirush+"\n" +
-                    "antirushtime: "+obj.get("antirushtime");
+                    "antirushtime: "+obj.get("antirushtime")+"\n\n" + 
+                    
+                    "# Logging enable\n" +
+                    "logging: "+logging+"\n\n" +
+
+                    "# Update check enable\n" +
+                    "update: "+update;
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }

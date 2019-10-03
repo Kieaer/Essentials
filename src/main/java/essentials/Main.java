@@ -46,12 +46,6 @@ public class Main extends Plugin{
 	private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
 
-	// Note
-	//Blocks.message = new MessageBlock(){ /**override methods **/};
-	//Vars.plugins.getPlugin(getClass()).zipRoot.child("bundle.properties")
-	//mods.getMod(getClass()).<stuff>
-	//Connection#kick(String reason)
-
 	public Main() {
 		// Make player DB
 		createNewDataFile();
@@ -60,19 +54,25 @@ public class Main extends Plugin{
 	    EssentialConfig.main();
 
 	    // Start log
-		EssentialLog.main();
+		if(logging){
+			EssentialLog.main();
+		}
+
+		EssentialAI.main();
 
 		// Update check
-		Thread update = new Thread(() -> {
-			try {
-				Global.log("Update checking...");
-				Thread.sleep(1500);
-				Update.main();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		});
-		update.start();
+		if(update){
+			Thread update = new Thread(() -> {
+				try {
+					Global.log("Update checking...");
+					Thread.sleep(1500);
+					Update.main();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			});
+			update.start();
+		}
 
 		// DB Upgrade check
 		EssentialPlayer.Upgrade();
@@ -417,6 +417,7 @@ public class Main extends Plugin{
 	@Override
 	public void registerClientCommands(CommandHandler handler){
 		handler.removeCommand("votekick");
+
 
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
@@ -827,21 +828,23 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("team", "Change team (PvP only)", (args, player) -> {
-			if(player.isAdmin){
-				int i = player.getTeam().ordinal()+1;
-				while (i != player.getTeam().ordinal()){
-					if (i >= Team.all.length) i = 0;
-					if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()){
-						player.setTeam(Team.all[i]);
-						break;
+		if(Vars.state.rules.pvp){
+			handler.<Player>register("team", "Change team (PvP only)", (args, player) -> {
+				if(player.isAdmin){
+					int i = player.getTeam().ordinal()+1;
+					while (i != player.getTeam().ordinal()){
+						if (i >= Team.all.length) i = 0;
+						if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()){
+							player.setTeam(Team.all[i]);
+							break;
+						}
+						i++;
 					}
-					i++;
+					player.kill();
+				} else {
+					player.sendMessage("You're not admin!");
 				}
-				player.kill();
-			} else {
-				player.sendMessage("You're not admin!");
-			}
-		});
+			});
+		}
 	}
 }
