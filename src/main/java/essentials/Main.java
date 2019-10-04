@@ -58,7 +58,7 @@ public class Main extends Plugin{
 			EssentialLog.main();
 		}
 
-		EssentialAI.main();
+		//EssentialAI.main();
 
 		// Update check
 		if(update){

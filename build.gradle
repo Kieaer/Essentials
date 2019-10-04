@@ -20,6 +20,7 @@ dependencies{
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
     compile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
     compile 'com.google.code.gson:gson:2.8.5'
+    //compile group: 'org.tensorflow', name:'tensorflow', version: '1.13.1'
 }
 
 jar{
