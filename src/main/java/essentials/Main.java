@@ -58,7 +58,7 @@ public class Main extends Plugin{
 			EssentialLog.main();
 		}
 
-		//EssentialAI.main();
+		EssentialAI.main();
 
 		// Update check
 		if(update){
@@ -733,6 +733,7 @@ public class Main extends Plugin{
 					}
 					break;
 				default:
+					this.voteactive = false;
 					player.sendMessage("[Essentials] Invalid option!");
 					break;
 			}
