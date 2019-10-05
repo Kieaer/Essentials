@@ -23,8 +23,6 @@ public class EssentialConfig {
     public static int cupdatei;
     public static boolean banshare;
     static boolean antivpn;
-    private static boolean webhookenable;
-    private static String discordurl;
     public static boolean query;
     private static int version;
     private static String language;
@@ -33,6 +31,7 @@ public class EssentialConfig {
     static boolean explimit;
     static boolean logging;
     static boolean update;
+    static boolean levelupalarm;
 
     public static void main() {
         Map<String, Object> obj;
@@ -64,7 +63,8 @@ public class EssentialConfig {
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n" +
                     "explimit: false\n" +
                     "basexp: 500\n" +
-                    "exponent: 1.12f\n\n" +
+                    "exponent: 1.12f\n" +
+                    "levelupalarm: false\n\n" +
 
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
                     "banshare: false\n\n" +
@@ -405,6 +405,12 @@ public class EssentialConfig {
             Global.log("motd file created.");
         }
 
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").exists()){
+            String msg = "\uc774\u0020\uba54\uc2dc\uc9c0\ub97c\u0020\ubc14\uafc0\ub824\uba74\u0020\u005b\u0067\u0072\u0065\u0065\u006e\u005d\u0063\u006f\u006e\u0066\u0069\u0067\u002f\u0070\u006c\u0075\u0067\u0069\u006e\u0073\u002f\u0045\u0073\u0073\u0065\u006e\u0074\u0069\u0061\u006c\u0073\u002f\u005b\u005d\u0020\ud3f4\ub354\uc5d0\uc11c\u0020\u005b\u0067\u0072\u0065\u0065\u006e\u005d\u006d\u006f\u0074\u0064\u002e\u0074\u0078\u0074\u005b\u005d\u0020\ud30c\uc77c\uc744\u0020\uc218\uc815\ud558\uc138\uc694\u002e";
+            Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").writeString(msg);
+            Global.log("motd_ko file created.");
+        }
+
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").exists()){
             JSONArray blacklist = new JSONArray();
             String json = blacklist.toString();
@@ -436,15 +442,13 @@ public class EssentialConfig {
             explimit = Boolean.parseBoolean(String.valueOf(obj.get("explimit")));
             basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
             exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
+            levelupalarm = Boolean.parseBoolean(String.valueOf(obj.get("levelupalarm")));
 
             banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
 
             query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
 
             antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
-
-            webhookenable = Boolean.parseBoolean(String.valueOf(obj.get("webhookenable")));
-            discordurl = (String) obj.get("discordurl");
 
             enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
 
@@ -499,7 +503,8 @@ public class EssentialConfig {
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n\n" +
                     "explimit: "+explimit+"\n" +
                     "basexp: "+basexp+"\n" +
-                    "exponent: "+exponent+"\n\n" +
+                    "exponent: "+exponent+"\n" +
+                    "levelupalarm: "+levelupalarm+"\n\n" +
 
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
                     "banshare: "+banshare+"\n\n" +

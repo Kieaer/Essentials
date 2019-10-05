@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimerTask;
 
 import static essentials.EssentialConfig.antirushtime;
 import static essentials.EssentialConfig.enableantirush;
@@ -22,10 +23,10 @@ import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
 import static io.anuke.mindustry.Vars.*;
 
-public class EssentialTimer {
+public class EssentialTimer extends TimerTask {
     public static String playtime;
 
-    static void main(){
+    public void run() {
         // Player playtime counting
         if(playerGroup.size() > 0){
             for(int i = 0; i < playerGroup.size(); i++){

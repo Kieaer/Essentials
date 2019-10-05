@@ -13,6 +13,7 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.content.Bullets;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -36,6 +37,8 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
@@ -58,7 +61,7 @@ public class Main extends Plugin{
 			EssentialLog.main();
 		}
 
-		EssentialAI.main();
+		//EssentialAI.main();
 
 		// Update check
 		if(update){
@@ -96,9 +99,7 @@ public class Main extends Plugin{
 			//e.winner.name();
 		});
 
-		Events.on(EventType.WorldLoadEvent.class, e -> {
-			EssentialTimer.playtime = "00:00.00";
-		});
+		Events.on(EventType.WorldLoadEvent.class, e -> EssentialTimer.playtime = "00:00.00");
 
         // Set if thorium rector explode
         Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
@@ -263,13 +264,9 @@ public class Main extends Plugin{
 			}
 		});
 
-		Timer timer = new Timer();
-		TimerTask playtime = new TimerTask(){
-			@Override
-			public void run() {
-			    EssentialTimer.main();
-			}
-		};
+		EssentialTimer job = new EssentialTimer();
+		Timer timer = new Timer(true);
+		timer.scheduleAtFixedRate(job, 1000, 1000);
 
 		// Set if shutdown
 		Core.app.addListener(new ApplicationListener(){
@@ -305,13 +302,38 @@ public class Main extends Plugin{
         if(detectreactor){
 			Global.log("Thorium reactor overheat detect enabled.");
         }
-
-        timer.scheduleAtFixedRate(playtime, 0, 1000);
-		Global.log("Play/bantime counting thread started.");
 	}
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
+		handler.register("gameover", "a test", arg -> {
+			Global.log("The destruction of the world has begun!");
+			List<String> copper = new ArrayList<String>();
+			Path test = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("test.log")));
+			// Multi thread
+			//ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			// Single thread
+			ExecutorService pool = Executors.newFixedThreadPool(1);
+			Thread t1 = new Thread(() -> {
+				for (int x = 0; x < world.width() * 8; x += 16) {
+					for (int y = 0; y < world.height() * 8; y += 8) {
+						int finalX = x;
+						int finalY = y;
+						Runnable t = () -> {
+							Call.createBullet(Bullets.meltdownLaser, finalX, finalY, 0);
+							try {
+								Thread.sleep(1);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+						};
+						pool.execute(t);
+					}
+				}
+			});
+			t1.start();
+		});
+
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
@@ -416,11 +438,24 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerClientCommands(CommandHandler handler){
-		handler.removeCommand("votekick");
-
+        handler.<Player>register("votekick", "Disabled.", (args, player) -> {
+            JSONObject db = getData(player.uuid);
+            if(db.get("language").equals("KR")){
+                player.sendMessage(EssentialBundle.load(true, "votekick-disabled"));
+            } else {
+                player.sendMessage(EssentialBundle.load(false, "votekick-disabled"));
+            }
+        });
 
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
-			String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+			JSONObject db = getData(player.uuid);
+			String motd;
+			Log.info(db.get("language"));
+			if(db.get("language").equals("KR")){
+				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
+			} else {
+				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+			}
 			int count = motd.split("\r\n|\r|\n").length;
 			if(count > 10){
 				Call.onInfoMessage(player.con, motd);
@@ -434,29 +469,54 @@ public class Main extends Plugin{
 		handler.<Player>register("info","Show your information", (args, player) -> {
 			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 			JSONObject db = getData(player.uuid);
-			String datatext =
-					"[#DEA82A]Player Information[]\n" +
-					"[#2B60DE]========================================[]\n" +
-					"[green]Name[]			: "+player.name+"[white]\n" +
-					"[green]UUID[]			: "+player.uuid+"\n" +
-					"[green]Mobile[]		: "+player.isMobile+"\n" +
-					"[green]IP[]			: "+ip+"\n" +
-					"[green]Country[]		: "+db.get("country")+"\n" +
-					"[green]Block place[]	: "+db.get("placecount")+"\n" +
-					"[green]Block break[]	: "+db.get("breakcount")+"\n" +
-					"[green]Kill units[]	: "+db.get("killcount")+"\n" +
-					"[green]Death count[]	: "+db.get("deathcount")+"\n" +
-					"[green]Join count[]	: "+db.get("joincount")+"\n" +
-					"[green]Kick count[]	: "+db.get("kickcount")+"\n" +
-					"[green]Level[]			: "+db.get("level")+"\n" +
-					"[green]XP[]			: "+db.get("reqtotalexp")+"\n" +
-					"[green]First join[]	: "+db.get("firstdate")+"\n" +
-					"[green]Last join[]		: "+db.get("lastdate")+"\n" +
-					"[green]Playtime[]		: "+db.get("playtime")+"\n" +
-					"[green]Attack clear[]	: "+db.get("attackclear")+"\n" +
-					"[green]PvP Win[]		: "+db.get("pvpwincount")+"\n" +
-					"[green]PvP Lose[]		: "+db.get("pvplosecount")+"\n" +
-					"[green]PvP Surrender[]	: "+db.get("pvpbreakout");
+			String datatext;
+			if(db.get("language").equals("KR")){
+				datatext = "[#DEA82A]"+EssentialBundle.nload(true, "player-info")+"[]\n" +
+						"[#2B60DE]========================================[]\n" +
+						"[green]"+EssentialBundle.nload(true, "player-name")+"[]				: "+player.name+"[white]\n" +
+						"[green]"+EssentialBundle.nload(true, "player-uuid")+"[]				: "+player.uuid+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-isMobile")+"[]			: "+player.isMobile+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-ip")+"[]				: "+ip+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-country")+"[]			: "+db.get("country")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-placecount")+"[]		: "+db.get("placecount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-breakcount")+"[]		: "+db.get("breakcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-killcount")+"[]		: "+db.get("killcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-deathcount")+"[]		: "+db.get("deathcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-joincount")+"[]		: "+db.get("joincount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-kickcount")+"[]		: "+db.get("kickcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-level")+"[]			: "+db.get("level")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-reqtotalexp")+"[]		: "+db.get("reqtotalexp")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-firstdate")+"[]		: "+db.get("firstdate")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-lastdate")+"[]			: "+db.get("lastdate")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-playtime")+"[]			: "+db.get("playtime")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-attackclear")+"[]		: "+db.get("attackclear")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-pvpwincount")+"[]		: "+db.get("pvpwincount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-pvplosecount")+"[]		: "+db.get("pvplosecount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-pvpbreakout")+"[]		: "+db.get("pvpbreakout");
+			} else {
+				datatext = "[#DEA82A]"+EssentialBundle.nload(false, "player-info")+"[]\n" +
+						"[#2B60DE]========================================[]\n" +
+						"[green]"+EssentialBundle.nload(false, "player-name")+"[]			: "+player.name+"[white]\n" +
+						"[green]"+EssentialBundle.nload(false, "player-uuid")+"[]			: "+player.uuid+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-isMobile")+"[]		: "+player.isMobile+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-ip")+"[]				: "+ip+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-country")+"[]			: "+db.get("country")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-placecount")+"[]		: "+db.get("placecount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-breakcount")+"[]		: "+db.get("breakcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-killcount")+"[]		: "+db.get("killcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-deathcount")+"[]		: "+db.get("deathcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-joincount")+"[]		: "+db.get("joincount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-kickcount")+"[]		: "+db.get("kickcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-level")+"[]			: "+db.get("level")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-reqtotalexp")+"[]		: "+db.get("reqtotalexp")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-firstdate")+"[]		: "+db.get("firstdate")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-lastdate")+"[]		: "+db.get("lastdate")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-playtime")+"[]		: "+db.get("playtime")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-attackclear")+"[]		: "+db.get("attackclear")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-pvpwincount")+"[]		: "+db.get("pvpwincount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-pvplosecount")+"[]	: "+db.get("pvplosecount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-pvpbreakout")+"[]		: "+db.get("pvpbreakout");
+			}
 			Call.onInfoMessage(player.con, datatext);
 		});
 
@@ -484,6 +544,7 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (args, player) -> {
+			JSONObject db = getData(player.uuid);
 			Player other1 = null;
 			Player other2 = null;
 			for(Player p : playerGroup.all()){
@@ -497,19 +558,34 @@ public class Main extends Plugin{
 				}
 			}
 			if(!player.isAdmin){
-				player.sendMessage("[green]Notice:[] You're not admin!");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "notadmin"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "notadmin"));
+				}
 			} else {
 				if(other1 == null || other2 == null){
-					player.sendMessage("[scarlet]No player by that name found!");
+					if(db.get("language").equals("KR")){
+						player.sendMessage(EssentialBundle.load(true, "player-not-found"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "player-not-found"));
+					}
 					return;
 				}
-				other1.setNet(other2.x, other2.y);
-				other1.setX(other2.x);
-				other1.setY(other2.y);
+				if(!other1.isMobile || !other2.isMobile){
+					other1.setNet(other2.x, other2.y);
+				} else {
+					if (db.get("language") == "KR") {
+						player.sendMessage(EssentialBundle.load(true, "tp-ismobile"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "tp-ismobile"));
+					}
+				}
 			}
 		});
 
 		handler.<Player>register("tp", "<player>", "Teleport to other players", (args, player) -> {
+			JSONObject db = getData(player.uuid);
 			Player other = null;
 			for(Player p : playerGroup.all()){
 				boolean result = p.name.contains(args[0]);
@@ -518,27 +594,37 @@ public class Main extends Plugin{
 				}
 			}
 			if(other == null){
-				player.sendMessage("[scarlet]No player by that name found!");
+				if (db.get("language") == "KR") {
+					player.sendMessage(EssentialBundle.load(true, "player-not-found"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "player-not-found"));
+				}
 				return;
 			}
-			if(!other.isMobile){
-				player.setNet(other.x, other.y);
-			} else {
-				player.sendMessage("[scarlet]This player is playing on Mobile! Mobile user teleport isn't supported.");
-			}
+			player.setNet(other.x, other.y);
 		});
 
 		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
 			if(!player.isAdmin){
-				player.sendMessage("[green]Notice: [] You're not admin!");
+				JSONObject db = getData(player.uuid);
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "notadmin"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "notadmin"));
+				}
 			} else {
 				Vars.netServer.kickAll(KickReason.gameover);
 			}
 		});
 
 		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (args, player) -> {
+			JSONObject db = getData(player.uuid);
 			if(!player.isAdmin){
-				player.sendMessage("[green]Notice: [] You're not admin!");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "notadmin"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "notadmin"));
+				}
 			} else {
 				Player other = null;
 				for(Player p : playerGroup.all()){
@@ -552,7 +638,11 @@ public class Main extends Plugin{
 					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
 					Call.sendMessage("Player"+other.name+" was killed (ban) by player "+player.name+"!");
 				} else {
-					player.sendMessage("No match player found!");
+					if (db.get("language") == "KR") {
+						player.sendMessage(EssentialBundle.load(true, "player-not-found"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "player-not-found"));
+					}
 				}
 			}
 		});
@@ -561,7 +651,12 @@ public class Main extends Plugin{
 
 		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (args, player) -> {
 			if(!player.isAdmin){
-				player.sendMessage("[green]Notice: [] You're not admin!");
+				JSONObject db = getData(player.uuid);
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "notadmin"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "notadmin"));
+				}
 			} else {
 				try{
 					Difficulty.valueOf(args[0]);
@@ -573,6 +668,7 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (args, player) -> {
+			JSONObject db = getData(player.uuid);
 			switch(args[0]) {
 				case "gameover":
 					if(!this.voteactive) {
@@ -580,22 +676,70 @@ public class Main extends Plugin{
 						vote.add(player.name);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
-						Call.sendMessage("[green][Essentials] Gameover vote started! Use '/vote y' to agree.");
+						for (int i = 0; i < playerGroup.size(); i++) {
+							Player others = playerGroup.all().get(i);
+							JSONObject db1 = getData(others.uuid);
+							if (db1.get("language") == "KR") {
+								others.sendMessage(EssentialBundle.load(true, "vote-gameover"));
+							} else {
+								others.sendMessage(EssentialBundle.load(false, "vote-gameover"));
+							}
+						}
 						Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 50 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 40 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 30 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 20 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 10 seconds remaining");
-								Thread.sleep(10000);
+								if(playerGroup != null && playerGroup.size() > 0) {
+									Thread playeralarm1 = null;
+									Thread playeralarm2 = null;
+									for (int i = 0; i < playerGroup.size(); i++) {
+										Player others = playerGroup.all().get(i);
+										JSONObject db1 = getData(others.uuid);
+										if (db1.get("language") == "KR") {
+											playeralarm1 = new Thread(() -> {
+												try {
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
+													Thread.sleep(10000);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											});
+											playeralarm1.start();
+										} else {
+											playeralarm2 = new Thread(() -> {
+												try {
+													Thread.sleep(10000);
+													others.sendMessage( EssentialBundle.load(false, "vote-50sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
+													Thread.sleep(10000);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											});
+											playeralarm2.start();
+										}
+									}
+									assert playeralarm1 != null;
+									assert playeralarm2 != null;
+									playeralarm1.join();
+									playeralarm2.join();
+								}
 								if (current >= require) {
 									Call.sendMessage("[green][Essentials] Gameover vote passed!");
 									Events.fire(new EventType.GameOverEvent(Team.sharded));
@@ -611,7 +755,11 @@ public class Main extends Plugin{
 						});
 						t.start();
 					} else {
-						player.sendMessage("[green][Essentials] Vote in processing!");
+						if (db.get("language") == "KR") {
+							player.sendMessage(player.name+EssentialBundle.load(true, "vote-in-processing"));
+						} else {
+							player.sendMessage(player.name+EssentialBundle.load(false, "vote-in-processing"));
+						}
 					}
 					break;
 				case "skipwave":
@@ -620,23 +768,81 @@ public class Main extends Plugin{
 						vote.add(player.name);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
-						Call.sendMessage("[green][Essentials] skipwave vote started! Use '/vote y' to agree.");
+						for (int i = 0; i < playerGroup.size(); i++) {
+							Player others = playerGroup.all().get(i);
+							JSONObject db1 = getData(others.uuid);
+							if (db1.get("language") == "KR") {
+								others.sendMessage(EssentialBundle.load(true, "vote-skipwave"));
+							} else {
+								others.sendMessage(EssentialBundle.load(false, "vote-skipwave"));
+							}
+						}
 						Call.sendMessage("[green][Essentials] Require [scarlet]"+require+"[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 50 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 40 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 30 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 20 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 10 seconds remaining");
-								Thread.sleep(10000);
+								if(playerGroup != null && playerGroup.size() > 0) {
+									Thread playeralarm1 = null;
+									Thread playeralarm2 = null;
+									for (int i = 0; i < playerGroup.size(); i++) {
+										Player others = playerGroup.all().get(i);
+										JSONObject db1 = getData(others.uuid);
+										if (db1.get("language") == "KR") {
+											playeralarm1 = new Thread(() -> {
+												try {
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
+													Thread.sleep(10000);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											});
+											playeralarm1.start();
+										} else {
+											playeralarm2 = new Thread(() -> {
+												try {
+													Thread.sleep(10000);
+													others.sendMessage( EssentialBundle.load(false, "vote-50sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
+													Thread.sleep(10000);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											});
+											playeralarm2.start();
+										}
+									}
+									assert playeralarm1 != null;
+									assert playeralarm2 != null;
+									playeralarm1.join();
+									playeralarm2.join();
+								}
 								if (current >= require) {
+									assert playerGroup != null;
+									for (int i = 0; i < playerGroup.size(); i++) {
+										Player others = playerGroup.all().get(i);
+										JSONObject db1 = getData(others.uuid);
+										if (db1.get("language") == "KR") {
+											others.sendMessage(player.name+EssentialBundle.load(true, "vote-in-processing"));
+										} else {
+											others.sendMessage(player.name+EssentialBundle.load(false, "vote-in-processing"));
+										}
+									}
 									Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
 									for (int i = 0; i < 10; i++) {
 										logic.runWave();
@@ -652,7 +858,11 @@ public class Main extends Plugin{
 						});
 						t.start();
 					} else {
-						player.sendMessage("[green][Essentials] Vote in processing!");
+						if (db.get("language") == "KR") {
+							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
+						} else {
+							player.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
+						}
 					}
 					break;
 				case "kick":
@@ -665,37 +875,90 @@ public class Main extends Plugin{
 						if (target != null) {
 							target.con.kick("You have been kicked by voting.");
 						} else {
-							player.sendMessage("[scarlet]Player not found!");
+							if (db.get("language") == "KR") {
+								player.sendMessage(EssentialBundle.load(true, "player-not-found"));
+							} else {
+								player.sendMessage(EssentialBundle.load(false, "player-not-found"));
+							}
 							this.voteactive = false;
 							return;
 						}
 
-						Call.sendMessage("[green][Essentials] ban vote started! Use '/vote y' to agree.");
+						for (int i = 0; i < playerGroup.size(); i++) {
+							Player others = playerGroup.all().get(i);
+							JSONObject db1 = getData(others.uuid);
+							if (db1.get("language") == "KR") {
+								others.sendMessage(EssentialBundle.load(true, "vote-kick"));
+							} else {
+								others.sendMessage(EssentialBundle.load(false, "vote-kick"));
+							}
+						}
 						Call.sendMessage("[green][Essentials] Require [white]" + require + "[green] players.");
 
 						Thread t = new Thread(() -> {
 							try {
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 50 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 40 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 30 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 20 seconds remaining");
-								Thread.sleep(10000);
-								Call.sendMessage("[green][Essentials] 10 seconds remaining");
-								Thread.sleep(10000);
+								if(playerGroup != null && playerGroup.size() > 0) {
+									Thread playeralarm1 = null;
+									Thread playeralarm2 = null;
+									for (int i = 0; i < playerGroup.size(); i++) {
+										Player others = playerGroup.all().get(i);
+										JSONObject db1 = getData(others.uuid);
+										if (db1.get("language") == "KR") {
+											playeralarm1 = new Thread(() -> {
+												try {
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
+													Thread.sleep(10000);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											});
+											playeralarm1.start();
+										} else {
+											playeralarm2 = new Thread(() -> {
+												try {
+													Thread.sleep(10000);
+													others.sendMessage( EssentialBundle.load(false, "vote-50sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
+													Thread.sleep(10000);
+													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
+													Thread.sleep(10000);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											});
+											playeralarm2.start();
+										}
+									}
+									assert playeralarm1 != null;
+									assert playeralarm2 != null;
+
+									playeralarm1.join();
+									playeralarm2.join();
+								}
 								if (current >= require) {
-									Call.sendMessage("[green][Essentials] Player ban vote success!");
+									Call.sendMessage("[green][Essentials] Player kick vote success!");
 									EssentialPlayer.addtimeban(target.name, target.uuid, 4);
 									Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. "+current+"/"+require);
 
 									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
 									Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
 									try {
-										JSONObject db = getData(target.uuid);
-										String text = db.get("name") + " / " + target.uuid + " Player has banned due to voting. "+current+"/"+require+"\n";
+										JSONObject other = getData(target.uuid);
+										String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. "+current+"/"+require+"\n";
 										byte[] result = text.getBytes();
 										Files.write(path, result, StandardOpenOption.APPEND);
 										Files.write(total, result, StandardOpenOption.APPEND);
@@ -704,7 +967,18 @@ public class Main extends Plugin{
 									}
 
 									netServer.admins.banPlayer(target.uuid);
+									Call.onKick(target.con, "You're banned.");
 								} else {
+									assert playerGroup != null;
+									for (int i = 0; i < playerGroup.size(); i++) {
+										Player others = playerGroup.all().get(i);
+										JSONObject db1 = getData(others.uuid);
+										if (db1.get("language") == "KR") {
+											player.sendMessage(EssentialBundle.load(true, "vote-failed"));
+										} else {
+											player.sendMessage(EssentialBundle.load(false, "vote-failed"));
+										}
+									}
 									Call.sendMessage("[green][Essentials][red] Player ban vote failed.");
 								}
 								vote.clear();
@@ -715,7 +989,11 @@ public class Main extends Plugin{
 						});
 						t.start();
 					} else {
-						player.sendMessage("[green][Essentials] Vote in processing!");
+						if (db.get("language") == "KR") {
+							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
+						} else {
+							player.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
+						}
 					}
 					break;
 				case "y":
@@ -729,50 +1007,91 @@ public class Main extends Plugin{
 							Call.sendMessage("[green][Essentials] " + current + " players voted. need " + require + " more players.");
 						}
 					} else {
-						player.sendMessage("[green][Essentials] Vote not processing!");
+						if (db.get("language") == "KR") {
+							player.sendMessage(EssentialBundle.load(true, "vote-not-processing"));
+						} else {
+							player.sendMessage(EssentialBundle.load(false, "vote-not-processing"));
+						}
 					}
 					break;
 				default:
 					this.voteactive = false;
-					player.sendMessage("[Essentials] Invalid option!");
+					if (db.get("language") == "KR") {
+						player.sendMessage(EssentialBundle.load(true, "vote-invalid"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "vote-invalid"));
+					}
 					break;
 			}
 		});
 
 		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
 			Player.onPlayerDeath(player);
-			Call.sendMessage(player.name+"[] used [green]suicide[] command.");
+			if(playerGroup != null && playerGroup.size() > 0) {
+				for (int i = 0; i < playerGroup.size(); i++) {
+					Player others = playerGroup.all().get(i);
+					JSONObject db = getData(others.uuid);
+					if (db.get("language") == "KR") {
+						others.sendMessage(player.name+EssentialBundle.load(true, "suicide"));
+					} else {
+						others.sendMessage(player.name+EssentialBundle.load(false, "suicide"));
+					}
+				}
+			}
 		});
 
 		handler.<Player>register("kill", "<player>", "Kill player.", (args, player) -> {
+			JSONObject db = getData(player.uuid);
 			if(player.isAdmin){
 				Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
 				if(other == null){
-					player.sendMessage("[scarlet]No player by that name found!");
+					if(db.get("language").equals("KR")){
+						player.sendMessage(EssentialBundle.load(true, "player-not-found"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "player-not-found"));
+					}
 					return;
 				}
 				Player.onPlayerDeath(other);
 			} else {
-				player.sendMessage("You're not admin!");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "notadmin"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "notadmin"));
+				}
 			}
 		});
 
 		handler.<Player>register("save", "Map save", (args, player) -> {
+			JSONObject db = getData(player.uuid);
 			if(player.isAdmin) {
 				Core.app.post(() -> {
 					SaveIO.saveToSlot(1);
-					player.sendMessage("Map saved.");
+					if(db.get("language").equals("KR")){
+						player.sendMessage(EssentialBundle.load(true, "mapsaved"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "mapsaved"));
+					}
 				});
 			} else {
-				player.sendMessage("You're not admin!");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "notadmin"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "notadmin"));
+				}
 			}
 		});
 
 		handler.<Player>register("time", "Show server time", (args, player) -> {
+			JSONObject db = getData(player.uuid);
 			LocalDateTime now = LocalDateTime.now();
 			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
 			String nowString = now.format(dateTimeFormatter);
-			player.sendMessage("[green]Server time[white]: "+nowString);
+			if(db.get("language").equals("KR")){
+				player.sendMessage(EssentialBundle.load(true, "servertime")+" "+nowString);
+			} else {
+				player.sendMessage(EssentialBundle.load(false, "servertime")+" "+nowString);
+			}
 		});
 
 		handler.<Player>register("tr", "Enable/disable Translate all chat", (args, player) -> {
@@ -781,12 +1100,22 @@ public class Main extends Plugin{
 			int set;
 			if(!value){
 				set = 1;
-				player.sendMessage("[green][INFO] [] translate enabled.");
-				player.sendMessage("This translation uses the papago API, some languages may not be supported. (Google is paid)");
-				player.sendMessage("Note: Translated letters are marked with [#F5FF6B]this[white] color.");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "translate1"));
+					player.sendMessage(EssentialBundle.load(true, "translate2"));
+					player.sendMessage(EssentialBundle.load(true, "translate3"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "translate1"));
+					player.sendMessage(EssentialBundle.load(false, "translate2"));
+					player.sendMessage(EssentialBundle.load(false, "translate3"));
+				}
 			} else {
 				set = 0;
-				player.sendMessage("[green][INFO] [] translate disabled.");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "translate-disable"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "translate-disable"));
+				}
 			}
 
 			writeData("UPDATE players SET translate = '"+set+"' WHERE uuid = '"+player.uuid+"'");
@@ -798,11 +1127,20 @@ public class Main extends Plugin{
 			int set;
 			if(!value){
 				set = 1;
-				player.sendMessage("[green][INFO] [] Crosschat enabled.");
-				player.sendMessage("[yellow]Note[]: [#357EC7][SC][] prefix is 'Send Chat', [#C77E36][RC][] prefix is 'Received Chat'.");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "crosschat1"));
+					player.sendMessage(EssentialBundle.load(true, "crosschat2"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "crosschat1"));
+					player.sendMessage(EssentialBundle.load(false, "crosschat2"));
+				}
 			} else {
 				set = 0;
-				player.sendMessage("[green][INFO] [] Crosschat disabled.");
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "crosschat-disable"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "crosschat-disable"));
+				}
 			}
 
 			writeData("UPDATE players SET crosschat = '"+set+"' WHERE uuid = '"+player.uuid+"'");
@@ -810,19 +1148,34 @@ public class Main extends Plugin{
 
 		handler.<Player>register("color", "Enable color nickname", (args, player) -> {
 			if(!player.isAdmin){
-				player.sendMessage("[green]Notice:[] You're not admin!");
+				JSONObject db = getData(player.uuid);
+				if(db.get("language").equals("KR")){
+					player.sendMessage(EssentialBundle.load(true, "notadmin"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "notadmin"));
+				}
 			} else {
 				JSONObject db = getData(player.uuid);
 				boolean value = (boolean) db.get("colornick");
 				int set;
 				if(!value){
 					set = 1;
-					player.sendMessage("[green][INFO] [] colornick enabled.");
-					player.sendMessage("[yellow]Note[]: This's a test function and can be forced to change the nickname.");
-					player.sendMessage("[yellow]Note[]: Reconnect to apply color nickname effect.");
+					if(db.get("language").equals("KR")){
+						player.sendMessage(EssentialBundle.load(true,"colornick1"));
+						player.sendMessage(EssentialBundle.load(true,"colornick2"));
+						player.sendMessage(EssentialBundle.load(true,"colornick3"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false,"colornick1"));
+						player.sendMessage(EssentialBundle.load(false,"colornick2"));
+						player.sendMessage(EssentialBundle.load(false,"colornick3"));
+					}
 				} else {
 					set = 0;
-					player.sendMessage("[green][INFO] [] colornick disabled.");
+					if(db.get("language").equals("KR")){
+						player.sendMessage(EssentialBundle.load(true, "colornick-disable"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "colornick-disable"));
+					}
 				}
 
 				writeData("UPDATE players SET colornick = '"+set+"' WHERE uuid = '"+player.uuid+"'");
@@ -843,7 +1196,12 @@ public class Main extends Plugin{
 					}
 					player.kill();
 				} else {
-					player.sendMessage("You're not admin!");
+					JSONObject db = getData(player.uuid);
+					if(db.get("language").equals("KR")){
+						player.sendMessage(EssentialBundle.load(true, "notadmin"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "notadmin"));
+					}
 				}
 			});
 		}

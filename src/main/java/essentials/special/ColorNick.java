@@ -46,7 +46,7 @@ public class ColorNick {
         colors[10] = "[#ff00ff]";
 
         String[] newnick = new String[name.length()];
-        for (int i = 0; i<name.length(); i++) {
+        for (int i = 0; i<name.length(); i+=2) {
             char c = name.charAt(i);
             int colorIndex = (i+colorOffset)%colors.length;
             if (colorIndex < 0) {

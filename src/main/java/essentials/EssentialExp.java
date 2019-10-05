@@ -4,16 +4,15 @@ import io.anuke.arc.Core;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 
-import static essentials.EssentialConfig.basexp;
-import static essentials.EssentialConfig.exponent;
+import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.writeData;
 
-public class EssentialExp {
+class EssentialExp {
     private static final double BASE_XP = basexp;
     private static final double EXPONENT = exponent;
     static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
 
-    public static void exp(String name, String uuid) {
+    static void exp(String name, String uuid) {
         JSONObject db = EssentialPlayer.getData(uuid);
 
         int currentlevel = (int) db.get("level");
@@ -28,7 +27,7 @@ public class EssentialExp {
         writeData("UPDATE players SET exp = '"+xp+"', reqexp = '"+reqexp+"', level = '"+level+"', reqtotalexp = '"+reqtotalexp+"' WHERE uuid = '"+uuid+"'");
 
         int curlevel = (int) db.get("level");
-        if(curlevel < level && curlevel > 20){
+        if(curlevel < level && curlevel > 20 && levelupalarm){
             Call.sendMessage("[yellow]Congratulations![white] "+name+"[white] achieved level [green]"+level+"!");
         }
     }
@@ -54,7 +53,7 @@ public class EssentialExp {
         return level;
     }
 
-    public static void joinexp(String uuid){
+    static void joinexp(String uuid){
         JSONObject db = EssentialPlayer.getData(uuid);
 
         int exp = (int) db.get("exp");

@@ -1,25 +1,22 @@
 package essentials;
 
-public class EssentialBundle {
-    public void main(){
-/*
-        // Korean
+import java.util.Locale;
+import java.util.ResourceBundle;
 
-        if (!Core.settings.getDataDirectory().child("plugins/Essentials/bundle/bundle_ko.properties").exists()){
-            String text = "";
-            Core.settings.getDataDirectory().child("plugins/Essentials/bundle/bundle_ko.properties").writeString(text);
+class EssentialBundle {
+    static String load(boolean lang, String value){
+        if(lang){
+            return "[green][Essentials][] "+ResourceBundle.getBundle("bundle.bundle").getString(value);
+        } else {
+            return "[green][Essentials][] "+ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH).getString(value);
         }
-
-        // English
-        if (!Core.settings.getDataDirectory().child("plugins/Essentials/bundle/bundle_en.properties").exists()){
-            String text = "";
-            Core.settings.getDataDirectory().child("plugins/Essentials/bundle/bundle_en.properties").writeString(text);
-        }
-        */
     }
 
-    public void load(){
-       // Yaml yaml = new Yaml();
-        //Object obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/bundle/bundle_"+language+".properties").readString()));
+    static String nload(boolean lang, String value){
+        if(lang){
+            return ResourceBundle.getBundle("bundle.bundle").getString(value);
+        } else {
+            return ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH).getString(value);
+        }
     }
 }

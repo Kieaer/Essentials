@@ -4,17 +4,11 @@ import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.content.Blocks;
-import io.anuke.mindustry.content.Bullets;
-import io.anuke.mindustry.entities.bullet.BulletType;
 import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -55,12 +49,12 @@ public class EssentialAI {
 
 
 
-        List<String> copper = new ArrayList<String>();
+        List<String> copper = new ArrayList<>();
         Path test = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("test.log")));
         // Multi thread
-        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        //ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         // Single thread
-        //ExecutorService pool = Executors.newFixedThreadPool(1);
+        ExecutorService pool = Executors.newFixedThreadPool(1);
         Events.on(EventType.WorldLoadEvent.class, () -> {
             Global.log("Map scan start!");
             Thread t1 = new Thread(() -> {
@@ -69,7 +63,6 @@ public class EssentialAI {
                         int finalX = x;
                         int finalY = y;
                         Runnable t = () -> {
-                            /*
                             if (world.tileWorld(finalX, finalY).overlayID() != 0) {
                                 if (world.tileWorld(finalX, finalY).blockID() == 0) {
                                     if (world.tileWorld(finalX, finalY).overlayID() == 149) {
@@ -98,8 +91,6 @@ public class EssentialAI {
                                     }
                                 }
                             }
-                            */
-                            Call.createBullet(Bullets.waterShot, finalX, finalY, 0);
                         };
                         pool.execute(t);
                     }

@@ -151,6 +151,8 @@ public class EssentialPlayer{
             if(conn != null){
                 String sql = "CREATE TABLE IF NOT EXISTS players (\n" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                        "accountid TEXT,\n" +
+                        "accountpw TEXT,\n" +
                         "name TEXT,\n" +
                         "uuid TEXT,\n" +
                         "country TEXT,\n" +

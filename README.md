@@ -6,6 +6,9 @@ Please submit your idea to this repository issues or Mindustry official discord!
 
 ## Installation
 
+Install **Java 12 or higher**.<br>
+Java 9 or lower isn't supported!
+
 Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
 ## Client commands
@@ -30,11 +33,6 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | tempban | &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | vote | &lt;gameover/skipwave/kick&gt; [player name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
-<!--
-| vote | &lt;map name&gt; | Vote map |
-|  |  |  |
-|  |  |  |
--->
 
 ## Console commands
 
@@ -43,6 +41,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | allinfo | &lt;player name&gt; | Show player information |
 | bansync |   | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
+| gameover |   | Destroy the world. |
 
 ## 4.0 version plans
 - [x] Use all network communications with a single port
@@ -89,7 +88,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] Detect some nickname
 - [ ] Nickname prefix
 - [ ] Anti-Explode
-- [ ] ~~Translatable all messages using bundle~~ (impossible. java limit.)
+- [x] Translatable all messages using bundle
 
 ## 6.0 version plans
 - [x] Make RPG using player DB
