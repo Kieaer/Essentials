@@ -37,173 +37,175 @@ public class EssentialLog {
         }
 
         Events.on(EventType.PlayerChatEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
+            Thread t = new Thread(() -> {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            try {
-                JSONObject db = getData(e.player.uuid);
-                String text = nowString+db.get("name")+": "+e.message+"\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            }catch (IOException error) {
-                error.printStackTrace();
-            }
-        });
-
-        Events.on(EventType.WorldLoadEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            try {
-                String text = nowString+"World loaded!\n";
-                byte[] result = text.getBytes();
-                Files.write(total, result, StandardOpenOption.APPEND);
-            }catch (IOException error) {
-                error.printStackTrace();
-            }
-        });
-
-        Events.on(EventType.BlockBuildEndEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
-
-            Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            try {
-                String text;
-                if(!e.breaking){
-                    text = nowString+e.player.name+"Player break " +e.tile.entity.block.name+".\n";
-                } else {
-                    text = nowString+e.player.name+"Player made " +e.tile.entity.block.name+".\n";
-                }
-                byte[] result = text.getBytes();
-                Files.write(block, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            }catch (IOException error) {
-                error.printStackTrace();
-            }
-        });
-
-        Events.on(EventType.BlockBuildEndEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
-
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            if(!e.breaking){
+                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
+                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
                 try {
-                    if(e.tile.block() != null){
-                        String text = nowString+e.tile.block().name+" placed by "+e.player.name+".\n";
-                        byte[] result = text.getBytes();
-                        Files.write(path, result, StandardOpenOption.APPEND);
-                        Files.write(total, result, StandardOpenOption.APPEND);
-                    }
+                    JSONObject db = getData(e.player.uuid);
+                    String text = nowString+db.get("name")+": "+e.message+"\n";
+                    byte[] result = text.getBytes();
+                    Files.write(path, result, StandardOpenOption.APPEND);
+                    Files.write(total, result, StandardOpenOption.APPEND);
                 }catch (IOException error) {
                     error.printStackTrace();
                 }
-            }
+            });
+            t.start();
+        });
+
+        Events.on(EventType.WorldLoadEvent.class, e -> {
+            Thread t = new Thread(() -> {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = "["+now.format(dateTimeFormatter)+"] ";
+                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                try {
+                    String text = nowString+"World loaded!\n";
+                    byte[] result = text.getBytes();
+                    Files.write(total, result, StandardOpenOption.APPEND);
+                }catch (IOException error) {
+                    error.printStackTrace();
+                }
+            });
+            t.start();
+        });
+
+        Events.on(EventType.BlockBuildEndEvent.class, e -> {
+            Thread t = new Thread(() -> {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = "["+now.format(dateTimeFormatter)+"] ";
+
+                Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
+                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                try {
+                    String text;
+                    if(!e.breaking && e.tile.entity() != null){
+                        text = nowString+e.player.name+" Player break " +e.tile.entity().block.name+".\n";
+                    } else if(e.tile.entity() != null){
+                        text = nowString+e.player.name+" Player made " + e.tile.entity().block.name+".\n";
+                    } else {
+                        return;
+                    }
+                    byte[] result = text.getBytes();
+                    Files.write(block, result, StandardOpenOption.APPEND);
+                    Files.write(total, result, StandardOpenOption.APPEND);
+                }catch (IOException error) {
+                    error.printStackTrace();
+                }
+            });
+            t.start();
         });
 
         Events.on(EventType.MechChangeEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
+            Thread t = new Thread(() -> {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            try {
-                String text = nowString+e.player.name+" has change mech to "+e.mech.name+".\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            }catch (IOException error) {
-                error.printStackTrace();
-            }
+                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
+                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                try {
+                    String text = nowString+e.player.name+" has change mech to "+e.mech.name+".\n";
+                    byte[] result = text.getBytes();
+                    Files.write(path, result, StandardOpenOption.APPEND);
+                    Files.write(total, result, StandardOpenOption.APPEND);
+                }catch (IOException error) {
+                    error.printStackTrace();
+                }
+            });
+            t.start();
         });
 
         Events.on(EventType.PlayerJoin.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
+            Thread t = new Thread(() -> {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            JSONObject db = getData(e.player.uuid);
+                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
+                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                JSONObject db = getData(e.player.uuid);
 
-            try {
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = nowString+e.player.name+" player joined.\n" +
-                        "========================================\n" +
-                        "Name: "+e.player.name+"\n" +
-                        "UUID: "+e.player.uuid+"\n" +
-                        "Mobile: "+e.player.isMobile+"\n" +
-                        "IP: "+ip+"\n" +
-                        "Country: "+db.get("country")+"\n" +
-                        "Block place: "+db.get("placecount")+"\n" +
-                        "Block break: "+db.get("breakcount")+"\n" +
-                        "Kill units: "+db.get("killcount")+"\n" +
-                        "Death count: "+db.get("deathcount")+"\n" +
-                        "Join count: "+db.get("joincount")+"\n" +
-                        "Kick count: "+db.get("kickcount")+"\n" +
-                        "Level: "+db.get("level")+"\n" +
-                        "XP: "+db.get("reqtotalexp")+"\n" +
-                        "First join: "+db.get("firstdate")+"\n" +
-                        "Last join: "+db.get("lastdate")+"\n" +
-                        "Playtime: "+db.get("playtime")+"\n" +
-                        "Attack clear: "+db.get("attackclear")+"\n" +
-                        "PvP Win: "+db.get("pvpwincount")+"\n" +
-                        "PvP Lose: "+db.get("pvplosecount")+"\n" +
-                        "PvP Surrender: "+db.get("pvpbreakout")+"\n" +
-                        "========================================\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+                try {
+                    String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+                    String text = nowString+e.player.name+" player joined.\n" +
+                            "========================================\n" +
+                            "Name: "+e.player.name+"\n" +
+                            "UUID: "+e.player.uuid+"\n" +
+                            "Mobile: "+e.player.isMobile+"\n" +
+                            "IP: "+ip+"\n" +
+                            "Country: "+db.get("country")+"\n" +
+                            "Block place: "+db.get("placecount")+"\n" +
+                            "Block break: "+db.get("breakcount")+"\n" +
+                            "Kill units: "+db.get("killcount")+"\n" +
+                            "Death count: "+db.get("deathcount")+"\n" +
+                            "Join count: "+db.get("joincount")+"\n" +
+                            "Kick count: "+db.get("kickcount")+"\n" +
+                            "Level: "+db.get("level")+"\n" +
+                            "XP: "+db.get("reqtotalexp")+"\n" +
+                            "First join: "+db.get("firstdate")+"\n" +
+                            "Last join: "+db.get("lastdate")+"\n" +
+                            "Playtime: "+db.get("playtime")+"\n" +
+                            "Attack clear: "+db.get("attackclear")+"\n" +
+                            "PvP Win: "+db.get("pvpwincount")+"\n" +
+                            "PvP Lose: "+db.get("pvplosecount")+"\n" +
+                            "PvP Surrender: "+db.get("pvpbreakout")+"\n" +
+                            "========================================\n";
+                    byte[] result = text.getBytes();
+                    Files.write(path, result, StandardOpenOption.APPEND);
+                    Files.write(total, result, StandardOpenOption.APPEND);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+            t.start();
         });
 
         Events.on(EventType.PlayerConnect.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
+            Thread t = new Thread(() -> {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            try {
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = nowString+e.player.name+"/"+e.player.uuid+"/"+ip+" Player connected.\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            }catch (IOException error) {
-                error.printStackTrace();
-            }
+                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
+                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                try {
+                    String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+                    String text = nowString+e.player.name+"/"+e.player.uuid+"/"+ip+" Player connected.\n";
+                    byte[] result = text.getBytes();
+                    Files.write(path, result, StandardOpenOption.APPEND);
+                    Files.write(total, result, StandardOpenOption.APPEND);
+                }catch (IOException error) {
+                    error.printStackTrace();
+                }
+            });
+            t.start();
         });
 
         Events.on(EventType.PlayerLeave.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "["+now.format(dateTimeFormatter)+"] ";
+            Thread t = new Thread(() -> {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-            try {
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = nowString+e.player.name+"/"+e.player.uuid+"/"+ip+" Player disconnected.\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            }catch (IOException error) {
-                error.printStackTrace();
-            }
+                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
+                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                try {
+                    String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+                    String text = nowString+e.player.name+"/"+e.player.uuid+"/"+ip+" Player disconnected.\n";
+                    byte[] result = text.getBytes();
+                    Files.write(path, result, StandardOpenOption.APPEND);
+                    Files.write(total, result, StandardOpenOption.APPEND);
+                }catch (IOException error) {
+                    error.printStackTrace();
+                }
+            });
+            t.start();
         });
     }
 }
