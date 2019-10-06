@@ -49,11 +49,16 @@ import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin{
-	private ArrayList<String> vote = new ArrayList<>();
+    private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
+    private ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
 	//state.rules.bannedBlocks;
 
 	public Main() {
+	    // SQLite multi-thread
+        openconnect();
+
 		// Make player DB
 		createNewDataFile();
 
@@ -100,7 +105,7 @@ public class Main extends Plugin{
 
 		// TODO Make PvP winner count
 		Events.on(EventType.GameOverEvent.class, e -> {
-			//e.winner.name();
+            dbpool.shutdown();
 		});
 
 		Events.on(EventType.WorldLoadEvent.class, e -> EssentialTimer.playtime = "00:00.00");
@@ -254,22 +259,22 @@ public class Main extends Plugin{
 			}
 		});
 
+        ExecutorService dbpool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		Events.on(EventType.UnitDestroyEvent.class, e -> {
-			if(playerGroup != null && playerGroup.size() > 0){
-				for(int i=0;i<playerGroup.size();i++){
-					Player player = playerGroup.all().get(i);
-					JSONObject db = getData(player.uuid);
-					int killcount;
-					if(db.has("killcount")) {
-						killcount = db.getInt("killcount");
-					} else {
-						return;
-					}
-					killcount++;
-
-					writeData("UPDATE players SET killcount = '"+killcount+"' WHERE uuid = '"+player.uuid+"'");
-				}
-			}
+			if(playerGroup != null && playerGroup.size() > 0) {
+                for (int i = 0; i < playerGroup.size(); i++) {
+                    Player player = playerGroup.all().get(i);
+                    JSONObject db = getData(player.uuid);
+                    int killcount;
+                    if (db.has("killcount")) {
+                        killcount = db.getInt("killcount");
+                    } else {
+                        return;
+                    }
+                    killcount++;
+                    writeData("UPDATE players SET killcount = '" + killcount + "' WHERE uuid = '" + player.uuid + "'");
+                }
+            }
 		});
 
 		Events.on(EventType.DepositEvent.class, e -> {
@@ -301,6 +306,8 @@ public class Main extends Plugin{
 					e.printStackTrace();
 				}
 
+				closeconnect();
+
 				// Kill Ban/chat server thread
 				if(serverenable){
 					try {
@@ -330,20 +337,17 @@ public class Main extends Plugin{
 	public void registerServerCommands(CommandHandler handler){
 		handler.register("gameover", "a test", arg -> {
 			Global.log("The destruction of the world has begun!");
-			Path test = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("test.log")));
-			// Multi thread
-			//ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-			// Single thread
-			ExecutorService pool = Executors.newFixedThreadPool(1);
 			Thread t1 = new Thread(() -> {
 				for (int x = 0; x < world.width() * 8; x += 16) {
 					for (int y = 0; y < world.height() * 8; y += 8) {
 						int finalX = x;
 						int finalY = y;
+						// FULL SPEED!
 						Runnable t = () -> {
 							Call.createBullet(Bullets.meltdownLaser, finalX, finalY, 0);
+                            Call.createBullet(Bullets.fireball, finalX, finalY, 0);
 							try {
-								Thread.sleep(1);
+								Thread.sleep(5);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
@@ -1202,7 +1206,6 @@ public class Main extends Plugin{
 			}
 		});
 
-
 		handler.<Player>register("team", "Change team (PvP only)", (args, player) -> {
 			if(Vars.state.rules.pvp){
 				if(player.isAdmin){
@@ -1228,5 +1231,11 @@ public class Main extends Plugin{
 				player.sendMessage("This command can use only PvP mode!");
 			}
 		});
+
+		/*
+        handler.<Player>register("powerstat", "messageblock", (args, player) -> {
+            Blocks.message = new MessageBlock("test");
+        });
+		 */
 	}
 }
