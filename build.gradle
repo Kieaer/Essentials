@@ -12,6 +12,7 @@ repositories{
 
 ext{
     targetversion = 'v96'
+    //targetversion = '-SNAPSHOT'
 }
 
 //compileJava {options.encoding = "UTF-8"}

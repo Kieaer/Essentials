@@ -33,7 +33,7 @@ class EssentialExp {
     }
 
     private static double calcXpForLevel(int level) {
-        return BASE_XP + (BASE_XP * Math.pow(level, EXPONENT));
+        return BASE_XP+(BASE_XP * Math.pow(level, EXPONENT));
     }
 
     private static double calculateFullTargetXp(int level) {

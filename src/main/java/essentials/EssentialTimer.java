@@ -86,7 +86,7 @@ public class EssentialTimer extends TimerTask {
                 object.remove(String.valueOf(i));
                 Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
                 netServer.admins.unbanPlayerID(uuid);
-                Global.log(name + "/" + uuid + " player unbanned!");
+                Global.log(name+"/"+uuid+" player unbanned!");
             }
         }
 

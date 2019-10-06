@@ -77,7 +77,7 @@ public class EssentialConfig {
 
                     "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
                     "enableantirush: true\n" +
-                    "antirushtime: 10.00\n\n" + 
+                    "antirushtime: 10.00\n\n"+
                     
                     "# Logging enable\n" +
                     "logging: false\n\n" +
@@ -517,7 +517,7 @@ public class EssentialConfig {
 
                     "# Enable Anti PvP early time rushing\n" +
                     "enableantirush: "+enableantirush+"\n" +
-                    "antirushtime: "+obj.get("antirushtime")+"\n\n" + 
+                    "antirushtime: "+obj.get("antirushtime")+"\n\n"+
                     
                     "# Logging enable\n" +
                     "logging: "+logging+"\n\n" +

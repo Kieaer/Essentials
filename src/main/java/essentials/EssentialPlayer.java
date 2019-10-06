@@ -64,7 +64,7 @@ public class EssentialPlayer{
                     lang = "en";
                 } else {
                     try {
-                        String apiURL = "http://ipapi.co/" + ip + "/json";
+                        String apiURL = "http://ipapi.co/"+ip+"/json";
                         URL url = new URL(apiURL);
                         HttpURLConnection con = (HttpURLConnection) url.openConnection();
                         con.setReadTimeout(5000);
@@ -87,7 +87,7 @@ public class EssentialPlayer{
 
                         BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
                         String inputLine;
-                        StringBuffer response = new StringBuffer();
+                        StringBuilder response = new StringBuilder();
                         while ((inputLine = br.readLine()) != null) {
                             response.append(inputLine);
                         }

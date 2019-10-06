@@ -20,7 +20,7 @@ class EssentialTR {
         String clientId = "Ujx3Ysdxfg7FY2wQn2ES";
         String clientSecret = "iHAb6PF3SK";
         try {
-            String query = URLEncoder.encode(message, "UTF-8");
+            String query = URLEncoder.encode(message, StandardCharsets.UTF_8);
             String apiURL = "https://openapi.naver.com/v1/papago/detectLangs";
             URL url = new URL(apiURL);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -28,7 +28,7 @@ class EssentialTR {
             con.setRequestProperty("X-Naver-Client-Id", clientId);
             con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
 
-            String postParams = "query=" + query;
+            String postParams = "query="+query;
             con.setDoOutput(true);
             DataOutputStream wr = new DataOutputStream(con.getOutputStream());
             wr.writeBytes(postParams);
@@ -42,7 +42,7 @@ class EssentialTR {
                 br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
             }
             String inputLine;
-            StringBuffer response = new StringBuffer();
+            StringBuilder response = new StringBuilder();
             while ((inputLine = br.readLine()) != null) {
                 response.append(inputLine);
             }
@@ -61,7 +61,7 @@ class EssentialTR {
         String clientId = "RNOXzFalw7FMFjBe2mbq";
         String clientSecret = "6k0TWLFmPN";
         try {
-            String text = URLEncoder.encode(message, "UTF-8");
+            String text = URLEncoder.encode(message, StandardCharsets.UTF_8);
             String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
             URL url = new URL(apiURL);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -69,7 +69,7 @@ class EssentialTR {
             con.setRequestProperty("X-Naver-Client-Id", clientId);
             con.setRequestProperty("X-Naver-Client-Secret", clientSecret);
 
-            String postParams = "source="+lang.get("langCode")+"&target="+db.get("language")+"&text=" + text;
+            String postParams = "source="+lang.get("langCode")+"&target="+db.get("language")+"&text="+text;
             con.setDoOutput(true);
             DataOutputStream wr = new DataOutputStream(con.getOutputStream());
             wr.writeBytes(postParams);
@@ -100,7 +100,7 @@ class EssentialTR {
                     JSONObject db2 = getData(p.uuid);
                     boolean value = (boolean) db2.get("translate");
                     if (value) {
-                        p.sendMessage("[orange][" + player.name.replaceAll("\\[(.*?)]", "") + "][white]: [#F5FF6B]" + result);
+                        p.sendMessage("[orange]["+player.name.replaceAll("\\[(.*?)]", "")+"][white]: [#F5FF6B]"+result);
                     }
                 }
             }

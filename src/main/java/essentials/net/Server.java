@@ -58,7 +58,7 @@ public class Server implements Runnable{
                 bw.flush();
                 Global.bans("Ban list sented to "+remoteip);
             } else {
-                // 11 length UUID + split array 1 length + max 12 length/dot IP = 15
+                // 11 length UUID+split array 1 length+max 12 length/dot IP = 15
                 if(data.length() > 28){
                     Global.bansw("Unknown data received from "+remoteip+"!");
                 } else {
@@ -96,7 +96,7 @@ public class Server implements Runnable{
                 Global.chatsw("[EssentialsChat] ALERT! This message isn't received from "+EssentialConfig.clienthost+"!!");
                 Global.chatsw("[EssentialsChat] Message is "+data);
             } else {
-                Call.sendMessage("[#C77E36][RC] " + data);
+                Call.sendMessage("[#C77E36][RC] "+data);
             }
             */
         }catch (Exception e){

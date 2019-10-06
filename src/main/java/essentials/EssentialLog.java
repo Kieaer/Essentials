@@ -78,9 +78,9 @@ public class EssentialLog {
             try {
                 String text;
                 if(!e.breaking){
-                    text = nowString+e.player.name + "Player break " +e.tile.entity.block.name+".\n";
+                    text = nowString+e.player.name+"Player break " +e.tile.entity.block.name+".\n";
                 } else {
-                    text = nowString+e.player.name + "Player made " +e.tile.entity.block.name+".\n";
+                    text = nowString+e.player.name+"Player made " +e.tile.entity.block.name+".\n";
                 }
                 byte[] result = text.getBytes();
                 Files.write(block, result, StandardOpenOption.APPEND);
@@ -131,7 +131,7 @@ public class EssentialLog {
         Events.on(EventType.PlayerJoin.class, e -> {
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "[" + now.format(dateTimeFormatter) + "] ";
+            String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
@@ -139,28 +139,28 @@ public class EssentialLog {
 
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = nowString + e.player.name + " player joined.\n" +
+                String text = nowString+e.player.name+" player joined.\n" +
                         "========================================\n" +
-                        "Name: " + e.player.name + "\n" +
-                        "UUID: " + e.player.uuid + "\n" +
-                        "Mobile: " + e.player.isMobile + "\n" +
-                        "IP: " + ip + "\n" +
-                        "Country: " + db.get("country") + "\n" +
-                        "Block place: " + db.get("placecount") + "\n" +
-                        "Block break: " + db.get("breakcount") + "\n" +
-                        "Kill units: " + db.get("killcount") + "\n" +
-                        "Death count: " + db.get("deathcount") + "\n" +
-                        "Join count: " + db.get("joincount") + "\n" +
-                        "Kick count: " + db.get("kickcount") + "\n" +
-                        "Level: " + db.get("level") + "\n" +
-                        "XP: " + db.get("reqtotalexp") + "\n" +
-                        "First join: " + db.get("firstdate") + "\n" +
-                        "Last join: " + db.get("lastdate") + "\n" +
-                        "Playtime: " + db.get("playtime") + "\n" +
-                        "Attack clear: " + db.get("attackclear") + "\n" +
-                        "PvP Win: " + db.get("pvpwincount") + "\n" +
-                        "PvP Lose: " + db.get("pvplosecount") + "\n" +
-                        "PvP Surrender: " + db.get("pvpbreakout") + "\n" +
+                        "Name: "+e.player.name+"\n" +
+                        "UUID: "+e.player.uuid+"\n" +
+                        "Mobile: "+e.player.isMobile+"\n" +
+                        "IP: "+ip+"\n" +
+                        "Country: "+db.get("country")+"\n" +
+                        "Block place: "+db.get("placecount")+"\n" +
+                        "Block break: "+db.get("breakcount")+"\n" +
+                        "Kill units: "+db.get("killcount")+"\n" +
+                        "Death count: "+db.get("deathcount")+"\n" +
+                        "Join count: "+db.get("joincount")+"\n" +
+                        "Kick count: "+db.get("kickcount")+"\n" +
+                        "Level: "+db.get("level")+"\n" +
+                        "XP: "+db.get("reqtotalexp")+"\n" +
+                        "First join: "+db.get("firstdate")+"\n" +
+                        "Last join: "+db.get("lastdate")+"\n" +
+                        "Playtime: "+db.get("playtime")+"\n" +
+                        "Attack clear: "+db.get("attackclear")+"\n" +
+                        "PvP Win: "+db.get("pvpwincount")+"\n" +
+                        "PvP Lose: "+db.get("pvplosecount")+"\n" +
+                        "PvP Surrender: "+db.get("pvpbreakout")+"\n" +
                         "========================================\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);

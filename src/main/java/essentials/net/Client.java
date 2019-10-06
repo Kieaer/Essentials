@@ -30,7 +30,7 @@ public class Client{
         Global.banc("Ban list senting...");
         for (Administration.PlayerInfo info : bans) {
             try {
-                String msg = info.id + "|" + info.lastIP + "\n";
+                String msg = info.id+"|"+info.lastIP+"\n";
                 bw.write(msg);
                 bw.flush();
 
@@ -80,10 +80,10 @@ public class Client{
             String msg = chat+"\n";
             bw.write(msg);
             bw.flush();
-            Call.sendMessage("[#357EC7][SC] " + chat);
-            Global.chatc("Message sent to " + clienthost + " - "+chat+"");
+            Call.sendMessage("[#357EC7][SC] "+chat);
+            Global.chatc("Message sent to "+clienthost+" - "+chat+"");
         } catch (Exception e) {
-            String url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+            String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
             player.sendMessage("Server is not responding! Cross-chat disabled!");
 
             String sql = "UPDATE players SET crosschat = ? WHERE uuid = ?";
