@@ -156,7 +156,12 @@ public class Main extends Plugin{
 				}
 
 				// Show motd
-				String motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+				String motd;
+				if(db.get("language").equals("KR")){
+					motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
+				} else {
+					motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+				}
 				int count = motd.split("\r\n|\r|\n").length;
 				if(count > 10){
 					Call.onInfoMessage(e.player.con, motd);
@@ -190,7 +195,6 @@ public class Main extends Plugin{
 		Events.on(EventType.PlayerLeave.class, e -> {
 			JSONObject db = getData(e.player.uuid);
 			e.player.name = db.getString("name");
-
 			writeData("UPDATE players SET connected = '0' WHERE uuid = '"+e.player.uuid+"'");
 		});
 
@@ -450,7 +454,6 @@ public class Main extends Plugin{
 		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
 			JSONObject db = getData(player.uuid);
 			String motd;
-			Log.info(db.get("language"));
 			if(db.get("language").equals("KR")){
 				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
 			} else {
@@ -690,13 +693,11 @@ public class Main extends Plugin{
 						Thread t = new Thread(() -> {
 							try {
 								if(playerGroup != null && playerGroup.size() > 0) {
-									Thread playeralarm1 = null;
-									Thread playeralarm2 = null;
 									for (int i = 0; i < playerGroup.size(); i++) {
 										Player others = playerGroup.all().get(i);
 										JSONObject db1 = getData(others.uuid);
 										if (db1.get("language") == "KR") {
-											playeralarm1 = new Thread(() -> {
+											Thread playeralarm1 = new Thread(() -> {
 												try {
 													Thread.sleep(10000);
 													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
@@ -715,10 +716,10 @@ public class Main extends Plugin{
 											});
 											playeralarm1.start();
 										} else {
-											playeralarm2 = new Thread(() -> {
+											Thread playeralarm2 = new Thread(() -> {
 												try {
 													Thread.sleep(10000);
-													others.sendMessage( EssentialBundle.load(false, "vote-50sec"));
+													others.sendMessage(EssentialBundle.load(false, "vote-50sec"));
 													Thread.sleep(10000);
 													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
 													Thread.sleep(10000);
@@ -735,11 +736,8 @@ public class Main extends Plugin{
 											playeralarm2.start();
 										}
 									}
-									assert playeralarm1 != null;
-									assert playeralarm2 != null;
-									playeralarm1.join();
-									playeralarm2.join();
 								}
+								Thread.sleep(60000);
 								if (current >= require) {
 									Call.sendMessage("[green][Essentials] Gameover vote passed!");
 									Events.fire(new EventType.GameOverEvent(Team.sharded));
@@ -756,9 +754,9 @@ public class Main extends Plugin{
 						t.start();
 					} else {
 						if (db.get("language") == "KR") {
-							player.sendMessage(player.name+EssentialBundle.load(true, "vote-in-processing"));
+							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
 						} else {
-							player.sendMessage(player.name+EssentialBundle.load(false, "vote-in-processing"));
+							player.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
 						}
 					}
 					break;
@@ -782,13 +780,11 @@ public class Main extends Plugin{
 						Thread t = new Thread(() -> {
 							try {
 								if(playerGroup != null && playerGroup.size() > 0) {
-									Thread playeralarm1 = null;
-									Thread playeralarm2 = null;
 									for (int i = 0; i < playerGroup.size(); i++) {
 										Player others = playerGroup.all().get(i);
 										JSONObject db1 = getData(others.uuid);
 										if (db1.get("language") == "KR") {
-											playeralarm1 = new Thread(() -> {
+											Thread playeralarm1 = new Thread(() -> {
 												try {
 													Thread.sleep(10000);
 													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
@@ -807,7 +803,7 @@ public class Main extends Plugin{
 											});
 											playeralarm1.start();
 										} else {
-											playeralarm2 = new Thread(() -> {
+											Thread playeralarm2 = new Thread(() -> {
 												try {
 													Thread.sleep(10000);
 													others.sendMessage( EssentialBundle.load(false, "vote-50sec"));
@@ -827,20 +823,17 @@ public class Main extends Plugin{
 											playeralarm2.start();
 										}
 									}
-									assert playeralarm1 != null;
-									assert playeralarm2 != null;
-									playeralarm1.join();
-									playeralarm2.join();
 								}
+								Thread.sleep(60000);
 								if (current >= require) {
 									assert playerGroup != null;
 									for (int i = 0; i < playerGroup.size(); i++) {
 										Player others = playerGroup.all().get(i);
 										JSONObject db1 = getData(others.uuid);
 										if (db1.get("language") == "KR") {
-											others.sendMessage(player.name+EssentialBundle.load(true, "vote-in-processing"));
+											others.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
 										} else {
-											others.sendMessage(player.name+EssentialBundle.load(false, "vote-in-processing"));
+											others.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
 										}
 									}
 									Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
@@ -898,13 +891,11 @@ public class Main extends Plugin{
 						Thread t = new Thread(() -> {
 							try {
 								if(playerGroup != null && playerGroup.size() > 0) {
-									Thread playeralarm1 = null;
-									Thread playeralarm2 = null;
 									for (int i = 0; i < playerGroup.size(); i++) {
 										Player others = playerGroup.all().get(i);
 										JSONObject db1 = getData(others.uuid);
 										if (db1.get("language") == "KR") {
-											playeralarm1 = new Thread(() -> {
+											Thread playeralarm1 = new Thread(() -> {
 												try {
 													Thread.sleep(10000);
 													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
@@ -923,10 +914,10 @@ public class Main extends Plugin{
 											});
 											playeralarm1.start();
 										} else {
-											playeralarm2 = new Thread(() -> {
+											Thread playeralarm2 = new Thread(() -> {
 												try {
 													Thread.sleep(10000);
-													others.sendMessage( EssentialBundle.load(false, "vote-50sec"));
+													others.sendMessage(EssentialBundle.load(false, "vote-50sec"));
 													Thread.sleep(10000);
 													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
 													Thread.sleep(10000);
@@ -943,12 +934,8 @@ public class Main extends Plugin{
 											playeralarm2.start();
 										}
 									}
-									assert playeralarm1 != null;
-									assert playeralarm2 != null;
-
-									playeralarm1.join();
-									playeralarm2.join();
 								}
+								Thread.sleep(60000);
 								if (current >= require) {
 									Call.sendMessage("[green][Essentials] Player kick vote success!");
 									EssentialPlayer.addtimeban(target.name, target.uuid, 4);
@@ -979,7 +966,6 @@ public class Main extends Plugin{
 											player.sendMessage(EssentialBundle.load(false, "vote-failed"));
 										}
 									}
-									Call.sendMessage("[green][Essentials][red] Player ban vote failed.");
 								}
 								vote.clear();
 								this.voteactive = false;

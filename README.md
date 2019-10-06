@@ -83,8 +83,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [ ] Show remote IP
 - [ ] Auto-translate
   - [ ] Fix translate not working
-- [ ] Teleport
-  - [ ] ~~using ID~~ (some nickname is better)
+- [x] Teleport
   - [x] Detect some nickname
 - [ ] Nickname prefix
 - [ ] Anti-Explode
