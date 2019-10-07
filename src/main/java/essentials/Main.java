@@ -59,6 +59,9 @@ public class Main extends Plugin{
 	    // SQLite multi-thread
         openconnect();
 
+        // Reset all connected status
+		writeData("UPDATE players SET connected = 0");
+
 		// Make player DB
 		createNewDataFile();
 
@@ -104,9 +107,11 @@ public class Main extends Plugin{
         EssentialEPG.main();
 
 		// TODO Make PvP winner count
+		/*
 		Events.on(EventType.GameOverEvent.class, e -> {
-            dbpool.shutdown();
+
 		});
+		*/
 
 		Events.on(EventType.WorldLoadEvent.class, e -> EssentialTimer.playtime = "00:00.00");
 

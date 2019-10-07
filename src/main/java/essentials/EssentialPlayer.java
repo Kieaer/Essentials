@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +31,6 @@ public class EssentialPlayer{
     private static int dbversion = 1;
     private static boolean queryresult;
     private static Connection conn;
-    static ExecutorService dbpool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()/2);
 
     static void main(Player player){
         try {
@@ -383,14 +380,14 @@ public class EssentialPlayer{
     static void closeconnect(){
         try{
             conn.close();
-            dbpool.shutdown();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
 	static void writeData(String sql){
-        Runnable work = () -> {
+        Thread db = new Thread(() -> {
+            Thread.currentThread().setName("DB Thread");
             try {
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.executeUpdate();
@@ -398,8 +395,8 @@ public class EssentialPlayer{
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        };
-        dbpool.execute(work);
+        });
+        db.start();
 	}
 
 	/*
