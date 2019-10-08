@@ -2,13 +2,15 @@ apply plugin: "java"
 
 version '2.1'
 
-sourceCompatibility = JavaVersion.VERSION_12
+sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories{
     mavenCentral()
     maven{ url 'https://jitpack.io' }
 
 }
+
+compileJava {options.encoding = "UTF-8"}
 
 ext{
     targetversion = 'v96'
@@ -27,6 +29,7 @@ dependencies{
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
     compile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
     compile 'com.google.code.gson:gson:2.8.5'
+    compile group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
     //compile group: 'org.tensorflow', name:'tensorflow', version: '1.13.1'
 }
 

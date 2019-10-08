@@ -2,7 +2,6 @@ package essentials;
 
 import essentials.net.Client;
 import essentials.net.Server;
-import essentials.special.ColorNick;
 import essentials.thread.Update;
 import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
@@ -37,7 +36,6 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
@@ -45,28 +43,29 @@ import java.util.concurrent.Executors;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
+import static essentials.Global.getTeamNoCore;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
-    private ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    static ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
 	//state.rules.bannedBlocks;
 
 	public Main() {
-	    // SQLite multi-thread
-        openconnect();
-
-        // Reset all connected status
-		writeData("UPDATE players SET connected = 0");
+		// Start config file
+		EssentialConfig.main();
 
 		// Make player DB
 		createNewDataFile();
 
-		// Start config file
-	    EssentialConfig.main();
+		// SQLite multi-thread
+		openconnect();
+
+		// Reset all connected status
+		writeData("UPDATE players SET connected = 0");
 
 	    // Start log
 		if(logging){
@@ -125,24 +124,10 @@ public class Main extends Plugin{
         });
 
 		// Set if player join event
-        Events.on(PlayerJoin.class, e -> {
+		Events.on(EventType.PlayerConnect.class, e -> {
 			// Database read/write
 			Thread playerthread = new Thread(() -> {
 				Thread.currentThread().setName("PlayerJoin Thread");
-				EssentialPlayer.main(e.player);
-				JSONObject db = getData(e.player.uuid);
-
-				LocalDateTime now = LocalDateTime.now();
-				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-				String nowString = now.format(dateTimeFormatter);
-
-				// Write player connected
-				writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"' WHERE uuid = '"+e.player.uuid+"'");
-
-				// Check if realname enabled
-				if(realname){
-					e.player.name = db.getString("name");
-				}
 
 				// Check if blacklisted nickname
 				String blacklist = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
@@ -151,7 +136,7 @@ public class Main extends Plugin{
 
 				for (int i = 0; i < array.length(); i++){
 					if (array.getString(i).equals(e.player.name)){
-						e.player.con.kick("Server isn't allow blacklisted nickname.");
+						e.player.con.kick("Server doesn't allow blacklisted nickname.");
 						Global.log(e.player.name+" nickname is blacklisted.");
 					}
 				}
@@ -169,36 +154,34 @@ public class Main extends Plugin{
 					}
 				}
 
-				// Show motd
-				String motd;
-				if(db.get("language").equals("KR")){
-					motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
-				} else {
-					motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+				JSONObject db = new JSONObject();
+				try{
+					db = getData(e.player.uuid);
+				}catch (Exception ex){
+					db.put("uuid", "none");
 				}
-				int count = motd.split("\r\n|\r|\n").length;
-				if(count > 10){
-					Call.onInfoMessage(e.player.con, motd);
+				if(db.getString("uuid").equals(e.player.uuid)){
+					if(db.get("language").equals("KR")){
+						player.sendMessage(EssentialBundle.load(true, "autologin"));
+					} else {
+						player.sendMessage(EssentialBundle.load(false, "autologin"));
+					}
 				} else {
-					e.player.sendMessage(motd);
-				}
-
-				// Give join exp
-				Thread expthread = new Thread(() -> EssentialExp.joinexp(e.player.uuid));
-				expthread.start();
-
-				// Color nickname
-				boolean colornick = (boolean) db.get("colornick");
-				if(realname && colornick){
-					ColorNick.main(e.player);
-				} else if(!realname && colornick){
-					Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
-
-					writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+e.player.uuid+"'");
+					// Login require
+					String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
+							"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
+							"서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
+							"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
+					Team no_core = getTeamNoCore(e.player);
+					e.player.setTeam(no_core);
+					Call.onPlayerDeath(e.player);
+					Call.onInfoMessage(e.player.con, message);
 				}
 			});
 			playerthread.start();
+		});
 
+        Events.on(PlayerJoin.class, e -> {
 			// PvP placetime (WorldLoadEvent isn't work.)
 			if(enableantirush && Vars.state.rules.pvp) {
 				state.rules.playerDamageMultiplier = 0f;
@@ -207,32 +190,36 @@ public class Main extends Plugin{
 		});
 
 		Events.on(EventType.PlayerLeave.class, e -> {
-			JSONObject db = getData(e.player.uuid);
-			e.player.name = db.getString("name");
-			writeData("UPDATE players SET connected = '0' WHERE uuid = '"+e.player.uuid+"'");
+			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
+				JSONObject db = getData(e.player.uuid);
+				e.player.name = db.getString("name");
+				writeData("UPDATE players SET connected = '0' WHERE uuid = '"+e.player.uuid+"'");
+			}
 		});
 
 		// Set if player chat event
 		Events.on(EventType.PlayerChatEvent.class, e -> {
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
-			if(!check.equals("/")) {
-				//boolean valid = e.message.matches("\\w+");
-				JSONObject db = getData(e.player.uuid);
-				boolean crosschat = (boolean) db.get("crosschat");
+			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
+				if(!check.equals("/")) {
+					//boolean valid = e.message.matches("\\w+");
+					JSONObject db = getData(e.player.uuid);
+					boolean crosschat = (boolean) db.get("crosschat");
 
-				EssentialTR.main(e.player, e.message);
+					EssentialTR.main(e.player, e.message);
 
-				if (clientenable) {
-					if(crosschat) {
-						Thread chatclient = new Thread(() -> {
-							String message = e.player.name.replaceAll("\\[(.*?)]", "")+": "+e.message;
-							Client.main("chat", message, e.player);
-						});
-						chatclient.start();
+					if (clientenable) {
+						if (crosschat) {
+							Thread chatclient = new Thread(() -> {
+								String message = e.player.name.replaceAll("\\[(.*?)]", "") + ": " + e.message;
+								Client.main("chat", message, e.player);
+							});
+							chatclient.start();
+						}
+					} else if (crosschat) {
+						e.player.sendMessage("Currently server isn't enable cross-server client!");
 					}
-				} else if(crosschat){
-					e.player.sendMessage("Currently server isn't enable cross-server client!");
 				}
 			}
 		});
@@ -264,7 +251,6 @@ public class Main extends Plugin{
 			}
 		});
 
-        ExecutorService dbpool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		Events.on(EventType.UnitDestroyEvent.class, e -> {
 			if(playerGroup != null && playerGroup.size() > 0) {
                 for (int i = 0; i < playerGroup.size(); i++) {
@@ -401,8 +387,8 @@ public class Main extends Plugin{
 			Global.log(""+arg[0]+" nickname is registered in blacklist.");
         });
 
-		handler.register("allinfo", "[name]", "Show player information", (args) -> {
-			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(args[0]));
+		handler.register("allinfo", "[name]", "Show player information", (arg) -> {
+			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(arg[0]));
 			if(other != null) {
 				JSONObject db = getData(other.uuid);
 				String datatext = "\nPlayer Information\n" +
@@ -432,7 +418,7 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.register("bansync", "Ban list synchronization from master server", (args) -> {
+		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
 			if(banshare){
 				String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
 				JSONTokener parser = new JSONTokener(db);
@@ -460,8 +446,8 @@ public class Main extends Plugin{
 			Global.log("Currently not supported!");
 		});
 
-		handler.register("team","[name]", "Change target player team", (args) -> {
-			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(args[0]));
+		handler.register("team","[name]", "Change target player team", (arg) -> {
+			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 			if(other != null){
 				int i = other.getTeam().ordinal()+1;
 				while(i != other.getTeam().ordinal()){
@@ -478,15 +464,59 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.register("nick", "<name> <newname...>", "Show player information", (args) -> {
-			//writeData("UPDATE players SET name='"+args[1]+"', WHERE name = '"+args[0]+"'");
+		handler.register("nick", "<name> <newname...>", "Show player information", (arg) -> {
+			//writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
 			Global.log("This command isn't supported now!");
 		});
 	}
 
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
-		handler.<Player>register("votekick", "Disabled.", (args, player) -> {
+        handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
+            if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials] [orange]You are already logged in");
+                return;
+            }
+
+            if(EssentialPlayer.login(player, arg[0], arg[1])){
+                player.sendMessage("[green][Essentials] [orange]Login success!");
+                EssentialPlayer.load(player);
+            } else {
+                player.sendMessage("[green][Essentials] [scarlet]Login failed!");
+            }
+        });
+        handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player)-> {
+            if(EssentialPlayer.register(player, arg[0], arg[1], arg[2])){
+				if (Vars.state.rules.pvp){
+					int index = player.getTeam().ordinal()+1;
+					while (index != player.getTeam().ordinal()){
+						if (index >= Team.all.length){
+							index = 0;
+						}
+						if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
+							player.setTeam(Team.all[index]);
+							break;
+						}
+						index++;
+					}
+
+					Call.onPlayerDeath(player);
+				} else {
+					player.setTeam(Vars.defaultTeam);
+					Call.onPlayerDeath(player);
+					player.sendMessage("[green][Essentials] [orange]Account register success!");
+				}
+            } else {
+                player.sendMessage("[green][Essentials] [scarlet]Register failed!");
+            }
+        });
+
+		handler.<Player>register("votekick", "Disabled.", (arg, player) -> {
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			if(db.get("language").equals("KR")){
 				player.sendMessage(EssentialBundle.load(true, "votekick-disabled"));
@@ -495,7 +525,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("motd", "Show server motd.", (args, player) -> {
+		handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			String motd;
 			if(db.get("language").equals("KR")){
@@ -511,63 +546,80 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("getpos", "Get your current position info", (args, player) -> player.sendMessage("X: "+Math.round(player.x)+" Y: "+Math.round(player.y)));
+		handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
 
-		handler.<Player>register("info", "Show your information", (args, player) -> {
+			player.sendMessage("X: "+Math.round(player.x)+" Y: "+Math.round(player.y));
+		});
+
+		handler.<Player>register("info", "Show your information", (arg, player) -> {
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
 			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 			JSONObject db = getData(player.uuid);
 			String datatext;
 			if(db.get("language").equals("KR")){
 				datatext = "[#DEA82A]"+EssentialBundle.nload(true, "player-info")+"[]\n" +
 						"[#2B60DE]========================================[]\n" +
-						"[green]"+EssentialBundle.nload(true, "player-name")+"[]			: "+player.name+"[white]\n" +
-						"[green]"+EssentialBundle.nload(true, "player-uuid")+"[]			: "+player.uuid+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-isMobile")+"[]		: "+player.isMobile+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-ip")+"[]				: "+ip+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-country")+"[]			: "+db.get("country")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-placecount")+"[]		: "+db.get("placecount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-breakcount")+"[]		: "+db.get("breakcount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-killcount")+"[]		: "+db.get("killcount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-deathcount")+"[]		: "+db.get("deathcount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-joincount")+"[]		: "+db.get("joincount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-kickcount")+"[]		: "+db.get("kickcount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-level")+"[]			: "+db.get("level")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-reqtotalexp")+"[]		: "+db.get("reqtotalexp")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-firstdate")+"[]		: "+db.get("firstdate")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-lastdate")+"[]		: "+db.get("lastdate")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-playtime")+"[]		: "+db.get("playtime")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-attackclear")+"[]		: "+db.get("attackclear")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-pvpwincount")+"[]		: "+db.get("pvpwincount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-pvplosecount")+"[]	: "+db.get("pvplosecount")+"\n" +
-						"[green]"+EssentialBundle.nload(true, "player-pvpbreakout")+"[]		: "+db.get("pvpbreakout");
+						"[green]"+EssentialBundle.nload(true, "player-name")+"[] : "+player.name+"[white]\n" +
+						"[green]"+EssentialBundle.nload(true, "player-uuid")+"[] : "+player.uuid+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-isMobile")+"[] : "+player.isMobile+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-ip")+"[] : "+ip+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-country")+"[] : "+db.get("country")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-placecount")+"[] : "+db.get("placecount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-breakcount")+"[] : "+db.get("breakcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-killcount")+"[] : "+db.get("killcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-deathcount")+"[] : "+db.get("deathcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-joincount")+"[] : "+db.get("joincount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-kickcount")+"[] : "+db.get("kickcount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-level")+"[] : "+db.get("level")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-reqtotalexp")+"[] : "+db.get("reqtotalexp")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-firstdate")+"[] : "+db.get("firstdate")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-lastdate")+"[] : "+db.get("lastdate")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-playtime")+"[] : "+db.get("playtime")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-attackclear")+"[] : "+db.get("attackclear")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-pvpwincount")+"[] : "+db.get("pvpwincount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-pvplosecount")+"[] : "+db.get("pvplosecount")+"\n" +
+						"[green]"+EssentialBundle.nload(true, "player-pvpbreakout")+"[] : "+db.get("pvpbreakout");
 			} else {
 				datatext = "[#DEA82A]"+EssentialBundle.nload(false, "player-info")+"[]\n" +
 						"[#2B60DE]========================================[]\n" +
-						"[green]"+EssentialBundle.nload(false, "player-name")+"[]			: "+player.name+"[white]\n" +
-						"[green]"+EssentialBundle.nload(false, "player-uuid")+"[]		    : "+player.uuid+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-isMobile")+"[]	    : "+player.isMobile+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-ip")+"[]			    : "+ip+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-country")+"[]		: "+db.get("country")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-placecount")+"[]	    : "+db.get("placecount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-breakcount")+"[]	    : "+db.get("breakcount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-killcount")+"[]	    : "+db.get("killcount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-deathcount")+"[]	    : "+db.get("deathcount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-joincount")+"[]	    : "+db.get("joincount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-kickcount")+"[]	    : "+db.get("kickcount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-level")+"[]		    : "+db.get("level")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-reqtotalexp")+"[]	: "+db.get("reqtotalexp")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-firstdate")+"[]	    : "+db.get("firstdate")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-lastdate")+"[]	    : "+db.get("lastdate")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-playtime")+"[]	    : "+db.get("playtime")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-attackclear")+"[]	: "+db.get("attackclear")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-pvpwincount")+"[]	: "+db.get("pvpwincount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-pvplosecount")+"[]   : "+db.get("pvplosecount")+"\n" +
-						"[green]"+EssentialBundle.nload(false, "player-pvpbreakout")+"[]	: "+db.get("pvpbreakout");
+						"[green]"+EssentialBundle.nload(false, "player-name")+"[] : "+player.name+"[white]\n" +
+						"[green]"+EssentialBundle.nload(false, "player-uuid")+"[] : "+player.uuid+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-isMobile")+"[] : "+player.isMobile+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-ip")+"[] : "+ip+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-country")+"[] : "+db.get("country")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-placecount")+"[] : "+db.get("placecount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-breakcount")+"[] : "+db.get("breakcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-killcount")+"[] : "+db.get("killcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-deathcount")+"[] : "+db.get("deathcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-joincount")+"[] : "+db.get("joincount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-kickcount")+"[] : "+db.get("kickcount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-level")+"[] : "+db.get("level")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-reqtotalexp")+"[] : "+db.get("reqtotalexp")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-firstdate")+"[] : "+db.get("firstdate")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-lastdate")+"[] : "+db.get("lastdate")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-playtime")+"[] : "+db.get("playtime")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-attackclear")+"[] : "+db.get("attackclear")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-pvpwincount")+"[] : "+db.get("pvpwincount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-pvplosecount")+"[] : "+db.get("pvplosecount")+"\n" +
+						"[green]"+EssentialBundle.nload(false, "player-pvpbreakout")+"[] : "+db.get("pvpbreakout");
 			}
 			Call.onInfoMessage(player.con, datatext);
 		});
 
-		handler.<Player>register("status", "Show server status", (args, player) -> {
+		handler.<Player>register("status", "Show server status", (arg, player) -> {
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
 			player.sendMessage("[#DEA82A]Server status[]");
 			player.sendMessage("[#2B60DE]========================================[]");
 			float fps = Math.round((int) 60f / Time.delta());
@@ -590,16 +642,21 @@ public class Main extends Plugin{
 			player.sendMessage("Total [scarlet]"+bancount+"[]("+idb+"/"+ipb+") players banned.");
 		});
 
-		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (args, player) -> {
+		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			Player other1 = null;
 			Player other2 = null;
 			for (Player p : playerGroup.all()) {
-				boolean result1 = p.name.contains(args[0]);
+				boolean result1 = p.name.contains(arg[0]);
 				if (result1) {
 					other1 = p;
 				}
-				boolean result2 = p.name.contains(args[1]);
+				boolean result2 = p.name.contains(arg[1]);
 				if (result2) {
 					other2 = p;
 				}
@@ -631,11 +688,16 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("tp", "<player>", "Teleport to other players", (args, player) -> {
+		handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			Player other = null;
 			for (Player p : playerGroup.all()) {
-				boolean result = p.name.contains(args[0]);
+				boolean result = p.name.contains(arg[0]);
 				if (result) {
 					other = p;
 				}
@@ -651,7 +713,12 @@ public class Main extends Plugin{
 			player.setNet(other.x, other.y);
 		});
 
-		handler.<Player>register("kickall", "Kick all players", (args, player) -> {
+		handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			if(!player.isAdmin){
 				JSONObject db = getData(player.uuid);
 				if(db.get("language").equals("KR")){
@@ -664,7 +731,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (args, player) -> {
+		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			if(!player.isAdmin){
 				if(db.get("language").equals("KR")){
@@ -675,13 +747,13 @@ public class Main extends Plugin{
 			} else {
 				Player other = null;
 				for (Player p : playerGroup.all()) {
-					boolean result = p.name.contains(args[0]);
+					boolean result = p.name.contains(arg[0]);
 					if (result) {
 						other = p;
 					}
 				}
 				if (other != null) {
-					int bantimeset = Integer.parseInt(args[1]);
+					int bantimeset = Integer.parseInt(arg[1]);
 					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
 					Call.sendMessage("Player"+other.name+" was killed (ban) by player "+player.name+"!");
 				} else {
@@ -694,9 +766,21 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("me", "[text...]", "broadcast * message", (args, player) -> Call.sendMessage("[orange]*[] "+player.name+"[white] : "+args[0]));
+		handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
 
-		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (args, player) -> {
+			Call.sendMessage("[orange]*[] "+player.name+"[white] : "+arg[0]);
+		});
+
+		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			if(!player.isAdmin){
 				JSONObject db = getData(player.uuid);
 				if(db.get("language").equals("KR")){
@@ -706,17 +790,22 @@ public class Main extends Plugin{
 				}
 			} else {
 				try {
-					Difficulty.valueOf(args[0]);
-					player.sendMessage("Difficulty set to '"+args[0]+"'.");
+					Difficulty.valueOf(arg[0]);
+					player.sendMessage("Difficulty set to '"+arg[0]+"'.");
 				} catch (IllegalArgumentException e) {
-					player.sendMessage("No difficulty with name '"+args[0]+"' found.");
+					player.sendMessage("No difficulty with name '"+arg[0]+"' found.");
 				}
 			}
 		});
 
-		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (args, player) -> {
+		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
-			switch (args[0]) {
+			switch (arg[0]) {
 				case "gameover":
 					if (!this.voteactive) {
 						this.voteactive = true;
@@ -908,7 +997,7 @@ public class Main extends Plugin{
 						vote.add(player.name);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
-						Player target = playerGroup.find(p -> p.name.equals(args[1]));
+						Player target = playerGroup.find(p -> p.name.equals(arg[1]));
 						if (target != null) {
 							target.con.kick("You have been kicked by voting.");
 						} else {
@@ -1055,7 +1144,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("suicide", "Kill yourself.", (args, player) -> {
+		handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			Player.onPlayerDeath(player);
 			if (playerGroup != null && playerGroup.size() > 0) {
 				for (int i = 0; i < playerGroup.size(); i++) {
@@ -1070,10 +1164,15 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("kill", "<player>", "Kill player.", (args, player) -> {
+		handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			if(player.isAdmin){
-				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(args[0]));
+				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 				if (other == null) {
 					if(db.get("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "player-not-found"));
@@ -1092,7 +1191,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("save", "Map save", (args, player) -> {
+		handler.<Player>register("save", "Map save", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			if(player.isAdmin){
 				Core.app.post(() -> {
@@ -1112,7 +1216,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("time", "Show server time", (args, player) -> {
+		handler.<Player>register("time", "Show server time", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			LocalDateTime now = LocalDateTime.now();
 			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
@@ -1124,7 +1233,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("tr", "Enable/disable Translate all chat", (args, player) -> {
+		handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			boolean value = (boolean) db.get("translate");
 			int set;
@@ -1151,7 +1265,12 @@ public class Main extends Plugin{
 			writeData("UPDATE players SET translate = '"+set+"' WHERE uuid = '"+player.uuid+"'");
 		});
 
-		handler.<Player>register("ch", "Send chat to another server.", (args, player) -> {
+		handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			JSONObject db = getData(player.uuid);
 			boolean value = (boolean) db.get("crosschat");
 			int set;
@@ -1176,7 +1295,12 @@ public class Main extends Plugin{
 			writeData("UPDATE players SET crosschat = '"+set+"' WHERE uuid = '"+player.uuid+"'");
 		});
 
-		handler.<Player>register("color", "Enable color nickname", (args, player) -> {
+		handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			if(!player.isAdmin){
 				JSONObject db = getData(player.uuid);
 				if(db.get("language").equals("KR")){
@@ -1211,7 +1335,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.<Player>register("team", "Change team (PvP only)", (args, player) -> {
+		handler.<Player>register("team", "Change team (PvP only)", (arg, player) -> {
+			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[orange]You are already logged in");
+				return;
+			}
+
 			if(Vars.state.rules.pvp){
 				if(player.isAdmin){
 					int i = player.getTeam().ordinal()+1;
@@ -1238,7 +1367,7 @@ public class Main extends Plugin{
 		});
 
 		/*
-        handler.<Player>register("powerstat", "messageblock", (args, player) -> {
+        handler.<Player>register("powerstat", "messageblock", (arg, player) -> {
             Blocks.message = new MessageBlock("test");
         });
 		 */

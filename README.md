@@ -6,9 +6,6 @@ Please submit your idea to this repository issues or Mindustry official discord!
 
 ## Installation
 
-Install **Java 12 or higher**.<br>
-Java 9 or lower isn't supported!
-
 Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
 ## Client commands

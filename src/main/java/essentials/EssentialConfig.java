@@ -406,7 +406,7 @@ public class EssentialConfig {
         }
 
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").exists()){
-            String msg = "\uc774\u0020\uba54\uc2dc\uc9c0\ub97c\u0020\ubc14\uafc0\ub824\uba74\u0020\u005b\u0067\u0072\u0065\u0065\u006e\u005d\u0063\u006f\u006e\u0066\u0069\u0067\u002f\u0070\u006c\u0075\u0067\u0069\u006e\u0073\u002f\u0045\u0073\u0073\u0065\u006e\u0074\u0069\u0061\u006c\u0073\u002f\u005b\u005d\u0020\ud3f4\ub354\uc5d0\uc11c\u0020\u005b\u0067\u0072\u0065\u0065\u006e\u005d\u006d\u006f\u0074\u0064\u002e\u0074\u0078\u0074\u005b\u005d\u0020\ud30c\uc77c\uc744\u0020\uc218\uc815\ud558\uc138\uc694\u002e";
+            String msg = "이 메시지를 바꿀려면 [green]config/plugins/Essentials/[] 폴더에서 [green]motd.txt[] 파일을 수정하세요.";
             Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").writeString(msg);
             Global.log("motd_ko file created.");
         }

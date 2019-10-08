@@ -1,11 +1,13 @@
 package essentials;
 
+import essentials.special.ColorNick;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +26,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static essentials.EssentialConfig.realname;
 import static io.anuke.mindustry.Vars.netServer;
 
 public class EssentialPlayer{
@@ -31,171 +34,59 @@ public class EssentialPlayer{
     private static int dbversion = 1;
     private static boolean queryresult;
     private static Connection conn;
+    private static boolean loginresult;
+    private static boolean registerresult;
 
-    static void main(Player player){
-        try {
-            if(!getData(player.uuid).has("uuid") || DriverManager.getConnection(url) == null){
-                LocalDateTime now = LocalDateTime.now();
-                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                String nowString = now.format(dateTimeFormatter);
-                String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-
-                boolean isLocal = player.isLocal;
-
-                // Geolocation
-                String geo;
-                String geocode;
-                String lang;
-                Pattern p = null;
-                try {
-                    p = Pattern.compile(
-                            "(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                assert p != null;
-                Matcher m = p.matcher(ip);
-
-                if(m.find()){
-                    isLocal = true;
-                }
-                if(isLocal) {
-                    geo = "Local IP";
-                    geocode = "LC";
-                    lang = "en";
-                } else {
-                    try {
-                        String apiURL = "http://ipapi.co/"+ip+"/json";
-                        URL url = new URL(apiURL);
-                        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                        con.setReadTimeout(5000);
-                        con.setRequestMethod("POST");
-
-                        boolean redirect = false;
-
-                        int status = con.getResponseCode();
-                        if (status != HttpURLConnection.HTTP_OK) {
-                            if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER) redirect = true;
-                        }
-
-                        if (redirect) {
-                            String newUrl = con.getHeaderField("Location");
-                            String cookies = con.getHeaderField("Set-Cookie");
-
-                            con = (HttpURLConnection) new URL(newUrl).openConnection();
-                            con.setRequestProperty("Cookie", cookies);
-                        }
-
-                        BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                        String inputLine;
-                        StringBuilder response = new StringBuilder();
-                        while ((inputLine = br.readLine()) != null) {
-                            response.append(inputLine);
-                        }
-                        br.close();
-                        JSONTokener parser = new JSONTokener(response.toString());
-                        JSONObject result = new JSONObject(parser);
-
-                        if(result.has("reserved")){
-                            geo = "Local IP";
-                            geocode = "LC";
-                            lang = "en";
-                        } else {
-                            geo = result.getString("country_name");
-                            geocode = result.getString("country");
-                            lang = result.getString("languages").substring(0, 1);
-                        }
-                    } catch (IOException e) {
-                        geo = "invalid";
-                        geocode = "invalid";
-                        lang = "en";
-                    }
-                }
-                // Geolocation end
-
-                int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
-                int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
-
-                // Remove color nickname
-                String changedname = player.name.replaceAll("\\[(.*?)]", "");
-
-                // Set non-color nickname
-                player.name = changedname;
-                player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
-
-                try {
-                    createNewDatabase(changedname, player.uuid, geo, geocode, lang,
-                            0, 0, 0, 0, timesjoined,
-                            timeskicked, 1, 0, 500, "0(500) / 500", nowString, nowString, "none",
-                            "none", "00:00.00", "none", 0, 0, 0,
-                            0, 0, "none", 0, false, false, false, true);
-                } catch (Exception e){
-                    Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
-                    player.con.kick("You have been kicked due to a plugin error.");
-                }
-            } else {
-                // Remove color nickname
-                String changedname = player.name.replaceAll("\\[(.*?)]", "");
-
-                // Set non-color nickname
-                player.name = changedname;
-                player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
     static void createNewDataFile(){
-        try{
+        try {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection(url);
-            if(conn != null){
-                String sql = "CREATE TABLE IF NOT EXISTS players (\n" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-                        "accountid TEXT,\n" +
-                        "accountpw TEXT,\n" +
-                        "name TEXT,\n" +
-                        "uuid TEXT,\n" +
-                        "country TEXT,\n" +
-                        "country_code TEXT,\n" +
-                        "language TEXT,\n" +
-                        "placecount INTEGER,\n" +
-                        "breakcount INTEGER,\n" +
-                        "killcount INTEGER,\n" +
-                        "deathcount INTEGER,\n" +
-                        "joincount INTEGER,\n" +
-                        "kickcount INTEGER,\n" +
-                        "level INTEGER,\n" +
-                        "exp INTEGER,\n" +
-                        "reqexp INTEGER,\n" +
-                        "reqtotalexp TEXT,\n" +
-                        "firstdate TEXT,\n" +
-                        "lastdate TEXT,\n" +
-                        "lastplacename TEXT,\n" +
-                        "lastbreakname TEXT,\n" +
-                        "lastchat TEXT,\n" +
-                        "playtime TEXT,\n" +
-                        "attackclear INTEGER,\n" +
-                        "pvpwincount INTEGER,\n" +
-                        "pvplosecount INTEGER,\n" +
-                        "pvpbreakout INTEGER,\n" +
-                        "reactorcount INTEGER,\n" +
-                        "bantimeset TEXT,\n" +
-                        "bantime INTEGER,\n" +
-                        "translate TEXT,\n" +
-                        "crosschat TEXT,\n" +
-                        "colornick TEXT,\n" +
-                        "connected TEXT\n" +
-                        ");";
-                Statement stmt = conn.createStatement();
-                stmt.execute(sql);
-                stmt.close();
-            }
+            String makeplayer = "CREATE TABLE IF NOT EXISTS players (\n" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                    "name TEXT,\n" +
+                    "uuid TEXT,\n" +
+                    "country TEXT,\n" +
+                    "country_code TEXT,\n" +
+                    "language TEXT,\n" +
+                    "placecount INTEGER,\n" +
+                    "breakcount INTEGER,\n" +
+                    "killcount INTEGER,\n" +
+                    "deathcount INTEGER,\n" +
+                    "joincount INTEGER,\n" +
+                    "kickcount INTEGER,\n" +
+                    "level INTEGER,\n" +
+                    "exp INTEGER,\n" +
+                    "reqexp INTEGER,\n" +
+                    "reqtotalexp TEXT,\n" +
+                    "firstdate TEXT,\n" +
+                    "lastdate TEXT,\n" +
+                    "lastplacename TEXT,\n" +
+                    "lastbreakname TEXT,\n" +
+                    "lastchat TEXT,\n" +
+                    "playtime TEXT,\n" +
+                    "attackclear INTEGER,\n" +
+                    "pvpwincount INTEGER,\n" +
+                    "pvplosecount INTEGER,\n" +
+                    "pvpbreakout INTEGER,\n" +
+                    "reactorcount INTEGER,\n" +
+                    "bantimeset TEXT,\n" +
+                    "bantime INTEGER,\n" +
+                    "translate TEXT,\n" +
+                    "crosschat TEXT,\n" +
+                    "colornick TEXT,\n" +
+                    "connected TEXT,\n" +
+                    "accountid TEXT,\n" +
+                    "accountpw TEXT\n" +
+                    ");";
+            Statement stmt = conn.createStatement();
+            stmt.execute(makeplayer);
+            stmt.close();
         } catch (Exception e){
             e.printStackTrace();
         }
     }
-	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String playtime, String lastchat, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, int bantime, boolean translate, boolean crosschat, boolean colornick, boolean connected) {
+
+	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Class.forName("org.sqlite.JDBC");
@@ -203,40 +94,42 @@ public class EssentialPlayer{
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
-                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
                 pstmt.setString(3, country);
                 pstmt.setString(4, country_code);
                 pstmt.setString(5, language);
-                pstmt.setInt(6, placecount);
-                pstmt.setInt(7, breakcount);
-                pstmt.setInt(8, killcount);
-                pstmt.setInt(9, deathcount);
+                pstmt.setInt(6, 0);
+                pstmt.setInt(7, 0);
+                pstmt.setInt(8, 0);
+                pstmt.setInt(9, 0);
                 pstmt.setInt(10, joincount);
                 pstmt.setInt(11, kickcount);
-                pstmt.setInt(12, level);
-                pstmt.setInt(13, exp);
-                pstmt.setInt(14, reqexp);
-                pstmt.setString(15, reqtotalexp);
+                pstmt.setInt(12, 1);
+                pstmt.setInt(13, 0);
+                pstmt.setInt(14, 500);
+                pstmt.setString(15, "0(500) / 500");
                 pstmt.setString(16, firstdate);
                 pstmt.setString(17, lastdate);
-                pstmt.setString(18, lastplacename);
-                pstmt.setString(19, lastbreakname);
-                pstmt.setString(20, lastchat);
-                pstmt.setString(21, playtime);
-                pstmt.setInt(22, attackclear);
-                pstmt.setInt(23, pvpwincount);
-                pstmt.setInt(24, pvplosecount);
-                pstmt.setInt(25, pvpbreakout);
-                pstmt.setInt(26, reactorcount);
-                pstmt.setString(27, bantimeset);
-                pstmt.setInt(28, bantime);
-                pstmt.setBoolean(29, translate);
-                pstmt.setBoolean(30, crosschat);
-                pstmt.setBoolean(31, colornick);
-                pstmt.setBoolean(32, connected);
+                pstmt.setString(18, "none");
+                pstmt.setString(19, "none");
+                pstmt.setString(20, "none");
+                pstmt.setString(21, "00:00.00");
+                pstmt.setInt(22, 0);
+                pstmt.setInt(23, 0);
+                pstmt.setInt(24, 0);
+                pstmt.setInt(25, 0);
+                pstmt.setInt(26, 0);
+                pstmt.setString(27, "none");
+                pstmt.setInt(28, 0);
+                pstmt.setBoolean(29, false);
+                pstmt.setBoolean(30, false);
+                pstmt.setBoolean(31, false);
+                pstmt.setBoolean(32, true);
+                pstmt.setString(33, accountid);
+                pstmt.setString(34, accountpw);
                 pstmt.executeUpdate();
                 pstmt.close();
                 Global.log(name +" Player database created!");
@@ -386,7 +279,7 @@ public class EssentialPlayer{
     }
 
 	static void writeData(String sql){
-        Thread db = new Thread(() -> {
+        Runnable t = () -> {
             Thread.currentThread().setName("DB Thread");
             try {
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -395,9 +288,226 @@ public class EssentialPlayer{
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        };
+        Main.pool.execute(t);
+	}
+
+	static boolean register(Player player, String id, String pw, String pw2){
+        Thread db = new Thread(() -> {
+            Thread.currentThread().setName("DB Register Thread");
+            if(!pw.equals(pw2)){
+                player.sendMessage("The password isn't the same.");
+                registerresult = false;
+                return;
+            }
+            try {
+                String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
+
+                PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE accountid = '"+id+"'");
+                ResultSet rs1 = pstm1.executeQuery();
+                if(rs1.next()){
+                    if(rs1.getString("accountid").equals(id)){
+                        player.sendMessage("This ID is already in use!");
+                        registerresult = false;
+                        return;
+                    }
+                }
+
+                PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '"+player.uuid+"'");
+                ResultSet rs2 = pstm2.executeQuery();
+                String isuuid = null;
+                while(rs2.next()){
+                    isuuid = rs2.getString("uuid");
+                }
+                if(isuuid == null || isuuid.length() == 0){
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                    String nowString = now.format(dateTimeFormatter);
+                    String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+
+                    boolean isLocal = player.isLocal;
+
+                    // Geolocation
+                    String geo;
+                    String geocode;
+                    String lang;
+                    Pattern p = null;
+                    try { p = Pattern.compile("(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    assert p != null;
+                    Matcher m = p.matcher(ip);
+
+                    if(m.find()){
+                        isLocal = true;
+                    }
+                    if(isLocal) {
+                        geo = "Local IP";
+                        geocode = "LC";
+                        lang = "en";
+                    } else {
+                        try {
+                            String apiURL = "http://ipapi.co/"+ip+"/json";
+                            URL url = new URL(apiURL);
+                            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                            con.setReadTimeout(5000);
+                            con.setRequestMethod("POST");
+
+                            boolean redirect = false;
+
+                            int status = con.getResponseCode();
+                            if (status != HttpURLConnection.HTTP_OK) {
+                                if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER) redirect = true;
+                            }
+
+                            if (redirect) {
+                                String newUrl = con.getHeaderField("Location");
+                                String cookies = con.getHeaderField("Set-Cookie");
+
+                                con = (HttpURLConnection) new URL(newUrl).openConnection();
+                                con.setRequestProperty("Cookie", cookies);
+                            }
+
+                            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                            String inputLine;
+                            StringBuilder response = new StringBuilder();
+                            while ((inputLine = br.readLine()) != null) {
+                                response.append(inputLine);
+                            }
+                            br.close();
+                            JSONTokener parser = new JSONTokener(response.toString());
+                            JSONObject result = new JSONObject(parser);
+
+                            if(result.has("reserved")){
+                                geo = "Local IP";
+                                geocode = "LC";
+                                lang = "en";
+                            } else {
+                                geo = result.getString("country_name");
+                                geocode = result.getString("country");
+                                lang = result.getString("languages").substring(0, 1);
+                            }
+                        } catch (IOException e) {
+                            geo = "invalid";
+                            geocode = "invalid";
+                            lang = "en";
+                        }
+                    }
+                    // Geolocation end
+
+                    int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
+                    int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
+
+                    // Remove color nickname
+                    String changedname = player.name.replaceAll("\\[(.*?)]", "");
+
+                    // Set non-color nickname
+                    player.name = changedname;
+                    player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
+
+                    try {
+                        createNewDatabase(changedname, player.uuid, geo, geocode, lang, timesjoined, timeskicked, nowString, nowString, id, hashed);
+                        registerresult = true;
+                    } catch (Exception e){
+                        Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
+                        player.con.kick("You have been kicked due to a plugin error.");
+                    }
+                } else if (isuuid.length() > 1){
+                    player.sendMessage("[green][Essentials] [orange]This account already exists!");
+                    registerresult = false;
+                } else {
+                    registerresult = false;
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
         db.start();
-	}
+        try{db.join();}catch (Exception ignored){}
+        return registerresult;
+    }
+
+    static boolean login(Player player, String id, String pw) {
+        Thread db = new Thread(() -> {
+            try{
+                PreparedStatement pstm = conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
+                pstm.setString(1, id);
+                ResultSet rs = pstm.executeQuery();
+                if (rs.next()){
+                    if (BCrypt.checkpw(pw, rs.getString("accountpw"))){
+                        Global.log(pw);
+                        Global.log(rs.getString("accountpw"));
+                        pstm = conn.prepareStatement("UPDATE players SET uuid = ?, connected = ? WHERE accountid = ? and accountpw = ?");
+                        pstm.setString(1, player.uuid);
+                        pstm.setBoolean(2, true);
+                        pstm.setString(3, id);
+                        pstm.setString(4, pw);
+                        pstm.executeUpdate();
+                        loginresult = true;
+                    } else {
+                        loginresult = false;
+                    }
+                } else {
+                    loginresult = false;
+                }
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        });
+
+        db.start();
+        try{db.join();}catch (Exception ignored){}
+        return loginresult;
+    }
+
+    static void load(Player player) {
+        player.setTeam(Vars.defaultTeam);
+        Call.onPlayerDeath(player);
+
+        // Show motd
+        JSONObject db = getData(player.uuid);
+
+        String motd;
+        if(db.get("language").equals("KR")){
+            motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
+        } else {
+            motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+        }
+        int count = motd.split("\r\n|\r|\n").length;
+        if(count > 10){
+            Call.onInfoMessage(player.con, motd);
+        } else {
+            player.sendMessage(motd);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+        String nowString = now.format(dateTimeFormatter);
+
+        // Write player connected
+        writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"' WHERE uuid = '"+player.uuid+"'");
+
+        // Check if realname enabled
+        if(realname){
+            player.name = db.getString("name");
+        }
+
+        // Give join exp
+        Thread expthread = new Thread(() -> EssentialExp.joinexp(player.uuid));
+        expthread.start();
+
+        // Color nickname
+        boolean colornick = (boolean) db.get("colornick");
+        if(realname && colornick){
+            ColorNick.main(player);
+        } else if(!realname && colornick){
+            Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
+
+            writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
+        }
+    }
 
 	/*
     // TODO make getall function

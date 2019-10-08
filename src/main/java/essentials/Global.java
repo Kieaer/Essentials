@@ -1,6 +1,9 @@
 package essentials;
 
 import io.anuke.arc.util.Log;
+import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Team;
 
 public class Global {
     public static void log(String msg){
@@ -37,5 +40,19 @@ public class Global {
 
     public static void chatsw(String msg){
         Log.warn("[EssentialsBanServer] "+msg);
+    }
+
+    public static Team getTeamNoCore(Player player){
+        int index = player.getTeam().ordinal()+1;
+        while (index != player.getTeam().ordinal()){
+            if (index >= Team.all.length){
+                index = 0;
+            }
+            if (Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
+                return Team.all[index]; //return a team without a core
+            }
+            index++;
+        }
+        return player.getTeam();
     }
 }
