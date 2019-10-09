@@ -48,8 +48,7 @@ public class EssentialLog {
                 Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
                 Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
                 try {
-                    JSONObject db = getData(e.player.uuid);
-                    String text = nowString+db.get("name")+": "+e.message+"\n";
+                    String text = nowString+e.player.name+": "+e.message+"\n";
                     byte[] result = text.getBytes();
                     Files.write(path, result, StandardOpenOption.APPEND);
                     Files.write(total, result, StandardOpenOption.APPEND);

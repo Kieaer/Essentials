@@ -94,7 +94,7 @@ public class Main extends Plugin{
 		EssentialPlayer.Upgrade();
 
 		// Start ban/chat server
-		if(banshare){
+		if(serverenable){
 			Runnable server = new Server();
 			Thread t = new Thread(server);
 			t.start();
@@ -126,28 +126,40 @@ public class Main extends Plugin{
         });
 
 		// Set if player join event
+		/*
 		Events.on(EventType.PlayerConnect.class, e -> {
-            JSONObject db = getData(e.player.uuid);
-            if(db.has("uuid")){
-                if(db.getString("uuid").equals(e.player.uuid)){
-                    JSONObject db2 = getData(e.player.uuid);
-                    if(db2.get("language").equals("KR")){
-                        e.player.sendMessage(EssentialBundle.load(true, "autologin"));
-                    } else {
-                        e.player.sendMessage(EssentialBundle.load(false, "autologin"));
-                    }
-                }
-            } else {
-                // Login require
-                String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-                        "If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
-                        "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-                        "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
-                Team no_core = getTeamNoCore(e.player);
-                e.player.setTeam(no_core);
-                Call.onPlayerDeath(e.player);
-                Call.onInfoMessage(e.player.con, message);
-            }
+
+		});
+		*/
+
+        Events.on(PlayerJoin.class, e -> {
+			e.player.isAdmin = false;
+
+			JSONObject db = getData(e.player.uuid);
+			if(db.has("uuid")){
+				if(db.getString("uuid").equals(e.player.uuid)){
+					JSONObject db2 = getData(e.player.uuid);
+					if(db2.get("language").equals("KR")){
+						e.player.sendMessage(EssentialBundle.load(true, "autologin"));
+					} else {
+						e.player.sendMessage(EssentialBundle.load(false, "autologin"));
+					}
+					if(db2.getBoolean("isadmin")){
+						e.player.isAdmin = true;
+					}
+					EssentialPlayer.load(e.player, null);
+				}
+			} else {
+				// Login require
+				String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
+						"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
+						"서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
+						"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
+				Team no_core = getTeamNoCore(e.player);
+				e.player.setTeam(no_core);
+				Call.onPlayerDeath(e.player);
+				Call.onInfoMessage(e.player.con, message);
+			}
 
 			// Database read/write
 			Thread playerthread = new Thread(() -> {
@@ -179,9 +191,7 @@ public class Main extends Plugin{
 				}
 			});
 			playerthread.start();
-		});
 
-        Events.on(PlayerJoin.class, e -> {
 			// PvP placetime (WorldLoadEvent isn't work.)
 			if(enableantirush && Vars.state.rules.pvp) {
 				state.rules.playerDamageMultiplier = 0f;
@@ -203,7 +213,7 @@ public class Main extends Plugin{
 				if(!check.equals("/")) {
 					//boolean valid = e.message.matches("\\w+");
 					JSONObject db = getData(e.player.uuid);
-					boolean crosschat = (boolean) db.get("crosschat");
+					boolean crosschat = db.getBoolean("crosschat");
 
 					EssentialTR.main(e.player, e.message);
 
@@ -224,7 +234,7 @@ public class Main extends Plugin{
 
 		// Set if player build block event
 		Events.on(EventType.BlockBuildEndEvent.class, e -> {
-			if (!e.breaking && e.player != null && e.player.buildRequest() != null) {
+			if (!e.breaking && e.player != null && e.player.buildRequest() != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
 				JSONObject db = getData(e.player.uuid);
 				String name = e.tile.block().name;
 				try{
@@ -253,15 +263,17 @@ public class Main extends Plugin{
 			if(playerGroup != null && playerGroup.size() > 0) {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    JSONObject db = getData(player.uuid);
-                    int killcount;
-                    if (db.has("killcount")) {
-                        killcount = db.getInt("killcount");
-                    } else {
-                        return;
-                    }
-                    killcount++;
-                    writeData("UPDATE players SET killcount = '" + killcount + "' WHERE uuid = '" + player.uuid + "'");
+					if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+						JSONObject db = getData(player.uuid);
+						int killcount;
+						if (db.has("killcount")) {
+							killcount = db.getInt("killcount");
+						} else {
+							return;
+						}
+						killcount++;
+						writeData("UPDATE players SET killcount = '" + killcount + "' WHERE uuid = '" + player.uuid + "'");
+					}
                 }
             }
 		});
@@ -269,11 +281,13 @@ public class Main extends Plugin{
 		Events.on(EventType.DepositEvent.class, e -> {
 			for (Player p : playerGroup.all()) {
 				if(p.item().item.flammability > 1){
-					JSONObject db = getData(p.uuid);
-					if(db.getString("language").equals("KR")){
-						player.sendMessage(EssentialBundle.load(true, "flammable-disabled"));
-					} else {
-						player.sendMessage(EssentialBundle.load(false, "flammable-disabled"));
+					if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+						JSONObject db = getData(p.uuid);
+						if(db.getString("language").equals("KR")){
+							player.sendMessage(EssentialBundle.load(true, "flammable-disabled"));
+						} else {
+							player.sendMessage(EssentialBundle.load(false, "flammable-disabled"));
+						}
 					}
 				}
 			}
@@ -299,7 +313,7 @@ public class Main extends Plugin{
 		};
 
 		Timer alerttimer = new Timer(true);
-		alerttimer.scheduleAtFixedRate(alert, 20000, 20000);
+		alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
 
 		EssentialTimer job = new EssentialTimer();
 		Timer timer = new Timer(true);
@@ -493,6 +507,20 @@ public class Main extends Plugin{
 			//writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
 			Global.log("This command isn't supported now!");
 		});
+
+		handler.register("admin", "<name>","Set admin status to player", (arg) -> {
+			Thread t = new Thread(() -> {
+				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+				if(other == null){
+					Global.loge("Player not found!");
+				} else {
+					writeData("UPDATE players SET isadmin = 1 WHERE uuid = '"+other.uuid+"'");
+					other.isAdmin = true;
+					Global.log("Done!");
+				}
+			});
+			t.start();
+		});
 	}
 
 	@Override
@@ -524,8 +552,8 @@ public class Main extends Plugin{
 						}
 						index++;
 					}
-
 					Call.onPlayerDeath(player);
+					player.sendMessage("[green][Essentials] [orange]Account register success!");
 				} else {
 					player.setTeam(Vars.defaultTeam);
 					Call.onPlayerDeath(player);

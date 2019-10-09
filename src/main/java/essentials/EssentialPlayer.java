@@ -48,6 +48,7 @@ public class EssentialPlayer{
                     "country TEXT,\n" +
                     "country_code TEXT,\n" +
                     "language TEXT,\n" +
+                    "isadmin TEXT,\n" +
                     "placecount INTEGER,\n" +
                     "breakcount INTEGER,\n" +
                     "killcount INTEGER,\n" +
@@ -86,7 +87,7 @@ public class EssentialPlayer{
         }
     }
 
-	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
+	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Class.forName("org.sqlite.JDBC");
@@ -94,42 +95,43 @@ public class EssentialPlayer{
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
-                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
                 pstmt.setString(3, country);
                 pstmt.setString(4, country_code);
                 pstmt.setString(5, language);
-                pstmt.setInt(6, 0);
+                pstmt.setBoolean(6, isAdmin);
                 pstmt.setInt(7, 0);
                 pstmt.setInt(8, 0);
                 pstmt.setInt(9, 0);
-                pstmt.setInt(10, joincount);
-                pstmt.setInt(11, kickcount);
-                pstmt.setInt(12, 1);
-                pstmt.setInt(13, 0);
-                pstmt.setInt(14, 500);
-                pstmt.setString(15, "0(500) / 500");
-                pstmt.setString(16, firstdate);
-                pstmt.setString(17, lastdate);
-                pstmt.setString(18, "none");
+                pstmt.setInt(10, 0);
+                pstmt.setInt(11, joincount);
+                pstmt.setInt(12, kickcount);
+                pstmt.setInt(13, 1);
+                pstmt.setInt(14, 0);
+                pstmt.setInt(15, 500);
+                pstmt.setString(16, "0(500) / 500");
+                pstmt.setString(17, firstdate);
+                pstmt.setString(18, lastdate);
                 pstmt.setString(19, "none");
                 pstmt.setString(20, "none");
-                pstmt.setString(21, "00:00.00");
-                pstmt.setInt(22, 0);
+                pstmt.setString(21, "none");
+                pstmt.setString(22, "00:00.00");
                 pstmt.setInt(23, 0);
                 pstmt.setInt(24, 0);
                 pstmt.setInt(25, 0);
                 pstmt.setInt(26, 0);
-                pstmt.setString(27, "none");
-                pstmt.setInt(28, 0);
-                pstmt.setBoolean(29, false);
+                pstmt.setInt(27, 0);
+                pstmt.setString(28, "none");
+                pstmt.setInt(29, 0);
                 pstmt.setBoolean(30, false);
                 pstmt.setBoolean(31, false);
-                pstmt.setBoolean(32, true);
-                pstmt.setString(33, accountid);
-                pstmt.setString(34, accountpw);
+                pstmt.setBoolean(32, false);
+                pstmt.setBoolean(33, true);
+                pstmt.setString(34, accountid);
+                pstmt.setString(35, accountpw);
                 pstmt.executeUpdate();
                 pstmt.close();
                 Global.log(name +" Player database created!");
@@ -155,6 +157,7 @@ public class EssentialPlayer{
                 json.put("country", rs.getString("country"));
                 json.put("country_code", rs.getString("country_code"));
                 json.put("language", rs.getString("language"));
+                json.put("isadmin", rs.getBoolean("isadmin"));
                 json.put("placecount", rs.getInt("placecount"));
                 json.put("breakcount", rs.getInt("breakcount"));
                 json.put("killcount", rs.getInt("killcount"));
@@ -282,6 +285,7 @@ public class EssentialPlayer{
                 pstmt.executeUpdate();
                 pstmt.close();
             } catch (Exception e) {
+                Global.loge(sql);
                 e.printStackTrace();
             }
         };
@@ -291,16 +295,36 @@ public class EssentialPlayer{
 	static boolean register(Player player, String id, String pw, String pw2){
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
+            // Check password security
             if(!pw.equals(pw2)){
-                player.sendMessage("[green][Essentials] [scarlet]The password isn't the same.");
+                player.sendMessage("[green][Essentials] [sky]The password isn't the same.\n" +
+                        "[green][Essentials] [sky]비밀번호가 똑같지 않습니다.");
                 registerresult = false;
                 return;
             }
             if(pw.length() <= 6){
-                player.sendMessage("[green][Essentials] [scarlet]Your password is too short!");
+                player.sendMessage("[green][Essentials] [sky]Your password is too short!\n" +
+                        "[green][Essentials] [sky]비밀번호가 너무 짧습니다!");
                 registerresult = false;
                 return;
             }
+            if(pw.matches("<(.*?)>")){
+                player.sendMessage("[green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!\n" +
+                        "[green][Essentials] [sky]Use /register accountname password password\n" +
+                        "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
+                        "[green][Essentials] [sky]/register accountname password password 형식으로 사용하세요.");
+                player.sendMessage("");
+                registerresult = false;
+                return;
+            }
+            if(pw.matches(id)){
+                player.sendMessage("[green][Essentials] [sky]Don't set your nickname and password the same!\n" +
+                        "[green][Essentials] [sky]비밀번호를 닉네임과 똑같이 설정하지 마세요!");
+                registerresult = false;
+                return;
+            }
+            // Check password security end
+
             try {
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
                 String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
@@ -401,11 +425,10 @@ public class EssentialPlayer{
                     int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
                     int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
-                    // Set non-color nickname
                     player.sendMessage("[green]Your nickname is now [white]"+player.name+".");
 
                     try {
-                        createNewDatabase(player.name, player.uuid, geo, geocode, lang, timesjoined, timeskicked, nowString, nowString, id, hashed);
+                        createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, id, hashed);
                         registerresult = true;
                     } catch (Exception e){
                         Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
@@ -423,6 +446,7 @@ public class EssentialPlayer{
             }
         });
         db.start();
+        try{db.join();}catch (Exception e){e.printStackTrace();}
         return registerresult;
     }
 
@@ -437,6 +461,9 @@ public class EssentialPlayer{
                         player.con.kick("You have tried to access an account that is already in use!");
                         loginresult = false;
                     } else if (BCrypt.checkpw(pw, rs.getString("accountpw"))){
+                        if(rs.getBoolean("isadmin")){
+                            player.isAdmin = true;
+                        }
                         pstm = conn.prepareStatement("UPDATE players SET uuid = ?, connected = ? WHERE accountid = ? and accountpw = ?");
                         pstm.setString(1, player.uuid);
                         pstm.setBoolean(2, true);
@@ -466,7 +493,11 @@ public class EssentialPlayer{
         String nowString = now.format(dateTimeFormatter);
 
         // Write player connected
-        writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', uuid = '"+player.uuid+"' WHERE accountid = '"+id+"'");
+        if(id == null){
+            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"' WHERE uuid = '"+player.uuid+"'");
+        } else {
+            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', uuid = '"+player.uuid+"' WHERE accountid = '"+id+"'");
+        }
 
         player.setTeam(Vars.defaultTeam);
         Call.onPlayerDeath(player);
@@ -502,7 +533,6 @@ public class EssentialPlayer{
             ColorNick.main(player);
         } else if(!realname && colornick){
             Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
-
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }
     }

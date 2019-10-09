@@ -12,10 +12,10 @@ public class ColorNick {
 
     public static void main(Player player){
         Thread thread = new Thread(() -> {
-            int connected = 1;
-            while (connected == 1) {
-                JSONObject db = EssentialPlayer.getData(player.uuid);
-                connected = Integer.parseInt(db.getString("connected"));
+            JSONObject db = EssentialPlayer.getData(player.uuid);
+            boolean connected = db.getBoolean("connected");
+            while (connected) {
+                connected = EssentialPlayer.getData(player.uuid).getBoolean("connected");
                 String name = db.getString("name").replaceAll("\\[(.*?)]", "");
                 try {
                     Thread.sleep(updateIntervalMs);
@@ -46,7 +46,7 @@ public class ColorNick {
         colors[10] = "[#ff00ff]";
 
         String[] newnick = new String[name.length()];
-        for (int i = 0; i<name.length(); i+=2) {
+        for (int i = 0; i<name.length(); i++) {
             char c = name.charAt(i);
             int colorIndex = (i+colorOffset)%colors.length;
             if (colorIndex < 0) {

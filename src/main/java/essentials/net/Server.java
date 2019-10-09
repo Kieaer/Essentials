@@ -180,7 +180,7 @@ public class Server implements Runnable{
                     if(banshare) {
                         ban(data, remoteip);
                     }
-                } else if (data.equals("GET / HTTP/1.1")) {
+                } else if (data.matches("GET / HTTP.*")) {
                     httpserver();
                 } else {
                     chat(data, remoteip);
