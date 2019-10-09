@@ -143,16 +143,13 @@ public class EssentialPlayer{
 	}
 
 	public static JSONObject getData(String uuid){
-        String sql = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
         JSONObject json = new JSONObject();
 
-        try{
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
-            Statement stmt  = conn.createStatement();
+        try {
+            String sql = "SELECT * FROM players WHERE uuid='"+uuid+"'";
+            Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
-
-            while(rs.next()){
+            if(rs.next()){
                 json.put("name", rs.getString("name"));
                 json.put("uuid", rs.getString("uuid"));
                 json.put("country", rs.getString("country"));
@@ -188,7 +185,6 @@ public class EssentialPlayer{
             }
             rs.close();
             stmt.close();
-            conn.close();
             queryresult = true;
         } catch (Exception e){
             queryresult = false;
@@ -301,13 +297,14 @@ public class EssentialPlayer{
                 return;
             }
             try {
+                Class.forName("org.mindrot.jbcrypt.BCrypt");
                 String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
 
                 PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE accountid = '"+id+"'");
                 ResultSet rs1 = pstm1.executeQuery();
                 if(rs1.next()){
                     if(rs1.getString("accountid").equals(id)){
-                        player.sendMessage("This ID is already in use!");
+                        player.sendMessage("[green][Essentials] [orange]This ID is already in use!");
                         registerresult = false;
                         return;
                     }
@@ -399,21 +396,17 @@ public class EssentialPlayer{
                     int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
                     int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
-                    // Remove color nickname
-                    String changedname = player.name.replaceAll("\\[(.*?)]", "");
-
                     // Set non-color nickname
-                    player.name = changedname;
-                    player.sendMessage("[green]Your nickname is now [white]"+changedname+".");
+                    player.sendMessage("[green]Your nickname is now [white]"+player.name+".");
 
                     try {
-                        createNewDatabase(changedname, player.uuid, geo, geocode, lang, timesjoined, timeskicked, nowString, nowString, id, hashed);
+                        createNewDatabase(player.name, player.uuid, geo, geocode, lang, timesjoined, timeskicked, nowString, nowString, id, hashed);
                         registerresult = true;
                     } catch (Exception e){
                         Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
                         player.con.kick("You have been kicked due to a plugin error.");
                     }
-                } else if (isuuid.length() > 1){
+                } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)){
                     player.sendMessage("[green][Essentials] [orange]This account already exists!");
                     registerresult = false;
                 } else {
@@ -437,8 +430,6 @@ public class EssentialPlayer{
                 ResultSet rs = pstm.executeQuery();
                 if (rs.next()){
                     if (BCrypt.checkpw(pw, rs.getString("accountpw"))){
-                        Global.log(pw);
-                        Global.log(rs.getString("accountpw"));
                         pstm = conn.prepareStatement("UPDATE players SET uuid = ?, connected = ? WHERE accountid = ? and accountpw = ?");
                         pstm.setString(1, player.uuid);
                         pstm.setBoolean(2, true);
@@ -462,7 +453,14 @@ public class EssentialPlayer{
         return loginresult;
     }
 
-    static void load(Player player) {
+    static void load(Player player, String id) {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+        String nowString = now.format(dateTimeFormatter);
+
+        // Write player connected
+        writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', uuid = '"+player.uuid+"' WHERE accountid = '"+id+"'");
+
         player.setTeam(Vars.defaultTeam);
         Call.onPlayerDeath(player);
 
@@ -470,7 +468,7 @@ public class EssentialPlayer{
         JSONObject db = getData(player.uuid);
 
         String motd;
-        if(db.get("language").equals("KR")){
+        if(db.getString("language").equals("KR")){
             motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
         } else {
             motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
@@ -481,13 +479,6 @@ public class EssentialPlayer{
         } else {
             player.sendMessage(motd);
         }
-
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-        String nowString = now.format(dateTimeFormatter);
-
-        // Write player connected
-        writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"' WHERE uuid = '"+player.uuid+"'");
 
         // Check if realname enabled
         if(realname){

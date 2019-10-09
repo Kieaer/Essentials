@@ -16,7 +16,7 @@ public class ColorNick {
             while (connected == 1) {
                 JSONObject db = EssentialPlayer.getData(player.uuid);
                 connected = Integer.parseInt(db.getString("connected"));
-                String name = db.getString("name");
+                String name = db.getString("name").replaceAll("\\[(.*?)]", "");
                 try {
                     Thread.sleep(updateIntervalMs);
                     nickcolor(name, player);

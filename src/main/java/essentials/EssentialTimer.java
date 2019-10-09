@@ -31,38 +31,40 @@ public class EssentialTimer extends TimerTask {
         if(playerGroup.size() > 0){
             for(int i = 0; i < playerGroup.size(); i++){
                 Player player = playerGroup.all().get(i);
-                JSONObject db = new JSONObject();
-                try {
-                    db = getData(player.uuid);
-                }catch (Exception ignored){}
+                if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                    JSONObject db = new JSONObject();
+                    try {
+                        db = getData(player.uuid);
+                    }catch (Exception ignored){}
 
-                String data;
-                if(db.has("playtime")){
-                    data = db.getString("playtime");
-                } else {
-                    return;
+                    String data;
+                    if(db.has("playtime")){
+                        data = db.getString("playtime");
+                    } else {
+                        return;
+                    }
+                    SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+                    Date d1;
+                    Calendar cal;
+                    String newTime = null;
+                    try {
+                        d1 = format.parse(data);
+                        cal = Calendar.getInstance();
+                        cal.setTime(d1);
+                        cal.add(Calendar.SECOND, 1);
+                        newTime = format.format(cal.getTime());
+                    } catch (ParseException e1) {
+                        e1.printStackTrace();
+                    }
+
+                    // Exp caculating
+                    int exp = db.getInt("exp");
+                    int newexp = exp+(int)(Math.random()*5);
+
+                    writeData("UPDATE players SET exp = '"+newexp+"', playtime = '"+newTime+"' WHERE uuid = '"+player.uuid+"'");
+
+                    EssentialExp.exp(player.name, player.uuid);
                 }
-                SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-                Date d1;
-                Calendar cal;
-                String newTime = null;
-                try {
-                    d1 = format.parse(data);
-                    cal = Calendar.getInstance();
-                    cal.setTime(d1);
-                    cal.add(Calendar.SECOND, 1);
-                    newTime = format.format(cal.getTime());
-                } catch (ParseException e1) {
-                    e1.printStackTrace();
-                }
-
-                // Exp caculating
-                int exp = (int) db.get("exp");
-                int newexp = exp+(int)(Math.random()*5);
-
-                writeData("UPDATE players SET exp = '"+newexp+"', playtime = '"+newTime+"' WHERE uuid = '"+player.uuid+"'");
-
-                EssentialExp.exp(player.name, player.uuid);
             }
         }
 

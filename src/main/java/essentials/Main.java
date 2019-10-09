@@ -125,6 +125,28 @@ public class Main extends Plugin{
 
 		// Set if player join event
 		Events.on(EventType.PlayerConnect.class, e -> {
+            JSONObject db = getData(e.player.uuid);
+            if(db.has("uuid")){
+                if(db.getString("uuid").equals(e.player.uuid)){
+                    JSONObject db2 = getData(e.player.uuid);
+                    if(db2.get("language").equals("KR")){
+                        e.player.sendMessage(EssentialBundle.load(true, "autologin"));
+                    } else {
+                        e.player.sendMessage(EssentialBundle.load(false, "autologin"));
+                    }
+                }
+            } else {
+                // Login require
+                String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
+                        "If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
+                        "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
+                        "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
+                Team no_core = getTeamNoCore(e.player);
+                e.player.setTeam(no_core);
+                Call.onPlayerDeath(e.player);
+                Call.onInfoMessage(e.player.con, message);
+            }
+
 			// Database read/write
 			Thread playerthread = new Thread(() -> {
 				Thread.currentThread().setName("PlayerJoin Thread");
@@ -152,30 +174,6 @@ public class Main extends Plugin{
 					} catch (IOException error) {
 						error.printStackTrace();
 					}
-				}
-
-				JSONObject db = new JSONObject();
-				try{
-					db = getData(e.player.uuid);
-				}catch (Exception ex){
-					db.put("uuid", "none");
-				}
-				if(db.getString("uuid").equals(e.player.uuid)){
-					if(db.get("language").equals("KR")){
-						player.sendMessage(EssentialBundle.load(true, "autologin"));
-					} else {
-						player.sendMessage(EssentialBundle.load(false, "autologin"));
-					}
-				} else {
-					// Login require
-					String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-							"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
-							"서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-							"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
-					Team no_core = getTeamNoCore(e.player);
-					e.player.setTeam(no_core);
-					Call.onPlayerDeath(e.player);
-					Call.onInfoMessage(e.player.con, message);
 				}
 			});
 			playerthread.start();
@@ -272,7 +270,7 @@ public class Main extends Plugin{
 			for (Player p : playerGroup.all()) {
 				if(p.item().item.flammability > 1){
 					JSONObject db = getData(p.uuid);
-					if(db.get("language").equals("KR")){
+					if(db.getString("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "flammable-disabled"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "flammable-disabled"));
@@ -480,7 +478,7 @@ public class Main extends Plugin{
 
             if(EssentialPlayer.login(player, arg[0], arg[1])){
                 player.sendMessage("[green][Essentials] [orange]Login success!");
-                EssentialPlayer.load(player);
+                EssentialPlayer.load(player, arg[0]);
             } else {
                 player.sendMessage("[green][Essentials] [scarlet]Login failed!");
             }
@@ -518,7 +516,7 @@ public class Main extends Plugin{
 			}
 
 			JSONObject db = getData(player.uuid);
-			if(db.get("language").equals("KR")){
+			if(db.getString("language").equals("KR")){
 				player.sendMessage(EssentialBundle.load(true, "votekick-disabled"));
 			} else {
 				player.sendMessage(EssentialBundle.load(false, "votekick-disabled"));
@@ -533,7 +531,7 @@ public class Main extends Plugin{
 
 			JSONObject db = getData(player.uuid);
 			String motd;
-			if(db.get("language").equals("KR")){
+			if(db.getString("language").equals("KR")){
 				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
 			} else {
 				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
@@ -564,7 +562,7 @@ public class Main extends Plugin{
 			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 			JSONObject db = getData(player.uuid);
 			String datatext;
-			if(db.get("language").equals("KR")){
+			if(db.getString("language").equals("KR")){
 				datatext = "[#DEA82A]"+EssentialBundle.nload(true, "player-info")+"[]\n" +
 						"[#2B60DE]========================================[]\n" +
 						"[green]"+EssentialBundle.nload(true, "player-name")+"[] : "+player.name+"[white]\n" +
@@ -615,10 +613,10 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("status", "Show server status", (arg, player) -> {
-			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			player.sendMessage("[#DEA82A]Server status[]");
 			player.sendMessage("[#2B60DE]========================================[]");
@@ -643,10 +641,10 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
-			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			Player other1 = null;
@@ -662,14 +660,14 @@ public class Main extends Plugin{
 				}
 			}
 			if(!player.isAdmin){
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "notadmin"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
 				}
 			} else {
 				if (other1 == null || other2 == null) {
-					if(db.get("language").equals("KR")){
+					if(db.getString("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "player-not-found"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "player-not-found"));
@@ -679,7 +677,7 @@ public class Main extends Plugin{
 				if (!other1.isMobile || !other2.isMobile) {
 					other1.setNet(other2.x, other2.y);
 				} else {
-					if (db.get("language") == "KR") {
+					if (db.getString("language").equals("KR")) {
 						player.sendMessage(EssentialBundle.load(true, "tp-ismobile"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "tp-ismobile"));
@@ -689,10 +687,10 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			Player other = null;
@@ -703,7 +701,7 @@ public class Main extends Plugin{
 				}
 			}
 			if (other == null) {
-				if (db.get("language") == "KR") {
+				if (db.getString("language").equals("KR")) {
 					player.sendMessage(EssentialBundle.load(true, "player-not-found"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "player-not-found"));
@@ -714,14 +712,14 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			if(!player.isAdmin){
 				JSONObject db = getData(player.uuid);
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "notadmin"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
@@ -732,14 +730,14 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			if(!player.isAdmin){
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "notadmin"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
@@ -757,7 +755,7 @@ public class Main extends Plugin{
 					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
 					Call.sendMessage("Player"+other.name+" was killed (ban) by player "+player.name+"!");
 				} else {
-					if (db.get("language") == "KR") {
+					if (db.getString("language").equals("KR")) {
 						player.sendMessage(EssentialBundle.load(true, "player-not-found"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "player-not-found"));
@@ -767,23 +765,23 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			Call.sendMessage("[orange]*[] "+player.name+"[white] : "+arg[0]);
 		});
 
 		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			if(!player.isAdmin){
 				JSONObject db = getData(player.uuid);
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "notadmin"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
@@ -799,10 +797,10 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			switch (arg[0]) {
@@ -886,7 +884,7 @@ public class Main extends Plugin{
 						});
 						t.start();
 					} else {
-						if (db.get("language") == "KR") {
+						if (db.getString("language").equals("KR")) {
 							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
 						} else {
 							player.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
@@ -984,7 +982,7 @@ public class Main extends Plugin{
 						});
 						t.start();
 					} else {
-						if (db.get("language") == "KR") {
+						if (db.getString("language").equals("KR")) {
 							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
 						} else {
 							player.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
@@ -1001,7 +999,7 @@ public class Main extends Plugin{
 						if (target != null) {
 							target.con.kick("You have been kicked by voting.");
 						} else {
-							if (db.get("language") == "KR") {
+							if (db.getString("language").equals("KR")) {
 								player.sendMessage(EssentialBundle.load(true, "player-not-found"));
 							} else {
 								player.sendMessage(EssentialBundle.load(false, "player-not-found"));
@@ -1108,7 +1106,7 @@ public class Main extends Plugin{
 						});
 						t.start();
 					} else {
-						if (db.get("language") == "KR") {
+						if (db.getString("language").equals("KR")) {
 							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
 						} else {
 							player.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
@@ -1126,7 +1124,7 @@ public class Main extends Plugin{
 							Call.sendMessage("[green][Essentials] "+current+" players voted. need "+require+" more players.");
 						}
 					} else {
-						if (db.get("language") == "KR") {
+						if (db.getString("language").equals("KR")) {
 							player.sendMessage(EssentialBundle.load(true, "vote-not-processing"));
 						} else {
 							player.sendMessage(EssentialBundle.load(false, "vote-not-processing"));
@@ -1135,7 +1133,7 @@ public class Main extends Plugin{
 					break;
 				default:
 					this.voteactive = false;
-					if (db.get("language") == "KR") {
+					if (db.getString("language").equals("KR")) {
 						player.sendMessage(EssentialBundle.load(true, "vote-invalid"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "vote-invalid"));
@@ -1145,17 +1143,17 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			Player.onPlayerDeath(player);
 			if (playerGroup != null && playerGroup.size() > 0) {
 				for (int i = 0; i < playerGroup.size(); i++) {
 					Player others = playerGroup.all().get(i);
 					JSONObject db = getData(others.uuid);
-					if (db.get("language") == "KR") {
+					if (db.getString("language").equals("KR")) {
 						others.sendMessage("[green][Essentials][] "+player.name+EssentialBundle.nload(true, "suicide"));
 					} else {
 						others.sendMessage("[green][Essentials][] "+player.name+EssentialBundle.nload(false, "suicide"));
@@ -1165,16 +1163,16 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			if(player.isAdmin){
 				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 				if (other == null) {
-					if(db.get("language").equals("KR")){
+					if(db.getString("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "player-not-found"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "player-not-found"));
@@ -1183,7 +1181,7 @@ public class Main extends Plugin{
 				}
 				Player.onPlayerDeath(other);
 			} else {
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "notadmin"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
@@ -1192,23 +1190,23 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("save", "Map save", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			if(player.isAdmin){
 				Core.app.post(() -> {
 					SaveIO.saveToSlot(1);
-					if(db.get("language").equals("KR")){
+					if(db.getString("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "mapsaved"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "mapsaved"));
 					}
 				});
 			} else {
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "notadmin"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
@@ -1217,16 +1215,16 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("time", "Show server time", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			LocalDateTime now = LocalDateTime.now();
 			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
 			String nowString = now.format(dateTimeFormatter);
-			if(db.get("language").equals("KR")){
+			if(db.getString("language").equals("KR")){
 				player.sendMessage(EssentialBundle.load(true, "servertime")+" "+nowString);
 			} else {
 				player.sendMessage(EssentialBundle.load(false, "servertime")+" "+nowString);
@@ -1234,17 +1232,17 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			boolean value = (boolean) db.get("translate");
 			int set;
 			if (!value) {
 				set = 1;
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "translate1"));
 					player.sendMessage(EssentialBundle.load(true, "translate2"));
 					player.sendMessage(EssentialBundle.load(true, "translate3"));
@@ -1255,7 +1253,7 @@ public class Main extends Plugin{
 				}
 			} else {
 				set = 0;
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "translate-disable"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "translate-disable"));
@@ -1266,17 +1264,17 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			JSONObject db = getData(player.uuid);
 			boolean value = (boolean) db.get("crosschat");
 			int set;
 			if (!value) {
 				set = 1;
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "crosschat1"));
 					player.sendMessage(EssentialBundle.load(true, "crosschat2"));
 				} else {
@@ -1285,7 +1283,7 @@ public class Main extends Plugin{
 				}
 			} else {
 				set = 0;
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "crosschat-disable"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "crosschat-disable"));
@@ -1296,14 +1294,14 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			if(!player.isAdmin){
 				JSONObject db = getData(player.uuid);
-				if(db.get("language").equals("KR")){
+				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "notadmin"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
@@ -1314,7 +1312,7 @@ public class Main extends Plugin{
 				int set;
 				if (!value) {
 					set = 1;
-					if(db.get("language").equals("KR")){
+					if(db.getString("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "colornick1"));
 						player.sendMessage(EssentialBundle.load(true, "colornick2"));
 						player.sendMessage(EssentialBundle.load(true, "colornick3"));
@@ -1325,7 +1323,7 @@ public class Main extends Plugin{
 					}
 				} else {
 					set = 0;
-					if(db.get("language").equals("KR")){
+					if(db.getString("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "colornick-disable"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "colornick-disable"));
@@ -1336,10 +1334,10 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("team", "Change team (PvP only)", (arg, player) -> {
-			if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[orange]You are already logged in");
-				return;
-			}
+            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
 
 			if(Vars.state.rules.pvp){
 				if(player.isAdmin){
@@ -1355,7 +1353,7 @@ public class Main extends Plugin{
 					player.kill();
 				} else {
 					JSONObject db = getData(player.uuid);
-					if(db.get("language").equals("KR")){
+					if(db.getString("language").equals("KR")){
 						player.sendMessage(EssentialBundle.load(true, "notadmin"));
 					} else {
 						player.sendMessage(EssentialBundle.load(false, "notadmin"));
