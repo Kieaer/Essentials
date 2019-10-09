@@ -33,7 +33,7 @@ public class EssentialPlayer{
     private static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
     private static int dbversion = 1;
     private static boolean queryresult;
-    private static Connection conn;
+    static Connection conn;
     private static boolean loginresult;
     private static boolean registerresult;
 
@@ -423,7 +423,6 @@ public class EssentialPlayer{
             }
         });
         db.start();
-        try{db.join();}catch (Exception ignored){}
         return registerresult;
     }
 
@@ -435,7 +434,7 @@ public class EssentialPlayer{
                 ResultSet rs = pstm.executeQuery();
                 if (rs.next()){
                     if(rs.getBoolean("connected")){
-                        Call.onKick(player.con,"You have tried to access an account that is already in use!");
+                        player.con.kick("You have tried to access an account that is already in use!");
                         loginresult = false;
                     } else if (BCrypt.checkpw(pw, rs.getString("accountpw"))){
                         pstm = conn.prepareStatement("UPDATE players SET uuid = ?, connected = ? WHERE accountid = ? and accountpw = ?");

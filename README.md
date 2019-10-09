@@ -30,6 +30,8 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | tempban | &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | vote | &lt;gameover/skipwave/kick&gt; [player name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
+| login | &lt;account id&gt; &lt;password&gt; | Login to account. |
+| register | &lt;account id&gt; &lt;new password&gt; &lt;new password repeat&gt; | Register account |
 
 ## Console commands
 

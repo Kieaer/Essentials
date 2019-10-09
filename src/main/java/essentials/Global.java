@@ -42,6 +42,8 @@ public class Global {
         Log.warn("[EssentialsBanServer] "+msg);
     }
 
+    public static void logn(String msg) { Log.info(msg); }
+
     public static Team getTeamNoCore(Player player){
         int index = player.getTeam().ordinal()+1;
         while (index != player.getTeam().ordinal()){

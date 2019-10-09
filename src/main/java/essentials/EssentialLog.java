@@ -11,10 +11,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+import static essentials.EssentialPlayer.conn;
 import static essentials.EssentialPlayer.getData;
 
 public class EssentialLog {
@@ -133,32 +136,36 @@ public class EssentialLog {
 
                 try {
                     String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                    String text = nowString+e.player.name+" player joined.\n" +
-                            "========================================\n" +
-                            "Name: "+e.player.name+"\n" +
-                            "UUID: "+e.player.uuid+"\n" +
-                            "Mobile: "+e.player.isMobile+"\n" +
-                            "IP: "+ip+"\n" +
-                            "Country: "+db.get("country")+"\n" +
-                            "Block place: "+db.get("placecount")+"\n" +
-                            "Block break: "+db.get("breakcount")+"\n" +
-                            "Kill units: "+db.get("killcount")+"\n" +
-                            "Death count: "+db.get("deathcount")+"\n" +
-                            "Join count: "+db.get("joincount")+"\n" +
-                            "Kick count: "+db.get("kickcount")+"\n" +
-                            "Level: "+db.get("level")+"\n" +
-                            "XP: "+db.get("reqtotalexp")+"\n" +
-                            "First join: "+db.get("firstdate")+"\n" +
-                            "Last join: "+db.get("lastdate")+"\n" +
-                            "Playtime: "+db.get("playtime")+"\n" +
-                            "Attack clear: "+db.get("attackclear")+"\n" +
-                            "PvP Win: "+db.get("pvpwincount")+"\n" +
-                            "PvP Lose: "+db.get("pvplosecount")+"\n" +
-                            "PvP Surrender: "+db.get("pvpbreakout")+"\n" +
-                            "========================================\n";
-                    byte[] result = text.getBytes();
-                    Files.write(path, result, StandardOpenOption.APPEND);
-                    Files.write(total, result, StandardOpenOption.APPEND);
+                    String sql = "SELECT * FROM players WHERE name='" + e.player.uuid + "'";
+
+                    Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery(sql);
+                    if (rs.next()) {
+                        String text = "\nPlayer Information\n" +
+                                "========================================\n" +
+                                "Name: " + rs.getString("name") + "\n" +
+                                "UUID: " + rs.getString("uuid") + "\n" +
+                                "IP: " + ip + "\n" +
+                                "Country: " + rs.getString("country") + "\n" +
+                                "Block place: " + rs.getInt("placecount") + "\n" +
+                                "Block break: " + rs.getInt("breakcount") + "\n" +
+                                "Kill units: " + rs.getInt("killcount") + "\n" +
+                                "Death count: " + rs.getInt("deathcount") + "\n" +
+                                "Join count: " + rs.getInt("joincount") + "\n" +
+                                "Kick count: " + rs.getInt("kickcount") + "\n" +
+                                "Level: " + rs.getInt("level") + "\n" +
+                                "XP: " + rs.getString("reqtotalexp") + "\n" +
+                                "First join: " + rs.getString("firstdate") + "\n" +
+                                "Last join: " + rs.getString("lastdate") + "\n" +
+                                "Playtime: " + rs.getString("playtime") + "\n" +
+                                "Attack clear: " + rs.getInt("attackclear") + "\n" +
+                                "PvP Win: " + rs.getInt("pvpwincount") + "\n" +
+                                "PvP Lose: " + rs.getInt("pvplosecount") + "\n" +
+                                "PvP Surrender: " + rs.getInt("pvpbreakout");
+                        byte[] result = text.getBytes();
+                        Files.write(path, result, StandardOpenOption.APPEND);
+                        Files.write(total, result, StandardOpenOption.APPEND);
+                    }
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }

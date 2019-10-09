@@ -9,7 +9,6 @@ import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
 import io.anuke.arc.util.CommandHandler;
-import io.anuke.arc.util.Log;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Bullets;
@@ -33,6 +32,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -190,8 +191,6 @@ public class Main extends Plugin{
 
 		Events.on(EventType.PlayerLeave.class, e -> {
 			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
-				JSONObject db = getData(e.player.uuid);
-				e.player.name = db.getString("name");
 				writeData("UPDATE players SET connected = '0' WHERE uuid = '"+e.player.uuid+"'");
 			}
 		});
@@ -358,13 +357,11 @@ public class Main extends Plugin{
 						Runnable t = () -> {
 							Call.createBullet(Bullets.meltdownLaser, finalX, finalY, 0);
                             Call.createBullet(Bullets.fireball, finalX, finalY, 0);
-							try {
-								Thread.sleep(5);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
 						};
 						pool.execute(t);
+						if(state.gameOver){
+							pool.shutdown();
+						}
 					}
 				}
 			});
@@ -408,35 +405,42 @@ public class Main extends Plugin{
 			Global.log(""+arg[0]+" nickname is registered in blacklist.");
         });
 
-		handler.register("allinfo", "[name]", "Show player information", (arg) -> {
-			Player other = Vars.playerGroup.find(p->p.name.equalsIgnoreCase(arg[0]));
-			if(other != null) {
-				JSONObject db = getData(other.uuid);
-				String datatext = "\nPlayer Information\n" +
-						"========================================\n" +
-						"Name: "+other.name+"\n" +
-						"UUID: "+other.uuid+"\n" +
-						"Mobile: "+other.isMobile+"\n" +
-						"Country: "+db.get("country")+"\n" +
-						"Block place: "+db.get("placecount")+"\n" +
-						"Block break: "+db.get("breakcount")+"\n" +
-						"Kill units: "+db.get("killcount")+"\n" +
-						"Death count: "+db.get("deathcount")+"\n" +
-						"Join count: "+db.get("joincount")+"\n" +
-						"Kick count: "+db.get("kickcount")+"\n" +
-						"Level: "+db.get("level")+"\n" +
-						"XP: "+db.get("reqtotalexp")+"\n" +
-						"First join: "+db.get("firstdate")+"\n" +
-						"Last join: "+db.get("lastdate")+"\n" +
-						"Playtime: "+db.get("playtime")+"\n" +
-						"Attack clear: "+db.get("attackclear")+"\n" +
-						"PvP Win: "+db.get("pvpwincount")+"\n" +
-						"PvP Lose: "+db.get("pvplosecount")+"\n" +
-						"PvP Surrender: "+db.get("pvpbreakout");
-				Log.info(datatext);
-			} else {
-				Global.log("Player not found!");
-			}
+		handler.register("allinfo", "<name>", "Show player information", (arg) -> {
+			Thread t = new Thread(() -> {
+				try{
+					String sql = "SELECT * FROM players WHERE name='"+arg[0]+"'";
+					Statement stmt = conn.createStatement();
+					ResultSet rs = stmt.executeQuery(sql);
+					while(rs.next()){
+						String datatext = "\nPlayer Information\n" +
+								"========================================\n" +
+								"Name: "+rs.getString("name")+"\n" +
+								"UUID: "+rs.getString("uuid")+"\n" +
+								"Country: "+rs.getString("country")+"\n" +
+								"Block place: "+rs.getInt("placecount")+"\n" +
+								"Block break: "+rs.getInt("breakcount")+"\n" +
+								"Kill units: "+rs.getInt("killcount")+"\n" +
+								"Death count: "+rs.getInt("deathcount")+"\n" +
+								"Join count: "+rs.getInt("joincount")+"\n" +
+								"Kick count: "+rs.getInt("kickcount")+"\n" +
+								"Level: "+rs.getInt("level")+"\n" +
+								"XP: "+rs.getString("reqtotalexp")+"\n" +
+								"First join: "+rs.getString("firstdate")+"\n" +
+								"Last join: "+rs.getString("lastdate")+"\n" +
+								"Playtime: "+rs.getString("playtime")+"\n" +
+								"Attack clear: "+rs.getInt("attackclear")+"\n" +
+								"PvP Win: "+rs.getInt("pvpwincount")+"\n" +
+								"PvP Lose: "+rs.getInt("pvplosecount")+"\n" +
+								"PvP Surrender: "+rs.getInt("pvpbreakout");
+						Global.logn(datatext);
+					}
+					rs.close();
+					stmt.close();
+				}catch (Exception e){
+					e.printStackTrace();
+				}
+			});
+			t.start();
 		});
 
 		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
