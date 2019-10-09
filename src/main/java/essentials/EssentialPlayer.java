@@ -292,7 +292,12 @@ public class EssentialPlayer{
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             if(!pw.equals(pw2)){
-                player.sendMessage("The password isn't the same.");
+                player.sendMessage("[green][Essentials] [scarlet]The password isn't the same.");
+                registerresult = false;
+                return;
+            }
+            if(pw.length() <= 6){
+                player.sendMessage("[green][Essentials] [scarlet]Your password is too short!");
                 registerresult = false;
                 return;
             }
@@ -429,7 +434,10 @@ public class EssentialPlayer{
                 pstm.setString(1, id);
                 ResultSet rs = pstm.executeQuery();
                 if (rs.next()){
-                    if (BCrypt.checkpw(pw, rs.getString("accountpw"))){
+                    if(rs.getBoolean("connected")){
+                        Call.onKick(player.con,"You have tried to access an account that is already in use!");
+                        loginresult = false;
+                    } else if (BCrypt.checkpw(pw, rs.getString("accountpw"))){
                         pstm = conn.prepareStatement("UPDATE players SET uuid = ?, connected = ? WHERE accountid = ? and accountpw = ?");
                         pstm.setString(1, player.uuid);
                         pstm.setBoolean(2, true);
