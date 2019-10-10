@@ -27,6 +27,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.EssentialConfig.realname;
+import static essentials.EssentialConfig.use_sqlite;
+import static essentials.EssentialConfig.use_pgsql;
+import static essentials.EssentialConfig.pguser;
+import static essentials.EssentialConfig.pgpwd;
 import static io.anuke.mindustry.Vars.netServer;
 
 public class EssentialPlayer{
@@ -42,10 +46,15 @@ public class EssentialPlayer{
 
     static void createNewDataFile(){
         try {
-	    Class.forName("org.sqlite.JDBC");
-            //Class.forName("org.postgresql.jar");
-            Connection conn = DriverManager.getConnection(url);
-	    //Connection conn = DriverManager.getConnection(url, pguser, pgpwd);
+	    Connection conn;
+            if(use_sqlite) {
+		Class.forName("org.sqlite.JDBC");
+		conn = DriverManager.getConnection(url);
+	    }
+            if(use_pgsql) {
+		Class.forName("org.postgresql.jar");
+		conn = DriverManager.getConnection(url, pguser, pgpwd);
+	    }
             String makeplayer = "CREATE TABLE IF NOT EXISTS players (\n" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
                     "name TEXT,\n" +
@@ -95,8 +104,15 @@ public class EssentialPlayer{
 	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
+	    Connection conn;
+            if(use_sqlite) {
+		Class.forName("org.sqlite.JDBC");
+		conn = DriverManager.getConnection(url);
+	    }
+            if(use_pgsql) {
+		Class.forName("org.postgresql.jar");
+		conn = DriverManager.getConnection(url, pguser, pgpwd);
+	    }
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
