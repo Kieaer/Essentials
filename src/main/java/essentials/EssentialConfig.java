@@ -90,9 +90,9 @@ public class EssentialConfig {
                     "update: true\n\n" +
 
                     "# Database\n" +
-                    "use-sqlite: true\n"
-                    "use-pgsql: false\n"
-                    "pguser: essentials\n";
+                    "use-sqlite: true\n" +
+                    "use-pgsql: false\n" +
+                    "pguser: essentials\n" +
                     "pgpwd: essentials\n\n";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
