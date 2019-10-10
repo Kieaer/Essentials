@@ -46,14 +46,13 @@ public class EssentialPlayer{
 
     static void createNewDataFile(){
         try {
-	    Connection conn;
             if(use_sqlite) {
 		Class.forName("org.sqlite.JDBC");
-		conn = DriverManager.getConnection(url);
+		Connection conn = DriverManager.getConnection(url);
 	    }
             if(use_pgsql) {
 		Class.forName("org.postgresql.jar");
-		conn = DriverManager.getConnection(url, pguser, pgpwd);
+		Connection conn = DriverManager.getConnection(url, pguser, pgpwd);
 	    }
             String makeplayer = "CREATE TABLE IF NOT EXISTS players (\n" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
@@ -104,14 +103,13 @@ public class EssentialPlayer{
 	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
-	    Connection conn;
             if(use_sqlite) {
 		Class.forName("org.sqlite.JDBC");
-		conn = DriverManager.getConnection(url);
+		Connection conn = DriverManager.getConnection(url);
 	    }
             if(use_pgsql) {
 		Class.forName("org.postgresql.jar");
-		conn = DriverManager.getConnection(url, pguser, pgpwd);
+		Connection conn = DriverManager.getConnection(url, pguser, pgpwd);
 	    }
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
