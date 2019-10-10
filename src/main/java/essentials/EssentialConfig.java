@@ -32,6 +32,10 @@ public class EssentialConfig {
     static boolean logging;
     static boolean update;
     static boolean levelupalarm;
+    static boolean use_sqlite;
+    static boolean use_pgsql;
+    static String pguser;
+    static String pgpwd;
 
     public static void main() {
         Map<String, Object> obj;
@@ -83,7 +87,13 @@ public class EssentialConfig {
                     "logging: false\n\n" +
 
                     "# update check enable\n" +
-                    "update: true";
+                    "update: true\n\n" +
+
+                    "# Database\n" +
+                    "use-sqlite: true\n"
+                    "use-pgsql: false\n"
+                    "pguser: essentials\n";
+                    "pgpwd: essentials\n\n";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -404,16 +414,8 @@ public class EssentialConfig {
             Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
             Global.log("motd file created.");
             
-        }if(!Core.settings.getDataDirectory().child("plugins/Essentials/databaseset.txt").exists()){
-            String text = "# database\n" +
-                    "use-sqlite: true\n" +
-                    "use-pgsql: false\n" +
-                    "pg-user: essentials\n" +
-                    "pg-pwd: essentials\n";
-            Core.settings.getDataDirectory().child("plugins/Essentials/database.txt").writeString(text);
-            Global.log("databaseset file created.");
         }
-
+        
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").exists()){
             String msg = "이 메시지를 바꿀려면 [green]config/plugins/Essentials/[] 폴더에서 [green]motd.txt[] 파일을 수정하세요.";
             Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").writeString(msg);
@@ -464,6 +466,11 @@ public class EssentialConfig {
             logging = Boolean.parseBoolean(String.valueOf(obj.get("logging")));
 
             update = Boolean.parseBoolean(String.valueOf(obj.get("update")));
+            
+            use_sqlite = Boolean.parseBoolean(String.valueOf(obj.get("use-sqlite")));
+            use_pgsql = Boolean.parseBoolean(String.valueOf(obj.get("use-pgsql")));
+            pguser = (String) obj.get("pguser");
+            pgpwd = (String) obj.get("pgpwd");
 
             try{
                 SimpleDateFormat format = new SimpleDateFormat("mm.ss");
@@ -481,12 +488,12 @@ public class EssentialConfig {
             Global.log("config file loaded!");
         }
 
-        if(version < 3){
+        if(version < 4){
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").readString()));
 
             String text = "# Config version (Don't touch this!)\n" +
-                    "version: 3\n\n" +
+                    "version: 4\n\n" +
 
                     "# Plugin language\n" +
                     "language: en\n\n" +
@@ -532,7 +539,13 @@ public class EssentialConfig {
                     "logging: "+logging+"\n\n" +
 
                     "# Update check enable\n" +
-                    "update: "+update;
+                    "update: "+update+"\n\n" +
+
+                    "# Database\n" +
+                    "use-sqlite: "+use_sqlite+"\n" +
+                    "use-pgsql: "+use_pgsql+"\n" +
+                    "pguser: "+pguser+"\n" +
+                    "pgpwd: "+pgpwd;
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }
