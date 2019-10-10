@@ -31,6 +31,9 @@ import static io.anuke.mindustry.Vars.netServer;
 
 public class EssentialPlayer{
     private static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+    //private static String pgusr = "essentials";
+    //private static String pgpwd = "1234";
+    //private static String url = "jdbc:sqlite:player"; //need "player" database
     private static int dbversion = 1;
     private static boolean queryresult;
     static Connection conn;
@@ -39,8 +42,10 @@ public class EssentialPlayer{
 
     static void createNewDataFile(){
         try {
-            Class.forName("org.sqlite.JDBC");
+	    Class.forName("org.sqlite.JDBC");
+            //Class.forName("org.postgresql.jar");
             Connection conn = DriverManager.getConnection(url);
+	    //Connection conn = DriverManager.getConnection(url, pguser, pgpwd);
             String makeplayer = "CREATE TABLE IF NOT EXISTS players (\n" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
                     "name TEXT,\n" +
