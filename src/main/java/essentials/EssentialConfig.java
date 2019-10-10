@@ -403,6 +403,15 @@ public class EssentialConfig {
             String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/plugins/Essentials/[] folder.";
             Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
             Global.log("motd file created.");
+            
+        }if(!Core.settings.getDataDirectory().child("plugins/Essentials/databaseset.txt").exists()){
+            String text = "# database\n" +
+                    "use-sqlite: true\n" +
+                    "use-pgsql: false\n" +
+                    "pg-user: essentials\n" +
+                    "pg-pwd: essentials\n";
+            Core.settings.getDataDirectory().child("plugins/Essentials/database.txt").writeString(text);
+            Global.log("databaseset file created.");
         }
 
         if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").exists()){
