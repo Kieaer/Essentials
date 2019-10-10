@@ -30,6 +30,10 @@ dependencies{
     compile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
     compile 'com.google.code.gson:gson:2.8.5'
     compile group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
+    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.0'
+    compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
+    compile group: 'net.java.dev.jna', name: 'jna', version: '5.4.0'
+
     //compile group: 'org.tensorflow', name:'tensorflow', version: '1.13.1'
 }
 

@@ -32,6 +32,12 @@ public class EssentialConfig {
     static boolean logging;
     static boolean update;
     static boolean levelupalarm;
+    static boolean sqlite;
+    private static String dburl;
+    static boolean loginenable;
+    static String url;
+    static String dbid;
+    static String dbpw;
 
     public static void main() {
         Map<String, Object> obj;
@@ -83,7 +89,16 @@ public class EssentialConfig {
                     "logging: false\n\n" +
 
                     "# update check enable\n" +
-                    "update: true";
+                    "update: true\n\n" +
+
+                    "# Database type setting (Default is SQLite)\n# Example - mariadb://localhost:3306/dbname\n# If you want to use MySQL/MariaDB, You must create a new database yourself.\n# dburl\n" +
+                    "sqlite: true\n" +
+                    "dburl: \n" +
+                    "dbid: \n" +
+                    "dbpw: \n\n" +
+
+                    "# Login features setting\n" +
+                    "loginenable: true";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -456,6 +471,18 @@ public class EssentialConfig {
 
             update = Boolean.parseBoolean(String.valueOf(obj.get("update")));
 
+            sqlite = Boolean.parseBoolean(String.valueOf(obj.get("sqlite")));
+            if(sqlite){
+                url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+            } else {
+                dburl = (String) obj.get("dburl");
+                url = "jdbc:"+dburl;
+            }
+            dbid = (String) obj.get("dbid");
+            dbpw = (String) obj.get("dbpw");
+
+            loginenable = Boolean.parseBoolean(String.valueOf(obj.get("loginenable")));
+
             try{
                 SimpleDateFormat format = new SimpleDateFormat("mm.ss");
                 Calendar cal;
@@ -523,7 +550,16 @@ public class EssentialConfig {
                     "logging: "+logging+"\n\n" +
 
                     "# Update check enable\n" +
-                    "update: "+update;
+                    "update: "+update+"\n\n" +
+
+                    "# Database type setting (Default is SQLite)\n# Example - mariadb://localhost:3306/dbname\n#If you want to use MySQL/MariaDB, You must create a new database yourself.\n" +
+                    "sqlite: "+sqlite+"\n" +
+                    "dburl: "+dburl+"\n" +
+                    "dbid: "+dbid+"\n" +
+                    "dbpw: "+dbpw+"\n\n" +
+
+                    "# Login features setting\n" +
+                    "loginenable: "+loginenable;
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }

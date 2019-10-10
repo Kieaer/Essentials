@@ -77,17 +77,9 @@ public class Main extends Plugin{
 		//EssentialAI.main();
 
 		// Update check
-		if(update){
-			Thread update = new Thread(() -> {
-				try {
-					Global.log("Update checking...");
-					Thread.sleep(1500);
-					Update.main();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			});
-			update.start();
+		if(update) {
+			Global.log("Update checking...");
+			Update.main();
 		}
 
 		// DB Upgrade check
@@ -133,33 +125,38 @@ public class Main extends Plugin{
 		*/
 
         Events.on(PlayerJoin.class, e -> {
-			e.player.isAdmin = false;
+        	if(loginenable){
+				e.player.isAdmin = false;
 
-			JSONObject db = getData(e.player.uuid);
-			if(db.has("uuid")){
-				if(db.getString("uuid").equals(e.player.uuid)){
-					JSONObject db2 = getData(e.player.uuid);
-					if(db2.get("language").equals("KR")){
-						e.player.sendMessage(EssentialBundle.load(true, "autologin"));
-					} else {
-						e.player.sendMessage(EssentialBundle.load(false, "autologin"));
+				JSONObject db = getData(e.player.uuid);
+				if(db.has("uuid")){
+					if(db.getString("uuid").equals(e.player.uuid)){
+						JSONObject db2 = getData(e.player.uuid);
+						if(db2.get("language").equals("KR")){
+							e.player.sendMessage(EssentialBundle.load(true, "autologin"));
+						} else {
+							e.player.sendMessage(EssentialBundle.load(false, "autologin"));
+						}
+						if(db2.getBoolean("isadmin")){
+							e.player.isAdmin = true;
+						}
+						EssentialPlayer.load(e.player, null);
 					}
-					if(db2.getBoolean("isadmin")){
-						e.player.isAdmin = true;
-					}
-					EssentialPlayer.load(e.player, null);
+				} else {
+					// Login require
+					String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
+							"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
+							"서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
+							"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
+					Team no_core = getTeamNoCore(e.player);
+					e.player.setTeam(no_core);
+					Call.onPlayerDeath(e.player);
+					Call.onInfoMessage(e.player.con, message);
 				}
 			} else {
-				// Login require
-				String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-						"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
-						"서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-						"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
-				Team no_core = getTeamNoCore(e.player);
-				e.player.setTeam(no_core);
-				Call.onPlayerDeath(e.player);
-				Call.onInfoMessage(e.player.con, message);
+				EssentialPlayer.load(e.player, null);
 			}
+
 
 			// Database read/write
 			Thread playerthread = new Thread(() -> {
@@ -254,7 +251,7 @@ public class Main extends Plugin{
 
 					writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+e.player.uuid+"'");
 				} catch (Exception ex){
-					ex.printStackTrace();
+					Call.onKick(e.player.con, "You're not logged!");
 				}
 			}
 		});
@@ -296,7 +293,7 @@ public class Main extends Plugin{
 		TimerTask alert = new TimerTask() {
 			@Override
 			public void run() {
-				if(playerGroup.size() > 0) {
+				if (playerGroup.size() > 0) {
 					for (int i = 0; i < playerGroup.size(); i++) {
 						Player player = playerGroup.all().get(i);
 						if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
@@ -312,8 +309,10 @@ public class Main extends Plugin{
 			}
 		};
 
-		Timer alerttimer = new Timer(true);
-		alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
+		if(loginenable){
+			Timer alerttimer = new Timer(true);
+			alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
+		}
 
 		EssentialTimer job = new EssentialTimer();
 		Timer timer = new Timer(true);
@@ -526,42 +525,51 @@ public class Main extends Plugin{
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
-            if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-                player.sendMessage("[green][Essentials] [orange]You are already logged in");
-                return;
-            }
-
-            if(EssentialPlayer.login(player, arg[0], arg[1])){
-                player.sendMessage("[green][Essentials] [orange]Login success!");
-                EssentialPlayer.load(player, arg[0]);
-            } else {
-                player.sendMessage("[green][Essentials] [scarlet]Login failed!");
-            }
-        });
-        handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player)-> {
-            if(EssentialPlayer.register(player, arg[0], arg[1], arg[2])){
-				if (Vars.state.rules.pvp){
-					int index = player.getTeam().ordinal()+1;
-					while (index != player.getTeam().ordinal()){
-						if (index >= Team.all.length){
-							index = 0;
-						}
-						if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
-							player.setTeam(Team.all[index]);
-							break;
-						}
-						index++;
-					}
-					Call.onPlayerDeath(player);
-					player.sendMessage("[green][Essentials] [orange]Account register success!");
-				} else {
-					player.setTeam(Vars.defaultTeam);
-					Call.onPlayerDeath(player);
-					player.sendMessage("[green][Essentials] [orange]Account register success!");
+        	if(loginenable){
+				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+					player.sendMessage("[green][Essentials] [orange]You are already logged in");
+					return;
 				}
-            } else {
-                player.sendMessage("[green][Essentials] [scarlet]Register failed!");
-            }
+
+				if(EssentialPlayer.login(player, arg[0], arg[1])){
+					player.sendMessage("[green][Essentials] [orange]Login success!");
+					EssentialPlayer.load(player, arg[0]);
+				} else {
+					player.sendMessage("[green][Essentials] [scarlet]Login failed!");
+				}
+			} else {
+        		Global.log("Server isn't using Login features.");
+			}
+        });
+
+        handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player)-> {
+        	if(loginenable){
+				if(EssentialPlayer.register(player, arg[0], arg[1], arg[2])){
+					if (Vars.state.rules.pvp){
+						int index = player.getTeam().ordinal()+1;
+						while (index != player.getTeam().ordinal()){
+							if (index >= Team.all.length){
+								index = 0;
+							}
+							if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
+								player.setTeam(Team.all[index]);
+								break;
+							}
+							index++;
+						}
+						Call.onPlayerDeath(player);
+						player.sendMessage("[green][Essentials] [orange]Account register success!");
+					} else {
+						player.setTeam(Vars.defaultTeam);
+						Call.onPlayerDeath(player);
+						player.sendMessage("[green][Essentials] [orange]Account register success!");
+					}
+				} else {
+					player.sendMessage("[green][Essentials] [scarlet]Register failed!");
+				}
+			} else {
+				Global.log("Server isn't using Login features.");
+			}
         });
 
 		handler.<Player>register("votekick", "Disabled.", (arg, player) -> {

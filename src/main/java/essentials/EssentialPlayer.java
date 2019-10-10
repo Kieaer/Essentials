@@ -4,6 +4,7 @@ import essentials.special.ColorNick;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -26,11 +27,10 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static essentials.EssentialConfig.realname;
+import static essentials.EssentialConfig.*;
 import static io.anuke.mindustry.Vars.netServer;
 
 public class EssentialPlayer{
-    private static String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
     private static int dbversion = 1;
     private static boolean queryresult;
     static Connection conn;
@@ -39,48 +39,102 @@ public class EssentialPlayer{
 
     static void createNewDataFile(){
         try {
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
-            String makeplayer = "CREATE TABLE IF NOT EXISTS players (\n" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-                    "name TEXT,\n" +
-                    "uuid TEXT,\n" +
-                    "country TEXT,\n" +
-                    "country_code TEXT,\n" +
-                    "language TEXT,\n" +
-                    "isadmin TEXT,\n" +
-                    "placecount INTEGER,\n" +
-                    "breakcount INTEGER,\n" +
-                    "killcount INTEGER,\n" +
-                    "deathcount INTEGER,\n" +
-                    "joincount INTEGER,\n" +
-                    "kickcount INTEGER,\n" +
-                    "level INTEGER,\n" +
-                    "exp INTEGER,\n" +
-                    "reqexp INTEGER,\n" +
-                    "reqtotalexp TEXT,\n" +
-                    "firstdate TEXT,\n" +
-                    "lastdate TEXT,\n" +
-                    "lastplacename TEXT,\n" +
-                    "lastbreakname TEXT,\n" +
-                    "lastchat TEXT,\n" +
-                    "playtime TEXT,\n" +
-                    "attackclear INTEGER,\n" +
-                    "pvpwincount INTEGER,\n" +
-                    "pvplosecount INTEGER,\n" +
-                    "pvpbreakout INTEGER,\n" +
-                    "reactorcount INTEGER,\n" +
-                    "bantimeset TEXT,\n" +
-                    "bantime INTEGER,\n" +
-                    "translate TEXT,\n" +
-                    "crosschat TEXT,\n" +
-                    "colornick TEXT,\n" +
-                    "connected TEXT,\n" +
-                    "accountid TEXT,\n" +
-                    "accountpw TEXT\n" +
-                    ");";
+            String sql = null;
+            if(sqlite){
+                Class.forName("org.sqlite.JDBC");
+                conn = DriverManager.getConnection(url);
+                sql = "CREATE TABLE IF NOT EXISTS players (\n" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                        "name TEXT,\n" +
+                        "uuid TEXT,\n" +
+                        "country TEXT,\n" +
+                        "country_code TEXT,\n" +
+                        "language TEXT,\n" +
+                        "isadmin TEXT,\n" +
+                        "placecount INTEGER,\n" +
+                        "breakcount INTEGER,\n" +
+                        "killcount INTEGER,\n" +
+                        "deathcount INTEGER,\n" +
+                        "joincount INTEGER,\n" +
+                        "kickcount INTEGER,\n" +
+                        "level INTEGER,\n" +
+                        "exp INTEGER,\n" +
+                        "reqexp INTEGER,\n" +
+                        "reqtotalexp TEXT,\n" +
+                        "firstdate TEXT,\n" +
+                        "lastdate TEXT,\n" +
+                        "lastplacename TEXT,\n" +
+                        "lastbreakname TEXT,\n" +
+                        "lastchat TEXT,\n" +
+                        "playtime TEXT,\n" +
+                        "attackclear INTEGER,\n" +
+                        "pvpwincount INTEGER,\n" +
+                        "pvplosecount INTEGER,\n" +
+                        "pvpbreakout INTEGER,\n" +
+                        "reactorcount INTEGER,\n" +
+                        "bantimeset TEXT,\n" +
+                        "bantime INTEGER,\n" +
+                        "translate TEXT,\n" +
+                        "crosschat TEXT,\n" +
+                        "colornick TEXT,\n" +
+                        "connected TEXT,\n" +
+                        "accountid TEXT,\n" +
+                        "accountpw TEXT\n" +
+                        ");";
+            } else {
+                if(!dbid.isEmpty()){
+                    Class.forName("org.mariadb.jdbc.Driver");
+                    Class.forName("com.mysql.jdbc.Driver");
+                    conn = DriverManager.getConnection(url, dbid, dbpw);
+                    sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
+                            "`id` INT(11) NOT NULL AUTO_INCREMENT,\n" +
+                            "`name` TEXT NULL DEFAULT NULL,\n" +
+                            "`uuid` VARCHAR(12) NULL DEFAULT NULL,\n" +
+                            "`country` TEXT NULL DEFAULT NULL,\n" +
+                            "`country_code` TEXT NULL DEFAULT NULL,\n" +
+                            "`language` TEXT NULL DEFAULT NULL,\n" +
+                            "`isadmin` TINYINT(4) NULL DEFAULT NULL,\n" +
+                            "`placecount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`breakcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`killcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`deathcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`joincount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`kickcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`level` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`exp` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`reqexp` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`reqtotalexp` TEXT NULL DEFAULT NULL,\n" +
+                            "`firstdate` TEXT NULL DEFAULT NULL,\n" +
+                            "`lastdate` TEXT NULL DEFAULT NULL,\n" +
+                            "`lastplacename` TEXT NULL DEFAULT NULL,\n" +
+                            "`lastbreakname` TEXT NULL DEFAULT NULL,\n" +
+                            "`lastchat` TEXT NULL DEFAULT NULL,\n" +
+                            "`playtime` TEXT NULL DEFAULT NULL,\n" +
+                            "`attackclear` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`pvpwincount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`pvplosecount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`pvpbreakout` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`reactorcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`bantimeset` INT(11) NULL DEFAULT NULL,\n" +
+                            "`bantime` TINYTEXT NULL DEFAULT NULL,\n" +
+                            "`translate` TINYINT(4) NULL DEFAULT NULL,\n" +
+                            "`crosschat` TINYINT(4) NULL DEFAULT NULL,\n" +
+                            "`colornick` TINYINT(4) NULL DEFAULT NULL,\n" +
+                            "`connected` TINYINT(4) NULL DEFAULT NULL,\n" +
+                            "`accountid` TEXT NULL DEFAULT NULL,\n" +
+                            "`accountpw` TEXT NULL DEFAULT NULL,\n" +
+                            "PRIMARY KEY (`id`)\n" +
+                            ")\n" +
+                            "COLLATE='utf8_general_ci'\n" +
+                            "ENGINE=InnoDB\n" +
+                            ";\n";
+                } else {
+                    conn = DriverManager.getConnection(url);
+                }
+            }
+
             Statement stmt = conn.createStatement();
-            stmt.execute(makeplayer);
+            stmt.execute(sql);
             stmt.close();
         } catch (Exception e){
             e.printStackTrace();
@@ -90,12 +144,15 @@ public class EssentialPlayer{
 	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
-                String sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql;
+                if(sqlite){
+                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                } else {
+                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                }
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
@@ -124,8 +181,8 @@ public class EssentialPlayer{
                 pstmt.setInt(25, 0);
                 pstmt.setInt(26, 0);
                 pstmt.setInt(27, 0);
-                pstmt.setString(28, "none");
-                pstmt.setInt(29, 0);
+                pstmt.setInt(28, 0);
+                pstmt.setString(29, "none");
                 pstmt.setBoolean(30, false);
                 pstmt.setBoolean(31, false);
                 pstmt.setBoolean(32, false);
@@ -138,7 +195,6 @@ public class EssentialPlayer{
             }
             rs.close();
             stmt.close();
-            conn.close();
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -146,12 +202,12 @@ public class EssentialPlayer{
 
 	public static JSONObject getData(String uuid){
         JSONObject json = new JSONObject();
-
         try {
             String sql = "SELECT * FROM players WHERE uuid='"+uuid+"'";
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
             if(rs.next()){
+                json.put("id", rs.getInt("id"));
                 json.put("name", rs.getString("name"));
                 json.put("uuid", rs.getString("uuid"));
                 json.put("country", rs.getString("country"));
@@ -180,16 +236,19 @@ public class EssentialPlayer{
                 json.put("pvpbreakout", rs.getInt("pvpbreakout"));
                 json.put("reactorcount", rs.getInt("reactorcount"));
                 json.put("bantimeset", rs.getString("bantimeset"));
-                json.put("bantime", rs.getInt("bantime"));
+                json.put("bantime", rs.getString("bantime"));
                 json.put("translate", rs.getBoolean("translate"));
                 json.put("crosschat", rs.getBoolean("crosschat"));
                 json.put("colornick", rs.getBoolean("colornick"));
                 json.put("connected", rs.getBoolean("connected"));
+                json.put("accountid", rs.getString("accountid"));
+                json.put("accountpw", rs.getString("accountpw"));
             }
             rs.close();
             stmt.close();
             queryresult = true;
         } catch (Exception e){
+            e.printStackTrace();
             queryresult = false;
         }
         return json;
@@ -262,8 +321,21 @@ public class EssentialPlayer{
     }
     static void openconnect(){
         try{
-            Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection(url);
+            if(sqlite){
+                Class.forName("org.sqlite.JDBC");
+                conn = DriverManager.getConnection(url);
+                Global.log("Database type: SQLite");
+            } else {
+                Class.forName("org.mariadb.jdbc.Driver");
+                Class.forName("com.mysql.jdbc.Driver");
+                if(!dbid.isEmpty()){
+                    conn = DriverManager.getConnection(url, dbid, dbpw);
+                    Global.log("Database type: MariaDB/MySQL");
+                } else {
+                    conn = DriverManager.getConnection(url);
+                    Global.log("Database type: Invalid");
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -499,7 +571,22 @@ public class EssentialPlayer{
             writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', uuid = '"+player.uuid+"' WHERE accountid = '"+id+"'");
         }
 
-        player.setTeam(Vars.defaultTeam);
+        if (Vars.state.rules.pvp){
+            int index = player.getTeam().ordinal()+1;
+            while (index != player.getTeam().ordinal()){
+                if (index >= Team.all.length){
+                    index = 0;
+                }
+                if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
+                    player.setTeam(Team.all[index]);
+                    break;
+                }
+                index++;
+            }
+            Call.onPlayerDeath(player);
+        } else {
+            player.setTeam(Vars.defaultTeam);
+        }
         Call.onPlayerDeath(player);
 
         // Show motd
