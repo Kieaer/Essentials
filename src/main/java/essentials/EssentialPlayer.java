@@ -72,8 +72,8 @@ public class EssentialPlayer{
                         "pvplosecount INTEGER,\n" +
                         "pvpbreakout INTEGER,\n" +
                         "reactorcount INTEGER,\n" +
-                        "bantimeset TEXT,\n" +
-                        "bantime INTEGER,\n" +
+                        "bantimeset INTEGER,\n" +
+                        "bantime TEXT,\n" +
                         "translate TEXT,\n" +
                         "crosschat TEXT,\n" +
                         "colornick TEXT,\n" +
@@ -94,15 +94,15 @@ public class EssentialPlayer{
                             "`country_code` TEXT NULL DEFAULT NULL,\n" +
                             "`language` TEXT NULL DEFAULT NULL,\n" +
                             "`isadmin` TINYINT(4) NULL DEFAULT NULL,\n" +
-                            "`placecount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`breakcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`killcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`deathcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`joincount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`kickcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`level` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`exp` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`reqexp` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`placecount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`breakcount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`killcount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`deathcount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`joincount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`kickcount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`level` INT(11) NULL DEFAULT NULL,\n" +
+                            "`exp` INT(11) NULL DEFAULT NULL,\n" +
+                            "`reqexp` INT(11) NULL DEFAULT NULL,\n" +
                             "`reqtotalexp` TEXT NULL DEFAULT NULL,\n" +
                             "`firstdate` TEXT NULL DEFAULT NULL,\n" +
                             "`lastdate` TEXT NULL DEFAULT NULL,\n" +
@@ -110,11 +110,11 @@ public class EssentialPlayer{
                             "`lastbreakname` TEXT NULL DEFAULT NULL,\n" +
                             "`lastchat` TEXT NULL DEFAULT NULL,\n" +
                             "`playtime` TEXT NULL DEFAULT NULL,\n" +
-                            "`attackclear` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`pvpwincount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`pvplosecount` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`pvpbreakout` SMALLINT(6) NULL DEFAULT NULL,\n" +
-                            "`reactorcount` SMALLINT(6) NULL DEFAULT NULL,\n" +
+                            "`attackclear` INT(11) NULL DEFAULT NULL,\n" +
+                            "`pvpwincount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`pvplosecount` INT(11) NULL DEFAULT NULL,\n" +
+                            "`pvpbreakout` INT(11) NULL DEFAULT NULL,\n" +
+                            "`reactorcount` INT(11) NULL DEFAULT NULL,\n" +
                             "`bantimeset` INT(11) NULL DEFAULT NULL,\n" +
                             "`bantime` TINYTEXT NULL DEFAULT NULL,\n" +
                             "`translate` TINYINT(4) NULL DEFAULT NULL,\n" +
@@ -127,7 +127,8 @@ public class EssentialPlayer{
                             ")\n" +
                             "COLLATE='utf8_general_ci'\n" +
                             "ENGINE=InnoDB\n" +
-                            ";\n";
+                            "AUTO_INCREMENT=1\n" +
+                            ";";
                 } else {
                     conn = DriverManager.getConnection(url);
                 }
@@ -160,33 +161,33 @@ public class EssentialPlayer{
                 pstmt.setString(4, country_code);
                 pstmt.setString(5, language);
                 pstmt.setBoolean(6, isAdmin);
-                pstmt.setInt(7, 0);
-                pstmt.setInt(8, 0);
-                pstmt.setInt(9, 0);
-                pstmt.setInt(10, 0);
+                pstmt.setInt(7, 0); // placecount
+                pstmt.setInt(8, 0); // breakcount
+                pstmt.setInt(9, 0); // killcount
+                pstmt.setInt(10, 0); // deathcount
                 pstmt.setInt(11, joincount);
                 pstmt.setInt(12, kickcount);
-                pstmt.setInt(13, 1);
-                pstmt.setInt(14, 0);
-                pstmt.setInt(15, 500);
-                pstmt.setString(16, "0(500) / 500");
+                pstmt.setInt(13, 1); // level
+                pstmt.setInt(14, 0); // exp
+                pstmt.setInt(15, 500); // reqexp
+                pstmt.setString(16, "0(500) / 500"); // reqtotalexp
                 pstmt.setString(17, firstdate);
                 pstmt.setString(18, lastdate);
-                pstmt.setString(19, "none");
-                pstmt.setString(20, "none");
-                pstmt.setString(21, "none");
-                pstmt.setString(22, "00:00.00");
-                pstmt.setInt(23, 0);
-                pstmt.setInt(24, 0);
-                pstmt.setInt(25, 0);
-                pstmt.setInt(26, 0);
-                pstmt.setInt(27, 0);
-                pstmt.setInt(28, 0);
-                pstmt.setString(29, "none");
-                pstmt.setBoolean(30, false);
-                pstmt.setBoolean(31, false);
-                pstmt.setBoolean(32, false);
-                pstmt.setBoolean(33, true);
+                pstmt.setString(19, "none"); // lastplacename
+                pstmt.setString(20, "none"); // lastbreakname
+                pstmt.setString(21, "none"); // lastchat
+                pstmt.setString(22, "00:00.00"); // playtime
+                pstmt.setInt(23, 0); // attackclear
+                pstmt.setInt(24, 0); // pvpwincount
+                pstmt.setInt(25, 0); // pvplosecount
+                pstmt.setInt(26, 0); // pvpbreakcount
+                pstmt.setInt(27, 0); // reactorcount
+                pstmt.setInt(28, 0); // bantimeset
+                pstmt.setString(29, "none"); // bantime
+                pstmt.setBoolean(30, false); // translate
+                pstmt.setBoolean(31, false); // crosschat
+                pstmt.setBoolean(32, false); // colornick
+                pstmt.setBoolean(33, true); // connected
                 pstmt.setString(34, accountid);
                 pstmt.setString(35, accountpw);
                 pstmt.executeUpdate();
