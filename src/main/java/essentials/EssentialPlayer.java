@@ -4,7 +4,6 @@ import essentials.special.ColorNick;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -29,6 +28,7 @@ import java.util.regex.Pattern;
 
 import static essentials.EssentialConfig.*;
 import static io.anuke.mindustry.Vars.netServer;
+import static io.anuke.mindustry.Vars.playerGroup;
 
 public class EssentialPlayer{
     private static int dbversion = 1;
@@ -187,6 +187,7 @@ public class EssentialPlayer{
                 pstmt.setBoolean(30, false); // translate
                 pstmt.setBoolean(31, false); // crosschat
                 pstmt.setBoolean(32, false); // colornick
+
                 pstmt.setBoolean(33, true); // connected
                 pstmt.setString(34, accountid);
                 pstmt.setString(35, accountpw);
@@ -351,7 +352,7 @@ public class EssentialPlayer{
     }
 
 	static void writeData(String sql){
-        Runnable t = () -> {
+        Thread t = new Thread(() -> {
             Thread.currentThread().setName("DB Thread");
             try {
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -361,8 +362,8 @@ public class EssentialPlayer{
                 Global.loge(sql);
                 e.printStackTrace();
             }
-        };
-        Main.pool.execute(t);
+        });
+        t.start();
 	}
 
 	static boolean register(Player player, String id, String pw, String pw2){
@@ -573,17 +574,7 @@ public class EssentialPlayer{
         }
 
         if (Vars.state.rules.pvp){
-            int index = player.getTeam().ordinal()+1;
-            while (index != player.getTeam().ordinal()){
-                if (index >= Team.all.length){
-                    index = 0;
-                }
-                if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
-                    player.setTeam(Team.all[index]);
-                    break;
-                }
-                index++;
-            }
+            player.setTeam(netServer.assignTeam(player, playerGroup.all()));
             Call.onPlayerDeath(player);
         } else {
             player.setTeam(Vars.defaultTeam);

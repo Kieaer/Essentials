@@ -3,6 +3,7 @@ package essentials;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.EventType;
 import org.json.JSONObject;
 
@@ -77,30 +78,47 @@ public class EssentialLog {
         });
 
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
-            Thread t = new Thread(() -> {
-                LocalDateTime now = LocalDateTime.now();
-                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                String nowString = "["+now.format(dateTimeFormatter)+"] ";
+            if(!e.breaking && e.tile.entity() != null){
+                Thread t = new Thread(() -> {
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                    String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
-                Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
-                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-                try {
-                    String text;
-                    if(!e.breaking && e.tile.entity() != null){
-                        text = nowString+e.player.name+" Player break " +e.tile.entity().block.name+".\n";
-                    } else if(e.tile.entity() != null){
-                        text = nowString+e.player.name+" Player made " + e.tile.entity().block.name+".\n";
-                    } else {
-                        return;
+                    Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
+                    Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                    try {
+                        String text = nowString+e.player.name+" Player place " +e.tile.entity.block.name+".\n";
+                        byte[] result = text.getBytes();
+                        Files.write(block, result, StandardOpenOption.APPEND);
+                        Files.write(total, result, StandardOpenOption.APPEND);
+                    }catch (IOException error) {
+                        error.printStackTrace();
                     }
-                    byte[] result = text.getBytes();
-                    Files.write(block, result, StandardOpenOption.APPEND);
-                    Files.write(total, result, StandardOpenOption.APPEND);
-                }catch (IOException error) {
-                    error.printStackTrace();
-                }
-            });
-            t.start();
+                });
+                t.start();
+            }
+        });
+
+        Events.on(EventType.BuildSelectEvent.class, e -> {
+            if(e.breaking && e.builder != null && e.builder.buildRequest() != null && e.builder.buildRequest().block != null && e.builder instanceof Player && !e.builder.buildRequest().block.name.matches(".*build.*")){
+                Thread t = new Thread(() -> {
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                    String nowString = "["+now.format(dateTimeFormatter)+"] ";
+
+                    Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
+                    Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                    try {
+                        String text = nowString+((Player)e.builder).name+" Player breaking " +e.builder.buildRequest().block.name+".\n";
+                        byte[] result = text.getBytes();
+                        Files.write(block, result, StandardOpenOption.APPEND);
+                        Files.write(total, result, StandardOpenOption.APPEND);
+                    }catch (IOException error) {
+                        error.printStackTrace();
+                    }
+                });
+                t.start();
+            }
         });
 
         Events.on(EventType.MechChangeEvent.class, e -> {

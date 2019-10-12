@@ -10,6 +10,14 @@ public class Global {
         Log.info("[Essentials] "+msg);
     }
 
+    public static void log(float msg){
+        Log.info("[Essentials] "+msg);
+    }
+
+    public static void log(int msg){
+        Log.info("[Essentials] "+msg);
+    }
+
     public static void logw(String msg){
         Log.warn("[Essentials] "+msg);
     }

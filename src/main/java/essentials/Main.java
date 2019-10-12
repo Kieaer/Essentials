@@ -11,7 +11,6 @@ import io.anuke.arc.collection.Array;
 import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Bullets;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -40,8 +39,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
@@ -52,7 +49,6 @@ import static io.anuke.mindustry.Vars.*;
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
-    static ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
 	//state.rules.bannedBlocks;
 
@@ -100,22 +96,31 @@ public class Main extends Plugin{
         EssentialEPG.main();
 
 		// TODO Make PvP winner count
-		/*
 		Events.on(EventType.GameOverEvent.class, e -> {
 
 		});
-		*/
 
 		Events.on(EventType.WorldLoadEvent.class, e -> EssentialTimer.playtime = "00:00.00");
 
         // Set if thorium rector explode
-        Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
+		/*
+        Events.on(EventType.thoriumReactorOverheat.class, e -> {
             if(detectreactor){
+            	Call.onTileDestroyed(e.tile);
                 Call.sendMessage("[scarlet]= WARNING WARNING WARNING =");
                 Call.sendMessage("[scarlet]Thorium Reactor Exploded");
                 Global.log("Thorium Reactor explode detected!!");
             }
         });
+        */
+
+        Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
+			if(detectreactor){
+				Call.sendMessage("[scarlet]= WARNING WARNING WARNING =");
+				Call.sendMessage("[scarlet]Thorium Reactor Exploded");
+				Global.log("Thorium Reactor explode detected!!");
+			}
+		});
 
 		// Set if player join event
 		/*
@@ -275,7 +280,10 @@ public class Main extends Plugin{
             }
 		});
 
+		/*
 		Events.on(EventType.DepositEvent.class, e -> {
+			e.player.sendMessage("DepositEvent done!");
+			/*
 			for (Player p : playerGroup.all()) {
 				if(p.item().item.flammability > 1){
 					if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
@@ -288,11 +296,19 @@ public class Main extends Plugin{
 					}
 				}
 			}
+
+
 		});
+
+		Events.on(EventType.WithdrawEvent.class, e -> {
+		//	e.player.sendMessage("WithdrawEvent done!");
+		});
+		*/
 
 		TimerTask alert = new TimerTask() {
 			@Override
 			public void run() {
+				Thread.currentThread().setName("Login alert thread");
 				if (playerGroup.size() > 0) {
 					for (int i = 0; i < playerGroup.size(); i++) {
 						Player player = playerGroup.all().get(i);
@@ -359,28 +375,6 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
-		handler.register("gameover", "a test", arg -> {
-			Global.log("The destruction of the world has begun!");
-			Thread t1 = new Thread(() -> {
-				for (int x = 0; x < world.width() * 8; x += 16) {
-					for (int y = 0; y < world.height() * 8; y += 8) {
-						int finalX = x;
-						int finalY = y;
-						// FULL SPEED!
-						Runnable t = () -> {
-							Call.createBullet(Bullets.meltdownLaser, finalX, finalY, 0);
-                            Call.createBullet(Bullets.fireball, finalX, finalY, 0);
-						};
-						pool.execute(t);
-						if(state.gameOver){
-							pool.shutdown();
-						}
-					}
-				}
-			});
-			t1.start();
-		});
-
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
@@ -1427,10 +1421,21 @@ public class Main extends Plugin{
 			}
 		});
 
-		/*
+
         handler.<Player>register("powerstat", "messageblock", (arg, player) -> {
-            Blocks.message = new MessageBlock("test");
+			Global.log("getBatteryCapacity "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getBatteryCapacity());
+			Global.log("getBatteryStored "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getBatteryStored());
+			Global.log("getLastPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getLastPowerNeeded());
+			Global.log("getLastPowerProduced "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getLastPowerProduced());
+			Global.log("getPowerBalance "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerBalance());
+			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
+			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
+			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
+			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
+			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
+			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
+            //Blocks.message = new MessageBlock("test");
         });
-		 */
+
 	}
 }
