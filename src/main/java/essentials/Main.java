@@ -11,6 +11,7 @@ import io.anuke.arc.collection.Array;
 import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -272,6 +273,12 @@ public class Main extends Plugin{
 						data++;
 
 						writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+e.player.uuid+"'");
+
+						if(e.player.buildRequest() != null && e.player.buildRequest().block == Blocks.thoriumReactor){
+						    int reactorcount = db.getInt("reactorcount");
+						    reactorcount++;
+						    writeData("UPDATE players SET reactorcount = '"+reactorcount+"' WHERE uuid = '"+e.player.uuid+"'");
+                        }
 					} catch (Exception ex){
 						Call.onKick(e.player.con, "You're not logged!");
 					}
@@ -301,6 +308,12 @@ public class Main extends Plugin{
 						data++;
 
 						writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+((Player)e.builder).uuid+"'");
+
+                        if(e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor){
+                            int reactorcount = db.getInt("reactorcount");
+                            reactorcount++;
+                            writeData("UPDATE players SET reactorcount = '"+reactorcount+"' WHERE uuid = '"+((Player) e.builder).uuid+"'");
+                        }
 					} catch (Exception ex){
 						Call.onKick(((Player) e.builder).con, "You're not logged!");
 					}
