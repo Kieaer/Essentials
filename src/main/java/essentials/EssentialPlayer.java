@@ -615,20 +615,4 @@ public class EssentialPlayer{
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }
     }
-
-	/*
-    // TODO make getall function
-	public static JSONObject getAll() throws FileNotFoundException {
-		File dir = new File("plugins/Essentials/players");
-		for (File file : dir.listFiles()) {
-			Scanner s = new Scanner(file);
-			JSONTokener parser = new JSONTokener(String.valueOf(s));
-			JSONObject object = new JSONObject(parser);
-			JSONObject response = (JSONObject) object.get("data");
-			s.close();
-		}
-
-		return response;
-	}
- */
 }

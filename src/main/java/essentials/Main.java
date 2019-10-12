@@ -95,9 +95,25 @@ public class Main extends Plugin{
 		// Essentials EPG Features
         EssentialEPG.main();
 
-		// TODO Make PvP winner count
 		Events.on(EventType.GameOverEvent.class, e -> {
-
+			if(Vars.state.rules.pvp){
+				if(playerGroup != null && playerGroup.size() > 0) {
+					for (int i = 0; i < playerGroup.size(); i++) {
+						Player player = playerGroup.all().get(i);
+						if(player.getTeam().name().equals(e.winner.name())){
+							JSONObject db = getData(player.uuid);
+							int pvpwin = db.getInt("pvpwincount");
+							pvpwin++;
+							writeData("UPDATE players SET pvpwincount = '"+pvpwin+"' WHERE uuid = '"+player.uuid+"'");
+						} else {
+							JSONObject db = getData(player.uuid);
+							int pvplose = db.getInt("pvplosecount");
+							pvplose++;
+							writeData("UPDATE players SET pvplosecount = '"+pvplose+"' WHERE uuid = '"+player.uuid+"'");
+						}
+					}
+				}
+			}
 		});
 
 		Events.on(EventType.WorldLoadEvent.class, e -> EssentialTimer.playtime = "00:00.00");
@@ -237,27 +253,59 @@ public class Main extends Plugin{
 		// Set if player build block event
 		Events.on(EventType.BlockBuildEndEvent.class, e -> {
 			if (!e.breaking && e.player != null && e.player.buildRequest() != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-				JSONObject db = getData(e.player.uuid);
-				String name = e.tile.block().name;
-				try{
-					int data = db.getInt("placecount");
-					int exp = db.getInt("exp");
+				Thread t = new Thread(() -> {
+					JSONObject db = getData(e.player.uuid);
+					String name = e.tile.block().name;
+					try{
+						int data = db.getInt("placecount");
+						int exp = db.getInt("exp");
 
-					Yaml yaml = new Yaml();
-					Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
-					int blockexp;
-					if(obj.get(name) != null) {
-						blockexp = (int) obj.get(name);
-					} else {
-						blockexp = 0;
+						Yaml yaml = new Yaml();
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
+						int blockexp;
+						if(obj.get(name) != null) {
+							blockexp = (int) obj.get(name);
+						} else {
+							blockexp = 0;
+						}
+						int newexp = exp+blockexp;
+						data++;
+
+						writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+e.player.uuid+"'");
+					} catch (Exception ex){
+						Call.onKick(e.player.con, "You're not logged!");
 					}
-					int newexp = exp+blockexp;
-					data++;
+				});
+				t.start();
+			}
+		});
 
-					writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+e.player.uuid+"'");
-				} catch (Exception ex){
-					Call.onKick(e.player.con, "You're not logged!");
-				}
+		Events.on(EventType.BuildSelectEvent.class, e -> {
+			if(e.breaking && e.builder != null && e.builder.buildRequest() != null && e.builder.buildRequest().block != null && e.builder instanceof Player && !e.builder.buildRequest().block.name.matches(".*build.*")){
+				Thread t = new Thread(() -> {
+					JSONObject db = getData(((Player)e.builder).uuid);
+					String name = e.tile.block().name;
+					try{
+						int data = db.getInt("placecount");
+						int exp = db.getInt("exp");
+
+						Yaml yaml = new Yaml();
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
+						int blockexp;
+						if(obj.get(name) != null) {
+							blockexp = (int) obj.get(name);
+						} else {
+							blockexp = 0;
+						}
+						int newexp = exp+blockexp;
+						data++;
+
+						writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+((Player)e.builder).uuid+"'");
+					} catch (Exception ex){
+						Call.onKick(((Player) e.builder).con, "You're not logged!");
+					}
+				});
+				t.start();
 			}
 		});
 
@@ -378,7 +426,7 @@ public class Main extends Plugin{
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-			EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
+			addtimeban(other.name, other.uuid, bantimeset);
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
@@ -402,14 +450,28 @@ public class Main extends Plugin{
 			}
 		});
 
-        handler.register("blacklist", "<nickname>", "Block special nickname.", arg -> {
-        	// TODO add remove option
-            String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
-            JSONTokener parser = new JSONTokener(db);
-            JSONArray object = new JSONArray(parser);
-            object.put(arg[0]);
-			Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
-			Global.log(""+arg[0]+" nickname is registered in blacklist.");
+        handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
+			if(arg[0].equals("add")){
+				String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				JSONTokener parser = new JSONTokener(db);
+				JSONArray object = new JSONArray(parser);
+				object.put(arg[1]);
+				Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Global.log("The "+arg[1]+" nickname has been added to the blacklist.");
+			} else if (arg[0].equals("remove")) {
+				String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				JSONTokener parser = new JSONTokener(db);
+				JSONArray object = new JSONArray(parser);
+				for (int i = 0; i < object.length(); i++) {
+					if (object.get(i).equals(arg[1])) {
+						object.remove(i);
+					}
+				}
+				Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Global.log(""+arg[1]+" nickname deleted from blacklist.");
+			} else {
+				Global.logw("Unknown parameter! Use blacklist <add/remove> <nickname>.");
+			}
         });
 
 		handler.register("allinfo", "<name>", "Show player information", (arg) -> {
@@ -484,7 +546,7 @@ public class Main extends Plugin{
 				int i = other.getTeam().ordinal()+1;
 				while(i != other.getTeam().ordinal()){
 					if (i >= Team.all.length) i = 0;
-					if(!Vars.state.teams.get(Team.all[i]).cores.isEmpty()){
+					if(!state.teams.get(Team.all[i]).cores.isEmpty()){
 						other.setTeam(Team.all[i]);
 						break;
 					}
@@ -503,7 +565,7 @@ public class Main extends Plugin{
 
 		handler.register("admin", "<name>","Set admin status to player", (arg) -> {
 			Thread t = new Thread(() -> {
-				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+				Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 				if(other == null){
 					Global.loge("Player not found!");
 				} else {
