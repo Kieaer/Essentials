@@ -50,7 +50,6 @@ import static io.anuke.mindustry.Vars.*;
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
-
 	//state.rules.bannedBlocks;
 
 	public Main() {
@@ -254,7 +253,7 @@ public class Main extends Plugin{
 		// Set if player build block event
 		Events.on(EventType.BlockBuildEndEvent.class, e -> {
 			if (!e.breaking && e.player != null && e.player.buildRequest() != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-				Thread t = new Thread(() -> {
+				Thread expthread = new Thread(() -> {
 					JSONObject db = getData(e.player.uuid);
 					String name = e.tile.block().name;
 					try{
@@ -283,9 +282,77 @@ public class Main extends Plugin{
 						Call.onKick(e.player.con, "You're not logged!");
 					}
 				});
-				t.start();
+				expthread.start();
+
+				if(e.tile.entity.block == Blocks.message){
+					Thread powerquery = new Thread(new Runnable() {
+						@Override
+						public synchronized void run() {
+							final boolean[] active = {true};
+							while(active[0]){
+								try {
+									final float[] c = new float[1];
+									final float[] p = new float[1];
+									final float[] t = new float[1];
+
+									Thread caculate = new Thread(() -> {
+										try {
+											c[0] = e.tile.getNearby(0).entity.power.graph.getPowerBalance() * 60;
+											p[0] = e.tile.getNearby(0).entity.power.graph.getPowerNeeded() * 60;
+											t[0] = e.tile.getNearby(0).entity.power.graph.getPowerProduced() * 60;
+										} catch (Exception e1) {
+											try {
+												c[0] = e.tile.getNearby(1).entity.power.graph.getPowerBalance() * 60;
+												p[0] = e.tile.getNearby(1).entity.power.graph.getPowerNeeded() * 60;
+												t[0] = e.tile.getNearby(1).entity.power.graph.getPowerProduced() * 60;
+											} catch (Exception e2) {
+												try {
+													c[0] = e.tile.getNearby(2).entity.power.graph.getPowerBalance() * 60;
+													p[0] = e.tile.getNearby(2).entity.power.graph.getPowerNeeded() * 60;
+													t[0] = e.tile.getNearby(2).entity.power.graph.getPowerProduced() * 60;
+												} catch (Exception e3) {
+													try {
+														c[0] = e.tile.getNearby(3).entity.power.graph.getPowerBalance() * 60;
+														p[0] = e.tile.getNearby(3).entity.power.graph.getPowerNeeded() * 60;
+														t[0] = e.tile.getNearby(3).entity.power.graph.getPowerProduced() * 60;
+													} catch (Exception e4) {
+														active[0] = false;
+													}
+												}
+											}
+										}
+										/*
+										double rand = Math.random();
+										float ranvalue = (float)(rand * 360)+1;
+										double rgbd = Math.random();
+										int rgb = (int)(rgbd * 255)+1;
+										Call.createLighting(100, Team.sharded, Color.cyan,-100 , e.tile.x*8, e.tile.y*8, 20, 100);
+										 */
+									});
+									caculate.start();
+									caculate.join();
+
+									if(active[0]){
+										String text = "Power status\n"+
+												"Current: [sky]"+Math.round(c[0])+"[]\n"+
+												"Using: [red]"+Math.round(p[0])+"[]\n"+
+												"Production: [green]"+Math.round(t[0])+"[]";
+										Call.setMessageBlockText(player, e.tile, text);
+										Thread.sleep(250);
+									}
+								}catch (Exception error){
+									Call.setMessageBlockText(player, e.tile,"Power node caculator dead!");
+									active[0] = false;
+									error.printStackTrace();
+								}
+							}
+						}
+					});
+					powerquery.start();
+				}
 			}
 		});
+
 
 		Events.on(EventType.BuildSelectEvent.class, e -> {
 			if(e.breaking && e.builder != null && e.builder.buildRequest() != null && e.builder.buildRequest().block != null && e.builder instanceof Player && !e.builder.buildRequest().block.name.matches(".*build.*")){
@@ -323,6 +390,16 @@ public class Main extends Plugin{
 		});
 
 		Events.on(EventType.UnitDestroyEvent.class, e -> {
+			if(e.unit instanceof Player){
+				Player player = (Player)e.unit;
+				if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+					JSONObject db = getData(player.uuid);
+					int deathcount = db.getInt("deathcount");
+					deathcount++;
+					writeData("UPDATE players SET killcount = '" + deathcount + "' WHERE uuid = '" + player.uuid + "'");
+				}
+			}
+
 			if(playerGroup != null && playerGroup.size() > 0) {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
@@ -1496,21 +1573,8 @@ public class Main extends Plugin{
 			}
 		});
 
-
         handler.<Player>register("powerstat", "messageblock", (arg, player) -> {
-			Global.log("getBatteryCapacity "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getBatteryCapacity());
-			Global.log("getBatteryStored "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getBatteryStored());
-			Global.log("getLastPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getLastPowerNeeded());
-			Global.log("getLastPowerProduced "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getLastPowerProduced());
-			Global.log("getPowerBalance "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerBalance());
-			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
-			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
-			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
-			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
-			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
-			Global.log("getPowerNeeded "+world.tileWorld(player.pointerX, player.pointerY).entity.power.graph.getPowerNeeded());
-            //Blocks.message = new MessageBlock("test");
-        });
 
+        });
 	}
 }

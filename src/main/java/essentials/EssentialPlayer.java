@@ -187,7 +187,6 @@ public class EssentialPlayer{
                 pstmt.setBoolean(30, false); // translate
                 pstmt.setBoolean(31, false); // crosschat
                 pstmt.setBoolean(32, false); // colornick
-
                 pstmt.setBoolean(33, true); // connected
                 pstmt.setString(34, accountid);
                 pstmt.setString(35, accountpw);
@@ -578,8 +577,8 @@ public class EssentialPlayer{
             Call.onPlayerDeath(player);
         } else {
             player.setTeam(Vars.defaultTeam);
+            Call.onPlayerDeath(player);
         }
-        Call.onPlayerDeath(player);
 
         // Show motd
         JSONObject db = getData(player.uuid);

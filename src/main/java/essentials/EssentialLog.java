@@ -100,25 +100,27 @@ public class EssentialLog {
         });
 
         Events.on(EventType.BuildSelectEvent.class, e -> {
-            if(e.breaking && e.builder != null && e.builder.buildRequest() != null && e.builder.buildRequest().block != null && e.builder instanceof Player && !e.builder.buildRequest().block.name.matches(".*build.*")){
-                Thread t = new Thread(() -> {
-                    LocalDateTime now = LocalDateTime.now();
-                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                    String nowString = "["+now.format(dateTimeFormatter)+"] ";
+            try{
+                if(e.breaking && e.builder != null && ((Player) e.builder).name != null && e.builder.buildRequest() != null && e.builder.buildRequest() != null && e.builder.buildRequest().block.name != null && !e.builder.buildRequest().block.name.matches(".*build.*")){
+                    Thread t = new Thread(() -> {
+                        LocalDateTime now = LocalDateTime.now();
+                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                        String nowString = "["+now.format(dateTimeFormatter)+"] ";
 
-                    Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
-                    Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
-                    try {
-                        String text = nowString+((Player)e.builder).name+" Player breaking " +e.builder.buildRequest().block.name+".\n";
-                        byte[] result = text.getBytes();
-                        Files.write(block, result, StandardOpenOption.APPEND);
-                        Files.write(total, result, StandardOpenOption.APPEND);
-                    }catch (IOException error) {
-                        error.printStackTrace();
-                    }
-                });
-                t.start();
-            }
+                        Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
+                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                        try {
+                            String text = nowString+((Player)e.builder).name+" Player break " +e.builder.buildRequest().block.name+".\n";
+                            byte[] result = text.getBytes();
+                            Files.write(block, result, StandardOpenOption.APPEND);
+                            Files.write(total, result, StandardOpenOption.APPEND);
+                        }catch (IOException error) {
+                            error.printStackTrace();
+                        }
+                    });
+                    t.start();
+                }
+            }catch (Exception ignored){}
         });
 
         Events.on(EventType.MechChangeEvent.class, e -> {
