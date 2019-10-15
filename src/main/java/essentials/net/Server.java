@@ -183,8 +183,10 @@ public class Server implements Runnable{
                     }
                 } else if (data.matches("GET / HTTP.*")) {
                     httpserver();
-                } else {
+                } else if (data.matches(".*\\[(.*)]:.*")){
                     chat(data, remoteip);
+                } else {
+                    Global.logw("Unknown data! - "+data);
                 }
             }
         } catch (Exception e){
