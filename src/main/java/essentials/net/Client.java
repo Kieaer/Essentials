@@ -105,7 +105,7 @@ public class Client{
             String message = br.readLine();
             Global.log(message);
         }catch (Exception e){
-            e.printStackTrace();
+            Global.loge(clienthost+":"+clientport+" server isn't response!");
         }
     }
 
