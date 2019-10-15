@@ -163,6 +163,7 @@ public class Server implements Runnable{
     @Override
     public void run() {
         try{
+            Thread.currentThread().setName("Essentials Server");
             serverSocket = new ServerSocket(serverport);
             while (active){
                 socket = serverSocket.accept();

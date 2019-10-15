@@ -22,6 +22,7 @@ import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.plugin.Plugin;
+import io.anuke.mindustry.world.Tile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -50,7 +51,8 @@ import static io.anuke.mindustry.Vars.*;
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
-	//state.rules.bannedBlocks;
+	public Tile tile;
+    //state.rules.bannedBlocks;
 
 	public Main() {
 		// Start config file
@@ -67,7 +69,7 @@ public class Main extends Plugin{
 
 	    // Start log
 		if(logging){
-			EssentialLog.main();
+            executorService.execute(new EssentialLog());
 		}
 
 		//EssentialAI.main();
@@ -116,7 +118,12 @@ public class Main extends Plugin{
 			}
 		});
 
-		Events.on(EventType.WorldLoadEvent.class, e -> EssentialTimer.playtime = "00:00.00");
+		Events.on(EventType.WorldLoadEvent.class, e -> {
+		    EssentialTimer.playtime = "00:00.00";
+
+            // Reset powernode information
+            Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString("[]");
+        });
 
         // Set if thorium rector explode
 		/*
@@ -285,70 +292,38 @@ public class Main extends Plugin{
 				expthread.start();
 
 				if(e.tile.entity.block == Blocks.message){
-					Thread powerquery = new Thread(new Runnable() {
-						@Override
-						public synchronized void run() {
-							final boolean[] active = {true};
-							while(active[0]){
-								try {
-									final float[] c = new float[1];
-									final float[] p = new float[1];
-									final float[] t = new float[1];
+				    int x = e.tile.x;
+				    int y = e.tile.y;
+				    int target_x;
+				    int target_y;
 
-									Thread caculate = new Thread(() -> {
-										try {
-											c[0] = e.tile.getNearby(0).entity.power.graph.getPowerBalance() * 60;
-											p[0] = e.tile.getNearby(0).entity.power.graph.getPowerNeeded() * 60;
-											t[0] = e.tile.getNearby(0).entity.power.graph.getPowerProduced() * 60;
-										} catch (Exception e1) {
-											try {
-												c[0] = e.tile.getNearby(1).entity.power.graph.getPowerBalance() * 60;
-												p[0] = e.tile.getNearby(1).entity.power.graph.getPowerNeeded() * 60;
-												t[0] = e.tile.getNearby(1).entity.power.graph.getPowerProduced() * 60;
-											} catch (Exception e2) {
-												try {
-													c[0] = e.tile.getNearby(2).entity.power.graph.getPowerBalance() * 60;
-													p[0] = e.tile.getNearby(2).entity.power.graph.getPowerNeeded() * 60;
-													t[0] = e.tile.getNearby(2).entity.power.graph.getPowerProduced() * 60;
-												} catch (Exception e3) {
-													try {
-														c[0] = e.tile.getNearby(3).entity.power.graph.getPowerBalance() * 60;
-														p[0] = e.tile.getNearby(3).entity.power.graph.getPowerNeeded() * 60;
-														t[0] = e.tile.getNearby(3).entity.power.graph.getPowerProduced() * 60;
-													} catch (Exception e4) {
-														active[0] = false;
-													}
-												}
-											}
-										}
-										/*
-										double rand = Math.random();
-										float ranvalue = (float)(rand * 360)+1;
-										double rgbd = Math.random();
-										int rgb = (int)(rgbd * 255)+1;
-										Call.createLighting(100, Team.sharded, Color.cyan,-100 , e.tile.x*8, e.tile.y*8, 20, 100);
-										 */
-									});
-									caculate.start();
-									caculate.join();
+				    if(e.tile.getNearby(0).entity != null){
+				        target_x = e.tile.getNearby(0).x;
+				        target_y = e.tile.getNearby(0).y;
+                    } else if(e.tile.getNearby(1).entity != null) {
+                        target_x = e.tile.getNearby(1).x;
+                        target_y = e.tile.getNearby(1).y;
+                    } else if(e.tile.getNearby(2).entity != null) {
+                        target_x = e.tile.getNearby(2).x;
+                        target_y = e.tile.getNearby(2).y;
+                    } else if(e.tile.getNearby(3).entity != null) {
+                        target_x = e.tile.getNearby(3).x;
+                        target_y = e.tile.getNearby(3).y;
+                    } else {
+				        return;
+                    }
 
-									if(active[0]){
-										String text = "Power status\n"+
-												"Current: [sky]"+Math.round(c[0])+"[]\n"+
-												"Using: [red]"+Math.round(p[0])+"[]\n"+
-												"Production: [green]"+Math.round(t[0])+"[]";
-										Call.setMessageBlockText(player, e.tile, text);
-										Thread.sleep(250);
-									}
-								}catch (Exception error){
-									Call.setMessageBlockText(player, e.tile,"Power node caculator dead!");
-									active[0] = false;
-									error.printStackTrace();
-								}
-							}
-						}
-					});
-					powerquery.start();
+                    String db = Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").readString();
+                    JSONTokener parser = new JSONTokener(db);
+                    JSONArray object;
+                    try{
+                        object = new JSONArray(parser);
+                    } catch (Exception ignored){
+                        e.player.sendMessage("[green][Essentials] [white]This messageblock is null!");
+                        return;
+                    }
+                    object.put(x+"/"+y+"/"+target_x+"/"+target_y);
+                    Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString(String.valueOf(object));
 				}
 			}
 		});
@@ -387,6 +362,36 @@ public class Main extends Plugin{
 				});
 				t.start();
 			}
+
+			/*
+			java.lang.ClassCastException: class io.anuke.mindustry.entities.type.base.Phantom cannot be cast to class io.anuke.mindustry.entities.type.Player (io.anuke.mindustry.entities.type.base.Phantom and io.anuke.mindustry.entities.type.Player are in unnamed module of loader 'app')
+                at essentials.Main.lambda$new$11(Main.java:369)
+                at io.anuke.arc.Events.lambda$fire$2(Events.java:26)
+                at io.anuke.arc.collection.Array.each(Array.java:174)
+                at io.anuke.arc.Events.fire(Events.java:26)
+                at io.anuke.arc.Events.fire(Events.java:21)
+                at io.anuke.mindustry.entities.traits.BuilderTrait.lambda$updateBuilding$0(BuilderTrait.java:84)
+                at io.anuke.arc.backends.headless.HeadlessApplication.executeRunnables(HeadlessApplication.java:126)
+                at io.anuke.arc.backends.headless.HeadlessApplication.mainLoop(HeadlessApplication.java:95)
+                at io.anuke.arc.backends.headless.HeadlessApplication$1.run(HeadlessApplication.java:64)
+			 */
+            if(e.breaking && e.builder != null && ((Player) e.builder).name != null && e.builder.buildRequest() != null && e.builder.buildRequest() != null && e.builder.buildRequest().block.name != null && !e.builder.buildRequest().block.name.matches(".*build.*")){
+                String db = Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").readString();
+                JSONTokener parser = new JSONTokener(db);
+                JSONArray object = new JSONArray(parser);
+                for(int i=0;i<object.length();i++) {
+                    String raw = object.getString(i);
+                    String[] data = raw.split("/");
+
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+
+                    if(x == e.tile.x && y == e.tile.y){
+                        object.remove(i);
+                        Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString(String.valueOf(object));
+                    }
+                }
+            }
 		});
 
 		Events.on(EventType.UnitDestroyEvent.class, e -> {
@@ -463,6 +468,35 @@ public class Main extends Plugin{
 			}
 		};
 
+/*
+		// Powerblock service
+		TimerTask powertimer = new TimerTask() {
+			@Override
+			public void run() {
+				Powerstat power = new Powerstat("");
+				power.update(tile);
+			}
+		};
+
+		Timer powertim = new Timer(true);
+		powertim.scheduleAtFixedRate(powertimer, 100, 100);
+*/
+
+/*
+		PowerBlock.active = true;
+		Thread powert = new PowerBlock();
+		powert.start();
+		*/
+/*
+		Powerstat power = new Powerstat("");
+		power.update(tile);
+*/
+		//Core.app.post(power.update());
+		/*
+		PowerBlock pw = new PowerBlock();
+		pw.update();
+		*/
+
 		if(loginenable){
 			Timer alerttimer = new Timer(true);
 			alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
@@ -496,7 +530,15 @@ public class Main extends Plugin{
 						err("[Essentials] Failure to disable Chat server thread!");
 					}
 				}
-			}
+
+				// Shutdown powerblock monitoring
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                executorService.shutdown();
+            }
 		});
 
         // Alert Realname event
@@ -508,7 +550,6 @@ public class Main extends Plugin{
         if(detectreactor){
 			Global.log("Thorium reactor overheat detect enabled.");
         }
-
 	}
 
 	@Override
@@ -1572,9 +1613,5 @@ public class Main extends Plugin{
 				player.sendMessage("This command can use only PvP mode!");
 			}
 		});
-
-        handler.<Player>register("powerstat", "messageblock", (arg, player) -> {
-
-        });
 	}
 }

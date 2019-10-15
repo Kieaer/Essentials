@@ -12,6 +12,7 @@ public class ColorNick {
 
     public static void main(Player player){
         Thread thread = new Thread(() -> {
+            Thread.currentThread().setName("Color nickname thread");
             JSONObject db = EssentialPlayer.getData(player.uuid);
             boolean connected = db.getBoolean("connected");
             while (connected) {

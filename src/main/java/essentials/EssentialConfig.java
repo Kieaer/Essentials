@@ -9,6 +9,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class EssentialConfig {
     public static String clienthost;
@@ -38,6 +40,8 @@ public class EssentialConfig {
     static String url;
     static String dbid;
     static String dbpw;
+
+    public static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
     public static void main() {
         Map<String, Object> obj;
@@ -431,6 +435,11 @@ public class EssentialConfig {
             String json = blacklist.toString();
             Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(json);
             Global.log("blacklist file created!");
+        }
+
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").exists()){
+            Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString("[]");
+            Global.log("powerblock file created!");
         }
 
         if (Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()){
