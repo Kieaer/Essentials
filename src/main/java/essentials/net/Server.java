@@ -79,8 +79,15 @@ public class Server implements Runnable{
             if(!remoteip.equals(EssentialConfig.clienthost)) {
                 Global.chatsw("[EssentialsChat] ALERT! This message isn't received from "+EssentialConfig.clienthost+"!!");
                 Global.chatsw("[EssentialsChat] Message is "+data);
-            } else {
-                Call.sendMessage("[#C77E36][RC] "+data);
+
+                for (int i = 0; i < playerGroup.size(); i++) {
+                    Player p = playerGroup.all().get(i);
+                    if(p.isAdmin){
+                        p.sendMessage("[#C77E36]["+remoteip+"][RC] "+data);
+                    } else {
+                        p.sendMessage("[#C77E36][RC] "+data);
+                    }
+                }
             }
         }catch (Exception e){
             e.printStackTrace();

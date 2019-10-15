@@ -75,11 +75,11 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [ ] ~~Anti coal in mech~~ (Impossible. No event.)
   - [x] Attackable timer
   - [x] Team switching
-- [ ] Ban share
-  - [ ] Auto share ban list to other clients
-  - [ ] ban to sent info
-- [ ] Cross-chat
-  - [ ] Show remote IP
+- [x] Ban share
+  - [x] Auto share ban list to other clients
+  - [x] ban to sent info
+- [x] Cross-chat
+  - [x] Show remote IP
 - [ ] Auto-translate
   - [ ] Fix translate not working
 - [x] Teleport
