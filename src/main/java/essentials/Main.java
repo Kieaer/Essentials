@@ -468,35 +468,6 @@ public class Main extends Plugin{
 			}
 		};
 
-/*
-		// Powerblock service
-		TimerTask powertimer = new TimerTask() {
-			@Override
-			public void run() {
-				Powerstat power = new Powerstat("");
-				power.update(tile);
-			}
-		};
-
-		Timer powertim = new Timer(true);
-		powertim.scheduleAtFixedRate(powertimer, 100, 100);
-*/
-
-/*
-		PowerBlock.active = true;
-		Thread powert = new PowerBlock();
-		powert.start();
-		*/
-/*
-		Powerstat power = new Powerstat("");
-		power.update(tile);
-*/
-		//Core.app.post(power.update());
-		/*
-		PowerBlock pw = new PowerBlock();
-		pw.update();
-		*/
-
 		if(loginenable){
 			Timer alerttimer = new Timer(true);
 			alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
@@ -530,13 +501,6 @@ public class Main extends Plugin{
 						err("[Essentials] Failure to disable Chat server thread!");
 					}
 				}
-
-				// Shutdown powerblock monitoring
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 executorService.shutdown();
             }
 		});
