@@ -40,7 +40,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | allinfo | &lt;player name&gt; | Show player information |
 | bansync |   | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
-| gameover |   | Destroy the world. |
+| team | &lt;player name&gt;  | Change player team |
 
 ## 4.0 version plans
 - [x] Use all network communications with a single port
@@ -80,8 +80,8 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
   - [x] ban to sent info
 - [x] Cross-chat
   - [x] Show remote IP
-- [ ] Auto-translate
-  - [ ] Fix translate not working
+- [x] Auto-translate
+  - [x] Fix translate not working
 - [x] Teleport
   - [x] Detect some nickname
 - [ ] Nickname prefix
