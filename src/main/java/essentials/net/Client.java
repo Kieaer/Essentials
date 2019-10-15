@@ -7,7 +7,7 @@ import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.net.Administration;
-import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONTokener;
 
 import java.io.*;
@@ -28,26 +28,13 @@ public class Client{
     private static void ban(BufferedWriter bw) {
         Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
         Global.banc("Ban list senting...");
+        JSONArray bandata = new JSONArray();
         for (Administration.PlayerInfo info : bans) {
-            try {
-                String msg = info.id+"|"+info.lastIP+"\n";
-                bw.write(msg);
-                bw.flush();
-
-                InputStream is = socket.getInputStream();
-                InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-                BufferedReader br = new BufferedReader(isr);
-                br.readLine();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            bandata.put(info.id+"|"+info.lastIP);
         }
-
-        try{
-            bw.write("Request");
+        try {
+            bw.write(bandata +"\n");
             bw.flush();
-
-            Global.banc("Ban list requested to "+clienthost);
 
             InputStream is = socket.getInputStream();
             InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
@@ -55,22 +42,23 @@ public class Client{
             String message = br.readLine();
 
             JSONTokener ar = new JSONTokener(message);
-            JSONObject jsob = new JSONObject(ar);
+            JSONArray result = new JSONArray(ar);
             Global.banc("Received data!");
 
-            for (int i = 0; i < jsob.length(); i++) {
-                JSONObject value1 = (JSONObject) jsob.get(String.valueOf(i));
-                String uuid = (String) value1.get("uuid");
-                String ip = (String) value1.get("ip");
-
-                netServer.admins.banPlayerID(uuid);
-                if(!ip.equals("<unknown>")){
-                    netServer.admins.banPlayerIP(ip);
+            for (int i = 0; i < result.length(); i++) {
+                String[] array = result.getString(i).split("\\|", -1);
+                if (array[0].length() == 12) {
+                    netServer.admins.banPlayerID(array[0]);
+                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                        netServer.admins.banPlayerIP(array[1]);
+                    }
+                }
+                if (array[0].equals("<unknown>")) {
+                    netServer.admins.banPlayerIP(array[1]);
                 }
             }
             Global.banc("Success!");
-            socket.close();
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -106,20 +94,42 @@ public class Client{
         }
     }
 
-    public static void main(String request, final String chat, final Player player) {
+    private static void ping(BufferedWriter bw){
         try{
+            bw.write("ping\n");
+            bw.flush();
+
+            InputStream is = socket.getInputStream();
+            InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
+            BufferedReader br = new BufferedReader(isr);
+            String message = br.readLine();
+            Global.log(message);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String request, String chat, Player player) {
+        try {
             InetAddress address = InetAddress.getByName(clienthost);
+            Global.log("Trying connect to "+address+":"+clientport+"...");
             socket = new Socket(address, clientport);
             OutputStream os = socket.getOutputStream();
             OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
             BufferedWriter bw = new BufferedWriter(osw);
 
-            if(request.equals("ban")){
-                ban(bw);
-            } else if(request.equals("chat")){
-                chat(bw, chat, player);
+            switch (request) {
+                case "ban":
+                    ban(bw);
+                    break;
+                case "chat":
+                    chat(bw, chat, player);
+                    break;
+                case "ping":
+                    ping(bw);
             }
-        } catch (Exception e){
+            socket.close();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

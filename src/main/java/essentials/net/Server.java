@@ -1,5 +1,6 @@
 package essentials.net;
 
+import essentials.EssentialConfig;
 import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
@@ -14,6 +15,7 @@ import io.anuke.mindustry.type.Item;
 import io.anuke.mindustry.type.ItemType;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -22,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Random;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialTimer.playtime;
@@ -34,53 +37,35 @@ public class Server implements Runnable{
     public static Player player;
 
     private static void ban(String data, String remoteip){
-        try{
-            if(data.length() < 9){
-                Global.bans("Ban list requested from "+remoteip);
-                JSONObject json = new JSONObject();
-                Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
-                int i=0;
-                for (Administration.PlayerInfo info : bans) {
-                    JSONObject data1 = new JSONObject();
-                    data1.put("uuid", info.id);
-                    data1.put("ip", info.lastIP);
-
-                    while(i<json.length()){
-                        i++;
+        try {
+            JSONTokener convert = new JSONTokener(data);
+            JSONArray bandata = new JSONArray(convert);
+            Global.bans("Ban list sync received from " + remoteip +".");
+            for (int i = 0; i < bandata.length(); i++) {
+                String[] array = bandata.getString(i).split("\\|", -1);
+                if (array[0].length() == 11) {
+                    netServer.admins.banPlayerID(array[0]);
+                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                        netServer.admins.banPlayerIP(array[1]);
                     }
-                    json.put(String.valueOf(i), data1);
                 }
-
-                OutputStream os = socket.getOutputStream();
-                OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-                BufferedWriter bw = new BufferedWriter(osw);
-                bw.write(json +"\n");
-                bw.flush();
-                Global.bans("Ban list sented to "+remoteip);
-            } else {
-                // 11 length UUID+split array 1 length+max 12 length/dot IP = 15
-                if(data.length() > 28){
-                    Global.bansw("Unknown data received from "+remoteip+"!");
-                } else {
-                    String[] array = data.split("\\|", -1);
-
-                    //Global.bans("[EssentialsBan] "+array[0]+"/"+array[1]+" data received from "+remoteip);
-                    if(array[0].length() == 11) {
-                        netServer.admins.banPlayerID(array[0]);
-                        if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                            netServer.admins.banPlayerIP(array[1]);
-                        }
-                    }
-
-                    String returnMessage = "Hello "+remoteip+"! Your data is received!\n";
-
-                    OutputStream os = socket.getOutputStream();
-                    OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-                    BufferedWriter bw = new BufferedWriter(osw);
-                    bw.write(returnMessage);
-                    bw.flush();
+                if (array[0].equals("<unknown>")) {
+                    netServer.admins.banPlayerIP(array[1]);
                 }
             }
+
+            Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
+            JSONArray data1 = new JSONArray();
+            for (Administration.PlayerInfo info : bans) {
+                data1.put(info.id + "|" + info.lastIP);
+            }
+
+            OutputStream os = socket.getOutputStream();
+            OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+            BufferedWriter bw = new BufferedWriter(osw);
+            bw.write(data1+"\n");
+            bw.flush();
+            Global.bans("Data sented to " + remoteip + "!");
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -91,14 +76,12 @@ public class Server implements Runnable{
             String msg = data.replaceAll("\n", "");
             Global.chats("Received message from "+remoteip+": "+msg);
             Call.sendMessage("[#C77E36][RC] "+msg);
-            /*
             if(!remoteip.equals(EssentialConfig.clienthost)) {
                 Global.chatsw("[EssentialsChat] ALERT! This message isn't received from "+EssentialConfig.clienthost+"!!");
                 Global.chatsw("[EssentialsChat] Message is "+data);
             } else {
                 Call.sendMessage("[#C77E36][RC] "+data);
             }
-            */
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -154,8 +137,23 @@ public class Server implements Runnable{
                 bw.write("<TITLE>403 Forbidden</TITLE>");
                 bw.write("<p>This server isn't allowed query!</p>");
             }
-            bw.close();
+            bw.flush();
         } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private static void ping(String remoteip){
+        try{
+            String[] msg = {"Hi "+remoteip+"! Your connection is successful!","Hello "+remoteip+"! I'm server!","Welcome to the server "+remoteip+"!"};
+            int rnd = new Random().nextInt(msg.length);
+            OutputStream os = socket.getOutputStream();
+            OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+            BufferedWriter bw = new BufferedWriter(osw);
+            bw.write(msg[rnd]+"\n");
+            bw.flush();
+            Global.log(remoteip+" connected to this server.");
+        }catch (Exception e){
             e.printStackTrace();
         }
     }
@@ -177,16 +175,17 @@ public class Server implements Runnable{
                 if(data == null){
                     return;
                 }
-                if(data.matches("(.*)\\|(.*)")){
-                    if(banshare) {
-                        ban(data, remoteip);
-                    }
-                } else if (data.matches("GET / HTTP.*")) {
+
+                if (data.matches("GET / HTTP.*")) {
                     httpserver();
                 } else if (data.matches(".*\\[(.*)]:.*")){
                     chat(data, remoteip);
+                } else if (data.matches("ping")) {
+                    ping(remoteip);
+                } else if(banshare){
+                    ban(data, remoteip);
                 } else {
-                    Global.logw("Unknown data! - "+data);
+                    Global.logw("Unknown data! - " + data);
                 }
             }
         } catch (Exception e){

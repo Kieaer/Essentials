@@ -58,6 +58,18 @@ public class Main extends Plugin{
 		// Start config file
 		EssentialConfig.main();
 
+		// Client connection test
+		Thread servercheck = new Thread(() -> {
+			try{
+				Global.log("EssentialsClient is attempting to connect to the server.");
+				Thread.sleep(1500);
+				Client.main("ping", null, null);
+			}catch (Exception e){
+				e.printStackTrace();
+			}
+		});
+		servercheck.start();
+
 		// Make player DB
 		createNewDataFile();
 
@@ -614,8 +626,10 @@ public class Main extends Plugin{
 				JSONObject object = new JSONObject(parser);
 				object.put("banall", "true");
 				Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
-				Thread banthread = new Thread(() -> Client.main("ban", "", null));
+				Thread banthread = new Thread(() -> Client.main("ban", null,null));
 				banthread.start();
+			} else {
+				Global.log("Ban sharing has been disabled!");
 			}
 		});
 
@@ -670,6 +684,78 @@ public class Main extends Plugin{
 				}
 			});
 			t.start();
+		});
+
+		// Override ban command
+		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
+			switch (arg[0]) {
+				case "id":
+					netServer.admins.banPlayerID(arg[1]);
+					if(banshare){
+						try{
+							String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+							JSONTokener parser = new JSONTokener(db);
+							JSONObject object = new JSONObject(parser);
+							object.put("banall", "true");
+							Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+							Thread banthread = new Thread(() -> Client.main("ban", null,null));
+							banthread.start();
+						}catch (Exception e){
+							e.printStackTrace();
+						}
+					}
+					Global.log("Banned.");
+					break;
+				case "name":
+					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+					if (target != null) {
+						netServer.admins.banPlayer(target.uuid);
+						if(banshare){
+							try{
+								String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+								JSONTokener parser = new JSONTokener(db);
+								JSONObject object = new JSONObject(parser);
+								object.put("banall", "true");
+								Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+								Thread banthread = new Thread(() -> Client.main("ban", null,null));
+								banthread.start();
+							}catch (Exception e){
+								e.printStackTrace();
+							}
+						}
+						Global.log("Banned.");
+					} else {
+						err("No matches found.");
+					}
+					break;
+				case "ip":
+					netServer.admins.banPlayerIP(arg[1]);
+					if(banshare){
+						try{
+							String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+							JSONTokener parser = new JSONTokener(db);
+							JSONObject object = new JSONObject(parser);
+							object.put("banall", "true");
+							Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+							Thread banthread = new Thread(() -> Client.main("ban", null,null));
+							banthread.start();
+						}catch (Exception e){
+							e.printStackTrace();
+						}
+					}
+					Global.log("Banned.");
+					break;
+				default:
+					err("Invalid type.");
+					break;
+			}
+
+			for(Player player : playerGroup.all()){
+				if(netServer.admins.isIDBanned(player.uuid)){
+					Call.sendMessage("[scarlet] " + player.name + " has been banned.");
+					player.con.kick(KickReason.banned);
+				}
+			}
 		});
 	}
 
