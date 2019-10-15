@@ -24,6 +24,10 @@ import static essentials.EssentialPlayer.getData;
 public class EssentialLog implements Runnable{
     @Override
     public void run() {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+        String nowString = "[" + now.format(dateTimeFormatter) + "] ";
+
         Thread.currentThread().setName("Logging thread");
 
         if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log").exists()) {
@@ -44,10 +48,6 @@ public class EssentialLog implements Runnable{
         }
 
         Events.on(EventType.PlayerChatEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "[" + now.format(dateTimeFormatter) + "] ";
-
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
@@ -61,9 +61,6 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.WorldLoadEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "[" + now.format(dateTimeFormatter) + "] ";
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
                 String text = nowString + "World loaded!\n";
@@ -77,10 +74,6 @@ public class EssentialLog implements Runnable{
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             if(!e.breaking && e.tile.entity() != null){
                 Thread t = new Thread(() -> {
-                    LocalDateTime now = LocalDateTime.now();
-                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                    String nowString = "["+now.format(dateTimeFormatter)+"] ";
-
                     Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
                     Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
                     try {
@@ -100,10 +93,6 @@ public class EssentialLog implements Runnable{
             try{
                 if(e.breaking && e.builder != null && ((Player) e.builder).name != null && e.builder.buildRequest() != null && e.builder.buildRequest() != null && e.builder.buildRequest().block.name != null && !e.builder.buildRequest().block.name.matches(".*build.*")){
                     Thread t = new Thread(() -> {
-                        LocalDateTime now = LocalDateTime.now();
-                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                        String nowString = "["+now.format(dateTimeFormatter)+"] ";
-
                         Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
                         Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
                         try {
@@ -121,10 +110,6 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.MechChangeEvent.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "[" + now.format(dateTimeFormatter) + "] ";
-
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
@@ -138,10 +123,6 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.PlayerJoin.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "[" + now.format(dateTimeFormatter) + "] ";
-
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             JSONObject db = getData(e.player.uuid);
@@ -184,10 +165,6 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.PlayerConnect.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "[" + now.format(dateTimeFormatter) + "] ";
-
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
@@ -202,15 +179,25 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.PlayerLeave.class, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-            String nowString = "[" + now.format(dateTimeFormatter) + "] ";
-
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
                 String text = nowString + e.player.name + "/" + e.player.uuid + "/" + ip + " Player disconnected.\n";
+                byte[] result = text.getBytes();
+                Files.write(path, result, StandardOpenOption.APPEND);
+                Files.write(total, result, StandardOpenOption.APPEND);
+            } catch (IOException error) {
+                error.printStackTrace();
+            }
+        });
+
+        Events.on(EventType.DepositEvent.class, e -> {
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            try {
+                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+                String text = nowString + e.player.name+" Player has moved item "+e.player.item().item.name+" to "+e.tile.block().name+".\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);

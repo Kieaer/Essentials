@@ -142,7 +142,7 @@ public class EssentialPlayer{
         }
     }
 
-	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
+	public static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
@@ -207,7 +207,7 @@ public class EssentialPlayer{
             String sql = "SELECT * FROM players WHERE uuid='"+uuid+"'";
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
-            if(rs.next()){
+            while(rs.next()){
                 json.put("id", rs.getInt("id"));
                 json.put("name", rs.getString("name"));
                 json.put("uuid", rs.getString("uuid"));
@@ -523,6 +523,110 @@ public class EssentialPlayer{
         return registerresult;
     }
 
+    static boolean register(Player player){
+        Thread db = new Thread(() -> {
+            Thread.currentThread().setName("DB Register Thread");
+            try {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                String nowString = now.format(dateTimeFormatter);
+                String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+
+                boolean isLocal = player.isLocal;
+
+                // Geolocation
+                String geo;
+                String geocode;
+                String lang;
+                Pattern p = null;
+                try {
+                    p = Pattern.compile("(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                assert p != null;
+                Matcher m = p.matcher(ip);
+
+                if (m.find()) {
+                    isLocal = true;
+                }
+                if (isLocal) {
+                    geo = "Local IP";
+                    geocode = "LC";
+                    lang = "en";
+                } else {
+                    try {
+                        String apiURL = "http://ipapi.co/" + ip + "/json";
+                        URL url = new URL(apiURL);
+                        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                        con.setReadTimeout(5000);
+                        con.setRequestMethod("POST");
+
+                        boolean redirect = false;
+
+                        int status = con.getResponseCode();
+                        if (status != HttpURLConnection.HTTP_OK) {
+                            if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+                                redirect = true;
+                        }
+
+                        if (redirect) {
+                            String newUrl = con.getHeaderField("Location");
+                            String cookies = con.getHeaderField("Set-Cookie");
+
+                            con = (HttpURLConnection) new URL(newUrl).openConnection();
+                            con.setRequestProperty("Cookie", cookies);
+                        }
+
+                        BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                        String inputLine;
+                        StringBuilder response = new StringBuilder();
+                        while ((inputLine = br.readLine()) != null) {
+                            response.append(inputLine);
+                        }
+                        br.close();
+                        JSONTokener parser = new JSONTokener(response.toString());
+                        JSONObject result = new JSONObject(parser);
+
+                        if (result.has("reserved")) {
+                            geo = "Local IP";
+                            geocode = "LC";
+                            lang = "en";
+                        } else {
+                            geo = result.getString("country_name");
+                            geocode = result.getString("country");
+                            lang = result.getString("languages").substring(0, 1);
+                        }
+                    } catch (IOException e) {
+                        geo = "invalid";
+                        geocode = "invalid";
+                        lang = "en";
+                    }
+                }
+                // Geolocation end
+
+                int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
+                int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
+
+                player.sendMessage("[green]Your nickname is now [white]" + player.name + ".");
+
+                try {
+                    createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, "blank", "blank");
+                    registerresult = true;
+                } catch (Exception e) {
+                    registerresult = false;
+                    Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n" + Arrays.toString(e.getStackTrace()));
+                    player.con.kick("You have been kicked due to a plugin error.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        db.start();
+        try{db.join();}catch (Exception e){e.printStackTrace();}
+        return registerresult;
+    }
+
     static boolean login(Player player, String id, String pw) {
         Thread db = new Thread(() -> {
             try{
@@ -580,9 +684,12 @@ public class EssentialPlayer{
             Call.onPlayerDeath(player);
         }
 
-        // Show motd
         JSONObject db = getData(player.uuid);
+        if(!db.getBoolean("connected")){
+            Global.loge("ERROR!");
+        }
 
+        // Show motd
         String motd;
         if(db.getString("language").equals("KR")){
             motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();

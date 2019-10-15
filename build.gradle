@@ -19,10 +19,10 @@ ext{
 //compileJava {options.encoding = "UTF-8"}
 
 dependencies{
-    //compileOnly "com.github.Anuken.Arc:arc-core:$targetversion"
-    //compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
-    compile files('C:/Users/cloud/Desktop/Mindustry-96/core/build/libs/core-release.jar')
-    compile files('C:/Users/cloud/Documents/Github/libs/arc-core-v95.jar')
+    compileOnly "com.github.Anuken.Arc:arc-core:$targetversion"
+    compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
+    //compile files('C:/Users/cloud/Desktop/Mindustry-96/core/build/libs/core-release.jar')
+    //compile files('C:/Users/cloud/Documents/Github/libs/arc-core-v95.jar')
 
     compile group: 'org.json', name: 'json', version: '20190722'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.0.pr2'
@@ -34,6 +34,7 @@ dependencies{
     compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.0'
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
     compile group: 'net.java.dev.jna', name: 'jna', version: '5.4.0'
+    compile 'com.google.cloud:google-cloud-translate:1.75.0'
 
     //compile group: 'org.tensorflow', name:'tensorflow', version: '1.13.1'
 }

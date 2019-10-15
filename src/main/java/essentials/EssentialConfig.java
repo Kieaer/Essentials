@@ -40,6 +40,7 @@ public class EssentialConfig {
     static String url;
     static String dbid;
     static String dbpw;
+    public static String keyfile;
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
@@ -102,7 +103,12 @@ public class EssentialConfig {
                     "dbpw: \n\n" +
 
                     "# Login features setting\n" +
-                    "loginenable: true";
+                    "loginenable: true\n\n" +
+
+                    "# Google translate API Key\n" +
+                    "# Make sure that the file is in plugins/Essentials\n" +
+                    "# Example - plugins/Essentials/test.json\n" +
+                    "keyfile: mykey";
 
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -446,65 +452,181 @@ public class EssentialConfig {
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").readString()));
             // Config version
-            version = Integer.parseInt(String.valueOf(obj.get("version")));
-
-            language = (String) obj.get("language");
-
-            serverenable = Boolean.parseBoolean(String.valueOf(obj.get("server-enable")));
-            serverport = Integer.parseInt(String.valueOf(obj.get("server-port")));
-
-            clientenable = Boolean.parseBoolean(String.valueOf(obj.get("client-enable")));
-            clienthost = (String) obj.get("client-host");
-            clientport = Integer.parseInt(String.valueOf(obj.get("client-port")));
-
-            realname = Boolean.parseBoolean(String.valueOf(obj.get("realname")));
-
-            cupdatei = Integer.parseInt(String.valueOf(obj.get("colornick update interval")));
-
-            detectreactor = Boolean.parseBoolean(String.valueOf(obj.get("detectreactor")));
-
-            explimit = Boolean.parseBoolean(String.valueOf(obj.get("explimit")));
-            basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
-            exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
-            levelupalarm = Boolean.parseBoolean(String.valueOf(obj.get("levelupalarm")));
-
-            banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
-
-            query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
-
-            antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
-
-            enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
-
-            logging = Boolean.parseBoolean(String.valueOf(obj.get("logging")));
-
-            update = Boolean.parseBoolean(String.valueOf(obj.get("update")));
-
-            sqlite = Boolean.parseBoolean(String.valueOf(obj.get("sqlite")));
-            if(sqlite){
-                url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+            if(obj.get("version") != null){
+                version = Integer.parseInt(String.valueOf(obj.get("version")));
             } else {
-                dburl = (String) obj.get("dburl");
-                url = "jdbc:"+dburl;
-            }
-            dbid = (String) obj.get("dbid");
-            dbpw = (String) obj.get("dbpw");
-
-            loginenable = Boolean.parseBoolean(String.valueOf(obj.get("loginenable")));
-
-            try{
-                SimpleDateFormat format = new SimpleDateFormat("mm.ss");
-                Calendar cal;
-                Date d = format.parse(String.valueOf(obj.get("antirushtime")));
-                cal = Calendar.getInstance();
-                cal.setTime(d);
-                antirushtime = cal;
-            } catch (Exception e){
-                e.printStackTrace();
-                Global.loge("Invalid settings! - antirushtime");
-                Global.loge("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
+                version = 3;
             }
 
+            if(obj.get("language") != null){
+                language = (String) obj.get("language");
+            } else {
+                language = "en";
+            }
+
+            if(obj.get("server-enable") != null){
+                serverenable = Boolean.parseBoolean(String.valueOf(obj.get("server-enable")));
+            } else {
+                serverenable = false;
+            }
+            if(obj.get("server-port") != null){
+                serverport = Integer.parseInt(String.valueOf(obj.get("server-port")));
+            } else {
+                serverport = 25000;
+            }
+
+            if(obj.get("client-enable") != null){
+                clientenable = Boolean.parseBoolean(String.valueOf(obj.get("client-enable")));
+            } else {
+                clientenable = false;
+            }
+            if(obj.get("client-port") != null){
+                clientport = Integer.parseInt(String.valueOf(obj.get("client-port")));
+            } else {
+                clientport = 20000;
+            }
+            if(obj.get("client-enable") != null){
+                clienthost = (String) obj.get("client-host");
+            } else {
+                clienthost = "mindustry.kr";
+            }
+
+            if(obj.get("realname") != null){
+                realname = Boolean.parseBoolean(String.valueOf(obj.get("realname")));
+            } else {
+                realname = true;
+            }
+
+            if(obj.get("colornick update interval") != null){
+                cupdatei = Integer.parseInt(String.valueOf(obj.get("colornick update interval")));
+            } else {
+                cupdatei = 1000;
+            }
+
+            if(obj.get("detectreactor") != null){
+                detectreactor = Boolean.parseBoolean(String.valueOf(obj.get("detectreactor")));
+            } else {
+                detectreactor = true;
+            }
+
+            if(obj.get("explimit") != null){
+                explimit = Boolean.parseBoolean(String.valueOf(obj.get("explimit")));
+            } else {
+                explimit = false;
+            }
+            if(obj.get("basexp") != null){
+                basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
+            } else {
+                basexp = 500;
+            }
+            if(obj.get("exponent") != null){
+                exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
+            } else {
+                exponent = 1.12f;
+            }
+            if(obj.get("levelupalarm") != null){
+                levelupalarm = Boolean.parseBoolean(String.valueOf(obj.get("levelupalarm")));
+            } else {
+                levelupalarm = false;
+            }
+
+            if(obj.get("banshare") != null){
+                banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
+            } else {
+                banshare = false;
+            }
+
+            if(obj.get("query") != null){
+                query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
+            } else {
+                query = false;
+            }
+
+            if(obj.get("antivpn") != null){
+                antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
+            } else {
+                antivpn = true;
+            }
+
+            if(obj.get("enableantirush") != null){
+                enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
+            } else {
+                enableantirush = true;
+            }
+            if(obj.get("antirushtime") != null){
+                try{
+                    SimpleDateFormat format = new SimpleDateFormat("mm.ss");
+                    Calendar cal;
+                    Date d = format.parse(String.valueOf(obj.get("antirushtime")));
+                    cal = Calendar.getInstance();
+                    cal.setTime(d);
+                    antirushtime = cal;
+                } catch (Exception e){
+                    e.printStackTrace();
+                    Global.loge("Invalid settings! - antirushtime");
+                    Global.loge("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
+                }
+            } else {
+                try{
+                    SimpleDateFormat format = new SimpleDateFormat("mm.ss");
+                    Calendar cal;
+                    Date d = format.parse("05.00");
+                    cal = Calendar.getInstance();
+                    cal.setTime(d);
+                    antirushtime = cal;
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+
+            if(obj.get("update") != null){
+                update = Boolean.parseBoolean(String.valueOf(obj.get("update")));
+            } else {
+                update = true;
+            }
+
+            if(obj.get("logging") != null){
+                logging = Boolean.parseBoolean(String.valueOf(obj.get("logging")));
+            } else {
+                logging = false;
+            }
+
+            if(obj.get("sqlite") != null){
+                sqlite = Boolean.parseBoolean(String.valueOf(obj.get("sqlite")));
+                if(sqlite){
+                    url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+                } else {
+                    dburl = (String) obj.get("dburl");
+                    url = "jdbc:"+dburl;
+                }
+            } else {
+                sqlite = true;
+                url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+            }
+
+            if(obj.get("dbid") != null){
+                dbid = (String) obj.get("dbid");
+            } else {
+                dbid = "";
+            }
+
+            if(obj.get("dbpw") != null){
+                dbpw = (String) obj.get("dbpw");
+            } else {
+                dbpw = "";
+            }
+
+            if(obj.get("loginenable") != null){
+                loginenable = Boolean.parseBoolean(String.valueOf(obj.get("loginenable")));
+            } else {
+                loginenable = true;
+            }
+
+            if(obj.get("keyfile") != null){
+                keyfile = (String) obj.get("keyfile");
+            } else {
+                keyfile = "mykey";
+            }
             Global.log("config file loaded!");
         }
 
@@ -568,7 +690,12 @@ public class EssentialConfig {
                     "dbpw: "+dbpw+"\n\n" +
 
                     "# Login features setting\n" +
-                    "loginenable: "+loginenable;
+                    "loginenable: "+loginenable+"\n\n" +
+
+                    "# Google translate API Key\n" +
+                    "# Make sure that the file is in plugins/Essentials\n" +
+                    "# Example - plugins/Essentials/test.json\n" +
+                    "keyfile: "+keyfile;
             Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }

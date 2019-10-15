@@ -194,6 +194,7 @@ public class Main extends Plugin{
 					Call.onInfoMessage(e.player.con, message);
 				}
 			} else {
+        		EssentialPlayer.register(e.player);
 				EssentialPlayer.load(e.player, null);
 			}
 
@@ -303,6 +304,7 @@ public class Main extends Plugin{
 				});
 				expthread.start();
 
+				/*
 				if(e.tile.entity.block == Blocks.message){
 				    int x = e.tile.x;
 				    int y = e.tile.y;
@@ -337,6 +339,7 @@ public class Main extends Plugin{
                     object.put(x+"/"+y+"/"+target_x+"/"+target_y);
                     Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString(String.valueOf(object));
 				}
+				 */
 			}
 		});
 
@@ -386,7 +389,7 @@ public class Main extends Plugin{
                 at io.anuke.arc.backends.headless.HeadlessApplication.executeRunnables(HeadlessApplication.java:126)
                 at io.anuke.arc.backends.headless.HeadlessApplication.mainLoop(HeadlessApplication.java:95)
                 at io.anuke.arc.backends.headless.HeadlessApplication$1.run(HeadlessApplication.java:64)
-			 */
+
             if(e.breaking && e.builder != null && ((Player) e.builder).name != null && e.builder.buildRequest() != null && e.builder.buildRequest() != null && e.builder.buildRequest().block.name != null && !e.builder.buildRequest().block.name.matches(".*build.*")){
                 String db = Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").readString();
                 JSONTokener parser = new JSONTokener(db);
@@ -404,13 +407,14 @@ public class Main extends Plugin{
                     }
                 }
             }
+			 */
 		});
 
 		Events.on(EventType.UnitDestroyEvent.class, e -> {
 			if(e.unit instanceof Player){
 				Player player = (Player)e.unit;
-				if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-					JSONObject db = getData(player.uuid);
+                JSONObject db = getData(player.uuid);
+				if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty() && !db.isNull("deathcount")){
 					int deathcount = db.getInt("deathcount");
 					deathcount++;
 					writeData("UPDATE players SET killcount = '" + deathcount + "' WHERE uuid = '" + player.uuid + "'");
@@ -434,27 +438,7 @@ public class Main extends Plugin{
                 }
             }
 		});
-
-		/*
-		Events.on(EventType.DepositEvent.class, e -> {
-			e.player.sendMessage("DepositEvent done!");
-			/*
-			for (Player p : playerGroup.all()) {
-				if(p.item().item.flammability > 1){
-					if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-						JSONObject db = getData(p.uuid);
-						if(db.getString("language").equals("KR")){
-							player.sendMessage(EssentialBundle.load(true, "flammable-disabled"));
-						} else {
-							player.sendMessage(EssentialBundle.load(false, "flammable-disabled"));
-						}
-					}
-				}
-			}
-
-
-		});
-
+/*
 		Events.on(EventType.WithdrawEvent.class, e -> {
 		//	e.player.sendMessage("WithdrawEvent done!");
 		});
@@ -1107,7 +1091,7 @@ public class Main extends Plugin{
 				case "gameover":
 					if (!this.voteactive) {
 						this.voteactive = true;
-						vote.add(player.name);
+						vote.add(player.uuid);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
 						for (int i = 0; i < playerGroup.size(); i++) {
@@ -1169,7 +1153,7 @@ public class Main extends Plugin{
 									}
 								}
 								Thread.sleep(60000);
-								if (current >= require) {
+								if (current > require-1) {
 									Call.sendMessage("[green][Essentials] Gameover vote passed!");
 									Events.fire(new EventType.GameOverEvent(Team.sharded));
 									Thread.sleep(15000);
@@ -1194,7 +1178,7 @@ public class Main extends Plugin{
 				case "skipwave":
 					if (!this.voteactive) {
 						this.voteactive = true;
-						vote.add(player.name);
+						vote.add(player.uuid);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
 						for (int i = 0; i < playerGroup.size(); i++) {
@@ -1256,7 +1240,7 @@ public class Main extends Plugin{
 									}
 								}
 								Thread.sleep(60000);
-								if (current >= require) {
+								if (current > require-1) {
 									assert playerGroup != null;
 									for (int i = 0; i < playerGroup.size(); i++) {
 										Player others = playerGroup.all().get(i);
@@ -1292,7 +1276,7 @@ public class Main extends Plugin{
 				case "kick":
 					if (!this.voteactive) {
 						this.voteactive = true;
-						vote.add(player.name);
+						vote.add(player.uuid);
 						int current = vote.size();
 						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
 						Player target = playerGroup.find(p -> p.name.equals(arg[1]));
@@ -1367,7 +1351,7 @@ public class Main extends Plugin{
 									}
 								}
 								Thread.sleep(60000);
-								if (current >= require) {
+								if (current > require-1) {
 									Call.sendMessage("[green][Essentials] Player kick vote success!");
 									EssentialPlayer.addtimeban(target.name, target.uuid, 4);
 									Global.log(target.name+" / "+target.uuid+" Player has banned due to voting. "+current+"/"+require);
@@ -1415,10 +1399,10 @@ public class Main extends Plugin{
 					break;
 				case "y":
 					if (this.voteactive) {
-						if (vote.contains(player.name)) {
+						if (vote.contains(player.uuid)) {
 							player.sendMessage("[green][Essentials][scarlet] You're already voted!");
 						} else {
-							vote.add(player.name);
+							vote.add(player.uuid);
 							int current = vote.size();
 							int require = (int) Math.ceil(0.5 * Vars.playerGroup.size()) - current;
 							Call.sendMessage("[green][Essentials] "+current+" players voted. need "+require+" more players.");
@@ -1545,11 +1529,9 @@ public class Main extends Plugin{
 				if(db.getString("language").equals("KR")){
 					player.sendMessage(EssentialBundle.load(true, "translate1"));
 					player.sendMessage(EssentialBundle.load(true, "translate2"));
-					player.sendMessage(EssentialBundle.load(true, "translate3"));
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "translate1"));
 					player.sendMessage(EssentialBundle.load(false, "translate2"));
-					player.sendMessage(EssentialBundle.load(false, "translate3"));
 				}
 			} else {
 				set = 0;
