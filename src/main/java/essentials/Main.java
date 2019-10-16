@@ -149,6 +149,7 @@ public class Main extends Plugin{
         });
         */
 
+		/*
         Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
 			if(detectreactor){
 				Call.sendMessage("[scarlet]= WARNING WARNING WARNING =");
@@ -156,6 +157,7 @@ public class Main extends Plugin{
 				Global.log("Thorium Reactor explode detected!!");
 			}
 		});
+		 */
 
 		// Set if player join event
 		/*
@@ -350,7 +352,7 @@ public class Main extends Plugin{
 					JSONObject db = getData(((Player)e.builder).uuid);
 					String name = e.tile.block().name;
 					try{
-						int data = db.getInt("placecount");
+						int data = db.getInt("breakcount");
 						int exp = db.getInt("exp");
 
 						Yaml yaml = new Yaml();
@@ -364,7 +366,7 @@ public class Main extends Plugin{
 						int newexp = exp+blockexp;
 						data++;
 
-						writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+((Player)e.builder).uuid+"'");
+						writeData("UPDATE players SET breakcount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+((Player)e.builder).uuid+"'");
 
                         if(e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor){
                             int reactorcount = db.getInt("reactorcount");
@@ -498,6 +500,7 @@ public class Main extends Plugin{
 					}
 				}
                 executorService.shutdown();
+				//reactormonitor.interrupt();
             }
 		});
 
