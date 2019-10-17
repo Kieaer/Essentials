@@ -13,7 +13,6 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
-import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -23,6 +22,7 @@ import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
+import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.world.Tile;
 import org.json.JSONArray;
@@ -59,8 +59,6 @@ public class Main extends Plugin{
     //state.rules.bannedBlocks;
 
 	public Main() {
-		NetClient.hidden = true;
-
 		// Start config file
 		EssentialConfig.main();
 
@@ -114,6 +112,13 @@ public class Main extends Plugin{
 
 		// Essentials EPG Features
         EssentialEPG.main();
+
+		// If desync (May work)
+		Events.on(ValidateException.class, e -> {
+			Call.onInfoMessage(e.player.con, "You're desynced! The server will send data again.");
+			Call.onWorldDataBegin(e.player.con);
+			netServer.sendWorldData(e.player);
+		});
 
 		Events.on(EventType.GameOverEvent.class, e -> {
 			if(Vars.state.rules.pvp){
@@ -265,6 +270,7 @@ public class Main extends Plugin{
 		// Set if player chat event
 		Events.on(EventType.PlayerChatEvent.class, e -> {
 			Call.sendMessage(e.message, "prefix/"+colorizeName(player.id, player.name)+"/suffix", e.player);
+
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
 			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
