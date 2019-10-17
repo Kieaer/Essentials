@@ -7,6 +7,7 @@ import com.google.cloud.translate.Translation;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 
 import static essentials.EssentialConfig.keyfile;
@@ -28,7 +29,7 @@ class EssentialTR {
                                 JSONObject db = getData(p.uuid);
                                 boolean value = db.getBoolean("translate");
                                 if (value) {
-                                    p.sendMessage("[orange]["+player.name.replaceAll("\\[(.*?)]", "")+"][white]: [#F5FF6B]"+translation.getTranslatedText());
+                                    p.sendMessage("[orange]["+player.name.replaceAll("\\[(.*?)]", "")+"][white]: [#F5FF6B]"+ StringEscapeUtils.unescapeHtml4(translation.getTranslatedText()));
                                 }
                             }
                         }

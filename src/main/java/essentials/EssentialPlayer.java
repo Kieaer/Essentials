@@ -661,7 +661,11 @@ public class EssentialPlayer{
         });
 
         db.start();
-        try{db.join();}catch (Exception ignored){}
+        try{
+            db.join();
+        }catch (Exception e){
+            printStackTrace(e);
+        }
         return loginresult;
     }
 

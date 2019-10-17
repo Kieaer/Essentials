@@ -36,8 +36,9 @@ public class EssentialTimer extends TimerTask {
                     JSONObject db = new JSONObject();
                     try {
                         db = getData(player.uuid);
-                    }catch (Exception ignored){}
-
+                    }catch (Exception e){
+                        printStackTrace(e);
+                    }
                     String data;
                     if(db.has("playtime")){
                         data = db.getString("playtime");

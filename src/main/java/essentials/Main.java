@@ -496,7 +496,8 @@ public class Main extends Plugin{
 						Server.active = false;
 						Server.serverSocket.close();
 						Global.log("Chat/Ban server thread disabled.");
-					} catch (Exception ignored){
+					} catch (Exception e){
+						printStackTrace(e);
 						err("[Essentials] Failure to disable Chat server thread!");
 					}
 				}

@@ -101,13 +101,15 @@ public class EssentialLog implements Runnable{
                             byte[] result = text.getBytes();
                             Files.write(block, result, StandardOpenOption.APPEND);
                             Files.write(total, result, StandardOpenOption.APPEND);
-                        }catch (IOException ignored) {
-                            // 113 line has random null
+                        }catch (IOException error) {
+                            printStackTrace(error);
                         }
                     });
                     t.start();
                 }
-            }catch (Exception ignored){}
+            }catch (Exception error){
+                printStackTrace(error);
+            }
         });
 
         Events.on(EventType.MechChangeEvent.class, e -> {

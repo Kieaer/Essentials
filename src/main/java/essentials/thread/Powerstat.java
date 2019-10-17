@@ -47,7 +47,8 @@ public class Powerstat extends Block{
                         using = world.tileWorld(target_x * 8, target_y * 8).entity.power.graph.getPowerNeeded() * 60;
                         // getPowerProduced() make random #iterator can't nested error.
                         product = world.tileWorld(target_x * 8, target_y * 8).entity.power.graph.getPowerProduced() * 60;
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
+                        printStackTrace(e);
                         current = 0;
                         using = 0;
                         product = 0;
