@@ -28,10 +28,10 @@ public class Powerstat{
                 float product;
                 float using;
                 try {
-                    current = world.tileWorld(target_x * 8, target_y * 8).entity.power.graph.getPowerBalance() * 60;
-                    using = world.tileWorld(target_x * 8, target_y * 8).entity.power.graph.getPowerNeeded() * 60;
+                    current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
+                    using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
                     // getPowerProduced() make random #iterator can't nested error.
-                    product = world.tileWorld(target_x * 8, target_y * 8).entity.power.graph.getPowerProduced() * 60;
+                    product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
                 } catch (Exception e) {
                     printStackTrace(e);
                     current = 0;
@@ -40,7 +40,7 @@ public class Powerstat{
                 }
 
                 if (current == 0 && using == 0 && product == 0) {
-                    //Call.onTileDestroyed(world.tileWorld(x * 8, y * 8));
+                    Call.onTileDestroyed(world.tile(x, y));
                     object.remove(i);
                     Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
                 } else {
@@ -48,7 +48,7 @@ public class Powerstat{
                             "Current: [sky]" + Math.round(current) + "[]\n" +
                             "Using: [red]" + Math.round(using) + "[]\n" +
                             "Production: [green]" + Math.round(product) + "[]";
-                    Call.setMessageBlockText(null, world.tileWorld(x * 8, y * 8), text);
+                    Call.setMessageBlockText(null, world.tile(x, y), text);
                 }
             }
         } catch (Exception e) {

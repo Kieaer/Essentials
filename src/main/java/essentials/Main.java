@@ -50,7 +50,6 @@ import static essentials.Global.getTeamNoCore;
 import static essentials.Global.printStackTrace;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
-import static io.anuke.mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
@@ -191,17 +190,20 @@ public class Main extends Plugin{
         Events.on(PlayerJoin.class, e -> {
         	if(loginenable){
 				e.player.isAdmin = false;
+				Team no_core = getTeamNoCore(e.player);
+				e.player.setTeam(no_core);
+				Call.onPlayerDeath(e.player);
 
 				JSONObject db = getData(e.player.uuid);
-				if(db.has("uuid") || !Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-					if(db.getString("uuid").equals(e.player.uuid)){
+				if(db != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+					if (db.getString("uuid").equals(e.player.uuid)) {
 						JSONObject db2 = getData(e.player.uuid);
-						if(db2.get("language").equals("KR")){
+						if (db2.get("language").equals("KR")) {
 							e.player.sendMessage(EssentialBundle.load(true, "autologin"));
 						} else {
 							e.player.sendMessage(EssentialBundle.load(false, "autologin"));
 						}
-						if(db2.getBoolean("isadmin")){
+						if (db2.getBoolean("isadmin")) {
 							e.player.isAdmin = true;
 						}
 						EssentialPlayer.load(e.player, null);
@@ -212,9 +214,6 @@ public class Main extends Plugin{
 							"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
 							"서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
 							"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
-					Team no_core = getTeamNoCore(e.player);
-					e.player.setTeam(no_core);
-					Call.onPlayerDeath(e.player);
 					Call.onInfoMessage(e.player.con, message);
 				}
 			} else {
@@ -269,8 +268,6 @@ public class Main extends Plugin{
 
 		// Set if player chat event
 		Events.on(EventType.PlayerChatEvent.class, e -> {
-			Call.sendMessage(e.message, "prefix/"+colorizeName(player.id, player.name)+"/suffix", e.player);
-
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
 			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
@@ -325,44 +322,49 @@ public class Main extends Plugin{
 						    writeData("UPDATE players SET reactorcount = '"+reactorcount+"' WHERE uuid = '"+e.player.uuid+"'");
                         }
 					} catch (Exception ex){
+						printStackTrace(ex);
 						Call.onKick(e.player.con, "You're not logged!");
 					}
 				});
 				expthread.start();
 
 				if(e.tile.entity.block == Blocks.message){
-				    int x = e.tile.x;
-				    int y = e.tile.y;
-				    int target_x;
-				    int target_y;
+					try{
+						int x = e.tile.x;
+						int y = e.tile.y;
+						int target_x;
+						int target_y;
 
-				    if(e.tile.getNearby(0).entity != null){
-				        target_x = e.tile.getNearby(0).x;
-				        target_y = e.tile.getNearby(0).y;
-                    } else if(e.tile.getNearby(1).entity != null) {
-                        target_x = e.tile.getNearby(1).x;
-                        target_y = e.tile.getNearby(1).y;
-                    } else if(e.tile.getNearby(2).entity != null) {
-                        target_x = e.tile.getNearby(2).x;
-                        target_y = e.tile.getNearby(2).y;
-                    } else if(e.tile.getNearby(3).entity != null) {
-                        target_x = e.tile.getNearby(3).x;
-                        target_y = e.tile.getNearby(3).y;
-                    } else {
-				        return;
-                    }
+						if(e.tile.getNearby(0).entity != null){
+							target_x = e.tile.getNearby(0).x;
+							target_y = e.tile.getNearby(0).y;
+						} else if(e.tile.getNearby(1).entity != null) {
+							target_x = e.tile.getNearby(1).x;
+							target_y = e.tile.getNearby(1).y;
+						} else if(e.tile.getNearby(2).entity != null) {
+							target_x = e.tile.getNearby(2).x;
+							target_y = e.tile.getNearby(2).y;
+						} else if(e.tile.getNearby(3).entity != null) {
+							target_x = e.tile.getNearby(3).x;
+							target_y = e.tile.getNearby(3).y;
+						} else {
+							return;
+						}
 
-                    String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-                    JSONTokener parser = new JSONTokener(db);
-                    JSONArray object;
-                    try{
-                        object = new JSONArray(parser);
-                    } catch (Exception ignored){
-                        e.player.sendMessage("[green][Essentials] [white]This messageblock is null!");
-                        return;
-                    }
-                    object.put(x+"/"+y+"/"+target_x+"/"+target_y);
-                    Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+						String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
+						JSONTokener parser = new JSONTokener(db);
+						JSONArray object;
+						try{
+							object = new JSONArray(parser);
+						} catch (Exception ignored){
+							e.player.sendMessage("[green][Essentials] [white]This messageblock is null!");
+							return;
+						}
+						object.put(x+"/"+y+"/"+target_x+"/"+target_y);
+						Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+					}catch (Exception ex){
+						printStackTrace(ex);
+					}
 				}
 			}
 		});
@@ -371,53 +373,55 @@ public class Main extends Plugin{
 		Events.on(EventType.BuildSelectEvent.class, e -> {
 		    if(e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                 if (e.breaking) {
-                    Thread t = new Thread(() -> {
-                        JSONObject db = getData(((Player) e.builder).uuid);
-                        String name = e.tile.block().name;
-                        try {
-                            int data = db.getInt("breakcount");
-                            int exp = db.getInt("exp");
+					JSONObject db = getData(((Player) e.builder).uuid);
+					String name = e.tile.block().name;
+					try {
+						int data = db.getInt("breakcount");
+						int exp = db.getInt("exp");
 
-                            Yaml yaml = new Yaml();
-                            Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
-                            int blockexp;
-                            if (obj.get(name) != null) {
-                                blockexp = (int) obj.get(name);
-                            } else {
-                                blockexp = 0;
-                            }
-                            int newexp = exp + blockexp;
-                            data++;
+						Yaml yaml = new Yaml();
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
+						int blockexp;
+						if (obj.get(name) != null) {
+							blockexp = (int) obj.get(name);
+						} else {
+							blockexp = 0;
+						}
+						int newexp = exp + blockexp;
+						data++;
 
-                            writeData("UPDATE players SET breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
+						writeData("UPDATE players SET breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
 
-                            if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
-                                int reactorcount = db.getInt("reactorcount");
-                                reactorcount++;
-                                writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
-                            }
-                        } catch (Exception ex) {
-                            Call.onKick(((Player) e.builder).con, "You're not logged!");
-                        }
-                        if(e.builder.buildRequest().block == Blocks.message){
-                            String db1 = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-                            JSONTokener parser = new JSONTokener(db1);
-                            JSONArray object = new JSONArray(parser);
-                            for (int i = 0; i < object.length(); i++) {
-                                String raw = object.getString(i);
-                                String[] data = raw.split("/");
+						if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
+							int reactorcount = db.getInt("reactorcount");
+							reactorcount++;
+							writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
+						}
+					} catch (Exception ex) {
+						printStackTrace(ex);
+						Call.onKick(((Player) e.builder).con, "You're not logged!");
+					}
+					if (e.tile.entity.block == Blocks.message) {
+						try {
+							String db1 = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
+							JSONTokener parser = new JSONTokener(db1);
+							JSONArray object = new JSONArray(parser);
+							for (int i = 0; i < object.length(); i++) {
+								String raw = object.getString(i);
+								String[] data = raw.split("/");
 
-                                int x = Integer.parseInt(data[0]);
-                                int y = Integer.parseInt(data[1]);
+								int x = Integer.parseInt(data[0]);
+								int y = Integer.parseInt(data[1]);
 
-                                if (x == e.tile.x && y == e.tile.y) {
-                                    object.remove(i);
-                                    Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
-                                }
-                            }
-                        }
-                    });
-                    t.start();
+								if (x == e.tile.x && y == e.tile.y) {
+									object.remove(i);
+									Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+								}
+							}
+						} catch (Exception ex) {
+							printStackTrace(ex);
+						}
+					}
                 }
             }
 		});
