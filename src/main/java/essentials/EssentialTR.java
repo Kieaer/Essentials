@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import static essentials.EssentialConfig.keyfile;
 import static essentials.EssentialPlayer.getData;
+import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 class EssentialTR {
@@ -33,7 +34,7 @@ class EssentialTR {
                         }
                     }
                 }catch (Exception e){
-                    e.printStackTrace();
+                    printStackTrace(e);
                 }
             });
             t.start();

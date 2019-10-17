@@ -1,9 +1,15 @@
 package essentials;
 
+import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Team;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 public class Global {
     public static void log(String msg){
@@ -64,5 +70,27 @@ public class Global {
             index++;
         }
         return player.getTeam();
+    }
+
+    public static void printStackTrace(Throwable e) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            sb.append(e.toString());
+            sb.append("\n");
+            StackTraceElement[] element = e.getStackTrace();
+            for (int idx = 0; idx < element.length; idx++) {
+                sb.append("\tat ");
+                sb.append(element[idx].toString());
+                sb.append("\n");
+            }
+            sb.append("=================================================\n");
+            String text = sb.toString();
+
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/error.log")));
+            byte[] result = text.getBytes();
+            Files.write(path, result, StandardOpenOption.APPEND);
+        } catch (Exception ignored) {
+            e.printStackTrace();
+        }
     }
 }

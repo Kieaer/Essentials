@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.EssentialConfig.*;
+import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
@@ -138,11 +139,11 @@ public class EssentialPlayer{
             stmt.execute(sql);
             stmt.close();
         } catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
-	public static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
+	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
@@ -197,7 +198,7 @@ public class EssentialPlayer{
             rs.close();
             stmt.close();
         } catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
 	}
 
@@ -249,7 +250,7 @@ public class EssentialPlayer{
             stmt.close();
             queryresult = true;
         } catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
             queryresult = false;
         }
         return json;
@@ -277,7 +278,7 @@ public class EssentialPlayer{
             cal.add(Calendar.HOUR, bantimeset);
             newTime = format.format(cal.getTime());
         } catch (ParseException e1) {
-            e1.printStackTrace();
+            printStackTrace(e1);
         }
 
         JSONObject data1 = new JSONObject();
@@ -314,7 +315,7 @@ public class EssentialPlayer{
                 }
                 stmt.close();
             } catch (ClassNotFoundException | SQLException e) {
-                e.printStackTrace();
+                printStackTrace(e);
             }
         }
 
@@ -338,7 +339,7 @@ public class EssentialPlayer{
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -346,7 +347,7 @@ public class EssentialPlayer{
         try{
             conn.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -359,7 +360,7 @@ public class EssentialPlayer{
                 pstmt.close();
             } catch (Exception e) {
                 Global.loge(sql);
-                e.printStackTrace();
+                printStackTrace(e);
             }
         });
         t.start();
@@ -433,7 +434,7 @@ public class EssentialPlayer{
                     Pattern p = null;
                     try { p = Pattern.compile("(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        printStackTrace(e);
                     }
                     assert p != null;
                     Matcher m = p.matcher(ip);
@@ -515,11 +516,11 @@ public class EssentialPlayer{
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                printStackTrace(e);
             }
         });
         db.start();
-        try{db.join();}catch (Exception e){e.printStackTrace();}
+        try{db.join();}catch (Exception e){printStackTrace(e);}
         return registerresult;
     }
 
@@ -542,7 +543,7 @@ public class EssentialPlayer{
                 try {
                     p = Pattern.compile("(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    printStackTrace(e);
                 }
                 assert p != null;
                 Matcher m = p.matcher(ip);
@@ -619,11 +620,11 @@ public class EssentialPlayer{
                     player.con.kick("You have been kicked due to a plugin error.");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                printStackTrace(e);
             }
         });
         db.start();
-        try{db.join();}catch (Exception e){e.printStackTrace();}
+        try{db.join();}catch (Exception e){printStackTrace(e);}
         return registerresult;
     }
 
@@ -655,7 +656,7 @@ public class EssentialPlayer{
                     loginresult = false;
                 }
             } catch (Exception e){
-                e.printStackTrace();
+                printStackTrace(e);
             }
         });
 

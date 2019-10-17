@@ -28,6 +28,7 @@ import java.util.Random;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialTimer.playtime;
+import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.*;
 
 public class Server implements Runnable{
@@ -67,7 +68,7 @@ public class Server implements Runnable{
             bw.flush();
             Global.bans("Data sented to " + remoteip + "!");
         }catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -90,7 +91,7 @@ public class Server implements Runnable{
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -146,7 +147,7 @@ public class Server implements Runnable{
             }
             bw.flush();
         } catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -161,7 +162,7 @@ public class Server implements Runnable{
             bw.flush();
             Global.log(remoteip+" connected to this server.");
         }catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -196,7 +197,7 @@ public class Server implements Runnable{
                 }
             }
         } catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 }

@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static essentials.Global.printStackTrace;
+
 public class EssentialConfig {
     public static String clienthost;
     public static int clientport;
@@ -40,9 +42,9 @@ public class EssentialConfig {
     static String url;
     static String dbid;
     static String dbpw;
-    public static String keyfile;
+    static String keyfile;
 
-    public static ExecutorService executorService = Executors.newFixedThreadPool(6);
+    static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
     public static void main() {
         Map<String, Object> obj;
@@ -448,6 +450,12 @@ public class EssentialConfig {
             Global.log("powerblock file created!");
         }
 
+        // EssentialsLog
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/error.log").exists()) {
+            Core.settings.getDataDirectory().child("plugins/Essentials/Logs/error.log").writeString("");
+            Global.log("error.log created.");
+        }
+
         if (Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()){
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").readString()));
@@ -562,7 +570,7 @@ public class EssentialConfig {
                     cal.setTime(d);
                     antirushtime = cal;
                 } catch (Exception e){
-                    e.printStackTrace();
+                    printStackTrace(e);
                     Global.loge("Invalid settings! - antirushtime");
                     Global.loge("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
                 }
@@ -575,7 +583,7 @@ public class EssentialConfig {
                     cal.setTime(d);
                     antirushtime = cal;
                 } catch (Exception e){
-                    e.printStackTrace();
+                    printStackTrace(e);
                 }
             }
 

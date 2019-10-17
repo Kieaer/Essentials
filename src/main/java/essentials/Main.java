@@ -45,6 +45,7 @@ import java.util.TimerTask;
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.getTeamNoCore;
+import static essentials.Global.printStackTrace;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
@@ -65,7 +66,7 @@ public class Main extends Plugin{
 				Thread.sleep(1500);
 				Client.main("ping", null, null);
 			}catch (Exception e){
-				e.printStackTrace();
+				printStackTrace(e);
 			}
 		});
 		servercheck.start();
@@ -226,7 +227,7 @@ public class Main extends Plugin{
 							e.player.con.kick("Server isn't allow VPN connection.");
 						}
 					} catch (IOException error) {
-						error.printStackTrace();
+						printStackTrace(error);
 					}
 				}
 			});
@@ -484,7 +485,7 @@ public class Main extends Plugin{
 					Global.log("Play/bantime counting thread disabled.");
 				} catch (Exception e){
 					err("[Essentials] Failure to disable Playtime counting thread!");
-					e.printStackTrace();
+					printStackTrace(e);
 				}
 
 				closeconnect();
@@ -600,7 +601,7 @@ public class Main extends Plugin{
 					rs.close();
 					stmt.close();
 				}catch (Exception e){
-					e.printStackTrace();
+					printStackTrace(e);
 				}
 			});
 			t.start();
@@ -688,7 +689,7 @@ public class Main extends Plugin{
 							Thread banthread = new Thread(() -> Client.main("ban", null,null));
 							banthread.start();
 						}catch (Exception e){
-							e.printStackTrace();
+							printStackTrace(e);
 						}
 					}
 					Global.log("Banned.");
@@ -707,7 +708,7 @@ public class Main extends Plugin{
 								Thread banthread = new Thread(() -> Client.main("ban", null,null));
 								banthread.start();
 							}catch (Exception e){
-								e.printStackTrace();
+								printStackTrace(e);
 							}
 						}
 						Global.log("Banned.");
@@ -727,7 +728,7 @@ public class Main extends Plugin{
 							Thread banthread = new Thread(() -> Client.main("ban", null,null));
 							banthread.start();
 						}catch (Exception e){
-							e.printStackTrace();
+							printStackTrace(e);
 						}
 					}
 					Global.log("Banned.");
@@ -1129,7 +1130,7 @@ public class Main extends Plugin{
 													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
 													Thread.sleep(10000);
 												} catch (Exception e) {
-													e.printStackTrace();
+													printStackTrace(e);
 												}
 											});
 											playeralarm1.start();
@@ -1148,7 +1149,7 @@ public class Main extends Plugin{
 													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
 													Thread.sleep(10000);
 												} catch (Exception e) {
-													e.printStackTrace();
+													printStackTrace(e);
 												}
 											});
 											playeralarm2.start();
@@ -1166,7 +1167,7 @@ public class Main extends Plugin{
 								vote.clear();
 								this.voteactive = false;
 							} catch (InterruptedException e) {
-								e.printStackTrace();
+								printStackTrace(e);
 							}
 						});
 						t.start();
@@ -1216,7 +1217,7 @@ public class Main extends Plugin{
 													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
 													Thread.sleep(10000);
 												} catch (Exception e) {
-													e.printStackTrace();
+													printStackTrace(e);
 												}
 											});
 											playeralarm1.start();
@@ -1235,7 +1236,7 @@ public class Main extends Plugin{
 													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
 													Thread.sleep(10000);
 												} catch (Exception e) {
-													e.printStackTrace();
+													printStackTrace(e);
 												}
 											});
 											playeralarm2.start();
@@ -1264,7 +1265,7 @@ public class Main extends Plugin{
 								vote.clear();
 								this.voteactive = false;
 							} catch (InterruptedException e) {
-								e.printStackTrace();
+								printStackTrace(e);
 							}
 						});
 						t.start();
@@ -1327,7 +1328,7 @@ public class Main extends Plugin{
 													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
 													Thread.sleep(10000);
 												} catch (Exception e) {
-													e.printStackTrace();
+													printStackTrace(e);
 												}
 											});
 											playeralarm1.start();
@@ -1346,7 +1347,7 @@ public class Main extends Plugin{
 													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
 													Thread.sleep(10000);
 												} catch (Exception e) {
-													e.printStackTrace();
+													printStackTrace(e);
 												}
 											});
 											playeralarm2.start();
@@ -1368,7 +1369,7 @@ public class Main extends Plugin{
 										Files.write(path, result, StandardOpenOption.APPEND);
 										Files.write(total, result, StandardOpenOption.APPEND);
 									} catch (IOException error) {
-										error.printStackTrace();
+										printStackTrace(error);
 									}
 
 									netServer.admins.banPlayer(target.uuid);
@@ -1388,7 +1389,7 @@ public class Main extends Plugin{
 								vote.clear();
 								this.voteactive = false;
 							} catch (InterruptedException e) {
-								e.printStackTrace();
+								printStackTrace(e);
 							}
 						});
 						t.start();

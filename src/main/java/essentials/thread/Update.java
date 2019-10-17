@@ -10,6 +10,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static essentials.Global.printStackTrace;
+
 public class Update {
     public static void main(){
         HttpURLConnection con;
@@ -55,7 +57,7 @@ public class Update {
             }
 
         } catch (Exception e){
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 }

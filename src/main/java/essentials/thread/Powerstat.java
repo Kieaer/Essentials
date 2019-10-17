@@ -8,10 +8,11 @@ import io.anuke.mindustry.world.Tile;
 import org.json.JSONArray;
 import org.json.JSONTokener;
 
+import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.world;
 
 public class Powerstat extends Block{
-    public boolean active;
+    private boolean active;
 
     public Powerstat(String name) {
         super(name);
@@ -65,7 +66,7 @@ public class Powerstat extends Block{
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                printStackTrace(e);
             }
         }
     }

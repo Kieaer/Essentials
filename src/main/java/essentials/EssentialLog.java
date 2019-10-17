@@ -20,6 +20,7 @@ import java.util.Locale;
 
 import static essentials.EssentialPlayer.conn;
 import static essentials.EssentialPlayer.getData;
+import static essentials.Global.printStackTrace;
 
 public class EssentialLog implements Runnable{
     @Override
@@ -56,7 +57,7 @@ public class EssentialLog implements Runnable{
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
             } catch (IOException error) {
-                error.printStackTrace();
+                printStackTrace(error);
             }
         });
 
@@ -67,7 +68,7 @@ public class EssentialLog implements Runnable{
                 byte[] result = text.getBytes();
                 Files.write(total, result, StandardOpenOption.APPEND);
             } catch (IOException error) {
-                error.printStackTrace();
+                printStackTrace(error);
             }
         });
 
@@ -82,7 +83,7 @@ public class EssentialLog implements Runnable{
                         Files.write(block, result, StandardOpenOption.APPEND);
                         Files.write(total, result, StandardOpenOption.APPEND);
                     }catch (IOException error) {
-                        error.printStackTrace();
+                        printStackTrace(error);
                     }
                 });
                 t.start();
@@ -118,7 +119,7 @@ public class EssentialLog implements Runnable{
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
             } catch (IOException error) {
-                error.printStackTrace();
+                printStackTrace(error);
             }
         });
 
@@ -160,7 +161,7 @@ public class EssentialLog implements Runnable{
                     Files.write(total, result, StandardOpenOption.APPEND);
                 }
             } catch (Exception ex) {
-                ex.printStackTrace();
+                printStackTrace(ex);
             }
         });
 
@@ -174,7 +175,7 @@ public class EssentialLog implements Runnable{
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
             } catch (IOException error) {
-                error.printStackTrace();
+                printStackTrace(error);
             }
         });
 
@@ -188,7 +189,7 @@ public class EssentialLog implements Runnable{
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
             } catch (IOException error) {
-                error.printStackTrace();
+                printStackTrace(error);
             }
         });
 
@@ -202,7 +203,7 @@ public class EssentialLog implements Runnable{
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
             } catch (IOException error) {
-                error.printStackTrace();
+                printStackTrace(error);
             }
         });
     }

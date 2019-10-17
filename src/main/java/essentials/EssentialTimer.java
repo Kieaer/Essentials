@@ -21,6 +21,7 @@ import static essentials.EssentialConfig.antirushtime;
 import static essentials.EssentialConfig.enableantirush;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
+import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.*;
 
 public class EssentialTimer extends TimerTask {
@@ -54,7 +55,7 @@ public class EssentialTimer extends TimerTask {
                         cal.add(Calendar.SECOND, 1);
                         newTime = format.format(cal.getTime());
                     } catch (ParseException e1) {
-                        e1.printStackTrace();
+                        printStackTrace(e1);
                     }
 
                     // Exp caculating
@@ -109,7 +110,7 @@ public class EssentialTimer extends TimerTask {
                     state.rules.playerHealthMultiplier = 1f;
                 }
             }catch (Exception e){
-                e.printStackTrace();
+                printStackTrace(e);
             }
         }
     }

@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 
 import static essentials.EssentialConfig.clienthost;
 import static essentials.EssentialConfig.clientport;
+import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 
 public class Client{
@@ -59,7 +60,7 @@ public class Client{
             }
             Global.banc("Success!");
         } catch (Exception e) {
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -88,9 +89,9 @@ public class Client{
                 pstmt.close();
                 conn.close();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                printStackTrace(ex);
             }
-            e.printStackTrace();
+            printStackTrace(e);
         }
     }
 
@@ -130,7 +131,8 @@ public class Client{
             }
             socket.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            Global.loge("Unable to connect to the "+clienthost+":"+clientport+" server!");
+            printStackTrace(e);
         }
     }
 }
