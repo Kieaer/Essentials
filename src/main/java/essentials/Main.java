@@ -190,12 +190,9 @@ public class Main extends Plugin{
         Events.on(PlayerJoin.class, e -> {
         	if(loginenable){
 				e.player.isAdmin = false;
-				Team no_core = getTeamNoCore(e.player);
-				e.player.setTeam(no_core);
-				Call.onPlayerDeath(e.player);
 
 				JSONObject db = getData(e.player.uuid);
-				if(db != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+				if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
 					if (db.getString("uuid").equals(e.player.uuid)) {
 						JSONObject db2 = getData(e.player.uuid);
 						if (db2.get("language").equals("KR")) {
@@ -209,6 +206,10 @@ public class Main extends Plugin{
 						EssentialPlayer.load(e.player, null);
 					}
 				} else {
+					Team no_core = getTeamNoCore(e.player);
+					e.player.setTeam(no_core);
+					Call.onPlayerDeath(e.player);
+
 					// Login require
 					String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
 							"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
@@ -401,7 +402,7 @@ public class Main extends Plugin{
 						printStackTrace(ex);
 						Call.onKick(((Player) e.builder).con, "You're not logged!");
 					}
-					if (e.tile.entity.block == Blocks.message) {
+					if (e.builder.buildRequest().block == Blocks.message) {
 						try {
 							String db1 = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
 							JSONTokener parser = new JSONTokener(db1);
