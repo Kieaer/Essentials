@@ -115,11 +115,13 @@ public class Main extends Plugin{
 				if(playerGroup != null && playerGroup.size() > 0) {
 					for (int i = 0; i < playerGroup.size(); i++) {
 						Player player = playerGroup.all().get(i);
-						if(player.getTeam().name().equals(e.winner.name())){
-							JSONObject db = getData(player.uuid);
-							int pvpwin = db.getInt("pvpwincount");
-							pvpwin++;
-							writeData("UPDATE players SET pvpwincount = '"+pvpwin+"' WHERE uuid = '"+player.uuid+"'");
+						if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+							if(player.getTeam().name().equals(e.winner.name())){
+								JSONObject db = getData(player.uuid);
+								int pvpwin = db.getInt("pvpwincount");
+								pvpwin++;
+								writeData("UPDATE players SET pvpwincount = '"+pvpwin+"' WHERE uuid = '"+player.uuid+"'");
+							}
 						} else {
 							JSONObject db = getData(player.uuid);
 							int pvplose = db.getInt("pvplosecount");
@@ -172,7 +174,7 @@ public class Main extends Plugin{
 				e.player.isAdmin = false;
 
 				JSONObject db = getData(e.player.uuid);
-				if(db.has("uuid")){
+				if(db.has("uuid") || !Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
 					if(db.getString("uuid").equals(e.player.uuid)){
 						JSONObject db2 = getData(e.player.uuid);
 						if(db2.get("language").equals("KR")){
