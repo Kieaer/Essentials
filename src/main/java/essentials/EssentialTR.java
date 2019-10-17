@@ -17,10 +17,10 @@ import static io.anuke.mindustry.Vars.playerGroup;
 
 class EssentialTR {
     static void main(Player player, String message) {
-        if(Core.settings.getDataDirectory().child("plugins/Essentials/"+keyfile+".json").exists()){
+        if(Core.settings.getDataDirectory().child("mods/Essentials/"+keyfile+".json").exists()){
             Thread t = new Thread(() -> {
                 try{
-                    Translate translate = TranslateOptions.newBuilder().setCredentials(ServiceAccountCredentials.fromStream(Core.settings.getDataDirectory().child("plugins/Essentials/"+keyfile+".json").read())).build().getService();
+                    Translate translate = TranslateOptions.newBuilder().setCredentials(ServiceAccountCredentials.fromStream(Core.settings.getDataDirectory().child("mods/Essentials/"+keyfile+".json").read())).build().getService();
                     Translation translation = translate.translate(message);
                     if(playerGroup != null && playerGroup.size() > 0) {
                         for (int i = 0; i < playerGroup.size(); i++) {

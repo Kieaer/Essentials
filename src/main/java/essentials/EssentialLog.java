@@ -31,26 +31,26 @@ public class EssentialLog implements Runnable{
 
         Thread.currentThread().setName("Logging thread");
 
-        if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log").exists()) {
-            Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log").writeString("");
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log").writeString("");
             Global.log("Block.log created.");
         }
-        if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log").exists()) {
-            Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log").writeString("");
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log").writeString("");
             Global.log("Player.log created.");
         }
-        if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log").exists()) {
-            Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log").writeString("");
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log").writeString("");
             Global.log("Total.log created.");
         }
-        if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Griefer.log").exists()) {
-            Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Griefer.log").writeString("");
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log").writeString("");
             Global.log("Griefer.log created.");
         }
 
         Events.on(EventType.PlayerChatEvent.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String text = nowString + e.player.name + ": " + e.message + "\n";
                 byte[] result = text.getBytes();
@@ -62,7 +62,7 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.WorldLoadEvent.class, e -> {
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String text = nowString + "World loaded!\n";
                 byte[] result = text.getBytes();
@@ -75,8 +75,8 @@ public class EssentialLog implements Runnable{
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             if(!e.breaking && e.tile.entity() != null){
                 Thread t = new Thread(() -> {
-                    Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
-                    Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                    Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
+                    Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
                     try {
                         String text = nowString+e.player.name+" Player place " +e.tile.entity.block.name+".\n";
                         byte[] result = text.getBytes();
@@ -94,8 +94,8 @@ public class EssentialLog implements Runnable{
             try{
                 if(e.breaking && e.builder != null && ((Player) e.builder).name != null && e.builder.buildRequest() != null && e.builder.buildRequest() != null && e.builder.buildRequest().block.name != null && !e.builder.buildRequest().block.name.matches(".*build.*")){
                     Thread t = new Thread(() -> {
-                        Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Block.log")));
-                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+                        Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
+                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
                         try {
                             String text = nowString+((Player)e.builder).name+" Player break " +e.builder.buildRequest().block.name+".\n";
                             byte[] result = text.getBytes();
@@ -113,8 +113,8 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.MechChangeEvent.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String text = nowString + e.player.name + " has change mech to " + e.mech.name + ".\n";
                 byte[] result = text.getBytes();
@@ -126,8 +126,8 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.PlayerJoin.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             JSONObject db = getData(e.player.uuid);
 
             try {
@@ -168,8 +168,8 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.PlayerConnect.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
                 String text = nowString + e.player.name + "/" + e.player.uuid + "/" + ip + " Player connected.\n";
@@ -182,8 +182,8 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.PlayerLeave.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
                 String text = nowString + e.player.name + "/" + e.player.uuid + "/" + ip + " Player disconnected.\n";
@@ -196,8 +196,8 @@ public class EssentialLog implements Runnable{
         });
 
         Events.on(EventType.DepositEvent.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
                 String text = nowString + e.player.name+" Player has moved item "+e.player.item().item.name+" to "+e.tile.block().name+".\n";

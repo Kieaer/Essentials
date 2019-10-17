@@ -259,7 +259,7 @@ public class EssentialPlayer{
 	static void addtimeban(String name, String uuid, int bantimeset){
 
 	    // Write ban data
-        String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
+        String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);
         JSONObject object = new JSONObject(parser);
 
@@ -293,7 +293,7 @@ public class EssentialPlayer{
 
         object.put(String.valueOf(i), data1);
 
-        Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
+        Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
 
         // Write player data
         writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"', WHERE uuid = '"+uuid+"'");
@@ -697,9 +697,9 @@ public class EssentialPlayer{
         // Show motd
         String motd;
         if(db.getString("language").equals("KR")){
-            motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
+            motd = Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").readString();
         } else {
-            motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+            motd = Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").readString();
         }
         int count = motd.split("\r\n|\r|\n").length;
         if(count > 10){

@@ -2,6 +2,7 @@ package essentials;
 
 import essentials.net.Client;
 import essentials.net.Server;
+import essentials.thread.Powerstat;
 import essentials.thread.Update;
 import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
@@ -12,6 +13,7 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
+import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
@@ -48,6 +50,7 @@ import static essentials.Global.getTeamNoCore;
 import static essentials.Global.printStackTrace;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
+import static io.anuke.mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
@@ -56,6 +59,8 @@ public class Main extends Plugin{
     //state.rules.bannedBlocks;
 
 	public Main() {
+		NetClient.hidden = true;
+
 		// Start config file
 		EssentialConfig.main();
 
@@ -137,7 +142,16 @@ public class Main extends Plugin{
 		    EssentialTimer.playtime = "00:00.00";
 
             // Reset powernode information
-            Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString("[]");
+            Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+            TimerTask time = new TimerTask() {
+                @Override
+                public void run() {
+                    Powerstat pw = new Powerstat();
+                    pw.main();
+                }
+            };
+            Timer timer = new Timer(true);
+            timer.scheduleAtFixedRate(time,100,100);
         });
 
         // Set if thorium rector explode
@@ -209,13 +223,13 @@ public class Main extends Plugin{
 				Thread.currentThread().setName("PlayerJoin Thread");
 
 				// Check if blacklisted nickname
-				String blacklist = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(blacklist);
 				JSONArray array = new JSONArray(parser);
 
 				for (int i = 0; i < array.length(); i++){
-					if (array.getString(i).equals(e.player.name)){
-						e.player.con.kick("Server doesn't allow blacklisted nickname.");
+					if (array.getString(i).matches(e.player.name)){
+						e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.\nBlack listed nickname: "+e.player.name);
 						Global.log(e.player.name+" nickname is blacklisted.");
 					}
 				}
@@ -250,6 +264,7 @@ public class Main extends Plugin{
 
 		// Set if player chat event
 		Events.on(EventType.PlayerChatEvent.class, e -> {
+			Call.sendMessage(e.message, "prefix/"+colorizeName(player.id, player.name)+"/suffix", e.player);
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
 			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
@@ -286,7 +301,7 @@ public class Main extends Plugin{
 						int exp = db.getInt("exp");
 
 						Yaml yaml = new Yaml();
-						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
 						int blockexp;
 						if(obj.get(name) != null) {
 							blockexp = (int) obj.get(name);
@@ -309,7 +324,6 @@ public class Main extends Plugin{
 				});
 				expthread.start();
 
-				/*
 				if(e.tile.entity.block == Blocks.message){
 				    int x = e.tile.x;
 				    int y = e.tile.y;
@@ -332,7 +346,7 @@ public class Main extends Plugin{
 				        return;
                     }
 
-                    String db = Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").readString();
+                    String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
                     JSONTokener parser = new JSONTokener(db);
                     JSONArray object;
                     try{
@@ -342,77 +356,64 @@ public class Main extends Plugin{
                         return;
                     }
                     object.put(x+"/"+y+"/"+target_x+"/"+target_y);
-                    Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString(String.valueOf(object));
+                    Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
 				}
-				 */
 			}
 		});
 
 
 		Events.on(EventType.BuildSelectEvent.class, e -> {
-			if(e.breaking && e.builder != null && e.builder.buildRequest() != null && e.builder.buildRequest().block != null && e.builder instanceof Player && !e.builder.buildRequest().block.name.matches(".*build.*")){
-				Thread t = new Thread(() -> {
-					JSONObject db = getData(((Player)e.builder).uuid);
-					String name = e.tile.block().name;
-					try{
-						int data = db.getInt("breakcount");
-						int exp = db.getInt("exp");
+		    if(e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
+                if (e.breaking) {
+                    Thread t = new Thread(() -> {
+                        JSONObject db = getData(((Player) e.builder).uuid);
+                        String name = e.tile.block().name;
+                        try {
+                            int data = db.getInt("breakcount");
+                            int exp = db.getInt("exp");
 
-						Yaml yaml = new Yaml();
-						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
-						int blockexp;
-						if(obj.get(name) != null) {
-							blockexp = (int) obj.get(name);
-						} else {
-							blockexp = 0;
-						}
-						int newexp = exp+blockexp;
-						data++;
+                            Yaml yaml = new Yaml();
+                            Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
+                            int blockexp;
+                            if (obj.get(name) != null) {
+                                blockexp = (int) obj.get(name);
+                            } else {
+                                blockexp = 0;
+                            }
+                            int newexp = exp + blockexp;
+                            data++;
 
-						writeData("UPDATE players SET breakcount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+((Player)e.builder).uuid+"'");
+                            writeData("UPDATE players SET breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
 
-                        if(e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor){
-                            int reactorcount = db.getInt("reactorcount");
-                            reactorcount++;
-                            writeData("UPDATE players SET reactorcount = '"+reactorcount+"' WHERE uuid = '"+((Player) e.builder).uuid+"'");
+                            if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
+                                int reactorcount = db.getInt("reactorcount");
+                                reactorcount++;
+                                writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
+                            }
+                        } catch (Exception ex) {
+                            Call.onKick(((Player) e.builder).con, "You're not logged!");
                         }
-					} catch (Exception ex){
-						Call.onKick(((Player) e.builder).con, "You're not logged!");
-					}
-				});
-				t.start();
-			}
+                        if(e.builder.buildRequest().block == Blocks.message){
+                            String db1 = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
+                            JSONTokener parser = new JSONTokener(db1);
+                            JSONArray object = new JSONArray(parser);
+                            for (int i = 0; i < object.length(); i++) {
+                                String raw = object.getString(i);
+                                String[] data = raw.split("/");
 
-			/*
-			java.lang.ClassCastException: class io.anuke.mindustry.entities.type.base.Phantom cannot be cast to class io.anuke.mindustry.entities.type.Player (io.anuke.mindustry.entities.type.base.Phantom and io.anuke.mindustry.entities.type.Player are in unnamed module of loader 'app')
-                at essentials.Main.lambda$new$11(Main.java:369)
-                at io.anuke.arc.Events.lambda$fire$2(Events.java:26)
-                at io.anuke.arc.collection.Array.each(Array.java:174)
-                at io.anuke.arc.Events.fire(Events.java:26)
-                at io.anuke.arc.Events.fire(Events.java:21)
-                at io.anuke.mindustry.entities.traits.BuilderTrait.lambda$updateBuilding$0(BuilderTrait.java:84)
-                at io.anuke.arc.backends.headless.HeadlessApplication.executeRunnables(HeadlessApplication.java:126)
-                at io.anuke.arc.backends.headless.HeadlessApplication.mainLoop(HeadlessApplication.java:95)
-                at io.anuke.arc.backends.headless.HeadlessApplication$1.run(HeadlessApplication.java:64)
+                                int x = Integer.parseInt(data[0]);
+                                int y = Integer.parseInt(data[1]);
 
-            if(e.breaking && e.builder != null && ((Player) e.builder).name != null && e.builder.buildRequest() != null && e.builder.buildRequest() != null && e.builder.buildRequest().block.name != null && !e.builder.buildRequest().block.name.matches(".*build.*")){
-                String db = Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").readString();
-                JSONTokener parser = new JSONTokener(db);
-                JSONArray object = new JSONArray(parser);
-                for(int i=0;i<object.length();i++) {
-                    String raw = object.getString(i);
-                    String[] data = raw.split("/");
-
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-
-                    if(x == e.tile.x && y == e.tile.y){
-                        object.remove(i);
-                        Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString(String.valueOf(object));
-                    }
+                                if (x == e.tile.x && y == e.tile.y) {
+                                    object.remove(i);
+                                    Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+                                }
+                            }
+                        }
+                    });
+                    t.start();
                 }
             }
-			 */
 		});
 
 		Events.on(EventType.UnitDestroyEvent.class, e -> {
@@ -550,14 +551,14 @@ public class Main extends Plugin{
 
         handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
 			if(arg[0].equals("add")){
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONArray object = new JSONArray(parser);
 				object.put(arg[1]);
-				Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
 				Global.log("The "+arg[1]+" nickname has been added to the blacklist.");
 			} else if (arg[0].equals("remove")) {
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONArray object = new JSONArray(parser);
 				for (int i = 0; i < object.length(); i++) {
@@ -565,7 +566,7 @@ public class Main extends Plugin{
 						object.remove(i);
 					}
 				}
-				Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
 				Global.log(""+arg[1]+" nickname deleted from blacklist.");
 			} else {
 				Global.logw("Unknown parameter! Use blacklist <add/remove> <nickname>.");
@@ -612,11 +613,11 @@ public class Main extends Plugin{
 
 		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
 			if(banshare){
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONObject object = new JSONObject(parser);
 				object.put("banall", "true");
-				Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 				Thread banthread = new Thread(() -> Client.main("ban", null,null));
 				banthread.start();
 			} else {
@@ -684,11 +685,11 @@ public class Main extends Plugin{
 					netServer.admins.banPlayerID(arg[1]);
 					if(banshare){
 						try{
-							String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
-							Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 							Thread banthread = new Thread(() -> Client.main("ban", null,null));
 							banthread.start();
 						}catch (Exception e){
@@ -703,11 +704,11 @@ public class Main extends Plugin{
 						netServer.admins.banPlayer(target.uuid);
 						if(banshare){
 							try{
-								String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+								String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 								JSONTokener parser = new JSONTokener(db);
 								JSONObject object = new JSONObject(parser);
 								object.put("banall", "true");
-								Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+								Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 								Thread banthread = new Thread(() -> Client.main("ban", null,null));
 								banthread.start();
 							}catch (Exception e){
@@ -723,11 +724,11 @@ public class Main extends Plugin{
 					netServer.admins.banPlayerIP(arg[1]);
 					if(banshare){
 						try{
-							String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
-							Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 							Thread banthread = new Thread(() -> Client.main("ban", null,null));
 							banthread.start();
 						}catch (Exception e){
@@ -823,9 +824,9 @@ public class Main extends Plugin{
 			JSONObject db = getData(player.uuid);
 			String motd;
 			if(db.getString("language").equals("KR")){
-				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
+				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").readString();
 			} else {
-				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").readString();
 			}
 			int count = motd.split("\r\n|\r|\n").length;
 			if (count > 10) {
@@ -1161,6 +1162,7 @@ public class Main extends Plugin{
 								}
 								Thread.sleep(60000);
 								if (current > require-1) {
+								    Global.log(current+"/"+require);
 									Call.sendMessage("[green][Essentials] Gameover vote passed!");
 									Events.fire(new EventType.GameOverEvent(Team.sharded));
 									Thread.sleep(15000);
@@ -1363,8 +1365,8 @@ public class Main extends Plugin{
 									EssentialPlayer.addtimeban(target.name, target.uuid, 4);
 									Global.log(target.name+" / "+target.uuid+" Player has banned due to voting. "+current+"/"+require);
 
-									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-									Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+									Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
 									try {
 										JSONObject other = getData(target.uuid);
 										String text = other.get("name")+" / "+target.uuid+" Player has banned due to voting. "+current+"/"+require+"\n";

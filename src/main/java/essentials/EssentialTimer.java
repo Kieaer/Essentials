@@ -71,7 +71,7 @@ public class EssentialTimer extends TimerTask {
         }
 
         // Temporarily ban players time counting
-        String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
+        String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);
         JSONObject object = new JSONObject(parser);
 
@@ -88,7 +88,7 @@ public class EssentialTimer extends TimerTask {
             if (date.equals(myTime)) {
                 Log.info(myTime);
                 object.remove(String.valueOf(i));
-                Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
+                Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
                 netServer.admins.unbanPlayerID(uuid);
                 Global.log(name+"/"+uuid+" player unbanned!");
             }

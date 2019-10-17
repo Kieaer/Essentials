@@ -72,7 +72,7 @@ public class Client{
             Call.sendMessage("[#357EC7][SC] "+chat);
             Global.chatc("Message sent to "+clienthost+" - "+chat+"");
         } catch (Exception e) {
-            String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+            String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
             player.sendMessage("Server is not responding! Cross-chat disabled!");
 
             String sql = "UPDATE players SET crosschat = ? WHERE uuid = ?";

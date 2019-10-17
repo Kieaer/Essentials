@@ -86,7 +86,7 @@ public class Global {
             sb.append("=================================================\n");
             String text = sb.toString();
 
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/error.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log")));
             byte[] result = text.getBytes();
             Files.write(path, result, StandardOpenOption.APPEND);
         } catch (Exception ignored) {
