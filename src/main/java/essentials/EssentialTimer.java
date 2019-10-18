@@ -26,6 +26,7 @@ import static io.anuke.mindustry.Vars.*;
 
 public class EssentialTimer extends TimerTask {
     public static String playtime;
+    public static String uptime;
 
     public void run() {
         // Player playtime counting
@@ -110,6 +111,21 @@ public class EssentialTimer extends TimerTask {
                     state.rules.playerDamageMultiplier = 1f;
                     state.rules.playerHealthMultiplier = 1f;
                 }
+            }catch (Exception e){
+                printStackTrace(e);
+            }
+        }
+
+        // Server uptime counting
+        if(playtime != null){
+            try{
+                Calendar cal1;
+                SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+                Date d2 = format.parse(uptime);
+                cal1 = Calendar.getInstance();
+                cal1.setTime(d2);
+                cal1.add(Calendar.SECOND, 1);
+                uptime = format.format(cal1.getTime());
             }catch (Exception e){
                 printStackTrace(e);
             }

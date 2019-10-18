@@ -147,6 +147,7 @@ public class Main extends Plugin{
 
             // Reset powernode information
             Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+
             TimerTask time = new TimerTask() {
                 @Override
                 public void run() {
@@ -529,6 +530,8 @@ public class Main extends Plugin{
         if(detectreactor){
 			Global.log("Thorium reactor overheat detect enabled.");
         }
+
+        EssentialTimer.uptime = "00:00.00";
 	}
 
 	@Override
@@ -812,6 +815,7 @@ public class Main extends Plugin{
 			}
         });
 
+        /*
 		handler.<Player>register("votekick", "Disabled.", (arg, player) -> {
 			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -825,6 +829,8 @@ public class Main extends Plugin{
 				player.sendMessage(EssentialBundle.load(false, "votekick-disabled"));
 			}
 		});
+
+         */
 
 		handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
 			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
@@ -924,8 +930,7 @@ public class Main extends Plugin{
 			player.sendMessage("[#DEA82A]Server status[]");
 			player.sendMessage("[#2B60DE]========================================[]");
 			float fps = Math.round((int) 60f / Time.delta());
-			float memory = Core.app.getJavaHeap() / 1024 / 1024;
-			player.sendMessage(fps+"TPS "+memory+"MB");
+			player.sendMessage(fps+"TPS");
 			player.sendMessage(Vars.playerGroup.size()+" players online.");
 			int idb = 0;
 			int ipb = 0;
@@ -941,6 +946,8 @@ public class Main extends Plugin{
 			}
 			int bancount = idb+ipb;
 			player.sendMessage("Total [scarlet]"+bancount+"[]("+idb+"/"+ipb+") players banned.");
+            player.sendMessage("World playtime: "+EssentialTimer.playtime);
+            player.sendMessage("Server uptime: "+EssentialTimer.playtime);
 		});
 
 		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
@@ -1105,14 +1112,153 @@ public class Main extends Plugin{
                 return;
             }
 
+            int current = vote.size();
+            int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
+            if(current <= 2){
+				JSONObject db1 = getData(player.uuid);
+				if (db1.get("language") == "KR") {
+					player.sendMessage(EssentialBundle.load(true, "vote-min"));
+				} else {
+					player.sendMessage(EssentialBundle.load(false, "vote-min"));
+				}
+			}
+            Player target;
+            if(arg.length == 2){
+                target = playerGroup.find(p -> p.name.equals(arg[1]));
+            } else {
+                target = null;
+            }
+
+            Thread counting = new Thread(() -> {
+                if (playerGroup != null && playerGroup.size() > 0) {
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        JSONObject db1 = getData(others.uuid);
+                        if (db1.get("language") == "KR") {
+                            Thread playeralarm1 = new Thread(() -> {
+                                try {
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
+                                    Thread.sleep(10000);
+                                } catch (Exception e) {
+                                    printStackTrace(e);
+                                }
+                            });
+                            playeralarm1.start();
+                        } else {
+                            Thread playeralarm2 = new Thread(() -> {
+                                try {
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(false, "vote-50sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
+                                    Thread.sleep(10000);
+                                    others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
+                                    Thread.sleep(10000);
+                                } catch (Exception e) {
+                                    printStackTrace(e);
+                                }
+                            });
+                            playeralarm2.start();
+                        }
+                    }
+                }
+            });
+
+            Thread gameovervote = new Thread(() -> {
+                try {
+                    counting.start();
+                    Thread.sleep(60000);
+                    if (current > require) {
+                        Global.log(current+"/"+require);
+                        Call.sendMessage("[green][Essentials] Gameover vote passed!");
+                        Events.fire(new EventType.GameOverEvent(Team.sharded));
+                    } else {
+                        Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
+                    }
+                    vote.clear();
+                    this.voteactive = false;
+                } catch (InterruptedException ignored) {}
+            });
+
+            Thread skipwavevote = new Thread(() -> {
+                try {
+                    counting.start();
+                    Thread.sleep(60000);
+                    if (current >= require) {
+                        Global.log(current+"/"+require);
+                        Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
+                        for (int i = 0; i < 10; i++) {
+                            logic.runWave();
+                        }
+                    } else {
+                        Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
+                    }
+                    vote.clear();
+                    this.voteactive = false;
+                } catch (InterruptedException ignored) {}
+            });
+
+            Thread kickvote = new Thread(() -> {
+                try {
+                    counting.start();
+                    Thread.sleep(60000);
+                    if (current >= require) {
+                        Call.sendMessage("[green][Essentials] Player kick vote success!");
+                        EssentialPlayer.addtimeban(target.name, target.uuid, 4);
+                        Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + current + "/" + require);
+
+                        Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
+                        try {
+                            JSONObject other = getData(target.uuid);
+                            String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + current + "/" + require + "\n";
+                            byte[] result = text.getBytes();
+                            Files.write(path, result, StandardOpenOption.APPEND);
+                            Files.write(total, result, StandardOpenOption.APPEND);
+                        } catch (IOException error) {
+                            printStackTrace(error);
+                        }
+
+                        netServer.admins.banPlayer(target.uuid);
+                        Call.onKick(target.con, "You're banned.");
+                    } else {
+                        assert playerGroup != null;
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player others = playerGroup.all().get(i);
+                            JSONObject db1 = getData(others.uuid);
+                            if (db1.get("language") == "KR") {
+                                player.sendMessage(EssentialBundle.load(true, "vote-failed"));
+                            } else {
+                                player.sendMessage(EssentialBundle.load(false, "vote-failed"));
+                            }
+                        }
+                    }
+                    vote.clear();
+                    this.voteactive = false;
+                } catch (InterruptedException e) {
+                    printStackTrace(e);
+                }
+            });
+
 			JSONObject db = getData(player.uuid);
 			switch (arg[0]) {
 				case "gameover":
 					if (!this.voteactive) {
 						this.voteactive = true;
 						vote.add(player.uuid);
-						int current = vote.size();
-						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
 						for (int i = 0; i < playerGroup.size(); i++) {
 							Player others = playerGroup.all().get(i);
 							JSONObject db1 = getData(others.uuid);
@@ -1124,70 +1270,14 @@ public class Main extends Plugin{
 						}
 						Call.sendMessage("[green][Essentials] Require [scarlet]"+require+"[green] players.");
 
-						Thread t = new Thread(() -> {
-							try {
-								if (playerGroup != null && playerGroup.size() > 0) {
-									for (int i = 0; i < playerGroup.size(); i++) {
-										Player others = playerGroup.all().get(i);
-										JSONObject db1 = getData(others.uuid);
-										if (db1.get("language") == "KR") {
-											Thread playeralarm1 = new Thread(() -> {
-												try {
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
-													Thread.sleep(10000);
-												} catch (Exception e) {
-													printStackTrace(e);
-												}
-											});
-											playeralarm1.start();
-										} else {
-											Thread playeralarm2 = new Thread(() -> {
-												try {
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-50sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
-													Thread.sleep(10000);
-												} catch (Exception e) {
-													printStackTrace(e);
-												}
-											});
-											playeralarm2.start();
-										}
-									}
-								}
-								Thread.sleep(60000);
-								if (current > require-1) {
-								    Global.log(current+"/"+require);
-									Call.sendMessage("[green][Essentials] Gameover vote passed!");
-									Events.fire(new EventType.GameOverEvent(Team.sharded));
-									Thread.sleep(15000);
-								} else {
-									Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
-								}
-								vote.clear();
-								this.voteactive = false;
-							} catch (InterruptedException e) {
-								printStackTrace(e);
-							}
-						});
-						t.start();
-					} else {
+                        Thread t = new Thread(() -> {
+                            gameovervote.start();
+                            try {
+                                gameovervote.join();
+                            } catch (InterruptedException ignored){}
+                        });
+                        t.start();
+                    } else {
 						if (db.getString("language").equals("KR")) {
 							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
 						} else {
@@ -1199,9 +1289,7 @@ public class Main extends Plugin{
 					if (!this.voteactive) {
 						this.voteactive = true;
 						vote.add(player.uuid);
-						int current = vote.size();
-						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
-						for (int i = 0; i < playerGroup.size(); i++) {
+                        for (int i = 0; i < playerGroup.size(); i++) {
 							Player others = playerGroup.all().get(i);
 							JSONObject db1 = getData(others.uuid);
 							if (db1.get("language") == "KR") {
@@ -1212,79 +1300,13 @@ public class Main extends Plugin{
 						}
 						Call.sendMessage("[green][Essentials] Require [scarlet]"+require+"[green] players.");
 
-						Thread t = new Thread(() -> {
-							try {
-								if (playerGroup != null && playerGroup.size() > 0) {
-									for (int i = 0; i < playerGroup.size(); i++) {
-										Player others = playerGroup.all().get(i);
-										JSONObject db1 = getData(others.uuid);
-										if (db1.get("language") == "KR") {
-											Thread playeralarm1 = new Thread(() -> {
-												try {
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
-													Thread.sleep(10000);
-												} catch (Exception e) {
-													printStackTrace(e);
-												}
-											});
-											playeralarm1.start();
-										} else {
-											Thread playeralarm2 = new Thread(() -> {
-												try {
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-50sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
-													Thread.sleep(10000);
-												} catch (Exception e) {
-													printStackTrace(e);
-												}
-											});
-											playeralarm2.start();
-										}
-									}
-								}
-								Thread.sleep(60000);
-								if (current > require-1) {
-									assert playerGroup != null;
-									for (int i = 0; i < playerGroup.size(); i++) {
-										Player others = playerGroup.all().get(i);
-										JSONObject db1 = getData(others.uuid);
-										if (db1.get("language") == "KR") {
-											others.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
-										} else {
-											others.sendMessage(EssentialBundle.load(false, "vote-in-processing"));
-										}
-									}
-									Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
-									for (int i = 0; i < 10; i++) {
-										logic.runWave();
-									}
-								} else {
-									Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
-								}
-								vote.clear();
-								this.voteactive = false;
-							} catch (InterruptedException e) {
-								printStackTrace(e);
-							}
-						});
-						t.start();
+                        Thread t = new Thread(() -> {
+                            skipwavevote.start();
+                            try {
+                                skipwavevote.join();
+                            } catch (InterruptedException ignored){}
+                        });
+                        t.start();
 					} else {
 						if (db.getString("language").equals("KR")) {
 							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
@@ -1297,10 +1319,7 @@ public class Main extends Plugin{
 					if (!this.voteactive) {
 						this.voteactive = true;
 						vote.add(player.uuid);
-						int current = vote.size();
-						int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
-						Player target = playerGroup.find(p -> p.name.equals(arg[1]));
-						if (target != null) {
+                        if (target != null) {
 							target.con.kick("You have been kicked by voting.");
 						} else {
 							if (db.getString("language").equals("KR")) {
@@ -1323,93 +1342,14 @@ public class Main extends Plugin{
 						}
 						Call.sendMessage("[green][Essentials] Require [white]"+require+"[green] players.");
 
-						Thread t = new Thread(() -> {
-							try {
-								if (playerGroup != null && playerGroup.size() > 0) {
-									for (int i = 0; i < playerGroup.size(); i++) {
-										Player others = playerGroup.all().get(i);
-										JSONObject db1 = getData(others.uuid);
-										if (db1.get("language") == "KR") {
-											Thread playeralarm1 = new Thread(() -> {
-												try {
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
-													Thread.sleep(10000);
-												} catch (Exception e) {
-													printStackTrace(e);
-												}
-											});
-											playeralarm1.start();
-										} else {
-											Thread playeralarm2 = new Thread(() -> {
-												try {
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-50sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
-													Thread.sleep(10000);
-													others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
-													Thread.sleep(10000);
-												} catch (Exception e) {
-													printStackTrace(e);
-												}
-											});
-											playeralarm2.start();
-										}
-									}
-								}
-								Thread.sleep(60000);
-								if (current > require-1) {
-									Call.sendMessage("[green][Essentials] Player kick vote success!");
-									EssentialPlayer.addtimeban(target.name, target.uuid, 4);
-									Global.log(target.name+" / "+target.uuid+" Player has banned due to voting. "+current+"/"+require);
-
-									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-									Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-									try {
-										JSONObject other = getData(target.uuid);
-										String text = other.get("name")+" / "+target.uuid+" Player has banned due to voting. "+current+"/"+require+"\n";
-										byte[] result = text.getBytes();
-										Files.write(path, result, StandardOpenOption.APPEND);
-										Files.write(total, result, StandardOpenOption.APPEND);
-									} catch (IOException error) {
-										printStackTrace(error);
-									}
-
-									netServer.admins.banPlayer(target.uuid);
-									Call.onKick(target.con, "You're banned.");
-								} else {
-									assert playerGroup != null;
-									for (int i = 0; i < playerGroup.size(); i++) {
-										Player others = playerGroup.all().get(i);
-										JSONObject db1 = getData(others.uuid);
-										if (db1.get("language") == "KR") {
-											player.sendMessage(EssentialBundle.load(true, "vote-failed"));
-										} else {
-											player.sendMessage(EssentialBundle.load(false, "vote-failed"));
-										}
-									}
-								}
-								vote.clear();
-								this.voteactive = false;
-							} catch (InterruptedException e) {
-								printStackTrace(e);
-							}
-						});
-						t.start();
-					} else {
+                        Thread t = new Thread(() -> {
+                            kickvote.start();
+                            try {
+                                kickvote.join();
+                            } catch (InterruptedException ignored){}
+                        });
+                        t.start();
+                    } else {
 						if (db.getString("language").equals("KR")) {
 							player.sendMessage(EssentialBundle.load(true, "vote-in-processing"));
 						} else {
@@ -1423,9 +1363,12 @@ public class Main extends Plugin{
 							player.sendMessage("[green][Essentials][scarlet] You're already voted!");
 						} else {
 							vote.add(player.uuid);
-							int current = vote.size();
-							int require = (int) Math.ceil(0.5 * Vars.playerGroup.size()) - current;
-							Call.sendMessage("[green][Essentials] "+current+" players voted. need "+require+" more players.");
+                            Call.sendMessage("[green][Essentials] "+current+" players voted. need "+require+" more players.");
+							if(current >= require){
+                                vote.clear();
+                                this.voteactive = false;
+                                counting.interrupt();
+                            }
 						}
 					} else {
 						if (db.getString("language").equals("KR")) {
