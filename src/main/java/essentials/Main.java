@@ -199,17 +199,18 @@ public class Main extends Plugin{
 							byte[] result = text.getBytes();
 							Files.write(path, result, StandardOpenOption.APPEND);
 							Call.onTileDestroyed(e.tile);
-						}
-						Thread.sleep(1750);
-						if(entity.heat >= 0.01){
-							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+                        } else {
+                            Thread.sleep(1750);
+                            if(entity.heat >= 0.01){
+                                Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
 
-							Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
-							String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
-							byte[] result = text.getBytes();
-							Files.write(path, result, StandardOpenOption.APPEND);
-							Call.onTileDestroyed(e.tile);
-						}
+                                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+                                String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
+                                byte[] result = text.getBytes();
+                                Files.write(path, result, StandardOpenOption.APPEND);
+                                Call.onTileDestroyed(e.tile);
+                            }
+                        }
 					}catch (Exception ex){
 						printStackTrace(ex);
 					}

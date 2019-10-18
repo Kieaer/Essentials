@@ -24,19 +24,21 @@ public class EssentialAI {
     float[] coalflow;
     float[] thoriumflow;
     float[] coreflow;
-/*
+
+    /*
     public boolean isPassable(int i) {
         int type = tilesInt(i);
-        if ((type == AIR) || (type == JUNCTION)) return true;
-        return false;
+        return (type == Blocks.air.id) || (type == Blocks.junction.id);
     }
-
+*/
+    /*
     int tilesInt(int i){
         if ((i<0)||(i>sizeSq-1)) return 0;
         int []xy = iToXY(i);
         return (int)tiles[xy[0]][xy[1]];
     }
-*/
+     */
+
     public static void main(){
 
 //        if (!Core.settings.getDataDirectory().child("test.log").exists()) {
