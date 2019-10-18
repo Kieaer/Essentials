@@ -14,21 +14,15 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 
 import static essentials.EssentialPlayer.conn;
 import static essentials.EssentialPlayer.getData;
+import static essentials.Global.gettime;
 import static essentials.Global.printStackTrace;
 
 public class EssentialLog implements Runnable{
     @Override
     public void run() {
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-        String nowString = "[" + now.format(dateTimeFormatter) + "] ";
-
         Thread.currentThread().setName("Logging thread");
 
         if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log").exists()) {
@@ -52,7 +46,7 @@ public class EssentialLog implements Runnable{
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
-                String text = nowString + e.player.name + ": " + e.message + "\n";
+                String text = gettime() + e.player.name + ": " + e.message + "\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
@@ -64,7 +58,7 @@ public class EssentialLog implements Runnable{
         Events.on(EventType.WorldLoadEvent.class, e -> {
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
-                String text = nowString + "World loaded!\n";
+                String text = gettime() + "World loaded!\n";
                 byte[] result = text.getBytes();
                 Files.write(total, result, StandardOpenOption.APPEND);
             } catch (IOException error) {
@@ -78,7 +72,7 @@ public class EssentialLog implements Runnable{
                     Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
                     Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
                     try {
-                        String text = nowString+e.player.name+" Player place " +e.tile.entity.block.name+".\n";
+                        String text = gettime()+e.player.name+" Player place " +e.tile.entity.block.name+".\n";
                         byte[] result = text.getBytes();
                         Files.write(block, result, StandardOpenOption.APPEND);
                         Files.write(total, result, StandardOpenOption.APPEND);
@@ -97,7 +91,7 @@ public class EssentialLog implements Runnable{
                         Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
                         Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
                         try {
-                            String text = nowString+((Player)e.builder).name+" Player break " +e.builder.buildRequest().block.name+".\n";
+                            String text = gettime()+((Player)e.builder).name+" Player break " +e.builder.buildRequest().block.name+".\n";
                             byte[] result = text.getBytes();
                             Files.write(block, result, StandardOpenOption.APPEND);
                             Files.write(total, result, StandardOpenOption.APPEND);
@@ -116,7 +110,7 @@ public class EssentialLog implements Runnable{
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
-                String text = nowString + e.player.name + " has change mech to " + e.mech.name + ".\n";
+                String text = gettime() + e.player.name + " has change mech to " + e.mech.name + ".\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
@@ -137,7 +131,7 @@ public class EssentialLog implements Runnable{
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql);
                 if (rs.next()) {
-                    String text = nowString+"\nPlayer Information\n" +
+                    String text = gettime()+"\nPlayer Information\n" +
                             "========================================\n" +
                             "Name: " + rs.getString("name") + "\n" +
                             "UUID: " + rs.getString("uuid") + "\n" +
@@ -172,7 +166,7 @@ public class EssentialLog implements Runnable{
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = nowString + e.player.name + "/" + e.player.uuid + "/" + ip + " Player connected.\n";
+                String text = gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player connected.\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
@@ -186,7 +180,7 @@ public class EssentialLog implements Runnable{
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = nowString + e.player.name + "/" + e.player.uuid + "/" + ip + " Player disconnected.\n";
+                String text = gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player disconnected.\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);
@@ -200,7 +194,7 @@ public class EssentialLog implements Runnable{
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = nowString + e.player.name+" Player has moved item "+e.player.item().item.name+" to "+e.tile.block().name+".\n";
+                String text = gettime() + e.player.name+" Player has moved item "+e.player.item().item.name+" to "+e.tile.block().name+".\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Files.write(total, result, StandardOpenOption.APPEND);

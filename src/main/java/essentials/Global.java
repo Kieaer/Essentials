@@ -10,6 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public class Global {
     public static void log(String msg){
@@ -94,5 +97,11 @@ public class Global {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static String gettime(){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+        return "[" + now.format(dateTimeFormatter) + "] ";
     }
 }

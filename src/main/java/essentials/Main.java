@@ -47,8 +47,7 @@ import java.util.TimerTask;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
-import static essentials.Global.getTeamNoCore;
-import static essentials.Global.printStackTrace;
+import static essentials.Global.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
@@ -194,11 +193,21 @@ public class Main extends Plugin{
 						Thread.sleep(250);
 						if(entity.heat >= 0.01){
 							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+
+							Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+							String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
+							byte[] result = text.getBytes();
+							Files.write(path, result, StandardOpenOption.APPEND);
 							Call.onTileDestroyed(e.tile);
 						}
 						Thread.sleep(1750);
 						if(entity.heat >= 0.01){
 							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+
+							Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+							String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
+							byte[] result = text.getBytes();
+							Files.write(path, result, StandardOpenOption.APPEND);
 							Call.onTileDestroyed(e.tile);
 						}
 					}catch (Exception ex){
