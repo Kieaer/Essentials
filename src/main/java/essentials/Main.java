@@ -25,6 +25,7 @@ import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.world.Tile;
+import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -182,11 +183,31 @@ public class Main extends Plugin{
 		 */
 
 		// Set if player join event
-		/*
 		Events.on(EventType.PlayerConnect.class, e -> {
 
 		});
-		*/
+		Events.on(EventType.DepositEvent.class, e -> {
+			if(e.tile.block() == Blocks.thoriumReactor){
+				NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) e.tile.entity;
+				Thread t = new Thread(() -> {
+					try{
+						Thread.sleep(250);
+						if(entity.heat >= 0.01){
+							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+							Call.onTileDestroyed(e.tile);
+						}
+						Thread.sleep(1750);
+						if(entity.heat >= 0.01){
+							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+							Call.onTileDestroyed(e.tile);
+						}
+					}catch (Exception ex){
+						printStackTrace(ex);
+					}
+				});
+				t.start();
+			}
+		});
 
         Events.on(PlayerJoin.class, e -> {
         	if(loginenable){

@@ -109,7 +109,7 @@ public class EssentialConfig {
 
                     "# Google translate API Key\n" +
                     "# Make sure that the file is in plugins/Essentials\n" +
-                    "# Example - mods/Essentials/test.json\n" +
+                    "# Example - mods/Essentials/mykey.json\n" +
                     "keyfile: mykey";
 
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
@@ -702,7 +702,7 @@ public class EssentialConfig {
 
                     "# Google translate API Key\n" +
                     "# Make sure that the file is in plugins/Essentials\n" +
-                    "# Example - mods/Essentials/test.json\n" +
+                    "# Example - mods/Essentials/mykey.json\n" +
                     "keyfile: "+keyfile;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");

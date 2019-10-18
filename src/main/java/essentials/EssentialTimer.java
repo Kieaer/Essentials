@@ -72,27 +72,31 @@ public class EssentialTimer extends TimerTask {
         }
 
         // Temporarily ban players time counting
-        String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
-        JSONTokener parser = new JSONTokener(db);
-        JSONObject object = new JSONObject(parser);
+        try{
+            String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
+            JSONTokener parser = new JSONTokener(db);
+            JSONObject object = new JSONObject(parser);
 
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-        String myTime = now.format(dateTimeFormatter);
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+            String myTime = now.format(dateTimeFormatter);
 
-        for (int i = 0; i < object.length(); i++) {
-            JSONObject value1 = (JSONObject) object.get(String.valueOf(i));
-            String date = (String) value1.get("date");
-            String uuid = (String) value1.get("uuid");
-            String name = (String) value1.get("name");
+            for (int i = 0; i < object.length(); i++) {
+                JSONObject value1 = (JSONObject) object.get(String.valueOf(i));
+                String date = (String) value1.get("date");
+                String uuid = (String) value1.get("uuid");
+                String name = (String) value1.get("name");
 
-            if (date.equals(myTime)) {
-                Log.info(myTime);
-                object.remove(String.valueOf(i));
-                Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
-                netServer.admins.unbanPlayerID(uuid);
-                Global.log("["+myTime+"] [Bantime]"+name+"/"+uuid+" player unbanned!");
+                if (date.equals(myTime)) {
+                    Log.info(myTime);
+                    object.remove(String.valueOf(i));
+                    Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
+                    netServer.admins.unbanPlayerID(uuid);
+                    Global.log("["+myTime+"] [Bantime]"+name+"/"+uuid+" player unbanned!");
+                }
             }
+        }catch (Exception ex){
+            printStackTrace(ex);
         }
 
         // Map playtime counting

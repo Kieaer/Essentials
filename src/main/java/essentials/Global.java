@@ -73,24 +73,26 @@ public class Global {
     }
 
     public static void printStackTrace(Throwable e) {
-        StringBuilder sb = new StringBuilder();
-        try {
-            sb.append(e.toString());
-            sb.append("\n");
-            StackTraceElement[] element = e.getStackTrace();
-            for (int idx = 0; idx < element.length; idx++) {
-                sb.append("\tat ");
-                sb.append(element[idx].toString());
+        if(!e.getMessage().equals("Connection refused: connect")){
+            StringBuilder sb = new StringBuilder();
+            try {
+                sb.append(e.toString());
                 sb.append("\n");
-            }
-            sb.append("=================================================\n");
-            String text = sb.toString();
+                StackTraceElement[] element = e.getStackTrace();
+                for (StackTraceElement stackTraceElement : element) {
+                    sb.append("\tat ");
+                    sb.append(stackTraceElement.toString());
+                    sb.append("\n");
+                }
+                sb.append("=================================================\n");
+                String text = sb.toString();
 
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log")));
-            byte[] result = text.getBytes();
-            Files.write(path, result, StandardOpenOption.APPEND);
-        } catch (Exception ignored) {
-            e.printStackTrace();
+                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log")));
+                byte[] result = text.getBytes();
+                Files.write(path, result, StandardOpenOption.APPEND);
+            } catch (Exception ignored) {
+                e.printStackTrace();
+            }
         }
     }
 }
