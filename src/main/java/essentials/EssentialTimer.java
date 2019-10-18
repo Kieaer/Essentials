@@ -91,7 +91,7 @@ public class EssentialTimer extends TimerTask {
                 object.remove(String.valueOf(i));
                 Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
                 netServer.admins.unbanPlayerID(uuid);
-                Global.log(name+"/"+uuid+" player unbanned!");
+                Global.log("["+myTime+"] [Bantime]"+name+"/"+uuid+" player unbanned!");
             }
         }
 
@@ -117,7 +117,7 @@ public class EssentialTimer extends TimerTask {
         }
 
         // Server uptime counting
-        if(playtime != null){
+        if(uptime != null){
             try{
                 Calendar cal1;
                 SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");

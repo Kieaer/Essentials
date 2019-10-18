@@ -930,8 +930,7 @@ public class Main extends Plugin{
 			player.sendMessage("[#DEA82A]Server status[]");
 			player.sendMessage("[#2B60DE]========================================[]");
 			float fps = Math.round((int) 60f / Time.delta());
-			player.sendMessage(fps+"TPS");
-			player.sendMessage(Vars.playerGroup.size()+" players online.");
+			player.sendMessage(fps+"TPS, "+Vars.playerGroup.size()+" players online.");
 			int idb = 0;
 			int ipb = 0;
 
@@ -947,7 +946,7 @@ public class Main extends Plugin{
 			int bancount = idb+ipb;
 			player.sendMessage("Total [scarlet]"+bancount+"[]("+idb+"/"+ipb+") players banned.");
             player.sendMessage("World playtime: "+EssentialTimer.playtime);
-            player.sendMessage("Server uptime: "+EssentialTimer.playtime);
+            player.sendMessage("Server uptime: "+EssentialTimer.uptime);
 		});
 
 		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
