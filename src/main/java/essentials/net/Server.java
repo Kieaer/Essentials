@@ -307,6 +307,7 @@ public class Server implements Runnable{
                     "</script>\n" +
                     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
                     "<meta http-equiv=\"refresh\" content=\"60\">\n" +
+                    "<link rel=\"shortcut icon\" href=\"about:blank\">" +
                     "</head>\n" +
                     "<body>\n" +
                     "<div id=\"infopopup\">\n" +
@@ -474,6 +475,7 @@ public class Server implements Runnable{
                     "</script>\n" +
                     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
                     "<meta http-equiv=\"refresh\" content=\"60\">\n" +
+                    "<link rel=\"shortcut icon\" href=\"about:blank\">" +
                     "</head>\n" +
                     "<body>\n" +
                     "<div id=\"infopopup\">\n" +
@@ -645,6 +647,7 @@ public class Server implements Runnable{
                             "*{margin: 0 auto;padding: 0;}\n" +
                             "#box{display: flex;align-items:center;justify-content: center;}\n" +
                             "</style>\n" +
+                            "<link rel=\"shortcut icon\" href=\"about:blank\">" +
                             "<TITLE>404 NOT FOUND</TITLE>\n" +
                             "</head>\n" +
                             "<body>\n" +

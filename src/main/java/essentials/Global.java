@@ -93,6 +93,7 @@ public class Global {
                 Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log")));
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
+                Global.loge("Internal error! - "+e.getMessage());
             } catch (Exception ignored) {
                 e.printStackTrace();
             }
