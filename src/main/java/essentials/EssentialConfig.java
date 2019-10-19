@@ -82,7 +82,7 @@ public class EssentialConfig {
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
                     "banshare: false\n\n" +
 
-                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n" +
+                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n# Ranking page address is http://localhost:server_port/rank\n" +
                     "query: false\n\n" +
 
                     "# Enable Anti-VPN service.\n" +
@@ -675,7 +675,7 @@ public class EssentialConfig {
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
                     "banshare: "+banshare+"\n\n" +
 
-                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n" +
+                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n# Ranking page address is http://localhost:server_port/rank\n" +
                     "query: "+query+"\n\n" +
 
                     "# Enable Anti-VPN service.\n" +

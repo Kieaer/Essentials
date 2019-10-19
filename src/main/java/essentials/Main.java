@@ -225,17 +225,30 @@ public class Main extends Plugin{
 
 				JSONObject db = getData(e.player.uuid);
 				if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-					if (db.getString("uuid").equals(e.player.uuid)) {
-						JSONObject db2 = getData(e.player.uuid);
-						if (db2.get("language").equals("KR")) {
-							e.player.sendMessage(EssentialBundle.load(true, "autologin"));
-						} else {
-							e.player.sendMessage(EssentialBundle.load(false, "autologin"));
+					if (db.has("uuid")){
+						if (db.getString("uuid").equals(e.player.uuid)) {
+							JSONObject db2 = getData(e.player.uuid);
+							if (db2.get("language").equals("KR")) {
+								e.player.sendMessage(EssentialBundle.load(true, "autologin"));
+							} else {
+								e.player.sendMessage(EssentialBundle.load(false, "autologin"));
+							}
+							if (db2.getBoolean("isadmin")) {
+								e.player.isAdmin = true;
+							}
+							EssentialPlayer.load(e.player, null);
 						}
-						if (db2.getBoolean("isadmin")) {
-							e.player.isAdmin = true;
-						}
-						EssentialPlayer.load(e.player, null);
+					} else {
+						Team no_core = getTeamNoCore(e.player);
+						e.player.setTeam(no_core);
+						Call.onPlayerDeath(e.player);
+
+						// Login require
+						String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
+								"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
+								"서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
+								"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
+						Call.onInfoMessage(e.player.con, message);
 					}
 				} else {
 					Team no_core = getTeamNoCore(e.player);

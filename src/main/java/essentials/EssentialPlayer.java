@@ -34,7 +34,7 @@ import static io.anuke.mindustry.Vars.playerGroup;
 public class EssentialPlayer{
     private static int dbversion = 1;
     private static boolean queryresult;
-    static Connection conn;
+    public static Connection conn;
     private static boolean loginresult;
     private static boolean registerresult;
 
@@ -528,96 +528,98 @@ public class EssentialPlayer{
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             try {
-                LocalDateTime now = LocalDateTime.now();
-                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                String nowString = now.format(dateTimeFormatter);
-                String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+                if(!getData(player.uuid).toString().equals("{}")){
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                    String nowString = now.format(dateTimeFormatter);
+                    String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 
-                boolean isLocal = player.isLocal;
+                    boolean isLocal = player.isLocal;
 
-                // Geolocation
-                String geo;
-                String geocode;
-                String lang;
-                Pattern p = null;
-                try {
-                    p = Pattern.compile("(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
-                } catch (Exception e) {
-                    printStackTrace(e);
-                }
-                assert p != null;
-                Matcher m = p.matcher(ip);
-
-                if (m.find()) {
-                    isLocal = true;
-                }
-                if (isLocal) {
-                    geo = "Local IP";
-                    geocode = "LC";
-                    lang = "en";
-                } else {
+                    // Geolocation
+                    String geo;
+                    String geocode;
+                    String lang;
+                    Pattern p = null;
                     try {
-                        String apiURL = "http://ipapi.co/" + ip + "/json";
-                        URL url = new URL(apiURL);
-                        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                        con.setReadTimeout(5000);
-                        con.setRequestMethod("POST");
-
-                        boolean redirect = false;
-
-                        int status = con.getResponseCode();
-                        if (status != HttpURLConnection.HTTP_OK) {
-                            if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
-                                redirect = true;
-                        }
-
-                        if (redirect) {
-                            String newUrl = con.getHeaderField("Location");
-                            String cookies = con.getHeaderField("Set-Cookie");
-
-                            con = (HttpURLConnection) new URL(newUrl).openConnection();
-                            con.setRequestProperty("Cookie", cookies);
-                        }
-
-                        BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                        String inputLine;
-                        StringBuilder response = new StringBuilder();
-                        while ((inputLine = br.readLine()) != null) {
-                            response.append(inputLine);
-                        }
-                        br.close();
-                        JSONTokener parser = new JSONTokener(response.toString());
-                        JSONObject result = new JSONObject(parser);
-
-                        if (result.has("reserved")) {
-                            geo = "Local IP";
-                            geocode = "LC";
-                            lang = "en";
-                        } else {
-                            geo = result.getString("country_name");
-                            geocode = result.getString("country");
-                            lang = result.getString("languages").substring(0, 1);
-                        }
-                    } catch (IOException e) {
-                        geo = "invalid";
-                        geocode = "invalid";
-                        lang = "en";
+                        p = Pattern.compile("(^127\\.)|(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)");
+                    } catch (Exception e) {
+                        printStackTrace(e);
                     }
-                }
-                // Geolocation end
+                    assert p != null;
+                    Matcher m = p.matcher(ip);
 
-                int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
-                int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
+                    if (m.find()) {
+                        isLocal = true;
+                    }
+                    if (isLocal) {
+                        geo = "Local IP";
+                        geocode = "LC";
+                        lang = "en";
+                    } else {
+                        try {
+                            String apiURL = "http://ipapi.co/" + ip + "/json";
+                            URL url = new URL(apiURL);
+                            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                            con.setReadTimeout(5000);
+                            con.setRequestMethod("POST");
 
-                player.sendMessage("[green]Your nickname is now [white]" + player.name + ".");
+                            boolean redirect = false;
 
-                try {
-                    createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, "blank", "blank");
-                    registerresult = true;
-                } catch (Exception e) {
-                    registerresult = false;
-                    Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n" + Arrays.toString(e.getStackTrace()));
-                    player.con.kick("You have been kicked due to a plugin error.");
+                            int status = con.getResponseCode();
+                            if (status != HttpURLConnection.HTTP_OK) {
+                                if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+                                    redirect = true;
+                            }
+
+                            if (redirect) {
+                                String newUrl = con.getHeaderField("Location");
+                                String cookies = con.getHeaderField("Set-Cookie");
+
+                                con = (HttpURLConnection) new URL(newUrl).openConnection();
+                                con.setRequestProperty("Cookie", cookies);
+                            }
+
+                            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                            String inputLine;
+                            StringBuilder response = new StringBuilder();
+                            while ((inputLine = br.readLine()) != null) {
+                                response.append(inputLine);
+                            }
+                            br.close();
+                            JSONTokener parser = new JSONTokener(response.toString());
+                            JSONObject result = new JSONObject(parser);
+
+                            if (result.has("reserved")) {
+                                geo = "Local IP";
+                                geocode = "LC";
+                                lang = "en";
+                            } else {
+                                geo = result.getString("country_name");
+                                geocode = result.getString("country");
+                                lang = result.getString("languages").substring(0, 1);
+                            }
+                        } catch (IOException e) {
+                            geo = "invalid";
+                            geocode = "invalid";
+                            lang = "en";
+                        }
+                    }
+                    // Geolocation end
+
+                    int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
+                    int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
+
+                    player.sendMessage("[green]Your nickname is now [white]" + player.name + ".");
+
+                    try {
+                        createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, "blank", "blank");
+                        registerresult = true;
+                    } catch (Exception e) {
+                        registerresult = false;
+                        Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n" + Arrays.toString(e.getStackTrace()));
+                        player.con.kick("You have been kicked due to a plugin error.");
+                    }
                 }
             } catch (Exception e) {
                 printStackTrace(e);

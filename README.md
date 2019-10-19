@@ -85,8 +85,12 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [x] Teleport
   - [x] Detect some nickname
 - [ ] Nickname prefix
-- [ ] Anti-Explode
+- [x] Anti-Explode
 - [x] Translatable all messages using bundle
+- [x] Ranking system
+- [x] monitoring message block
+  - [ ] Core block
+  - [x] Power node
 
 ## 6.0 version plans
 - [x] Make RPG using player DB
@@ -94,3 +98,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 - [ ] Monitoring resource consumption
   - [ ] Alarm when resource consumption is fast
   - [ ] Alarm when resource bank is full
+- [ ] AI
+  - [ ] Pathfinding
+  - [ ] OreFlow
+  - [ ] Player
