@@ -5,6 +5,7 @@ import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.mindrot.jbcrypt.BCrypt;
@@ -286,14 +287,11 @@ public class EssentialPlayer{
         data1.put("date", newTime);
         data1.put("name", name);
 
-        int i = 0;
-        while(i<object.length()){
-            i++;
-        }
+        JSONArray dataarray = new JSONArray();
 
-        object.put(String.valueOf(i), data1);
+        dataarray.put(data1);
 
-        Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
+        Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(dataarray));
 
         // Write player data
         writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"', WHERE uuid = '"+uuid+"'");

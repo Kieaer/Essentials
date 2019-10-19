@@ -16,7 +16,6 @@ import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType;
-import io.anuke.mindustry.game.EventType.PlayerJoin;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
@@ -185,6 +184,7 @@ public class Main extends Plugin{
 		Events.on(EventType.PlayerConnect.class, e -> {
 
 		});
+
 		Events.on(EventType.DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
 				NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) e.tile.entity;
@@ -219,7 +219,7 @@ public class Main extends Plugin{
 			}
 		});
 
-        Events.on(PlayerJoin.class, e -> {
+        Events.on(EventType.PlayerJoin.class, e -> {
         	if(loginenable){
 				e.player.isAdmin = false;
 

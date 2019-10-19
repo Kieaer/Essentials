@@ -7,6 +7,7 @@ import essentials.special.gifimage;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
 import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.core.GameState;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.Team;
@@ -126,34 +127,38 @@ public class Server implements Runnable{
     }
 
     private static String serverinfo(){
-        int playercount = playerGroup.size();
-        StringBuilder playerdata = new StringBuilder();
-        for(Player p : playerGroup.all()){
-            playerdata.append(p.name+",");
-        }
-        String players = "Empty";
-        if(playerdata.length() != 0) {
-            playerdata.substring(playerdata.length() - 1, playerdata.length());
-        }
-        int version = Version.build;
-        String description = Core.settings.getString("servername");
-        String worldtime = playtime;
-        String serveruptime = uptime;
-        StringBuilder items = new StringBuilder();
-        for(Item item : content.items()) {
-            if(item.type == ItemType.material){
-                items.append(item.name+": "+state.teams.get(Team.sharded).cores.first().entity.items.get(item)+"<br>");
+        if(state.is(GameState.State.playing)){
+            int playercount = playerGroup.size();
+            StringBuilder playerdata = new StringBuilder();
+            for(Player p : playerGroup.all()){
+                playerdata.append(p.name+",");
             }
-        }
-        String coreitem = items.toString();
+            String players = "Empty";
+            if(playerdata.length() != 0) {
+                playerdata.substring(playerdata.length() - 1, playerdata.length());
+            }
+            int version = Version.build;
+            String description = Core.settings.getString("servername");
+            String worldtime = playtime;
+            String serveruptime = uptime;
+            StringBuilder items = new StringBuilder();
+            for(Item item : content.items()) {
+                if(item.type == ItemType.material){
+                    items.append(item.name+": "+state.teams.get(Team.sharded).cores.first().entity.items.get(item)+"<br>");
+                }
+            }
+            String coreitem = items.toString();
 
-        return "Player count: "+playercount+"<br>" +
-                "Player list: "+players+"<br>" +
-                "Version: "+version+"<br>" +
-                "Description: "+description+"<br>" +
-                "World playtime: "+worldtime+"<br>" +
-                "Server uptime: "+serveruptime+"<br>" +
-                "Core items<br>"+coreitem;
+            return "Player count: "+playercount+"<br>" +
+                    "Player list: "+players+"<br>" +
+                    "Version: "+version+"<br>" +
+                    "Description: "+description+"<br>" +
+                    "World playtime: "+worldtime+"<br>" +
+                    "Server uptime: "+serveruptime+"<br>" +
+                    "Core items<br>"+coreitem;
+        } else {
+            return "Server isn't hosted!";
+        }
     }
     private static String rankingdata(boolean lang){
         StringBuilder placecount = new StringBuilder();

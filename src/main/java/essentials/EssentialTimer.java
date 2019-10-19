@@ -5,6 +5,7 @@ import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -79,24 +80,24 @@ public class EssentialTimer extends TimerTask {
         try{
             String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
             JSONTokener parser = new JSONTokener(db);
-            JSONObject object = new JSONObject(parser);
+            JSONArray object = new JSONArray(parser);
 
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
             String myTime = now.format(dateTimeFormatter);
 
             for (int i = 0; i < object.length(); i++) {
-                JSONObject value1 = (JSONObject) object.get(String.valueOf(i));
+                JSONObject value1 = object.getJSONObject(i);
                 String date = (String) value1.get("date");
                 String uuid = (String) value1.get("uuid");
                 String name = (String) value1.get("name");
 
                 if (date.equals(myTime)) {
                     Log.info(myTime);
-                    object.remove(String.valueOf(i));
+                    object.remove(i);
                     Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
                     netServer.admins.unbanPlayerID(uuid);
-                    Global.log("["+myTime+"] [Bantime]"+name+"/"+uuid+" player unbanned!");
+                    Global.log("[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
                 }
             }
         }catch (Exception ex){

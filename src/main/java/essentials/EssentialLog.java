@@ -189,6 +189,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
+
         Events.on(EventType.DepositEvent.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
