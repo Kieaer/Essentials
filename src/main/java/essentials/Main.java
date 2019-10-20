@@ -151,6 +151,8 @@ public class Main extends Plugin{
             Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
         });
 
+		Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+
 		Thread powerrepeat = new Thread(new Runnable(){
 			@Override
 			public synchronized void run() {

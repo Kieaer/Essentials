@@ -31,8 +31,8 @@ public class Powerstat{
                     current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
                     using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
                     product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
-                } catch (Exception e) {
-                    printStackTrace(e);
+                } catch (Exception ex) {
+                    printStackTrace(ex);
                     current = 0;
                     using = 0;
                     product = 0;
