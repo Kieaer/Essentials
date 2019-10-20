@@ -62,16 +62,23 @@ public class Server implements Runnable{
             }
 
             Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
+            Array<String> ipbans = netServer.admins.getBannedIPs();
             JSONArray data1 = new JSONArray();
-            for (Administration.PlayerInfo info : bans) {
-                data1.put(info.id + "|" + info.lastIP);
+            if(bans.size != 0){
+                for (Administration.PlayerInfo info : bans) {
+                    data1.put(info.id + "|" + info.lastIP);
+                }
+            }
+            if(ipbans.size != 0){
+                for(String string : ipbans){
+                    data1.put("<unknown>|"+string);
+                }
             }
 
             OutputStream os = socket.getOutputStream();
             OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
             BufferedWriter bw = new BufferedWriter(osw);
             bw.write(data1+"\n");
-            bw.flush();
             bw.close();
             Global.bans("Data sented to " + remoteip + "!");
         }catch (Exception e){
@@ -610,74 +617,84 @@ public class Server implements Runnable{
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
             String time = now.format(dateTimeFormatter);
 
-            OutputStream os = socket.getOutputStream();
-            OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-            BufferedWriter bw = new BufferedWriter(osw);
-            if(query){
-                if(receive.matches("GET / HTTP/.*")){
-                    String data = query();
-                    bw.write("HTTP/1.1 200 OK\r\n");
-                    bw.write("Date: "+time+"\r\n");
-                    bw.write("Server: Mindustry/Essentials 5.0\r\n");
-                    bw.write("Content-Type: application/json; charset=utf-8\r\n");
-                    bw.write("Content-Length: "+data.getBytes().length+1+"\r\n");
-                    bw.write("\r\n");
-                    bw.write(query());
-                } else if(receive.matches("GET /rank HTTP/.*") || receive.matches("GET /rank# HTTP/.*")){
-                    String rank = rankingdata(true);
-                    bw.write("HTTP/1.1 200 OK\r\n");
-                    bw.write("Date: "+time+"\r\n");
-                    bw.write("Server: Mindustry/Essentials 5.0\r\n");
-                    bw.write("Content-Type: text/html; charset=utf-8\r\n");
-                    bw.write("Content-Length: "+rank.getBytes().length+1+"\r\n");
-                    bw.write("\r\n");
-                    bw.write(rank);
-                } else if(receive.matches("GET /rank/kr HTTP/.*") || receive.matches("GET /rank/kr# HTTP/.*")){
-                    String rankkr = rankingdata(false);
-                    bw.write("HTTP/1.1 200 OK\r\n");
-                    bw.write("Date: "+time+"\r\n");
-                    bw.write("Server: Mindustry/Essentials 5.0\r\n");
-                    bw.write("Content-Type: text/html; charset=utf-8\r\n");
-                    bw.write("Content-Length: "+rankkr.getBytes().length+1+"\r\n");
-                    bw.write("\r\n");
-                    bw.write(rankkr);
-                } else {
-                    gifimage gif = new gifimage();
-                    String webdata = "<!DOCTYPE html>\n" +
-                            "<html lang=\"ko\">\n" +
-                            "<head>\n" +
-                            "<meta charset=\"UTF-8\">\n" +
-                            "<title>404 NOT FOUND</title>\n" +
-                            "<style>\n" +
-                            "*{margin: 0 auto;padding: 0;}\n" +
-                            "#box{display: flex;align-items:center;justify-content: center;}\n" +
-                            "</style>\n" +
-                            "<link rel=\"shortcut icon\" href=\"about:blank\">" +
-                            "<TITLE>404 NOT FOUND</TITLE>\n" +
-                            "</head>\n" +
-                            "<body>\n" +
-                            "<div id=\"box\">\n" +
-                            "<img src=\""+gif.notfound()+"\" style=\"width:100%\" alt=\"\">\n" +
-                            "</div>\n" +
-                            "</body>\n" +
-                            "</html>";
-                    bw.write("HTTP/1.1 404 Internal error\r\n");
-                    bw.write("Date: "+time+"\r\n");
-                    bw.write("Server: Mindustry/Essentials 5.0\r\n");
-                    bw.write("\r\n");
-                    bw.write(webdata);
-                    Global.log(receive);
+            Thread server = new Thread(new Runnable() {
+                @Override
+                public synchronized void run() {
+                    try{
+                        OutputStream os = socket.getOutputStream();
+                        OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+                        BufferedWriter bw = new BufferedWriter(osw);
+                        if(query){
+                            if(receive.matches("GET / HTTP/.*")){
+                                String data = query();
+                                bw.write("HTTP/1.1 200 OK\r\n");
+                                bw.write("Date: "+time+"\r\n");
+                                bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                                bw.write("Content-Type: application/json; charset=utf-8\r\n");
+                                bw.write("Content-Length: "+data.getBytes().length+1+"\r\n");
+                                bw.write("\r\n");
+                                bw.write(query());
+                            } else if(receive.matches("GET /rank HTTP/.*") || receive.matches("GET /rank# HTTP/.*")){
+                                String rank = rankingdata(true);
+                                bw.write("HTTP/1.1 200 OK\r\n");
+                                bw.write("Date: "+time+"\r\n");
+                                bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                                bw.write("Content-Type: text/html; charset=utf-8\r\n");
+                                bw.write("Content-Length: "+rank.getBytes().length+1+"\r\n");
+                                bw.write("\r\n");
+                                bw.write(rank);
+                            } else if(receive.matches("GET /rank/kr HTTP/.*") || receive.matches("GET /rank/kr# HTTP/.*")){
+                                String rankkr = rankingdata(false);
+                                bw.write("HTTP/1.1 200 OK\r\n");
+                                bw.write("Date: "+time+"\r\n");
+                                bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                                bw.write("Content-Type: text/html; charset=utf-8\r\n");
+                                bw.write("Content-Length: "+rankkr.getBytes().length+1+"\r\n");
+                                bw.write("\r\n");
+                                bw.write(rankkr);
+                            } else {
+                                gifimage gif = new gifimage();
+                                String webdata = "<!DOCTYPE html>\n" +
+                                        "<html lang=\"ko\">\n" +
+                                        "<head>\n" +
+                                        "<meta charset=\"UTF-8\">\n" +
+                                        "<title>404 NOT FOUND</title>\n" +
+                                        "<style>\n" +
+                                        "*{margin: 0 auto;padding: 0;}\n" +
+                                        "#box{display: flex;align-items:center;justify-content: center;}\n" +
+                                        "</style>\n" +
+                                        "<link rel=\"shortcut icon\" href=\"about:blank\">" +
+                                        "<TITLE>404 NOT FOUND</TITLE>\n" +
+                                        "</head>\n" +
+                                        "<body>\n" +
+                                        "<div id=\"box\">\n" +
+                                        "<img src=\""+gif.notfound()+"\" style=\"width:100%\" alt=\"\">\n" +
+                                        "</div>\n" +
+                                        "</body>\n" +
+                                        "</html>";
+                                bw.write("HTTP/1.1 404 Internal error\r\n");
+                                bw.write("Date: "+time+"\r\n");
+                                bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                                bw.write("\r\n");
+                                bw.write(webdata);
+                                Global.log(receive);
+                            }
+                        } else {
+                            bw.write("HTTP/1.1 403 Forbidden\r\n");
+                            bw.write("Date: "+time+"\r\n");
+                            bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                            bw.write("Content-Encoding: gzip");
+                            bw.write("\r\n");
+                            bw.write("<TITLE>403 Forbidden</TITLE>");
+                            bw.write("<p>This server isn't allowed query!</p>");
+                        }
+                        bw.close();
+                    }catch (Exception e){
+                        printStackTrace(e);
+                    }
                 }
-            } else {
-                bw.write("HTTP/1.1 403 Forbidden\r\n");
-                bw.write("Date: "+time+"\r\n");
-                bw.write("Server: Mindustry/Essentials 5.0\r\n");
-                bw.write("Content-Encoding: gzip");
-                bw.write("\r\n");
-                bw.write("<TITLE>403 Forbidden</TITLE>");
-                bw.write("<p>This server isn't allowed query!</p>");
-            }
-            bw.close();
+            });
+            server.start();
         } catch (Exception e){
             printStackTrace(e);
         }
@@ -700,7 +717,7 @@ public class Server implements Runnable{
     }
 
     @Override
-    public void run() {
+    public synchronized void run() {
         try{
             Thread.currentThread().setName("Essentials Server");
             serverSocket = new ServerSocket(serverport);

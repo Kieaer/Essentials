@@ -580,6 +580,19 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
+		handler.register("ping", "send ping to remote server", arg -> {
+			Thread servercheck = new Thread(() -> {
+				try{
+					Global.log("EssentialsClient is attempting to connect to the server.");
+					Thread.sleep(1500);
+					Client.main("ping", null, null);
+				}catch (Exception e){
+					printStackTrace(e);
+				}
+			});
+			servercheck.start();
+		});
+
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));

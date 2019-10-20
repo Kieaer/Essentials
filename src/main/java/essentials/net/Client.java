@@ -28,11 +28,20 @@ public class Client{
 
     private static void ban(BufferedWriter bw) {
         Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
+        Array<String> ipbans = netServer.admins.getBannedIPs();
         Global.banc("Ban list senting...");
         JSONArray bandata = new JSONArray();
-        for (Administration.PlayerInfo info : bans) {
-            bandata.put(info.id+"|"+info.lastIP);
+        if(bans.size != 0){
+            for (Administration.PlayerInfo info : bans) {
+                bandata.put(info.id + "|" + info.lastIP);
+            }
         }
+        if(ipbans.size != 0){
+            for(String string : ipbans){
+                bandata.put("<unknown>|"+string);
+            }
+        }
+
         try {
             bw.write(bandata +"\n");
             bw.flush();
@@ -42,6 +51,9 @@ public class Client{
             BufferedReader br = new BufferedReader(isr);
             String message = br.readLine();
 
+            is.close();
+            isr.close();
+            br.close();
             JSONTokener ar = new JSONTokener(message);
             JSONArray result = new JSONArray(ar);
             Global.banc("Received data!");
@@ -105,7 +117,12 @@ public class Client{
             BufferedReader br = new BufferedReader(isr);
             String message = br.readLine();
             Global.log(message);
+
+            is.close();
+            isr.close();
+            br.close();
         }catch (Exception e){
+            e.printStackTrace();
             Global.loge(clienthost+":"+clientport+" server isn't response!");
         }
     }
@@ -129,6 +146,7 @@ public class Client{
                 case "ping":
                     ping(bw);
             }
+            bw.close();
             socket.close();
         } catch (Exception e) {
             Global.loge("Unable to connect to the "+clienthost+":"+clientport+" server!");
