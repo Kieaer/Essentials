@@ -30,7 +30,6 @@ public class Powerstat{
                 try {
                     current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
                     using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
-                    // getPowerProduced() make random #iterator can't nested error.
                     product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
                 } catch (Exception e) {
                     printStackTrace(e);
@@ -38,18 +37,11 @@ public class Powerstat{
                     using = 0;
                     product = 0;
                 }
-
-                if (current == 0 && using == 0 && product == 0) {
-                    Call.onTileDestroyed(world.tile(x, y));
-                    object.remove(i);
-                    Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
-                } else {
-                    String text = "Power status\n" +
-                            "Current: [sky]" + Math.round(current) + "[]\n" +
-                            "Using: [red]" + Math.round(using) + "[]\n" +
-                            "Production: [green]" + Math.round(product) + "[]";
-                    Call.setMessageBlockText(null, world.tile(x, y), text);
-                }
+                String text = "Power status\n" +
+                        "Current: [sky]" + Math.round(current) + "[]\n" +
+                        "Using: [red]" + Math.round(using) + "[]\n" +
+                        "Production: [green]" + Math.round(product) + "[]";
+                Call.setMessageBlockText(null, world.tile(x, y), text);
             }
         } catch (Exception e) {
             e.printStackTrace();

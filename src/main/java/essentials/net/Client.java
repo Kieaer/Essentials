@@ -78,10 +78,10 @@ public class Client{
 
     private static void chat(BufferedWriter bw, String chat, Player player) {
         try {
-            String msg = chat+"\n";
-            bw.write(msg);
+            String msg = "["+player.name+"]: "+chat;
+            bw.write(msg+"\n");
             bw.flush();
-            Call.sendMessage("[#357EC7][SC] "+chat);
+            Call.sendMessage("[#357EC7][SC] "+msg);
             Global.chatc("Message sent to "+clienthost+" - "+chat+"");
         } catch (Exception e) {
             String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");

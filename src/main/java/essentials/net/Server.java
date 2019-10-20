@@ -736,12 +736,18 @@ public class Server implements Runnable{
 
                 if (data.matches("GET /.*")) {
                     httpserver(data);
-                } else if (data.matches(".*\\[(.*)]:.*")){
+                } else if (data.matches("\\[(.*)]:.*")){
                     chat(data, remoteip);
                 } else if (data.matches("ping")) {
                     ping(remoteip);
-                } else if(banshare){
-                    ban(data, remoteip);
+                } else if(banshare) {
+                    try{
+                        JSONTokener test = new JSONTokener(data);
+                        new JSONArray(test);
+                        ban(data, remoteip);
+                    }catch (Exception e){
+                        Global.logw("Unknown data! - " + data);
+                    }
                 } else {
                     Global.logw("Unknown data! - " + data);
                 }

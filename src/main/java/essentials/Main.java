@@ -149,17 +149,34 @@ public class Main extends Plugin{
 
             // Reset powernode information
             Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
-
-            TimerTask time = new TimerTask() {
-                @Override
-                public void run() {
-                    Powerstat pw = new Powerstat();
-                    pw.main();
-                }
-            };
-            Timer timer = new Timer(true);
-            timer.scheduleAtFixedRate(time,100,100);
         });
+
+		Thread powerrepeat = new Thread(new Runnable(){
+			@Override
+			public synchronized void run() {
+				try{
+					while(true){
+						Powerstat pw = new Powerstat();
+						pw.main();
+						Thread.sleep(200);
+					}
+				}catch (Exception e){
+					printStackTrace(e);
+				}
+			}
+		});
+		powerrepeat.start();
+
+		TimerTask checkdead = new TimerTask() {
+			@Override
+			public void run() {
+				if(!powerrepeat.isAlive()){
+					powerrepeat.start();
+				}
+			}
+		};
+		Timer checkthread = new Timer(true);
+		checkthread.scheduleAtFixedRate(checkdead, 1000, 1000);
 
         // Set if thorium rector explode
 		/*
@@ -187,6 +204,7 @@ public class Main extends Plugin{
 		Events.on(EventType.PlayerConnect.class, e -> {
 
 		});
+
 
 		Events.on(EventType.DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
@@ -330,8 +348,7 @@ public class Main extends Plugin{
 					if (clientenable) {
 						if (crosschat) {
 							Thread chatclient = new Thread(() -> {
-								String message = e.player.name.replaceAll("\\[(.*?)]", "") + ": " + e.message;
-								Client.main("chat", message, e.player);
+								Client.main("chat", e.message, e.player);
 							});
 							chatclient.start();
 						}
@@ -565,6 +582,10 @@ public class Main extends Plugin{
 				}
                 executorService.shutdown();
 				//reactormonitor.interrupt();
+
+				checkthread.cancel();
+				checkdead.cancel();
+				powerrepeat.interrupt();
             }
 		});
 
@@ -1791,20 +1812,20 @@ public class Main extends Plugin{
 				}
 				if (targetteam != null) {
 					if (targetplayer != null) {
-						for(int i=0;count>=i;i++){
+						for(int i=0;count>i;i++){
 							BaseUnit baseUnit = targetunit.create(targetplayer.getTeam());
 							baseUnit.set(targetplayer.getX(), targetplayer.getY());
 							baseUnit.add();
 						}
 					} else {
-						for(int i=0;count>=i;i++){
+						for(int i=0;count>i;i++){
 							BaseUnit baseUnit = targetunit.create(targetteam);
 							baseUnit.set(player.getX(), player.getY());
 							baseUnit.add();
 						}
 					}
 				} else {
-					for(int i=0;count>=i;i++){
+					for(int i=0;count>i;i++){
 						BaseUnit baseUnit = targetunit.create(player.getTeam());
 						baseUnit.set(player.getX(), player.getY());
 						baseUnit.add();
