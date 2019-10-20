@@ -94,8 +94,8 @@ public class Global {
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Global.loge("Internal error! - "+e.getMessage());
-            } catch (Exception ignored) {
-                e.printStackTrace();
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
     }

@@ -52,6 +52,7 @@ public class Powerstat{
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             printStackTrace(e);
         }
     }
