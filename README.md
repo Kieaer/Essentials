@@ -32,14 +32,16 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | vote | &lt;gameover/skipwave/kick&gt; [player name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | login | &lt;account id&gt; &lt;password&gt; | Login to account. |
 | register | &lt;account id&gt; &lt;new password&gt; &lt;new password repeat&gt; | Register account |
+| spawn | &lt;mob name&gt; &lt;count&gt; &lt;team name&gt; [player name] | Spawn mob in player location |
 
 ## Console commands
 
 | Command | Parameter | Description |
 |:---|:---|:---|
+| ping |  | send ping to remote server |
 | tempban | &lt;type-id/ip/name&gt; &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
 | allinfo | &lt;player name&gt; | Show player information |
-| bansync |   | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
+| bansync |  | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
 | team | &lt;player name&gt;  | Change player team |
 
 ## 4.0 version plans
