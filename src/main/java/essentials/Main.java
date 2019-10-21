@@ -153,32 +153,9 @@ public class Main extends Plugin{
 
 		Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
 
-		Thread powerrepeat = new Thread(new Runnable(){
-			@Override
-			public synchronized void run() {
-				try{
-					while(true){
-						Powerstat pw = new Powerstat();
-						pw.main();
-						Thread.sleep(200);
-					}
-				}catch (Exception e){
-					printStackTrace(e);
-				}
-			}
-		});
-		powerrepeat.start();
-
-		TimerTask checkdead = new TimerTask() {
-			@Override
-			public void run() {
-				if(!powerrepeat.isAlive()){
-					powerrepeat.start();
-				}
-			}
-		};
-		Timer checkthread = new Timer(true);
-		checkthread.scheduleAtFixedRate(checkdead, 1000, 1000);
+        TimerTask pwt = new Powerstat();
+		Timer pw = new Timer(true);
+		pw.scheduleAtFixedRate(pwt, 150, 150);
 
         // Set if thorium rector explode
 		/*
@@ -585,9 +562,7 @@ public class Main extends Plugin{
                 executorService.shutdown();
 				//reactormonitor.interrupt();
 
-				checkthread.cancel();
-				checkdead.cancel();
-				powerrepeat.interrupt();
+                pwt.cancel();
             }
 		});
 
