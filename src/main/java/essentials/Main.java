@@ -2,7 +2,6 @@ package essentials;
 
 import essentials.net.Client;
 import essentials.net.Server;
-import essentials.thread.Powerstat;
 import essentials.thread.Update;
 import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
@@ -144,6 +143,67 @@ public class Main extends Plugin{
 			}
 		});
 
+		// Set live powerblock
+        final int[] delaycount = {0};
+		ApplicationListener pta = new ApplicationListener() {
+            @Override
+            public void update() {
+                if(delaycount[0] == 10){
+                    String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
+                    JSONTokener parser = new JSONTokener(db);
+                    try{
+                        JSONArray object = new JSONArray(parser);
+                        for (int i = 0; i < object.length(); i++) {
+                            String raw = object.getString(i);
+
+                            String[] data = raw.split("/");
+
+                            int x = Integer.parseInt(data[0]);
+                            int y = Integer.parseInt(data[1]);
+                            int target_x = Integer.parseInt(data[2]);
+                            int target_y = Integer.parseInt(data[3]);
+
+                            if(world.tile(x, y).block() != Blocks.message){
+                                object.remove(i);
+                                Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+                                return;
+                            }
+
+                            float current;
+                            float product;
+                            float using;
+                            try {
+                                current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
+                                using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
+                                product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
+                            } catch (Exception ex) {
+                                printStackTrace(ex);
+                                current = 0;
+                                using = 0;
+                                product = 0;
+                            }
+                            if (current == 0 && using == 0 && product == 0) {
+                                Call.onTileDestroyed(world.tile(x, y));
+                                object.remove(i);
+                                Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+                            } else {
+                                String text = "Power status\n" +
+                                        "Current: [sky]" + Math.round(current) + "[]\n" +
+                                        "Using: [red]" + Math.round(using) + "[]\n" +
+                                        "Production: [green]" + Math.round(product) + "[]";
+                                Call.setMessageBlockText(null, world.tile(x, y), text);
+                            }
+                        }
+                    }catch (Exception e){
+                        printStackTrace(e);
+                    }
+                } else {
+                    delaycount[0]++;
+                }
+            }
+        };
+        Core.app.addListener(pta);
+
 		Events.on(EventType.WorldLoadEvent.class, e -> {
 		    EssentialTimer.playtime = "00:00.00";
 
@@ -153,9 +213,9 @@ public class Main extends Plugin{
 
 		Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
 
-        TimerTask pwt = new Powerstat();
+        /*TimerTask pwt = new Powerstat();
 		Timer pw = new Timer(true);
-		pw.scheduleAtFixedRate(pwt, 150, 150);
+		pw.scheduleAtFixedRate(pwt, 150, 150);*/
 
         // Set if thorium rector explode
 		/*
@@ -562,7 +622,7 @@ public class Main extends Plugin{
                 executorService.shutdown();
 				//reactormonitor.interrupt();
 
-                pwt.cancel();
+                //pwt.cancel();
             }
 		});
 
