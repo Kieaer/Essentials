@@ -420,7 +420,7 @@ public class EssentialConfig {
         }
 
         if(!Core.settings.getDataDirectory().child("mods/Essentials/banned.json").exists()){
-            JSONObject ban = new JSONObject();
+            JSONArray ban = new JSONArray();
             String json = ban.toString();
             Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(json);
             Global.log("banned file created!");
