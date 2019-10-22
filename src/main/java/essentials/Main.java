@@ -143,67 +143,6 @@ public class Main extends Plugin{
 			}
 		});
 
-		// Set live powerblock
-        final int[] delaycount = {0};
-		ApplicationListener pta = new ApplicationListener() {
-            @Override
-            public void update() {
-                if(delaycount[0] == 10){
-                    String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-                    JSONTokener parser = new JSONTokener(db);
-                    try{
-                        JSONArray object = new JSONArray(parser);
-                        for (int i = 0; i < object.length(); i++) {
-                            String raw = object.getString(i);
-
-                            String[] data = raw.split("/");
-
-                            int x = Integer.parseInt(data[0]);
-                            int y = Integer.parseInt(data[1]);
-                            int target_x = Integer.parseInt(data[2]);
-                            int target_y = Integer.parseInt(data[3]);
-
-                            if(world.tile(x, y).block() != Blocks.message){
-                                object.remove(i);
-                                Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
-                                return;
-                            }
-
-                            float current;
-                            float product;
-                            float using;
-                            try {
-                                current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
-                                using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
-                                product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
-                            } catch (Exception ex) {
-                                printStackTrace(ex);
-                                current = 0;
-                                using = 0;
-                                product = 0;
-                            }
-                            if (current == 0 && using == 0 && product == 0) {
-                                Call.onTileDestroyed(world.tile(x, y));
-                                object.remove(i);
-                                Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
-                            } else {
-                                String text = "Power status\n" +
-                                        "Current: [sky]" + Math.round(current) + "[]\n" +
-                                        "Using: [red]" + Math.round(using) + "[]\n" +
-                                        "Production: [green]" + Math.round(product) + "[]";
-                                Call.setMessageBlockText(null, world.tile(x, y), text);
-                            }
-                        }
-                    }catch (Exception e){
-                        printStackTrace(e);
-                    }
-                } else {
-                    delaycount[0]++;
-                }
-            }
-        };
-        Core.app.addListener(pta);
-
 		Events.on(EventType.WorldLoadEvent.class, e -> {
 		    EssentialTimer.playtime = "00:00.00";
 
@@ -440,16 +379,16 @@ public class Main extends Plugin{
 						int target_x;
 						int target_y;
 
-						if(e.tile.getNearby(0).entity != null){
+						if(e.tile.getNearby(0).entity.power.graph != null){
 							target_x = e.tile.getNearby(0).x;
 							target_y = e.tile.getNearby(0).y;
-						} else if(e.tile.getNearby(1).entity != null) {
+						} else if(e.tile.getNearby(1).entity.power.graph != null) {
 							target_x = e.tile.getNearby(1).x;
 							target_y = e.tile.getNearby(1).y;
-						} else if(e.tile.getNearby(2).entity != null) {
+						} else if(e.tile.getNearby(2).entity.power.graph != null) {
 							target_x = e.tile.getNearby(2).x;
 							target_y = e.tile.getNearby(2).y;
-						} else if(e.tile.getNearby(3).entity != null) {
+						} else if(e.tile.getNearby(3).entity.power.graph != null) {
 							target_x = e.tile.getNearby(3).x;
 							target_y = e.tile.getNearby(3).y;
 						} else {
@@ -594,8 +533,65 @@ public class Main extends Plugin{
 		Timer timer = new Timer(true);
 		timer.scheduleAtFixedRate(job, 1000, 1000);
 
-		// Set if shutdown
+		// Set main thread works
+		final int[] delaycount = {0};
 		Core.app.addListener(new ApplicationListener(){
+			@Override
+			public void update() {
+				if(delaycount[0] == 60){
+					String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
+					JSONTokener parser = new JSONTokener(db);
+					try{
+						JSONArray object = new JSONArray(parser);
+						for (int i = 0; i < object.length(); i++) {
+							String raw = object.getString(i);
+
+							String[] data = raw.split("/");
+
+							int x = Integer.parseInt(data[0]);
+							int y = Integer.parseInt(data[1]);
+							int target_x = Integer.parseInt(data[2]);
+							int target_y = Integer.parseInt(data[3]);
+
+							if(world.tile(x, y).block() != Blocks.message){
+								object.remove(i);
+								Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+								return;
+							}
+
+							float current;
+							float product;
+							float using;
+							try {
+								current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
+								using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
+								product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
+							} catch (Exception ex) {
+								printStackTrace(ex);
+								current = 0;
+								using = 0;
+								product = 0;
+							}
+							if (current == 0 && using == 0 && product == 0) {
+								Call.onTileDestroyed(world.tile(x, y));
+								object.remove(i);
+								Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+							} else {
+								String text = "Power status\n" +
+										"Current: [sky]" + Math.round(current) + "[]\n" +
+										"Using: [red]" + Math.round(using) + "[]\n" +
+										"Production: [green]" + Math.round(product) + "[]";
+								Call.setMessageBlockText(null, world.tile(x, y), text);
+							}
+						}
+					}catch (Exception ex){
+						printStackTrace(ex);
+					}
+				} else {
+					delaycount[0]++;
+				}
+			}
+
 			public void dispose(){
 				// Kill timer thread
 				try{
@@ -641,6 +637,16 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
+		handler.register("sync", "<player>", "Force sync request from the target player", arg -> {
+			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			if(other != null){
+				Call.onWorldDataBegin(other.con);
+				netServer.sendWorldData(other);
+			} else {
+				Global.logw("Player not found!");
+			}
+		});
+
 		handler.register("ping", "send ping to remote server", arg -> {
 			Thread servercheck = new Thread(() -> {
 				try{
@@ -885,6 +891,11 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
+		handler.<Player>register("test", "Test command", (arg, player) -> {
+			String ip = "127.0.0.1:6568";
+			Call.onConnect(player.con, player, ip);
+		});
+
 		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
 			if (loginenable) {
 				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
