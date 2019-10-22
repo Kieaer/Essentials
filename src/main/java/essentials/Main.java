@@ -125,18 +125,18 @@ public class Main extends Plugin{
 				if(playerGroup != null && playerGroup.size() > 0) {
 					for (int i = 0; i < playerGroup.size(); i++) {
 						Player player = playerGroup.all().get(i);
-						if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-							if(player.getTeam().name().equals(e.winner.name())){
+						if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+							if (player.getTeam().name().equals(e.winner.name())) {
 								JSONObject db = getData(player.uuid);
 								int pvpwin = db.getInt("pvpwincount");
 								pvpwin++;
-								writeData("UPDATE players SET pvpwincount = '"+pvpwin+"' WHERE uuid = '"+player.uuid+"'");
+								writeData("UPDATE players SET pvpwincount = '" + pvpwin + "' WHERE uuid = '" + player.uuid + "'");
+							} else {
+								JSONObject db = getData(player.uuid);
+								int pvplose = db.getInt("pvplosecount");
+								pvplose++;
+								writeData("UPDATE players SET pvplosecount = '" + pvplose + "' WHERE uuid = '" + player.uuid + "'");
 							}
-						} else {
-							JSONObject db = getData(player.uuid);
-							int pvplose = db.getInt("pvplosecount");
-							pvplose++;
-							writeData("UPDATE players SET pvplosecount = '"+pvplose+"' WHERE uuid = '"+player.uuid+"'");
 						}
 					}
 				}
@@ -891,11 +891,6 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
-		handler.<Player>register("test", "Test command", (arg, player) -> {
-			String ip = "127.0.0.1:6568";
-			Call.onConnect(player.con, player, ip);
-		});
-
 		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
 			if (loginenable) {
 				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
