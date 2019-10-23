@@ -1,5 +1,6 @@
 package essentials.net;
 
+import essentials.EssentialConfig;
 import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
@@ -78,11 +79,12 @@ public class Client{
 
     private static void chat(BufferedWriter bw, String chat, Player player) {
         try {
+            EssentialConfig config = new EssentialConfig();
             String msg = "["+player.name+"]: "+chat;
             bw.write(msg+"\n");
             bw.flush();
             Call.sendMessage("[#357EC7][SC] "+msg);
-            Global.chatc("Message sent to "+clienthost+" - "+chat+"");
+            Global.chatc("Message sent to "+config.clienthost+" - "+chat+"");
         } catch (Exception e) {
             String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
             player.sendMessage("Server is not responding! Cross-chat disabled!");

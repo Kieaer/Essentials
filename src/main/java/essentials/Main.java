@@ -24,7 +24,6 @@ import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
-import io.anuke.mindustry.world.Tile;
 import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,7 +47,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static essentials.EssentialConfig.*;
+import static essentials.EssentialConfig.executorService;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.*;
 import static io.anuke.arc.util.Log.err;
@@ -57,12 +56,13 @@ import static io.anuke.mindustry.Vars.*;
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
-	public Tile tile;
-    //state.rules.bannedBlocks;
+	private JSONArray powerblock = new JSONArray();
+	private JSONArray nukeblock = new JSONArray();
 
 	public Main() {
 		// Start config file
-		EssentialConfig.main();
+		EssentialConfig config = new EssentialConfig();
+		config.main();
 
 		// Client connection test
 		Thread servercheck = new Thread(() -> {
@@ -86,14 +86,14 @@ public class Main extends Plugin{
 		writeData("UPDATE players SET connected = 0");
 
 	    // Start log
-		if(logging){
+		if(config.logging){
             executorService.execute(new EssentialLog());
 		}
 
 		//EssentialAI.main();
 
 		// Update check
-		if(update) {
+		if(config.update) {
 			Global.log("Update checking...");
 			Update.main();
 		}
@@ -102,7 +102,7 @@ public class Main extends Plugin{
 		EssentialPlayer.Upgrade();
 
 		// Start ban/chat server
-		if(serverenable){
+		if(config.serverenable){
 			Runnable server = new Server();
 			Thread t = new Thread(server);
 			t.start();
@@ -145,10 +145,10 @@ public class Main extends Plugin{
 		    EssentialTimer.playtime = "00:00.00";
 
             // Reset powernode information
-            Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+            powerblock = new JSONArray();
         });
 
-		Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+		powerblock = new JSONArray();
 
 		// Set if player join event
 		Events.on(EventType.PlayerConnect.class, e -> {
@@ -190,7 +190,7 @@ public class Main extends Plugin{
 		});
 
         Events.on(EventType.PlayerJoin.class, e -> {
-        	if(loginenable){
+        	if(config.loginenable){
 				e.player.isAdmin = false;
 
 				JSONObject db = getData(e.player.uuid);
@@ -255,7 +255,7 @@ public class Main extends Plugin{
 				}
 
 				// Check VPN
-				if(antivpn){
+				if(config.antivpn){
 					try{
 						String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
 						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
@@ -274,7 +274,7 @@ public class Main extends Plugin{
 			playerthread.start();
 
 			// PvP placetime (WorldLoadEvent isn't work.)
-			if(enableantirush && Vars.state.rules.pvp) {
+			if(config.enableantirush && Vars.state.rules.pvp) {
 				state.rules.playerDamageMultiplier = 0f;
 				state.rules.playerHealthMultiplier = 0.001f;
 			}
@@ -298,7 +298,7 @@ public class Main extends Plugin{
 
 					EssentialTR.main(e.player, e.message);
 
-					if (clientenable) {
+					if (config.clientenable) {
 						if (crosschat) {
 							Thread chatclient = new Thread(() -> {
 								Client.main("chat", e.message, e.player);
@@ -369,18 +369,7 @@ public class Main extends Plugin{
 						} else {
 							return;
 						}
-
-						String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-						JSONTokener parser = new JSONTokener(db);
-						JSONArray object;
-						try{
-							object = new JSONArray(parser);
-						} catch (Exception ignored){
-							e.player.sendMessage("[green][Essentials] [white]This messageblock is null!");
-							return;
-						}
-						object.put(x+"/"+y+"/"+target_x+"/"+target_y);
-						Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+						powerblock.put(x+"/"+y+"/"+target_x+"/"+target_y);
 					}catch (Exception ex){
 						ex.printStackTrace();
 						//printStackTrace(ex);
@@ -422,19 +411,15 @@ public class Main extends Plugin{
 					}
 					if (e.builder.buildRequest().block == Blocks.message) {
 						try {
-							String db1 = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-							JSONTokener parser = new JSONTokener(db1);
-							JSONArray object = new JSONArray(parser);
-							for (int i = 0; i < object.length(); i++) {
-								String raw = object.getString(i);
+							for (int i = 0; i < powerblock.length(); i++) {
+								String raw = powerblock.getString(i);
 								String[] data = raw.split("/");
 
 								int x = Integer.parseInt(data[0]);
 								int y = Integer.parseInt(data[1]);
 
 								if (x == e.tile.x && y == e.tile.y) {
-									object.remove(i);
-									Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+									powerblock.remove(i);
 								}
 							}
 						} catch (Exception ex) {
@@ -500,7 +485,7 @@ public class Main extends Plugin{
 			}
 		};
 
-		if(loginenable){
+		if(config.loginenable){
 			Timer alerttimer = new Timer(true);
 			alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
 		}
@@ -515,12 +500,9 @@ public class Main extends Plugin{
 			@Override
 			public void update() {
 				if(delaycount[0] == 60){
-					String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-					JSONTokener parser = new JSONTokener(db);
 					try{
-						JSONArray object = new JSONArray(parser);
-						for (int i = 0; i < object.length(); i++) {
-							String raw = object.getString(i);
+						for (int i = 0; i < powerblock.length(); i++) {
+							String raw = powerblock.getString(i);
 
 							String[] data = raw.split("/");
 
@@ -530,8 +512,7 @@ public class Main extends Plugin{
 							int target_y = Integer.parseInt(data[3]);
 
 							if(world.tile(x, y).block() != Blocks.message){
-								object.remove(i);
-								Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+								powerblock.remove(i);
 								return;
 							}
 
@@ -550,8 +531,7 @@ public class Main extends Plugin{
 							}
 							if (current == 0 && using == 0 && product == 0) {
 								Call.onTileDestroyed(world.tile(x, y));
-								object.remove(i);
-								Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+								powerblock.remove(i);
 							} else {
 								String text = "Power status\n" +
 										"Current: [sky]" + Math.round(current) + "[]\n" +
@@ -563,6 +543,31 @@ public class Main extends Plugin{
 					}catch (Exception ignored){}
 				} else {
 					delaycount[0]++;
+				}
+
+				try{
+					if(entity.heat >= 0.01){
+						Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+
+						Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+						String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
+						byte[] result = text.getBytes();
+						Files.write(path, result, StandardOpenOption.APPEND);
+						Call.onTileDestroyed(e.tile);
+					} else {
+						Thread.sleep(1750);
+						if(entity.heat >= 0.01){
+							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+
+							Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+							String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
+							byte[] result = text.getBytes();
+							Files.write(path, result, StandardOpenOption.APPEND);
+							Call.onTileDestroyed(e.tile);
+						}
+					}
+				}catch (Exception ex){
+					printStackTrace(ex);
 				}
 			}
 
@@ -579,7 +584,7 @@ public class Main extends Plugin{
 				closeconnect();
 
 				// Kill Ban/chat server thread
-				if(serverenable){
+				if(config.serverenable){
 					try {
 						Server.active = false;
 						Server.serverSocket.close();
@@ -595,12 +600,12 @@ public class Main extends Plugin{
 		});
 
         // Alert Realname event
-        if(realname){
+        if(config.realname){
 			Global.log("Realname enabled.");
         }
 
         // Alert thorium reactor explode detect event
-        if(detectreactor){
+        if(config.detectreactor){
 			Global.log("Thorium reactor overheat detect enabled.");
         }
 
@@ -722,7 +727,8 @@ public class Main extends Plugin{
 		});
 
 		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
-			if(banshare){
+			EssentialConfig config = new EssentialConfig();
+			if(config.banshare){
 				String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONObject object = new JSONObject(parser);
@@ -790,10 +796,11 @@ public class Main extends Plugin{
 
 		// Override ban command
 		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
+			EssentialConfig config = new EssentialConfig();
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
-					if(banshare){
+					if(config.banshare){
 						try{
 							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
@@ -812,7 +819,7 @@ public class Main extends Plugin{
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						if(banshare){
+						if(config.banshare){
 							try{
 								String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 								JSONTokener parser = new JSONTokener(db);
@@ -832,7 +839,7 @@ public class Main extends Plugin{
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					if(banshare){
+					if(config.banshare){
 						try{
 							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
@@ -864,7 +871,8 @@ public class Main extends Plugin{
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
 		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
-			if (loginenable) {
+			EssentialConfig config = new EssentialConfig();
+			if (config.loginenable) {
 				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 					player.sendMessage("[green][Essentials] [orange]You are already logged in");
 					return;
@@ -882,7 +890,8 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player) -> {
-			if (loginenable) {
+			EssentialConfig config = new EssentialConfig();
+			if (config.loginenable) {
 				if (EssentialPlayer.register(player, arg[0], arg[1], arg[2])) {
 					if (Vars.state.rules.pvp) {
 						int index = player.getTeam().ordinal() + 1;

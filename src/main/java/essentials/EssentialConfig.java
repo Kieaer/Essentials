@@ -15,38 +15,38 @@ import java.util.concurrent.Executors;
 import static essentials.Global.printStackTrace;
 
 public class EssentialConfig {
-    public static String clienthost;
-    public static int clientport;
-    public static int serverport;
-    static boolean realname;
-    static boolean detectreactor;
-    static boolean serverenable;
-    static boolean clientenable;
-    static double basexp;
-    static double exponent;
-    public static int cupdatei;
-    public static boolean banshare;
-    static boolean antivpn;
-    public static boolean query;
-    private static int version;
-    private static String language;
-    static boolean enableantirush;
-    static Calendar antirushtime;
-    static boolean explimit;
-    static boolean logging;
-    static boolean update;
-    static boolean levelupalarm;
-    static boolean sqlite;
-    private static String dburl;
-    static boolean loginenable;
-    static String url;
-    static String dbid;
-    static String dbpw;
-    static String apikey;
+    public String clienthost;
+    public int clientport;
+    public int serverport;
+    boolean realname;
+    boolean detectreactor;
+    boolean serverenable;
+    boolean clientenable;
+    double basexp;
+    double exponent;
+    public int cupdatei;
+    public boolean banshare;
+    boolean antivpn;
+    public boolean query;
+    private int version;
+    private String language;
+    boolean enableantirush;
+    Calendar antirushtime;
+    boolean explimit;
+    boolean logging;
+    boolean update;
+    boolean levelupalarm;
+    boolean sqlite;
+    private String dburl;
+    boolean loginenable;
+    String url;
+    String dbid;
+    String dbpw;
+    String apikey;
 
     static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
-    public static void main() {
+    public void main() {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()) {
             String text = "# Config version (Don't touch this!)\n" +
@@ -648,60 +648,60 @@ public class EssentialConfig {
                     "language: en\n\n" +
 
                     "# Server / client port settings\n#It will enable server as server chat function.\n" +
-                    "server-enable: "+serverenable+"\n" +
-                    "server-port: "+serverport+"\n\n" +
+                    "server-enable: "+this.serverenable+"\n" +
+                    "server-port: "+this.serverport+"\n\n" +
 
-                    "client-enable: "+clientenable+"\n" +
-                    "client-port: "+clientport+"\n" +
-                    "client-host: "+clienthost+"\n\n" +
+                    "client-enable: "+this.clientenable+"\n" +
+                    "client-port: "+this.clientport+"\n" +
+                    "client-host: "+this.clienthost+"\n\n" +
 
                     "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
                     "# If you want colornick features, must enable this.\n" +
-                    "realname: "+realname+"\n\n" +
+                    "realname: "+this.realname+"\n\n" +
 
                     "# Color nickname update interval. 1sec = 1000\n" +
-                    "colornick update interval: "+cupdatei+"\n\n" +
+                    "colornick update interval: "+this.cupdatei+"\n\n" +
 
                     "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
-                    "detectreactor: "+detectreactor+"\n\n" +
+                    "detectreactor: "+this.detectreactor+"\n\n" +
 
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n\n" +
-                    "explimit: "+explimit+"\n" +
-                    "basexp: "+basexp+"\n" +
-                    "exponent: "+exponent+"\n" +
-                    "levelupalarm: "+levelupalarm+"\n\n" +
+                    "explimit: "+this.explimit+"\n" +
+                    "basexp: "+this.basexp+"\n" +
+                    "exponent: "+this.exponent+"\n" +
+                    "levelupalarm: "+this.levelupalarm+"\n\n" +
 
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
-                    "banshare: "+banshare+"\n\n" +
+                    "banshare: "+this.banshare+"\n\n" +
 
                     "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n# Ranking page address is http://localhost:server_port/rank\n" +
-                    "query: "+query+"\n\n" +
+                    "query: "+this.query+"\n\n" +
 
                     "# Enable Anti-VPN service.\n" +
-                    "antivpn: "+antivpn+"\n\n" +
+                    "antivpn: "+this.antivpn+"\n\n" +
 
                     "# Enable Anti PvP early time rushing\n" +
-                    "enableantirush: "+enableantirush+"\n" +
+                    "enableantirush: "+this.enableantirush+"\n" +
                     "antirushtime: "+obj.get("antirushtime")+"\n\n"+
                     
                     "# Logging enable\n" +
-                    "logging: "+logging+"\n\n" +
+                    "logging: "+this.logging+"\n\n" +
 
                     "# Update check enable\n" +
-                    "update: "+update+"\n\n" +
+                    "update: "+this.update+"\n\n" +
 
                     "# Database type setting (Default is SQLite)\n# Example - mariadb://localhost:3306/dbname\n#If you want to use MySQL/MariaDB, You must create a new database yourself.\n" +
-                    "sqlite: "+sqlite+"\n" +
-                    "dburl: "+dburl+"\n" +
-                    "dbid: "+dbid+"\n" +
-                    "dbpw: "+dbpw+"\n\n" +
+                    "sqlite: "+this.sqlite+"\n" +
+                    "dburl: "+this.dburl+"\n" +
+                    "dbid: "+this.dbid+"\n" +
+                    "dbpw: "+this.dbpw+"\n\n" +
 
                     "# Login features setting\n" +
-                    "loginenable: "+loginenable+"\n\n" +
+                    "loginenable: "+this.loginenable+"\n\n" +
 
                     "# Google translate API Key\n" +
                     "# The api key can be obtained from cloud.google.com.\n" +
-                    "apikey: "+apikey;
+                    "apikey: "+this.apikey;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }
