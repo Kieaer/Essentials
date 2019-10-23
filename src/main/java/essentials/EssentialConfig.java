@@ -42,7 +42,7 @@ public class EssentialConfig {
     static String url;
     static String dbid;
     static String dbpw;
-    static String keyfile;
+    static String apikey;
 
     static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
@@ -50,7 +50,7 @@ public class EssentialConfig {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()) {
             String text = "# Config version (Don't touch this!)\n" +
-                    "version: 3\n\n" +
+                    "version: 2\n\n" +
 
                     "# Plugin language\n" +
                     "language: en\n\n" +
@@ -108,9 +108,8 @@ public class EssentialConfig {
                     "loginenable: true\n\n" +
 
                     "# Google translate API Key\n" +
-                    "# Make sure that the file is in plugins/Essentials\n" +
-                    "# Example - mods/Essentials/mykey.json\n" +
-                    "keyfile: mykey";
+                    "# The api key can be obtained from cloud.google.com.\n" +
+                    "apikey: "+apikey;
 
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -630,15 +629,15 @@ public class EssentialConfig {
                 loginenable = true;
             }
 
-            if(obj.get("keyfile") != null){
-                keyfile = (String) obj.get("keyfile");
+            if(obj.get("apikey") != null){
+                apikey = (String) obj.get("apikey");
             } else {
-                keyfile = "mykey";
+                apikey = "";
             }
             Global.log("config file loaded!");
         }
 
-        if(version < 3){
+        if(version < 2){
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
 
@@ -701,9 +700,8 @@ public class EssentialConfig {
                     "loginenable: "+loginenable+"\n\n" +
 
                     "# Google translate API Key\n" +
-                    "# Make sure that the file is in plugins/Essentials\n" +
-                    "# Example - mods/Essentials/mykey.json\n" +
-                    "keyfile: "+keyfile;
+                    "# The api key can be obtained from cloud.google.com.\n" +
+                    "apikey: "+apikey;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }

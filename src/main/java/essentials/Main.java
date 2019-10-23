@@ -387,7 +387,6 @@ public class Main extends Plugin{
 			}
 		});
 
-
 		Events.on(EventType.BuildSelectEvent.class, e -> {
 		    if(e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                 if (e.breaking) {
@@ -472,7 +471,8 @@ public class Main extends Plugin{
                 }
             }
 		});
-/*
+
+		/*
 		Events.on(EventType.WithdrawEvent.class, e -> {
 		//	e.player.sendMessage("WithdrawEvent done!");
 		});
