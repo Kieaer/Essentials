@@ -274,9 +274,9 @@ public class Main extends Plugin{
 						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
 						BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 						String line;
-						IpAddressMatcher match = new IpAddressMatcher(ip);
 						while((line = reader.readLine()) != null){
-							if(match.matches(line)){
+							IpAddressMatcher match = new IpAddressMatcher(line);
+							if(match.matches(ip)){
 								Call.onKick(e.player.con, "Server isn't allow VPN connection.");
 							}
 						}
