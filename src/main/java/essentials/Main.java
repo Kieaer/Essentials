@@ -2,8 +2,8 @@ package essentials;
 
 import essentials.net.Client;
 import essentials.net.Server;
+import essentials.special.IpAddressMatcher;
 import essentials.thread.Update;
-import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -25,14 +25,16 @@ import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
-import io.anuke.mindustry.world.Tile;
 import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,7 +48,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static essentials.EssentialConfig.*;
+import static essentials.EssentialConfig.enableantirush;
+import static essentials.EssentialConfig.executorService;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.*;
 import static io.anuke.arc.util.Log.err;
@@ -55,12 +58,13 @@ import static io.anuke.mindustry.Vars.*;
 public class Main extends Plugin{
     private ArrayList<String> vote = new ArrayList<>();
 	private boolean voteactive;
-	public Tile tile;
-    //state.rules.bannedBlocks;
+	private JSONArray powerblock = new JSONArray();
+	private JSONArray nukeblock = new JSONArray();
 
 	public Main() {
 		// Start config file
-		EssentialConfig.main();
+		EssentialConfig config = new EssentialConfig();
+		config.main();
 
 		// Client connection test
 		Thread servercheck = new Thread(() -> {
@@ -74,24 +78,24 @@ public class Main extends Plugin{
 		});
 		servercheck.start();
 
+		// Database
+		openconnect();
+
 		// Make player DB
 		createNewDataFile();
-
-		// SQLite multi-thread
-		openconnect();
 
 		// Reset all connected status
 		writeData("UPDATE players SET connected = 0");
 
 	    // Start log
-		if(logging){
+		if(config.logging){
             executorService.execute(new EssentialLog());
 		}
 
 		//EssentialAI.main();
 
 		// Update check
-		if(update) {
+		if(config.update) {
 			Global.log("Update checking...");
 			Update.main();
 		}
@@ -100,14 +104,10 @@ public class Main extends Plugin{
 		EssentialPlayer.Upgrade();
 
 		// Start ban/chat server
-		if(serverenable){
+		if(config.serverenable){
 			Runnable server = new Server();
 			Thread t = new Thread(server);
 			t.start();
-		}
-
-		if(antivpn){
-			Global.log("Anti-VPN enabled.");
 		}
 
 		// Essentials EPG Features
@@ -147,10 +147,10 @@ public class Main extends Plugin{
 		    EssentialTimer.playtime = "00:00.00";
 
             // Reset powernode information
-            Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+            powerblock = new JSONArray();
         });
 
-		Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+		powerblock = new JSONArray();
 
 		// Set if player join event
 		Events.on(EventType.PlayerConnect.class, e -> {
@@ -159,31 +159,39 @@ public class Main extends Plugin{
 
 		Events.on(EventType.DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
-				NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) e.tile.entity;
+				nukeblock.put(e.tile.entity.tileX()+"/"+e.tile.entity.tileY()+"/"+e.player.name);
 				Thread t = new Thread(() -> {
 					try{
-						Thread.sleep(250);
-						if(entity.heat >= 0.01){
-							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+						for (int i = 0; i < nukeblock.length(); i++) {
+							String nukedata = nukeblock.getString(i);
+							String[] data = nukedata.split("/");
+							int x = Integer.parseInt(data[0]);
+							int y = Integer.parseInt(data[1]);
+							String builder = data[2];
+							NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
+							if (entity.heat >= 0.01) {
+								Thread.sleep(50);
+								Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
 
-							Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
-							String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
-							byte[] result = text.getBytes();
-							Files.write(path, result, StandardOpenOption.APPEND);
-							Call.onTileDestroyed(e.tile);
-                        } else {
-                            Thread.sleep(1750);
-                            if(entity.heat >= 0.01){
-                                Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+								Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+								String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
+								byte[] result = text.getBytes();
+								Files.write(path, result, StandardOpenOption.APPEND);
+								Call.onTileDestroyed(world.tile(x, y));
+							} else {
+								Thread.sleep(1950);
+								if (entity.heat >= 0.01) {
+									Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
 
-                                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
-                                String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
-                                byte[] result = text.getBytes();
-                                Files.write(path, result, StandardOpenOption.APPEND);
-                                Call.onTileDestroyed(e.tile);
-                            }
-                        }
-					}catch (Exception ex){
+									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+									String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
+									byte[] result = text.getBytes();
+									Files.write(path, result, StandardOpenOption.APPEND);
+									Call.onTileDestroyed(world.tile(x, y));
+								}
+							}
+						}
+					} catch (Exception ex){
 						printStackTrace(ex);
 					}
 				});
@@ -192,7 +200,7 @@ public class Main extends Plugin{
 		});
 
         Events.on(EventType.PlayerJoin.class, e -> {
-        	if(loginenable){
+        	if(config.loginenable){
 				e.player.isAdmin = false;
 
 				JSONObject db = getData(e.player.uuid);
@@ -235,8 +243,11 @@ public class Main extends Plugin{
 					Call.onInfoMessage(e.player.con, message);
 				}
 			} else {
-        		EssentialPlayer.register(e.player);
-				EssentialPlayer.load(e.player, null);
+        		if(EssentialPlayer.register(e.player)) {
+					EssentialPlayer.load(e.player, null);
+				} else {
+        			Call.onKick(e.player.con, "Plugin error! Please contact server admin!");
+				}
 			}
 
 
@@ -257,15 +268,20 @@ public class Main extends Plugin{
 				}
 
 				// Check VPN
-				if(antivpn){
-					String ipToLookup = netServer.admins.getInfo(e.player.uuid).lastIP;
-					try {
-						boolean isHostingorVPN = new VPNDetection().getResponse(ipToLookup).hostip;
-						if(isHostingorVPN){
-							e.player.con.kick("Server isn't allow VPN connection.");
+				if(config.antivpn){
+					try{
+						String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
+						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
+						BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+						String line;
+						while((line = reader.readLine()) != null){
+							IpAddressMatcher match = new IpAddressMatcher(line);
+							if(match.matches(ip)){
+								Call.onKick(e.player.con, "Server isn't allow VPN connection.");
+							}
 						}
-					} catch (IOException error) {
-						printStackTrace(error);
+					} catch (IOException ex){
+						printStackTrace(ex);
 					}
 				}
 			});
@@ -294,9 +310,10 @@ public class Main extends Plugin{
 					JSONObject db = getData(e.player.uuid);
 					boolean crosschat = db.getBoolean("crosschat");
 
-					EssentialTR.main(e.player, e.message);
+					EssentialTR tr = new EssentialTR();
+					tr.main(e.player, e.message);
 
-					if (clientenable) {
+					if (config.clientenable) {
 						if (crosschat) {
 							Thread chatclient = new Thread(() -> {
 								Client.main("chat", e.message, e.player);
@@ -367,18 +384,7 @@ public class Main extends Plugin{
 						} else {
 							return;
 						}
-
-						String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-						JSONTokener parser = new JSONTokener(db);
-						JSONArray object;
-						try{
-							object = new JSONArray(parser);
-						} catch (Exception ignored){
-							e.player.sendMessage("[green][Essentials] [white]This messageblock is null!");
-							return;
-						}
-						object.put(x+"/"+y+"/"+target_x+"/"+target_y);
-						Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+						powerblock.put(x+"/"+y+"/"+target_x+"/"+target_y);
 					}catch (Exception ex){
 						ex.printStackTrace();
 						//printStackTrace(ex);
@@ -386,7 +392,6 @@ public class Main extends Plugin{
 				}
 			}
 		});
-
 
 		Events.on(EventType.BuildSelectEvent.class, e -> {
 		    if(e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
@@ -421,19 +426,15 @@ public class Main extends Plugin{
 					}
 					if (e.builder.buildRequest().block == Blocks.message) {
 						try {
-							String db1 = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-							JSONTokener parser = new JSONTokener(db1);
-							JSONArray object = new JSONArray(parser);
-							for (int i = 0; i < object.length(); i++) {
-								String raw = object.getString(i);
+							for (int i = 0; i < powerblock.length(); i++) {
+								String raw = powerblock.getString(i);
 								String[] data = raw.split("/");
 
 								int x = Integer.parseInt(data[0]);
 								int y = Integer.parseInt(data[1]);
 
 								if (x == e.tile.x && y == e.tile.y) {
-									object.remove(i);
-									Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+									powerblock.remove(i);
 								}
 							}
 						} catch (Exception ex) {
@@ -472,7 +473,8 @@ public class Main extends Plugin{
                 }
             }
 		});
-/*
+
+		/*
 		Events.on(EventType.WithdrawEvent.class, e -> {
 		//	e.player.sendMessage("WithdrawEvent done!");
 		});
@@ -498,7 +500,7 @@ public class Main extends Plugin{
 			}
 		};
 
-		if(loginenable){
+		if(config.loginenable){
 			Timer alerttimer = new Timer(true);
 			alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
 		}
@@ -512,13 +514,10 @@ public class Main extends Plugin{
 		Core.app.addListener(new ApplicationListener(){
 			@Override
 			public void update() {
-				if(delaycount[0] == 60){
-					String db = Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").readString();
-					JSONTokener parser = new JSONTokener(db);
-					try{
-						JSONArray object = new JSONArray(parser);
-						for (int i = 0; i < object.length(); i++) {
-							String raw = object.getString(i);
+				if (delaycount[0] == 60) {
+					try {
+						for (int i = 0; i < powerblock.length(); i++) {
+							String raw = powerblock.getString(i);
 
 							String[] data = raw.split("/");
 
@@ -527,9 +526,8 @@ public class Main extends Plugin{
 							int target_x = Integer.parseInt(data[2]);
 							int target_y = Integer.parseInt(data[3]);
 
-							if(world.tile(x, y).block() != Blocks.message){
-								object.remove(i);
-								Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+							if (world.tile(x, y).block() != Blocks.message) {
+								powerblock.remove(i);
 								return;
 							}
 
@@ -548,8 +546,7 @@ public class Main extends Plugin{
 							}
 							if (current == 0 && using == 0 && product == 0) {
 								Call.onTileDestroyed(world.tile(x, y));
-								object.remove(i);
-								Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
+								powerblock.remove(i);
 							} else {
 								String text = "Power status\n" +
 										"Current: [sky]" + Math.round(current) + "[]\n" +
@@ -558,9 +555,22 @@ public class Main extends Plugin{
 								Call.setMessageBlockText(null, world.tile(x, y), text);
 							}
 						}
-					}catch (Exception ignored){}
+					} catch (Exception ignored) {
+					}
 				} else {
 					delaycount[0]++;
+				}
+
+				for (int i = 0; i < nukeblock.length(); i++) {
+					String nukedata = nukeblock.getString(i);
+					String[] data = nukedata.split("/");
+					int x = Integer.parseInt(data[0]);
+					int y = Integer.parseInt(data[1]);
+
+					NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
+					if(entity.heat >= 0.98f){
+						Call.sendMessage("[green]Thorium reactor [scarlet]overload warning![white] X: "+x+", Y: "+y);
+					}
 				}
 			}
 
@@ -577,7 +587,7 @@ public class Main extends Plugin{
 				closeconnect();
 
 				// Kill Ban/chat server thread
-				if(serverenable){
+				if(config.serverenable){
 					try {
 						Server.active = false;
 						Server.serverSocket.close();
@@ -593,12 +603,12 @@ public class Main extends Plugin{
 		});
 
         // Alert Realname event
-        if(realname){
+        if(config.realname){
 			Global.log("Realname enabled.");
         }
 
         // Alert thorium reactor explode detect event
-        if(detectreactor){
+        if(config.detectreactor){
 			Global.log("Thorium reactor overheat detect enabled.");
         }
 
@@ -720,7 +730,8 @@ public class Main extends Plugin{
 		});
 
 		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
-			if(banshare){
+			EssentialConfig config = new EssentialConfig();
+			if(config.banshare){
 				String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONObject object = new JSONObject(parser);
@@ -788,10 +799,11 @@ public class Main extends Plugin{
 
 		// Override ban command
 		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
+			EssentialConfig config = new EssentialConfig();
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
-					if(banshare){
+					if(config.banshare){
 						try{
 							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
@@ -810,7 +822,7 @@ public class Main extends Plugin{
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						if(banshare){
+						if(config.banshare){
 							try{
 								String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 								JSONTokener parser = new JSONTokener(db);
@@ -830,7 +842,7 @@ public class Main extends Plugin{
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					if(banshare){
+					if(config.banshare){
 						try{
 							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
@@ -862,7 +874,8 @@ public class Main extends Plugin{
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
 		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
-			if (loginenable) {
+			EssentialConfig config = new EssentialConfig();
+			if (config.loginenable) {
 				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 					player.sendMessage("[green][Essentials] [orange]You are already logged in");
 					return;
@@ -880,7 +893,8 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player) -> {
-			if (loginenable) {
+			EssentialConfig config = new EssentialConfig();
+			if (config.loginenable) {
 				if (EssentialPlayer.register(player, arg[0], arg[1], arg[2])) {
 					if (Vars.state.rules.pvp) {
 						int index = player.getTeam().ordinal() + 1;

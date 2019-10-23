@@ -82,7 +82,7 @@ public class Client{
             bw.write(msg+"\n");
             bw.flush();
             Call.sendMessage("[#357EC7][SC] "+msg);
-            Global.chatc("Message sent to "+clienthost+" - "+chat+"");
+            Global.chatc("Message sent to "+ clienthost+" - "+chat+"");
         } catch (Exception e) {
             String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
             player.sendMessage("Server is not responding! Cross-chat disabled!");
@@ -123,7 +123,7 @@ public class Client{
             br.close();
         }catch (Exception e){
             e.printStackTrace();
-            Global.loge(clienthost+":"+clientport+" server isn't response!");
+            Global.loge(clienthost+":"+ clientport+" server isn't response!");
         }
     }
 
@@ -149,7 +149,7 @@ public class Client{
             bw.close();
             socket.close();
         } catch (Exception e) {
-            Global.loge("Unable to connect to the "+clienthost+":"+clientport+" server!");
+            Global.loge("Unable to connect to the "+ clienthost+":"+ clientport+" server!");
             printStackTrace(e);
         }
     }

@@ -132,15 +132,15 @@ public class EssentialPlayer{
                             "AUTO_INCREMENT=1\n" +
                             ";";
                 } else {
-                    conn = DriverManager.getConnection(url);
+                    Global.loge("Database address isn't set!");
                 }
             }
 
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
             stmt.close();
-        } catch (Exception e){
-            printStackTrace(e);
+        } catch (Exception ex){
+            printStackTrace(ex);
         }
     }
 
@@ -670,6 +670,7 @@ public class EssentialPlayer{
     }
 
     static void load(Player player, String id) {
+        EssentialConfig config = new EssentialConfig();
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
@@ -709,7 +710,7 @@ public class EssentialPlayer{
         }
 
         // Check if realname enabled
-        if(realname){
+        if(config.realname){
             player.name = db.getString("name");
         }
 
@@ -719,9 +720,10 @@ public class EssentialPlayer{
 
         // Color nickname
         boolean colornick = (boolean) db.get("colornick");
-        if(realname && colornick){
-            ColorNick.main(player);
-        } else if(!realname && colornick){
+        if(config.realname && colornick){
+            ColorNick color = new ColorNick();
+            color.main(player);
+        } else if(!config.realname && colornick){
             Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }

@@ -10,12 +10,12 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
-import static essentials.EssentialConfig.explimit;
 import static essentials.EssentialPlayer.getData;
 
 public class EssentialEPG {
     public static void main(){
-        if(explimit){
+        EssentialConfig config = new EssentialConfig();
+        if(config.explimit){
             Events.on(EventType.BuildSelectEvent.class, e -> {
                 if(!e.breaking){
                     JSONObject db = getData(((Player)e.builder).uuid);

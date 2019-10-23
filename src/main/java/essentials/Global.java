@@ -1,15 +1,10 @@
 package essentials;
 
-import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Team;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -76,7 +71,8 @@ public class Global {
     }
 
     public static void printStackTrace(Throwable e) {
-        if(!e.getMessage().equals("Connection refused: connect")){
+        /*EssentialConfig config = new EssentialConfig();
+        if(!config.debug){
             StringBuilder sb = new StringBuilder();
             try {
                 sb.append(e.toString());
@@ -97,7 +93,10 @@ public class Global {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        }
+        } else {
+            e.printStackTrace();
+        }*/
+        e.printStackTrace();
     }
 
     public static String gettime(){

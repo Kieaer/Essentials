@@ -116,7 +116,12 @@ public class EssentialTimer extends TimerTask {
                 playtime = format.format(cal1.getTime());
                 // Anti PvP rushing timer
                 if(enableantirush && Vars.state.rules.pvp && cal1.equals(antirushtime)) {
-                    Call.sendMessage("Peace time is over!");
+                    Call.sendMessage("[green] Peace time is over!");
+                    Call.sendMessage("[green] You can now attack other teams!");
+                    for(int i = 0; i < playerGroup.size(); i++) {
+                        Player player = playerGroup.all().get(i);
+                        Call.onPlayerDeath(player);
+                    }
                     state.rules.playerDamageMultiplier = 1f;
                     state.rules.playerHealthMultiplier = 1f;
                 }
