@@ -152,37 +152,10 @@ public class Main extends Plugin{
 
 		Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
 
-        /*TimerTask pwt = new Powerstat();
-		Timer pw = new Timer(true);
-		pw.scheduleAtFixedRate(pwt, 150, 150);*/
-
-        // Set if thorium rector explode
-		/*
-        Events.on(EventType.thoriumReactorOverheat.class, e -> {
-            if(detectreactor){
-            	Call.onTileDestroyed(e.tile);
-                Call.sendMessage("[scarlet]= WARNING WARNING WARNING =");
-                Call.sendMessage("[scarlet]Thorium Reactor Exploded");
-                Global.log("Thorium Reactor explode detected!!");
-            }
-        });
-        */
-
-		/*
-        Events.on(EventType.Trigger.thoriumReactorOverheat, () -> {
-			if(detectreactor){
-				Call.sendMessage("[scarlet]= WARNING WARNING WARNING =");
-				Call.sendMessage("[scarlet]Thorium Reactor Exploded");
-				Global.log("Thorium Reactor explode detected!!");
-			}
-		});
-		 */
-
 		// Set if player join event
 		Events.on(EventType.PlayerConnect.class, e -> {
 
 		});
-
 
 		Events.on(EventType.DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
@@ -379,16 +352,16 @@ public class Main extends Plugin{
 						int target_x;
 						int target_y;
 
-						if(e.tile.getNearby(0).entity.power.graph != null){
+						if(e.tile.getNearby(0).entity != null){
 							target_x = e.tile.getNearby(0).x;
 							target_y = e.tile.getNearby(0).y;
-						} else if(e.tile.getNearby(1).entity.power.graph != null) {
+						} else if(e.tile.getNearby(1).entity != null) {
 							target_x = e.tile.getNearby(1).x;
 							target_y = e.tile.getNearby(1).y;
-						} else if(e.tile.getNearby(2).entity.power.graph != null) {
+						} else if(e.tile.getNearby(2).entity != null) {
 							target_x = e.tile.getNearby(2).x;
 							target_y = e.tile.getNearby(2).y;
-						} else if(e.tile.getNearby(3).entity.power.graph != null) {
+						} else if(e.tile.getNearby(3).entity != null) {
 							target_x = e.tile.getNearby(3).x;
 							target_y = e.tile.getNearby(3).y;
 						} else {
@@ -407,7 +380,8 @@ public class Main extends Plugin{
 						object.put(x+"/"+y+"/"+target_x+"/"+target_y);
 						Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString(String.valueOf(object));
 					}catch (Exception ex){
-						printStackTrace(ex);
+						ex.printStackTrace();
+						//printStackTrace(ex);
 					}
 				}
 			}
@@ -584,9 +558,7 @@ public class Main extends Plugin{
 								Call.setMessageBlockText(null, world.tile(x, y), text);
 							}
 						}
-					}catch (Exception ex){
-						printStackTrace(ex);
-					}
+					}catch (Exception ignored){}
 				} else {
 					delaycount[0]++;
 				}
@@ -617,8 +589,6 @@ public class Main extends Plugin{
 				}
                 executorService.shutdown();
 				//reactormonitor.interrupt();
-
-                //pwt.cancel();
             }
 		});
 
