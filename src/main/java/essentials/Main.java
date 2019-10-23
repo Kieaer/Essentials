@@ -3,7 +3,6 @@ package essentials;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.thread.Update;
-import essentials.vpn.VPNDetection;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -32,7 +31,10 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -104,10 +106,6 @@ public class Main extends Plugin{
 			Runnable server = new Server();
 			Thread t = new Thread(server);
 			t.start();
-		}
-
-		if(antivpn){
-			Global.log("Anti-VPN enabled.");
 		}
 
 		// Essentials EPG Features
@@ -258,14 +256,18 @@ public class Main extends Plugin{
 
 				// Check VPN
 				if(antivpn){
-					String ipToLookup = netServer.admins.getInfo(e.player.uuid).lastIP;
-					try {
-						boolean isHostingorVPN = new VPNDetection().getResponse(ipToLookup).hostip;
-						if(isHostingorVPN){
-							e.player.con.kick("Server isn't allow VPN connection.");
+					try{
+						String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
+						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
+						BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+						String line;
+						while((line = reader.readLine()) != null){
+							if(ipmatches(ip, line)){
+								Call.onKick(e.player.con, "Server isn't allow VPN connection.");
+							}
 						}
-					} catch (IOException error) {
-						printStackTrace(error);
+					} catch (IOException ex){
+						printStackTrace(ex);
 					}
 				}
 			});
