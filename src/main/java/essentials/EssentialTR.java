@@ -11,7 +11,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import static essentials.EssentialConfig.apikey;
 import static essentials.EssentialPlayer.getData;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -20,14 +19,13 @@ class EssentialTR {
     private static URL url;
     private static HttpURLConnection c;
     private static BufferedReader in;
-    private static String inputLine;
-    private static StringBuilder rs;
 
     static void main(Player player, String message) {
-        if (!apikey.equals("")) {
+        EssentialConfig config = new EssentialConfig();
+        if (!config.apikey.equals("")) {
             Thread t = new Thread(() -> {
                 try {
-                    url = new URL("https://translation.googleapis.com/language/translate/v2/detect/?q=" + message + "&key=" + apikey);
+                    url = new URL("https://translation.googleapis.com/language/translate/v2/detect/?q=" + message + "&key=" + config.apikey);
                     c = (HttpURLConnection) url.openConnection();
                     c.setRequestMethod("GET");
                     in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
@@ -46,16 +44,17 @@ class EssentialTR {
                             Player p = playerGroup.all().get(i);
                             if (!Objects.equals(p.name, player.name)) {
                                 JSONObject data = getData(p.uuid);
-                                url = new URL("https://translation.googleapis.com/language/translate/v2/?q=&source=" + langcode + "&target=" + data.getString("language") + "&key=" + apikey);
+                                url = new URL("https://translation.googleapis.com/language/translate/v2/?q=&source=" + langcode + "&target=" + data.getString("language") + "&key=" + config.apikey);
                                 c = (HttpURLConnection) url.openConnection();
                                 c.setRequestMethod("GET");
                                 in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
-                                rs = new StringBuilder();
+                                StringBuilder rb = new StringBuilder();
                                 while ((inputLine = in.readLine()) != null) {
-                                    rs.append(inputLine);
+                                    rb.append(inputLine);
                                 }
                                 in.close();
-                                JSONTokener token = new JSONTokener(rs.toString());
+
+                                JSONTokener token = new JSONTokener(rb.toString());
                                 JSONObject object = new JSONObject(token);
                                 String result = object.getJSONObject("data").getJSONArray("translations").getJSONObject(0).getString("translatedText");
                                 p.sendMessage(player.name + ": " + result);

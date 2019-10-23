@@ -2,6 +2,7 @@ package essentials;
 
 import essentials.net.Client;
 import essentials.net.Server;
+import essentials.special.IpAddressMatcher;
 import essentials.thread.Update;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static essentials.EssentialConfig.enableantirush;
 import static essentials.EssentialConfig.executorService;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.*;
@@ -157,31 +159,39 @@ public class Main extends Plugin{
 
 		Events.on(EventType.DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
-				NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) e.tile.entity;
+				nukeblock.put(e.tile.entity.tileX()+"/"+e.tile.entity.tileY()+"/"+e.player.name);
 				Thread t = new Thread(() -> {
 					try{
-						Thread.sleep(250);
-						if(entity.heat >= 0.01){
-							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+						for (int i = 0; i < nukeblock.length(); i++) {
+							String nukedata = nukeblock.getString(i);
+							String[] data = nukedata.split("/");
+							int x = Integer.parseInt(data[0]);
+							int y = Integer.parseInt(data[1]);
+							String builder = data[2];
+							NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
+							if (entity.heat >= 0.01) {
+								Thread.sleep(50);
+								Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
 
-							Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
-							String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
-							byte[] result = text.getBytes();
-							Files.write(path, result, StandardOpenOption.APPEND);
-							Call.onTileDestroyed(e.tile);
-                        } else {
-                            Thread.sleep(1750);
-                            if(entity.heat >= 0.01){
-                                Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+								Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+								String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
+								byte[] result = text.getBytes();
+								Files.write(path, result, StandardOpenOption.APPEND);
+								Call.onTileDestroyed(world.tile(x, y));
+							} else {
+								Thread.sleep(1950);
+								if (entity.heat >= 0.01) {
+									Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
 
-                                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
-                                String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
-                                byte[] result = text.getBytes();
-                                Files.write(path, result, StandardOpenOption.APPEND);
-                                Call.onTileDestroyed(e.tile);
-                            }
-                        }
-					}catch (Exception ex){
+									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
+									String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
+									byte[] result = text.getBytes();
+									Files.write(path, result, StandardOpenOption.APPEND);
+									Call.onTileDestroyed(world.tile(x, y));
+								}
+							}
+						}
+					} catch (Exception ex){
 						printStackTrace(ex);
 					}
 				});
@@ -261,8 +271,9 @@ public class Main extends Plugin{
 						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
 						BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 						String line;
+						IpAddressMatcher match = new IpAddressMatcher(ip);
 						while((line = reader.readLine()) != null){
-							if(ipmatches(ip, line)){
+							if(match.matches(line)){
 								Call.onKick(e.player.con, "Server isn't allow VPN connection.");
 							}
 						}
@@ -274,7 +285,7 @@ public class Main extends Plugin{
 			playerthread.start();
 
 			// PvP placetime (WorldLoadEvent isn't work.)
-			if(config.enableantirush && Vars.state.rules.pvp) {
+			if(enableantirush && Vars.state.rules.pvp) {
 				state.rules.playerDamageMultiplier = 0f;
 				state.rules.playerHealthMultiplier = 0.001f;
 			}
@@ -499,8 +510,8 @@ public class Main extends Plugin{
 		Core.app.addListener(new ApplicationListener(){
 			@Override
 			public void update() {
-				if(delaycount[0] == 60){
-					try{
+				if (delaycount[0] == 60) {
+					try {
 						for (int i = 0; i < powerblock.length(); i++) {
 							String raw = powerblock.getString(i);
 
@@ -511,7 +522,7 @@ public class Main extends Plugin{
 							int target_x = Integer.parseInt(data[2]);
 							int target_y = Integer.parseInt(data[3]);
 
-							if(world.tile(x, y).block() != Blocks.message){
+							if (world.tile(x, y).block() != Blocks.message) {
 								powerblock.remove(i);
 								return;
 							}
@@ -540,34 +551,22 @@ public class Main extends Plugin{
 								Call.setMessageBlockText(null, world.tile(x, y), text);
 							}
 						}
-					}catch (Exception ignored){}
+					} catch (Exception ignored) {
+					}
 				} else {
 					delaycount[0]++;
 				}
 
-				try{
-					if(entity.heat >= 0.01){
-						Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+				for (int i = 0; i < nukeblock.length(); i++) {
+					String nukedata = nukeblock.getString(i);
+					String[] data = nukedata.split("/");
+					int x = Integer.parseInt(data[0]);
+					int y = Integer.parseInt(data[1]);
 
-						Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
-						String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
-						byte[] result = text.getBytes();
-						Files.write(path, result, StandardOpenOption.APPEND);
-						Call.onTileDestroyed(e.tile);
-					} else {
-						Thread.sleep(1750);
-						if(entity.heat >= 0.01){
-							Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
-
-							Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
-							String text = gettime()+e.player.name+" put thorium in "+e.tile.block().name+" without Cryofluid.";
-							byte[] result = text.getBytes();
-							Files.write(path, result, StandardOpenOption.APPEND);
-							Call.onTileDestroyed(e.tile);
-						}
+					NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
+					if(entity.heat >= 0.98f){
+						Call.sendMessage("[green]Thorium reactor [scarlet]overload warning![white] X: "+x+", Y: "+y);
 					}
-				}catch (Exception ex){
-					printStackTrace(ex);
 				}
 			}
 

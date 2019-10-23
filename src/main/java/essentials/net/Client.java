@@ -19,8 +19,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
-import static essentials.EssentialConfig.clienthost;
-import static essentials.EssentialConfig.clientport;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 
@@ -125,15 +123,17 @@ public class Client{
             br.close();
         }catch (Exception e){
             e.printStackTrace();
-            Global.loge(clienthost+":"+clientport+" server isn't response!");
+            EssentialConfig config = new EssentialConfig();
+            Global.loge(config.clienthost+":"+config.clientport+" server isn't response!");
         }
     }
 
     public static void main(String request, String chat, Player player) {
         try {
-            InetAddress address = InetAddress.getByName(clienthost);
-            Global.log("Trying connect to "+address+":"+clientport+"...");
-            socket = new Socket(address, clientport);
+            EssentialConfig config = new EssentialConfig();
+            InetAddress address = InetAddress.getByName(config.clienthost);
+            Global.log("Trying connect to "+address+":"+config.clientport+"...");
+            socket = new Socket(address, config.clientport);
             OutputStream os = socket.getOutputStream();
             OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
             BufferedWriter bw = new BufferedWriter(osw);
@@ -151,7 +151,8 @@ public class Client{
             bw.close();
             socket.close();
         } catch (Exception e) {
-            Global.loge("Unable to connect to the "+clienthost+":"+clientport+" server!");
+            EssentialConfig config = new EssentialConfig();
+            Global.loge("Unable to connect to the "+config.clienthost+":"+config.clientport+" server!");
             printStackTrace(e);
         }
     }

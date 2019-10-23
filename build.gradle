@@ -29,7 +29,7 @@ dependencies{
     compile group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
     compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.0'
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
-    compile group: 'org.springframework.security', name: 'spring-security-web', version: '5.2.0.RELEASE'
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
 
     //compile files('C:/Users/cloud/Downloads/Mindustry-96/core/build/libs/core-release.jar')
     //compile files('C:/Users/cloud/Desktop/Arc-master/arc-core/build/libs/arc-core-1.0.jar')

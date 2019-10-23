@@ -31,7 +31,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Random;
 
-import static essentials.EssentialConfig.*;
 import static essentials.EssentialTimer.playtime;
 import static essentials.EssentialTimer.uptime;
 import static essentials.Global.printStackTrace;
@@ -88,11 +87,12 @@ public class Server implements Runnable{
 
     private static void chat(String data, String remoteip){
         try{
+            EssentialConfig config = new EssentialConfig();
             String msg = data.replaceAll("\n", "");
             Global.chats("Received message from "+remoteip+": "+msg);
             Call.sendMessage("[#C77E36][RC] "+msg);
-            if(!remoteip.equals(EssentialConfig.clienthost)) {
-                Global.chatsw("[EssentialsChat] ALERT! This message isn't received from "+EssentialConfig.clienthost+"!!");
+            if(!remoteip.equals(config.clienthost)) {
+                Global.chatsw("[EssentialsChat] ALERT! This message isn't received from "+config.clienthost+"!!");
                 Global.chatsw("[EssentialsChat] Message is "+data);
 
                 for (int i = 0; i < playerGroup.size(); i++) {
@@ -621,10 +621,11 @@ public class Server implements Runnable{
                 @Override
                 public synchronized void run() {
                     try{
+                        EssentialConfig config = new EssentialConfig();
                         OutputStream os = socket.getOutputStream();
                         OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                         BufferedWriter bw = new BufferedWriter(osw);
-                        if(query){
+                        if(config.query){
                             if(receive.matches("GET / HTTP/.*")){
                                 String data = query();
                                 bw.write("HTTP/1.1 200 OK\r\n");
@@ -720,7 +721,8 @@ public class Server implements Runnable{
     public synchronized void run() {
         try{
             Thread.currentThread().setName("Essentials Server");
-            serverSocket = new ServerSocket(serverport);
+            EssentialConfig config = new EssentialConfig();
+            serverSocket = new ServerSocket(config.serverport);
             while (active){
                 socket = serverSocket.accept();
                 InputStream is = socket.getInputStream();
@@ -740,7 +742,7 @@ public class Server implements Runnable{
                     chat(data, remoteip);
                 } else if (data.matches("ping")) {
                     ping(remoteip);
-                } else if(banshare) {
+                } else if(config.banshare) {
                     try{
                         JSONTokener test = new JSONTokener(data);
                         new JSONArray(test);

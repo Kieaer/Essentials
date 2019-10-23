@@ -5,7 +5,6 @@ import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Team;
-import org.springframework.security.web.util.matcher.IpAddressMatcher;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -105,10 +104,5 @@ public class Global {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         return "[" + now.format(dateTimeFormatter) + "] ";
-    }
-
-    public static boolean ipmatches(String ip, String subnet) {
-        IpAddressMatcher ipAddressMatcher = new IpAddressMatcher(subnet);
-        return ipAddressMatcher.matches(ip);
     }
 }
