@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static essentials.EssentialConfig.*;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -41,10 +42,9 @@ public class EssentialPlayer{
     static void createNewDataFile(){
         try {
             String sql = null;
-            EssentialConfig config = new EssentialConfig();
-            if(config.sqlite){
+            if(sqlite){
                 Class.forName("org.sqlite.JDBC");
-                conn = DriverManager.getConnection(config.url);
+                conn = DriverManager.getConnection(url);
                 sql = "CREATE TABLE IF NOT EXISTS players (\n" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
                         "name TEXT,\n" +
@@ -84,10 +84,10 @@ public class EssentialPlayer{
                         "accountpw TEXT\n" +
                         ");";
             } else {
-                if(!config.dbid.isEmpty()){
+                if(!dbid.isEmpty()){
                     Class.forName("org.mariadb.jdbc.Driver");
                     Class.forName("com.mysql.jdbc.Driver");
-                    conn = DriverManager.getConnection(config.url, config.dbid, config.dbpw);
+                    conn = DriverManager.getConnection(url, dbid, dbpw);
                     sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
                             "`id` INT(11) NOT NULL AUTO_INCREMENT,\n" +
                             "`name` TEXT NULL DEFAULT NULL,\n" +
@@ -132,27 +132,26 @@ public class EssentialPlayer{
                             "AUTO_INCREMENT=1\n" +
                             ";";
                 } else {
-                    conn = DriverManager.getConnection(config.url);
+                    Global.loge("Database address isn't set!");
                 }
             }
 
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
             stmt.close();
-        } catch (Exception e){
-            printStackTrace(e);
+        } catch (Exception ex){
+            printStackTrace(ex);
         }
     }
 
 	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
-            EssentialConfig config = new EssentialConfig();
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
                 String sql;
-                if(config.sqlite){
+                if(sqlite){
                     sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
                     sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -322,19 +321,18 @@ public class EssentialPlayer{
     }
     static void openconnect(){
         try{
-            EssentialConfig config = new EssentialConfig();
-            if(config.sqlite){
+            if(sqlite){
                 Class.forName("org.sqlite.JDBC");
-                conn = DriverManager.getConnection(config.url);
+                conn = DriverManager.getConnection(url);
                 Global.log("Database type: SQLite");
             } else {
                 Class.forName("org.mariadb.jdbc.Driver");
                 Class.forName("com.mysql.jdbc.Driver");
-                if(!config.dbid.isEmpty()){
-                    conn = DriverManager.getConnection(config.url, config.dbid, config.dbpw);
+                if(!dbid.isEmpty()){
+                    conn = DriverManager.getConnection(url, dbid, dbpw);
                     Global.log("Database type: MariaDB/MySQL");
                 } else {
-                    conn = DriverManager.getConnection(config.url);
+                    conn = DriverManager.getConnection(url);
                     Global.log("Database type: Invalid");
                 }
             }
@@ -723,7 +721,8 @@ public class EssentialPlayer{
         // Color nickname
         boolean colornick = (boolean) db.get("colornick");
         if(config.realname && colornick){
-            ColorNick.main(player);
+            ColorNick color = new ColorNick();
+            color.main(player);
         } else if(!config.realname && colornick){
             Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");

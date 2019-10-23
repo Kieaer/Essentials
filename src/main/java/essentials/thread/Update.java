@@ -44,9 +44,8 @@ public class Update {
             JSONTokener parser = new JSONTokener(response.toString());
             JSONObject object = new JSONObject(parser);
 
-            DefaultArtifactVersion latest = new DefaultArtifactVersion((String) object.get("tag_name"));
+            DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
             DefaultArtifactVersion current = new DefaultArtifactVersion("5.0");
-            //Vars.mods.getMod(Main.class).meta.version
 
             if(latest.compareTo(current) > 0){
                 Global.log("New version found!");

@@ -1,6 +1,5 @@
 package essentials.net;
 
-import essentials.EssentialConfig;
 import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
@@ -19,6 +18,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
+import static essentials.EssentialConfig.clienthost;
+import static essentials.EssentialConfig.clientport;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 
@@ -77,12 +78,11 @@ public class Client{
 
     private static void chat(BufferedWriter bw, String chat, Player player) {
         try {
-            EssentialConfig config = new EssentialConfig();
             String msg = "["+player.name+"]: "+chat;
             bw.write(msg+"\n");
             bw.flush();
             Call.sendMessage("[#357EC7][SC] "+msg);
-            Global.chatc("Message sent to "+config.clienthost+" - "+chat+"");
+            Global.chatc("Message sent to "+ clienthost+" - "+chat+"");
         } catch (Exception e) {
             String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
             player.sendMessage("Server is not responding! Cross-chat disabled!");
@@ -123,17 +123,15 @@ public class Client{
             br.close();
         }catch (Exception e){
             e.printStackTrace();
-            EssentialConfig config = new EssentialConfig();
-            Global.loge(config.clienthost+":"+config.clientport+" server isn't response!");
+            Global.loge(clienthost+":"+ clientport+" server isn't response!");
         }
     }
 
     public static void main(String request, String chat, Player player) {
         try {
-            EssentialConfig config = new EssentialConfig();
-            InetAddress address = InetAddress.getByName(config.clienthost);
-            Global.log("Trying connect to "+address+":"+config.clientport+"...");
-            socket = new Socket(address, config.clientport);
+            InetAddress address = InetAddress.getByName(clienthost);
+            Global.log("Trying connect to "+address+":"+clientport+"...");
+            socket = new Socket(address, clientport);
             OutputStream os = socket.getOutputStream();
             OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
             BufferedWriter bw = new BufferedWriter(osw);
@@ -151,8 +149,7 @@ public class Client{
             bw.close();
             socket.close();
         } catch (Exception e) {
-            EssentialConfig config = new EssentialConfig();
-            Global.loge("Unable to connect to the "+config.clienthost+":"+config.clientport+" server!");
+            Global.loge("Unable to connect to the "+ clienthost+":"+ clientport+" server!");
             printStackTrace(e);
         }
     }

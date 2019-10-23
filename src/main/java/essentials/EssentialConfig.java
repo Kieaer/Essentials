@@ -15,34 +15,35 @@ import java.util.concurrent.Executors;
 import static essentials.Global.printStackTrace;
 
 public class EssentialConfig {
-    public String clienthost;
-    public int clientport;
+    public static String clienthost;
+    public static int clientport;
     public int serverport;
-    boolean realname;
-    boolean detectreactor;
-    boolean serverenable;
-    boolean clientenable;
-    static double basexp;
-    static double exponent;
+    public boolean realname;
+    public boolean detectreactor;
+    public boolean serverenable;
+    public boolean clientenable;
+    public static double basexp;
+    public static double exponent;
     public static int cupdatei;
     public boolean banshare;
-    boolean antivpn;
+    public boolean antivpn;
     public boolean query;
     private int version;
     private String language;
-    static boolean enableantirush;
-    static Calendar antirushtime;
-    boolean explimit;
-    boolean logging;
-    boolean update;
+    public static boolean enableantirush;
+    public static Calendar antirushtime;
+    public boolean explimit;
+    public boolean logging;
+    public boolean update;
     static boolean levelupalarm;
-    boolean sqlite;
+    public static boolean sqlite;
     private String dburl;
-    boolean loginenable;
-    String url;
-    String dbid;
-    String dbpw;
-    String apikey;
+    public boolean loginenable;
+    public static String url;
+    public static String dbid;
+    public static String dbpw;
+    public String apikey;
+    public boolean debug;
 
     static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
@@ -109,7 +110,10 @@ public class EssentialConfig {
 
                     "# Google translate API Key\n" +
                     "# The api key can be obtained from cloud.google.com.\n" +
-                    "apikey: "+apikey;
+                    "apikey: \n\n" +
+
+                    "# The error message is output immediately.\n" +
+                    "debug: false";
 
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -634,6 +638,12 @@ public class EssentialConfig {
             } else {
                 apikey = "";
             }
+
+            if(obj.get("debug") != null){
+                debug = Boolean.parseBoolean(String.valueOf(obj.get("debug")));
+            } else {
+                debug = false;
+            }
             Global.log("config file loaded!");
         }
 
@@ -660,16 +670,16 @@ public class EssentialConfig {
                     "realname: "+this.realname+"\n\n" +
 
                     "# Color nickname update interval. 1sec = 1000\n" +
-                    "colornick update interval: "+this.cupdatei+"\n\n" +
+                    "colornick update interval: "+ cupdatei+"\n\n" +
 
                     "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
                     "detectreactor: "+this.detectreactor+"\n\n" +
 
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n\n" +
                     "explimit: "+this.explimit+"\n" +
-                    "basexp: "+this.basexp+"\n" +
-                    "exponent: "+this.exponent+"\n" +
-                    "levelupalarm: "+this.levelupalarm+"\n\n" +
+                    "basexp: "+ basexp+"\n" +
+                    "exponent: "+ exponent+"\n" +
+                    "levelupalarm: "+ levelupalarm+"\n\n" +
 
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
                     "banshare: "+this.banshare+"\n\n" +
@@ -681,7 +691,7 @@ public class EssentialConfig {
                     "antivpn: "+this.antivpn+"\n\n" +
 
                     "# Enable Anti PvP early time rushing\n" +
-                    "enableantirush: "+this.enableantirush+"\n" +
+                    "enableantirush: "+enableantirush+"\n" +
                     "antirushtime: "+obj.get("antirushtime")+"\n\n"+
                     
                     "# Logging enable\n" +
@@ -701,7 +711,10 @@ public class EssentialConfig {
 
                     "# Google translate API Key\n" +
                     "# The api key can be obtained from cloud.google.com.\n" +
-                    "apikey: "+this.apikey;
+                    "apikey: "+this.apikey+"\n\n" +
+
+                    "# The error message is output immediately.\n" +
+                    "debug: "+this.debug;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }

@@ -20,7 +20,7 @@ class EssentialTR {
     private static HttpURLConnection c;
     private static BufferedReader in;
 
-    static void main(Player player, String message) {
+    public void main(Player player, String message) {
         EssentialConfig config = new EssentialConfig();
         if (!config.apikey.equals("")) {
             Thread t = new Thread(() -> {

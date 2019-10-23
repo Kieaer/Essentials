@@ -78,11 +78,11 @@ public class Main extends Plugin{
 		});
 		servercheck.start();
 
+		// Database
+		openconnect();
+
 		// Make player DB
 		createNewDataFile();
-
-		// SQLite multi-thread
-		openconnect();
 
 		// Reset all connected status
 		writeData("UPDATE players SET connected = 0");
@@ -243,8 +243,11 @@ public class Main extends Plugin{
 					Call.onInfoMessage(e.player.con, message);
 				}
 			} else {
-        		EssentialPlayer.register(e.player);
-				EssentialPlayer.load(e.player, null);
+        		if(EssentialPlayer.register(e.player)) {
+					EssentialPlayer.load(e.player, null);
+				} else {
+        			Call.onKick(e.player.con, "Plugin error! Please contact server admin!");
+				}
 			}
 
 
@@ -307,7 +310,8 @@ public class Main extends Plugin{
 					JSONObject db = getData(e.player.uuid);
 					boolean crosschat = db.getBoolean("crosschat");
 
-					EssentialTR.main(e.player, e.message);
+					EssentialTR tr = new EssentialTR();
+					tr.main(e.player, e.message);
 
 					if (config.clientenable) {
 						if (crosschat) {

@@ -10,7 +10,7 @@ public class ColorNick {
     private static int colorOffset = 0;
     private static long updateIntervalMs = cupdatei;
 
-    public static void main(Player player){
+    public void main(Player player){
         Thread thread = new Thread(() -> {
             Thread.currentThread().setName("Color nickname thread");
             JSONObject db = EssentialPlayer.getData(player.uuid);
@@ -30,7 +30,7 @@ public class ColorNick {
         thread.start();
     }
 
-    private static void nickcolor(String name, Player player) {
+    private void nickcolor(String name, Player player) {
         StringBuilder stringBuilder = new StringBuilder();
 
         String[] colors = new String[11];
