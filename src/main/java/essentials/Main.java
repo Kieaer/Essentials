@@ -68,12 +68,14 @@ public class Main extends Plugin{
 		config.main();
 
 		// Client connection test
-		try {
-			Global.log("EssentialsClient is attempting to connect to the server.");
-			Client.main("ping", null, null);
-		} catch (Exception e) {
-			printStackTrace(e);
-		}
+		if(clientenable){
+		    try {
+                Global.log("EssentialsClient is attempting to connect to the server.");
+                Client.main("ping", null, null);
+            } catch (Exception e) {
+                printStackTrace(e);
+            }
+        }
 
 		// Database
 		openconnect();
