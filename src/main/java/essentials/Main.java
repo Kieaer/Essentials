@@ -48,8 +48,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static essentials.EssentialConfig.enableantirush;
-import static essentials.EssentialConfig.executorService;
+import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.*;
 import static io.anuke.arc.util.Log.err;
@@ -67,16 +66,13 @@ public class Main extends Plugin{
 		config.main();
 
 		// Client connection test
-		Thread servercheck = new Thread(() -> {
-			try{
-				Global.log("EssentialsClient is attempting to connect to the server.");
-				Thread.sleep(1500);
-				Client.main("ping", null, null);
-			}catch (Exception e){
-				printStackTrace(e);
-			}
-		});
-		servercheck.start();
+		try {
+			Global.log("EssentialsClient is attempting to connect to the server.");
+			Thread.sleep(1500);
+			Client.main("ping", null, null);
+		} catch (Exception e) {
+			printStackTrace(e);
+		}
 
 		// Database
 		openconnect();
@@ -88,14 +84,14 @@ public class Main extends Plugin{
 		writeData("UPDATE players SET connected = 0");
 
 	    // Start log
-		if(config.logging){
+		if(logging){
             executorService.execute(new EssentialLog());
 		}
 
 		//EssentialAI.main();
 
 		// Update check
-		if(config.update) {
+		if(update) {
 			Global.log("Update checking...");
 			Update.main();
 		}
@@ -104,7 +100,7 @@ public class Main extends Plugin{
 		EssentialPlayer.Upgrade();
 
 		// Start ban/chat server
-		if(config.serverenable){
+		if(serverenable){
 			Runnable server = new Server();
 			Thread t = new Thread(server);
 			t.start();
@@ -200,7 +196,7 @@ public class Main extends Plugin{
 		});
 
         Events.on(EventType.PlayerJoin.class, e -> {
-        	if(config.loginenable){
+        	if(loginenable){
 				e.player.isAdmin = false;
 
 				JSONObject db = getData(e.player.uuid);
@@ -268,7 +264,7 @@ public class Main extends Plugin{
 				}
 
 				// Check VPN
-				if(config.antivpn){
+				if(antivpn){
 					try{
 						String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
 						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
@@ -313,7 +309,7 @@ public class Main extends Plugin{
 					EssentialTR tr = new EssentialTR();
 					tr.main(e.player, e.message);
 
-					if (config.clientenable) {
+					if (clientenable) {
 						if (crosschat) {
 							Thread chatclient = new Thread(() -> {
 								Client.main("chat", e.message, e.player);
@@ -500,7 +496,7 @@ public class Main extends Plugin{
 			}
 		};
 
-		if(config.loginenable){
+		if(loginenable){
 			Timer alerttimer = new Timer(true);
 			alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
 		}
@@ -587,7 +583,7 @@ public class Main extends Plugin{
 				closeconnect();
 
 				// Kill Ban/chat server thread
-				if(config.serverenable){
+				if(serverenable){
 					try {
 						Server.active = false;
 						Server.serverSocket.close();
@@ -603,12 +599,12 @@ public class Main extends Plugin{
 		});
 
         // Alert Realname event
-        if(config.realname){
+        if(realname){
 			Global.log("Realname enabled.");
         }
 
         // Alert thorium reactor explode detect event
-        if(config.detectreactor){
+        if(detectreactor){
 			Global.log("Thorium reactor overheat detect enabled.");
         }
 
@@ -730,8 +726,7 @@ public class Main extends Plugin{
 		});
 
 		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
-			EssentialConfig config = new EssentialConfig();
-			if(config.banshare){
+			if(banshare){
 				String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONObject object = new JSONObject(parser);
@@ -799,11 +794,10 @@ public class Main extends Plugin{
 
 		// Override ban command
 		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
-			EssentialConfig config = new EssentialConfig();
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
-					if(config.banshare){
+					if(banshare){
 						try{
 							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
@@ -822,7 +816,7 @@ public class Main extends Plugin{
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						if(config.banshare){
+						if(banshare){
 							try{
 								String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 								JSONTokener parser = new JSONTokener(db);
@@ -842,7 +836,7 @@ public class Main extends Plugin{
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					if(config.banshare){
+					if(banshare){
 						try{
 							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
@@ -874,8 +868,7 @@ public class Main extends Plugin{
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
 		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
-			EssentialConfig config = new EssentialConfig();
-			if (config.loginenable) {
+			if (loginenable) {
 				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 					player.sendMessage("[green][Essentials] [orange]You are already logged in");
 					return;
@@ -893,8 +886,7 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player) -> {
-			EssentialConfig config = new EssentialConfig();
-			if (config.loginenable) {
+			if (loginenable) {
 				if (EssentialPlayer.register(player, arg[0], arg[1], arg[2])) {
 					if (Vars.state.rules.pvp) {
 						int index = player.getTeam().ordinal() + 1;

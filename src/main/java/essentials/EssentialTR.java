@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import static essentials.EssentialConfig.apikey;
 import static essentials.EssentialPlayer.getData;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -21,11 +22,10 @@ class EssentialTR {
     private static BufferedReader in;
 
     public void main(Player player, String message) {
-        EssentialConfig config = new EssentialConfig();
-        if (!config.apikey.equals("")) {
+        if (apikey.equals("")) {
             Thread t = new Thread(() -> {
                 try {
-                    url = new URL("https://translation.googleapis.com/language/translate/v2/detect/?q=" + message + "&key=" + config.apikey);
+                    url = new URL("https://translation.googleapis.com/language/translate/v2/detect/?q=" + message + "&key=" + apikey);
                     c = (HttpURLConnection) url.openConnection();
                     c.setRequestMethod("GET");
                     in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
@@ -44,7 +44,7 @@ class EssentialTR {
                             Player p = playerGroup.all().get(i);
                             if (!Objects.equals(p.name, player.name)) {
                                 JSONObject data = getData(p.uuid);
-                                url = new URL("https://translation.googleapis.com/language/translate/v2/?q=&source=" + langcode + "&target=" + data.getString("language") + "&key=" + config.apikey);
+                                url = new URL("https://translation.googleapis.com/language/translate/v2/?q=&source=" + langcode + "&target=" + data.getString("language") + "&key=" + apikey);
                                 c = (HttpURLConnection) url.openConnection();
                                 c.setRequestMethod("GET");
                                 in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));

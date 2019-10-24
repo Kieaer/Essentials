@@ -262,7 +262,7 @@ public class EssentialPlayer{
 	    // Write ban data
         String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);
-        JSONObject object = new JSONObject(parser);
+        JSONArray object = new JSONArray(parser);
 
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
@@ -287,11 +287,9 @@ public class EssentialPlayer{
         data1.put("date", newTime);
         data1.put("name", name);
 
-        JSONArray dataarray = new JSONArray();
+        object.put(data1);
 
-        dataarray.put(data1);
-
-        Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(dataarray));
+        Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
 
         // Write player data
         writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"', WHERE uuid = '"+uuid+"'");
@@ -670,7 +668,6 @@ public class EssentialPlayer{
     }
 
     static void load(Player player, String id) {
-        EssentialConfig config = new EssentialConfig();
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
@@ -710,7 +707,7 @@ public class EssentialPlayer{
         }
 
         // Check if realname enabled
-        if(config.realname){
+        if(realname){
             player.name = db.getString("name");
         }
 
@@ -720,10 +717,10 @@ public class EssentialPlayer{
 
         // Color nickname
         boolean colornick = (boolean) db.get("colornick");
-        if(config.realname && colornick){
+        if(realname && colornick){
             ColorNick color = new ColorNick();
             color.main(player);
-        } else if(!config.realname && colornick){
+        } else if(!realname && colornick){
             Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }

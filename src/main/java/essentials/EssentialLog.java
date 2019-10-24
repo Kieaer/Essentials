@@ -5,7 +5,6 @@ import io.anuke.arc.Events;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.EventType;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +15,6 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 import static essentials.EssentialPlayer.conn;
-import static essentials.EssentialPlayer.getData;
 import static essentials.Global.gettime;
 import static essentials.Global.printStackTrace;
 
@@ -122,8 +120,6 @@ public class EssentialLog implements Runnable{
         Events.on(EventType.PlayerJoin.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-            JSONObject db = getData(e.player.uuid);
-
             try {
                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
                 String sql = "SELECT * FROM players WHERE name='" + e.player.uuid + "'";
@@ -194,7 +190,6 @@ public class EssentialLog implements Runnable{
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
                 String text = gettime() + e.player.name+" Player has moved item "+e.player.item().item.name+" to "+e.tile.block().name+".\n";
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
