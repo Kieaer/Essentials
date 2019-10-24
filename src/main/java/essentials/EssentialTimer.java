@@ -3,8 +3,12 @@ package essentials;
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
+import io.anuke.mindustry.world.Block;
+import io.anuke.mindustry.world.Tile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -18,12 +22,10 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimerTask;
 
-import static essentials.EssentialConfig.antirushtime;
-import static essentials.EssentialConfig.enableantirush;
+import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
 import static essentials.Global.printStackTrace;
-import static essentials.Main.jumpzone;
 import static io.anuke.mindustry.Vars.*;
 
 public class EssentialTimer extends TimerTask implements Runnable{
@@ -158,6 +160,37 @@ public class EssentialTimer extends TimerTask implements Runnable{
                     int tiley = Integer.parseInt(data[3]);
                     String serverip = data[4];
                     int serverport = Integer.parseInt(data[5]);
+                    int block = Integer.parseInt(data[6]);
+
+                    Block target;
+                    switch(block){
+                        case 1:
+                        default:
+                            target = Blocks.metalFloor;
+                            break;
+                        case 2:
+                            target = Blocks.metalFloor2;
+                            break;
+                        case 3:
+                            target = Blocks.metalFloor3;
+                            break;
+                        case 4:
+                            target = Blocks.metalFloor5;
+                            break;
+                        case 5:
+                            target = Blocks.metalFloorDamaged;
+                            break;
+                    }
+
+                    if(!world.tile(startx, starty).block().name.matches(".*metal.*")){
+                        int size = tilex - startx;
+                        for(int x=0;x<size;x++){
+                            for(int y=0;y<size;y++){
+                                Tile tile = world.tile(startx+x, starty+y);
+                                Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
+                            }
+                        }
+                    }
 
                     for (int ix = 0; ix < playerGroup.size(); ix++) {
                         Player player = playerGroup.all().get(ix);

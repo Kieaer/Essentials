@@ -3,6 +3,7 @@ package essentials;
 import io.anuke.arc.Core;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
 import java.text.SimpleDateFormat;
@@ -44,6 +45,7 @@ public class EssentialConfig {
     public static String dbpw;
     public static String apikey;
     public static boolean debug;
+    public static JSONArray jumpzone = new JSONArray();
 
     static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
@@ -453,10 +455,18 @@ public class EssentialConfig {
             Global.log("powerblock file created!");
         }
 
-        // EssentialsLog
         if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log").exists()) {
             Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log").writeString("");
             Global.log("error.log created.");
+        }
+
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
+            Global.log("jumpzone created.");
+        } else {
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").readString();
+            JSONTokener data = new JSONTokener(temp1);
+            jumpzone = new JSONArray(data);
         }
 
         if (Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()){
@@ -658,63 +668,63 @@ public class EssentialConfig {
                     "language: en\n\n" +
 
                     "# Server / client port settings\n#It will enable server as server chat function.\n" +
-                    "server-enable: "+this.serverenable+"\n" +
+                    "server-enable: "+serverenable+"\n" +
                     "server-port: "+this.serverport+"\n\n" +
 
-                    "client-enable: "+this.clientenable+"\n" +
-                    "client-port: "+this.clientport+"\n" +
-                    "client-host: "+this.clienthost+"\n\n" +
+                    "client-enable: "+clientenable+"\n" +
+                    "client-port: "+clientport+"\n" +
+                    "client-host: "+clienthost+"\n\n" +
 
                     "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
                     "# If you want colornick features, must enable this.\n" +
-                    "realname: "+this.realname+"\n\n" +
+                    "realname: "+realname+"\n\n" +
 
                     "# Color nickname update interval. 1sec = 1000\n" +
                     "colornick update interval: "+ cupdatei+"\n\n" +
 
                     "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
-                    "detectreactor: "+this.detectreactor+"\n\n" +
+                    "detectreactor: "+detectreactor+"\n\n" +
 
                     "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n\n" +
-                    "explimit: "+this.explimit+"\n" +
+                    "explimit: "+explimit+"\n" +
                     "basexp: "+ basexp+"\n" +
                     "exponent: "+ exponent+"\n" +
                     "levelupalarm: "+ levelupalarm+"\n\n" +
 
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
-                    "banshare: "+this.banshare+"\n\n" +
+                    "banshare: "+banshare+"\n\n" +
 
                     "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n# Ranking page address is http://localhost:server_port/rank\n" +
-                    "query: "+this.query+"\n\n" +
+                    "query: "+query+"\n\n" +
 
                     "# Enable Anti-VPN service.\n" +
-                    "antivpn: "+this.antivpn+"\n\n" +
+                    "antivpn: "+antivpn+"\n\n" +
 
                     "# Enable Anti PvP early time rushing\n" +
                     "enableantirush: "+enableantirush+"\n" +
                     "antirushtime: "+obj.get("antirushtime")+"\n\n"+
                     
                     "# Logging enable\n" +
-                    "logging: "+this.logging+"\n\n" +
+                    "logging: "+logging+"\n\n" +
 
                     "# Update check enable\n" +
-                    "update: "+this.update+"\n\n" +
+                    "update: "+update+"\n\n" +
 
                     "# Database type setting (Default is SQLite)\n# Example - mariadb://localhost:3306/dbname\n#If you want to use MySQL/MariaDB, You must create a new database yourself.\n" +
-                    "sqlite: "+this.sqlite+"\n" +
+                    "sqlite: "+sqlite+"\n" +
                     "dburl: "+this.dburl+"\n" +
-                    "dbid: "+this.dbid+"\n" +
-                    "dbpw: "+this.dbpw+"\n\n" +
+                    "dbid: "+dbid+"\n" +
+                    "dbpw: "+dbpw+"\n\n" +
 
                     "# Login features setting\n" +
-                    "loginenable: "+this.loginenable+"\n\n" +
+                    "loginenable: "+loginenable+"\n\n" +
 
                     "# Google translate API Key\n" +
                     "# The api key can be obtained from cloud.google.com.\n" +
-                    "apikey: "+this.apikey+"\n\n" +
+                    "apikey: "+apikey+"\n\n" +
 
                     "# The error message is output immediately.\n" +
-                    "debug: "+this.debug;
+                    "debug: "+debug;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }

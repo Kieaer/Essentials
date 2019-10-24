@@ -61,7 +61,6 @@ public class Main extends Plugin{
 	private boolean voteactive;
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
-	static JSONArray jumpzone = new JSONArray();
 
 	public Main() {
 		// Start config file
@@ -592,7 +591,9 @@ public class Main extends Plugin{
 					}
 				}
                 executorService.shutdown();
-				//reactormonitor.interrupt();
+
+				// save jumpzone data
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
             }
 		});
 
@@ -860,6 +861,47 @@ public class Main extends Plugin{
 					player.con.kick(KickReason.banned);
 				}
 			}
+		});
+
+		handler.register("jumpreset", "Clear a server-to-server jumping zone data.", arg -> {
+			for (int i = 0; i < jumpzone.length(); i++) {
+				String jumpdata = jumpzone.getString(i);
+				String[] data = jumpdata.split("/");
+				int startx = Integer.parseInt(data[0]);
+				int starty = Integer.parseInt(data[1]);
+				int tilex = Integer.parseInt(data[2]);
+				int block = Integer.parseInt(data[6]);
+
+				Block target;
+				switch (block) {
+					case 1:
+					default:
+						target = Blocks.metalFloor;
+						break;
+					case 2:
+						target = Blocks.metalFloor2;
+						break;
+					case 3:
+						target = Blocks.metalFloor3;
+						break;
+					case 4:
+						target = Blocks.metalFloor5;
+						break;
+					case 5:
+						target = Blocks.metalFloorDamaged;
+						break;
+				}
+
+				int size = tilex - startx;
+				for (int x = 0; x < size; x++) {
+					for (int y = 0; y < size; y++) {
+						Tile tile = world.tile(startx + x, starty + y);
+						Call.onDeconstructFinish(tile, target, 0);
+					}
+				}
+			}
+			jumpzone = new JSONArray();
+			Global.log("Data reseted!");
 		});
 	}
 
@@ -1905,7 +1947,7 @@ public class Main extends Plugin{
 					}
 				}
 
-				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]);
+				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
 			} else {
 				player.sendMessage("You are not admin!");
 			}
