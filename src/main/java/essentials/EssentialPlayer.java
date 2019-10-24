@@ -144,7 +144,7 @@ public class EssentialPlayer{
         }
     }
 
-	private static void createNewDatabase(String name, String uuid, String country, String language, String country_code, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
+	private static void createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
@@ -260,7 +260,7 @@ public class EssentialPlayer{
 	static void addtimeban(String name, String uuid, int bantimeset){
 
 	    // Write ban data
-        String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
+        String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);
         JSONArray object = new JSONArray(parser);
 
@@ -289,7 +289,7 @@ public class EssentialPlayer{
 
         object.put(data1);
 
-        Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
+        Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
 
         // Write player data
         writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"', WHERE uuid = '"+uuid+"'");
@@ -482,7 +482,7 @@ public class EssentialPlayer{
                             } else {
                                 geo = result.getString("country_name");
                                 geocode = result.getString("country");
-                                lang = result.getString("languages").substring(0, 1);
+                                lang = result.getString("languages").substring(0, 2);
                             }
                         } catch (IOException e) {
                             geo = "invalid";
@@ -695,9 +695,9 @@ public class EssentialPlayer{
         // Show motd
         String motd;
         if(db.getString("language").equals("KR")){
-            motd = Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").readString();
+            motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
         } else {
-            motd = Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").readString();
+            motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
         }
         int count = motd.split("\r\n|\r|\n").length;
         if(count > 10){
