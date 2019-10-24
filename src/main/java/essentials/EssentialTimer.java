@@ -23,12 +23,14 @@ import static essentials.EssentialConfig.enableantirush;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
 import static essentials.Global.printStackTrace;
+import static essentials.Main.jumpzone;
 import static io.anuke.mindustry.Vars.*;
 
-public class EssentialTimer extends TimerTask {
+public class EssentialTimer extends TimerTask implements Runnable{
     public static String playtime;
     public static String uptime;
 
+    @Override
     public void run() {
         // Player playtime counting
         try{
@@ -143,6 +145,31 @@ public class EssentialTimer extends TimerTask {
             }catch (Exception e){
                 printStackTrace(e);
             }
+        }
+
+        if (playerGroup.size() > 0) {
+            Thread work = new Thread(() -> {
+                for(int i=0;i<jumpzone.length();i++){
+                    String jumpdata = jumpzone.getString(i);
+                    String[] data = jumpdata.split("/");
+                    int startx = Integer.parseInt(data[0]);
+                    int starty = Integer.parseInt(data[1]);
+                    int tilex = Integer.parseInt(data[2]);
+                    int tiley = Integer.parseInt(data[3]);
+                    String serverip = data[4];
+                    int serverport = Integer.parseInt(data[5]);
+
+                    for (int ix = 0; ix < playerGroup.size(); ix++) {
+                        Player player = playerGroup.all().get(ix);
+                        if(player.tileX()>startx && player.tileX()<tilex){
+                            if(player.tileY()>starty && player.tileY()<tiley){
+                                Call.onConnect(player.con, serverip, serverport);
+                            }
+                        }
+                    }
+                }
+            });
+            work.start();
         }
     }
 }

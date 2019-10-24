@@ -62,39 +62,34 @@ public class EssentialAI {
             Thread t1 = new Thread(() -> {
                 for (int x = 0; x < world.width() * 8; x += 8) {
                     for (int y = 0; y < world.height() * 8; y += 8) {
-                        int finalX = x;
-                        int finalY = y;
-                        Runnable t = () -> {
-                            if (world.tileWorld(finalX, finalY).overlayID() != 0) {
-                                if (world.tileWorld(finalX, finalY).blockID() == 0) {
-                                    if (world.tileWorld(finalX, finalY).overlayID() == 149) {
-                                        world.tileWorld(finalX, finalY).setBlock(Blocks.mechanicalDrill, Team.sharded, 0);
-                                    }
+                        if (world.tileWorld(x, y).overlayID() != 0) {
+                            if (world.tileWorld(x, y).blockID() == 0) {
+                                if (world.tileWorld(x, y).overlayID() == 149) {
+                                    world.tileWorld(x, y).setBlock(Blocks.mechanicalDrill, Team.sharded, 0);
                                 }
                             }
-                            if (world.tileWorld(finalX, finalY).overlayID() != 0) {
-                                if (world.tileWorld(finalX, finalY).blockID() == 0) {
-                                    if (world.tileWorld(finalX, finalY).overlayID() == 150) {
-                                        world.tileWorld(finalX, finalY).setBlock(Blocks.mechanicalDrill, Team.sharded, 0);
-                                    }
+                        }
+                        if (world.tileWorld(x, y).overlayID() != 0) {
+                            if (world.tileWorld(x, y).blockID() == 0) {
+                                if (world.tileWorld(x, y).overlayID() == 150) {
+                                    world.tileWorld(x, y).setBlock(Blocks.mechanicalDrill, Team.sharded, 0);
                                 }
                             }
-                            if (world.tileWorld(finalX, finalY).overlayID() != 0) {
-                                if (world.tileWorld(finalX, finalY).blockID() == 0) {
-                                    if (world.tileWorld(finalX, finalY).overlayID() == 154) {
-                                        world.tileWorld(finalX, finalY).setBlock(Blocks.laserDrill, Team.sharded, 0);
-                                    }
+                        }
+                        if (world.tileWorld(x, y).overlayID() != 0) {
+                            if (world.tileWorld(x, y).blockID() == 0) {
+                                if (world.tileWorld(x, y).overlayID() == 154) {
+                                    world.tileWorld(x, y).setBlock(Blocks.laserDrill, Team.sharded, 0);
                                 }
                             }
-                            if (world.tileWorld(finalX, finalY).overlayID() != 0) {
-                                if (world.tileWorld(finalX, finalY).blockID() == 0) {
-                                    if (world.tileWorld(finalX, finalY).overlayID() == 153) {
-                                        world.tileWorld(finalX, finalY).setBlock(Blocks.pneumaticDrill, Team.sharded, 0);
-                                    }
+                        }
+                        if (world.tileWorld(x, y).overlayID() != 0) {
+                            if (world.tileWorld(x, y).blockID() == 0) {
+                                if (world.tileWorld(x, y).overlayID() == 153) {
+                                    world.tileWorld(x, y).setBlock(Blocks.pneumaticDrill, Team.sharded, 0);
                                 }
                             }
-                        };
-                        pool.execute(t);
+                        }
                     }
                 }
                 Log.info(copper);

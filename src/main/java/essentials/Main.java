@@ -25,6 +25,8 @@ import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
+import io.anuke.mindustry.world.Block;
+import io.anuke.mindustry.world.Tile;
 import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -59,6 +61,7 @@ public class Main extends Plugin{
 	private boolean voteactive;
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
+	static JSONArray jumpzone = new JSONArray();
 
 	public Main() {
 		// Start config file
@@ -68,7 +71,6 @@ public class Main extends Plugin{
 		// Client connection test
 		try {
 			Global.log("EssentialsClient is attempting to connect to the server.");
-			Thread.sleep(1500);
 			Client.main("ping", null, null);
 		} catch (Exception e) {
 			printStackTrace(e);
@@ -147,8 +149,6 @@ public class Main extends Plugin{
         });
 
 		powerblock = new JSONArray();
-
-		// Set if player join event
 		Events.on(EventType.PlayerConnect.class, e -> {
 
 		});
@@ -296,7 +296,6 @@ public class Main extends Plugin{
 			}
 		});
 
-		// Set if player chat event
 		Events.on(EventType.PlayerChatEvent.class, e -> {
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
@@ -323,7 +322,6 @@ public class Main extends Plugin{
 			}
 		});
 
-		// Set if player build block event
 		Events.on(EventType.BlockBuildEndEvent.class, e -> {
 			if (!e.breaking && e.player != null && e.player.buildRequest() != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
 				Thread expthread = new Thread(() -> {
@@ -1857,6 +1855,59 @@ public class Main extends Plugin{
 				} else {
 					player.sendMessage(EssentialBundle.load(false, "notadmin"));
 				}
+			}
+		});
+
+		handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
+			if(player.isAdmin){
+				int size;
+				try{
+					size = Integer.parseInt(arg[2]);
+				} catch (Exception ignored){
+					player.sendMessage("range value must be number!");
+					return;
+				}
+				int block;
+				try{
+					block = Integer.parseInt(arg[3]);
+				} catch (Exception ignored){
+					player.sendMessage("block-type must be number!");
+					return;
+				}
+				Block target;
+				switch(block){
+					case 1:
+					default:
+						target = Blocks.metalFloor;
+						break;
+					case 2:
+						target = Blocks.metalFloor2;
+						break;
+					case 3:
+						target = Blocks.metalFloor3;
+						break;
+					case 4:
+						target = Blocks.metalFloor5;
+						break;
+					case 5:
+						target = Blocks.metalFloorDamaged;
+						break;
+				}
+				int xt = player.tileX();
+				int yt = player.tileY();
+				int tilexfinal = xt+size;
+				int tileyfinal = yt+size;
+
+				for(int x=0;x<size;x++){
+					for(int y=0;y<size;y++){
+						Tile tile = world.tile(xt+x, yt+y);
+						Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
+					}
+				}
+
+				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]);
+			} else {
+				player.sendMessage("You are not admin!");
 			}
 		});
 	}
