@@ -18,7 +18,7 @@ import static essentials.Global.printStackTrace;
 public class EssentialConfig {
     public static String clienthost;
     public static int clientport;
-    public int serverport;
+    public static int serverport;
     public static boolean realname;
     public static boolean detectreactor;
     public static boolean serverenable;
@@ -669,7 +669,7 @@ public class EssentialConfig {
 
                     "# Server / client port settings\n#It will enable server as server chat function.\n" +
                     "server-enable: "+serverenable+"\n" +
-                    "server-port: "+this.serverport+"\n\n" +
+                    "server-port: "+serverport+"\n\n" +
 
                     "client-enable: "+clientenable+"\n" +
                     "client-port: "+clientport+"\n" +
