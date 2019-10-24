@@ -51,7 +51,7 @@ public class EssentialConfig {
 
     public void main() {
         Map<String, Object> obj;
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()) {
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()) {
             String text = "# Config version (Don't touch this!)\n" +
                     "version: 2\n\n" +
 
@@ -117,11 +117,11 @@ public class EssentialConfig {
                     "# The error message is output immediately.\n" +
                     "debug: false";
 
-            Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
+            Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").exists()) {
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").exists()) {
             String text = "# crafting\n" +
                     "graphite-press: 5\n" +
                     "multi-press: 15\n" +
@@ -266,11 +266,11 @@ public class EssentialConfig {
                     "trident-ship-pad: 45\n" +
                     "glaive-ship-pad: 150";
 
-            Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").writeString(text);
+            Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").writeString(text);
             Global.log("Exp config file created!");
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.txt").exists()) {
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/BlockReqExp.txt").exists()) {
             String text = "# crafting\n" +
                     "graphite-press: 3\n" +
                     "multi-press: 15\n" +
@@ -414,64 +414,64 @@ public class EssentialConfig {
                     "javelin-ship-pad: 20\n" +
                     "trident-ship-pad: 25\n" +
                     "glaive-ship-pad: 30\n";
-            Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.txt").writeString(text);
+            Core.settings.getDataDirectory().child("plugins/Essentials/BlockReqExp.txt").writeString(text);
             Global.log("BlockReqExp config file created!");
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/data.json").exists()) {
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/data.json").exists()) {
             JSONObject object = new JSONObject();
             object.put("banall", "true");
-            Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+            Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/banned.json").exists()){
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").exists()){
             JSONArray ban = new JSONArray();
             String json = ban.toString();
-            Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(json);
+            Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(json);
             Global.log("banned file created!");
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").exists()){
-            String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/mods/Essentials/[] folder.";
-            Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").writeString(msg);
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").exists()){
+            String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/plugins/Essentials/[] folder.";
+            Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").writeString(msg);
             Global.log("motd file created.");
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").exists()){
-            String msg = "이 메시지를 바꿀려면 [green]config/mods/Essentials/[] 폴더에서 [green]motd.txt[] 파일을 수정하세요.";
-            Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").writeString(msg);
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").exists()){
+            String msg = "이 메시지를 바꿀려면 [green]config/plugins/Essentials/[] 폴더에서 [green]motd.txt[] 파일을 수정하세요.";
+            Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").writeString(msg);
             Global.log("motd_ko file created.");
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").exists()){
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").exists()){
             JSONArray blacklist = new JSONArray();
             String json = blacklist.toString();
-            Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(json);
+            Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(json);
             Global.log("blacklist file created!");
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").exists()){
-            Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+        if(!Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").exists()){
+            Core.settings.getDataDirectory().child("plugins/Essentials/powerblock.json").writeString("[]");
             Global.log("powerblock file created!");
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log").writeString("");
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/Logs/error.log").exists()) {
+            Core.settings.getDataDirectory().child("plugins/Essentials/Logs/error.log").writeString("");
             Global.log("error.log created.");
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
+        if (!Core.settings.getDataDirectory().child("plugins/Essentials/jumpdata.json").exists()) {
+            Core.settings.getDataDirectory().child("plugins/Essentials/jumpdata.json").writeString(jumpzone.toString());
             Global.log("jumpzone created.");
         } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").readString();
+            String temp1 = Core.settings.getDataDirectory().child("plugins/Essentials/jumpdata.json").readString();
             JSONTokener data = new JSONTokener(temp1);
             jumpzone = new JSONArray(data);
         }
 
-        if (Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()){
+        if (Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").exists()){
             Yaml yaml = new Yaml();
-            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
+            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").readString()));
             // Config version
             if(obj.get("version") != null){
                 version = Integer.parseInt(String.valueOf(obj.get("version")));
@@ -615,14 +615,14 @@ public class EssentialConfig {
             if(obj.get("sqlite") != null){
                 sqlite = Boolean.parseBoolean(String.valueOf(obj.get("sqlite")));
                 if(sqlite){
-                    url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
+                    url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
                 } else {
                     dburl = (String) obj.get("dburl");
                     url = "jdbc:"+dburl;
                 }
             } else {
                 sqlite = true;
-                url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
+                url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
             }
 
             if(obj.get("dbid") != null){
@@ -659,7 +659,7 @@ public class EssentialConfig {
 
         if(version < 2){
             Yaml yaml = new Yaml();
-            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
+            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").readString()));
 
             String text = "# Config version (Don't touch this!)\n" +
                     "version: 3\n\n" +
@@ -725,7 +725,7 @@ public class EssentialConfig {
 
                     "# The error message is output immediately.\n" +
                     "debug: "+debug;
-            Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
+            Core.settings.getDataDirectory().child("plugins/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }
     }

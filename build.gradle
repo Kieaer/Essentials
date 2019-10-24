@@ -1,6 +1,6 @@
 apply plugin: "java"
 
-version '2.1'
+version '4.5'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 
@@ -12,8 +12,8 @@ repositories{
 compileJava {options.encoding = "UTF-8"}
 
 ext{
-    //targetversion = 'v96'
-    targetversion = '-SNAPSHOT'
+    targetversion = 'v96'
+    //targetversion = '-SNAPSHOT'
 }
 
 //compileJava {options.encoding = "UTF-8"}

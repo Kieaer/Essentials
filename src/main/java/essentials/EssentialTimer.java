@@ -3,12 +3,8 @@ package essentials;
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
-import io.anuke.mindustry.world.Block;
-import io.anuke.mindustry.world.Tile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -22,7 +18,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimerTask;
 
-import static essentials.EssentialConfig.*;
+import static essentials.EssentialConfig.antirushtime;
+import static essentials.EssentialConfig.enableantirush;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
 import static essentials.Global.printStackTrace;
@@ -82,7 +79,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
         // Temporarily ban players time counting
         try{
-            String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
+            String db = Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").readString();
             JSONTokener parser = new JSONTokener(db);
             JSONArray object = new JSONArray(parser);
 
@@ -99,7 +96,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 if (date.equals(myTime)) {
                     Log.info(myTime);
                     object.remove(i);
-                    Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
+                    Core.settings.getDataDirectory().child("plugins/Essentials/banned.json").writeString(String.valueOf(object));
                     netServer.admins.unbanPlayerID(uuid);
                     Global.log("[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
                 }
@@ -149,7 +146,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
 
-        if (playerGroup.size() > 0) {
+        /*if (playerGroup.size() > 0) {
             Thread work = new Thread(() -> {
                 for(int i=0;i<jumpzone.length();i++){
                     String jumpdata = jumpzone.getString(i);
@@ -203,6 +200,6 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 }
             });
             work.start();
-        }
+        }*/
     }
 }

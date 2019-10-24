@@ -1,13 +1,20 @@
 package essentials;
 
+import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Team;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+
+import static essentials.EssentialConfig.debug;
 
 public class Global {
     public static void log(String msg){
@@ -71,8 +78,7 @@ public class Global {
     }
 
     public static void printStackTrace(Throwable e) {
-        /*EssentialConfig config = new EssentialConfig();
-        if(!config.debug){
+        if(debug){
             StringBuilder sb = new StringBuilder();
             try {
                 sb.append(e.toString());
@@ -86,7 +92,7 @@ public class Global {
                 sb.append("=================================================\n");
                 String text = sb.toString();
 
-                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log")));
+                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/error.log")));
                 byte[] result = text.getBytes();
                 Files.write(path, result, StandardOpenOption.APPEND);
                 Global.loge("Internal error! - "+e.getMessage());
@@ -95,8 +101,7 @@ public class Global {
             }
         } else {
             e.printStackTrace();
-        }*/
-        e.printStackTrace();
+        }
     }
 
     public static String gettime(){

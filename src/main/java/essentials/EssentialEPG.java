@@ -22,7 +22,7 @@ public class EssentialEPG {
                     String name = e.tile.block().name;
                     int level = (int) db.get("level");
                     Yaml yaml = new Yaml();
-                    Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.txt").readString()));
+                    Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/BlockReqExp.txt").readString()));
                     int blockreqlevel = 100;
                     if(String.valueOf(obj.get(name)) != null) {
                         blockreqlevel = Integer.parseInt(String.valueOf(obj.get(name)));

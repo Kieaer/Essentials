@@ -66,19 +66,21 @@ public class EssentialLog implements Runnable{
 
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             if(!e.breaking && e.tile.entity() != null && e.player != null){
-                Thread t = new Thread(() -> {
-                    Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
-                    Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-                    try {
-                        String text = gettime()+e.player.name+" Player place " +e.tile.entity.block.name+".\n";
-                        byte[] result = text.getBytes();
-                        Files.write(block, result, StandardOpenOption.APPEND);
-                        Files.write(total, result, StandardOpenOption.APPEND);
-                    }catch (IOException error) {
-                        printStackTrace(error);
-                    }
-                });
-                t.start();
+                if(e.tile.entity.block != null && e.player.name != null){
+                    //Thread t = new Thread(() -> {
+                        Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
+                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
+                        try {
+                            String text = gettime()+e.player.name+" Player place " +e.tile.entity.block.name+".\n";
+                            byte[] result = text.getBytes();
+                            Files.write(block, result, StandardOpenOption.APPEND);
+                            Files.write(total, result, StandardOpenOption.APPEND);
+                        }catch (IOException error) {
+                            printStackTrace(error);
+                        }
+                    //});
+                    //t.start();
+                }
             }
         });
 
@@ -185,8 +187,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-
-        Events.on(EventType.DepositEvent.class, e -> {
+        /*Events.on(EventType.DepositEvent.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
@@ -197,6 +198,6 @@ public class EssentialLog implements Runnable{
             } catch (IOException error) {
                 printStackTrace(error);
             }
-        });
+        });*/
     }
 }
