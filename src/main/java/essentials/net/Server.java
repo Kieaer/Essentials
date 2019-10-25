@@ -5,7 +5,6 @@ import essentials.Global;
 import essentials.special.gifimage;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
-import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.core.GameState;
 import io.anuke.mindustry.core.Version;
 import io.anuke.mindustry.entities.type.Player;
@@ -41,7 +40,8 @@ public class Server implements Runnable{
     public static boolean active = true;
     public static ServerSocket serverSocket;
     private Service service;
-    ArrayList<Service> list = new ArrayList();
+    private ArrayList<Service> list = new ArrayList();
+    private String remoteip;
 
     public void ChatServer() {
         try {
@@ -68,68 +68,123 @@ public class Server implements Runnable{
 
     class Service extends Thread {
         BufferedReader in;
-        OutputStream out;
+        BufferedWriter bw;
+        OutputStreamWriter osw;
+        OutputStream os;
         Socket socket;
 
-        private void ban(String data, String remoteip){
+        public Service(Socket socket) {
             try {
-                JSONTokener convert = new JSONTokener(data);
-                JSONArray bandata = new JSONArray(convert);
-                Global.bans("Ban list sync received from " + remoteip +".");
-                for (int i = 0; i < bandata.length(); i++) {
-                    String[] array = bandata.getString(i).split("\\|", -1);
-                    if (array[0].length() == 11) {
-                        netServer.admins.banPlayerID(array[0]);
-                        if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                            netServer.admins.banPlayerIP(array[1]);
-                        }
-                    }
-                    if (array[0].equals("<unknown>")) {
-                        netServer.admins.banPlayerIP(array[1]);
-                    }
-                }
-
-                Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
-                Array<String> ipbans = netServer.admins.getBannedIPs();
-                JSONArray data1 = new JSONArray();
-                if(bans.size != 0){
-                    for (Administration.PlayerInfo info : bans) {
-                        data1.put(info.id + "|" + info.lastIP);
-                    }
-                }
-                if(ipbans.size != 0){
-                    for(String string : ipbans){
-                        data1.put("<unknown>|"+string);
-                    }
-                }
-
-                out.write((data1 + "\n").getBytes(StandardCharsets.UTF_8));
-                Global.bans("Data sented to " + remoteip + "!");
-            }catch (Exception e){
+                this.socket = socket;
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                os = socket.getOutputStream();
+                osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+                bw = new BufferedWriter(osw);
+            } catch (Exception e) {
                 printStackTrace(e);
             }
         }
 
-        private void chat(String data, String remoteip){
-            try{
-                String msg = data.replaceAll("\n", "");
-                Global.chats("Received message from "+remoteip+": "+msg);
-                Call.sendMessage("[#C77E36][RC] "+msg);
-                if(!remoteip.equals(clienthost)) {
-                    Global.chatsw("[EssentialsChat] ALERT! This message isn't received from "+clienthost+"!!");
-                    Global.chatsw("[EssentialsChat] Message is "+data);
+        @Override
+        public void run(){
+            while(true) {
+                try {
+                    String data = in.readLine();
+                    if(data == null || data.equals("")) continue;
+                    remoteip = socket.getInetAddress().toString().replace("/", "");
 
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player p = playerGroup.all().get(i);
-                        if(p.isAdmin){
-                            p.sendMessage("[#C77E36]["+remoteip+"][RC] "+data);
-                        } else {
-                            p.sendMessage("[#C77E36][RC] "+data);
+                    if (data.matches("GET /.*")) {
+                        Global.log("server HTTP!");
+
+                        httpserver(data);
+                    } else if (data.matches("\\[(.*)]:.*")){
+                        Global.log("server chat!");
+
+                        for (Service ser : list) {
+                            ser.bw.write(data);
+                            ser.bw.flush();
                         }
+
+                        String msg = data.replaceAll("\n", "");
+                        Global.logs("Received message from "+remoteip+": "+msg);
+                        Call.sendMessage("[#C77E36][RC] "+msg);
+                        if(!remoteip.equals(clienthost)) {
+                            Global.logs("[EssentialsChat] ALERT! This message isn't received from "+clienthost+"!!");
+                            Global.logs("[EssentialsChat] Message is "+data);
+
+                            for (int i = 0; i < playerGroup.size(); i++) {
+                                Player p = playerGroup.all().get(i);
+                                if(p.isAdmin){
+                                    p.sendMessage("[#C77E36]["+remoteip+"][RC] "+data);
+                                } else {
+                                    p.sendMessage("[#C77E36][RC] "+data);
+                                }
+                            }
+                        }
+                    } else if (data.matches("ping")) {
+                        String[] msg = {"Hi "+remoteip+"! Your connection is successful!","Hello "+remoteip+"! I'm server!","Welcome to the server "+remoteip+"!"};
+                        int rnd = new Random().nextInt(msg.length);
+                        bw.write(msg[rnd]+"\n");
+                        bw.flush();
+                        Global.log(remoteip+" connected to this server.");
+                    } else if(banshare) {
+                        try {
+                            JSONTokener convert = new JSONTokener(data);
+                            JSONArray bandata = new JSONArray(convert);
+                            Global.logs("Ban list sync received from " + remoteip + ".");
+                            for (int i = 0; i < bandata.length(); i++) {
+                                String[] array = bandata.getString(i).split("\\|", -1);
+                                if (array[0].length() == 11) {
+                                    netServer.admins.banPlayerID(array[0]);
+                                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                                        netServer.admins.banPlayerIP(array[1]);
+                                    }
+                                }
+                                if (array[0].equals("<unknown>")) {
+                                    netServer.admins.banPlayerIP(array[1]);
+                                }
+                            }
+
+                            Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
+                            Array<String> ipbans = netServer.admins.getBannedIPs();
+                            JSONArray data1 = new JSONArray();
+                            if (bans.size != 0) {
+                                for (Administration.PlayerInfo info : bans) {
+                                    data1.put(info.id + "|" + info.lastIP);
+                                }
+                            }
+                            if (ipbans.size != 0) {
+                                for (String string : ipbans) {
+                                    data1.put("<unknown>|" + string);
+                                }
+                            }
+
+                            os.write((data1 + "\n").getBytes(StandardCharsets.UTF_8));
+                            Global.logs("Data sented to " + remoteip + "!");
+                        } catch (Exception e) {
+                            Global.logw("server " + data);
+                        }
+                    } else {
+                        Global.log("server "+data);
                     }
+                } catch (IOException e) {
+                    String msg = e.getMessage();
+                    if(msg.equals("Connection reset")){
+                        Global.logs(remoteip+" Client disconnected");
+                        return;
+                    }
+                    if(msg.equals("socket closed")){
+                        Global.logs(remoteip+" Client disconnected");
+                        return;
+                    }
+                    Global.log(msg);
+                    /*if(!msg.matches("socket closed") || !msg.matches("Connection reset")){
+                        e.printStackTrace();
+                    } else {
+                        Global.logs(remoteip+" Client disconnected");
+                        return;
+                    }*/
                 }
-            }catch (Exception e){
-                printStackTrace(e);
             }
         }
 
@@ -643,7 +698,7 @@ public class Server implements Runnable{
                 String time = now.format(dateTimeFormatter);
 
                 try {
-                    OutputStreamWriter osw = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+                    OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                     BufferedWriter bw = new BufferedWriter(osw);
                     if (query) {
                         if (receive.matches("GET / HTTP/.*")) {
@@ -709,6 +764,7 @@ public class Server implements Runnable{
                         bw.write("<TITLE>403 Forbidden</TITLE>");
                         bw.write("<p>This server isn't allowed query!</p>");
                     }
+                    bw.flush();
                     bw.close();
                 } catch (Exception e) {
                     printStackTrace(e);
@@ -717,116 +773,30 @@ public class Server implements Runnable{
                 printStackTrace(e);
             }
         }
-
-        private void ping(String remoteip){
-            try{
-                String[] msg = {"Hi "+remoteip+"! Your connection is successful!","Hello "+remoteip+"! I'm server!","Welcome to the server "+remoteip+"!"};
-                int rnd = new Random().nextInt(msg.length);
-                out.write((msg[rnd]+"\n").getBytes(StandardCharsets.UTF_8));
-                Global.log(remoteip+" connected to this server.");
-            }catch (Exception e){
-                printStackTrace(e);
-            }
-        }
-
-
-        Service(Socket socket) {
-            try {
-                this.socket = socket;
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-                out = socket.getOutputStream();
-            } catch (Exception e) {
-                printStackTrace(e);
-            }
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    socket = serverSocket.accept();
-                } catch (IOException e) {
-                    System.out.println("I/O error: " + e);
-                }
-                // new thread for a client
-                new EchoThread(socket).start();
-            }
-            /*
-            while(true) {
-                try {
-                    String data = in.readLine();
-                    if(data == null || data.equals("")) continue;
-                    String remoteip = socket.getRemoteSocketAddress().toString();
-
-                    if (data.matches("GET /.*")) {
-                        Global.log("server HTTP!");
-                        httpserver(data);
-                    } else if (data.matches("\\[(.*)]:.*")){
-                        Global.log("server chat!");
-                        messageAll(data);
-                    } else if (data.matches("ping")) {
-                        Global.log("server ping!");
-                        ping(remoteip);
-                    } else if(banshare) {
-                        try{
-                            JSONTokener test = new JSONTokener(data);
-                            new JSONArray(test);
-                            ban(data, remoteip);
-                        }catch (Exception e){
-                            Global.logw("server "+ data);
-                        }
-                    } else {
-                        Global.log("server "+data);
-                    }
-                } catch (Exception e) {
-                    break;
-                }
-            }
-            */
-        }
-
-        void messageAll(String msg) {
-            try {
-                for (int i = 0; i < list.size(); i++) {
-                    Service ser = list.get(i);
-                    ser.messageSend(msg);
-                }
-            } catch (Exception e) {
-                printStackTrace(e);
-            }
-        }
-
-        void messageSend(String msg) {
-            try {
-                out.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
-            } catch (Exception e) {
-                printStackTrace(e);
-            }
-        }
     }
 
-    public static void main(String args[]) {
+    /*public static void main(String[] args) {
         ServerSocket serverSocket = null;
         Socket socket = null;
 
         try {
-            serverSocket = new ServerSocket(PORT);
+            serverSocket = new ServerSocket(serverport);
         } catch (IOException e) {
             e.printStackTrace();
-
         }
+
         while (true) {
             try {
                 socket = serverSocket.accept();
             } catch (IOException e) {
-                System.out.println("I/O error: " + e);
+                e.printStackTrace();
             }
-            // new thread for a client
             new ServerThread(socket).start();
         }
-    }
+    }*/
 }
 
+/*
 class ServerThread extends Thread {
     protected Socket socket;
 
@@ -835,20 +805,21 @@ class ServerThread extends Thread {
     }
 
     public void run() {
-        InputStream inp = null;
-        BufferedReader brinp = null;
-        DataOutputStream out = null;
+        InputStream in;
+        BufferedReader br;
+        DataOutputStream out;
         try {
-            inp = socket.getInputStream();
-            brinp = new BufferedReader(new InputStreamReader(inp));
+            in = socket.getInputStream();
+            br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
             out = new DataOutputStream(socket.getOutputStream());
         } catch (IOException e) {
             return;
         }
+
         String line;
         while (true) {
             try {
-                line = brinp.readLine();
+                line = br.readLine();
                 if ((line == null) || line.equalsIgnoreCase("QUIT")) {
                     socket.close();
                     return;
@@ -862,4 +833,4 @@ class ServerThread extends Thread {
             }
         }
     }
-}
+}*/

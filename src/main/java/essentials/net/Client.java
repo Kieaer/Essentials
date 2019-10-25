@@ -1,7 +1,6 @@
 package essentials.net;
 
 import essentials.Global;
-import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -10,167 +9,122 @@ import io.anuke.mindustry.net.Administration;
 import org.json.JSONArray;
 import org.json.JSONTokener;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 
 import static essentials.EssentialConfig.*;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 
 public class Client implements Runnable{
-    public boolean serverconnected;
-    private Socket socket;
-    private BufferedReader in;
-    private OutputStream out;
-    private String request;
+    public Socket socket;
+    private static BufferedReader br;
+    private static BufferedWriter bw;
+    private static boolean serverconn;
 
-    private void bansent() {
-        try{
-            Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
-            Array<String> ipbans = netServer.admins.getBannedIPs();
-            Global.banc("Ban list senting...");
-            JSONArray bandata = new JSONArray();
-            if (bans.size != 0) {
-                for (Administration.PlayerInfo info : bans) {
-                    bandata.put(info.id + "|" + info.lastIP);
-                }
-            }
-            if (ipbans.size != 0) {
-                for (String string : ipbans) {
-                    bandata.put("<unknown>|" + string);
-                }
-            }
-            out.write((bandata+"\n").getBytes(StandardCharsets.UTF_8));
-            Global.banc("Success!");
-        }catch (Exception e){
-            printStackTrace(e);
-        }
-    }
-
-    private void banreceive(String data) {
-        JSONTokener ar = new JSONTokener(data);
-        JSONArray result = new JSONArray(ar);
-
-        for (int i = 0; i < result.length(); i++) {
-            String[] array = result.getString(i).split("\\|", -1);
-            if (array[0].length() == 12) {
-                netServer.admins.banPlayerID(array[0]);
-                if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                    netServer.admins.banPlayerIP(array[1]);
-                }
-            }
-            if (array[0].equals("<unknown>")) {
-                netServer.admins.banPlayerIP(array[1]);
-            }
-        }
-    }
-
-    private void chatsent(String chat, Player player) {
-        try {
-            String msg = "["+player.name+"]: "+chat;
-            out.write((msg+"\n").getBytes(StandardCharsets.UTF_8));
-            Call.sendMessage("[#357EC7][SC] "+msg);
-            Global.chatc("Message sent to "+ clienthost+" - "+chat+"");
-        } catch (Exception e) {
-            String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
-            player.sendMessage("Server is not responding! Cross-chat disabled!");
-
-            String sql = "UPDATE players SET crosschat = ? WHERE uuid = ?";
-            player.sendMessage("[green][INFO] [] Crosschat disabled.");
-
+    public void main(String option, Player player, String message){
+        if(!serverconn){
             try {
-                Class.forName("org.sqlite.JDBC");
-                Connection conn = DriverManager.getConnection(url);
+                InetAddress address = InetAddress.getByName(clienthost);
+                socket = new Socket(address, clientport);
+                OutputStream os = socket.getOutputStream();
+                OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+                bw = new BufferedWriter(osw);
+                bw.write("ping\n");
+                bw.flush();
 
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                pstmt.setString(1, "false");
-                pstmt.setString(2, player.uuid);
-                pstmt.executeUpdate();
-                pstmt.close();
-                conn.close();
-            } catch (Exception ex) {
-                printStackTrace(ex);
-            }
-            printStackTrace(e);
-        }
-    }
-
-    public void main(String request, String chat, Player player) {
-        try {
-            /*if(!serverconnected){
-                if(clientenable){
-                    InetAddress address = InetAddress.getByName(clienthost);
-                    socket = new Socket(address, clientport);
-                    in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-                    out = socket.getOutputStream();
-                    out.write("ping\n".getBytes(StandardCharsets.UTF_8));
-                    this.request = request;
-                    Thread t = new Thread(this);
-                    t.start();
-                    Global.log("server "+serverconnected);
-                    serverconnected = true;
+                br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                String line = br.readLine();
+                if(line != null){
+                    Global.logc(line);
+                    serverconn = true;
+                    new Thread(this).start();
                 }
-            } else {*/
-            InetAddress address = InetAddress.getByName(clienthost);
-            socket = new Socket(address, clientport);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-            out = socket.getOutputStream();
-                switch (request) {
-                    case "ban":
-                        bansent();
-                        break;
-                    case "chat":
-                        chatsent(chat, player);
-                        break;
-                    case "ping":
-                        out.write("ping\n".getBytes(StandardCharsets.UTF_8));
-                        Global.log("work");
-            //    }
+            } catch (UnknownHostException e) {
+                Global.loge("Invalid host!");
+            } catch (IOException e) {
+                Global.loge("I/O Exception");
             }
-        } catch (Exception e) {
-            Global.loge("Unable to connect to the "+ clienthost+":"+ clientport+" server!");
-            printStackTrace(e);
+        } else {
+            if(option.equals("bansync")){
+                try{
+                    Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
+                    Array<String> ipbans = netServer.admins.getBannedIPs();
+                    JSONArray bandata = new JSONArray();
+                    if (bans.size != 0) {
+                        for (Administration.PlayerInfo info : bans) {
+                            bandata.put(info.id + "|" + info.lastIP);
+                        }
+                    }
+                    if (ipbans.size != 0) {
+                        for (String string : ipbans) {
+                            bandata.put("<unknown>|" + string);
+                        }
+                    }
+                    bw.write(bandata+"\n");
+                    bw.flush();
+                    Global.logc("Ban list sented!");
+                } catch (IOException e) {
+                    printStackTrace(e);
+                }
+            } else if(option.equals("chat")){
+                try {
+                    String msg = "["+player.name+"]: "+message;
+                    bw.write(msg+"\n");
+                    Call.sendMessage("[#357EC7][SC] "+msg);
+                    Global.logc("Message sent to "+ clienthost+" - "+message+"");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
     @Override
     public void run(){
-        while (true) {
-            try {
-                String data = in.readLine();
+        while(true){
+            try{
+                String data = br.readLine();
                 if (data == null || data.equals("")) return;
 
                 Global.log(socket.getRemoteSocketAddress().toString());
 
                 if(data.matches("\\[(.*)]:.*")){
-                    // if chat
-                    Global.log("client chat!");
-                    Call.sendMessage(data);
+                    Call.sendMessage("[#C77E36][RC] "+data);
                 } else if(banshare){
-                    // if ban list
                     try{
                         JSONTokener test = new JSONTokener(data);
-                        new JSONArray(test);
-                        Global.log("client bandata!");
-                        banreceive(data);
+                        JSONArray result = new JSONArray(test);
+                        for (int i = 0; i < result.length(); i++) {
+                            String[] array = result.getString(i).split("\\|", -1);
+                            if (array[0].length() == 12) {
+                                netServer.admins.banPlayerID(array[0]);
+                                if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                                    netServer.admins.banPlayerIP(array[1]);
+                                }
+                            }
+                            if (array[0].equals("<unknown>")) {
+                                netServer.admins.banPlayerIP(array[1]);
+                            }
+                        }
+                        Global.logc("Ban data received!");
                     }catch (Exception e){
-                        Global.logw("client "+ data);
+                        printStackTrace(e);
                     }
                 } else {
-                    // if ping
-                    Global.log("client ping!");
-                    Global.log("client "+data);
-                    serverconnected = true;
+                    Global.logw("Unknown data! - "+data);
                 }
-            } catch (Exception e) {
-                printStackTrace(e);
+            } catch (IOException e) {
+                String msg = e.getMessage();
+                if(!msg.matches("socket closed") || msg.matches("Connection reset")){
+                    e.printStackTrace();
+                } else {
+                    Global.logs(clienthost+" Server disconnected");
+                    return;
+                }
             }
         }
     }

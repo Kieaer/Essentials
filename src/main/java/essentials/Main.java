@@ -71,8 +71,7 @@ public class Main extends Plugin{
 		if(clientenable){
 			Global.log("EssentialsClient is attempting to connect to the server.");
 			Client client = new Client();
-			client.serverconnected = false;
-			client.main("ping", null, null);
+			client.main(null, null, null);
 		}
 
 		// Database
@@ -306,11 +305,8 @@ public class Main extends Plugin{
 
 					if (clientenable) {
 						if (crosschat) {
-							Thread chatclient = new Thread(() -> {
-								Client client = new Client();
-								client.main("chat", e.message, e.player);
-							});
-							chatclient.start();
+							Client client = new Client();
+							client.main("chat", e.player, e.message);
 						}
 					} else if (crosschat) {
 						e.player.sendMessage("Currently server isn't enable cross-server client!");
@@ -619,11 +615,6 @@ public class Main extends Plugin{
 			}
 		});
 
-		handler.register("ping", "send ping to remote server", arg -> {
-			Client client = new Client();
-			client.main("ping", null, null);
-		});
-
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
@@ -721,7 +712,7 @@ public class Main extends Plugin{
 				object.put("banall", "true");
 				Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 				Client client = new Client();
-				client.main("ban", null,null);
+				client.main("bansync", null, null);
 			} else {
 				Global.log("Ban sharing has been disabled!");
 			}
@@ -782,21 +773,12 @@ public class Main extends Plugin{
 
 		// Override ban command
 		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
+			Client client = new Client();
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
-					if(banshare){
-						try{
-							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
-							JSONTokener parser = new JSONTokener(db);
-							JSONObject object = new JSONObject(parser);
-							object.put("banall", "true");
-							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-							Client client = new Client();
-							client.main("ban", null,null);
-						}catch (Exception e){
-							printStackTrace(e);
-						}
+					if(banshare) {
+						client.main("bansync", null, null);
 					}
 					Global.log("Banned.");
 					break;
@@ -804,18 +786,8 @@ public class Main extends Plugin{
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						if(banshare){
-							try{
-								String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
-								JSONTokener parser = new JSONTokener(db);
-								JSONObject object = new JSONObject(parser);
-								object.put("banall", "true");
-								Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-								Client client = new Client();
-								client.main("ban", null,null);
-							}catch (Exception e){
-								printStackTrace(e);
-							}
+						if(banshare) {
+							client.main("bansync", null, null);
 						}
 						Global.log("Banned.");
 					} else {
@@ -824,18 +796,8 @@ public class Main extends Plugin{
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					if(banshare){
-						try{
-							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
-							JSONTokener parser = new JSONTokener(db);
-							JSONObject object = new JSONObject(parser);
-							object.put("banall", "true");
-							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-							Client client = new Client();
-							client.main("ban", null,null);
-						}catch (Exception e){
-							printStackTrace(e);
-						}
+					if(banshare) {
+						client.main("bansync", null, null);
 					}
 					Global.log("Banned.");
 					break;
