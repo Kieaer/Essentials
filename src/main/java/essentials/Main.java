@@ -25,6 +25,8 @@ import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
+import io.anuke.mindustry.world.Block;
+import io.anuke.mindustry.world.Tile;
 import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,6 +37,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
@@ -46,8 +52,7 @@ import java.util.TimerTask;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
-import static essentials.Global.getTeamNoCore;
-import static essentials.Global.printStackTrace;
+import static essentials.Global.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
@@ -56,7 +61,6 @@ public class Main extends Plugin{
 	private boolean voteactive;
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
-	private Client client = new Client();
 
 	public Main() {
 		// Start config file
@@ -64,8 +68,12 @@ public class Main extends Plugin{
 		config.main();
 
 		// Client connection test
-		Global.log("EssentialsClient is attempting to connect to the server.");
-		client.main("ping", null, null);
+		if(clientenable){
+			Global.log("EssentialsClient is attempting to connect to the server.");
+			Client client = new Client();
+			client.serverconnected = false;
+			client.main("ping", null, null);
+		}
 
 		// Database
 		openconnect();
@@ -142,7 +150,7 @@ public class Main extends Plugin{
 
 		});
 
-		/*Events.on(EventType.DepositEvent.class, e -> {
+		Events.on(EventType.DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
 				nukeblock.put(e.tile.entity.tileX()+"/"+e.tile.entity.tileY()+"/"+e.player.name);
 				Thread t = new Thread(() -> {
@@ -182,7 +190,7 @@ public class Main extends Plugin{
 				});
 				t.start();
 			}
-		});*/
+		});
 
         Events.on(EventType.PlayerJoin.class, e -> {
         	if(loginenable){
@@ -299,6 +307,7 @@ public class Main extends Plugin{
 					if (clientenable) {
 						if (crosschat) {
 							Thread chatclient = new Thread(() -> {
+								Client client = new Client();
 								client.main("chat", e.message, e.player);
 							});
 							chatclient.start();
@@ -611,6 +620,7 @@ public class Main extends Plugin{
 		});
 
 		handler.register("ping", "send ping to remote server", arg -> {
+			Client client = new Client();
 			client.main("ping", null, null);
 		});
 
@@ -710,6 +720,7 @@ public class Main extends Plugin{
 				JSONObject object = new JSONObject(parser);
 				object.put("banall", "true");
 				Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+				Client client = new Client();
 				client.main("ban", null,null);
 			} else {
 				Global.log("Ban sharing has been disabled!");
@@ -781,6 +792,7 @@ public class Main extends Plugin{
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
 							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+							Client client = new Client();
 							client.main("ban", null,null);
 						}catch (Exception e){
 							printStackTrace(e);
@@ -799,6 +811,7 @@ public class Main extends Plugin{
 								JSONObject object = new JSONObject(parser);
 								object.put("banall", "true");
 								Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+								Client client = new Client();
 								client.main("ban", null,null);
 							}catch (Exception e){
 								printStackTrace(e);
@@ -818,6 +831,7 @@ public class Main extends Plugin{
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
 							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+							Client client = new Client();
 							client.main("ban", null,null);
 						}catch (Exception e){
 							printStackTrace(e);
@@ -839,7 +853,7 @@ public class Main extends Plugin{
 		});
 
 		handler.register("jumpreset", "Clear a server-to-server jumping zone data.", arg -> {
-			/*for (int i = 0; i < jumpzone.length(); i++) {
+			for (int i = 0; i < jumpzone.length(); i++) {
 				String jumpdata = jumpzone.getString(i);
 				String[] data = jumpdata.split("/");
 				int startx = Integer.parseInt(data[0]);
@@ -876,8 +890,7 @@ public class Main extends Plugin{
 				}
 			}
 			jumpzone = new JSONArray();
-			Global.log("Data reseted!");*/
-			Global.log("This command is available in build 97 and later! Please be looking forward for it!");
+			Global.log("Data reseted!");
 		});
 	}
 
@@ -1878,8 +1891,7 @@ public class Main extends Plugin{
 
 		handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
 			if(player.isAdmin){
-				player.sendMessage("This command is available in build 97 and later! Please be looking forward for it!");
-				/*int size;
+				int size;
 				try{
 					size = Integer.parseInt(arg[2]);
 				} catch (Exception ignored){
@@ -1924,7 +1936,7 @@ public class Main extends Plugin{
 					}
 				}
 
-				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);*/
+				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
 			} else {
 				player.sendMessage("You are not admin!");
 			}

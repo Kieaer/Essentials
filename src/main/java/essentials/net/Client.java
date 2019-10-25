@@ -25,10 +25,11 @@ import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 
 public class Client implements Runnable{
-    private boolean serverconnected = false;
+    public boolean serverconnected;
     private Socket socket;
     private BufferedReader in;
     private OutputStream out;
+    private String request;
 
     private void bansent() {
         try{
@@ -103,16 +104,24 @@ public class Client implements Runnable{
 
     public void main(String request, String chat, Player player) {
         try {
-            if(!serverconnected){
+            /*if(!serverconnected){
                 if(clientenable){
                     InetAddress address = InetAddress.getByName(clienthost);
                     socket = new Socket(address, clientport);
                     in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     out = socket.getOutputStream();
                     out.write("ping\n".getBytes(StandardCharsets.UTF_8));
-                    new Thread(this).start();
+                    this.request = request;
+                    Thread t = new Thread(this);
+                    t.start();
+                    Global.log("server "+serverconnected);
+                    serverconnected = true;
                 }
-            } else {
+            } else {*/
+            InetAddress address = InetAddress.getByName(clienthost);
+            socket = new Socket(address, clientport);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            out = socket.getOutputStream();
                 switch (request) {
                     case "ban":
                         bansent();
@@ -122,7 +131,8 @@ public class Client implements Runnable{
                         break;
                     case "ping":
                         out.write("ping\n".getBytes(StandardCharsets.UTF_8));
-                }
+                        Global.log("work");
+            //    }
             }
         } catch (Exception e) {
             Global.loge("Unable to connect to the "+ clienthost+":"+ clientport+" server!");
@@ -141,19 +151,22 @@ public class Client implements Runnable{
 
                 if(data.matches("\\[(.*)]:.*")){
                     // if chat
+                    Global.log("client chat!");
                     Call.sendMessage(data);
                 } else if(banshare){
                     // if ban list
                     try{
                         JSONTokener test = new JSONTokener(data);
                         new JSONArray(test);
+                        Global.log("client bandata!");
                         banreceive(data);
                     }catch (Exception e){
-                        Global.logw("Unknown data! - " + data);
+                        Global.logw("client "+ data);
                     }
                 } else {
                     // if ping
-                    Global.log(data);
+                    Global.log("client ping!");
+                    Global.log("client "+data);
                     serverconnected = true;
                 }
             } catch (Exception e) {

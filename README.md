@@ -44,29 +44,14 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 | bansync |  | Ban list synchronization from master server. <br> Must enable 'banshare' and set master server address. |
 | team | &lt;player name&gt;  | Change player team |
 
-## 4.0 version plans
-- [x] Use all network communications with a single port
-  - [x] Ban share
-    - [x] Server
-    - [x] Client
-  - [x] Server as Server chat
-    - [x] Server
-    - [x] Client
-  - [x] Add server query
-    - [x] Player counting
-    - [x] Player list
-    - [x] Server version
-    - [x] Server description
-    - [x] Server map playtime
-    - [ ] ~~difficulty~~ (impossible. Game source limit.)
-    - [x] Core resources status
-  - [x] Discord bot
-- [x] Optimize
-  - [x] Player DB
-    - [x] Read/write source integration
-    - [x] DB Upgrade possible
-  - [x] Config file upgrade possible
-  - [x] All internal plugin log in file
+## 5.0 Release plans
+Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
+- [ ] Fix network (working)
+  - [ ] server
+  - [ ] client
+- [ ] Fix vote
+- [ ] Fix server to server
+  - [ ] Update client (It need game client update)
 
 ## 5.0 version plans
 - [x] Vote
