@@ -56,6 +56,7 @@ public class Main extends Plugin{
 	private boolean voteactive;
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
+	private Client client = new Client();
 
 	public Main() {
 		// Start config file
@@ -63,14 +64,8 @@ public class Main extends Plugin{
 		config.main();
 
 		// Client connection test
-		if(clientenable){
-		    try {
-                Global.log("EssentialsClient is attempting to connect to the server.");
-                Client.main("ping", null, null);
-            } catch (Exception e) {
-                printStackTrace(e);
-            }
-        }
+		Global.log("EssentialsClient is attempting to connect to the server.");
+		client.main("ping", null, null);
 
 		// Database
 		openconnect();
@@ -99,9 +94,7 @@ public class Main extends Plugin{
 
 		// Start ban/chat server
 		if(serverenable){
-			Runnable server = new Server();
-			Thread t = new Thread(server);
-			t.start();
+			new essentials.net.Server().ChatServer();
 		}
 
 		// Essentials EPG Features
@@ -306,7 +299,7 @@ public class Main extends Plugin{
 					if (clientenable) {
 						if (crosschat) {
 							Thread chatclient = new Thread(() -> {
-								Client.main("chat", e.message, e.player);
+								client.main("chat", e.message, e.player);
 							});
 							chatclient.start();
 						}
@@ -618,16 +611,7 @@ public class Main extends Plugin{
 		});
 
 		handler.register("ping", "send ping to remote server", arg -> {
-			Thread servercheck = new Thread(() -> {
-				try{
-					Global.log("EssentialsClient is attempting to connect to the server.");
-					Thread.sleep(1500);
-					Client.main("ping", null, null);
-				}catch (Exception e){
-					printStackTrace(e);
-				}
-			});
-			servercheck.start();
+			client.main("ping", null, null);
 		});
 
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
@@ -726,8 +710,7 @@ public class Main extends Plugin{
 				JSONObject object = new JSONObject(parser);
 				object.put("banall", "true");
 				Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-				Thread banthread = new Thread(() -> Client.main("ban", null,null));
-				banthread.start();
+				client.main("ban", null,null);
 			} else {
 				Global.log("Ban sharing has been disabled!");
 			}
@@ -798,8 +781,7 @@ public class Main extends Plugin{
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
 							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-							Thread banthread = new Thread(() -> Client.main("ban", null,null));
-							banthread.start();
+							client.main("ban", null,null);
 						}catch (Exception e){
 							printStackTrace(e);
 						}
@@ -817,8 +799,7 @@ public class Main extends Plugin{
 								JSONObject object = new JSONObject(parser);
 								object.put("banall", "true");
 								Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-								Thread banthread = new Thread(() -> Client.main("ban", null,null));
-								banthread.start();
+								client.main("ban", null,null);
 							}catch (Exception e){
 								printStackTrace(e);
 							}
@@ -837,8 +818,7 @@ public class Main extends Plugin{
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
 							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-							Thread banthread = new Thread(() -> Client.main("ban", null,null));
-							banthread.start();
+							client.main("ban", null,null);
 						}catch (Exception e){
 							printStackTrace(e);
 						}
