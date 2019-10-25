@@ -10,7 +10,9 @@ import io.anuke.mindustry.net.Administration;
 import org.json.JSONArray;
 import org.json.JSONTokener;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -18,73 +20,66 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
-import static essentials.EssentialConfig.clienthost;
-import static essentials.EssentialConfig.clientport;
+import static essentials.EssentialConfig.*;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 
-public class Client{
-    private static Socket socket;
+public class Client implements Runnable{
+    public boolean serverconnected;
+    private Socket socket;
+    private BufferedReader in;
+    private OutputStream out;
+    private String request;
 
-    private static void ban(BufferedWriter bw) {
-        Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
-        Array<String> ipbans = netServer.admins.getBannedIPs();
-        Global.banc("Ban list senting...");
-        JSONArray bandata = new JSONArray();
-        if(bans.size != 0){
-            for (Administration.PlayerInfo info : bans) {
-                bandata.put(info.id + "|" + info.lastIP);
-            }
-        }
-        if(ipbans.size != 0){
-            for(String string : ipbans){
-                bandata.put("<unknown>|"+string);
-            }
-        }
-
-        try {
-            bw.write(bandata +"\n");
-            bw.flush();
-
-            InputStream is = socket.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-            BufferedReader br = new BufferedReader(isr);
-            String message = br.readLine();
-
-            is.close();
-            isr.close();
-            br.close();
-            JSONTokener ar = new JSONTokener(message);
-            JSONArray result = new JSONArray(ar);
-            Global.banc("Received data!");
-
-            for (int i = 0; i < result.length(); i++) {
-                String[] array = result.getString(i).split("\\|", -1);
-                if (array[0].length() == 12) {
-                    netServer.admins.banPlayerID(array[0]);
-                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                        netServer.admins.banPlayerIP(array[1]);
-                    }
-                }
-                if (array[0].equals("<unknown>")) {
-                    netServer.admins.banPlayerIP(array[1]);
+    private void bansent() {
+        try{
+            Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
+            Array<String> ipbans = netServer.admins.getBannedIPs();
+            Global.banc("Ban list senting...");
+            JSONArray bandata = new JSONArray();
+            if (bans.size != 0) {
+                for (Administration.PlayerInfo info : bans) {
+                    bandata.put(info.id + "|" + info.lastIP);
                 }
             }
+            if (ipbans.size != 0) {
+                for (String string : ipbans) {
+                    bandata.put("<unknown>|" + string);
+                }
+            }
+            out.write((bandata+"\n").getBytes(StandardCharsets.UTF_8));
             Global.banc("Success!");
-        } catch (Exception e) {
+        }catch (Exception e){
             printStackTrace(e);
         }
     }
 
-    private static void chat(BufferedWriter bw, String chat, Player player) {
+    private void banreceive(String data) {
+        JSONTokener ar = new JSONTokener(data);
+        JSONArray result = new JSONArray(ar);
+
+        for (int i = 0; i < result.length(); i++) {
+            String[] array = result.getString(i).split("\\|", -1);
+            if (array[0].length() == 12) {
+                netServer.admins.banPlayerID(array[0]);
+                if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                    netServer.admins.banPlayerIP(array[1]);
+                }
+            }
+            if (array[0].equals("<unknown>")) {
+                netServer.admins.banPlayerIP(array[1]);
+            }
+        }
+    }
+
+    private void chatsent(String chat, Player player) {
         try {
             String msg = "["+player.name+"]: "+chat;
-            bw.write(msg+"\n");
-            bw.flush();
+            out.write((msg+"\n").getBytes(StandardCharsets.UTF_8));
             Call.sendMessage("[#357EC7][SC] "+msg);
             Global.chatc("Message sent to "+ clienthost+" - "+chat+"");
         } catch (Exception e) {
-            String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("plugins/Essentials/player.sqlite3");
+            String url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
             player.sendMessage("Server is not responding! Cross-chat disabled!");
 
             String sql = "UPDATE players SET crosschat = ? WHERE uuid = ?";
@@ -107,50 +102,76 @@ public class Client{
         }
     }
 
-    private static void ping(BufferedWriter bw){
-        try{
-            bw.write("ping\n");
-            bw.flush();
-
-            InputStream is = socket.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-            BufferedReader br = new BufferedReader(isr);
-            String message = br.readLine();
-            Global.log(message);
-
-            is.close();
-            isr.close();
-            br.close();
-        }catch (Exception e){
-            e.printStackTrace();
-            Global.loge(clienthost+":"+ clientport+" server isn't response!");
-        }
-    }
-
-    public static void main(String request, String chat, Player player) {
+    public void main(String request, String chat, Player player) {
         try {
+            /*if(!serverconnected){
+                if(clientenable){
+                    InetAddress address = InetAddress.getByName(clienthost);
+                    socket = new Socket(address, clientport);
+                    in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                    out = socket.getOutputStream();
+                    out.write("ping\n".getBytes(StandardCharsets.UTF_8));
+                    this.request = request;
+                    Thread t = new Thread(this);
+                    t.start();
+                    Global.log("server "+serverconnected);
+                    serverconnected = true;
+                }
+            } else {*/
             InetAddress address = InetAddress.getByName(clienthost);
-            Global.log("Trying connect to "+address+":"+clientport+"...");
             socket = new Socket(address, clientport);
-            OutputStream os = socket.getOutputStream();
-            OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-            BufferedWriter bw = new BufferedWriter(osw);
-
-            switch (request) {
-                case "ban":
-                    ban(bw);
-                    break;
-                case "chat":
-                    chat(bw, chat, player);
-                    break;
-                case "ping":
-                    ping(bw);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            out = socket.getOutputStream();
+                switch (request) {
+                    case "ban":
+                        bansent();
+                        break;
+                    case "chat":
+                        chatsent(chat, player);
+                        break;
+                    case "ping":
+                        out.write("ping\n".getBytes(StandardCharsets.UTF_8));
+                        Global.log("work");
+            //    }
             }
-            bw.close();
-            socket.close();
         } catch (Exception e) {
             Global.loge("Unable to connect to the "+ clienthost+":"+ clientport+" server!");
             printStackTrace(e);
+        }
+    }
+
+    @Override
+    public void run(){
+        while (true) {
+            try {
+                String data = in.readLine();
+                if (data == null || data.equals("")) return;
+
+                Global.log(socket.getRemoteSocketAddress().toString());
+
+                if(data.matches("\\[(.*)]:.*")){
+                    // if chat
+                    Global.log("client chat!");
+                    Call.sendMessage(data);
+                } else if(banshare){
+                    // if ban list
+                    try{
+                        JSONTokener test = new JSONTokener(data);
+                        new JSONArray(test);
+                        Global.log("client bandata!");
+                        banreceive(data);
+                    }catch (Exception e){
+                        Global.logw("client "+ data);
+                    }
+                } else {
+                    // if ping
+                    Global.log("client ping!");
+                    Global.log("client "+data);
+                    serverconnected = true;
+                }
+            } catch (Exception e) {
+                printStackTrace(e);
+            }
         }
     }
 }
