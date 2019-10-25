@@ -165,7 +165,7 @@ public class Main extends Plugin{
 								Thread.sleep(50);
 								Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
 
-								Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Griefer.log")));
+								Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
 								String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
 								byte[] result = text.getBytes();
 								Files.write(path, result, StandardOpenOption.APPEND);
@@ -175,7 +175,7 @@ public class Main extends Plugin{
 								if (entity.heat >= 0.01) {
 									Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
 
-									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Griefer.log")));
+									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
 									String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
 									byte[] result = text.getBytes();
 									Files.write(path, result, StandardOpenOption.APPEND);
@@ -248,7 +248,7 @@ public class Main extends Plugin{
 				Thread.currentThread().setName("PlayerJoin Thread");
 
 				// Check if blacklisted nickname
-				String blacklist = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(blacklist);
 				JSONArray array = new JSONArray(parser);
 
@@ -327,7 +327,7 @@ public class Main extends Plugin{
 						int exp = db.getInt("exp");
 
 						Yaml yaml = new Yaml();
-						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
 						int blockexp;
 						if(obj.get(name) != null) {
 							blockexp = (int) obj.get(name);
@@ -392,7 +392,7 @@ public class Main extends Plugin{
 						int exp = db.getInt("exp");
 
 						Yaml yaml = new Yaml();
-						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Exp.txt").readString()));
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
 						int blockexp;
 						if (obj.get(name) != null) {
 							blockexp = (int) obj.get(name);
@@ -588,7 +588,7 @@ public class Main extends Plugin{
                 executorService.shutdown();
 
 				// save jumpzone data
-				Core.settings.getDataDirectory().child("plugins/Essentials/jumpdata.json").writeString(jumpzone.toString());
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
             }
 		});
 
@@ -659,14 +659,14 @@ public class Main extends Plugin{
 
         handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
 			if(arg[0].equals("add")){
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONArray object = new JSONArray(parser);
 				object.put(arg[1]);
-				Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
 				Global.log("The "+arg[1]+" nickname has been added to the blacklist.");
 			} else if (arg[0].equals("remove")) {
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONArray object = new JSONArray(parser);
 				for (int i = 0; i < object.length(); i++) {
@@ -674,7 +674,7 @@ public class Main extends Plugin{
 						object.remove(i);
 					}
 				}
-				Core.settings.getDataDirectory().child("plugins/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
 				Global.log(""+arg[1]+" nickname deleted from blacklist.");
 			} else {
 				Global.logw("Unknown parameter! Use blacklist <add/remove> <nickname>.");
@@ -721,11 +721,11 @@ public class Main extends Plugin{
 
 		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
 			if(banshare){
-				String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONObject object = new JSONObject(parser);
 				object.put("banall", "true");
-				Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 				Thread banthread = new Thread(() -> Client.main("ban", null,null));
 				banthread.start();
 			} else {
@@ -793,11 +793,11 @@ public class Main extends Plugin{
 					netServer.admins.banPlayerID(arg[1]);
 					if(banshare){
 						try{
-							String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
-							Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 							Thread banthread = new Thread(() -> Client.main("ban", null,null));
 							banthread.start();
 						}catch (Exception e){
@@ -812,11 +812,11 @@ public class Main extends Plugin{
 						netServer.admins.banPlayer(target.uuid);
 						if(banshare){
 							try{
-								String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+								String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 								JSONTokener parser = new JSONTokener(db);
 								JSONObject object = new JSONObject(parser);
 								object.put("banall", "true");
-								Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+								Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 								Thread banthread = new Thread(() -> Client.main("ban", null,null));
 								banthread.start();
 							}catch (Exception e){
@@ -832,11 +832,11 @@ public class Main extends Plugin{
 					netServer.admins.banPlayerIP(arg[1]);
 					if(banshare){
 						try{
-							String db = Core.settings.getDataDirectory().child("plugins/Essentials/data.json").readString();
+							String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
 							JSONTokener parser = new JSONTokener(db);
 							JSONObject object = new JSONObject(parser);
 							object.put("banall", "true");
-							Core.settings.getDataDirectory().child("plugins/Essentials/data.json").writeString(String.valueOf(object));
+							Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
 							Thread banthread = new Thread(() -> Client.main("ban", null,null));
 							banthread.start();
 						}catch (Exception e){
@@ -977,9 +977,9 @@ public class Main extends Plugin{
 			JSONObject db = getData(player.uuid);
 			String motd;
 			if (db.getString("language").equals("KR")) {
-				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd_ko.txt").readString();
+				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").readString();
 			} else {
-				motd = Core.settings.getDataDirectory().child("plugins/Essentials/motd.txt").readString();
+				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").readString();
 			}
 			int count = motd.split("\r\n|\r|\n").length;
 			if (count > 10) {
@@ -1357,8 +1357,8 @@ public class Main extends Plugin{
 						EssentialPlayer.addtimeban(target.name, target.uuid, 4);
 						Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + current + "/" + require);
 
-						Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Player.log")));
-						Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("plugins/Essentials/Logs/Total.log")));
+						Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+						Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
 						try {
 							JSONObject other = getData(target.uuid);
 							String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + current + "/" + require + "\n";
