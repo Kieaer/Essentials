@@ -13,7 +13,7 @@ Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
 - [x] Fix network
   - [x] server
   - [x] client
-- [ ] Fix vote (working)
+- [x] Fix vote
 - [x] Fix server to server (https://github.com/Anuken/Mindustry/pull/896)
   - [x] Update client (It need game client update)
 

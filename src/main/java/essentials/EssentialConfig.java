@@ -591,7 +591,7 @@ public class EssentialConfig {
                 try{
                     SimpleDateFormat format = new SimpleDateFormat("mm.ss");
                     Calendar cal;
-                    Date d = format.parse("05.00");
+                    Date d = format.parse("10.00");
                     cal = Calendar.getInstance();
                     cal.setTime(d);
                     antirushtime = cal;

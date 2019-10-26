@@ -119,15 +119,17 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 cal1.add(Calendar.SECOND, 1);
                 playtime = format.format(cal1.getTime());
                 // Anti PvP rushing timer
-                if(enableantirush && Vars.state.rules.pvp && cal1.equals(antirushtime)) {
-                    Call.sendMessage("[green] Peace time is over!");
-                    Call.sendMessage("[green] You can now attack other teams!");
+                if(enableantirush && Vars.state.rules.pvp && cal1.after(antirushtime)) {
+                    Call.sendMessage("[scarlet]== NOTICE ==");
+                    Call.sendMessage("[green]Peace time is over!");
+                    Call.sendMessage("[green]You can now attack other teams using your own mechs!");
+
+                    state.rules.playerDamageMultiplier = 1f;
+                    state.rules.playerHealthMultiplier = 1f;
                     for(int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
                         Call.onPlayerDeath(player);
                     }
-                    state.rules.playerDamageMultiplier = 1f;
-                    state.rules.playerHealthMultiplier = 1f;
                 }
             }catch (Exception e){
                 printStackTrace(e);

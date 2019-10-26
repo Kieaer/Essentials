@@ -3,8 +3,8 @@ package essentials;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-class EssentialBundle {
-    static String load(boolean lang, String value){
+public class EssentialBundle {
+    public static String load(boolean lang, String value){
         if(lang){
             return "[green][Essentials][] "+ResourceBundle.getBundle("bundle.bundle").getString(value);
         } else {
@@ -12,7 +12,7 @@ class EssentialBundle {
         }
     }
 
-    static String nload(boolean lang, String value){
+    public static String nload(boolean lang, String value){
         if(lang){
             return ResourceBundle.getBundle("bundle.bundle").getString(value);
         } else {

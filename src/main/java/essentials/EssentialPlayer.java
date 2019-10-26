@@ -257,8 +257,7 @@ public class EssentialPlayer{
         return json;
     }
 
-	static void addtimeban(String name, String uuid, int bantimeset){
-
+	public static void addtimeban(String name, String uuid, int bantimeset){
 	    // Write ban data
         String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);

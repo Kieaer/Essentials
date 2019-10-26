@@ -3,6 +3,7 @@ package essentials;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
+import essentials.special.Vote;
 import essentials.thread.Update;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
@@ -53,6 +54,8 @@ import java.util.TimerTask;
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.*;
+import static essentials.special.Vote.isvoting;
+import static essentials.special.Vote.require;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
@@ -291,8 +294,8 @@ public class Main extends Plugin{
 		Events.on(EventType.PlayerChatEvent.class, e -> {
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
-			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
-				if(!check.equals("/")) {
+			if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+				if (!check.equals("/")) {
 					JSONObject db = getData(e.player.uuid);
 					boolean crosschat = db.getBoolean("crosschat");
 
@@ -303,19 +306,36 @@ public class Main extends Plugin{
 							Client client = new Client();
 							client.main("chat", e.player, e.message);
 						}
-					} else if (crosschat && serverenable) {
-						// send message to all clients
-						try{
-							for (int i = 0; i < Server.list.size(); i++) {
-								Server.Service ser = Server.list.get(i);
-								ser.bw.write(data+"\n");
-								ser.bw.flush();
+						if (crosschat && serverenable) {
+							// send message to all clients
+							try {
+								for (int i = 0; i < Server.list.size(); i++) {
+									Server.Service ser = Server.list.get(i);
+									ser.bw.write(data + "\n");
+									ser.bw.flush();
+								}
+							} catch (IOException ex) {
+								ex.printStackTrace();
 							}
-						} catch (IOException ex) {
-							ex.printStackTrace();
 						}
-					} else {
+					}
+					if (!clientenable && !serverenable && crosschat) {
 						e.player.sendMessage("Currently server isn't enable any network features!");
+						writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + e.player.uuid + "'");
+					}
+				}
+			}
+			if (isvoting) {
+				if (e.message.equals("y")) {
+					if (Vote.list.contains(e.player.uuid)) {
+						e.player.sendMessage("[green][Essentials][scarlet] You're already voted!");
+					} else {
+						Vote.list.add(e.player.uuid);
+						int current = Vote.list.size();
+						Call.sendMessage("[green][Essentials] " + current + " players voted. need " + (require - current) + " more players.");
+						if ((require - current) == 0) {
+							Vote.counting.interrupt();
+						}
 					}
 				}
 			}
@@ -503,11 +523,12 @@ public class Main extends Plugin{
 		timer.scheduleAtFixedRate(job, 1000, 1000);
 
 		// Set main thread works
-		final int[] delaycount = {0};
 		Core.app.addListener(new ApplicationListener(){
+			int delaycount = 0;
+
 			@Override
 			public void update() {
-				if (delaycount[0] == 60) {
+				if (delaycount == 20) {
 					try {
 						for (int i = 0; i < powerblock.length(); i++) {
 							String raw = powerblock.getString(i);
@@ -547,10 +568,10 @@ public class Main extends Plugin{
 								Call.setMessageBlockText(null, world.tile(x, y), text);
 							}
 						}
-					} catch (Exception ignored) {
-					}
+						delaycount = 0;
+					} catch (Exception ignored) {}
 				} else {
-					delaycount[0]++;
+					delaycount++;
 				}
 
 				for (int i = 0; i < nukeblock.length(); i++) {
@@ -916,22 +937,21 @@ public class Main extends Plugin{
 			}
 		});
 
-        /*
-		handler.<Player>register("votekick", "Disabled.", (arg, player) -> {
+
+		handler.<Player>register("votekick", "Player kick starts voting.", (arg, player) -> {
 			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
 				return;
 			}
 
-			JSONObject db = getData(player.uuid);
-			if(db.getString("language").equals("KR")){
-				player.sendMessage(EssentialBundle.load(true, "votekick-disabled"));
-			} else {
-				player.sendMessage(EssentialBundle.load(false, "votekick-disabled"));
+			Vote vote = new Vote();
+			Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			if (other == null) {
+				bundle(player, "player-not-found");
+				return;
 			}
+			vote.main(player, "kick", other.name);
 		});
-
-         */
 
 		handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
@@ -1056,7 +1076,6 @@ public class Main extends Plugin{
 				return;
 			}
 
-			JSONObject db = getData(player.uuid);
 			Player other1 = null;
 			Player other2 = null;
 			for (Player p : playerGroup.all()) {
@@ -1090,7 +1109,6 @@ public class Main extends Plugin{
 				return;
 			}
 
-			JSONObject db = getData(player.uuid);
 			Player other = null;
 			for (Player p : playerGroup.all()) {
 				boolean result = p.name.contains(arg[0]);
@@ -1124,7 +1142,6 @@ public class Main extends Plugin{
 				return;
 			}
 
-			JSONObject db = getData(player.uuid);
 			if (!player.isAdmin) {
 				bundle(player, "notadmin");
 			} else {
@@ -1177,237 +1194,11 @@ public class Main extends Plugin{
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
 				return;
 			}
-
-			int current = vote.size();
-			int require = (int) Math.ceil(0.5 * Vars.playerGroup.size());
-			if (current <= 2) {
-				bundle(player, "vote-min");
-			}
-			Player target;
-			if (arg.length == 2) {
-				target = playerGroup.find(p -> p.name.equals(arg[1]));
+			Vote vote = new Vote();
+			if(arg.length == 2){
+				vote.main(player, arg[0], arg[1]);
 			} else {
-				target = null;
-			}
-
-			Thread counting = new Thread(() -> {
-				if (playerGroup != null && playerGroup.size() > 0) {
-					for (int i = 0; i < playerGroup.size(); i++) {
-						Player others = playerGroup.all().get(i);
-						JSONObject db1 = getData(others.uuid);
-						if (db1.get("country_code") == "KR") {
-							Thread playeralarm1 = new Thread(() -> {
-								try {
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(true, "vote-50sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(true, "vote-40sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(true, "vote-30sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(true, "vote-20sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(true, "vote-10sec"));
-									Thread.sleep(10000);
-								} catch (Exception e) {
-									printStackTrace(e);
-								}
-							});
-							playeralarm1.start();
-						} else {
-							Thread playeralarm2 = new Thread(() -> {
-								try {
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(false, "vote-50sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(false, "vote-40sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(false, "vote-30sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(false, "vote-20sec"));
-									Thread.sleep(10000);
-									others.sendMessage(EssentialBundle.load(false, "vote-10sec"));
-									Thread.sleep(10000);
-								} catch (Exception e) {
-									printStackTrace(e);
-								}
-							});
-							playeralarm2.start();
-						}
-					}
-				}
-			});
-
-			Thread gameovervote = new Thread(() -> {
-				try {
-					counting.start();
-					Thread.sleep(60000);
-					if (current > require) {
-						Global.log(current + "/" + require);
-						Call.sendMessage("[green][Essentials] Gameover vote passed!");
-						Events.fire(new EventType.GameOverEvent(Team.sharded));
-					} else {
-						Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
-					}
-					vote.clear();
-					this.voteactive = false;
-				} catch (InterruptedException ignored) {
-				}
-			});
-
-			Thread skipwavevote = new Thread(() -> {
-				try {
-					counting.start();
-					Thread.sleep(60000);
-					if (current >= require) {
-						Global.log(current + "/" + require);
-						Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
-						for (int i = 0; i < 10; i++) {
-							logic.runWave();
-						}
-					} else {
-						Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
-					}
-					vote.clear();
-					this.voteactive = false;
-				} catch (InterruptedException ignored) {
-				}
-			});
-
-			Thread kickvote = new Thread(() -> {
-				try {
-					counting.start();
-					Thread.sleep(60000);
-					if (current >= require) {
-						Call.sendMessage("[green][Essentials] Player kick vote success!");
-						EssentialPlayer.addtimeban(target.name, target.uuid, 4);
-						Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + current + "/" + require);
-
-						Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-						Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-						try {
-							JSONObject other = getData(target.uuid);
-							String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + current + "/" + require + "\n";
-							byte[] result = text.getBytes();
-							Files.write(path, result, StandardOpenOption.APPEND);
-							Files.write(total, result, StandardOpenOption.APPEND);
-						} catch (IOException error) {
-							printStackTrace(error);
-						}
-
-						netServer.admins.banPlayer(target.uuid);
-						Call.onKick(target.con, "You're banned.");
-					} else {
-						assert playerGroup != null;
-						for (int i = 0; i < playerGroup.size(); i++) {
-							Player others = playerGroup.all().get(i);
-							bundle(others, "vote-failed");
-						}
-					}
-					vote.clear();
-					this.voteactive = false;
-				} catch (InterruptedException e) {
-					printStackTrace(e);
-				}
-			});
-
-			JSONObject db = getData(player.uuid);
-			switch (arg[0]) {
-				case "gameover":
-					if (!this.voteactive) {
-						this.voteactive = true;
-						vote.add(player.uuid);
-						for (int i = 0; i < playerGroup.size(); i++) {
-							Player others = playerGroup.all().get(i);
-							bundle(others, "vote-gameover");
-						}
-						Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
-
-						Thread t = new Thread(() -> {
-							gameovervote.start();
-							try {
-								gameovervote.join();
-							} catch (InterruptedException ignored) {
-							}
-						});
-						t.start();
-					} else {
-						bundle(player, "vote-in-processing");
-					}
-					break;
-				case "skipwave":
-					if (!this.voteactive) {
-						this.voteactive = true;
-						vote.add(player.uuid);
-						for (int i = 0; i < playerGroup.size(); i++) {
-							Player others = playerGroup.all().get(i);
-							bundle(others, "vote-skipwave");
-						}
-						Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
-
-						Thread t = new Thread(() -> {
-							skipwavevote.start();
-							try {
-								skipwavevote.join();
-							} catch (InterruptedException ignored) {
-							}
-						});
-						t.start();
-					} else {
-						bundle(player, "vote-in-processing");
-					}
-					break;
-				case "kick":
-					if (!this.voteactive) {
-						this.voteactive = true;
-						vote.add(player.uuid);
-						if (target != null) {
-							target.con.kick("You have been kicked by voting.");
-						} else {
-							bundle(player, "player-not-found");
-							this.voteactive = false;
-							return;
-						}
-
-						for (int i = 0; i < playerGroup.size(); i++) {
-							Player others = playerGroup.all().get(i);
-							bundle(player, "vote-kick");
-						}
-						Call.sendMessage("[green][Essentials] Require [white]" + require + "[green] players.");
-
-						Thread t = new Thread(() -> {
-							kickvote.start();
-							try {
-								kickvote.join();
-							} catch (InterruptedException ignored) {
-							}
-						});
-						t.start();
-					} else {
-						bundle(player, "vote-in-processing");
-					}
-					break;
-				case "y":
-					if (this.voteactive) {
-						if (vote.contains(player.uuid)) {
-							player.sendMessage("[green][Essentials][scarlet] You're already voted!");
-						} else {
-							vote.add(player.uuid);
-							Call.sendMessage("[green][Essentials] " + current + " players voted. need " + require + " more players.");
-							if (current >= require) {
-								vote.clear();
-								this.voteactive = false;
-								counting.interrupt();
-							}
-						}
-					} else {
-						bundle(player, "vote-not-processing");
-					}
-					break;
-				default:
-					this.voteactive = false;
-					bundle(player, "vote-invalid");
-					break;
+				vote.main(player, arg[0], null);
 			}
 		});
 
@@ -1437,7 +1228,6 @@ public class Main extends Plugin{
 				return;
 			}
 
-			JSONObject db = getData(player.uuid);
 			if (player.isAdmin) {
 				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 				if (other == null) {
@@ -1456,7 +1246,6 @@ public class Main extends Plugin{
 				return;
 			}
 
-			JSONObject db = getData(player.uuid);
 			if (player.isAdmin) {
 				Core.app.post(() -> {
 					SaveIO.saveToSlot(1);
@@ -1744,7 +1533,7 @@ public class Main extends Plugin{
 
 				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
 			} else {
-				bundle(player, "player-not-found");
+				bundle(player, "notadmin");
 			}
 		});
 	}
