@@ -715,16 +715,20 @@ public class Main extends Plugin{
 		});
 
 		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
-			if(banshare){
-				String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
-				JSONTokener parser = new JSONTokener(db);
-				JSONObject object = new JSONObject(parser);
-				object.put("banall", "true");
-				Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-				Client client = new Client();
-				client.main("bansync", null, null);
+			if(!serverenable){
+				if(banshare){
+					String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
+					JSONTokener parser = new JSONTokener(db);
+					JSONObject object = new JSONObject(parser);
+					object.put("banall", "true");
+					Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+					Client client = new Client();
+					client.main("bansync", null, null);
+				} else {
+					Global.logw("Ban sharing has been disabled!");
+				}
 			} else {
-				Global.log("Ban sharing has been disabled!");
+				Global.logw("The server can't ban sharing!");
 			}
 		});
 
@@ -818,7 +822,7 @@ public class Main extends Plugin{
 
 			for(Player player : playerGroup.all()){
 				if(netServer.admins.isIDBanned(player.uuid)){
-					Call.sendMessage("[scarlet] " + player.name + " has been banned.");
+					Call.sendMessage("[scarlet]" + player.name + " has been banned.");
 					player.con.kick(KickReason.banned);
 				}
 			}
