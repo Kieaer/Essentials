@@ -5,6 +5,7 @@ import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Team;
+import org.json.JSONObject;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import static essentials.EssentialConfig.debug;
+import static essentials.EssentialPlayer.getData;
 
 public class Global {
     public static void log(String msg){
@@ -92,5 +94,14 @@ public class Global {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         return "[" + now.format(dateTimeFormatter) + "] ";
+    }
+
+    public static void bundle(Player player, String value){
+        JSONObject db = getData(player.uuid);
+        if (db.get("country_code") == "KR") {
+            player.sendMessage(EssentialBundle.load(true, value));
+        } else {
+            player.sendMessage(EssentialBundle.load(false, value));
+        }
     }
 }
