@@ -74,6 +74,7 @@ public class Client implements Runnable{
                 try {
                     String msg = "["+player.name+"]: "+message;
                     bw.write(msg+"\n");
+                    bw.flush();
                     Call.sendMessage("[#357EC7][SC] "+msg);
                     Global.logc("Message sent to "+ clienthost+" - "+message+"");
                 } catch (IOException e) {
@@ -119,12 +120,16 @@ public class Client implements Runnable{
                 }
             } catch (IOException e) {
                 String msg = e.getMessage();
-                if(!msg.matches("socket closed") || msg.matches("Connection reset")){
-                    e.printStackTrace();
-                } else {
-                    Global.logs(clienthost+" Server disconnected");
+                if (msg.equals("Connection reset")) {
+                    Global.logs(clienthost + " Server disconnected");
                     return;
                 }
+                if (msg.equals("socket closed")) {
+                    Global.logs(clienthost + " Server disconnected");
+                    return;
+                }
+                serverconn = false;
+                Global.log(msg);
             }
         }
     }

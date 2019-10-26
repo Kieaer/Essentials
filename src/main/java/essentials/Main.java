@@ -297,7 +297,6 @@ public class Main extends Plugin{
 			//check if command
 			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
 				if(!check.equals("/")) {
-					//boolean valid = e.message.matches("\\w+");
 					JSONObject db = getData(e.player.uuid);
 					boolean crosschat = db.getBoolean("crosschat");
 
@@ -308,8 +307,19 @@ public class Main extends Plugin{
 							Client client = new Client();
 							client.main("chat", e.player, e.message);
 						}
-					} else if (crosschat) {
-						e.player.sendMessage("Currently server isn't enable cross-server client!");
+					} else if (crosschat && serverenable) {
+						// send message to all clients
+						try{
+							for (int i = 0; i < Server.list.size(); i++) {
+								Server.Service ser = Server.list.get(i);
+								ser.bw.write(data+"\n");
+								ser.bw.flush();
+							}
+						} catch (IOException ex) {
+							ex.printStackTrace();
+						}
+					} else {
+						e.player.sendMessage("Currently server isn't enable any network features!");
 					}
 				}
 			}
@@ -777,7 +787,7 @@ public class Main extends Plugin{
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
-					if(banshare) {
+					if(banshare && clientenable) {
 						client.main("bansync", null, null);
 					}
 					Global.log("Banned.");
@@ -786,7 +796,7 @@ public class Main extends Plugin{
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						if(banshare) {
+						if(banshare && clientenable) {
 							client.main("bansync", null, null);
 						}
 						Global.log("Banned.");
@@ -796,7 +806,7 @@ public class Main extends Plugin{
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					if(banshare) {
+					if(banshare && clientenable) {
 						client.main("bansync", null, null);
 					}
 					Global.log("Banned.");

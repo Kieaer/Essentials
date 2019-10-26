@@ -47,7 +47,7 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 ## 5.0 Release plans
 Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
 - [ ] Fix network (working)
-  - [ ] server
+  - [x] server
   - [ ] client
 - [ ] Fix vote
 - [ ] Fix server to server

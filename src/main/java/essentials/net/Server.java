@@ -36,11 +36,10 @@ import static essentials.EssentialTimer.uptime;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.*;
 
-public class Server implements Runnable{
+public class Server implements Runnable {
     public static boolean active = true;
     public static ServerSocket serverSocket;
-    private Service service;
-    private ArrayList<Service> list = new ArrayList();
+    public static ArrayList<Service> list = new ArrayList<>();
     private String remoteip;
 
     public void ChatServer() {
@@ -54,10 +53,10 @@ public class Server implements Runnable{
 
     @Override
     public void run() {
-        while(active) {
+        while (active) {
             try {
                 Socket socket = serverSocket.accept();
-                service = new Service(socket);
+                Service service = new Service(socket);
                 service.start();
                 list.add(service);
             } catch (Exception e) {
@@ -66,9 +65,9 @@ public class Server implements Runnable{
         }
     }
 
-    class Service extends Thread {
+    public class Service extends Thread {
         BufferedReader in;
-        BufferedWriter bw;
+        public BufferedWriter bw;
         OutputStreamWriter osw;
         OutputStream os;
         Socket socket;
@@ -86,48 +85,51 @@ public class Server implements Runnable{
         }
 
         @Override
-        public void run(){
-            while(true) {
+        public void run() {
+            while (true) {
                 try {
                     String data = in.readLine();
-                    if(data == null || data.equals("")) continue;
+                    if (data == null || data.equals("")) continue;
                     remoteip = socket.getInetAddress().toString().replace("/", "");
 
                     if (data.matches("GET /.*")) {
                         Global.log("server HTTP!");
 
                         httpserver(data);
-                    } else if (data.matches("\\[(.*)]:.*")){
+                    } else if (data.matches("\\[(.*)]:.*")) {
                         Global.log("server chat!");
 
-                        for (Service ser : list) {
-                            ser.bw.write(data);
-                            ser.bw.flush();
-                        }
-
                         String msg = data.replaceAll("\n", "");
-                        Global.logs("Received message from "+remoteip+": "+msg);
-                        Call.sendMessage("[#C77E36][RC] "+msg);
-                        if(!remoteip.equals(clienthost)) {
-                            Global.logs("[EssentialsChat] ALERT! This message isn't received from "+clienthost+"!!");
-                            Global.logs("[EssentialsChat] Message is "+data);
+                        Global.logs("Received message from " + remoteip + ": " + msg);
+                        Call.sendMessage("[#C77E36][RC] " + msg);
+                        if (!remoteip.equals(clienthost)) {
+                            Global.logs("[EssentialsChat] ALERT! This message isn't received from " + clienthost + "!!");
+                            Global.logs("[EssentialsChat] Message is " + data);
 
                             for (int i = 0; i < playerGroup.size(); i++) {
                                 Player p = playerGroup.all().get(i);
-                                if(p.isAdmin){
-                                    p.sendMessage("[#C77E36]["+remoteip+"][RC] "+data);
+                                if (p.isAdmin) {
+                                    p.sendMessage("[#C77E36][" + remoteip + "][RC] " + data);
                                 } else {
-                                    p.sendMessage("[#C77E36][RC] "+data);
+                                    p.sendMessage("[#C77E36][RC] " + data);
                                 }
                             }
                         }
+
+                        // send message to all clients
+                        for (int i = 0; i < list.size(); i++) {
+                            Service ser = list.get(i);
+                            ser.bw.write(data + "\n");
+                            ser.bw.flush();
+                        }
+
                     } else if (data.matches("ping")) {
-                        String[] msg = {"Hi "+remoteip+"! Your connection is successful!","Hello "+remoteip+"! I'm server!","Welcome to the server "+remoteip+"!"};
+                        String[] msg = {"Hi " + remoteip + "! Your connection is successful!", "Hello " + remoteip + "! I'm server!", "Welcome to the server " + remoteip + "!"};
                         int rnd = new Random().nextInt(msg.length);
-                        bw.write(msg[rnd]+"\n");
+                        bw.write(msg[rnd] + "\n");
                         bw.flush();
-                        Global.log(remoteip+" connected to this server.");
-                    } else if(banshare) {
+                        Global.log(remoteip + " connected to this server.");
+                    } else if (banshare) {
                         try {
                             JSONTokener convert = new JSONTokener(data);
                             JSONArray bandata = new JSONArray(convert);
@@ -165,39 +167,33 @@ public class Server implements Runnable{
                             Global.logw("server " + data);
                         }
                     } else {
-                        Global.log("server "+data);
+                        Global.log("server " + data);
                     }
                 } catch (IOException e) {
                     String msg = e.getMessage();
-                    if(msg.equals("Connection reset")){
-                        Global.logs(remoteip+" Client disconnected");
+                    if (msg.equals("Connection reset")) {
+                        Global.logs(remoteip + " Client disconnected");
                         return;
                     }
-                    if(msg.equals("socket closed")){
-                        Global.logs(remoteip+" Client disconnected");
+                    if (msg.equals("socket closed")) {
+                        Global.logs(remoteip + " Client disconnected");
                         return;
                     }
                     Global.log(msg);
-                    /*if(!msg.matches("socket closed") || !msg.matches("Connection reset")){
-                        e.printStackTrace();
-                    } else {
-                        Global.logs(remoteip+" Client disconnected");
-                        return;
-                    }*/
                 }
             }
         }
 
-        private String query(){
+        private String query() {
             JSONObject json = new JSONObject();
             JSONObject items = new JSONObject();
             JSONArray array = new JSONArray();
-            for(Player p : playerGroup.all()){
+            for (Player p : playerGroup.all()) {
                 array.put(p.name);
             }
 
-            for(Item item : content.items()) {
-                if(item.type == ItemType.material){
+            for (Item item : content.items()) {
+                if (item.type == ItemType.material) {
                     items.put(item.name, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
                 }
             }
@@ -208,19 +204,19 @@ public class Server implements Runnable{
             json.put("name", Core.settings.getString("servername"));
             json.put("playtime", playtime);
             json.put("difficulty", Difficulty.values());
-            json.put("resource",items);
+            json.put("resource", items);
             return json.toString();
         }
 
-        private String serverinfo(){
-            if(state.is(GameState.State.playing)){
+        private String serverinfo() {
+            if (state.is(GameState.State.playing)) {
                 int playercount = playerGroup.size();
                 StringBuilder playerdata = new StringBuilder();
-                for(Player p : playerGroup.all()){
-                    playerdata.append(p.name+",");
+                for (Player p : playerGroup.all()) {
+                    playerdata.append(p.name + ",");
                 }
                 String players = "Empty";
-                if(playerdata.length() != 0) {
+                if (playerdata.length() != 0) {
                     playerdata.substring(playerdata.length() - 1, playerdata.length());
                 }
                 int version = Version.build;
@@ -228,26 +224,26 @@ public class Server implements Runnable{
                 String worldtime = playtime;
                 String serveruptime = uptime;
                 StringBuilder items = new StringBuilder();
-                for(Item item : content.items()) {
-                    if(item.type == ItemType.material){
-                        items.append(item.name+": "+state.teams.get(Team.sharded).cores.first().entity.items.get(item)+"<br>");
+                for (Item item : content.items()) {
+                    if (item.type == ItemType.material) {
+                        items.append(item.name + ": " + state.teams.get(Team.sharded).cores.first().entity.items.get(item) + "<br>");
                     }
                 }
                 String coreitem = items.toString();
 
-                return "Player count: "+playercount+"<br>" +
-                        "Player list: "+players+"<br>" +
-                        "Version: "+version+"<br>" +
-                        "Description: "+description+"<br>" +
-                        "World playtime: "+worldtime+"<br>" +
-                        "Server uptime: "+serveruptime+"<br>" +
-                        "Core items<br>"+coreitem;
+                return "Player count: " + playercount + "<br>" +
+                        "Player list: " + players + "<br>" +
+                        "Version: " + version + "<br>" +
+                        "Description: " + description + "<br>" +
+                        "World playtime: " + worldtime + "<br>" +
+                        "Server uptime: " + serveruptime + "<br>" +
+                        "Core items<br>" + coreitem;
             } else {
                 return "Server isn't hosted!";
             }
         }
 
-        private String rankingdata(boolean lang){
+        private String rankingdata(boolean lang) {
             StringBuilder placecount = new StringBuilder();
             StringBuilder breakcount = new StringBuilder();
             StringBuilder killcount = new StringBuilder();
@@ -323,15 +319,15 @@ public class Server implements Runnable{
                 ResultSet rs8 = stmt.executeQuery(sql[7]);
                 while (rs8.next()) {
                     int percent;
-                    try{
+                    try {
                         percent = rs8.getInt("pvpwincount") / rs8.getInt("pvplosecount") * 100;
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         percent = 0;
                     }
                     pvpcount.append("<tr><td>" + rs8.getString("name") + "</td>\n" +
                             "<td>" + rs8.getString("country") + "</td>\n" +
-                            "<td>" + rs8.getInt("pvpwincount") + "</td>\n"+
-                            "<td>" + rs8.getInt("pvplosecount") + "</td>\n"+
+                            "<td>" + rs8.getInt("pvpwincount") + "</td>\n" +
+                            "<td>" + rs8.getInt("pvplosecount") + "</td>\n" +
                             "<td>" + percent + "%</td></tr>\n");
                 }
                 rs8.close();
@@ -343,7 +339,7 @@ public class Server implements Runnable{
                 }
                 rs9.close();
                 stmt.close();
-            }catch (Exception e){
+            } catch (Exception e) {
                 printStackTrace(e);
             }
 
@@ -352,7 +348,7 @@ public class Server implements Runnable{
             String jquery = jquery1 + jquery2;
             String cookie = "<script>/*! js-cookie v3.0.0-beta.0 | MIT */!function(e,n){\"object\"==typeof exports&&\"undefined\"!=typeof module?module.exports=n():\"function\"==typeof define&&define.amd?define(n):(e=e||self,function(){var t=e.Cookies,o=e.Cookies=n();o.noConflict=function(){return e.Cookies=t,o}}())}(this,function(){\"use strict\";function e(){for(var e={},n=0;n<arguments.length;n++){var t=arguments[n];for(var o in t)e[o]=t[o]}return e}function n(e){return e.replace(/(%[\\dA-F]{2})+/gi,decodeURIComponent)}return function t(o){function r(n,t,r){if(\"undefined\"!=typeof document){\"number\"==typeof(r=e(i.defaults,r)).expires&&(r.expires=new Date(1*new Date+864e5*r.expires)),r.expires&&(r.expires=r.expires.toUTCString()),t=o.write?o.write(t,n):encodeURIComponent(String(t)).replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g,decodeURIComponent),n=encodeURIComponent(String(n)).replace(/%(23|24|26|2B|5E|60|7C)/g,decodeURIComponent).replace(/[()]/g,escape);var c=\"\";for(var f in r)r[f]&&(c+=\"; \"+f,!0!==r[f]&&(c+=\"=\"+r[f].split(\";\")[0]));return document.cookie=n+\"=\"+t+c}}var i={defaults:{path:\"/\"},set:r,get:function(e){if(\"undefined\"!=typeof document&&(!arguments.length||e)){for(var t=document.cookie?document.cookie.split(\"; \"):[],r={},i=0;i<t.length;i++){var c=t[i].split(\"=\"),f=c.slice(1).join(\"=\");'\"'===f.charAt(0)&&(f=f.slice(1,-1));try{var u=n(c[0]);if(r[u]=(o.read||o)(f,u)||n(f),e===u)break}catch(e){}}return e?r[e]:r}},remove:function(n,t){r(n,\"\",e(t,{expires:-1}))},withConverter:t};return i}(function(){})});\n</script>\n";
 
-            if(lang){
+            if (lang) {
                 return "<!DOCTYPE html>\n" +
                         "<html lang=\"ko\">\n" +
                         "<head>\n" +
@@ -385,7 +381,7 @@ public class Server implements Runnable{
                         "<script>\n" +
                         "$(function(){\n" +
                         "if (Cookies.get(\"popup\") == 'true'){" +
-                        "document.getElementById('infopopup').style.display = \"block\";"+
+                        "document.getElementById('infopopup').style.display = \"block\";" +
                         "}" +
                         "$('#serverinfo').click(function(){\n" +
                         "$(\"#infopopup\").show();\n" +
@@ -404,7 +400,7 @@ public class Server implements Runnable{
                         "<body>\n" +
                         "<div id=\"infopopup\">\n" +
                         "<div id=\"info_header\">Server information</div>\n" +
-                        "<div id=\"info_body\">"+serverinfo()+"</div>\n" +
+                        "<div id=\"info_body\">" + serverinfo() + "</div>\n" +
                         "</div>\n" +
                         "\n" +
                         "<div id=\"box\">\n" +
@@ -553,7 +549,7 @@ public class Server implements Runnable{
                         "<script>\n" +
                         "$(function(){\n" +
                         "if (Cookies.get(\"popup\") == 'true'){" +
-                        "document.getElementById('infopopup').style.display = \"block\";"+
+                        "document.getElementById('infopopup').style.display = \"block\";" +
                         "}" +
                         "$('#serverinfo').click(function(){\n" +
                         "$(\"#infopopup\").show();\n" +
@@ -572,7 +568,7 @@ public class Server implements Runnable{
                         "<body>\n" +
                         "<div id=\"infopopup\">\n" +
                         "<div id=\"info_header\">현재 서버 정보</div>\n" +
-                        "<div id=\"info_body\">"+serverinfo()+"</div>\n" +
+                        "<div id=\"info_body\">" + serverinfo() + "</div>\n" +
                         "</div>\n" +
                         "\n" +
                         "<div id=\"box\">\n" +
@@ -691,7 +687,7 @@ public class Server implements Runnable{
             }
         }
 
-        private void httpserver(String receive){
+        private void httpserver(String receive) {
             try {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
@@ -769,68 +765,9 @@ public class Server implements Runnable{
                 } catch (Exception e) {
                     printStackTrace(e);
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 printStackTrace(e);
             }
         }
     }
-
-    /*public static void main(String[] args) {
-        ServerSocket serverSocket = null;
-        Socket socket = null;
-
-        try {
-            serverSocket = new ServerSocket(serverport);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        while (true) {
-            try {
-                socket = serverSocket.accept();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            new ServerThread(socket).start();
-        }
-    }*/
 }
-
-/*
-class ServerThread extends Thread {
-    protected Socket socket;
-
-    public ServerThread(Socket clientSocket) {
-        this.socket = clientSocket;
-    }
-
-    public void run() {
-        InputStream in;
-        BufferedReader br;
-        DataOutputStream out;
-        try {
-            in = socket.getInputStream();
-            br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-            out = new DataOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-            return;
-        }
-
-        String line;
-        while (true) {
-            try {
-                line = br.readLine();
-                if ((line == null) || line.equalsIgnoreCase("QUIT")) {
-                    socket.close();
-                    return;
-                } else {
-                    out.writeBytes(line + "\n\r");
-                    out.flush();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
-            }
-        }
-    }
-}*/
