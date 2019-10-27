@@ -64,7 +64,7 @@ public class Global {
     }
 
     public static void printStackTrace(Throwable e) {
-        if(debug){
+        if(!debug){
             StringBuilder sb = new StringBuilder();
             try {
                 sb.append(e.toString());

@@ -43,7 +43,8 @@ public class EssentialConfig {
     public static String url;
     public static String dbid;
     public static String dbpw;
-    public static String apikey;
+    public static String clientId;
+    public static String clientSecret;
     public static boolean debug;
     public static JSONArray jumpzone = new JSONArray();
 
@@ -110,9 +111,10 @@ public class EssentialConfig {
                     "# Login features setting\n" +
                     "loginenable: true\n\n" +
 
-                    "# Google translate API Key\n" +
-                    "# The api key can be obtained from cloud.google.com.\n" +
-                    "apikey: \n\n" +
+                    "# Papago translate API Key\n" +
+                    "# The api key can be obtained from developers.naver.com.\n" +
+                    "clientId: \n" +
+                    "clientSecret: \n\n" +
 
                     "# The error message is output immediately.\n" +
                     "debug: false";
@@ -643,10 +645,16 @@ public class EssentialConfig {
                 loginenable = true;
             }
 
-            if(obj.get("apikey") != null){
-                apikey = (String) obj.get("apikey");
+            if(obj.get("clientId") != null){
+                clientId = (String) obj.get("clientId");
             } else {
-                apikey = "";
+                clientId = "";
+            }
+
+            if(obj.get("clientSecret") != null){
+                clientSecret = (String) obj.get("clientSecret");
+            } else {
+                clientSecret = "";
             }
 
             if(obj.get("debug") != null){
@@ -719,9 +727,10 @@ public class EssentialConfig {
                     "# Login features setting\n" +
                     "loginenable: "+loginenable+"\n\n" +
 
-                    "# Google translate API Key\n" +
-                    "# The api key can be obtained from cloud.google.com.\n" +
-                    "apikey: "+apikey+"\n\n" +
+                    "# Papago translate API Key\n" +
+                    "# The api key can be obtained from developers.naver.com.\n" +
+                    "clientId: "+clientId+"\n" +
+                    "clientSecret: "+clientSecret+"\n\n" +
 
                     "# The error message is output immediately.\n" +
                     "debug: "+debug;

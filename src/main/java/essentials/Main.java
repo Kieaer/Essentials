@@ -528,6 +528,7 @@ public class Main extends Plugin{
 
 			@Override
 			public void update() {
+				// Power node monitoring
 				if (delaycount == 20) {
 					try {
 						for (int i = 0; i < powerblock.length(); i++) {
@@ -574,15 +575,19 @@ public class Main extends Plugin{
 					delaycount++;
 				}
 
+				// nuke block monitoring
 				for (int i = 0; i < nukeblock.length(); i++) {
 					String nukedata = nukeblock.getString(i);
 					String[] data = nukedata.split("/");
 					int x = Integer.parseInt(data[0]);
 					int y = Integer.parseInt(data[1]);
-
-					NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
-					if(entity.heat >= 0.98f){
-						Call.sendMessage("[green]Thorium reactor [scarlet]overload warning![white] X: "+x+", Y: "+y);
+					try{
+						NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
+						if(entity.heat >= 0.98f){
+							Call.sendMessage("[green]Thorium reactor [scarlet]overload warning![white] X: "+x+", Y: "+y);
+						}
+					}catch (Exception e){
+						nukeblock.remove(i);
 					}
 				}
 			}
@@ -1212,12 +1217,7 @@ public class Main extends Plugin{
 			if (playerGroup != null && playerGroup.size() > 0) {
 				for (int i = 0; i < playerGroup.size(); i++) {
 					Player others = playerGroup.all().get(i);
-					JSONObject db = getData(others.uuid);
-					if (db.getString("country_code").equals("KR")) {
-						others.sendMessage("[green][Essentials][] " + player.name + EssentialBundle.nload(true, "suicide"));
-					} else {
-						others.sendMessage("[green][Essentials][] " + player.name + EssentialBundle.nload(false, "suicide"));
-					}
+					bundle(others, "suicide");
 				}
 			}
 		});
@@ -1532,6 +1532,33 @@ public class Main extends Plugin{
 				}
 
 				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
+			} else {
+				bundle(player, "notadmin");
+			}
+		});
+
+		handler.<Player>register("test", "pathfinding test", (arg, player) -> {
+			if (player.isAdmin) {
+				/*
+				Thread work = new Thread(() -> {
+					EssentialAI ai = new EssentialAI();
+
+					Tile tile = world.tile(player.tileX(), player.tileY());
+					ai.start = tile;
+					ai.player = player;
+
+					Call.onConstructFinish(tile, Blocks.copperWall, 0, (byte) 0, Team.sharded, false);
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					ai.target = world.tile(player.tileX(), player.tileY());
+					ai.main();
+				});
+				work.start();
+				*/
+				player.sendMessage("[scarlet][경고] 이 명령어를 사용하지 마세요.");
 			} else {
 				bundle(player, "notadmin");
 			}

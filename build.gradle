@@ -9,8 +9,6 @@ repositories{
     maven{ url 'https://jitpack.io' }
 }
 
-compileJava {options.encoding = "UTF-8"}
-
 ext{
     targetversion = 'v97'
     //targetversion = '-SNAPSHOT'
