@@ -86,7 +86,7 @@ public class EssentialLog implements Runnable{
 
         Events.on(EventType.BuildSelectEvent.class, e -> {
             try{
-                if(e.breaking && e.builder != null && ((Player) e.builder).name != null && e.builder.buildRequest() != null && e.builder.buildRequest() != null && e.builder.buildRequest().block.name != null && !e.builder.buildRequest().block.name.matches(".*build.*")){
+                if(e.breaking && e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                     Thread t = new Thread(() -> {
                         Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
                         Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));

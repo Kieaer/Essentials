@@ -166,7 +166,7 @@ public class Server implements Runnable {
                         Global.logs(remoteip + " Client disconnected");
                         return;
                     }
-                    if (msg.equals("socket closed")) {
+                    if (msg.equals("Socket closed")) {
                         Global.logs(remoteip + " Client disconnected");
                         return;
                     }

@@ -44,7 +44,7 @@ class EssentialTR {
                                     }
                                 }
                                 if(found){
-                                    url = new URL("https://openapi.naver.com/v1/papago/n2mt");
+                                    url = new URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation");
                                     c = (HttpURLConnection) url.openConnection();
                                     c.setRequestMethod("POST");
                                     c.setRequestProperty("X-NCP-APIGW-API-KEY-ID", clientId);
