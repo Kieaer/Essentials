@@ -725,5 +725,62 @@ public class EssentialPlayer{
 
         //Thread checkgrief = new Thread(() -> new EssentialTimer.checkgrief(player));
         //checkgrief.start();
+
+        if(db.getString("country").equals("invalid")) {
+            // Geolocation
+            String geo;
+            String geocode;
+            String lang;
+            String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+
+            try {
+                String apiURL = "http://ipapi.co/" + ip + "/json";
+                URL url = new URL(apiURL);
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setReadTimeout(5000);
+                con.setRequestMethod("POST");
+
+                boolean redirect = false;
+
+                int status = con.getResponseCode();
+                if (status != HttpURLConnection.HTTP_OK) {
+                    if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+                        redirect = true;
+                }
+
+                if (redirect) {
+                    String newUrl = con.getHeaderField("Location");
+                    String cookies = con.getHeaderField("Set-Cookie");
+
+                    con = (HttpURLConnection) new URL(newUrl).openConnection();
+                    con.setRequestProperty("Cookie", cookies);
+                }
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                String inputLine;
+                StringBuilder response = new StringBuilder();
+                while ((inputLine = br.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                br.close();
+                JSONTokener parser = new JSONTokener(response.toString());
+                JSONObject result = new JSONObject(parser);
+
+                if (result.has("reserved")) {
+                    geo = "Local IP";
+                    geocode = "LC";
+                    lang = "en";
+                } else {
+                    geo = result.getString("country_name");
+                    geocode = result.getString("country");
+                    lang = result.getString("languages").substring(0, 1);
+                }
+            } catch (IOException e) {
+                geo = "invalid";
+                geocode = "invalid";
+                lang = "en";
+            }
+            writeData("UPDATE players SET country_name = '"+geo+"', country = '"+geocode+"', lang = '"+lang+"' WHERE uuid = '"+player.uuid+"'");
+        }
     }
 }
