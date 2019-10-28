@@ -6,13 +6,13 @@ import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.net.Administration;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +27,53 @@ public class Client implements Runnable{
     private static BufferedReader br;
     private static BufferedWriter bw;
     private static boolean serverconn;
+
+    public static void update(){
+        HttpURLConnection con;
+        try {
+            String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
+            URL url = new URL(apiURL);
+            con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Content-length", "0");
+            con.setUseCaches(false);
+            con.setAllowUserInteraction(false);
+            con.setConnectTimeout(3000);
+            con.setReadTimeout(3000);
+            con.connect();
+            int status = con.getResponseCode();
+            StringBuilder response = new StringBuilder();
+
+            switch (status) {
+                case 200:
+                case 201:
+                    BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        response.append(line).append("\n");
+                    }
+                    br.close();
+                    con.disconnect();
+            }
+
+            JSONTokener parser = new JSONTokener(response.toString());
+            JSONObject object = new JSONObject(parser);
+
+            DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
+            DefaultArtifactVersion current = new DefaultArtifactVersion("5.0");
+
+            if(latest.compareTo(current) > 0){
+                Global.log("New version found!");
+            } else if(latest.compareTo(current) == 0){
+                Global.log("Current version is up to date.");
+            } else if(latest.compareTo(current) < 0){
+                Global.log("You're using development version!");
+            }
+
+        } catch (Exception e){
+            printStackTrace(e);
+        }
+    }
 
     public void main(String option, Player player, String message){
         if(!serverconn){

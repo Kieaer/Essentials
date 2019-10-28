@@ -4,7 +4,6 @@ import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
 import essentials.special.Vote;
-import essentials.thread.Update;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -17,7 +16,7 @@ import io.anuke.mindustry.content.UnitTypes;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
-import io.anuke.mindustry.game.EventType;
+import io.anuke.mindustry.game.EventType.*;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
@@ -49,11 +48,22 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 
-import static essentials.EssentialConfig.*;
+import static essentials.EssentialConfig.antivpn;
+import static essentials.EssentialConfig.banshare;
+import static essentials.EssentialConfig.clientenable;
+import static essentials.EssentialConfig.detectreactor;
+import static essentials.EssentialConfig.enableantirush;
+import static essentials.EssentialConfig.executorService;
+import static essentials.EssentialConfig.jumpzone;
+import static essentials.EssentialConfig.logging;
+import static essentials.EssentialConfig.loginenable;
+import static essentials.EssentialConfig.realname;
+import static essentials.EssentialConfig.serverenable;
+import static essentials.EssentialConfig.update;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.*;
+import static essentials.net.Client.update;
 import static essentials.special.Vote.isvoting;
 import static essentials.special.Vote.require;
 import static io.anuke.arc.util.Log.err;
@@ -96,7 +106,7 @@ public class Main extends Plugin{
 		// Update check
 		if(update) {
 			Global.log("Update checking...");
-			Update.main();
+			update();
 		}
 
 		// DB Upgrade check
@@ -117,7 +127,7 @@ public class Main extends Plugin{
 			netServer.sendWorldData(e.player);
 		});
 
-		Events.on(EventType.GameOverEvent.class, e -> {
+		Events.on(GameOverEvent.class, e -> {
 			if(Vars.state.rules.pvp){
 				if(playerGroup != null && playerGroup.size() > 0) {
 					for (int i = 0; i < playerGroup.size(); i++) {
@@ -140,7 +150,7 @@ public class Main extends Plugin{
 			}
 		});
 
-		Events.on(EventType.WorldLoadEvent.class, e -> {
+		Events.on(WorldLoadEvent.class, e -> {
 		    EssentialTimer.playtime = "00:00.00";
 
             // Reset powernode information
@@ -148,11 +158,11 @@ public class Main extends Plugin{
         });
 
 		powerblock = new JSONArray();
-		Events.on(EventType.PlayerConnect.class, e -> {
+		Events.on(PlayerConnect.class, e -> {
 
 		});
 
-		Events.on(EventType.DepositEvent.class, e -> {
+		Events.on(DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
 				nukeblock.put(e.tile.entity.tileX()+"/"+e.tile.entity.tileY()+"/"+e.player.name);
 				Thread t = new Thread(() -> {
@@ -166,7 +176,7 @@ public class Main extends Plugin{
 							NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
 							if (entity.heat >= 0.01) {
 								Thread.sleep(50);
-								Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+								Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!\n");
 
 								Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
 								String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
@@ -176,7 +186,7 @@ public class Main extends Plugin{
 							} else {
 								Thread.sleep(1950);
 								if (entity.heat >= 0.01) {
-									Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!");
+									Call.sendMessage("[scarlet]ALERT! " + builder + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!\n");
 
 									Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log")));
 									String text = gettime() + builder + " put thorium in Thorium Reactor without Cryofluid.";
@@ -194,7 +204,7 @@ public class Main extends Plugin{
 			}
 		});
 
-        Events.on(EventType.PlayerJoin.class, e -> {
+        Events.on(PlayerJoin.class, e -> {
         	if(loginenable){
 				e.player.isAdmin = false;
 
@@ -285,13 +295,13 @@ public class Main extends Plugin{
 			}
 		});
 
-		Events.on(EventType.PlayerLeave.class, e -> {
+		Events.on(PlayerLeave.class, e -> {
 			if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()){
 				writeData("UPDATE players SET connected = '0' WHERE uuid = '"+e.player.uuid+"'");
 			}
 		});
 
-		Events.on(EventType.PlayerChatEvent.class, e -> {
+		Events.on(PlayerChatEvent.class, e -> {
 			String check = String.valueOf(e.message.charAt(0));
 			//check if command
 			if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
@@ -341,7 +351,7 @@ public class Main extends Plugin{
 			}
 		});
 
-		Events.on(EventType.BlockBuildEndEvent.class, e -> {
+		Events.on(BlockBuildEndEvent.class, e -> {
 			if (!e.breaking && e.player != null && e.player.buildRequest() != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
 				Thread expthread = new Thread(() -> {
 					JSONObject db = getData(e.player.uuid);
@@ -406,7 +416,7 @@ public class Main extends Plugin{
 			}
 		});
 
-		Events.on(EventType.BuildSelectEvent.class, e -> {
+		Events.on(BuildSelectEvent.class, e -> {
 		    if(e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                 if (e.breaking) {
 					JSONObject db = getData(((Player) e.builder).uuid);
@@ -454,11 +464,12 @@ public class Main extends Plugin{
 							printStackTrace(ex);
 						}
 					}
+
                 }
             }
 		});
 
-		Events.on(EventType.UnitDestroyEvent.class, e -> {
+		Events.on(UnitDestroyEvent.class, e -> {
 			if(e.unit instanceof Player){
 				Player player = (Player)e.unit;
                 JSONObject db = getData(player.uuid);
@@ -493,29 +504,9 @@ public class Main extends Plugin{
 		});
 		*/
 
-		TimerTask alert = new TimerTask() {
-			@Override
-			public void run() {
-				Thread.currentThread().setName("Login alert thread");
-				if (playerGroup.size() > 0) {
-					for (int i = 0; i < playerGroup.size(); i++) {
-						Player player = playerGroup.all().get(i);
-						if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-							String message1 = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-									"If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].";
-							String message2 = "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-									"만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
-							player.sendMessage(message1);
-							player.sendMessage(message2);
-						}
-					}
-				}
-			}
-		};
-
 		if(loginenable){
 			Timer alerttimer = new Timer(true);
-			alerttimer.scheduleAtFixedRate(alert, 60000, 60000);
+			alerttimer.scheduleAtFixedRate(new EssentialTimer.login(), 60000, 60000);
 		}
 
 		EssentialTimer job = new EssentialTimer();

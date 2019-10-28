@@ -43,7 +43,7 @@ class EssentialTR {
                                         break;
                                     }
                                 }
-                                if(found && data.getBoolean("translate")){
+                                if(found){
                                     url = new URL("https://openapi.naver.com/v1/papago/n2mt");
                                     c = (HttpURLConnection) url.openConnection();
                                     c.setRequestMethod("POST");

@@ -20,10 +20,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +36,7 @@ public class EssentialPlayer{
     public static Connection conn;
     private static boolean loginresult;
     private static boolean registerresult;
+    private static ArrayList<Thread> griefthread = new ArrayList<>();
 
     static void createNewDataFile(){
         try {
@@ -723,5 +722,8 @@ public class EssentialPlayer{
             Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }
+
+        //Thread checkgrief = new Thread(() -> new EssentialTimer.checkgrief(player));
+        //checkgrief.start();
     }
 }
