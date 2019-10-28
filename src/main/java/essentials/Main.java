@@ -942,7 +942,8 @@ public class Main extends Plugin{
 			}
 		});
 
-
+		handler.removeCommand("votekick");
+		/*
 		handler.<Player>register("votekick", "Player kick starts voting.", (arg, player) -> {
 			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -957,6 +958,7 @@ public class Main extends Plugin{
 			}
 			vote.main(player, "kick", other.name);
 		});
+		 */
 
 		handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {

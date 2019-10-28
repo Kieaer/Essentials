@@ -14,10 +14,13 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static essentials.EssentialConfig.*;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
+import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Client implements Runnable{
     public Socket socket;
@@ -94,7 +97,14 @@ public class Client implements Runnable{
                 Global.log(socket.getRemoteSocketAddress().toString());
 
                 if(data.matches("\\[(.*)]:.*")){
-                    Call.sendMessage("[#C77E36][RC] "+data);
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player player = playerGroup.all().get(i);
+                        Pattern p = Pattern.compile("\\[(.*?)]");
+                        Matcher m = p.matcher(data);
+                        if(!m.group().equals(player.name)){
+                            Call.sendMessage("[#C77E36][RC] "+data);
+                        }
+                    }
                 } else if(banshare){
                     try{
                         JSONTokener test = new JSONTokener(data);

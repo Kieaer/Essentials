@@ -43,12 +43,12 @@ class EssentialTR {
                                         break;
                                     }
                                 }
-                                if(found){
+                                if(found && data.getBoolean("translate")){
                                     url = new URL("https://openapi.naver.com/v1/papago/n2mt");
                                     c = (HttpURLConnection) url.openConnection();
                                     c.setRequestMethod("POST");
-                                    c.setRequestProperty("X-Naver-Client-Id", clientId);
-                                    c.setRequestProperty("X-Naver-Client-Secret", clientSecret);
+                                    c.setRequestProperty("X-NCP-APIGW-API-KEY-ID", clientId);
+                                    c.setRequestProperty("X-NCP-APIGW-API-KEY", clientSecret);
                                     String postParams;
                                     if(orignal.equals("zh")){
                                         if(data.getString("language").equals("zh")){
@@ -59,18 +59,24 @@ class EssentialTR {
                                     } else {
                                         postParams = "source="+orignaldata.getString("language")+"&target="+data.getString("language")+"&text=" + message;
                                     }
+                                    c.setDoOutput(true);
                                     DataOutputStream wr = new DataOutputStream(c.getOutputStream());
                                     wr.writeBytes(postParams);
                                     wr.flush();
                                     wr.close();
-                                    in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
+                                    int response = c.getResponseCode();
+                                    if(response == 200) {
+                                        in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
+                                    } else {
+                                        in = new BufferedReader(new InputStreamReader(c.getErrorStream(), StandardCharsets.UTF_8));
+                                    }
                                     StringBuilder rb = new StringBuilder();
                                     String inputLine;
                                     while ((inputLine = in.readLine()) != null) {
                                         rb.append(inputLine);
                                     }
                                     in.close();
-                                    int response = c.getResponseCode();
+
                                     if(response == 200){
                                         JSONTokener token = new JSONTokener(rb.toString());
                                         JSONObject object = new JSONObject(token);
@@ -78,6 +84,8 @@ class EssentialTR {
                                         if (data.getBoolean("translate")) {
                                             p.sendMessage("[green]"+player.name + "[orange]: [white]" + result);
                                         }
+                                    } else {
+                                        Global.logw(rb.toString());
                                     }
                                 }
                             }

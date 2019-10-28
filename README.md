@@ -16,6 +16,7 @@ Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
 - [x] Fix vote
 - [x] Fix server to server (https://github.com/Anuken/Mindustry/pull/896)
   - [x] Update client (It need game client update)
+- [ ] Improved detection of griefing
 
 ## 5.0 version plans
 - [x] Vote

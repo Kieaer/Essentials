@@ -27,10 +27,9 @@ import static io.anuke.mindustry.Vars.*;
 public class Vote{
     private Player player;
     private Player target;
-    public String mode;
     public static boolean isvoting;
     public static ArrayList<String> list = new ArrayList<>();
-    public static int require = (int) Math.ceil(0.4 * playerGroup.size());
+    public static int require = (int) Math.ceil(0.35 * playerGroup.size());
 
     public void main(Player player, String type, String target){
         this.player = player;
@@ -49,7 +48,6 @@ public class Vote{
             case "gameover":
                 if(!isvoting){
                     isvoting = true;
-                    list.add(player.uuid);
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player others = playerGroup.all().get(i);
                         bundle(others, "vote-gameover");
@@ -62,7 +60,6 @@ public class Vote{
             case "skipwave":
                 if(!isvoting){
                     isvoting = true;
-                    list.add(player.uuid);
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player others = playerGroup.all().get(i);
                         bundle(others, "vote-skipwave");
@@ -75,7 +72,6 @@ public class Vote{
             case "kick":
                 if(!isvoting){
                     isvoting = true;
-                    list.add(player.uuid);
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player others = playerGroup.all().get(i);
                         bundle(others, "vote-kick");
@@ -92,10 +88,10 @@ public class Vote{
 
     public static final Thread counting = new Thread(() -> {
         if (playerGroup != null && playerGroup.size() > 0) {
-            Thread loop = new Thread(() -> {
+            Thread work = null;
                 for (int i = 0; i < playerGroup.size(); i++) {
                     int finalI = i;
-                    Thread work = new Thread(() -> {
+                    work = new Thread(() -> {
                         Player others = playerGroup.all().get(finalI);
                         JSONObject db1 = getData(others.uuid);
                         if (db1.get("country_code") == "KR") {
@@ -134,12 +130,11 @@ public class Vote{
                     });
                     work.start();
                 }
-            });
-            loop.start();
             try {
                 Thread.sleep(60000);
             } catch (InterruptedException e) {
-                loop.interrupt();
+                assert work != null;
+                work.interrupt();
             }
         }
     });
@@ -157,7 +152,7 @@ public class Vote{
             } else {
                 Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
             }
-            list = new ArrayList<>();
+            list.clear();
             isvoting = false;
         }
     });
@@ -177,7 +172,7 @@ public class Vote{
             } else {
                 Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
             }
-            list = new ArrayList<>();
+            list.clear();
             isvoting = false;
         }
     });
@@ -215,7 +210,7 @@ public class Vote{
                         bundle(others, "vote-failed");
                     }
                 }
-                list = new ArrayList<>();
+                list.clear();
                 isvoting = false;
             }
         } else {

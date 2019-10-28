@@ -10,7 +10,6 @@ import io.anuke.mindustry.core.Version;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.net.Administration;
 import io.anuke.mindustry.type.Item;
 import io.anuke.mindustry.type.ItemType;
@@ -94,25 +93,17 @@ public class Server implements Runnable {
 
                     if (data.matches("GET /.*")) {
                         Global.log("server HTTP!");
-
                         httpserver(data);
                     } else if (data.matches("\\[(.*)]:.*")) {
                         Global.log("server chat!");
-
                         String msg = data.replaceAll("\n", "");
                         Global.logs("Received message from " + remoteip + ": " + msg);
-                        Call.sendMessage("[#C77E36][RC] " + msg);
-                        if (!remoteip.equals(clienthost)) {
-                            Global.logs("[EssentialsChat] ALERT! This message isn't received from " + clienthost + "!!");
-                            Global.logs("[EssentialsChat] Message is " + data);
-
-                            for (int i = 0; i < playerGroup.size(); i++) {
-                                Player p = playerGroup.all().get(i);
-                                if (p.isAdmin) {
-                                    p.sendMessage("[#C77E36][" + remoteip + "][RC] " + data);
-                                } else {
-                                    p.sendMessage("[#C77E36][RC] " + data);
-                                }
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player p = playerGroup.all().get(i);
+                            if (p.isAdmin) {
+                                p.sendMessage("[#C77E36][" + remoteip + "][RC] " + data);
+                            } else {
+                                p.sendMessage("[#C77E36][RC] " + data);
                             }
                         }
 
