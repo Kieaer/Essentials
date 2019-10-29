@@ -170,7 +170,9 @@ public class Server implements Runnable {
                         Global.logs(remoteip + " Client disconnected");
                         return;
                     }
+                    printStackTrace(e);
                     Global.log(msg);
+                    return;
                 }
             }
         }
