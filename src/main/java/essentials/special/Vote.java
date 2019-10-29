@@ -25,21 +25,21 @@ import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.*;
 
 public class Vote{
-    private Player player;
-    private Player target;
+    private static Player player;
+    private static Player target;
     public static boolean isvoting;
     public static ArrayList<String> list = new ArrayList<>();
-    public static int require = (int) Math.ceil(0.35 * playerGroup.size());
+    public static int require = (int) Math.ceil(0.5 * playerGroup.size());
 
     public void main(Player player, String type, String target){
-        this.player = player;
+        Vote.player = player;
         if(target != null){
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(target));
             if(other != null){
-                this.target = other;
+                Vote.target = other;
             }
         }
-        if(playerGroup.size() < 3){
+        if(playerGroup.size() <= 3){
             bundle(player, "vote-min");
             return;
         }
@@ -139,7 +139,7 @@ public class Vote{
         }
     });
 
-    private final Thread gameover = new Thread(() -> {
+    public static final Thread gameover = new Thread(() -> {
         try {
             Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
             counting.start();
@@ -157,7 +157,7 @@ public class Vote{
         }
     });
 
-    private final Thread skipwave = new Thread(() -> {
+    public static final Thread skipwave = new Thread(() -> {
         try {
             Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
             counting.start();
@@ -177,7 +177,7 @@ public class Vote{
         }
     });
 
-    private final Thread kick = new Thread(() -> {
+    public static final Thread kick = new Thread(() -> {
         if(target != null){
             try {
                 Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");

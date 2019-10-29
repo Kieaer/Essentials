@@ -1,5 +1,6 @@
 package essentials;
 
+import essentials.special.Vote;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.util.Log;
@@ -26,6 +27,7 @@ import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
 import static essentials.Global.printStackTrace;
+import static essentials.special.Vote.isvoting;
 import static io.anuke.mindustry.Vars.*;
 
 public class EssentialTimer extends TimerTask implements Runnable{
@@ -53,6 +55,10 @@ public class EssentialTimer extends TimerTask implements Runnable{
         // server to server monitoring
         Thread jumpzone = new jumpzone();
         jumpzone.start();
+
+        // server to server monitoring
+        Thread checkvote = new checkvote();
+        checkvote.start();
     }
 
     static class playtime extends Thread{
@@ -148,7 +154,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
                     cal1.add(Calendar.SECOND, 1);
                     playtime = format.format(cal1.getTime());
                     // Anti PvP rushing timer
-                    if(enableantirush && Vars.state.rules.pvp && cal1.after(antirushtime)) {
+                    if(enableantirush && Vars.state.rules.pvp && cal1.equals(antirushtime)) {
                         Call.sendMessage("[scarlet]== NOTICE ==");
                         Call.sendMessage("[green]Peace time is over!");
                         Call.sendMessage("[green]You can now attack other teams using your own mechs!");
@@ -345,6 +351,17 @@ public class EssentialTimer extends TimerTask implements Runnable{
                         player.sendMessage(message2);
                     }
                 }
+            }
+        }
+    }
+    static class checkvote extends Thread{
+        @Override
+        public void run() {
+            if(!isvoting){
+                Vote.counting.interrupt();
+                /*Vote.gameover.interrupt();
+                Vote.skipwave.interrupt();
+                Vote.kick.interrupt();*/
             }
         }
     }

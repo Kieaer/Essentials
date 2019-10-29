@@ -29,6 +29,9 @@ dependencies{
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
 
+    //compile "com.github.ariejan:slick2d:master-6a9d179731-1"
+    //compile "com.github.xaguzman:pathfinding:0.2.6"
+
     //compile files('C:/Users/cloud/Downloads/Mindustry-96/core/build/libs/core-release.jar')
     //compile files('C:/Users/cloud/Desktop/Arc-master/arc-core/build/libs/arc-core-1.0.jar')
 

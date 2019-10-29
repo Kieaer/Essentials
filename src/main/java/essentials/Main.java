@@ -343,7 +343,7 @@ public class Main extends Plugin{
 						Vote.list.add(e.player.uuid);
 						int current = Vote.list.size();
 						Call.sendMessage("[green][Essentials] " + current + " players voted. need " + (require - current) + " more players.");
-						if ((require - current) == 0) {
+						if ((require - current) <= 0) {
 							Vote.counting.interrupt();
 						}
 					}
@@ -1121,6 +1121,24 @@ public class Main extends Plugin{
 			player.setNet(other.x, other.y);
 		});
 
+		handler.<Player>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			int x;
+			int y;
+			try{
+				x = Integer.parseInt(arg[0]);
+				y = Integer.parseInt(arg[1]);
+			}catch (Exception ignored){
+				player.sendMessage("value must be number!");
+				return;
+			}
+			player.setNet(x, y);
+		});
+
 		handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -1531,7 +1549,7 @@ public class Main extends Plugin{
 		});
 
 		handler.<Player>register("test", "pathfinding test", (arg, player) -> {
-			if (player.isAdmin) {
+			/*if (player.isAdmin) {
 				Thread work = new Thread(() -> {
 					EssentialAI ai = new EssentialAI();
 
@@ -1546,12 +1564,13 @@ public class Main extends Plugin{
 						e.printStackTrace();
 					}
 					ai.target = world.tile(player.tileX(), player.tileY());
-					ai.auto();
+					ai.main();
 				});
 				work.start();
 			} else {
 				bundle(player, "notadmin");
-			}
+			}*/
+			player.sendMessage("a nothing");
 		});
 	}
 }
