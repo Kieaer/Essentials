@@ -255,30 +255,6 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
         @Override
         public void run(){
-            if(playerGroup.size() > 0) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player player = playerGroup.all().get(i);
-                    Thread work = new Thread(() -> {
-                        try{
-                            JSONObject db = getData(player.uuid);
-                            int destorycount = db.getInt("breakcount");
-                            try {
-                                Thread.sleep(20000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            int tempcount = db.getInt("breakcount");
-                            int result = tempcount - destorycount;
-                            if(result > 50){
-                                Call.sendMessage("[scarlet]ALERT! " + player.name + "[white] player is destroying an many blocks!");
-                            }
-                        }catch (Exception e){
-                            this.interrupt();
-                        }
-                    });
-                    work.start();
-                }
-            }
             // Important blocks
             impblock.add(Blocks.thoriumReactor);
             impblock.add(Blocks.impactReactor);

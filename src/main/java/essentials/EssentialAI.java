@@ -15,42 +15,109 @@ public class EssentialAI {
 
     public ArrayList<Tile> closed = new ArrayList<>();
     public ArrayList<Tile> opened = new ArrayList<>();
+    public ArrayList<Tile> path = new ArrayList<>();
 
     public boolean success;
 
-    public void main(){
+    public void tracking(){
+
+    }
+
+    public void auto(){
         closed.add(start);
         for (int rot = 0; rot < 4; rot++) {
             opened.add(start.getNearby(rot));
         }
+        // 완료되기 전까지 무한반복
         while(!success){
+            // 검색 가능한 블록 확인
             for(int a=0;a<opened.size();a++){
+                // 목표 블록이 맞는지 확인
                 if(opened.get(a) != target){
-                    int rangex = opened.get(a).x - target.x;
-                    int rangey = opened.get(a).y - target.y;
-                    for (int rot = 0; rot < 4; rot++) {
-                        if(opened.get(a).getNearby(rot) != target){
-                            opened.add(opened.get(a).getNearby(rot));
+                    // 현재 블록과 목표간의 거리 확인
+                    float rangex = Math.abs(opened.get(a).x - target.x);
+                    float rangey = Math.abs(opened.get(a).y - target.y);
 
-                            int tmpx;
-                            int tmpy;
-                            if(!closed.contains(opened.get(a))){
-                                tmpx = opened.get(a).getNearby(rot).x - target.x;
-                                tmpy = opened.get(a).getNearby(rot).y - target.y;
-                                if(tmpx > rangex || tmpy > rangey){
+                    // 가까운 4면 블록 확인
+                    for (int rot = 0; rot < 4; rot++) {
+                        boolean match = false;
+                        // 검색 가능한 블록이 맞는지 확인
+                        for(int i=0;i<closed.size();i++){
+                            if(opened.get(a) == closed.get(i)){
+                                match = true;
+                            }
+                        }
+
+                        // 검색 가능하고, 벽이 아닌지 확인
+                        if(!match && !opened.get(a).getNearby(rot).block().solid) {
+                            // 현재 검색블록 위치 표시
+                            Call.onConstructFinish(opened.get(a).getNearby(rot), Blocks.titaniumWall, 0, (byte) rot, Team.sharded, false);
+
+                            // 가까운 4면 블록중 목표 블럭이 맞는지 확인
+                            if (opened.get(a).getNearby(rot) != target) {
+                                // 현재 검색중인 블록 거리 확인
+                                float tmpx = Math.abs(opened.get(a).getNearby(rot).x - target.x);
+                                float tmpy = Math.abs(opened.get(a).getNearby(rot).y - target.y);
+
+                                // 목표와의 거리 확인
+                                if (tmpx > rangex || tmpy > rangey) {
+                                    // 거리가 더 멀어질경우 검색 대상에서 제외
                                     closed.add(opened.get(a).getNearby(rot));
+
+                                    // 거리가 더 멀어졌으니 검색 경로에서 제외
+                                    path.remove(opened.get(a).getNearby(rot));
+                                } else if(tmpx < rangex || tmpy < rangey){
+                                    // 검색 가능한 블록으로 등록
+                                    opened.add(opened.get(a).getNearby(rot));
+
+                                    // 거리가 가까워 졌으니 검색 경로에 등록
+                                    path.add(opened.get(a).getNearby(rot));
+
+                                    // 현재 검색된 블럭을 메타벽으로 확인
+                                    Call.onConstructFinish(opened.get(a).getNearby(rot), Blocks.phaseWall, 0, (byte) rot, Team.sharded, false);
                                 } else {
-                                    Call.onConstructFinish(opened.get(a).getNearby(rot), Blocks.conveyor, 0, (byte) rot, Team.sharded, false);
+                                    // 망한 것들은 검색 대상에서 제외
+                                    closed.add(opened.get(a).getNearby(rot));
                                 }
+
                                 try {
-                                    Thread.sleep(10);
+                                    // 디버그를 위한 작업 지연
+                                    Thread.sleep(1);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
+                            } else if(opened.get(a).getNearby(rot) == target){
+                                // 목표 블럭이 맞을 때 구리 벽으로 확인
+                                Call.onConstructFinish(opened.get(a).getNearby(rot), Blocks.copperWall, 0, (byte) rot, Team.sharded, false);
+                                success = true;
+                                return;
                             }
                         }
                     }
                 } else {
+                    /*
+                    for(int b=0;b<path.size();b++) {
+                        float rangex = Math.abs(path.get(b).x - target.x);
+                        float rangey = Math.abs(path.get(b).y - target.y);
+
+                        // 목표 블럭간 경로를 컨베이어로 확인
+                        for (int i = 0; i < path.size(); i++) {
+                            for (int rot = 0; rot < 4; rot++) {
+                                float tmpx = Math.abs(path.get(b).x - target.x);
+                                float tmpy = Math.abs(path.get(b).y - target.y);
+
+                                // 목표와의 거리 확인
+                                if (tmpx < rangex || tmpy < rangey) {
+                                    Call.onConstructFinish(path.get(i), Blocks.conveyor, 0, (byte) rot, Team.sharded, false);
+                                }
+                            }
+                        }
+                    }
+
+                     */
+
+                    // 목표 블럭이 맞을때 처리
+                    Call.onConstructFinish(target, Blocks.surgeWall, 0, (byte) 0, Team.sharded, false);
                     Global.log("SUCCESS!");
                     success = true;
                     return;

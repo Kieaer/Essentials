@@ -1532,7 +1532,6 @@ public class Main extends Plugin{
 
 		handler.<Player>register("test", "pathfinding test", (arg, player) -> {
 			if (player.isAdmin) {
-				/*
 				Thread work = new Thread(() -> {
 					EssentialAI ai = new EssentialAI();
 
@@ -1547,11 +1546,9 @@ public class Main extends Plugin{
 						e.printStackTrace();
 					}
 					ai.target = world.tile(player.tileX(), player.tileY());
-					ai.main();
+					ai.auto();
 				});
 				work.start();
-				*/
-				player.sendMessage("[scarlet][경고] 이 명령어를 사용하지 마세요.");
 			} else {
 				bundle(player, "notadmin");
 			}
