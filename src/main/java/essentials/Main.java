@@ -45,7 +45,6 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
 
@@ -71,8 +70,6 @@ import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin{
-    private ArrayList<String> vote = new ArrayList<>();
-	private boolean voteactive;
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
 
@@ -636,67 +633,19 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
-		handler.register("sync", "<player>", "Force sync request from the target player", arg -> {
-			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-			if(other != null){
-				Call.onWorldDataBegin(other.con);
-				netServer.sendWorldData(other);
-			} else {
-				Global.logw("Player not found!");
-			}
-		});
-
-		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
-			int bantimeset = Integer.parseInt(arg[1]);
-			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-			addtimeban(other.name, other.uuid, bantimeset);
-			switch (arg[0]) {
-				case "id":
-					netServer.admins.banPlayerID(arg[1]);
-					break;
-				case "name":
-					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-					if (target != null) {
-						netServer.admins.banPlayer(target.uuid);
-						Global.log("banned the "+other.name+" player for "+arg[1]+" hour.");
-					} else {
-						err("No matches found.");
-					}
-					break;
-				case "ip":
-					netServer.admins.banPlayerIP(arg[1]);
-					Global.log("banned the "+other.name+" player for "+arg[1]+" hour.");
-					break;
-				default:
-					err("Invalid type.");
-					break;
-			}
-		});
-
-        handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
-			if(arg[0].equals("add")){
-				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
-				JSONTokener parser = new JSONTokener(db);
-				JSONArray object = new JSONArray(parser);
-				object.put(arg[1]);
-				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
-				Global.log("The "+arg[1]+" nickname has been added to the blacklist.");
-			} else if (arg[0].equals("remove")) {
-				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
-				JSONTokener parser = new JSONTokener(db);
-				JSONArray object = new JSONArray(parser);
-				for (int i = 0; i < object.length(); i++) {
-					if (object.get(i).equals(arg[1])) {
-						object.remove(i);
-					}
+		handler.register("admin", "<name>","Set admin status to player", (arg) -> {
+			Thread t = new Thread(() -> {
+				Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+				if(other == null){
+					Global.loge("Player not found!");
+				} else {
+					writeData("UPDATE players SET isadmin = 1 WHERE uuid = '"+other.uuid+"'");
+					other.isAdmin = true;
+					Global.log("Done!");
 				}
-				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
-				Global.log(""+arg[1]+" nickname deleted from blacklist.");
-			} else {
-				Global.logw("Unknown parameter! Use blacklist <add/remove> <nickname>.");
-			}
-        });
-
+			});
+			t.start();
+		});
 		handler.register("allinfo", "<name>", "Show player information", (arg) -> {
 			Thread t = new Thread(() -> {
 				try{
@@ -734,84 +683,6 @@ public class Main extends Plugin{
 			});
 			t.start();
 		});
-
-		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
-			if(!serverenable){
-				if(banshare){
-					String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
-					JSONTokener parser = new JSONTokener(db);
-					JSONObject object = new JSONObject(parser);
-					object.put("banall", "true");
-					Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
-					Client client = new Client();
-					client.main("bansync", null, null);
-				} else {
-					Global.logw("Ban sharing has been disabled!");
-				}
-			} else {
-				Global.logw("The server can't ban sharing!");
-			}
-		});
-
-		handler.register("pvp", "<anticoal/timer> [time...]", "Set gamerule with PvP mode.", arg -> {
-			/*
-			if(Vars.state.rules.pvp){
-				switch(arg[0]){
-					case "anticoal":
-						break;
-					case "timer":
-						break;
-					default:
-						break;
-				}
-			}
-			*/
-			Global.log("Currently not supported!");
-		});
-
-		handler.register("team","[name]", "Change target player team", (arg) -> {
-			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-			if(other != null){
-				int i = other.getTeam().ordinal()+1;
-				while(i != other.getTeam().ordinal()){
-					if (i >= Team.all.length) i = 0;
-					if(!state.teams.get(Team.all[i]).cores.isEmpty()){
-						other.setTeam(Team.all[i]);
-						break;
-					}
-					i++;
-				}
-				other.kill();
-			} else {
-				Global.log("Player not found!");
-			}
-		});
-
-		handler.register("nick", "<name> <newname...>", "Show player information", (arg) -> {
-			try{
-				writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
-				Global.log(arg[0]+" player's nickname has been changed to "+arg[1]+".");
-			}catch (Exception e){
-				printStackTrace(e);
-				Global.log("Invalid nickname!");
-			}
-		});
-
-		handler.register("admin", "<name>","Set admin status to player", (arg) -> {
-			Thread t = new Thread(() -> {
-				Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-				if(other == null){
-					Global.loge("Player not found!");
-				} else {
-					writeData("UPDATE players SET isadmin = 1 WHERE uuid = '"+other.uuid+"'");
-					other.isAdmin = true;
-					Global.log("Done!");
-				}
-			});
-			t.start();
-		});
-
-		// Override ban command
 		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
 			Client client = new Client();
 			switch (arg[0]) {
@@ -853,7 +724,46 @@ public class Main extends Plugin{
 				}
 			}
 		});
-
+		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
+			if(!serverenable){
+				if(banshare){
+					String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
+					JSONTokener parser = new JSONTokener(db);
+					JSONObject object = new JSONObject(parser);
+					object.put("banall", "true");
+					Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+					Client client = new Client();
+					client.main("bansync", null, null);
+				} else {
+					Global.logw("Ban sharing has been disabled!");
+				}
+			} else {
+				Global.logw("The server can't ban sharing!");
+			}
+		});
+		handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
+			if(arg[0].equals("add")){
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
+				JSONTokener parser = new JSONTokener(db);
+				JSONArray object = new JSONArray(parser);
+				object.put(arg[1]);
+				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Global.log("The "+arg[1]+" nickname has been added to the blacklist.");
+			} else if (arg[0].equals("remove")) {
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
+				JSONTokener parser = new JSONTokener(db);
+				JSONArray object = new JSONArray(parser);
+				for (int i = 0; i < object.length(); i++) {
+					if (object.get(i).equals(arg[1])) {
+						object.remove(i);
+					}
+				}
+				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Global.log(""+arg[1]+" nickname deleted from blacklist.");
+			} else {
+				Global.logw("Unknown parameter! Use blacklist <add/remove> <nickname>.");
+			}
+		});
 		handler.register("jumpreset", "Clear a server-to-server jumping zone data.", arg -> {
 			for (int i = 0; i < jumpzone.length(); i++) {
 				String jumpdata = jumpzone.getString(i);
@@ -894,111 +804,158 @@ public class Main extends Plugin{
 			jumpzone = new JSONArray();
 			Global.log("Data reseted!");
 		});
-
-		handler.register("kill", "<username>", "Kill target player", arg -> {
-            Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-            if(other != null){
-                other.kill();
-            } else {
-                Global.log("Player not found!");
-            }
-        });
-
 		handler.register("kickall", "Kick all players",  arg -> {
 			Vars.netServer.kickAll(KickReason.valueOf("All kick players by administrator."));
 			Global.log("It's done.");
+		});
+		handler.register("kill", "<username>", "Kill target player", arg -> {
+			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			if(other != null){
+				other.kill();
+			} else {
+				Global.log("Player not found!");
+			}
+		});
+		handler.register("nick", "<name> <newname...>", "Show player information", (arg) -> {
+			try{
+				writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
+				Global.log(arg[0]+" player's nickname has been changed to "+arg[1]+".");
+			}catch (Exception e){
+				printStackTrace(e);
+				Global.log("Invalid nickname!");
+			}
+		});
+		handler.register("pvp", "<anticoal/timer> [time...]", "Set gamerule with PvP mode.", arg -> {
+			/*
+			if(Vars.state.rules.pvp){
+				switch(arg[0]){
+					case "anticoal":
+						break;
+					case "timer":
+						break;
+					default:
+						break;
+				}
+			}
+			*/
+			Global.log("Currently not supported!");
+		});
+		handler.register("sync", "<player>", "Force sync request from the target player", arg -> {
+			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			if(other != null){
+				Call.onWorldDataBegin(other.con);
+				netServer.sendWorldData(other);
+			} else {
+				Global.logw("Player not found!");
+			}
+		});
+		handler.register("team","[name]", "Change target player team", (arg) -> {
+			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			if(other != null){
+				int i = other.getTeam().ordinal()+1;
+				while(i != other.getTeam().ordinal()){
+					if (i >= Team.all.length) i = 0;
+					if(!state.teams.get(Team.all[i]).cores.isEmpty()){
+						other.setTeam(Team.all[i]);
+						break;
+					}
+					i++;
+				}
+				other.kill();
+			} else {
+				Global.log("Player not found!");
+			}
+		});
+		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
+			int bantimeset = Integer.parseInt(arg[1]);
+			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			addtimeban(other.name, other.uuid, bantimeset);
+			switch (arg[0]) {
+				case "id":
+					netServer.admins.banPlayerID(arg[1]);
+					break;
+				case "name":
+					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+					if (target != null) {
+						netServer.admins.banPlayer(target.uuid);
+						Global.log("banned the "+other.name+" player for "+arg[1]+" hour.");
+					} else {
+						err("No matches found.");
+					}
+					break;
+				case "ip":
+					netServer.admins.banPlayerIP(arg[1]);
+					Global.log("banned the "+other.name+" player for "+arg[1]+" hour.");
+					break;
+				default:
+					err("Invalid type.");
+					break;
+			}
 		});
 	}
 
 	@Override
 	public void registerClientCommands(CommandHandler handler) {
-		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
-			if (loginenable) {
-				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-					player.sendMessage("[green][Essentials] [orange]You are already logged in");
-					return;
-				}
-
-				if (EssentialPlayer.login(player, arg[0], arg[1])) {
-					player.sendMessage("[green][Essentials] [orange]Login success!");
-					EssentialPlayer.load(player, arg[0]);
-				} else {
-					player.sendMessage("[green][Essentials] [scarlet]Login failed!");
-				}
-			} else {
-				Global.log("Server isn't using Login features.");
-			}
-		});
-
-		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player) -> {
-			if (loginenable) {
-				if (EssentialPlayer.register(player, arg[0], arg[1], arg[2])) {
-					if (Vars.state.rules.pvp) {
-						int index = player.getTeam().ordinal() + 1;
-						while (index != player.getTeam().ordinal()) {
-							if (index >= Team.all.length) {
-								index = 0;
-							}
-							if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
-								player.setTeam(Team.all[index]);
-								break;
-							}
-							index++;
-						}
-						Call.onPlayerDeath(player);
-						player.sendMessage("[green][Essentials] [orange]Account register success!");
-					} else {
-						player.setTeam(Vars.defaultTeam);
-						Call.onPlayerDeath(player);
-						player.sendMessage("[green][Essentials] [orange]Account register success!");
-					}
-				} else {
-					player.sendMessage("[green][Essentials] [scarlet]Register failed!");
-				}
-			} else {
-				Global.log("Server isn't using Login features.");
-			}
-		});
-
 		handler.removeCommand("votekick");
-		/*
-		handler.<Player>register("votekick", "Player kick starts voting.", (arg, player) -> {
-			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
 
-			Vote vote = new Vote();
-			Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-			if (other == null) {
-				bundle(player, "player-not-found");
-				return;
-			}
-			vote.main(player, "kick", other.name);
-		});
-		 */
-
-		handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
+		handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
 				return;
 			}
 
 			JSONObject db = getData(player.uuid);
-			String motd;
-			if (db.getString("language").equals("KR")) {
-				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").readString();
+			boolean value = (boolean) db.get("crosschat");
+			int set;
+			if (!value) {
+				set = 1;
+				bundle(player, "crosschat");
 			} else {
-				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").readString();
+				set = 0;
+				bundle(player, "crosschat-disable");
 			}
-			int count = motd.split("\r\n|\r|\n").length;
-			if (count > 10) {
-				Call.onInfoMessage(player.con, motd);
+
+			writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
+		});
+		handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			if (!player.isAdmin) {
+				bundle(player, "notadmin");
 			} else {
-				player.sendMessage(motd);
+				JSONObject db = getData(player.uuid);
+				boolean value = (boolean) db.get("colornick");
+				int set;
+				if (!value) {
+					set = 1;
+					bundle(player, "colornick");
+				} else {
+					set = 0;
+					bundle(player, "colornick-disable");
+				}
+				writeData("UPDATE players SET colornick = '" + set + "' WHERE uuid = '" + player.uuid + "'");
 			}
 		});
+		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
 
+			if (!player.isAdmin) {
+				bundle(player, "notadmin");
+			} else {
+				try {
+					Difficulty.valueOf(arg[0]);
+					player.sendMessage("Difficulty set to '" + arg[0] + "'.");
+				} catch (IllegalArgumentException e) {
+					player.sendMessage("No difficulty with name '" + arg[0] + "' found.");
+				}
+			}
+		});
 		handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -1007,7 +964,6 @@ public class Main extends Plugin{
 
 			player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
 		});
-
 		handler.<Player>register("info", "Show your information", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -1066,106 +1022,58 @@ public class Main extends Plugin{
 			}
 			Call.onInfoMessage(player.con, datatext);
 		});
-
-		handler.<Player>register("status", "Show server status", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			player.sendMessage("[#DEA82A]Server status[]");
-			player.sendMessage("[#2B60DE]========================================[]");
-			float fps = Math.round((int) 60f / Time.delta());
-			player.sendMessage(fps + "TPS, " + Vars.playerGroup.size() + " players online.");
-			int idb = 0;
-			int ipb = 0;
-
-			Array<PlayerInfo> bans = Vars.netServer.admins.getBanned();
-			for (PlayerInfo ignored : bans) {
-				idb++;
-			}
-
-			Array<String> ipbans = Vars.netServer.admins.getBannedIPs();
-			for (String ignored : ipbans) {
-				ipb++;
-			}
-			int bancount = idb + ipb;
-			player.sendMessage("Total [scarlet]" + bancount + "[](" + idb + "/" + ipb + ") players banned.");
-			player.sendMessage("World playtime: " + EssentialTimer.playtime);
-			player.sendMessage("Server uptime: " + EssentialTimer.uptime);
-		});
-
-		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			Player other1 = null;
-			Player other2 = null;
-			for (Player p : playerGroup.all()) {
-				boolean result1 = p.name.contains(arg[0]);
-				if (result1) {
-					other1 = p;
-				}
-				boolean result2 = p.name.contains(arg[1]);
-				if (result2) {
-					other2 = p;
-				}
-			}
-			if (!player.isAdmin) {
-				bundle(player, "notadmin");
-			} else {
-				if (other1 == null || other2 == null) {
-					bundle(player, "player-not-found");
+		handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
+			if(player.isAdmin){
+				int size;
+				try{
+					size = Integer.parseInt(arg[2]);
+				} catch (Exception ignored){
+					player.sendMessage("range value must be number!");
 					return;
 				}
-				if (!other1.isMobile || !other2.isMobile) {
-					other1.setNet(other2.x, other2.y);
-				} else {
-					bundle(player, "tp-ismobile");
+				int block;
+				try{
+					block = Integer.parseInt(arg[3]);
+				} catch (Exception ignored){
+					player.sendMessage("block-type must be number!");
+					return;
 				}
-			}
-		});
-
-		handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			Player other = null;
-			for (Player p : playerGroup.all()) {
-				boolean result = p.name.contains(arg[0]);
-				if (result) {
-					other = p;
+				Block target;
+				switch(block){
+					case 1:
+					default:
+						target = Blocks.metalFloor;
+						break;
+					case 2:
+						target = Blocks.metalFloor2;
+						break;
+					case 3:
+						target = Blocks.metalFloor3;
+						break;
+					case 4:
+						target = Blocks.metalFloor5;
+						break;
+					case 5:
+						target = Blocks.metalFloorDamaged;
+						break;
 				}
+				int xt = player.tileX();
+				int yt = player.tileY();
+				int tilexfinal = xt+size;
+				int tileyfinal = yt+size;
+
+				for(int x=0;x<size;x++){
+					for(int y=0;y<size;y++){
+						Tile tile = world.tile(xt+x, yt+y);
+						Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
+					}
+				}
+
+				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
+			} else {
+				bundle(player, "notadmin");
 			}
-			if (other == null) {
-				bundle(player, "player-not-found");
-				return;
-			}
-			player.setNet(other.x, other.y);
 		});
-
-		handler.<Player>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			int x;
-			int y;
-			try{
-				x = Integer.parseInt(arg[0]);
-				y = Integer.parseInt(arg[1]);
-			}catch (Exception ignored){
-				player.sendMessage("value must be number!");
-				return;
-			}
-			player.setNet(x, y);
-		});
-
 		handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -1178,88 +1086,6 @@ public class Main extends Plugin{
 				Vars.netServer.kickAll(KickReason.gameover);
 			}
 		});
-
-		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			if (!player.isAdmin) {
-				bundle(player, "notadmin");
-			} else {
-				Player other = null;
-				for (Player p : playerGroup.all()) {
-					boolean result = p.name.contains(arg[0]);
-					if (result) {
-						other = p;
-					}
-				}
-				if (other != null) {
-					int bantimeset = Integer.parseInt(arg[1]);
-					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
-					Call.sendMessage("Player" + other.name + " was killed (ban) by player " + player.name + "!");
-				} else {
-					bundle(player, "player-not-found");
-				}
-			}
-		});
-
-		handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			Call.sendMessage("[orange]*[] " + player.name + "[white] : " + arg[0]);
-		});
-
-		handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			if (!player.isAdmin) {
-				bundle(player, "notadmin");
-			} else {
-				try {
-					Difficulty.valueOf(arg[0]);
-					player.sendMessage("Difficulty set to '" + arg[0] + "'.");
-				} catch (IllegalArgumentException e) {
-					player.sendMessage("No difficulty with name '" + arg[0] + "' found.");
-				}
-			}
-		});
-
-		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-			Vote vote = new Vote();
-			if(arg.length == 2){
-				vote.main(player, arg[0], arg[1]);
-			} else {
-				vote.main(player, arg[0], null);
-			}
-		});
-
-		handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			Player.onPlayerDeath(player);
-			if (playerGroup != null && playerGroup.size() > 0) {
-				for (int i = 0; i < playerGroup.size(); i++) {
-					Player others = playerGroup.all().get(i);
-					bundle(others, "suicide");
-				}
-			}
-		});
-
 		handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -1277,7 +1103,80 @@ public class Main extends Plugin{
 				bundle(player, "notadmin");
 			}
 		});
+		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
+			if (loginenable) {
+				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+					player.sendMessage("[green][Essentials] [orange]You are already logged in");
+					return;
+				}
 
+				if (EssentialPlayer.login(player, arg[0], arg[1])) {
+					player.sendMessage("[green][Essentials] [orange]Login success!");
+					EssentialPlayer.load(player, arg[0]);
+				} else {
+					player.sendMessage("[green][Essentials] [scarlet]Login failed!");
+				}
+			} else {
+				Global.log("Server isn't using Login features.");
+			}
+		});
+		handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			Call.sendMessage("[orange]*[] " + player.name + "[white] : " + arg[0]);
+		});
+		handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			JSONObject db = getData(player.uuid);
+			String motd;
+			if (db.getString("language").equals("KR")) {
+				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").readString();
+			} else {
+				motd = Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").readString();
+			}
+			int count = motd.split("\r\n|\r|\n").length;
+			if (count > 10) {
+				Call.onInfoMessage(player.con, motd);
+			} else {
+				player.sendMessage(motd);
+			}
+		});
+		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player) -> {
+			if (loginenable) {
+				if (EssentialPlayer.register(player, arg[0], arg[1], arg[2])) {
+					if (Vars.state.rules.pvp) {
+						int index = player.getTeam().ordinal() + 1;
+						while (index != player.getTeam().ordinal()) {
+							if (index >= Team.all.length) {
+								index = 0;
+							}
+							if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
+								player.setTeam(Team.all[index]);
+								break;
+							}
+							index++;
+						}
+						Call.onPlayerDeath(player);
+						player.sendMessage("[green][Essentials] [orange]Account register success!");
+					} else {
+						player.setTeam(Vars.defaultTeam);
+						Call.onPlayerDeath(player);
+						player.sendMessage("[green][Essentials] [orange]Account register success!");
+					}
+				} else {
+					player.sendMessage("[green][Essentials] [scarlet]Register failed!");
+				}
+			} else {
+				Global.log("Server isn't using Login features.");
+			}
+		});
 		handler.<Player>register("save", "Map save", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
@@ -1293,113 +1192,6 @@ public class Main extends Plugin{
 				bundle(player, "notadmin");
 			}
 		});
-
-		handler.<Player>register("time", "Show server time", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			JSONObject db = getData(player.uuid);
-			LocalDateTime now = LocalDateTime.now();
-			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
-			String nowString = now.format(dateTimeFormatter);
-			if (db.getString("country_code").equals("KR")) {
-				player.sendMessage(EssentialBundle.load(true, "servertime") + " " + nowString);
-			} else {
-				player.sendMessage(EssentialBundle.load(false, "servertime") + " " + nowString);
-			}
-		});
-
-		handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			JSONObject db = getData(player.uuid);
-			boolean value = (boolean) db.get("translate");
-			int set;
-			if (!value) {
-				set = 1;
-				bundle(player, "translate");
-			} else {
-				set = 0;
-				bundle(player, "translate-disable");
-			}
-
-			writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
-		});
-
-		handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			JSONObject db = getData(player.uuid);
-			boolean value = (boolean) db.get("crosschat");
-			int set;
-			if (!value) {
-				set = 1;
-				bundle(player, "crosschat");
-			} else {
-				set = 0;
-				bundle(player, "crosschat-disable");
-			}
-
-			writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
-		});
-
-		handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			if (!player.isAdmin) {
-				bundle(player, "notadmin");
-			} else {
-				JSONObject db = getData(player.uuid);
-				boolean value = (boolean) db.get("colornick");
-				int set;
-				if (!value) {
-					set = 1;
-					bundle(player, "colornick");
-				} else {
-					set = 0;
-					bundle(player, "colornick-disable");
-				}
-				writeData("UPDATE players SET colornick = '" + set + "' WHERE uuid = '" + player.uuid + "'");
-			}
-		});
-
-		handler.<Player>register("team", "Change team (PvP only)", (arg, player) -> {
-			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-				return;
-			}
-
-			if (Vars.state.rules.pvp) {
-				if (player.isAdmin) {
-					int i = player.getTeam().ordinal() + 1;
-					while (i != player.getTeam().ordinal()) {
-						if (i >= Team.all.length) i = 0;
-						if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()) {
-							player.setTeam(Team.all[i]);
-							break;
-						}
-						i++;
-					}
-					player.kill();
-				} else {
-					bundle(player, "notadmin");
-				}
-			} else {
-				player.sendMessage("This command can use only PvP mode!");
-			}
-		});
-
 		handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
 			if(player.isAdmin) {
 				UnitType targetunit;
@@ -1521,57 +1313,210 @@ public class Main extends Plugin{
 				bundle(player, "notadmin");
 			}
 		});
+		handler.<Player>register("status", "Show server status", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
 
-		handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
-			if(player.isAdmin){
-				int size;
-				try{
-					size = Integer.parseInt(arg[2]);
-				} catch (Exception ignored){
-					player.sendMessage("range value must be number!");
-					return;
-				}
-				int block;
-				try{
-					block = Integer.parseInt(arg[3]);
-				} catch (Exception ignored){
-					player.sendMessage("block-type must be number!");
-					return;
-				}
-				Block target;
-				switch(block){
-					case 1:
-					default:
-						target = Blocks.metalFloor;
-						break;
-					case 2:
-						target = Blocks.metalFloor2;
-						break;
-					case 3:
-						target = Blocks.metalFloor3;
-						break;
-					case 4:
-						target = Blocks.metalFloor5;
-						break;
-					case 5:
-						target = Blocks.metalFloorDamaged;
-						break;
-				}
-				int xt = player.tileX();
-				int yt = player.tileY();
-				int tilexfinal = xt+size;
-				int tileyfinal = yt+size;
+			player.sendMessage("[#DEA82A]Server status[]");
+			player.sendMessage("[#2B60DE]========================================[]");
+			float fps = Math.round((int) 60f / Time.delta());
+			player.sendMessage(fps + "TPS, " + Vars.playerGroup.size() + " players online.");
+			int idb = 0;
+			int ipb = 0;
 
-				for(int x=0;x<size;x++){
-					for(int y=0;y<size;y++){
-						Tile tile = world.tile(xt+x, yt+y);
-						Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
+			Array<PlayerInfo> bans = Vars.netServer.admins.getBanned();
+			for (PlayerInfo ignored : bans) {
+				idb++;
+			}
+
+			Array<String> ipbans = Vars.netServer.admins.getBannedIPs();
+			for (String ignored : ipbans) {
+				ipb++;
+			}
+			int bancount = idb + ipb;
+			player.sendMessage("Total [scarlet]" + bancount + "[](" + idb + "/" + ipb + ") players banned.");
+			player.sendMessage("World playtime: " + EssentialTimer.playtime);
+			player.sendMessage("Server uptime: " + EssentialTimer.uptime);
+		});
+		handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			Player.onPlayerDeath(player);
+			if (playerGroup != null && playerGroup.size() > 0) {
+				for (int i = 0; i < playerGroup.size(); i++) {
+					Player others = playerGroup.all().get(i);
+					bundle(others, "suicide");
+				}
+			}
+		});
+		handler.<Player>register("team", "Change team (PvP only)", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			if (Vars.state.rules.pvp) {
+				if (player.isAdmin) {
+					int i = player.getTeam().ordinal() + 1;
+					while (i != player.getTeam().ordinal()) {
+						if (i >= Team.all.length) i = 0;
+						if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()) {
+							player.setTeam(Team.all[i]);
+							break;
+						}
+						i++;
+					}
+					player.kill();
+				} else {
+					bundle(player, "notadmin");
+				}
+			} else {
+				player.sendMessage("This command can use only PvP mode!");
+			}
+		});
+		handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			if (!player.isAdmin) {
+				bundle(player, "notadmin");
+			} else {
+				Player other = null;
+				for (Player p : playerGroup.all()) {
+					boolean result = p.name.contains(arg[0]);
+					if (result) {
+						other = p;
 					}
 				}
+				if (other != null) {
+					int bantimeset = Integer.parseInt(arg[1]);
+					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
+					Call.sendMessage("Player" + other.name + " was killed (ban) by player " + player.name + "!");
+				} else {
+					bundle(player, "player-not-found");
+				}
+			}
+		});
+		handler.<Player>register("time", "Show server time", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
 
-				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
+			JSONObject db = getData(player.uuid);
+			LocalDateTime now = LocalDateTime.now();
+			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
+			String nowString = now.format(dateTimeFormatter);
+			if (db.getString("country_code").equals("KR")) {
+				player.sendMessage(EssentialBundle.load(true, "servertime") + " " + nowString);
 			} else {
+				player.sendMessage(EssentialBundle.load(false, "servertime") + " " + nowString);
+			}
+		});
+		handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			Player other = null;
+			for (Player p : playerGroup.all()) {
+				boolean result = p.name.contains(arg[0]);
+				if (result) {
+					other = p;
+				}
+			}
+			if (other == null) {
+				bundle(player, "player-not-found");
+				return;
+			}
+			player.setNet(other.x, other.y);
+		});
+		handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			Player other1 = null;
+			Player other2 = null;
+			for (Player p : playerGroup.all()) {
+				boolean result1 = p.name.contains(arg[0]);
+				if (result1) {
+					other1 = p;
+				}
+				boolean result2 = p.name.contains(arg[1]);
+				if (result2) {
+					other2 = p;
+				}
+			}
+			if (!player.isAdmin) {
 				bundle(player, "notadmin");
+			} else {
+				if (other1 == null || other2 == null) {
+					bundle(player, "player-not-found");
+					return;
+				}
+				if (!other1.isMobile || !other2.isMobile) {
+					other1.setNet(other2.x, other2.y);
+				} else {
+					bundle(player, "tp-ismobile");
+				}
+			}
+		});
+		handler.<Player>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			int x;
+			int y;
+			try{
+				x = Integer.parseInt(arg[0]);
+				y = Integer.parseInt(arg[1]);
+			}catch (Exception ignored){
+				player.sendMessage("value must be number!");
+				return;
+			}
+			player.setNet(x, y);
+		});
+		handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			JSONObject db = getData(player.uuid);
+			boolean value = (boolean) db.get("translate");
+			int set;
+			if (!value) {
+				set = 1;
+				bundle(player, "translate");
+			} else {
+				set = 0;
+				bundle(player, "translate-disable");
+			}
+
+			writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
+		});
+		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+			Vote vote = new Vote();
+			if(arg.length == 2){
+				vote.main(player, arg[0], arg[1]);
+			} else {
+				vote.main(player, arg[0], null);
 			}
 		});
 
@@ -1599,5 +1544,21 @@ public class Main extends Plugin{
 			}*/
 			player.sendMessage("a nothing");
 		});
+		/*
+		handler.<Player>register("votekick", "Player kick starts voting.", (arg, player) -> {
+			if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+
+			Vote vote = new Vote();
+			Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			if (other == null) {
+				bundle(player, "player-not-found");
+				return;
+			}
+			vote.main(player, "kick", other.name);
+		});
+		 */
 	}
 }
