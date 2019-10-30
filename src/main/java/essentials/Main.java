@@ -894,6 +894,15 @@ public class Main extends Plugin{
 			jumpzone = new JSONArray();
 			Global.log("Data reseted!");
 		});
+
+		handler.register("kill", "<username>", "Kill target player", arg -> {
+            Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+            if(other != null){
+                other.kill();
+            } else {
+                Global.log("Player not found!");
+            }
+        });
 	}
 
 	@Override
