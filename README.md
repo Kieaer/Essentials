@@ -57,7 +57,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tpp | &lt;name&gt; &lt;another player name&gt; | Teleport player to other players |
 | tp | &lt;name&gt; | Teleport to players |
 | tr |  | Enable/disable auto translate <br> Currently only support Korean to English. |
-| vote | &lt;gameover/skipwave/kick&gt; [name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
+| vote | &lt;gameover/skipwave/kick/rollback&gt; [name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 
 ## Console commands
 

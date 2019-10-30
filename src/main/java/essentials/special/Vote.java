@@ -81,6 +81,18 @@ public class Vote{
                     bundle(player, "vote-in-processing");
                 }
                 break;
+            case "rollback":
+                if(!isvoting){
+                    isvoting = true;
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        bundle(others, "vote-rollback");
+                    }
+                    rollback.start();
+                } else {
+                    bundle(player, "vote-in-processing");
+                }
+                break;
             default:
                 break;
         }
@@ -139,7 +151,7 @@ public class Vote{
         }
     });
 
-    public static final Thread gameover = new Thread(() -> {
+    private static final Thread gameover = new Thread(() -> {
         try {
             Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
             counting.start();
@@ -157,7 +169,7 @@ public class Vote{
         }
     });
 
-    public static final Thread skipwave = new Thread(() -> {
+    private static final Thread skipwave = new Thread(() -> {
         try {
             Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
             counting.start();
@@ -177,7 +189,7 @@ public class Vote{
         }
     });
 
-    public static final Thread kick = new Thread(() -> {
+    private static final Thread kick = new Thread(() -> {
         if(target != null){
             try {
                 Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
@@ -215,6 +227,25 @@ public class Vote{
             }
         } else {
             bundle(player, "player-not-found");
+        }
+    });
+
+    private static final Thread rollback = new Thread(() -> {
+        try {
+            Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
+            counting.start();
+            counting.join();
+        } catch (InterruptedException ignored) {
+        } finally {
+            if (list.size() >= require) {
+                Call.sendMessage("[green][Essentials] Map rollback passed!!");
+                AutoRollback rl = new AutoRollback();
+                rl.load();
+            } else {
+                Call.sendMessage("[green][Essentials] [red]Map rollback failed.");
+            }
+            list.clear();
+            isvoting = false;
         }
     });
 }

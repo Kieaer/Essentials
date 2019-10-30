@@ -2,6 +2,7 @@ package essentials;
 
 import essentials.net.Client;
 import essentials.net.Server;
+import essentials.special.AutoRollback;
 import essentials.special.IpAddressMatcher;
 import essentials.special.Vote;
 import io.anuke.arc.ApplicationListener;
@@ -58,6 +59,7 @@ import static essentials.EssentialConfig.jumpzone;
 import static essentials.EssentialConfig.logging;
 import static essentials.EssentialConfig.loginenable;
 import static essentials.EssentialConfig.realname;
+import static essentials.EssentialConfig.savetime;
 import static essentials.EssentialConfig.serverenable;
 import static essentials.EssentialConfig.update;
 import static essentials.EssentialPlayer.*;
@@ -155,7 +157,6 @@ public class Main extends Plugin{
             powerblock = new JSONArray();
         });
 
-		powerblock = new JSONArray();
 		Events.on(PlayerConnect.class, e -> {
 
 		});
@@ -510,6 +511,10 @@ public class Main extends Plugin{
 		EssentialTimer job = new EssentialTimer();
 		Timer timer = new Timer(true);
 		timer.scheduleAtFixedRate(job, 1000, 1000);
+
+		AutoRollback rollback = new AutoRollback();
+		Timer rt = new Timer(true);
+		rt.scheduleAtFixedRate(rollback, savetime*60000, savetime*60000);
 
 		// Set main thread works
 		Core.app.addListener(new ApplicationListener(){
@@ -1509,7 +1514,7 @@ public class Main extends Plugin{
 
 			writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
 		});
-		handler.<Player>register("vote", "<gameover/skipwave/kick/y> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
+		handler.<Player>register("vote", "<gameover/skipwave/kick/rollback> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
 				return;

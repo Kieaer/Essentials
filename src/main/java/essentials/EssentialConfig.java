@@ -19,7 +19,7 @@ public class EssentialConfig {
     public static String clienthost;
     public static int clientport;
     public static int serverport;
-    public static boolean realname;
+    static boolean realname;
     public static boolean detectreactor;
     public static boolean serverenable;
     public static boolean clientenable;
@@ -47,6 +47,8 @@ public class EssentialConfig {
     public static String clientSecret;
     public static boolean debug;
     public static JSONArray jumpzone = new JSONArray();
+    public static int savetime;
+    public static int slotnumber;
 
     static ExecutorService executorService = Executors.newFixedThreadPool(6);
 
@@ -54,7 +56,7 @@ public class EssentialConfig {
         Map<String, Object> obj;
         if (!Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()) {
             String text = "# Config version (Don't touch this!)\n" +
-                    "version: 2\n\n" +
+                    "version: 4\n\n" +
 
                     "# Plugin language\n" +
                     "language: en\n\n" +
@@ -117,7 +119,13 @@ public class EssentialConfig {
                     "clientSecret: \n\n" +
 
                     "# The error message is output immediately.\n" +
-                    "debug: false";
+                    "debug: false" +
+
+                    "# Map auto save time. Time unit: 1 minute\n" +
+                    "savetime: 10" +
+
+                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav." +
+                    "slotnumber: 1000";
 
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file created!");
@@ -662,15 +670,27 @@ public class EssentialConfig {
             } else {
                 debug = false;
             }
+
+            if(obj.get("savetime") != null){
+                savetime = Integer.parseInt(String.valueOf(obj.get("savetime")));
+            } else {
+                savetime = 10;
+            }
+
+            if(obj.get("slotnumber") != null){
+                slotnumber = Integer.parseInt(String.valueOf(obj.get("slotnumber")));
+            } else {
+                slotnumber = 1000;
+            }
             Global.log("config file loaded!");
         }
 
-        if(version < 2){
+        if(version < 4){
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
 
             String text = "# Config version (Don't touch this!)\n" +
-                    "version: 3\n\n" +
+                    "version: 4\n\n" +
 
                     "# Plugin language\n" +
                     "language: en\n\n" +
@@ -733,7 +753,13 @@ public class EssentialConfig {
                     "clientSecret: "+clientSecret+"\n\n" +
 
                     "# The error message is output immediately.\n" +
-                    "debug: "+debug;
+                    "debug: "+debug+"\n" +
+
+                    "# Map auto save time. Time unit: 1 minute\n" +
+                    "savetime: "+savetime+"\n" +
+
+                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav." +
+                    "slotnumber: "+slotnumber;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
         }
