@@ -306,6 +306,10 @@ public class Main extends Plugin{
 			if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
 				if (!check.equals("/")) {
 					JSONObject db = getData(e.player.uuid);
+
+					// Set lastchat data
+					writeData("UPDATE players SET lastchat = '"+e.message+"' WHERE uuid = '" + e.player.uuid + "'");
+
 					boolean crosschat = db.getBoolean("crosschat");
 
 					EssentialTR.main(e.player, e.message);
@@ -370,7 +374,7 @@ public class Main extends Plugin{
 						int newexp = exp+blockexp;
 						data++;
 
-						writeData("UPDATE players SET placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+e.player.uuid+"'");
+						writeData("UPDATE players SET lastplacename = '"+e.tile.block().name+"', placecount = '"+data+"', exp = '"+newexp+"' WHERE uuid = '"+e.player.uuid+"'");
 
 						if(e.player.buildRequest() != null && e.player.buildRequest().block == Blocks.thoriumReactor){
 						    int reactorcount = db.getInt("reactorcount");
@@ -435,7 +439,7 @@ public class Main extends Plugin{
 						int newexp = exp + blockexp;
 						data++;
 
-						writeData("UPDATE players SET breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
+						writeData("UPDATE players SET lastplacename = '"+e.tile.block().name+"', breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
 
 						if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
 							int reactorcount = db.getInt("reactorcount");

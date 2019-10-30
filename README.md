@@ -29,9 +29,13 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 - [x] monitoring message block
   - [ ] Core block
   - [x] Power node
-- [ ] Nickname prefix
 - [ ] PvP mode rule
   - [ ] Anti coal in mech
+- [ ] Chat feature upgrade
+  - [ ] Blocking bad words
+  - [ ] Nickname prefix
+  - [ ] Remove translate before message
+  - [ ] PvP Team chat without command
 
 ## Client commands
 
