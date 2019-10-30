@@ -609,6 +609,8 @@ public class Main extends Plugin{
 				if(serverconn){
 					Client client = new Client();
 					client.main("exit", null, null);
+					//client.interrupt();
+					Global.log("Client thread disabled.");
 				}
 
                 executorService.shutdown();
@@ -633,7 +635,7 @@ public class Main extends Plugin{
 
 	@Override
 	public void registerServerCommands(CommandHandler handler){
-		handler.register("admin", "<name>","Set admin status to player", (arg) -> {
+		handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
 			Thread t = new Thread(() -> {
 				Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 				if(other == null){
@@ -646,7 +648,7 @@ public class Main extends Plugin{
 			});
 			t.start();
 		});
-		handler.register("allinfo", "<name>", "Show player information", (arg) -> {
+		handler.register("allinfo", "<name>", "Show player information.", (arg) -> {
 			Thread t = new Thread(() -> {
 				try{
 					String sql = "SELECT * FROM players WHERE name='"+arg[0]+"'";
@@ -724,7 +726,7 @@ public class Main extends Plugin{
 				}
 			}
 		});
-		handler.register("bansync", "Ban list synchronization from master server", (arg) -> {
+		handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
 			if(!serverenable){
 				if(banshare){
 					String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
@@ -804,11 +806,11 @@ public class Main extends Plugin{
 			jumpzone = new JSONArray();
 			Global.log("Data reseted!");
 		});
-		handler.register("kickall", "Kick all players",  arg -> {
+		handler.register("kickall", "Kick all players.",  arg -> {
 			Vars.netServer.kickAll(KickReason.valueOf("All kick players by administrator."));
 			Global.log("It's done.");
 		});
-		handler.register("kill", "<username>", "Kill target player", arg -> {
+		handler.register("kill", "<username>", "Kill target player.", arg -> {
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 			if(other != null){
 				other.kill();
@@ -816,7 +818,7 @@ public class Main extends Plugin{
 				Global.log("Player not found!");
 			}
 		});
-		handler.register("nick", "<name> <newname...>", "Show player information", (arg) -> {
+		handler.register("nick", "<name> <newname...>", "Show player information.", (arg) -> {
 			try{
 				writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
 				Global.log(arg[0]+" player's nickname has been changed to "+arg[1]+".");
@@ -840,7 +842,7 @@ public class Main extends Plugin{
 			*/
 			Global.log("Currently not supported!");
 		});
-		handler.register("sync", "<player>", "Force sync request from the target player", arg -> {
+		handler.register("sync", "<player>", "Force sync request from the target player.", arg -> {
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 			if(other != null){
 				Call.onWorldDataBegin(other.con);
@@ -849,7 +851,7 @@ public class Main extends Plugin{
 				Global.logw("Player not found!");
 			}
 		});
-		handler.register("team","[name]", "Change target player team", (arg) -> {
+		handler.register("team","[name]", "Change target player team.", (arg) -> {
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 			if(other != null){
 				int i = other.getTeam().ordinal()+1;
@@ -866,7 +868,7 @@ public class Main extends Plugin{
 				Global.log("Player not found!");
 			}
 		});
-		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours", arg -> {
+		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 			addtimeban(other.name, other.uuid, bantimeset);

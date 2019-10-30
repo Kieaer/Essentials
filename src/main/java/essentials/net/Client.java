@@ -2,6 +2,7 @@ package essentials.net;
 
 import essentials.Global;
 import io.anuke.arc.collection.Array;
+import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.net.Administration;
@@ -22,9 +23,7 @@ import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Client extends Thread{
-    public static Socket socket;
-    public static OutputStream os;
-    public static OutputStreamWriter osw;
+    public Socket socket;
     public static BufferedReader br;
     public static BufferedWriter bw;
     public static boolean serverconn;
@@ -81,8 +80,8 @@ public class Client extends Thread{
             try {
                 InetAddress address = InetAddress.getByName(clienthost);
                 socket = new Socket(address, clientport);
-                os = socket.getOutputStream();
-                osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+                OutputStream os = socket.getOutputStream();
+                OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                 bw = new BufferedWriter(osw);
                 bw.write("ping\n");
                 bw.flush();
@@ -100,45 +99,55 @@ public class Client extends Thread{
                 Global.loge("I/O Exception");
             }
         } else {
-            if (option.equals("bansync")) {
-                try {
-                    Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
-                    Array<String> ipbans = netServer.admins.getBannedIPs();
-                    JSONArray bandata = new JSONArray();
-                    if (bans.size != 0) {
-                        for (Administration.PlayerInfo info : bans) {
-                            bandata.put(info.id + "|" + info.lastIP);
+            switch (option) {
+                case "bansync":
+                    try {
+                        Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
+                        Array<String> ipbans = netServer.admins.getBannedIPs();
+                        JSONArray bandata = new JSONArray();
+                        if (bans.size != 0) {
+                            for (Administration.PlayerInfo info : bans) {
+                                bandata.put(info.id + "|" + info.lastIP);
+                            }
                         }
-                    }
-                    if (ipbans.size != 0) {
-                        for (String string : ipbans) {
-                            bandata.put("<unknown>|" + string);
+                        if (ipbans.size != 0) {
+                            for (String string : ipbans) {
+                                bandata.put("<unknown>|" + string);
+                            }
                         }
+                        bw.write(bandata + "\n");
+                        bw.flush();
+                        Global.logc("Ban list sented!");
+                    } catch (IOException e) {
+                        printStackTrace(e);
                     }
-                    bw.write(bandata + "\n");
-                    bw.flush();
-                    Global.logc("Ban list sented!");
-                } catch (IOException e) {
-                    printStackTrace(e);
-                }
-            } else if (option.equals("chat")) {
-                try {
-                    String msg = "[" + player.name + "]: " + message;
-                    bw.write(msg + "\n");
-                    bw.flush();
-                    Call.sendMessage("[#357EC7][SC] " + msg);
-                    Global.logc("Message sent to " + clienthost + " - " + message + "");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else if (option.equals("exit")) {
-                try {
-                    bw.write("exit");
-                    bw.flush();
-                    bw.close();
-                } catch (IOException e) {
-                    printStackTrace(e);
-                }
+                    break;
+                case "chat":
+                    try {
+                        String msg = "[" + player.name + "]: " + message;
+                        bw.write(msg + "\n");
+                        bw.flush();
+                        Call.sendMessage("[#357EC7][SC] " + msg);
+                        Global.logc("Message sent to " + clienthost + " - " + message + "");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "exit":
+                    try {
+                        bw.write("exit");
+                        bw.flush();
+
+                        bw.close();
+                        br.close();
+                        socket.close();
+                        serverconn = false;
+                        this.interrupt();
+                        return;
+                    } catch (IOException e) {
+                        printStackTrace(e);
+                    }
+                    break;
             }
         }
     }
@@ -181,10 +190,6 @@ public class Client extends Thread{
                     }catch (Exception e){
                         printStackTrace(e);
                     }
-                } else if(data.matches("exit")) {
-                    socket.close();
-                    this.interrupt();
-                    Global.log("client exit!");
                 } else {
                     Global.logw("Unknown data! - "+data);
                 }
@@ -207,7 +212,6 @@ public class Client extends Thread{
                     printStackTrace(ex);
                 }
                 Global.log(msg);
-                return;
             }
         }
     }

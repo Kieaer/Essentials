@@ -88,7 +88,6 @@ public class Server implements Runnable {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     String data = in.readLine();
-                    Global.log(data);
                     if (data == null || data.equals("")) continue;
                     remoteip = socket.getInetAddress().toString().replace("/", "");
 
@@ -122,14 +121,8 @@ public class Server implements Runnable {
                         bw.flush();
                         Global.log(remoteip + " connected to this server.");
                     } else if (data.matches("exit")){
-                        Global.log("server exit!");
-                        bw.write("exit");
-                        bw.flush();
-                        bw.close();
-                        in.close();
-                        socket.close();
-                        Global.logs(remoteip + " Client disconnected");
                         list.remove(this);
+                        socket.shutdownOutput();
                         return;
                     } else if (banshare) {
                         try {
@@ -185,6 +178,10 @@ public class Server implements Runnable {
                         Global.log(msg);
                     }
                     try {
+                        bw.close();
+                        os.close();
+                        osw.close();
+                        in.close();
                         socket.close();
                         list.remove(this);
                     } catch (IOException ex) {
