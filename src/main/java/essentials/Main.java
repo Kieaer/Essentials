@@ -63,6 +63,7 @@ import static essentials.EssentialConfig.serverenable;
 import static essentials.EssentialConfig.update;
 import static essentials.EssentialPlayer.*;
 import static essentials.Global.*;
+import static essentials.net.Client.serverconn;
 import static essentials.net.Client.update;
 import static essentials.special.Vote.isvoting;
 import static essentials.special.Vote.require;
@@ -595,17 +596,29 @@ public class Main extends Plugin{
 
 				closeconnect();
 
-				// Kill Ban/chat server thread
+				// Stop server
 				if(serverenable){
 					try {
 						Server.active = false;
 						Server.serverSocket.close();
-						Global.log("Chat/Ban server thread disabled.");
+						Global.log("Server thread disabled.");
 					} catch (Exception e){
 						printStackTrace(e);
 						err("[Essentials] Failure to disable Chat server thread!");
 					}
 				}
+
+				// Stop client
+				if(serverconn){
+					try{
+						serverconn = false;
+						Client.socket.close();
+						Global.log("Client thread disabled.");
+					}catch (IOException e){
+						printStackTrace(e);
+					}
+				}
+
                 executorService.shutdown();
 
 				// save jumpzone data

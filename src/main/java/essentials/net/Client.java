@@ -22,11 +22,11 @@ import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
-public class Client implements Runnable{
-    public Socket socket;
+public class Client extends Thread{
+    public static Socket socket;
     private static BufferedReader br;
     private static BufferedWriter bw;
-    private static boolean serverconn;
+    public static boolean serverconn;
 
     public static void update(){
         HttpURLConnection con;
@@ -136,7 +136,7 @@ public class Client implements Runnable{
 
     @Override
     public void run(){
-        while(true){
+        while(serverconn){
             try{
                 String data = br.readLine();
                 if (data == null || data.equals("")) return;
