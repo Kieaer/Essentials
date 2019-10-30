@@ -903,6 +903,11 @@ public class Main extends Plugin{
                 Global.log("Player not found!");
             }
         });
+
+		handler.register("kickall", "Kick all players",  arg -> {
+			Vars.netServer.kickAll(KickReason.valueOf("All kick players by administrator."));
+			Global.log("It's done.");
+		});
 	}
 
 	@Override
