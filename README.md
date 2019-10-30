@@ -8,41 +8,6 @@ Please submit your idea to this repository issues or Mindustry official discord!
 
 Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
-## 5.0 Release plans
-Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
-- [x] Fix network
-  - [x] server
-  - [x] client
-- [x] Fix vote
-- [x] Fix server to server (https://github.com/Anuken/Mindustry/pull/896)
-  - [x] Update client (It need game client update)
-
-## 5.0 version plans
-- [x] Vote
-  - [x] Surrender
-  - [x] Next wave
-  - [x] Ban
-- [x] PvP mode rule
-  - [ ] ~~Anti coal in mech~~ (Impossible. No event.)
-  - [x] Attackable timer
-  - [x] Team switching
-- [x] Ban share
-  - [x] Auto share ban list to other clients
-  - [x] ban to sent info
-- [x] Cross-chat
-  - [x] Show remote IP
-- [x] Auto-translate
-  - [x] Fix translate not working
-- [x] Teleport
-  - [x] Detect some nickname
-- [ ] Nickname prefix
-- [x] Anti-Explode
-- [x] Translatable all messages using bundle
-- [x] Ranking system
-- [x] monitoring message block
-  - [ ] Core block
-  - [x] Power node
-
 ## 6.0 version plans
 - [x] Make RPG using player DB
   - [x] Lock blocks
@@ -58,7 +23,13 @@ Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
   - [ ] Show all server players
     - [ ] Message block
     - [ ] Server information
-  
+- [x] monitoring message block
+  - [ ] Core block
+  - [x] Power node
+- [ ] Nickname prefix
+- [ ] PvP mode rule
+  - [ ] Anti coal in mech
+
 ## Client commands
 
 | Command | Parameter | Description |

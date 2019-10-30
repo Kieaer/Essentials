@@ -780,7 +780,7 @@ public class EssentialPlayer{
                 geocode = "invalid";
                 lang = "en";
             }
-            writeData("UPDATE players SET country_code = '"+geocode+"', country = '"+geo+"', lang = '"+lang+"' WHERE uuid = '"+player.uuid+"'");
+            writeData("UPDATE players SET country_code = '"+geocode+"', country = '"+geo+"', language = '"+lang+"' WHERE uuid = '"+player.uuid+"'");
         }
     }
 }

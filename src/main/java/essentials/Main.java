@@ -788,8 +788,13 @@ public class Main extends Plugin{
 		});
 
 		handler.register("nick", "<name> <newname...>", "Show player information", (arg) -> {
-			//writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
-			Global.log("This command isn't supported now!");
+			try{
+				writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
+				Global.log(arg[0]+" player's nickname has been changed to "+arg[1]+".");
+			}catch (Exception e){
+				printStackTrace(e);
+				Global.log("Invalid nickname!");
+			}
 		});
 
 		handler.register("admin", "<name>","Set admin status to player", (arg) -> {
