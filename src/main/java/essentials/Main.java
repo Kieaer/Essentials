@@ -612,8 +612,6 @@ public class Main extends Plugin{
 				if(serverconn){
 					Client client = new Client();
 					client.main("exit", null, null);
-					//client.interrupt();
-					Global.log("Client thread disabled.");
 				}
 
                 executorService.shutdown();

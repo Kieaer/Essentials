@@ -10,13 +10,12 @@ Put this plugin in the ``<server folder location>/config/plugins`` folder.
 
 ## 5.0 Release plans
 Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
-- [ ] Fix network
-  - [ ] server
-  - [ ] client
+- [x] Fix network
+  - [x] server
+  - [x] client
 - [x] Fix vote
 - [x] Fix server to server (https://github.com/Anuken/Mindustry/pull/896)
   - [x] Update client (It need game client update)
-- [ ] Improved detection of griefing
 
 ## 5.0 version plans
 - [x] Vote
@@ -54,6 +53,11 @@ Many bugs have occurred since the 5.0 update, and I will fix this first.<br>
   - [ ] Pathfinding
   - [ ] OreFlow
   - [ ] Player
+- [ ] Improved detection of griefing
+- [ ] Make lobby features
+  - [ ] Show all server players
+    - [ ] Message block
+    - [ ] Server information
   
 ## Client commands
 
