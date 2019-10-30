@@ -85,7 +85,7 @@ public class Server implements Runnable {
 
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     String data = in.readLine();
                     if (data == null || data.equals("")) continue;
@@ -120,6 +120,10 @@ public class Server implements Runnable {
                         bw.write(msg[rnd] + "\n");
                         bw.flush();
                         Global.log(remoteip + " connected to this server.");
+                    } else if (data.matches("exit")){
+                        list.remove(this);
+                        socket.shutdownOutput();
+                        return;
                     } else if (banshare) {
                         try {
                             JSONTokener convert = new JSONTokener(data);
@@ -169,9 +173,20 @@ public class Server implements Runnable {
                     if (msg.equals("Socket closed")) {
                         Global.logs(remoteip + " Client disconnected");
                         return;
+                    } else {
+                        printStackTrace(e);
+                        Global.log(msg);
                     }
-                    printStackTrace(e);
-                    Global.log(msg);
+                    try {
+                        bw.close();
+                        os.close();
+                        osw.close();
+                        in.close();
+                        socket.close();
+                        list.remove(this);
+                    } catch (IOException ex) {
+                        printStackTrace(ex);
+                    }
                     return;
                 }
             }

@@ -610,13 +610,10 @@ public class Main extends Plugin{
 
 				// Stop client
 				if(serverconn){
-					try{
-						serverconn = false;
-						Client.socket.close();
-						Global.log("Client thread disabled.");
-					}catch (IOException e){
-						printStackTrace(e);
-					}
+					Client client = new Client();
+					client.main("exit", null, null);
+					//client.interrupt();
+					Global.log("Client thread disabled.");
 				}
 
                 executorService.shutdown();
