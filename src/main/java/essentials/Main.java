@@ -9,6 +9,7 @@ import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
+import io.anuke.arc.files.FileHandle;
 import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
@@ -1196,7 +1197,8 @@ public class Main extends Mod {
 
 			if (player.isAdmin) {
 				Core.app.post(() -> {
-					SaveIO.saveToSlot(1);
+					FileHandle file = saveDirectory.child("1." + saveExtension);
+					SaveIO.save(file);
 					bundle(player, "mapsaved");
 				});
 			} else {

@@ -2,6 +2,7 @@ package essentials.special;
 
 import essentials.Global;
 import io.anuke.arc.collection.Array;
+import io.anuke.arc.files.FileHandle;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.gen.Call;
@@ -11,11 +12,14 @@ import java.util.TimerTask;
 
 import static essentials.EssentialConfig.slotnumber;
 import static essentials.Global.printStackTrace;
+import static io.anuke.mindustry.Vars.saveDirectory;
+import static io.anuke.mindustry.Vars.saveExtension;
 
 public class AutoRollback extends TimerTask {
     private boolean save() {
         try{
-            SaveIO.saveToSlot(slotnumber);
+            FileHandle file = saveDirectory.child(slotnumber + "." + saveExtension);
+            SaveIO.save(file);
             return true;
         }catch (Exception e){
             printStackTrace(e);
@@ -29,7 +33,8 @@ public class AutoRollback extends TimerTask {
         players.addAll(all);
 
         try {
-            SaveIO.loadFromSlot(slotnumber);
+            FileHandle file = saveDirectory.child(slotnumber + "." + saveExtension);
+            SaveIO.load(file);
         } catch (SaveIO.SaveException e) {
             printStackTrace(e);
         }
