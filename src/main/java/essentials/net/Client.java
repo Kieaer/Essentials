@@ -23,7 +23,7 @@ import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Client extends Thread{
-    public Socket socket;
+    public static Socket socket;
     public static BufferedReader br;
     public static BufferedWriter bw;
     public static boolean serverconn;
@@ -203,6 +203,10 @@ public class Client extends Thread{
                     Global.logs(clienthost + " Server disconnected");
                     return;
                 }
+                if (msg.equals("Stream closed")) {
+                    Global.logs(clienthost + " Server disconnected");
+                    return;
+                }
                 serverconn = false;
                 try {
                     bw.close();
@@ -212,6 +216,7 @@ public class Client extends Thread{
                     printStackTrace(ex);
                 }
                 Global.log(msg);
+                return;
             }
         }
     }

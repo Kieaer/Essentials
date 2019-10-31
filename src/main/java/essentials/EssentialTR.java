@@ -84,7 +84,7 @@ class EssentialTR {
                                         if (data.getBoolean("translate")) {
                                             p.sendMessage("[green]"+player.name + "[orange]: [white]" + result);
                                         }
-                                    } else {
+                                    } else if (response != 400){
                                         Global.logw(rb.toString());
                                     }
                                 }

@@ -22,10 +22,10 @@ import io.anuke.mindustry.game.EventType.*;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
-import io.anuke.mindustry.mod.Mod;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
+import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
@@ -56,6 +56,8 @@ import static essentials.EssentialConfig.clientenable;
 import static essentials.EssentialConfig.detectreactor;
 import static essentials.EssentialConfig.enableantirush;
 import static essentials.EssentialConfig.executorService;
+import static essentials.EssentialConfig.jumpall;
+import static essentials.EssentialConfig.jumpcount;
 import static essentials.EssentialConfig.jumpzone;
 import static essentials.EssentialConfig.logging;
 import static essentials.EssentialConfig.loginenable;
@@ -72,7 +74,7 @@ import static essentials.special.Vote.require;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
-public class Main extends Mod {
+public class Main extends Plugin {
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
 
@@ -626,7 +628,9 @@ public class Main extends Mod {
                 executorService.shutdown();
 
 				// save jumpzone data
-				Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString().replaceAll("[\\[\\]]", "").replaceAll(" " , ""));
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").writeString(jumpcount.toString().replaceAll("[\\[\\]]", "").replaceAll(" " , ""));
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").writeString(jumpall.toString().replaceAll("[\\[\\]]", "").replaceAll(" " , ""));
             }
 		});
 
@@ -776,45 +780,60 @@ public class Main extends Mod {
 				Global.logw("Unknown parameter! Use blacklist <add/remove> <nickname>.");
 			}
 		});
-		handler.register("jumpreset", "Clear a server-to-server jumping zone data.", arg -> {
-			for (int i = 0; i < jumpzone.length(); i++) {
-				String jumpdata = jumpzone.getString(i);
-				String[] data = jumpdata.split("/");
-				int startx = Integer.parseInt(data[0]);
-				int starty = Integer.parseInt(data[1]);
-				int tilex = Integer.parseInt(data[2]);
-				int block = Integer.parseInt(data[6]);
+		handler.register("reset", "<zone/count/total>", "Clear a server-to-server jumping zone data.", arg -> {
+			switch(arg[0]){
+				case "zone":
+					for (int i = 0; i < jumpzone.size(); i++) {
+						String jumpdata = jumpzone.get(i);
+						String[] data = jumpdata.split("/");
+						int startx = Integer.parseInt(data[0]);
+						int starty = Integer.parseInt(data[1]);
+						int tilex = Integer.parseInt(data[2]);
+						int block = Integer.parseInt(data[6]);
 
-				Block target;
-				switch (block) {
-					case 1:
-					default:
-						target = Blocks.metalFloor;
-						break;
-					case 2:
-						target = Blocks.metalFloor2;
-						break;
-					case 3:
-						target = Blocks.metalFloor3;
-						break;
-					case 4:
-						target = Blocks.metalFloor5;
-						break;
-					case 5:
-						target = Blocks.metalFloorDamaged;
-						break;
-				}
+						Block target;
+						switch (block) {
+							case 1:
+							default:
+								target = Blocks.metalFloor;
+								break;
+							case 2:
+								target = Blocks.metalFloor2;
+								break;
+							case 3:
+								target = Blocks.metalFloor3;
+								break;
+							case 4:
+								target = Blocks.metalFloor5;
+								break;
+							case 5:
+								target = Blocks.metalFloorDamaged;
+								break;
+						}
 
-				int size = tilex - startx;
-				for (int x = 0; x < size; x++) {
-					for (int y = 0; y < size; y++) {
-						Tile tile = world.tile(startx + x, starty + y);
-						Call.onDeconstructFinish(tile, target, 0);
+						int size = tilex - startx;
+						for (int x = 0; x < size; x++) {
+							for (int y = 0; y < size; y++) {
+								Tile tile = world.tile(startx + x, starty + y);
+								Call.onDeconstructFinish(tile, target, 0);
+							}
+						}
 					}
-				}
+					jumpzone.clear();
+					Global.log("Data reseted!");
+					break;
+				case "count":
+					jumpcount.clear();
+					Global.log("Data reseted!");
+					break;
+				case "total":
+					jumpall.clear();
+					Global.log("Data reseted!");
+					break;
+				default:
+					Global.log("Invalid option!");
+					break;
 			}
-			jumpzone = new JSONArray();
-			Global.log("Data reseted!");
 		});
 		handler.register("kickall", "Kick all players.",  arg -> {
 			Vars.netServer.kickAll(KickReason.valueOf("All kick players by administrator."));
@@ -1081,10 +1100,18 @@ public class Main extends Mod {
 					}
 				}
 
-				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
+				jumpzone.add(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
 			} else {
 				bundle(player, "notadmin");
 			}
+		});
+		handler.<Player>register("jumpcount", "<serverip> <port>", "Add server player counting", (arg, player) -> {
+			jumpcount.add(arg[0]+"/"+arg[1]+"/"+player.tileX()+"/"+player.tileY()+"/0");
+			player.sendMessage("added.");
+		});
+		handler.<Player>register("jumptotal", "Counting all server players", (arg, player) -> {
+			jumpall.add(player.tileX()+"/"+player.tileY()+"/0");
+			player.sendMessage("added.");
 		});
 		handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
@@ -1533,7 +1560,8 @@ public class Main extends Mod {
 			}
 		});
 
-		handler.<Player>register("test", "pathfinding test", (arg, player) -> {
+		handler.<Player>register("test", "<number>", "pathfinding test", (arg, player) -> {
+			getcount(world.tile(player.tileX(), player.tileY()), Integer.parseInt(arg[0]));
 			/*if (player.isAdmin) {
 				Thread work = new Thread(() -> {
 					EssentialAI ai = new EssentialAI();

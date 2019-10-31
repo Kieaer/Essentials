@@ -3,6 +3,7 @@ package essentials;
 import essentials.special.Vote;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
+import io.anuke.arc.function.Consumer;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
@@ -17,6 +18,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -26,7 +31,7 @@ import java.util.*;
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
-import static essentials.Global.printStackTrace;
+import static essentials.Global.*;
 import static essentials.special.Vote.isvoting;
 import static io.anuke.mindustry.Vars.*;
 
@@ -56,9 +61,17 @@ public class EssentialTimer extends TimerTask implements Runnable{
         Thread jumpzone = new jumpzone();
         jumpzone.start();
 
-        // server to server monitoring
+        // Vote monitoring
         Thread checkvote = new checkvote();
         checkvote.start();
+
+        // client players counting
+        Thread jumpcheck = new jumpcheck();
+        jumpcheck.start();
+
+        // all client players counting
+        Thread jumpall = new jumpall();
+        jumpall.start();
     }
 
     static class playtime extends Thread{
@@ -194,8 +207,8 @@ public class EssentialTimer extends TimerTask implements Runnable{
         @Override
         public void run(){
             if (playerGroup.size() > 0) {
-                for (int i = 0; i < jumpzone.length(); i++) {
-                    String jumpdata = jumpzone.getString(i);
+                for (String jumpdata : jumpzone) {
+                    if (jumpdata.equals("")) return;
                     String[] data = jumpdata.split("/");
                     int startx = Integer.parseInt(data[0]);
                     int starty = Integer.parseInt(data[1]);
@@ -362,6 +375,184 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 /*Vote.gameover.interrupt();
                 Vote.skipwave.interrupt();
                 Vote.kick.interrupt();*/
+            }
+        }
+    }
+    static class jumpcheck extends Thread {
+        // Source from Anuken/CoreBot
+        @Override
+        public void run() {
+            for (int i = 0; i < jumpcount.size(); i++) {
+                String jumpdata = jumpcount.get(i);
+                String[] data = jumpdata.split("/");
+                String serverip = data[0];
+                int port = Integer.parseInt(data[1]);
+                int x = Integer.parseInt(data[2]);
+                int y = Integer.parseInt(data[3]);
+                String count = data[4];
+                int finalI = i;
+                pingServer(serverip, port, result -> {
+                    if (result.valid) {
+                        String str = result.players;
+                        jumpcount.set(finalI, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players);
+                        int[] digits = new int[str.length()];
+                        for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
+
+                        Tile tile = world.tile(x, y);
+                        for (int ab = 0; ab < digits.length; ab++) {
+                            int digit = digits[ab];
+                            if(!count.equals(result.players)){
+                                if (validcount(tile, digit)) {
+                                    for (int a = 0; a < 3; a++) {
+                                        for (int b = 0; b < 5; b++) {
+                                            Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.plastaniumWall, 0);
+                                        }
+                                    }
+                                    getcount(tile, digit);
+                                }
+                                if (ab == 1) {
+                                    if(validcount(tile, digit)){
+                                        for (int a = 0; a < 3; a++) {
+                                            for (int b = 0; b < 5; b++) {
+                                                Call.onDeconstructFinish(world.tile(tile.x+a+4, tile.y+b), Blocks.plastaniumWall, 0);
+                                            }
+                                        }
+                                        tile = world.tile(tile.x+4,tile.y);
+                                    }
+                                    getcount(tile, digit);
+                                }
+                            } else {
+                                if(validcount(tile, digit)){
+                                    getcount(tile, digit);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        void pingServer(String ip, int port, Consumer<PingResult> listener) {
+            try {
+                DatagramSocket socket = new DatagramSocket();
+                socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(ip), port));
+
+                socket.setSoTimeout(2000);
+
+                DatagramPacket packet = new DatagramPacket(new byte[256], 256);
+
+                long start = System.currentTimeMillis();
+                socket.receive(packet);
+
+                ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
+                listener.accept(readServerData(buffer, ip, System.currentTimeMillis() - start));
+                socket.disconnect();
+            } catch (Exception ignored) {}
+        }
+
+        private static PingResult readServerData(ByteBuffer buffer, String ip, long ping){
+            byte hlength = buffer.get();
+            byte[] hb = new byte[hlength];
+            buffer.get(hb);
+
+            byte mlength = buffer.get();
+            byte[] mb = new byte[mlength];
+            buffer.get(mb);
+
+            String host = new String(hb);
+            String map = new String(mb);
+
+            int players = buffer.getInt();
+            int wave = buffer.getInt();
+            int version = buffer.getInt();
+
+            return new PingResult(ip, ping, players + "", host, map, wave + "", version == -1 ? "Custom Build" : ("" + version));
+        }
+
+        static class PingResult{
+            boolean valid;
+            String players;
+            String host;
+            String error;
+            String wave;
+            String map;
+            String ip;
+            String version;
+            long ping;
+
+            public PingResult(String ip, String error){
+                this.valid = false;
+                this.error = error;
+                this.ip = ip;
+            }
+
+            public PingResult(String error){
+                this.valid = false;
+                this.error = error;
+            }
+
+            PingResult(String ip, long ping, String players, String host, String map, String wave, String version){
+                this.ping = ping;
+                this.ip = ip;
+                this.valid = true;
+                this.players = players;
+                this.host = host;
+                this.map = map;
+                this.wave = wave;
+                this.version = version;
+            }
+        }
+    }
+    static class jumpall extends Thread{
+        @Override
+        public void run() {
+            for (int i = 0; i < jumpall.size(); i++) {
+                String jumpdata = jumpall.get(i);
+                String[] data = jumpdata.split("/");
+                int x = Integer.parseInt(data[0]);
+                int y = Integer.parseInt(data[1]);
+                int count = Integer.parseInt(data[2]);
+
+                int result = 0;
+                for (String dat : jumpcount) {
+                    String[] re = dat.split("/");
+                    result += Integer.parseInt(re[4]);
+                }
+
+                String str = String.valueOf(result);
+                int[] digits = new int[str.length()];
+                for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
+
+                Tile tile = world.tile(x, y);
+                for (int ab = 0; ab < digits.length; ab++) {
+                    int digit = digits[ab];
+                    if(count != result){
+                        if (validcount(tile, digit)) {
+                            for (int a = 0; a < 3; a++) {
+                                for (int b = 0; b < 5; b++) {
+                                    Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.plastaniumWall, 0);
+                                }
+                            }
+                            getcount(tile, digit);
+                        }
+                        if (ab == 1) {
+                            if(validcount(tile, digit)){
+                                for (int a = 0; a < 3; a++) {
+                                    for (int b = 0; b < 5; b++) {
+                                        Call.onDeconstructFinish(world.tile(tile.x+a+4, tile.y+b), Blocks.plastaniumWall, 0);
+                                    }
+                                }
+                                tile = world.tile(tile.x+4,tile.y);
+                            }
+                            getcount(tile, digit);
+                        }
+                    } else {
+                        if(validcount(tile, digit)){
+                            getcount(tile, digit);
+                        }
+                    }
+                }
+                jumpall.set(i, x + "/" + y + "/" + str);
             }
         }
     }

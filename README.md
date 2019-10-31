@@ -23,9 +23,10 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Show all server players
     - [ ] Message block
     - [ ] Server information
+    - [x] Block drawing
   - [ ] Show client server players
     - [ ] Message block
-    - [ ] Block drawing
+    - [x] Block drawing
 - [x] monitoring message block
   - [ ] Core block
   - [x] Power node
@@ -46,6 +47,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
 | getpos |  | Show your current position position |
 | info |  | Show player information |
+| jump | &lt;serverip&gt; &lt;port&gt; &lt;range&gt; &lt;block-type&gt; | Create a server-to-server jumping zone. |
+| jumpcount | &lt;serverip&gt; &lt;port&gt; | Add server player counting |
+| jumptotal |  | Counting all server players |
 | kickall |  | Kick all players without you. |
 | kill | &lt;name&gt; | Kill other players |
 | login | &lt;account id&gt; &lt;password&gt; | Login to account. |
@@ -72,7 +76,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | ban | &lt;uuid/name/ip&gt; &lt;username/ip/uuid&gt; | Ban a person. |
 | bansync |  | Ban list synchronization from main server |
 | blacklist | &lt;add/remove&gt; &lt;name&gt; | Block special nickname. |
-| jumpreset |  | Clear a server-to-server jumping zone data. |
+| reset | &lt;zone/count/total&gt; | Clear a server-to-server jumping zone data. |
 | kickall |  | Kick all players |
 | kill | &lt;name&gt; | Kill target player |
 | nick | &lt;name&gt; &lt;new_name&gt; | Show player information |

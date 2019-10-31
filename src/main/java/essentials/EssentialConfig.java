@@ -3,13 +3,10 @@ package essentials;
 import io.anuke.arc.Core;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,7 +43,9 @@ public class EssentialConfig {
     public static String clientId;
     public static String clientSecret;
     public static boolean debug;
-    public static JSONArray jumpzone = new JSONArray();
+    public static ArrayList<String> jumpzone = new ArrayList<>();
+    public static ArrayList<String> jumpcount = new ArrayList<>();
+    public static ArrayList<String> jumpall = new ArrayList<>();
     public static int savetime;
     public static int slotnumber;
 
@@ -474,9 +473,24 @@ public class EssentialConfig {
             Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
             Global.log("jumpzone created.");
         } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").readString();
-            JSONTokener data = new JSONTokener(temp1);
-            jumpzone = new JSONArray(data);
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").readString().replaceAll("[\\[\\]]", "").replaceAll(" " , "");;
+            jumpzone = new ArrayList<>(Arrays.asList(temp1.split(",")));
+        }
+
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").writeString(jumpcount.toString());
+            Global.log("jumpcount created.");
+        } else {
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").readString().replaceAll("[\\[\\]]", "").replaceAll(" " , "");;
+            jumpcount = new ArrayList<>(Arrays.asList(temp1.split(",")));
+        }
+
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").writeString(jumpall.toString());
+            Global.log("jumpall created.");
+        } else {
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").readString().replaceAll("[\\[\\]]", "").replaceAll(" " , "");
+            jumpall = new ArrayList<>(Arrays.asList(temp1.split(",")));
         }
 
         if (Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()){
