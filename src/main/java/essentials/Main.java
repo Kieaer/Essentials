@@ -21,10 +21,10 @@ import io.anuke.mindustry.game.EventType.*;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
+import io.anuke.mindustry.mod.Mod;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
-import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
@@ -71,7 +71,7 @@ import static essentials.special.Vote.require;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
-public class Main extends Plugin{
+public class Main extends Mod {
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
 

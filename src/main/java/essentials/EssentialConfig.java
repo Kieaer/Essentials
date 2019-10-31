@@ -119,12 +119,12 @@ public class EssentialConfig {
                     "clientSecret: \n\n" +
 
                     "# The error message is output immediately.\n" +
-                    "debug: false" +
+                    "debug: false\n\n" +
 
                     "# Map auto save time. Time unit: 1 minute\n" +
-                    "savetime: 10" +
+                    "savetime: 10\n\n" +
 
-                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav." +
+                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
                     "slotnumber: 1000";
 
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
@@ -753,12 +753,12 @@ public class EssentialConfig {
                     "clientSecret: "+clientSecret+"\n\n" +
 
                     "# The error message is output immediately.\n" +
-                    "debug: "+debug+"\n" +
+                    "debug: "+debug+"\n\n" +
 
                     "# Map auto save time. Time unit: 1 minute\n" +
-                    "savetime: "+savetime+"\n" +
+                    "savetime: "+savetime+"\n\n" +
 
-                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav." +
+                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
                     "slotnumber: "+slotnumber;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
