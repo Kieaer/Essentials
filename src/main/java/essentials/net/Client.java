@@ -164,10 +164,11 @@ public class Client extends Thread{
                 if(data.matches("\\[(.*)]:.*")){
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
-                        Pattern p = Pattern.compile("\\[(.*?)]");
-                        Matcher m = p.matcher(data);
-                        if(!m.group().equals(player.name)){
-                            Call.sendMessage("[#C77E36][RC] "+data);
+                        Matcher m = Pattern.compile("\\[(.*?)]").matcher(player.name);
+                        if(m.find()){
+                            if(m.group(1).equals(player.name)){
+                                Call.sendMessage("[#C77E36][RC] "+data);
+                            }
                         }
                     }
                 } else if(banshare){
