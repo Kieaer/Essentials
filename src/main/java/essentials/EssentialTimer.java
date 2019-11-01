@@ -31,7 +31,8 @@ import java.util.*;
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
-import static essentials.Global.*;
+import static essentials.Global.printStackTrace;
+import static essentials.Global.setcount;
 import static essentials.special.Vote.isvoting;
 import static io.anuke.mindustry.Vars.*;
 
@@ -401,21 +402,21 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
                         Tile tile = world.tile(x, y);
                         if(!count.equals(result.players)) {
-                            for (int digit : digits) {
-                                for (int a=0;a<3;a++) {
-                                    for (int b=0;b<5;b++) {
-                                        Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.air, 0);
+                            if(length != digits.length){
+                                for(int px=0;px<3;px++){
+                                    for(int py=0;py<5;py++){
+                                        Call.onDeconstructFinish(world.tile(tile.x+4+px,tile.y+py), Blocks.air, 0);
                                     }
                                 }
-                                getcount(tile, digit);
-                                tile = world.tile(tile.x + 4, tile.y);
+                            }
+                            for (int digit : digits) {
+                                setcount(tile, digit);
+                                tile = world.tile(tile.x+4, tile.y);
                             }
                         } else {
-                            for(int l=0;l<length;l++){
-                                if (validcount(tile, digits[l])) {
-                                    getcount(tile, digits[l]);
-                                    tile = world.tile(x+4, y);
-                                }
+                            for(int l=0;l<length;l++) {
+                                setcount(tile, digits[l]);
+                                tile = world.tile(x + 4, y);
                             }
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
@@ -519,21 +520,21 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
                 Tile tile = world.tile(x, y);
                 if(count != result) {
-                    for (int digit : digits) {
-                        for (int a=0;a<3;a++) {
-                            for (int b=0;b<5;b++) {
-                                Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.air, 0);
+                    if(length != digits.length){
+                        for(int px=0;px<3;px++){
+                            for(int py=0;py<5;py++){
+                                Call.onDeconstructFinish(world.tile(tile.x+4+px,tile.y+py), Blocks.air, 0);
                             }
                         }
-                        getcount(tile, digit);
-                        tile = world.tile(tile.x + 4, tile.y);
+                    }
+                    for (int digit : digits) {
+                        setcount(tile, digit);
+                        tile = world.tile(tile.x+4, tile.y);
                     }
                 } else {
-                    for(int l=0;l<length;l++){
-                        if (validcount(tile, digits[l])) {
-                            getcount(tile, digits[l]);
-                            tile = world.tile(x+4, y);
-                        }
+                    for(int l=0;l<length;l++) {
+                        setcount(tile, digits[l]);
+                        tile = world.tile(x+4, y);
                     }
                 }
                 jumpall.set(i, x+"/"+y+"/"+result+"/"+digits.length);

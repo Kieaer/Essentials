@@ -109,284 +109,200 @@ public class Global {
         }
     }
 
-    public static void getcount(Tile tile, int count){
-        String[] zero = {"0.0","0.1","0.2","0.3","0.4","1.4","2.4","2.3","2.2","2.1","2.0","1.0"};
-        String[] one = {"0.0","0.1","0.2","0.3","0.4"};
-        String[] two = {"0.4","1.4","2.4","2.3","2.2","1.2","0.2","0.1","0.0","1.0","2.0"};
-        String[] three = {"0.4","1.4","2.4","2.3","0.2","1.2","2.2","2.1","0.0","1.0","2.0"};
-        String[] four = {"0.4","0.3","0.2","1.2","2.4","2.3","2.2","2.1","2.0"};
-        String[] five = {"0.4","1.4","2.4","0.3","0.2","1.2","2.2","2.1","0.0","1.0","2.0"};
-        String[] six = {"0.0","0.1","0.2","0.3","0.4","1.0","2.0","1.2","2.2","2.1"};
-        String[] seven = {"0.4","1.4","2.4","2.3","2.2","2.1","2.0"};
-        String[] eight = {"0.0","0.1","0.2","0.3","0.4","1.0","2.0","2.1","1.2","2.2","2.3","1.4","2.4"};
-        String[] nine = {"0.2","0.3","0.4","2.0","2.1","2.2","2.3","2.4","1.2","1.4"};
+    public static void setcount(Tile tile, int count){
+        String[] pos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
+        int[] zero = {1,1,1,1,0,1,1,0,1,1,0,1,1,1,1};
+        int[] one = {0,1,0,1,1,0,0,1,0,0,1,0,1,1,1};
+        int[] two = {1,1,1,0,0,1,1,1,1,1,0,0,1,1,1};
+        int[] three = {1,1,1,0,0,1,1,1,1,0,0,1,1,1,1};
+        int[] four = {1,0,1,1,0,1,1,1,1,0,0,1,0,0,1};
+        int[] five = {1,1,1,1,0,0,1,1,1,0,0,1,1,1,1};
+        int[] six = {1,1,1,1,0,0,1,1,1,1,0,1,1,1,1};
+        int[] seven = {1,1,1,1,0,1,0,0,1,0,0,1,0,0,1};
+        int[] eight = {1,1,1,1,0,1,1,1,1,1,0,1,1,1,1};
+        int[] nine = {1,1,1,1,0,1,1,1,1,0,0,1,1,1,1};
+
         switch(count) {
             case 0:
-                for (String s : zero) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(zero[a] == 1) {
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(zero[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 1:
-                for (String s : one) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(one[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(one[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 2:
-                for (String s : two) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(two[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(two[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 3:
-                for (String s : three) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(three[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(three[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 4:
-                for (String s : four) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(four[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(four[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 5:
-                for (String s : five) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(five[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(five[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 6:
-                for (String s : six) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(six[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(six[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 7:
-                for (String s : seven) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(seven[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(seven[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 8:
-                for (String s : eight) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(eight[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(eight[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
             case 9:
-                for (String s : nine) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
-                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                for(int a=0;a<15;a++){
+                    String position = pos[a];
+                    String[] data = position.split(",");
+                    int x = Integer.parseInt(data[0]);
+                    int y = Integer.parseInt(data[1]);
+                    Tile target = world.tile(tile.x, tile.y);
+                    if(nine[a] == 1){
+                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        }
+                    } else if(nine[a] == 0){
+                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                        }
                     }
                 }
                 break;
         }
-    }
-
-    public static boolean validcount(Tile tile, int count){
-        String[] zero = {"0.0","0.1","0.2","0.3","0.4","1.4","2.4","2.3","2.2","2.1","2.0","1.0"};
-        String[] one = {"0.0","0.1","0.2","0.3","0.4"};
-        String[] two = {"0.4","1.4","2.4","2.3","2.2","1.2","0.2","0.1","0.0","1.0","2.0"};
-        String[] three = {"0.4","1.4","2.4","2.3","0.2","1.2","2.2","2.1","0.0","1.0","2.0"};
-        String[] four = {"0.4","0.3","0.2","1.2","2.4","2.3","2.2","2.1","2.0"};
-        String[] five = {"0.4","1.4","2.4","0.3","0.2","1.2","2.2","2.1","0.0","1.0","2.0"};
-        String[] six = {"0.0","0.1","0.2","0.3","0.4","1.0","2.0","1.2","2.2","2.1"};
-        String[] seven = {"0.4","1.4","2.4","2.3","2.2","2.1","2.0"};
-        String[] eight = {"0.0","0.1","0.2","0.3","0.4","1.0","2.0","2.1","1.2","2.2","2.3","1.4","2.4"};
-        String[] nine = {"0.2","0.3","0.4","2.0","2.1","2.2","2.3","2.4","1.2","1.4"};
-        boolean result = false;
-        switch(count){
-            case 0:
-                for (String s : zero) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("0 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 1:
-                for (String s : one) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("1 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 2:
-                for (String s : two) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("2 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 3:
-                for (String s : three) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("3 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 4:
-                for (String s : four) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("4 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 5:
-                for (String s : five) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("5 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 6:
-                for (String s : six) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("6 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 7:
-                for (String s : seven) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("7 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 8:
-                for (String s : eight) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("8 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-            case 9:
-                for (String s : nine) {
-                    String[] split = s.split("\\.");
-                    int x = Integer.parseInt(split[0]);
-                    int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x+x, tile.y+y);
-                    if (target.block() != Blocks.plastaniumWall) {
-                        Global.log("9 "+target.x+"/"+target.y+" Block is null");
-                        result = true;
-                        break;
-                    }
-                }
-                break;
-        }
-        return result;
     }
 }
