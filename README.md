@@ -22,6 +22,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Thorium reactor
     - [ ] Monitoring cryofluid destroy
     - [ ] Monitoring no thorium input
+    - [ ] Make the reactor near the core
 - [ ] Make lobby features
   - [ ] Show all server players
     - [ ] Message block
