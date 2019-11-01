@@ -364,30 +364,61 @@ public class EssentialPlayer{
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             // Check password security
+            // 영문(대/소문자), 숫자, 특수문자 조합, 7~20자리
+            String pwPattern = "^(?=.*\\d)(?=.*[~`!@#$%\\^&*()-])(?=.*[a-z])(?=.*[A-Z]).{7,20}$";
+            Matcher matcher = Pattern.compile(pwPattern).matcher(pw);
+
+            // 같은 문자 4개이상 사용 불가
+            pwPattern = "(.)\\1\\1\\1";
+            Matcher matcher2 = Pattern.compile(pwPattern).matcher(pw);
+
+            // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
             if(!pw.equals(pw2)){
                 player.sendMessage("[green][Essentials] [sky]The password isn't the same.\n" +
                         "[green][Essentials] [sky]비밀번호가 똑같지 않습니다.");
                 registerresult = false;
                 return;
             }
-            if(pw.length() <= 6){
-                player.sendMessage("[green][Essentials] [sky]Your password is too short!\n" +
-                        "[green][Essentials] [sky]비밀번호가 너무 짧습니다!");
+
+            // 정규식에 맞지 않을경우
+            if(!matcher.matches()){
+                player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
+                        "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자, 특수문자를 포함해야 합니다!");
                 registerresult = false;
                 return;
             }
+
+            // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
+            if(matcher2.find()){
+                player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
+                        "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자, 특수문자를 포함해야 합니다!");
+                registerresult = false;
+                return;
+            }
+
+            // 비밀번호와 ID가 완전히 같은경우
+            if(pw.contains(id)){
+                player.sendMessage("[green][Essentials] [sky]Passwords can't be set similar to ID!\n" +
+                        "[green][Essentials] [sky]비밀번호는 ID는 비슷하게 설정할 수 없습니다!");
+                registerresult = false;
+                return;
+            }
+
+            // 비밀번호에 공백이 있을경우
+            if(pw.contains(" ")){
+                player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
+                        "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
+                registerresult = false;
+                return;
+            }
+
+            // 비밀번호 형식이 "<비밀번호>" 일경우
             if(pw.matches("<(.*?)>")){
                 player.sendMessage("[green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!\n" +
                         "[green][Essentials] [sky]Use /register accountname password password\n" +
                         "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                         "[green][Essentials] [sky]/register accountname password password 형식으로 사용하세요.");
                 player.sendMessage("");
-                registerresult = false;
-                return;
-            }
-            if(pw.matches(id)){
-                player.sendMessage("[green][Essentials] [sky]Don't set your nickname and password the same!\n" +
-                        "[green][Essentials] [sky]비밀번호를 닉네임과 똑같이 설정하지 마세요!");
                 registerresult = false;
                 return;
             }
