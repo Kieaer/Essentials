@@ -43,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
@@ -311,7 +312,21 @@ public class Main extends Plugin {
 					JSONObject db = getData(e.player.uuid);
 
 					// Set lastchat data
-					writeData("UPDATE players SET lastchat = '"+e.message+"' WHERE uuid = '" + e.player.uuid + "'");
+					Thread t = new Thread(() -> {
+						Thread.currentThread().setName("DB Thread");
+						String sql = "UPDATE players SET lastchat = ? WHERE uuid = ?";
+						try {
+							PreparedStatement pstmt = conn.prepareStatement(sql);
+							pstmt.setString(1, e.message);
+							pstmt.setString(2, e.player.uuid);
+							pstmt.executeUpdate();
+							pstmt.close();
+						} catch (Exception ex) {
+							Global.loge(sql);
+							printStackTrace(ex);
+						}
+					});
+					t.start();
 
 					boolean crosschat = db.getBoolean("crosschat");
 
