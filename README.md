@@ -1,8 +1,19 @@
 # Essentials
 Add more commands to the server.  
 
-I'm getting a lot of suggestions.  
+I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
+
+## Requirements for running this plugin
+### Minimum
+CPU: Ryzen 3 2200G or Intel i3 8100<br>
+RAM: 256MB<br>
+Disk: A disk capable of reading and writing normally at speeds above 10MB/s.
+
+### Recommand
+CPU: Ryzen 5 2600x or Intel i5 8500<br>
+RAM: 500MB<br>
+Disk: SSD capable of more than 30MB/s random read/write.
 
 ## Installation
 
