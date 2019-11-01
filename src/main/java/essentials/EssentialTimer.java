@@ -135,7 +135,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
                 String myTime = now.format(dateTimeFormatter);
 
-                for (int i = 0; i < object.length(); i++) {
+                for(int i = 0; i < object.length(); i++) {
                     JSONObject value1 = object.getJSONObject(i);
                     String date = (String) value1.get("date");
                     String uuid = (String) value1.get("uuid");
@@ -146,7 +146,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
                         object.remove(i);
                         Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
                         netServer.admins.unbanPlayerID(uuid);
-                        Global.log("[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
+                        Global.log("["+myTime+"] [Bantime]"+name+"/"+uuid+" player unbanned!");
                     }
                 }
             }catch (Exception ex){
@@ -240,15 +240,15 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
                     if (!world.tile(startx, starty).block().name.matches(".*metal.*")) {
                         int size = tilex - startx;
-                        for (int x = 0; x < size; x++) {
-                            for (int y = 0; y < size; y++) {
-                                Tile tile = world.tile(startx + x, starty + y);
+                        for(int x = 0; x < size; x++) {
+                            for(int y = 0; y < size; y++) {
+                                Tile tile = world.tile(startx+x, starty+y);
                                 Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
                             }
                         }
                     }
 
-                    for (int ix = 0; ix < playerGroup.size(); ix++) {
+                    for(int ix = 0; ix < playerGroup.size(); ix++) {
                         Player player = playerGroup.all().get(ix);
                         if (player.tileX() > startx && player.tileX() < tilex) {
                             if (player.tileY() > starty && player.tileY() < tiley) {
@@ -312,13 +312,13 @@ public class EssentialTimer extends TimerTask implements Runnable{
                     if(e.player.buildRequest().block == Blocks.router){
                         routercount++;
                         if(routercount > 20){
-                            Call.sendMessage("[scarlet]ALERT! " + e.player.name + "[white] player is spamming [gray]router[]!");
+                            Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] player is spamming [gray]router[]!");
                         }
                         for (Block value : impblock) {
                             if (e.player.buildRequest().block == value) {
                                 breakcount++;
                                 if (breakcount > 15) {
-                                    Call.sendMessage("[scarlet]ALERT! " + e.player.name + "[white] player is destroying an [green]important building[]!");
+                                    Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] player is destroying an [green]important building[]!");
                                 }
                             }
                         }
@@ -326,7 +326,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
                             if (e.player.buildRequest().block == value) {
                                 conveyorcount++;
                                 if (conveyorcount > 30) {
-                                    Call.sendMessage("[scarlet]ALERT! " + e.player.name + "[white] player is destroying an many [green]conveyors[]!");
+                                    Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] player is destroying an many [green]conveyors[]!");
                                 }
                             }
                         }
@@ -353,7 +353,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
         public void run() {
             Thread.currentThread().setName("Login alert thread");
             if (playerGroup.size() > 0) {
-                for (int i = 0; i < playerGroup.size(); i++) {
+                for(int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
                         String message1 = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
@@ -382,7 +382,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
         // Source from Anuken/CoreBot
         @Override
         public void run() {
-            for (int i = 0; i < jumpcount.size(); i++) {
+            for(int i = 0; i < jumpcount.size(); i++) {
                 String jumpdata = jumpcount.get(i);
                 String[] data = jumpdata.split("/");
                 String serverip = data[0];
@@ -390,43 +390,36 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 int x = Integer.parseInt(data[2]);
                 int y = Integer.parseInt(data[3]);
                 String count = data[4];
+                int length = Integer.parseInt(data[5]);
+
                 int finalI = i;
                 pingServer(serverip, port, result -> {
                     if (result.valid) {
                         String str = result.players;
-                        jumpcount.set(finalI, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players);
                         int[] digits = new int[str.length()];
-                        for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
+                        for(int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
                         Tile tile = world.tile(x, y);
-                        for (int ab = 0; ab < digits.length; ab++) {
-                            int digit = digits[ab];
-                            if(!count.equals(result.players)){
-                                if (validcount(tile, digit)) {
-                                    for (int a = 0; a < 3; a++) {
-                                        for (int b = 0; b < 5; b++) {
-                                            Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.plastaniumWall, 0);
-                                        }
+                        if(!count.equals(result.players)) {
+                            for (int digit : digits) {
+                                for (int a=0;a<3;a++) {
+                                    for (int b=0;b<5;b++) {
+                                        Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.air, 0);
                                     }
-                                    getcount(tile, digit);
                                 }
-                                if (ab == 1) {
-                                    if(validcount(tile, digit)){
-                                        for (int a = 0; a < 3; a++) {
-                                            for (int b = 0; b < 5; b++) {
-                                                Call.onDeconstructFinish(world.tile(tile.x+a+4, tile.y+b), Blocks.plastaniumWall, 0);
-                                            }
-                                        }
-                                        tile = world.tile(tile.x+4,tile.y);
-                                    }
-                                    getcount(tile, digit);
-                                }
-                            } else {
-                                if(validcount(tile, digit)){
-                                    getcount(tile, digit);
+                                getcount(tile, digit);
+                                tile = world.tile(tile.x + 4, tile.y);
+                            }
+                        } else {
+                            for(int l=0;l<length;l++){
+                                if (validcount(tile, digits[l])) {
+                                    getcount(tile, digits[l]);
+                                    tile = world.tile(x+4, y);
                                 }
                             }
                         }
+                        // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                        jumpcount.set(finalI, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
                     }
                 });
             }
@@ -466,7 +459,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             int wave = buffer.getInt();
             int version = buffer.getInt();
 
-            return new PingResult(ip, ping, players + "", host, map, wave + "", version == -1 ? "Custom Build" : ("" + version));
+            return new PingResult(ip, ping, players+"", host, map, wave+"", version == -1 ? "Custom Build" : (""+version));
         }
 
         static class PingResult{
@@ -506,12 +499,13 @@ public class EssentialTimer extends TimerTask implements Runnable{
     static class jumpall extends Thread{
         @Override
         public void run() {
-            for (int i = 0; i < jumpall.size(); i++) {
+            for(int i=0;i<jumpall.size();i++) {
                 String jumpdata = jumpall.get(i);
                 String[] data = jumpdata.split("/");
                 int x = Integer.parseInt(data[0]);
                 int y = Integer.parseInt(data[1]);
                 int count = Integer.parseInt(data[2]);
+                int length = Integer.parseInt(data[3]);
 
                 int result = 0;
                 for (String dat : jumpcount) {
@@ -521,38 +515,28 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
                 String str = String.valueOf(result);
                 int[] digits = new int[str.length()];
-                for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
+                for(int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
                 Tile tile = world.tile(x, y);
-                for (int ab = 0; ab < digits.length; ab++) {
-                    int digit = digits[ab];
-                    if(count != result){
-                        if (validcount(tile, digit)) {
-                            for (int a = 0; a < 3; a++) {
-                                for (int b = 0; b < 5; b++) {
-                                    Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.plastaniumWall, 0);
-                                }
+                if(count != result) {
+                    for (int digit : digits) {
+                        for (int a=0;a<3;a++) {
+                            for (int b=0;b<5;b++) {
+                                Call.onDeconstructFinish(world.tile(tile.x+a, tile.y+b), Blocks.air, 0);
                             }
-                            getcount(tile, digit);
                         }
-                        if (ab == 1) {
-                            if(validcount(tile, digit)){
-                                for (int a = 0; a < 3; a++) {
-                                    for (int b = 0; b < 5; b++) {
-                                        Call.onDeconstructFinish(world.tile(tile.x+a+4, tile.y+b), Blocks.plastaniumWall, 0);
-                                    }
-                                }
-                                tile = world.tile(tile.x+4,tile.y);
-                            }
-                            getcount(tile, digit);
-                        }
-                    } else {
-                        if(validcount(tile, digit)){
-                            getcount(tile, digit);
+                        getcount(tile, digit);
+                        tile = world.tile(tile.x + 4, tile.y);
+                    }
+                } else {
+                    for(int l=0;l<length;l++){
+                        if (validcount(tile, digits[l])) {
+                            getcount(tile, digits[l]);
+                            tile = world.tile(x+4, y);
                         }
                     }
                 }
-                jumpall.set(i, x + "/" + y + "/" + str);
+                jumpall.set(i, x+"/"+y+"/"+result+"/"+digits.length);
             }
         }
     }

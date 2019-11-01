@@ -126,9 +126,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -137,9 +138,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -148,9 +150,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -159,9 +162,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -170,9 +174,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -181,9 +186,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -192,9 +198,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -203,9 +209,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -214,9 +221,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -225,9 +233,10 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
-                        Call.onConstructFinish(world.tile(tile.x + x, tile.y + y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                        Call.onDeconstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.air, 0);
+                        Call.onConstructFinish(world.tile(tile.x+x, tile.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
                     }
                 }
                 break;
@@ -252,8 +261,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("0 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -264,8 +274,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("1 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -276,8 +287,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("2 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -288,8 +300,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("3 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -300,8 +313,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("4 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -312,8 +326,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("5 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -324,8 +339,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("6 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -336,8 +352,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("7 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -348,8 +365,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("8 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }
@@ -360,8 +378,9 @@ public class Global {
                     String[] split = s.split("\\.");
                     int x = Integer.parseInt(split[0]);
                     int y = Integer.parseInt(split[1]);
-                    Tile target = world.tile(tile.x + x, tile.y + y);
+                    Tile target = world.tile(tile.x+x, tile.y+y);
                     if (target.block() != Blocks.plastaniumWall) {
+                        Global.log("9 "+target.x+"/"+target.y+" Block is null");
                         result = true;
                         break;
                     }

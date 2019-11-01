@@ -1106,12 +1106,20 @@ public class Main extends Plugin {
 			}
 		});
 		handler.<Player>register("jumpcount", "<serverip> <port>", "Add server player counting", (arg, player) -> {
-			jumpcount.add(arg[0]+"/"+arg[1]+"/"+player.tileX()+"/"+player.tileY()+"/0");
-			player.sendMessage("added.");
+			if (!player.isAdmin) {
+				bundle(player, "notadmin");
+			} else {
+				jumpcount.add(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+				player.sendMessage("added.");
+			}
 		});
 		handler.<Player>register("jumptotal", "Counting all server players", (arg, player) -> {
-			jumpall.add(player.tileX()+"/"+player.tileY()+"/0");
-			player.sendMessage("added.");
+			if (!player.isAdmin) {
+				bundle(player, "notadmin");
+			} else {
+				jumpall.add(player.tileX() + "/" + player.tileY() + "/0/0");
+				player.sendMessage("added.");
+			}
 		});
 		handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
@@ -1561,7 +1569,7 @@ public class Main extends Plugin {
 		});
 
 		handler.<Player>register("test", "<number>", "pathfinding test", (arg, player) -> {
-			getcount(world.tile(player.tileX(), player.tileY()), Integer.parseInt(arg[0]));
+			//getcount(world.tile(player.tileX(), player.tileY()), Integer.parseInt(arg[0]));
 			/*if (player.isAdmin) {
 				Thread work = new Thread(() -> {
 					EssentialAI ai = new EssentialAI();

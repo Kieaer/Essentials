@@ -19,6 +19,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] OreFlow
   - [ ] Player
 - [ ] Improved detection of griefing
+  - [ ] Thorium reactor
+    - [ ] Monitoring cryofluid destroy
+    - [ ] Monitoring no thorium input
 - [ ] Make lobby features
   - [ ] Show all server players
     - [ ] Message block
