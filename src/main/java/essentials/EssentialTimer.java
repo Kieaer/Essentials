@@ -6,6 +6,7 @@ import io.anuke.arc.Events;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
+import io.anuke.mindustry.core.GameState;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.EventType.BlockBuildEndEvent;
 import io.anuke.mindustry.game.EventType.BuildSelectEvent;
@@ -58,21 +59,24 @@ public class EssentialTimer extends TimerTask implements Runnable{
         Thread uptime = new uptime();
         uptime.start();
 
-        // server to server monitoring
-        Thread jumpzone = new jumpzone();
-        jumpzone.start();
-
         // Vote monitoring
         Thread checkvote = new checkvote();
         checkvote.start();
 
-        // client players counting
-        Thread jumpcheck = new jumpcheck();
-        jumpcheck.start();
+        // If world loaded
+        if(state.is(GameState.State.playing)) {
+            // server to server monitoring
+            Thread jumpzone = new jumpzone();
+            jumpzone.start();
 
-        // all client players counting
-        Thread jumpall = new jumpall();
-        jumpall.start();
+            // client players counting
+            Thread jumpcheck = new jumpcheck();
+            jumpcheck.start();
+
+            // all client players counting
+            Thread jumpall = new jumpall();
+            jumpall.start();
+        }
     }
 
     static class playtime extends Thread{
@@ -208,7 +212,8 @@ public class EssentialTimer extends TimerTask implements Runnable{
         @Override
         public void run(){
             if (playerGroup.size() > 0) {
-                for (String jumpdata : jumpzone) {
+                for (int i=0;i<jumpzone.length();i++) {
+                    String jumpdata = jumpzone.getString(i);
                     if (jumpdata.equals("")) return;
                     String[] data = jumpdata.split("/");
                     int startx = Integer.parseInt(data[0]);
@@ -383,8 +388,8 @@ public class EssentialTimer extends TimerTask implements Runnable{
         // Source from Anuken/CoreBot
         @Override
         public void run() {
-            for(int i = 0; i < jumpcount.size(); i++) {
-                String jumpdata = jumpcount.get(i);
+            for (int i=0;i<jumpcount.length();i++) {
+                String jumpdata = jumpcount.getString(i);
                 String[] data = jumpdata.split("/");
                 String serverip = data[0];
                 int port = Integer.parseInt(data[1]);
@@ -420,7 +425,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
                             }
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                        jumpcount.set(finalI, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
+                        jumpcount.put(finalI, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
                     }
                 });
             }
@@ -500,8 +505,8 @@ public class EssentialTimer extends TimerTask implements Runnable{
     static class jumpall extends Thread{
         @Override
         public void run() {
-            for(int i=0;i<jumpall.size();i++) {
-                String jumpdata = jumpall.get(i);
+            for (int i=0;i<jumpall.length();i++) {
+                String jumpdata = jumpall.getString(i);
                 String[] data = jumpdata.split("/");
                 int x = Integer.parseInt(data[0]);
                 int y = Integer.parseInt(data[1]);
@@ -509,7 +514,8 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 int length = Integer.parseInt(data[3]);
 
                 int result = 0;
-                for (String dat : jumpcount) {
+                for (int l=0;l<jumpcount.length();l++) {
+                    String dat = jumpcount.getString(i);
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }
@@ -537,7 +543,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
                         tile = world.tile(x+4, y);
                     }
                 }
-                jumpall.set(i, x+"/"+y+"/"+result+"/"+digits.length);
+                jumpall.put(i, x+"/"+y+"/"+result+"/"+digits.length);
             }
         }
     }

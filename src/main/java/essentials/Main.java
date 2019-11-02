@@ -636,9 +636,9 @@ public class Main extends Plugin {
                 executorService.shutdown();
 
 				// save jumpzone data
-				Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString().replaceAll("[\\[\\]]", "").replaceAll(" " , ""));
-				Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").writeString(jumpcount.toString().replaceAll("[\\[\\]]", "").replaceAll(" " , ""));
-				Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").writeString(jumpall.toString().replaceAll("[\\[\\]]", "").replaceAll(" " , ""));
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").writeString(jumpcount.toString());
+				Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").writeString(jumpall.toString());
             }
 		});
 
@@ -791,8 +791,8 @@ public class Main extends Plugin {
 		handler.register("reset", "<zone/count/total>", "Clear a server-to-server jumping zone data.", arg -> {
 			switch(arg[0]){
 				case "zone":
-					for (int i = 0; i < jumpzone.size(); i++) {
-						String jumpdata = jumpzone.get(i);
+					for (int i = 0; i < jumpzone.length(); i++) {
+						String jumpdata = jumpzone.get(i).toString();
 						String[] data = jumpdata.split("/");
 						int startx = Integer.parseInt(data[0]);
 						int starty = Integer.parseInt(data[1]);
@@ -827,15 +827,15 @@ public class Main extends Plugin {
 							}
 						}
 					}
-					jumpzone.clear();
+					jumpzone = new JSONArray();
 					Global.log("Data reseted!");
 					break;
 				case "count":
-					jumpcount.clear();
+					jumpcount = new JSONArray();
 					Global.log("Data reseted!");
 					break;
 				case "total":
-					jumpall.clear();
+					jumpall = new JSONArray();
 					Global.log("Data reseted!");
 					break;
 				default:
@@ -1108,7 +1108,7 @@ public class Main extends Plugin {
 					}
 				}
 
-				jumpzone.add(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
+				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
 			} else {
 				bundle(player, "notadmin");
 			}
@@ -1117,7 +1117,7 @@ public class Main extends Plugin {
 			if (!player.isAdmin) {
 				bundle(player, "notadmin");
 			} else {
-				jumpcount.add(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+				jumpcount.put(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
 				player.sendMessage("added.");
 			}
 		});
@@ -1125,7 +1125,7 @@ public class Main extends Plugin {
 			if (!player.isAdmin) {
 				bundle(player, "notadmin");
 			} else {
-				jumpall.add(player.tileX() + "/" + player.tileY() + "/0/0");
+				jumpall.put(player.tileX() + "/" + player.tileY() + "/0/0");
 				player.sendMessage("added.");
 			}
 		});
