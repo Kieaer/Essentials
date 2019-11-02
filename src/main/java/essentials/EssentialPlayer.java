@@ -364,8 +364,8 @@ public class EssentialPlayer{
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             // Check password security
-            // 영문(대/소문자), 숫자, 특수문자 조합, 7~20자리
-            String pwPattern = "^(?=.*\\d)(?=.*[~`!@#$%\\^&*()-])(?=.*[a-z])(?=.*[A-Z]).{7,20}$";
+            // 영문(소문자), 숫자, 특수문자 조합, 7~20자리
+            String pwPattern = "^(?=.*\\d)(?=.*[~`!@#$%\\^&*()-])(?=.*[a-z]).{7,20}$";
             Matcher matcher = Pattern.compile(pwPattern).matcher(pw);
 
             // 같은 문자 4개이상 사용 불가
@@ -648,6 +648,8 @@ public class EssentialPlayer{
                         Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n" + Arrays.toString(e.getStackTrace()));
                         player.con.kick("You have been kicked due to a plugin error.");
                     }
+                } else {
+                    registerresult = true;
                 }
             } catch (Exception e) {
                 printStackTrace(e);

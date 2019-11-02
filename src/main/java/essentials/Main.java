@@ -275,8 +275,10 @@ public class Main extends Plugin {
 				if(antivpn){
 					try{
 						String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
+
 						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
-						BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+						InputStreamReader isr = new InputStreamReader(in);
+						BufferedReader reader = new BufferedReader(isr);
 						String line;
 						while((line = reader.readLine()) != null){
 							IpAddressMatcher match = new IpAddressMatcher(line);
