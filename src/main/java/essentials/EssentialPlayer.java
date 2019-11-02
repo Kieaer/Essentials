@@ -530,6 +530,7 @@ public class EssentialPlayer{
                         createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, id, hashed);
                         registerresult = true;
                     } catch (Exception e){
+                        printStackTrace(e);
                         Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
                         player.con.kick("You have been kicked due to a plugin error.");
                     }
@@ -553,7 +554,7 @@ public class EssentialPlayer{
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             try {
-                if(!getData(player.uuid).toString().equals("{}")){
+                if(getData(player.uuid).toString().equals("{}")){
                     LocalDateTime now = LocalDateTime.now();
                     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
                     String nowString = now.format(dateTimeFormatter);
@@ -625,6 +626,7 @@ public class EssentialPlayer{
                                 lang = result.getString("languages").substring(0, 1);
                             }
                         } catch (IOException e) {
+                            printStackTrace(e);
                             geo = "invalid";
                             geocode = "invalid";
                             lang = "en";
@@ -642,6 +644,7 @@ public class EssentialPlayer{
                         registerresult = true;
                     } catch (Exception e) {
                         registerresult = false;
+                        printStackTrace(e);
                         Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n" + Arrays.toString(e.getStackTrace()));
                         player.con.kick("You have been kicked due to a plugin error.");
                     }

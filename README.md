@@ -33,7 +33,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Player
 - [ ] Improved detection of griefing
   - [ ] Thorium reactor
-    - [ ] Monitoring cryofluid destroy
+    - [ ] Monitoring cryofluid destroy &nbsp;<img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
     - [ ] Monitoring no thorium input
     - [ ] Make the reactor near the core
 - [ ] Make lobby features
