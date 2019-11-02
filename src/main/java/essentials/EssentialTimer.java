@@ -3,7 +3,6 @@ package essentials;
 import essentials.special.Vote;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
-import io.anuke.arc.function.Consumer;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
@@ -27,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
