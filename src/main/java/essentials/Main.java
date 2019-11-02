@@ -260,7 +260,7 @@ public class Main extends Plugin {
 				Thread.currentThread().setName("PlayerJoin Thread");
 
 				// Check if blacklisted nickname
-				String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
+				String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(blacklist);
 				JSONArray array = new JSONArray(parser);
 
@@ -636,9 +636,9 @@ public class Main extends Plugin {
                 executorService.shutdown();
 
 				// save jumpzone data
-				Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(jumpzone.toString());
-				Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").writeString(jumpcount.toString());
-				Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").writeString(jumpall.toString());
+				Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
+				Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
+				Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
             }
 		});
 
@@ -751,11 +751,11 @@ public class Main extends Plugin {
 		handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
 			if(!serverenable){
 				if(banshare){
-					String db = Core.settings.getDataDirectory().child("mods/Essentials/data.json").readString();
+					String db = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
 					JSONTokener parser = new JSONTokener(db);
 					JSONObject object = new JSONObject(parser);
 					object.put("banall", "true");
-					Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+					Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
 					Client client = new Client();
 					client.main("bansync", null, null);
 				} else {
@@ -767,14 +767,14 @@ public class Main extends Plugin {
 		});
 		handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
 			if(arg[0].equals("add")){
-				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONArray object = new JSONArray(parser);
 				object.put(arg[1]);
-				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(String.valueOf(object));
 				Global.log("The "+arg[1]+" nickname has been added to the blacklist.");
 			} else if (arg[0].equals("remove")) {
-				String db = Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").readString();
+				String db = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
 				JSONTokener parser = new JSONTokener(db);
 				JSONArray object = new JSONArray(parser);
 				for (int i = 0; i < object.length(); i++) {
@@ -782,7 +782,7 @@ public class Main extends Plugin {
 						object.remove(i);
 					}
 				}
-				Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(String.valueOf(object));
+				Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(String.valueOf(object));
 				Global.log(""+arg[1]+" nickname deleted from blacklist.");
 			} else {
 				Global.logw("Unknown parameter! Use blacklist <add/remove> <nickname>.");
@@ -1454,7 +1454,7 @@ public class Main extends Plugin {
 				if (other != null) {
 					int bantimeset = Integer.parseInt(arg[1]);
 					EssentialPlayer.addtimeban(other.name, other.uuid, bantimeset);
-					Call.sendMessage("Player" + other.name + " was killed (ban) by player " + player.name + "!");
+					Call.sendMessage("[green][Essentials][] Player [orange]" + other.name + "[] was killed (ban) by player [blue]" + player.name + "[]!");
 				} else {
 					bundle(player, "player-not-found");
 				}

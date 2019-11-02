@@ -5,6 +5,8 @@ I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
 
 ## Requirements for running this plugin
+This plugin does a lot of disk read/write operations depending on the features usage.
+
 ### Minimum
 CPU: Ryzen 3 2200G or Intel i3 8100<br>
 RAM: 256MB<br>

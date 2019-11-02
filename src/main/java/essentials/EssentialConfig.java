@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -430,16 +431,32 @@ public class EssentialConfig {
             Global.log("BlockReqExp config file created!");
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/data.json").exists()) {
-            JSONObject object = new JSONObject();
-            object.put("banall", "true");
-            Core.settings.getDataDirectory().child("mods/Essentials/data.json").writeString(String.valueOf(object));
+        // Move folder
+        try{
+            File baseDir = Core.settings.getDataDirectory().child("mods/Essentials/").file();
+            File destDir = Core.settings.getDataDirectory().child("mods/Essentials/data/").file();
+
+            File[] files = baseDir.listFiles();
+            for (int i=0; i<files.length; i++){
+                if (files[i].getName().endsWith(".json")){
+                    files[i].renameTo(new File(destDir, files[i].getName()));
+                    Global.log(files[i].getName());
+                }
+            }
+        }catch (Exception e){
+            printStackTrace(e);
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/banned.json").exists()){
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").exists()) {
+            JSONObject object = new JSONObject();
+            object.put("banall", "true");
+            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
+        }
+
+        if(!Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").exists()){
             JSONArray ban = new JSONArray();
             String json = ban.toString();
-            Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(json);
+            Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(json);
             Global.log("banned file created!");
         }
 
@@ -455,15 +472,15 @@ public class EssentialConfig {
             Global.log("motd_ko file created.");
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").exists()){
+        if(!Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").exists()){
             JSONArray blacklist = new JSONArray();
             String json = blacklist.toString();
-            Core.settings.getDataDirectory().child("mods/Essentials/blacklist.json").writeString(json);
+            Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(json);
             Global.log("blacklist file created!");
         }
 
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").exists()){
-            Core.settings.getDataDirectory().child("mods/Essentials/powerblock.json").writeString("[]");
+        if(!Core.settings.getDataDirectory().child("mods/Essentials/data/powerblock.json").exists()){
+            Core.settings.getDataDirectory().child("mods/Essentials/data/powerblock.json").writeString("[]");
             Global.log("powerblock file created!");
         }
 
@@ -472,29 +489,29 @@ public class EssentialConfig {
             Global.log("error.log created.");
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").writeString(new JSONArray().toString());
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(new JSONArray().toString());
             Global.log("jumpzone created.");
         } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpdata.json").readString();
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").readString();
             JSONTokener temp2 = new JSONTokener(temp1);
             jumpzone = new JSONArray(temp2);
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").writeString(new JSONArray().toString());
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(new JSONArray().toString());
             Global.log("jumpcount created.");
         } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpcount.json").readString();
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").readString();
             JSONTokener temp2 = new JSONTokener(temp1);
             jumpcount = new JSONArray(temp2);
         }
 
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").writeString(new JSONArray().toString());
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(new JSONArray().toString());
             Global.log("jumpall created.");
         } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/jumpall.json").readString();
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").readString();
             JSONTokener temp2 = new JSONTokener(temp1);
             jumpall = new JSONArray(temp2);
         }
@@ -645,14 +662,14 @@ public class EssentialConfig {
             if(obj.get("sqlite") != null){
                 sqlite = Boolean.parseBoolean(String.valueOf(obj.get("sqlite")));
                 if(sqlite){
-                    url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
+                    url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
                 } else {
                     dburl = (String) obj.get("dburl");
                     url = "jdbc:"+dburl;
                 }
             } else {
                 sqlite = true;
-                url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("mods/Essentials/player.sqlite3");
+                url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
             }
 
             if(obj.get("dbid") != null){

@@ -258,7 +258,7 @@ public class EssentialPlayer{
 
 	public static void addtimeban(String name, String uuid, int bantimeset){
 	    // Write ban data
-        String db = Core.settings.getDataDirectory().child("mods/Essentials/banned.json").readString();
+        String db = Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").readString();
         JSONTokener parser = new JSONTokener(db);
         JSONArray object = new JSONArray(parser);
 
@@ -287,10 +287,10 @@ public class EssentialPlayer{
 
         object.put(data1);
 
-        Core.settings.getDataDirectory().child("mods/Essentials/banned.json").writeString(String.valueOf(object));
+        Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
 
         // Write player data
-        writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"', WHERE uuid = '"+uuid+"'");
+        writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"' WHERE uuid = '"+uuid+"'");
         netServer.admins.banPlayer(uuid);
     }
 
