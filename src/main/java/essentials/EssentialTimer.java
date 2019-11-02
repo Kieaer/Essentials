@@ -515,7 +515,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
                 int result = 0;
                 for (int l=0;l<jumpcount.length();l++) {
-                    String dat = jumpcount.getString(i);
+                    String dat = jumpcount.getString(l);
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }

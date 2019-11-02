@@ -857,7 +857,7 @@ public class Main extends Plugin {
 		});
 		handler.register("nick", "<name> <newname...>", "Show player information.", (arg) -> {
 			try{
-				writeData("UPDATE players SET name='"+arg[1]+"', WHERE name = '"+arg[0]+"'");
+				writeData("UPDATE players SET name='"+arg[1]+"' WHERE name = '"+arg[0]+"'");
 				Global.log(arg[0]+" player's nickname has been changed to "+arg[1]+".");
 			}catch (Exception e){
 				printStackTrace(e);
