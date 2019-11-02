@@ -12,8 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.EssentialConfig.clientId;
-import static essentials.EssentialConfig.clientSecret;
+import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -95,7 +94,7 @@ class EssentialTR {
                     printStackTrace(e);
                 }
             });
-            t.start();
+            executorService.execute(t);
         }
     }
 }

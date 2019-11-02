@@ -48,6 +48,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
 
@@ -67,6 +68,7 @@ import static essentials.EssentialConfig.savetime;
 import static essentials.EssentialConfig.serverenable;
 import static essentials.EssentialConfig.update;
 import static essentials.EssentialPlayer.*;
+import static essentials.EssentialTimer.nukeposition;
 import static essentials.Global.*;
 import static essentials.net.Client.serverconn;
 import static essentials.net.Client.update;
@@ -78,6 +80,7 @@ import static io.anuke.mindustry.Vars.*;
 public class Main extends Plugin {
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
+	private ArrayList<Tile> nukedata = new ArrayList<>();
 
 	public Main() {
 		// Start config file
@@ -217,9 +220,6 @@ public class Main extends Plugin {
 						if (db.getString("uuid").equals(e.player.uuid)) {
 							bundle(e.player, "autologin");
 							JSONObject db2 = getData(e.player.uuid);
-							if (db2.getBoolean("isadmin")) {
-								e.player.isAdmin = true;
-							}
 							EssentialPlayer.load(e.player, null);
 						}
 					} else {
@@ -273,21 +273,19 @@ public class Main extends Plugin {
 
 				// Check VPN
 				if(antivpn){
-					try{
-						String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
+					try (InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
+						 BufferedReader br = new BufferedReader(new InputStreamReader(reader))){
 
-						InputStream in = getClass().getResourceAsStream("/vpn/ipv4.txt");
-						InputStreamReader isr = new InputStreamReader(in);
-						BufferedReader reader = new BufferedReader(isr);
+						String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
 						String line;
-						while((line = reader.readLine()) != null){
+						while ((line = br.readLine()) != null) {
 							IpAddressMatcher match = new IpAddressMatcher(line);
 							if(match.matches(ip)){
 								Call.onKick(e.player.con, "Server isn't allow VPN connection.");
 							}
 						}
-					} catch (IOException ex){
-						printStackTrace(ex);
+					}catch (IOException ex){
+						ex.printStackTrace();
 					}
 				}
 			});
@@ -328,7 +326,7 @@ public class Main extends Plugin {
 							printStackTrace(ex);
 						}
 					});
-					t.start();
+					executorService.execute(t);
 
 					boolean crosschat = db.getBoolean("crosschat");
 
@@ -435,6 +433,11 @@ public class Main extends Plugin {
 						ex.printStackTrace();
 					}
 				}
+
+				if(e.tile.entity.block == Blocks.thoriumReactor){
+				    nukeposition.put(e.tile.entity.tileX()+"/"+e.tile.entity.tileY());
+					nukedata.add(e.tile);
+                }
 			}
 		});
 
@@ -542,6 +545,7 @@ public class Main extends Plugin {
 		// Set main thread works
 		Core.app.addListener(new ApplicationListener(){
 			int delaycount = 0;
+			boolean a1,a2,a3,a4 = false;
 
 			@Override
 			public void update() {
@@ -581,21 +585,45 @@ public class Main extends Plugin {
                             Call.setMessageBlockText(null, world.tile(x, y), text);
 						}
 						delaycount = 0;
+						a1 = false;
+						a2 = false;
+						a3 = false;
+						a4 = false;
 					} catch (Exception ignored) {}
 				} else {
 					delaycount++;
 				}
 
 				// nuke block monitoring
-				for (int i = 0; i < nukeblock.length(); i++) {
-					String nukedata = nukeblock.getString(i);
-					String[] data = nukedata.split("/");
-					int x = Integer.parseInt(data[0]);
-					int y = Integer.parseInt(data[1]);
+				for (int i = 0; i < nukedata.size(); i++) {
+					Tile target = nukedata.get(i);
 					try{
-						NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
-						if(entity.heat >= 0.98f){
-							Call.sendMessage("[green]Thorium reactor [scarlet]overload warning![white] X: "+x+", Y: "+y);
+						NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
+						if(entity.heat >= 0.2f && entity.heat <= 0.39f && !a1){
+							Call.sendMessage("[green]Thorium reactor overheat [green]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+							a1 = true;
+						}
+						if(entity.heat >= 0.4f && entity.heat <= 0.59f && !a2){
+							Call.sendMessage("[green]Thorium reactor overheat [yellow]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+							a2 = true;
+						}
+						if(entity.heat >= 0.6f && entity.heat <= 0.79f && !a3){
+							Call.sendMessage("[green]Thorium reactor overheat [yellow]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+							a3 = true;
+						}
+						if(entity.heat >= 0.8f && entity.heat <= 0.95f && !a4){
+							Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+							a4 = true;
+						}
+						if(entity.heat >= 0.95f){
+							Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+							for(int a=0;a<playerGroup.size();a++){
+								Player player = playerGroup.all().get(i);
+								if(player.isAdmin){
+									player.set(target.x*8, target.y*8);
+								}
+							}
+							Call.onDeconstructFinish(target, Blocks.air, 0);
 						}
 					}catch (Exception e){
 						nukeblock.remove(i);
@@ -1580,7 +1608,7 @@ public class Main extends Plugin {
 
 		handler.<Player>register("test", "<number>", "pathfinding test", (arg, player) -> {
 			//getcount(world.tile(player.tileX(), player.tileY()), Integer.parseInt(arg[0]));
-			/*if (player.isAdmin) {
+			if (player.isAdmin) {
 				Thread work = new Thread(() -> {
 					EssentialAI ai = new EssentialAI();
 
@@ -1595,12 +1623,12 @@ public class Main extends Plugin {
 						e.printStackTrace();
 					}
 					ai.target = world.tile(player.tileX(), player.tileY());
-					ai.main();
+					ai.auto();
 				});
 				work.start();
 			} else {
 				bundle(player, "notadmin");
-			}*/
+			}
 			player.sendMessage("a nothing");
 		});
 		/*

@@ -357,7 +357,7 @@ public class EssentialPlayer{
                 printStackTrace(e);
             }
         });
-        t.start();
+        executorService.execute(t);
 	}
 
 	static boolean register(Player player, String id, String pw, String pw2){
@@ -761,6 +761,10 @@ public class EssentialPlayer{
 
         //Thread checkgrief = new Thread(() -> new EssentialTimer.checkgrief(player));
         //checkgrief.start();
+
+        if (db.getBoolean("isadmin")) {
+            player.isAdmin = true;
+        }
 
         if(db.getString("country").equals("invalid")) {
             // Geolocation

@@ -91,7 +91,7 @@ public class Client extends Thread{
                 if(line != null){
                     Global.logc(line);
                     serverconn = true;
-                    new Thread(this).start();
+                    executorService.execute(new Thread(this));
                 }
             } catch (UnknownHostException e) {
                 Global.loge("Invalid host!");

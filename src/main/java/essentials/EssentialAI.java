@@ -1,5 +1,14 @@
 package essentials;
 
+import io.anuke.mindustry.Vars;
+import io.anuke.mindustry.content.Blocks;
+import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Team;
+import io.anuke.mindustry.gen.Call;
+import io.anuke.mindustry.world.Tile;
+
+import java.util.ArrayList;
+
 public class EssentialAI {
 
     /*public Tile start;
@@ -10,7 +19,7 @@ public class EssentialAI {
         return PathTile.get(tile.cost, tile.getTeamID(), (byte)0, !tile.solid() && tile.floor().drownTime <= 0f);
     }*/
 
-    public void main() {
+    //public void main() {
         /*for(int x=0;x<world.width();x++){
             for(int y=0;y<world.height();y++){
                 if(world.tile(x,y).solid()){
@@ -26,9 +35,9 @@ public class EssentialAI {
         for(int i=0;i<pathToEnd.size();i++){
             Call.onConstructFinish(world.tileWorld(pathToEnd.get(i).x, pathToEnd.get(i).y), Blocks.conveyor, 0, (byte) 0, Team.sharded, false);
         }*/
-    }
+    //}
 
-    /*
+
     public Tile start;
     public Tile target;
     public Player player;
@@ -156,7 +165,7 @@ public class EssentialAI {
             }
         }
     }
-    */
+
     /*
     public final int width, height;
     private final int[] cardinals;

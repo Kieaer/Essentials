@@ -53,7 +53,7 @@ public class EssentialConfig {
     public static int savetime;
     public static int slotnumber;
 
-    static ExecutorService executorService = Executors.newFixedThreadPool(6);
+    public static ExecutorService executorService = Executors.newCachedThreadPool();
 
     public void main() {
         Map<String, Object> obj;

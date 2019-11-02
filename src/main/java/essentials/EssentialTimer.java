@@ -40,42 +40,38 @@ import static io.anuke.mindustry.Vars.*;
 public class EssentialTimer extends TimerTask implements Runnable{
     public static String playtime;
     public static String uptime;
+    public static JSONArray nukeposition = new JSONArray();
 
     @Override
     public void run() {
         // Player playtime counting
-        Thread playtime = new playtime();
-        playtime.start();
+        executorService.execute(new playtime());
 
         // Temporarily ban players time counting
-        Thread bantime = new bantime();
-        bantime.start();
+        executorService.execute(new bantime());
 
         // Map playtime counting
-        Thread maptime = new maptime();
-        maptime.start();
+        executorService.execute(new maptime());
 
         // Server uptime counting
-        Thread uptime = new uptime();
-        uptime.start();
+        executorService.execute(new uptime());
 
         // Vote monitoring
-        Thread checkvote = new checkvote();
-        checkvote.start();
+        executorService.execute(new checkvote());
 
         // If world loaded
         if(state.is(GameState.State.playing)) {
             // server to server monitoring
-            Thread jumpzone = new jumpzone();
-            jumpzone.start();
+            executorService.execute(new jumpzone());
 
             // client players counting
-            Thread jumpcheck = new jumpcheck();
-            jumpcheck.start();
+            executorService.execute(new jumpcheck());
 
             // all client players counting
-            Thread jumpall = new jumpall();
-            jumpall.start();
+            executorService.execute(new jumpall());
+
+            // Check thorium reactor in cryofluid
+            // executorService.execute(new checkthorium());
         }
     }
 
@@ -353,6 +349,110 @@ public class EssentialTimer extends TimerTask implements Runnable{
             reset.start();
         }
 
+    }
+    static class checkthorium extends Thread{
+        public Tile getNear(Tile tile, int count){
+            int x = tile.x;
+            int y = tile.y;
+            Tile result;
+            switch(count){
+                case 0:
+                    result = world.tile(x-1,y+2);
+                    break;
+                case 1:
+                    result = world.tile(x,y+2);
+                    break;
+                case 2:
+                    result = world.tile(x+1,y+2);
+                    break;
+                case 3:
+                    result = world.tile(x+2,y+1);
+                    break;
+                case 4:
+                    result = world.tile(x+2,y);
+                    break;
+                case 5:
+                    result = world.tile(x+2,y-1);
+                    break;
+                case 6:
+                    result = world.tile(x-1,y-2);
+                    break;
+                case 7:
+                    result = world.tile(x,y-2);
+                    break;
+                case 8:
+                    result = world.tile(x+1,y-2);
+                    break;
+                case 9:
+                    result = world.tile(x-2,y-1);
+                    break;
+                case 10:
+                    result = world.tile(x-2,y);
+                    break;
+                case 11:
+                    result = world.tile(x-2,y+1);
+                    break;
+                default:
+                    result = tile;
+            }
+            return result;
+        }
+
+        @Override
+        public void run() {
+            for (int a = 0; a < nukeposition.length(); a++) {
+                String nukedata = nukeposition.getString(a);
+                String[] data = nukedata.split("/");
+                int x = Integer.parseInt(data[0]);
+                int y = Integer.parseInt(data[1]);
+                Tile tile = world.tile(x, y);
+
+                ArrayList<Tile> open = new ArrayList<>();
+                ArrayList<Tile> close = new ArrayList<>();
+
+                boolean success;
+
+                if (world.tile(x, y).block() != Blocks.thoriumReactor) {
+                    nukeposition.remove(a);
+                    return;
+                }
+                // 12면을 검색함
+                Global.log("SEARCH START");
+                int count = 0;
+                for (int b = 0; b < 12; b++) {
+                    open.add(getNear(tile, b));
+                }
+                for(int b=0;b<open.size();b++){
+                    Tile target = open.get(b);
+                    if(target.block() == Blocks.air){
+                        open.remove(b);
+                        break;
+                    }
+                    for(int c=0;c<4;c++){
+                        if(target.getNearby(c).block() == Blocks.conduit || target.getNearby(c).block() == Blocks.pulseConduit){
+                            open.add(target.getNearby(c));
+                        } else if (target.getNearby(c).block() == Blocks.cryofluidMixer) {
+
+                        }
+                    }
+                    // 파이프의 4면을 검색함
+                    while (count < 10) {
+                        for (int c = 0; c < 4; c++) {
+                            Global.log(target.x+"/"+target.y);
+                            // 파이프를 발견했다면
+                            if (target.getNearby(c).block() == Blocks.conduit || target.getNearby(c).block() == Blocks.pulseConduit) {
+                                target = target.getNearby(c);
+                            } else if (target.getNearby(c).block() == Blocks.cryofluidMixer) {
+                                Global.log("냉각수 공장 발견");
+                                count = 100;
+                            }
+                        }
+                        count++;
+                        //Global.log(count + " 번째 " + target.x + "/" + target.y);
+                    }
+                }
+            }
+        }
     }
     static class login extends TimerTask{
         @Override
