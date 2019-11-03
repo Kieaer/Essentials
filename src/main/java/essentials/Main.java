@@ -1049,7 +1049,7 @@ public class Main extends Plugin {
 			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 			JSONObject db = getData(player.uuid);
 			String datatext;
-			if (db.getString("country_code").equals("KR")) {
+			if (db.getString("country_code").contains("KR")) {
 				datatext = "[#DEA82A]" + EssentialBundle.nload(true, "player-info") + "[]\n" +
 						"[#2B60DE]========================================[]\n" +
 						"[green]" + EssentialBundle.nload(true, "player-name") + "[] : " + player.name + "[white]\n" +
@@ -1507,7 +1507,7 @@ public class Main extends Plugin {
 			LocalDateTime now = LocalDateTime.now();
 			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
 			String nowString = now.format(dateTimeFormatter);
-			if (db.getString("country_code").equals("KR")) {
+			if (db.getString("country_code").contains("KR")) {
 				player.sendMessage(EssentialBundle.load(true, "servertime") + " " + nowString);
 			} else {
 				player.sendMessage(EssentialBundle.load(false, "servertime") + " " + nowString);

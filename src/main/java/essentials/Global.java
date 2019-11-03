@@ -102,7 +102,7 @@ public class Global {
 
     public static void bundle(Player player, String value){
         JSONObject db = getData(player.uuid);
-        if (db.get("country_code") == "KR") {
+        if (db.getString("country_code").contains("KR")) {
             player.sendMessage(EssentialBundle.load(true, value));
         } else {
             player.sendMessage(EssentialBundle.load(false, value));
