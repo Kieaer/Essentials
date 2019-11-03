@@ -25,17 +25,18 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 - [x] Make RPG using player DB
   - [x] Lock blocks
 - [ ] Monitoring resource consumption
-  - [ ] Alarm when resource consumption is fast
+  - [ ] Alarm when resource consumption is fast <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
   - [ ] Alarm when resource bank is full
 - [ ] AI
   - [ ] Pathfinding
   - [ ] OreFlow
   - [ ] Player
-- [ ] Improved detection of griefing
-  - [ ] Thorium reactor
-    - [ ] Monitoring cryofluid destroy &nbsp;<img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
-    - [ ] Monitoring no thorium input
-    - [ ] Make the reactor near the core
+- [x] Improved detection of griefing
+  - [x] Thorium reactor
+    - [ ] ~~Monitoring cryofluid destroy~~
+    - [ ] ~~Monitoring no thorium input~~
+    - [ ] ~~Make the reactor near the core~~
+    - [x] Destroy thorium reactor when reactor overheated
 - [ ] Make lobby features
   - [ ] Show all server players
     - [ ] Message block
@@ -54,6 +55,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Nickname prefix
   - [ ] Remove translate before message
   - [ ] PvP Team chat without command
+- [ ] Difficulty adjustments based on the number of players
 
 ## Client commands
 

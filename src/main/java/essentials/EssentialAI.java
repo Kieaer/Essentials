@@ -1,13 +1,9 @@
 package essentials;
 
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.world.Tile;
 
-import java.util.ArrayList;
+import static io.anuke.mindustry.Vars.world;
 
 public class EssentialAI {
 
@@ -42,37 +38,30 @@ public class EssentialAI {
     public Tile target;
     public Player player;
 
-    public ArrayList<Tile> closed = new ArrayList<>();
-    public ArrayList<Tile> opened = new ArrayList<>();
-    public ArrayList<Tile> path = new ArrayList<>();
-
     public boolean success;
 
     public Tile getNearby(Tile tile, int rotate){
         if(rotate == 0){
-            return Vars.world.tile(tile.x+1, tile.y);
+            return world.tile(tile.x+1, tile.y);
         } else if(rotate == 1){
-            return Vars.world.tile(tile.x+1, tile.y+1);
+            return world.tile(tile.x+1, tile.y+1);
         } else if(rotate == 2){
-            return Vars.world.tile(tile.x, tile.y+1);
+            return world.tile(tile.x, tile.y+1);
         } else if(rotate == 3){
-            return Vars.world.tile(tile.x-1, tile.y+1);
+            return world.tile(tile.x-1, tile.y+1);
         } else if(rotate == 4){
-            return Vars.world.tile(tile.x-1, tile.y);
+            return world.tile(tile.x-1, tile.y);
         } else if(rotate == 5){
-            return Vars.world.tile(tile.x-1, tile.y-1);
+            return world.tile(tile.x-1, tile.y-1);
         } else if(rotate == 6){
-            return Vars.world.tile(tile.x, tile.y-1);
+            return world.tile(tile.x, tile.y-1);
         } else {
-            return rotate == 7 ? Vars.world.tile(tile.x+1, tile.y-1) : null;
+            return rotate == 7 ? world.tile(tile.x+1, tile.y-1) : null;
         }
     }
 
-    public void tracking(){
-
-    }
-
     public void auto(){
+        /*
         closed.add(start);
         for (int rot = 0; rot < 4; rot++) {
             opened.add(start.getNearby(rot));
@@ -164,143 +153,157 @@ public class EssentialAI {
                 }
             }
         }
+         */
     }
 
+    /* Source copied from io.anuke.mindustry.input.Placement start */
+    //for pathfinding
     /*
-    public final int width, height;
-    private final int[] cardinals;
-    public final int size;
+    private static IntFloatMap costs = new IntFloatMap();
+    private static IntIntMap parents = new IntIntMap();
+    private static IntSet closed = new IntSet();
+    private static Array<Point2> points = new Array<>();
+    private static Bresenham2 bres = new Bresenham2();
+    Block block = Blocks.conveyor;
+    int rotation;
+    boolean overrideLineRotation = false;
+    protected PlaceLine line = new PlaceLine();
 
-    public Tile start;
-    public Tile target;
-    public int[] field;
-    public boolean success;
-    public Player player;
+    public void main(){
+        Array<Point2> points = Placement.pathfindLine(true, start.x, start.y, target.x, target.y);
 
-    public ArrayList<Vector3> path = new ArrayList<>();
-    public ArrayList<Vector3> reverse = new ArrayList<>();
-
-    public EssentialAI() {
-        width = world.width();
-        height = world.height();
-        size = (width - 1) * (height - 1);
-        cardinals = new int[]{-1, 1, -width, width};
-        field = new int[size];
-    }
-
-    public void main() {
-        path(Blocks.conveyor, player);
-        if (!success) return;
-        Block block = Blocks.titaniumConveyor;
-        float x, y;
-        int rot;
-        final float blockOffset = block.offset();
-        for (Vector3 t : path) {
-            x = t.x * tilesize + blockOffset;
-            y = t.y * tilesize + blockOffset;
-            rot = (int) t.z;
-            Call.onConstructFinish(world.tileWorld(x, y), block, 0, (byte) rot, Team.sharded, false);
+        float angle = Angles.angle(start.x, start.y, target.x, target.y);
+        int baseRotation = rotation;
+        if(!overrideLineRotation){
+            baseRotation = (start.x == target.x && start.y == target.y) ? rotation : ((int)((angle + 45) / 90f)) % 4;
         }
-    }
 
-    public void path(Block type, Player player) {
-        if (start == target) return;
-        path.clear();
-        int[] flowField = flow();
-        int i = xyToI(target.x, target.y);
-        if (!validindex(i)) return;
-        int dir = nexttile(flowField, i);
-        int ni = dir + i;
-        Tile t = target;
-        path.add(new Vector3(t.x, t.y, cardinalToRot(dir)));
+        Tmp.r3.set(-1, -1, 0, 0);
 
-        int limit = 300;
-        while (t != start && limit-- > 0) {
-            int[] xy = iToXY(ni);
-            int rot = cardinalToRot(dir);
-            if (!validindex(ni) || !Build.validPlace(player.getTeam(), xy[0], xy[1], type, rot)) {
-                success = false;
-                return;
+        for(int i = 0; i < points.size; i++){
+            Point2 point = points.get(i);
+
+            if(block != null && Tmp.r2.setSize(block.size * tilesize).setCenter(point.x * tilesize + block.offset(), point.y * tilesize + block.offset()).overlaps(Tmp.r3)){
+                continue;
             }
-            path.add(new Vector3(xy[0], xy[1], rot));
-            dir = nexttile(flowField, ni);
-            ni += dir;
-            t = world.tile(ni);
-        }
-        success = t.equals(start);
-        if (!success) return;
-        path.add(new Vector3(t.x, t.y, cardinalToRot(dir)));
-        reverse = new ArrayList<>();
-        for (int q = path.size() - 1; q >= 0; q--) reverse.add(path.get(q));
-        path = reverse;
-    }
 
-    public int nexttile(int[] flow, int i) {
-        int highestDir = -1;
-        int highestVal = -1;
-        for (int cardinal : cardinals) {
-            Integer neighbor = flow[i + cardinal];
-            if (neighbor > highestVal) {
-                highestVal = neighbor;
-                highestDir = cardinal;
+            Point2 next = i == points.size - 1 ? null : points.get(i + 1);
+            line.x = point.x;
+            line.y = point.y;
+            if(!overrideLineRotation){
+                line.rotation = next != null ? Tile.relativeTo(point.x, point.y, next.x, next.y) : baseRotation;
+            }else{
+                line.rotation = rotation;
             }
+            line.last = next == null;
+            //cons.get(line);
+
+            Global.log(line.x+"/"+line.y+"/"+line.rotation);
+            Tmp.r3.setSize(block.size * tilesize).setCenter(point.x * tilesize + block.offset(), point.y * tilesize + block.offset());
         }
-        return highestDir;
     }
 
-    private int[] iToXY(int i) {
-        return new int[]{i % width, i / width};
-    }
+    private static boolean astar(int startX, int startY, int endX, int endY){
+        Tile start = world.tile(startX, startY);
+        Tile end = world.tile(endX, endY);
+        if(start == end || start == null || end == null) return false;
 
-    private byte cardinalToRot(int dir) {
-        if (dir == -1) return (byte) 0;
-        if (dir == 1) return (byte) 2;
-        if (dir < 0) return (byte) 1;
-        return (byte) 3;
-    }
+        costs.clear();
+        closed.clear();
+        parents.clear();
 
-    public boolean validindex(int i) {
-        return ((i > width) && (i < size - width) && (i % width > 0));
-    }
+        int nodeLimit = 1000;
+        int totalNodes = 0;
 
-    public boolean validtile(Tile tile, int i) {
-        return validindex(i) && (!tile.solid()) && (tile.block() == Blocks.air);
-    }
-
-    private Tile getTile(int i) {
-        return (validindex(i) ? world.tile(i) : world.tile(0));
-    }
-
-    public int[] flow() {
-        for (int i = 0; i < size; i++) field[i] = 0;
-        IntArray current = new IntArray(), next = new IntArray();
-        current.add(xyToI(start.x, start.y));
-        while (current.size > 0) {
-            for (int index : current.items) {
-                for (int cardinal : cardinals) {
-                    int neg = index + cardinal;
-                    Call.onConstructFinish(world.tile(neg), Blocks.phaseWall, 0, (byte) 0, Team.sharded, false);
-                    if (!validindex(neg)) continue;
-                    Tile t = getTile(neg);
-                    if (!validtile(t, neg)) continue;
-                    int p = field[index] - 1;
-                    if (field[neg] < p) {
-                        next.add(neg);
-                        field[neg] = p;
+        PriorityQueue<Tile> queue = new PriorityQueue<>(10, (a, b) -> Float.compare(costs.get(a.pos(), 0f) + distanceHeuristic(a.x, a.y, end.x, end.y), costs.get(b.pos(), 0f) + distanceHeuristic(b.x, b.y, end.x, end.y)));
+        queue.add(start);
+        boolean found = false;
+        while(!queue.isEmpty() && totalNodes++ < nodeLimit){
+            Tile next = queue.poll();
+            float baseCost = costs.get(next.pos(), 0f);
+            if(next == end){
+                found = true;
+                break;
+            }
+            closed.add(Pos.get(next.x, next.y));
+            for(Point2 point : Geometry.d4){
+                int newx = next.x + point.x, newy = next.y + point.y;
+                Tile child = world.tile(newx, newy);
+                if(child != null && validNode(next, child)){
+                    if(closed.add(child.pos())){
+                        parents.put(child.pos(), next.pos());
+                        costs.put(child.pos(), tileHeuristic(next, child) + baseCost);
+                        queue.add(child);
                     }
                 }
             }
-            IntArray swap = current;
-            current = next;
-            swap.clear();
-            next = swap;
         }
-        return field;
+
+        if(!found) return false;
+        int total = 0;
+
+        points.add(Pools.obtain(Point2.class, Point2::new).set(endX, endY));
+
+        Tile current = end;
+        while(current != start && total++ < nodeLimit){
+            if(current == null) return false;
+            int newPos = parents.get(current.pos(), Pos.invalid);
+
+            if(newPos == Pos.invalid) return false;
+
+            points.add(Pools.obtain(Point2.class, Point2::new).set(Pos.x(newPos),  Pos.y(newPos)));
+            current = world.tile(newPos);
+        }
+
+        points.reverse();
+
+        return true;
     }
 
-    public int xyToI(int x, int y) {
-        return x + y * world.width();
-        //return x * y;
+    private static float distanceHeuristic(int x1, int y1, int x2, int y2){
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
     }
-     */
+
+    private static boolean validNode(Tile tile, Tile other){
+        Block block = Blocks.conveyor;
+        if(block != null && block.canReplace(other.block())){
+            return true;
+        }else{
+            return other.block().alwaysReplace;
+        }
+    }
+
+    private static float tileHeuristic(Tile tile, Tile other){
+        Block block = Blocks.conveyor;
+
+        if(!other.block().alwaysReplace && !(block != null && block.canReplace(other.block()))){
+            return 20;
+        }else{
+            if(parents.containsKey(tile.pos())){
+                Tile prev = world.tile(parents.get(tile.pos(), 0));
+                if(tile.relativeTo(prev) != other.relativeTo(tile)){
+                    return 8;
+                }
+            }
+        }
+        return 1;
+    }
+
+    public static Array<Point2> pathfindLine(boolean conveyors, int startX, int startY, int endX, int endY){
+        Pools.freeAll(points);
+
+        points.clear();
+        if(astar(startX, startY, endX, endY)){
+            return points;
+        }else{
+            return bres.lineNoDiagonal(startX, startY, endX, endY, Pools.get(Point2.class, Point2::new), points);
+        }
+    }
+
+    class PlaceLine{
+        public int x, y, rotation;
+        public boolean last;
+    }
+*/
+    /* source copied from io.anuke.mindustry.input.Placement end*/
 }

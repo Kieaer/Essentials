@@ -364,8 +364,8 @@ public class EssentialPlayer{
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             // Check password security
-            // 영문(소문자), 숫자, 특수문자 조합, 7~20자리
-            String pwPattern = "^(?=.*\\d)(?=.*[~`!@#$%\\^&*()-])(?=.*[a-z]).{7,20}$";
+            // 영문(소문자), 숫자, 7~20자리
+            String pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$";
             Matcher matcher = Pattern.compile(pwPattern).matcher(pw);
 
             // 같은 문자 4개이상 사용 불가
@@ -383,7 +383,7 @@ public class EssentialPlayer{
             // 정규식에 맞지 않을경우
             if(!matcher.matches()){
                 player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
-                        "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자, 특수문자를 포함해야 합니다!");
+                        "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
                 registerresult = false;
                 return;
             }
@@ -391,7 +391,7 @@ public class EssentialPlayer{
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             if(matcher2.find()){
                 player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
-                        "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자, 특수문자를 포함해야 합니다!");
+                        "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
                 registerresult = false;
                 return;
             }

@@ -14,6 +14,7 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
+import io.anuke.mindustry.content.Items;
 import io.anuke.mindustry.content.UnitTypes;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
@@ -616,14 +617,20 @@ public class Main extends Plugin {
 							a4 = true;
 						}
 						if(entity.heat >= 0.95f){
+                            Call.onDeconstructFinish(target, Blocks.air, 0);
 							Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+
 							for(int a=0;a<playerGroup.size();a++){
 								Player player = playerGroup.all().get(i);
 								if(player.isAdmin){
-									player.set(target.x*8, target.y*8);
+									player.setNet(target.x*8, target.y*8);
 								}
 							}
-							Call.onDeconstructFinish(target, Blocks.air, 0);
+							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.lead, 150);
+							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.metaglass, 25);
+							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.graphite, 75);
+							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.thorium, 75);
+							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.silicon, 100);
 						}
 					}catch (Exception e){
 						nukeblock.remove(i);
@@ -1606,8 +1613,9 @@ public class Main extends Plugin {
 			}
 		});
 
-		handler.<Player>register("test", "<number>", "pathfinding test", (arg, player) -> {
+		handler.<Player>register("test", "pathfinding test", (arg, player) -> {
 			//getcount(world.tile(player.tileX(), player.tileY()), Integer.parseInt(arg[0]));
+			/*
 			if (player.isAdmin) {
 				Thread work = new Thread(() -> {
 					EssentialAI ai = new EssentialAI();
@@ -1623,12 +1631,14 @@ public class Main extends Plugin {
 						e.printStackTrace();
 					}
 					ai.target = world.tile(player.tileX(), player.tileY());
-					ai.auto();
+					ai.main();
 				});
 				work.start();
 			} else {
 				bundle(player, "notadmin");
 			}
+
+			 */
 			player.sendMessage("a nothing");
 		});
 		/*
