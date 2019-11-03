@@ -59,6 +59,9 @@ public class EssentialTimer extends TimerTask implements Runnable{
         // Vote monitoring
         executorService.execute(new checkvote());
 
+        // client players counting in servername
+        executorService.execute(new changename());
+
         // If world loaded
         if(state.is(GameState.State.playing)) {
             // server to server monitoring
@@ -644,6 +647,21 @@ public class EssentialTimer extends TimerTask implements Runnable{
                     }
                 }
                 jumpall.put(i, x+"/"+y+"/"+result+"/"+digits.length);
+            }
+        }
+    }
+    static class changename extends Thread{
+        @Override
+        public void run(){
+            if(jumpcount.length() > 1){
+                int result = 0;
+                for (int l=0;l<jumpcount.length();l++) {
+                    String dat = jumpcount.getString(l);
+                    String[] re = dat.split("/");
+                    result += Integer.parseInt(re[4]);
+                }
+
+                Core.settings.put("servername", servername+", "+result+" players");
             }
         }
     }

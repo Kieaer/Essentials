@@ -54,6 +54,7 @@ public class EssentialConfig {
     public static int slotnumber;
 
     public static ExecutorService executorService = Executors.newCachedThreadPool();
+    public final static String servername = Core.settings.getString("servername");
 
     public void main() {
         Map<String, Object> obj;
