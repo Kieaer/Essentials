@@ -5,6 +5,7 @@ import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
 
 import static essentials.EssentialConfig.cupdatei;
+import static essentials.EssentialConfig.executorService;
 
 public class ColorNick {
     private static int colorOffset = 0;
@@ -27,7 +28,7 @@ public class ColorNick {
                 }
             }
         });
-        thread.start();
+        executorService.execute(thread);
     }
 
     private void nickcolor(String name, Player player) {

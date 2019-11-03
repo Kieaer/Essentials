@@ -53,7 +53,7 @@ public class EssentialConfig {
     public static int savetime;
     public static int slotnumber;
 
-    public static ExecutorService executorService = Executors.newCachedThreadPool();
+    public static ExecutorService executorService = Executors.newFixedThreadPool(6);
     public final static String servername = Core.settings.getString("servername");
 
     public void main() {
@@ -434,14 +434,21 @@ public class EssentialConfig {
 
         // Move folder
         try{
-            File baseDir = Core.settings.getDataDirectory().child("mods/Essentials/").file();
-            File destDir = Core.settings.getDataDirectory().child("mods/Essentials/data/").file();
+            File f1 = new File(Core.settings.getDataDirectory().child("mods/Essentials").path());
+            File f2 = new File(Core.settings.getDataDirectory().child("mods/Essentials/data").path());
 
-            File[] files = baseDir.listFiles();
-            for (int i=0; i<files.length; i++){
-                if (files[i].getName().endsWith(".json")){
-                    files[i].renameTo(new File(destDir, files[i].getName()));
-                    Global.log(files[i].getName());
+            if(!f2.exists()){
+                if(!f2.mkdirs()){
+                    Global.log("create data folder failed!");
+                };
+            }
+
+            File[] files = f1.listFiles();
+            for (File file : files) {
+                if (file.getName().endsWith(".json")) {
+                    if (!file.renameTo(new File(f2, file.getName()))) {
+                        Global.log(file.getName() + " file move failed!");
+                    }
                 }
             }
         }catch (Exception e){
@@ -451,7 +458,19 @@ public class EssentialConfig {
         if (!Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").exists()) {
             JSONObject object = new JSONObject();
             object.put("banall", "true");
+            object.put("servername", Core.settings.getString("servername"));
             Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
+        } else {
+            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
+            JSONTokener temp2 = new JSONTokener(temp1);
+            JSONObject data = new JSONObject(temp2);
+            if(data.isNull("servername")){
+                data.put("servername", Core.settings.getString("servername"));
+                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(data));
+            } else {
+                Core.settings.put("servername", data.getString("servername"));
+                Core.settings.save();
+            }
         }
 
         if(!Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").exists()){

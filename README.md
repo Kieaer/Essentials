@@ -56,6 +56,12 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Remove translate before message
   - [ ] PvP Team chat without command
 - [ ] Difficulty adjustments based on the number of players
+- [ ] Open player's server (submit by Kyan)
+  - [ ] Add /event host (roomname) (map) (gamemode)
+  - [ ] Add /event stop
+  - [ ] Add /event join (roomname)
+- [ ] Improved rank system
+  - [ ] Show personal ranking record
 
 ## Client commands
 

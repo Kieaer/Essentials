@@ -746,8 +746,7 @@ public class EssentialPlayer{
         }
 
         // Give join exp
-        Thread expthread = new Thread(() -> EssentialExp.joinexp(player.uuid));
-        expthread.start();
+        executorService.execute(new Thread (() -> EssentialExp.joinexp(player.uuid)));
 
         // Color nickname
         boolean colornick = (boolean) db.get("colornick");
@@ -759,8 +758,7 @@ public class EssentialPlayer{
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }
 
-        //Thread checkgrief = new Thread(() -> new EssentialTimer.checkgrief(player));
-        //checkgrief.start();
+        new EssentialTimer.checkgrief(player);
 
         if (db.getBoolean("isadmin")) {
             player.isAdmin = true;

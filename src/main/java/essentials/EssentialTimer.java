@@ -1,6 +1,7 @@
 package essentials;
 
 import essentials.special.Vote;
+import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.util.Log;
@@ -270,15 +271,19 @@ public class EssentialTimer extends TimerTask implements Runnable{
         int routercount;
         int breakcount;
         int conveyorcount;
+        int routerlimit;
+        int breaklimit;
+        int conveyorlimit;
         ArrayList<Block> impblock = new ArrayList<>();
         ArrayList<Block> block = new ArrayList<>();
 
         checkgrief(Player player){
             this.player = player;
+            new Thread(this).start();
         }
 
         @Override
-        public void run(){
+        public void run() {
             // Important blocks
             impblock.add(Blocks.thoriumReactor);
             impblock.add(Blocks.impactReactor);
@@ -299,13 +304,32 @@ public class EssentialTimer extends TimerTask implements Runnable{
             breakcount = 0;
             conveyorcount = 0;
 
+            int level = getData(player.uuid).getInt("level");
+            routerlimit = 10 + (level * 2);
+            breaklimit = 30 + (level * 3);
+            conveyorlimit = 20 + (level * 3);
+
             // Break count
             Events.on(BuildSelectEvent.class, e -> {
-                if(e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
+                if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                     if (e.breaking) {
                         Block block = e.builder.buildRequest().block;
-                        if(block == Blocks.thoriumReactor){
+                        if (block == Blocks.thoriumReactor) {
                             breakcount++;
+                        }
+                        for (Block value : impblock) {
+                            if (e.builder.buildRequest().block == value) {
+                                breakcount++;
+                                if (breakcount > 15) {
+                                    Call.sendMessage("[scarlet]ALERT! " + ((Player) e.builder).name + "[white] player is destroying an [green]important building[]!");
+                                }
+                            }
+                        }
+                        if (e.builder.buildRequest().block == Blocks.conveyor || e.builder.buildRequest().block == Blocks.titaniumConveyor) {
+                            conveyorcount++;
+                            if (conveyorcount > 50) {
+                                Call.sendMessage("[scarlet]ALERT! " + ((Player) e.builder).name + "[white] player is destroying an many [green]conveyors[]!");
+                            }
                         }
                     }
                 }
@@ -314,44 +338,31 @@ public class EssentialTimer extends TimerTask implements Runnable{
             // Place count
             Events.on(BlockBuildEndEvent.class, e -> {
                 if (!e.breaking && e.player != null && e.player.buildRequest() != null && !state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-                    if(e.player.buildRequest().block == Blocks.router){
+                    if (e.player.buildRequest().block == Blocks.router) {
                         routercount++;
-                        if(routercount > 20){
-                            Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] player is spamming [gray]router[]!");
-                        }
-                        for (Block value : impblock) {
-                            if (e.player.buildRequest().block == value) {
-                                breakcount++;
-                                if (breakcount > 15) {
-                                    Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] player is destroying an [green]important building[]!");
-                                }
-                            }
-                        }
-                        for (Block value : block) {
-                            if (e.player.buildRequest().block == value) {
-                                conveyorcount++;
-                                if (conveyorcount > 30) {
-                                    Call.sendMessage("[scarlet]ALERT! "+e.player.name+"[white] player is destroying an many [green]conveyors[]!");
-                                }
-                            }
+                        if (routercount > 20) {
+                            Call.sendMessage("[scarlet]ALERT! " + e.player.name + "[white] player is spamming [gray]router[]!");
                         }
                     }
                 }
             });
-
-            Thread reset = new Thread(() -> {
-                try {
-                    Thread.sleep(20000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            if(player == null){
+                this.interrupt();
+            }
+            Core.app.addListener(new ApplicationListener(){
+                int delaycount = 0;
+                @Override
+                public void update(){
+                    if(delaycount == 600){
+                        routercount = 0;
+                        breakcount = 0;
+                        conveyorcount = 0;
+                    } else {
+                        delaycount++;
+                    }
                 }
-                routercount = 0;
-                breakcount = 0;
-                conveyorcount = 0;
             });
-            reset.start();
         }
-
     }
     static class checkthorium extends Thread{
         public Tile getNear(Tile tile, int count){
@@ -660,8 +671,11 @@ public class EssentialTimer extends TimerTask implements Runnable{
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }
+                String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
+                JSONTokener temp2 = new JSONTokener(temp1);
+                JSONObject data = new JSONObject(temp2);
 
-                Core.settings.put("servername", servername+", "+result+" players");
+                Core.settings.put("servername", data.getString("servername")+", "+result+" players");
             }
         }
     }

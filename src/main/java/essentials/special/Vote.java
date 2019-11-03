@@ -99,6 +99,7 @@ public class Vote{
     }
 
     public static final Thread counting = new Thread(() -> {
+        ArrayList<Thread> threads = new ArrayList<>();
         if (playerGroup != null && playerGroup.size() > 0) {
             Thread work = null;
                 for (int i = 0; i < playerGroup.size(); i++) {
@@ -140,13 +141,16 @@ public class Vote{
                             }
                         }
                     });
+                    threads.add(work);
                     work.start();
                 }
             try {
                 Thread.sleep(60000);
             } catch (InterruptedException e) {
                 assert work != null;
-                work.interrupt();
+                for (Thread thread : threads) {
+                    thread.interrupt();
+                }
             }
         }
     });

@@ -14,7 +14,6 @@ import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
-import io.anuke.mindustry.content.Items;
 import io.anuke.mindustry.content.UnitTypes;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
@@ -207,7 +206,7 @@ public class Main extends Plugin {
 						printStackTrace(ex);
 					}
 				});
-				t.start();
+				executorService.execute(t);
 			}
 		});
 
@@ -290,7 +289,7 @@ public class Main extends Plugin {
 					}
 				}
 			});
-			playerthread.start();
+			executorService.execute(playerthread);
 
 			// PvP placetime (WorldLoadEvent isn't work.)
 			if(enableantirush && Vars.state.rules.pvp) {
@@ -405,7 +404,7 @@ public class Main extends Plugin {
 						Call.onKick(e.player.con, "You're not logged!");
 					}
 				});
-				expthread.start();
+				executorService.execute(expthread);
 
 				if(e.tile.entity.block == Blocks.message){
 					try{
@@ -621,16 +620,16 @@ public class Main extends Plugin {
 							Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
 
 							for(int a=0;a<playerGroup.size();a++){
-								Player player = playerGroup.all().get(i);
-								if(player.isAdmin){
-									player.setNet(target.x*8, target.y*8);
+								Player p = playerGroup.all().get(a);
+								if(p.isAdmin){
+									p.setNet(target.x*8, target.y*8);
 								}
 							}
-							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.lead, 150);
+							/*state.teams.get(Team.sharded).cores.first().entity.items.add(Items.lead, 150);
 							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.metaglass, 25);
 							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.graphite, 75);
 							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.thorium, 75);
-							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.silicon, 100);
+							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.silicon, 100);*/
 						}
 					}catch (Exception e){
 						nukeblock.remove(i);
@@ -705,7 +704,7 @@ public class Main extends Plugin {
 					Global.log("Done!");
 				}
 			});
-			t.start();
+			executorService.execute(t);
 		});
 		handler.register("allinfo", "<name>", "Show player information.", (arg) -> {
 			Thread t = new Thread(() -> {
@@ -742,7 +741,7 @@ public class Main extends Plugin {
 					printStackTrace(e);
 				}
 			});
-			t.start();
+			executorService.execute(t);
 		});
 		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
 			Client client = new Client();
