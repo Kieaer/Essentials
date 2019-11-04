@@ -248,6 +248,10 @@ public class EssentialPlayer{
             }
             rs.close();
             stmt.close();
+            if(json.toString().equals("{}")){
+                Global.loge("Invalid data!");
+                // todo make invalid player information
+            }
             queryresult = true;
         } catch (Exception e){
             printStackTrace(e);

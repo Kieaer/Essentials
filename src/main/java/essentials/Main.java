@@ -1,8 +1,9 @@
 package essentials;
 
+import essentials.EssentialTimer.AutoRollback;
+import essentials.EssentialTimer.login;
 import essentials.net.Client;
 import essentials.net.Server;
-import essentials.special.AutoRollback;
 import essentials.special.IpAddressMatcher;
 import essentials.special.Vote;
 import io.anuke.arc.ApplicationListener;
@@ -39,6 +40,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -69,6 +71,7 @@ import static essentials.EssentialConfig.serverenable;
 import static essentials.EssentialConfig.update;
 import static essentials.EssentialPlayer.*;
 import static essentials.EssentialTimer.nukeposition;
+import static essentials.EssentialTimer.process;
 import static essentials.Global.*;
 import static essentials.net.Client.serverconn;
 import static essentials.net.Client.update;
@@ -81,6 +84,7 @@ public class Main extends Plugin {
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
 	private ArrayList<Tile> nukedata = new ArrayList<>();
+	private ArrayList<String> ports = new ArrayList<>();
 
 	public Main() {
 		// Start config file
@@ -554,16 +558,14 @@ public class Main extends Plugin {
 
 		if(loginenable){
 			Timer alerttimer = new Timer(true);
-			alerttimer.scheduleAtFixedRate(new EssentialTimer.login(), 60000, 60000);
+			alerttimer.scheduleAtFixedRate(new login(), 60000, 60000);
 		}
 
-		EssentialTimer job = new EssentialTimer();
 		Timer timer = new Timer(true);
-		timer.scheduleAtFixedRate(job, 1000, 1000);
+		timer.scheduleAtFixedRate(new EssentialTimer(), 1000, 1000);
 
-		AutoRollback rollback = new AutoRollback();
 		Timer rt = new Timer(true);
-		rt.scheduleAtFixedRate(rollback, savetime*60000, savetime*60000);
+		rt.scheduleAtFixedRate(new AutoRollback(), savetime*60000, savetime*60000);
 
 		// Set main thread works
 		Core.app.addListener(new ApplicationListener(){
@@ -690,6 +692,10 @@ public class Main extends Plugin {
 					client.main("exit", null, null);
 					//client.interrupt();
 					Global.log("Client thread disabled.");
+				}
+
+				for (Process value : process) {
+					value.destroy();
 				}
 
                 executorService.shutdown();
@@ -967,6 +973,10 @@ public class Main extends Plugin {
 		handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
 			int bantimeset = Integer.parseInt(arg[1]);
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+			if(other == null){
+				Global.log("Player not found!");
+				return;
+			}
 			addtimeban(other.name, other.uuid, bantimeset);
 			switch (arg[0]) {
 				case "id":
@@ -988,6 +998,11 @@ public class Main extends Plugin {
 				default:
 					err("Invalid type.");
 					break;
+			}
+			Call.onKick(other.con, "Tempban kicked");
+			if(clientenable){
+				Client client = new Client();
+				client.main("bansync", null, null);
 			}
 		});
 		handler.register("test", "Check that the plug-in is working properly.", arg -> {
@@ -1055,6 +1070,94 @@ public class Main extends Plugin {
 				} catch (IllegalArgumentException e) {
 					player.sendMessage("No difficulty with name '" + arg[0] + "' found.");
 				}
+			}
+		});
+		handler.<Player>register("event", "<host/stop/join> <roomname> [map] [gamemode]", "Host your own sever", (arg, player) -> {
+			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+				return;
+			}
+			final String[] ip = new String[1];
+			Thread t = new Thread(() -> {
+				try{
+					URL whatismyip = new URL("http://checkip.amazonaws.com");
+					BufferedReader in = new BufferedReader(new InputStreamReader(
+							whatismyip.openStream()));
+
+					ip[0] = in.readLine();
+				}catch (Exception e){
+					e.printStackTrace();
+				}
+			});
+			t.start();
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			if(arg[0].equals("host")) {
+				JSONObject db = getData(player.uuid);
+				if (db.toString().equals("{}")) return;
+				if (db.getInt("level") > 20 || player.isAdmin) {
+					if(arg[2] == null){
+						player.sendMessage("Put map name!");
+						return;
+					}
+					if(arg[3] == null){
+						player.sendMessage("Put mode!");
+						return;
+					}
+					int customport = (int)(Math.random() * 65535);
+					String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
+					JSONTokener parser = new JSONTokener(settings);
+					JSONObject object = new JSONObject(parser);
+
+					JSONArray array = new JSONArray();
+					JSONObject item = new JSONObject();
+					item.put("name", arg[1]);
+					item.put("port", customport);
+					array.put(item);
+
+					object.put("servers", array);
+					Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
+
+					EssentialTimer.eventserver es = new EssentialTimer.eventserver();
+					es.roomname = arg[1];
+					es.map = arg[2];
+					es.gamemode = arg[3];
+					es.customport = customport;
+					es.start();
+					try {
+						es.join();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					//Call.onConnect(player.con, ip[0], customport);
+					Call.onConnect(player.con,"localhost",customport);
+				} else {
+					player.sendMessage("You must achieve level 25 or above!");
+				}
+			} else if(arg[0].equals("join")){
+				String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
+				JSONTokener parser = new JSONTokener(settings);
+				JSONObject object = new JSONObject(parser);
+				JSONArray arr = object.getJSONArray("servers");
+				for(int a=0;a<arr.length();a++){
+					JSONObject ob = arr.getJSONObject(a);
+					String name = ob.getString("name");
+					if(name.equals(arg[1])){
+						//Call.onConnect(player.con,ip[0],ob.getInt("port"));
+						Call.onConnect(player.con,"localhost",ob.getInt("port"));
+					}
+				}
+			} else if(arg[0].equals("stop")){
+				// todo Upgrade java 9 and use 'long pid = p.pid();'
+				//for(int a=0;a<process.size();a++){
+
+				//}
+			} else {
+				Global.log("invalid option!");
 			}
 		});
 		handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {

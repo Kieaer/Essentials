@@ -31,6 +31,8 @@ class EssentialTR {
                         Player p = playerGroup.all().get(i);
                         if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
                             JSONObject data = getData(p.uuid);
+                            // Null check?
+                            if(!data.toString().equals("{}")) continue;
                             String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
                             String language = data.getString("language");
                             String orignal = orignaldata.getString("language");

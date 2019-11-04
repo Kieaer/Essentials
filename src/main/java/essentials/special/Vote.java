@@ -2,6 +2,7 @@ package essentials.special;
 
 import essentials.EssentialBundle;
 import essentials.EssentialPlayer;
+import essentials.EssentialTimer.AutoRollback;
 import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -23,7 +24,6 @@ import static essentials.EssentialPlayer.getData;
 import static essentials.Global.bundle;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.*;
-
 public class Vote{
     private static Player player;
     private static Player target;
@@ -41,6 +41,15 @@ public class Vote{
         }
         if(playerGroup.size() <= 3){
             bundle(player, "vote-min");
+            return;
+        }
+        if(require == 0){
+            Call.sendMessage("Vote system error! Please inform the plugin developer of this issue!");
+            Global.loge("targetplayer: "+target);
+            Global.loge("requestplayer: "+player.name);
+            Global.loge("isvoteing: "+isvoting);
+            Global.loge("arraylist: "+list.toString());
+            Global.loge("require: "+require);
             return;
         }
 

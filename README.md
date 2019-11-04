@@ -25,7 +25,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 - [x] Make RPG using player DB
   - [x] Lock blocks
 - [ ] Monitoring resource consumption
-  - [ ] Alarm when resource consumption is fast <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
+  - [ ] Alarm when resource consumption is fast
   - [ ] Alarm when resource bank is full
 - [ ] AI
   - [ ] Pathfinding
@@ -57,9 +57,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] PvP Team chat without command
 - [ ] Difficulty adjustments based on the number of players
 - [ ] Open player's server (submit by Kyan)
-  - [ ] Add /event host (roomname) (map) (gamemode)
-  - [ ] Add /event stop
-  - [ ] Add /event join (roomname)
+  - [x] Add /event host (roomname) (map) (gamemode)
+  - [ ] Add /event stop <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
+  - [x] Add /event join (roomname)
 - [ ] Improved rank system
   - [ ] Show personal ranking record
 - [ ] Improved login system

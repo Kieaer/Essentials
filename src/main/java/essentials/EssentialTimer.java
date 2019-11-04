@@ -4,6 +4,8 @@ import essentials.special.Vote;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
+import io.anuke.arc.collection.Array;
+import io.anuke.arc.files.FileHandle;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
@@ -13,28 +15,29 @@ import io.anuke.mindustry.game.EventType.BlockBuildEndEvent;
 import io.anuke.mindustry.game.EventType.BuildSelectEvent;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
+import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
+import org.codehaus.plexus.util.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Consumer;
 
 import static essentials.EssentialConfig.*;
 import static essentials.EssentialPlayer.getData;
 import static essentials.EssentialPlayer.writeData;
 import static essentials.Global.printStackTrace;
 import static essentials.Global.setcount;
+import static essentials.special.PingServer.pingServer;
 import static essentials.special.Vote.isvoting;
 import static io.anuke.mindustry.Vars.*;
 
@@ -42,6 +45,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
     public static String playtime;
     public static String uptime;
     public static JSONArray nukeposition = new JSONArray();
+    public static ArrayList<Process> process = new ArrayList<>();
 
     @Override
     public void run() {
@@ -79,7 +83,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
         }
     }
 
-    static class playtime extends Thread{
+    static final class playtime extends Thread{
         @Override
         public void run(){
             try{
@@ -128,7 +132,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class bantime extends Thread{
+    static final class bantime extends Thread{
         @Override
         public void run(){
             try{
@@ -159,7 +163,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class maptime extends Thread{
+    static final class maptime extends Thread{
         @Override
         public void run(){
             if(playtime != null){
@@ -190,7 +194,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class uptime extends Thread{
+    static final class uptime extends Thread{
         @Override
         public void run(){
             if(uptime != null){
@@ -208,7 +212,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class jumpzone extends Thread{
+    static final class jumpzone extends Thread{
         @Override
         public void run(){
             if (playerGroup.size() > 0) {
@@ -266,7 +270,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class checkgrief extends Thread{
+    static final class checkgrief extends Thread{
         Player player;
         int routercount;
         int breakcount;
@@ -364,7 +368,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             });
         }
     }
-    static class checkthorium extends Thread{
+    static final class checkthorium extends Thread{
         public Tile getNear(Tile tile, int count){
             int x = tile.x;
             int y = tile.y;
@@ -468,7 +472,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class login extends TimerTask{
+    static final class login extends TimerTask{
         @Override
         public void run() {
             Thread.currentThread().setName("Login alert thread");
@@ -487,7 +491,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class checkvote extends Thread{
+    static final class checkvote extends Thread{
         @Override
         public void run() {
             if(!isvoting){
@@ -498,7 +502,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class jumpcheck extends Thread {
+    static final class jumpcheck extends Thread {
         // Source from Anuken/CoreBot
         @Override
         public void run() {
@@ -544,79 +548,8 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 });
             }
         }
-
-        void pingServer(String ip, int port, Consumer<PingResult> listener) {
-            try {
-                DatagramSocket socket = new DatagramSocket();
-                socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(ip), port));
-
-                socket.setSoTimeout(2000);
-
-                DatagramPacket packet = new DatagramPacket(new byte[256], 256);
-
-                long start = System.currentTimeMillis();
-                socket.receive(packet);
-
-                ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
-                listener.accept(readServerData(buffer, ip, System.currentTimeMillis() - start));
-                socket.disconnect();
-            } catch (Exception ignored) {}
-        }
-
-        private static PingResult readServerData(ByteBuffer buffer, String ip, long ping){
-            byte hlength = buffer.get();
-            byte[] hb = new byte[hlength];
-            buffer.get(hb);
-
-            byte mlength = buffer.get();
-            byte[] mb = new byte[mlength];
-            buffer.get(mb);
-
-            String host = new String(hb);
-            String map = new String(mb);
-
-            int players = buffer.getInt();
-            int wave = buffer.getInt();
-            int version = buffer.getInt();
-
-            return new PingResult(ip, ping, players+"", host, map, wave+"", version == -1 ? "Custom Build" : (""+version));
-        }
-
-        static class PingResult{
-            boolean valid;
-            String players;
-            String host;
-            String error;
-            String wave;
-            String map;
-            String ip;
-            String version;
-            long ping;
-
-            public PingResult(String ip, String error){
-                this.valid = false;
-                this.error = error;
-                this.ip = ip;
-            }
-
-            public PingResult(String error){
-                this.valid = false;
-                this.error = error;
-            }
-
-            PingResult(String ip, long ping, String players, String host, String map, String wave, String version){
-                this.ping = ping;
-                this.ip = ip;
-                this.valid = true;
-                this.players = players;
-                this.host = host;
-                this.map = map;
-                this.wave = wave;
-                this.version = version;
-            }
-        }
     }
-    static class jumpall extends Thread{
+    static final class jumpall extends Thread{
         @Override
         public void run() {
             for (int i=0;i<jumpall.length();i++) {
@@ -661,7 +594,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static class changename extends Thread{
+    static final class changename extends Thread{
         @Override
         public void run(){
             if(jumpcount.length() > 1){
@@ -676,6 +609,105 @@ public class EssentialTimer extends TimerTask implements Runnable{
                 JSONObject data = new JSONObject(temp2);
 
                 Core.settings.put("servername", data.getString("servername")+", "+result+" players");
+            }
+        }
+    }
+    public final static class AutoRollback extends TimerTask {
+        private boolean save() {
+            try {
+                FileHandle file = saveDirectory.child(slotnumber + "." + saveExtension);
+                SaveIO.save(file);
+                return true;
+            } catch (Exception e) {
+                printStackTrace(e);
+                return false;
+            }
+        }
+
+        public void load() {
+            Array<Player> all = Vars.playerGroup.all();
+            Array<Player> players = new Array<>();
+            players.addAll(all);
+
+            try {
+                FileHandle file = saveDirectory.child(slotnumber + "." + saveExtension);
+                SaveIO.load(file);
+            } catch (SaveIO.SaveException e) {
+                printStackTrace(e);
+            }
+
+            Call.onWorldDataBegin();
+
+            for (Player p : players) {
+                Vars.netServer.sendWorldData(p);
+                p.reset();
+
+                if (Vars.state.rules.pvp) {
+                    p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+                }
+            }
+            Global.log("Map rollbacked.");
+            Call.sendMessage("[green]Map rollbacked.");
+        }
+
+        @Override
+        public void run() {
+            if (save()) {
+                Call.sendMessage("[scarlet]AutoSave complete");
+            } else {
+                Global.loge("Map save failed! Check your disk or config!");
+            }
+        }
+    }
+    static final class eventserver extends Thread{
+        String roomname;
+        String map;
+        String gamemode;
+        int customport;
+
+        public void ready(){
+            new Thread(this).start();
+        }
+
+        @Override
+        public void run() {
+            try {
+                FileUtils.copyURLToFile(new URL("https://github.com/Anuken/Mindustry/releases/download/v99/server-release.jar"), new File(Paths.get("").toAbsolutePath().toString()+"/config/mods/Essentials/temp/"+roomname+"/server.jar"));
+                Service service = new Service(roomname, map, gamemode, customport);
+                service.start();
+                Thread.sleep(2000);
+            } catch (Exception e) {
+                printStackTrace(e);
+            }
+        }
+
+        public class Service extends Thread{
+            String roomname;
+            String map;
+            String gamemode;
+            int customport;
+
+            Service(String roomname, String map, String gamemode, int customport) {
+                this.gamemode = gamemode;
+                this.map = map;
+                this.roomname = roomname;
+                this.customport = customport;
+            }
+
+            @Override
+            public void run(){
+                try {
+                    Process p = null;
+                    ProcessBuilder pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "port", String.valueOf(customport), ",host", map, gamemode);
+                    pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
+                    p = pb.start();
+
+                    //Process proc = Runtime.getRuntime().exec("java -jar " + Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar port "+customport+",host " + map + " " + gamemode);
+                    //proc.
+                    process.add(p);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
             }
         }
     }
