@@ -92,7 +92,6 @@ public class Server implements Runnable {
                     remoteip = socket.getInetAddress().toString().replace("/", "");
 
                     if (data.matches("GET /.*")) {
-                        Global.log("server HTTP!");
                         httpserver(data);
                     } else if (data.matches("\\[(.*)]:.*")) {
                         Global.log("server chat!");
@@ -172,6 +171,8 @@ public class Server implements Runnable {
                     }
                     if (msg.equals("Socket closed")) {
                         Global.logs(remoteip + " Client disconnected");
+                        return;
+                    } if(msg.equals("Stream closed")) {
                         return;
                     } else {
                         printStackTrace(e);
@@ -770,6 +771,11 @@ public class Server implements Runnable {
                     }
                     bw.flush();
                     bw.close();
+                    os.close();
+                    osw.close();
+                    in.close();
+                    socket.close();
+                    list.remove(this);
                 } catch (Exception e) {
                     printStackTrace(e);
                 }

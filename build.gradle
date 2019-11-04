@@ -6,13 +6,13 @@ sourceCompatibility = JavaVersion.VERSION_1_8
 
 configurations.all {
     // Check for updates every build
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    //resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
 repositories{
     //mavenCentral()
     jcenter()
-    maven{ url 'https://jitpack.io' }
+    maven{ url 'https://www.jitpack.io' }
 }
 
 ext{

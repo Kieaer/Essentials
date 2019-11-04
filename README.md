@@ -62,6 +62,8 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Add /event join (roomname)
 - [ ] Improved rank system
   - [ ] Show personal ranking record
+- [ ] Improved login system
+  - [ ] Reset password
 
 ## Client commands
 

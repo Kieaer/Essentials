@@ -169,6 +169,29 @@ public class Main extends Plugin {
 		});
 
 		Events.on(DepositEvent.class, e -> {
+			// If deposit block name is thorium reactor
+			if(e.tile.block() == Blocks.thoriumReactor){
+				// Prevent the main thread from hanging when thread.sleep
+				Thread t = new Thread(() -> {
+					try {
+						NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) e.tile.entity;
+						Thread.sleep(50);
+						// If thorium reactor overheat
+						if (entity.heat >= 0.01) {
+							// Will show alert message
+							Call.sendMessage("ALERT! [scarlet]" + e.player + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!\n");
+							// then, destroy overheated reactor
+							Call.onTileDestroyed(e.tile);
+						}
+					} catch (Exception ex){
+						ex.printStackTrace();
+					}
+				});
+				executorService.execute(t);
+			}
+		});
+
+		Events.on(DepositEvent.class, e -> {
 			if(e.tile.block() == Blocks.thoriumReactor){
 				nukeblock.put(e.tile.entity.tileX()+"/"+e.tile.entity.tileY()+"/"+e.player.name);
 				Thread t = new Thread(() -> {
@@ -966,6 +989,9 @@ public class Main extends Plugin {
 					err("Invalid type.");
 					break;
 			}
+		});
+		handler.register("test", "Check that the plug-in is working properly.", arg -> {
+
 		});
 	}
 

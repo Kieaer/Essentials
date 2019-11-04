@@ -4,7 +4,7 @@ import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.EventType;
+import io.anuke.mindustry.game.EventType.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,7 +40,7 @@ public class EssentialLog implements Runnable{
             Global.log("Griefer.log created.");
         }
 
-        Events.on(EventType.PlayerChatEvent.class, e -> {
+        Events.on(PlayerChatEvent.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
@@ -53,7 +53,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.WorldLoadEvent.class, e -> {
+        Events.on(WorldLoadEvent.class, e -> {
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String text = gettime() + "World loaded!\n";
@@ -64,7 +64,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.BlockBuildEndEvent.class, e -> {
+        Events.on(BlockBuildEndEvent.class, e -> {
             if(!e.breaking && e.tile.entity() != null && e.player != null){
                 if(e.tile.entity.block != null && e.player.name != null){
                     //Thread t = new Thread(() -> {
@@ -84,7 +84,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.BuildSelectEvent.class, e -> {
+        Events.on(BuildSelectEvent.class, e -> {
             try{
                 if(e.breaking && e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                     Thread t = new Thread(() -> {
@@ -106,7 +106,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.MechChangeEvent.class, e -> {
+        Events.on(MechChangeEvent.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
@@ -119,7 +119,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.PlayerJoin.class, e -> {
+        Events.on(PlayerJoin.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
@@ -159,7 +159,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.PlayerConnect.class, e -> {
+        Events.on(PlayerConnect.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
@@ -173,7 +173,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.PlayerLeave.class, e -> {
+        Events.on(PlayerLeave.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
@@ -187,7 +187,7 @@ public class EssentialLog implements Runnable{
             }
         });
 
-        Events.on(EventType.DepositEvent.class, e -> {
+        Events.on(DepositEvent.class, e -> {
             Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
