@@ -25,7 +25,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 - [x] Make RPG using player DB
   - [x] Lock blocks
 - [ ] Monitoring resource consumption
-  - [ ] Alarm when resource consumption is fast
+  - [x] Alarm when resource consumption is fast
   - [ ] Alarm when resource bank is full
 - [ ] AI
   - [ ] Pathfinding
@@ -37,6 +37,18 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
     - [ ] ~~Monitoring no thorium input~~
     - [ ] ~~Make the reactor near the core~~
     - [x] Destroy thorium reactor when reactor overheated
+  - [ ] Detect non-block destroy/place griefing
+    - [ ] change mess driver
+    - [ ] change phase conveyor
+    - [ ] change Tunnel
+    - [ ] put bad items in any blocks
+      - [ ] Conveyor
+      - [ ] Phase/tunnel/mess driver
+      - [ ] Core
+      - [ ] container/Vault
+    - [ ] cryofluid
+    - [ ] ALL Deposit events <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
+    - [ ] ALL WithDraw events
 - [ ] Make lobby features
   - [ ] Show all server players
     - [ ] Message block
@@ -56,10 +68,10 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Remove translate before message
   - [ ] PvP Team chat without command
 - [ ] Difficulty adjustments based on the number of players
-- [ ] Open player's server (submit by Kyan)
-  - [x] Add /event host (roomname) (map) (gamemode)
-  - [ ] Add /event stop <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
-  - [x] Add /event join (roomname)
+- [x] Open player's server (submit by Kyan)
+  - [x] Add /event host [roomname] [map] [gamemode]
+  - [x] Add /event stop (Automatic)
+  - [x] Add /event join [roomname]
 - [ ] Improved rank system
   - [ ] Show personal ranking record
 - [ ] Improved login system
@@ -72,6 +84,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | ch | &lt;message&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
+| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
 | getpos |  | Show your current position position |
 | info |  | Show player information |
 | jump | &lt;serverip&gt; &lt;port&gt; &lt;range&gt; &lt;block-type&gt; | Create a server-to-server jumping zone. |

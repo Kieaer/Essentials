@@ -1,7 +1,7 @@
 package essentials.net;
 
-import essentials.EssentialPlayer;
 import essentials.Global;
+import essentials.PlayerDB;
 import essentials.special.gifimage;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
@@ -29,10 +29,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 
-import static essentials.EssentialConfig.*;
-import static essentials.EssentialTimer.playtime;
-import static essentials.EssentialTimer.uptime;
+import static essentials.Config.*;
 import static essentials.Global.printStackTrace;
+import static essentials.Threads.playtime;
+import static essentials.Threads.uptime;
 import static io.anuke.mindustry.Vars.*;
 
 public class Server implements Runnable {
@@ -79,6 +79,9 @@ public class Server implements Runnable {
                 osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                 bw = new BufferedWriter(osw);
             } catch (Exception e) {
+                if(e.getMessage().equals("socket closed")){
+                    return;
+                }
                 printStackTrace(e);
             }
         }
@@ -87,14 +90,23 @@ public class Server implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    String data = in.readLine();
-                    if (data == null || data.equals("")) continue;
                     remoteip = socket.getInetAddress().toString().replace("/", "");
+                    String data = in.readLine();
+                    Global.log(data);
+                    if (data == null || data.equals("")){
+                        bw.close();
+                        os.close();
+                        osw.close();
+                        in.close();
+                        socket.close();
+                        list.remove(this);
+                        Global.logs(remoteip + " Client disconnected");
+                        return;
+                    }
 
                     if (data.matches("GET /.*")) {
                         httpserver(data);
                     } else if (data.matches("\\[(.*)]:.*")) {
-                        Global.log("server chat!");
                         String msg = data.replaceAll("\n", "");
                         Global.logs("Received message from " + remoteip + ": " + msg);
                         for (int i = 0; i < playerGroup.size(); i++) {
@@ -156,6 +168,15 @@ public class Server implements Runnable {
                             }
 
                             os.write((data1 + "\n").getBytes(StandardCharsets.UTF_8));
+
+                            // send message to all clients
+                            for (int i = 0; i < list.size(); i++) {
+                                Service ser = list.get(i);
+
+                                ser.os.write((data1+"\n").getBytes(StandardCharsets.UTF_8));
+                                ser.os.flush();
+                            }
+
                             Global.logs("Data sented to " + remoteip + "!");
                         } catch (Exception e) {
                             Global.logw("server " + data);
@@ -275,7 +296,7 @@ public class Server implements Runnable {
             sql[8] = "SELECT * FROM players ORDER BY `reactorcount` DESC LIMIT 10";
 
             try {
-                Statement stmt = EssentialPlayer.conn.createStatement();
+                Statement stmt = PlayerDB.conn.createStatement();
                 ResultSet rs1 = stmt.executeQuery(sql[0]);
                 while (rs1.next()) {
                     placecount.append("<tr><td>" + rs1.getString("name") + "</td>\n" +

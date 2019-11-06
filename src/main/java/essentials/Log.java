@@ -14,11 +14,11 @@ import java.nio.file.StandardOpenOption;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import static essentials.EssentialPlayer.conn;
 import static essentials.Global.gettime;
 import static essentials.Global.printStackTrace;
+import static essentials.PlayerDB.conn;
 
-public class EssentialLog implements Runnable{
+public class Log implements Runnable{
     @Override
     public void run() {
         Thread.currentThread().setName("Logging thread");
@@ -39,9 +39,13 @@ public class EssentialLog implements Runnable{
             Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log").writeString("");
             Global.log("Griefer.log created.");
         }
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Chat.log").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Chat.log").writeString("");
+            Global.log("Chat.log created.");
+        }
 
         Events.on(PlayerChatEvent.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Chat.log")));
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String text = gettime() + e.player.name + ": " + e.message + "\n";
@@ -199,5 +203,19 @@ public class EssentialLog implements Runnable{
                 printStackTrace(error);
             }
         });
+
+        /*Path path = Core.settings.getDataDirectory().child("mods/Essentials/Logs/").path();
+        try (Stream<String> lines = Files.lines(path, Charset.defaultCharset())) {
+            long numOfLines = lines.count();
+        }
+        try {
+            int result;
+            FileReader input = new FileReader(Core.settings.getDataDirectory().child("mods/Essentials/Logs/").file());
+            LineNumberReader count = new LineNumberReader(input);
+            while (count.skip(Long.MAX_VALUE) > 0) { }
+            result = count.getLineNumber() + 1;
+        }catch (IOException e){
+            printStackTrace(e);
+        }*/
     }
 }

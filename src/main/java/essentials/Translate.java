@@ -12,12 +12,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.EssentialConfig.*;
-import static essentials.EssentialPlayer.getData;
+import static essentials.Config.*;
+import static essentials.PlayerDB.getData;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.playerGroup;
 
-class EssentialTR {
+class Translate {
     private static URL url;
     private static HttpURLConnection c;
     private static BufferedReader in;
@@ -32,7 +32,7 @@ class EssentialTR {
                         if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
                             JSONObject data = getData(p.uuid);
                             // Null check?
-                            if(!data.toString().equals("{}")) continue;
+                            if(data.toString().equals("{}") || !data.has("language")) return;
                             String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
                             String language = data.getString("language");
                             String orignal = orignaldata.getString("language");

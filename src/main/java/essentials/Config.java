@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 
 import static essentials.Global.printStackTrace;
 
-public class EssentialConfig {
+public class Config {
     public static String clienthost;
     public static int clientport;
     public static int serverport;
@@ -91,6 +91,9 @@ public class EssentialConfig {
 
                     "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
                     "banshare: false\n\n" +
+
+                    "# Ban sharing trust list\n" +
+                    "bantrust: \n\n" +
 
                     "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n# Ranking page address is http://localhost:server_port/rank\n" +
                     "query: false\n\n" +
@@ -538,6 +541,7 @@ public class EssentialConfig {
 
         if (Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()){
             Yaml yaml = new Yaml();
+
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
             // Config version
             if(obj.get("version") != null){

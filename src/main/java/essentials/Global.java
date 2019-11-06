@@ -18,8 +18,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import static essentials.EssentialConfig.debug;
-import static essentials.EssentialPlayer.getData;
+import static essentials.Config.debug;
+import static essentials.PlayerDB.getData;
 import static io.anuke.mindustry.Vars.world;
 
 public class Global {
@@ -103,9 +103,9 @@ public class Global {
     public static void bundle(Player player, String value){
         JSONObject db = getData(player.uuid);
         if (db.getString("country_code").contains("KR")) {
-            player.sendMessage(EssentialBundle.load(true, value));
+            player.sendMessage(Bundle.load(true, value));
         } else {
-            player.sendMessage(EssentialBundle.load(false, value));
+            player.sendMessage(Bundle.load(false, value));
         }
     }
 

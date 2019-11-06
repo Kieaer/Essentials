@@ -3,15 +3,15 @@ package essentials;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 
-import static essentials.EssentialConfig.*;
-import static essentials.EssentialPlayer.writeData;
+import static essentials.Config.*;
+import static essentials.PlayerDB.writeData;
 
-class EssentialExp {
+class Exp {
     private static final double BASE_XP = basexp;
     private static final double EXPONENT = exponent;
 
     static void exp(String name, String uuid) {
-        JSONObject db = EssentialPlayer.getData(uuid);
+        JSONObject db = PlayerDB.getData(uuid);
 
         int currentlevel = db.getInt("level");
         int max = (int) calculateFullTargetXp(currentlevel);
@@ -52,7 +52,7 @@ class EssentialExp {
     }
 
     static void joinexp(String uuid){
-        JSONObject db = EssentialPlayer.getData(uuid);
+        JSONObject db = PlayerDB.getData(uuid);
 
         int exp = (int) db.get("exp");
         int joincount = (int) db.get("joincount");

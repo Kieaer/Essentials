@@ -1,6 +1,5 @@
 package essentials;
 
-import essentials.special.ColorNick;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -25,12 +24,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static essentials.EssentialConfig.*;
+import static essentials.Config.*;
 import static essentials.Global.printStackTrace;
+import static essentials.Threads.ColorNick;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
-public class EssentialPlayer{
+public class PlayerDB {
     private static int dbversion = 1;
     private static boolean queryresult;
     public static Connection conn;
@@ -361,7 +361,7 @@ public class EssentialPlayer{
                 printStackTrace(e);
             }
         });
-        executorService.execute(t);
+        t.start();
 	}
 
 	static boolean register(Player player, String id, String pw, String pw2){
@@ -750,7 +750,7 @@ public class EssentialPlayer{
         }
 
         // Give join exp
-        executorService.execute(new Thread (() -> EssentialExp.joinexp(player.uuid)));
+        executorService.execute(new Thread(() -> Exp.joinexp(player.uuid)));
 
         // Color nickname
         boolean colornick = (boolean) db.get("colornick");
@@ -762,7 +762,7 @@ public class EssentialPlayer{
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }
 
-        new EssentialTimer.checkgrief(player);
+        new Threads.checkgrief(player);
 
         if (db.getBoolean("isadmin")) {
             player.isAdmin = true;

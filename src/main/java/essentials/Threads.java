@@ -1,6 +1,5 @@
 package essentials;
 
-import essentials.special.Vote;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -11,11 +10,14 @@ import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.core.GameState;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.EventType.BlockBuildEndEvent;
 import io.anuke.mindustry.game.EventType.BuildSelectEvent;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
+import io.anuke.mindustry.type.Item;
+import io.anuke.mindustry.type.ItemType;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
 import org.codehaus.plexus.util.FileUtils;
@@ -24,24 +26,26 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static essentials.EssentialConfig.*;
-import static essentials.EssentialPlayer.getData;
-import static essentials.EssentialPlayer.writeData;
-import static essentials.Global.printStackTrace;
-import static essentials.Global.setcount;
+import static essentials.Config.*;
+import static essentials.Global.*;
+import static essentials.PlayerDB.getData;
+import static essentials.PlayerDB.writeData;
 import static essentials.special.PingServer.pingServer;
-import static essentials.special.Vote.isvoting;
 import static io.anuke.mindustry.Vars.*;
 
-public class EssentialTimer extends TimerTask implements Runnable{
+public class Threads extends TimerTask implements Runnable{
     public static String playtime;
     public static String uptime;
     public static JSONArray nukeposition = new JSONArray();
@@ -78,12 +82,15 @@ public class EssentialTimer extends TimerTask implements Runnable{
             // all client players counting
             executorService.execute(new jumpall());
 
+            // check resource use fast
+            executorService.execute(new monitorresource());
+
             // Check thorium reactor in cryofluid
             // executorService.execute(new checkthorium());
         }
     }
 
-    static final class playtime extends Thread{
+    class playtime extends Thread {
         @Override
         public void run(){
             try{
@@ -123,7 +130,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
 
                             writeData("UPDATE players SET exp = '"+newexp+"', playtime = '"+newTime+"' WHERE uuid = '"+player.uuid+"'");
 
-                            EssentialExp.exp(player.name, player.uuid);
+                            Exp.exp(player.name, player.uuid);
                         }
                     }
                 }
@@ -132,7 +139,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class bantime extends Thread{
+    class bantime extends Thread {
         @Override
         public void run(){
             try{
@@ -163,7 +170,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class maptime extends Thread{
+    class maptime extends Thread {
         @Override
         public void run(){
             if(playtime != null){
@@ -194,7 +201,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class uptime extends Thread{
+    class uptime extends Thread {
         @Override
         public void run(){
             if(uptime != null){
@@ -212,7 +219,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class jumpzone extends Thread{
+    class jumpzone extends Thread {
         @Override
         public void run(){
             if (playerGroup.size() > 0) {
@@ -270,7 +277,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class checkgrief extends Thread{
+    static class checkgrief extends Thread {
         Player player;
         int routercount;
         int breakcount;
@@ -368,7 +375,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             });
         }
     }
-    static final class checkthorium extends Thread{
+    class checkthorium extends Thread {
         public Tile getNear(Tile tile, int count){
             int x = tile.x;
             int y = tile.y;
@@ -472,7 +479,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class login extends TimerTask{
+    static class login extends TimerTask{
         @Override
         public void run() {
             Thread.currentThread().setName("Login alert thread");
@@ -491,10 +498,10 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class checkvote extends Thread{
+    class checkvote extends Thread {
         @Override
         public void run() {
-            if(!isvoting){
+            if(!Vote.isvoting){
                 Vote.counting.interrupt();
                 /*Vote.gameover.interrupt();
                 Vote.skipwave.interrupt();
@@ -502,7 +509,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class jumpcheck extends Thread {
+    class jumpcheck extends Thread {
         // Source from Anuken/CoreBot
         @Override
         public void run() {
@@ -549,7 +556,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class jumpall extends Thread{
+    class jumpall extends Thread {
         @Override
         public void run() {
             for (int i=0;i<jumpall.length();i++) {
@@ -594,7 +601,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class changename extends Thread{
+    class changename extends Thread {
         @Override
         public void run(){
             if(jumpcount.length() > 1){
@@ -612,7 +619,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    public final static class AutoRollback extends TimerTask {
+    public static class AutoRollback extends TimerTask {
         private boolean save() {
             try {
                 FileHandle file = saveDirectory.child(slotnumber + "." + saveExtension);
@@ -659,7 +666,7 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
     }
-    static final class eventserver extends Thread{
+    static class eventserver extends Thread {
         String roomname;
         String map;
         String gamemode;
@@ -681,11 +688,12 @@ public class EssentialTimer extends TimerTask implements Runnable{
             }
         }
 
-        public class Service extends Thread{
+        public class Service extends Thread {
             String roomname;
             String map;
             String gamemode;
             int customport;
+            int disablecount;
 
             Service(String roomname, String map, String gamemode, int customport) {
                 this.gamemode = gamemode;
@@ -698,17 +706,396 @@ public class EssentialTimer extends TimerTask implements Runnable{
             public void run(){
                 try {
                     Process p = null;
-                    ProcessBuilder pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "port", String.valueOf(customport), ",host", map, gamemode);
+                    ProcessBuilder pb;
+                    if(gamemode.equals("wave")){
+                        pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "port", String.valueOf(customport), ",host", map);
+                    } else {
+                        pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "port", String.valueOf(customport), ",host", map, gamemode);
+                    }
                     pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
                     p = pb.start();
-
-                    //Process proc = Runtime.getRuntime().exec("java -jar " + Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar port "+customport+",host " + map + " " + gamemode);
-                    //proc.
                     process.add(p);
+
+                    Process finalP = p;
+                    TimerTask t = new TimerTask() {
+                        @Override
+                        public void run() {
+                            pingServer("localhost", customport, result -> {
+                                if (disablecount > 300) {
+                                    finalP.destroy();
+                                    process.remove(finalP);
+                                    this.cancel();
+                                } else if (result.players.contains("0")) {
+                                    disablecount++;
+                                }
+                            });
+                        }
+                    };
+                    Timer timer = new Timer(true);
+                    timer.scheduleAtFixedRate(t, 1000, 1000);
+
+                    Core.app.addListener(new ApplicationListener(){
+                        @Override
+                        public void dispose(){
+                            timer.cancel();
+                        }
+                    });
                 }catch (Exception e){
                     e.printStackTrace();
                 }
             }
+        }
+    }
+    static class Vote{
+        private static Player player;
+        private static Player target;
+        static boolean isvoting;
+        static ArrayList<String> list = new ArrayList<>();
+        static int require = (int) Math.ceil(0.5 * playerGroup.size());
+
+        public void main(Player player, String type, String target){
+            Vote.player = player;
+            if(target != null){
+                Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(target));
+                if(other != null){
+                    Vote.target = other;
+                }
+            }
+            if(playerGroup.size() <= 3){
+                bundle(player, "vote-min");
+                return;
+            }
+            if(require == 0){
+                Call.sendMessage("Vote system error! Please inform the plugin developer of this issue!");
+                Global.loge("targetplayer: "+target);
+                Global.loge("requestplayer: "+player.name);
+                Global.loge("isvoteing: "+isvoting);
+                Global.loge("arraylist: "+list.toString());
+                Global.loge("require: "+require);
+                return;
+            }
+
+            switch(type) {
+                case "gameover":
+                    if(!isvoting){
+                        isvoting = true;
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player others = playerGroup.all().get(i);
+                            bundle(others, "vote-gameover");
+                        }
+                        gameover.start();
+                    } else {
+                        bundle(player, "vote-in-processing");
+                    }
+                    break;
+                case "skipwave":
+                    if(!isvoting){
+                        isvoting = true;
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player others = playerGroup.all().get(i);
+                            bundle(others, "vote-skipwave");
+                        }
+                        skipwave.start();
+                    } else {
+                        bundle(player, "vote-in-processing");
+                    }
+                    break;
+                case "kick":
+                    if(!isvoting){
+                        isvoting = true;
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player others = playerGroup.all().get(i);
+                            bundle(others, "vote-kick");
+                        }
+                        kick.start();
+                    } else {
+                        bundle(player, "vote-in-processing");
+                    }
+                    break;
+                case "rollback":
+                    if(!isvoting){
+                        isvoting = true;
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player others = playerGroup.all().get(i);
+                            bundle(others, "vote-rollback");
+                        }
+                        rollback.start();
+                    } else {
+                        bundle(player, "vote-in-processing");
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        static final Thread counting = new Thread(() -> {
+            ArrayList<Thread> threads = new ArrayList<>();
+            if (playerGroup != null && playerGroup.size() > 0) {
+                Thread work = null;
+                for (int i = 0; i < playerGroup.size(); i++) {
+                    int finalI = i;
+                    work = new Thread(() -> {
+                        Player others = playerGroup.all().get(finalI);
+                        JSONObject db1 = getData(others.uuid);
+                        if (db1.get("country_code") == "KR") {
+                            try {
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(true, "vote-50sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(true, "vote-40sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(true, "vote-30sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(true, "vote-20sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(true, "vote-10sec"));
+                                Thread.sleep(10000);
+                            } catch (Exception e) {
+                                printStackTrace(e);
+                            }
+                        } else {
+                            try {
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(false, "vote-50sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(false, "vote-40sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(false, "vote-30sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(false, "vote-20sec"));
+                                Thread.sleep(10000);
+                                others.sendMessage(Bundle.load(false, "vote-10sec"));
+                                Thread.sleep(10000);
+                            } catch (Exception e) {
+                                printStackTrace(e);
+                            }
+                        }
+                    });
+                    threads.add(work);
+                    work.start();
+                }
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    assert work != null;
+                    for (Thread thread : threads) {
+                        thread.interrupt();
+                    }
+                }
+            }
+        });
+
+        private static final Thread gameover = new Thread(() -> {
+            try {
+                Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
+                counting.start();
+                counting.join();
+            } catch (InterruptedException ignored) {
+            } finally {
+                if (list.size() >= require) {
+                    Call.sendMessage("[green][Essentials] Gameover vote passed!");
+                    Events.fire(new EventType.GameOverEvent(Team.sharded));
+                } else {
+                    Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
+                }
+                list.clear();
+                isvoting = false;
+            }
+        });
+
+        private static final Thread skipwave = new Thread(() -> {
+            try {
+                Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
+                counting.start();
+                counting.join();
+            } catch (InterruptedException ignored) {
+            } finally {
+                if (list.size() >= require) {
+                    Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
+                    for (int i = 0; i < 10; i++) {
+                        logic.runWave();
+                    }
+                } else {
+                    Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
+                }
+                list.clear();
+                isvoting = false;
+            }
+        });
+
+        private static final Thread kick = new Thread(() -> {
+            if(target != null){
+                try {
+                    Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
+                    counting.start();
+                    counting.join();
+                } catch (InterruptedException ignored) {
+                } finally {
+                    if (list.size() >= require) {
+                        Call.sendMessage("[green][Essentials] Player kick vote success!");
+                        PlayerDB.addtimeban(target.name, target.uuid, 4);
+                        Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
+
+                        Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
+                        try {
+                            JSONObject other = getData(target.uuid);
+                            String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require + "\n";
+                            byte[] result = text.getBytes();
+                            Files.write(path, result, StandardOpenOption.APPEND);
+                            Files.write(total, result, StandardOpenOption.APPEND);
+                        } catch (IOException error) {
+                            printStackTrace(error);
+                        }
+
+                        netServer.admins.banPlayer(target.uuid);
+                        Call.onKick(target.con, "You're banned.");
+                    } else {
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player others = playerGroup.all().get(i);
+                            bundle(others, "vote-failed");
+                        }
+                    }
+                    list.clear();
+                    isvoting = false;
+                }
+            } else {
+                bundle(player, "player-not-found");
+            }
+        });
+
+        private static final Thread rollback = new Thread(() -> {
+            try {
+                Call.sendMessage("[green][Essentials] Require [scarlet]" + require + "[green] players.");
+                counting.start();
+                counting.join();
+            } catch (InterruptedException ignored) {
+            } finally {
+                if (list.size() >= require) {
+                    Call.sendMessage("[green][Essentials] Map rollback passed!!");
+                    AutoRollback rl = new AutoRollback();
+                    rl.load();
+                } else {
+                    Call.sendMessage("[green][Essentials] [red]Map rollback failed.");
+                }
+                list.clear();
+                isvoting = false;
+            }
+        });
+    }
+    static class ColorNick {
+        private static int colorOffset = 0;
+        private static long updateIntervalMs = cupdatei;
+
+        public void main(Player player){
+            Thread thread = new Thread(() -> {
+                Thread.currentThread().setName("Color nickname thread");
+                JSONObject db = PlayerDB.getData(player.uuid);
+                boolean connected = db.getBoolean("connected");
+                while (connected) {
+                    connected = PlayerDB.getData(player.uuid).getBoolean("connected");
+                    String name = db.getString("name").replaceAll("\\[(.*?)]", "");
+                    try {
+                        Thread.sleep(updateIntervalMs);
+                        nickcolor(name, player);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            });
+            executorService.execute(thread);
+        }
+
+        private void nickcolor(String name, Player player) {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            String[] colors = new String[11];
+            colors[0] = "[#ff0000]";
+            colors[1] = "[#ff7f00]";
+            colors[2] = "[#ffff00]";
+            colors[3] = "[#7fff00]";
+            colors[4] = "[#00ff00]";
+            colors[5] = "[#00ff7f]";
+            colors[6] = "[#00ffff]";
+            colors[7] = "[#007fff]";
+            colors[8] = "[#0000ff]";
+            colors[9] = "[#8000ff]";
+            colors[10] = "[#ff00ff]";
+
+            String[] newnick = new String[name.length()];
+            for (int i = 0; i<name.length(); i++) {
+                char c = name.charAt(i);
+                int colorIndex = (i+colorOffset)%colors.length;
+                if (colorIndex < 0) {
+                    colorIndex += colors.length;
+                }
+                String newtext = colors[colorIndex]+c;
+                newnick[i]=newtext;
+            }
+            colorOffset--;
+            for (String s : newnick) {
+                stringBuilder.append(s);
+            }
+            player.name = stringBuilder.toString();
+        }
+    }
+    class monitorresource extends Thread {
+        Array<Integer> pre = new Array<>();
+        Array<Integer> cur = new Array<>();
+        Array<Item> name = new Array<>();
+        ArrayList<String> using = new ArrayList<>();
+
+        @Override
+        public void run(){
+            for (Item item : content.items()) {
+                if (item.type == ItemType.material) {
+                    pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                }
+            }
+
+            for (Item item : content.items()) {
+                if (item.type == ItemType.material) {
+                    name.add(item);
+                }
+            }
+
+            try {
+                Thread.sleep(750);
+            } catch (InterruptedException ignored) {}
+
+            int a=0;
+            for (Item item : content.items()) {
+                if (item.type == ItemType.material) {
+                    int resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                    int temp = resource - pre.get(a);
+                    if(temp <= -50){
+                        StringBuilder using = new StringBuilder();
+                        for(int b=0;b<playerGroup.size();b++) {
+                            Player p = playerGroup.all().get(b);
+                            for(int c=0;c<p.buildRequest().block.requirements.length;c++){
+                                //if(p.buildRequest().block.requirements[c].item != null) continue;
+                                Item ad = p.buildRequest().block.requirements[c].item;
+                                if(ad == name.get(a)){
+                                    using.append(p.name+", ");
+                                }
+                            }
+                        }
+                        Call.sendMessage(name.get(a).name+" Resource usage is so fast!");
+                        Call.sendMessage("Resource "+name.get(a).name+" is using by "+using.substring(0,using.length()-2));
+                    }
+                    cur.add(a, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                    a++;
+                }
+            }
+
+            for (Item item : content.items()) {
+                if (item.type == ItemType.material) {
+                    pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                }
+            }
+            a=0;
         }
     }
 }

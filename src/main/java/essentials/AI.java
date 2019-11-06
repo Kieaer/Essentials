@@ -5,7 +5,7 @@ import io.anuke.mindustry.world.Tile;
 
 import static io.anuke.mindustry.Vars.world;
 
-public class EssentialAI {
+public class AI {
 
     /*public Tile start;
     public Tile target;

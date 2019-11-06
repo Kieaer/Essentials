@@ -10,10 +10,10 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
-import static essentials.EssentialConfig.explimit;
-import static essentials.EssentialPlayer.getData;
+import static essentials.Config.explimit;
+import static essentials.PlayerDB.getData;
 
-public class EssentialEPG {
+public class EPG {
     public static void main(){
         if(explimit){
             Events.on(EventType.BuildSelectEvent.class, e -> {

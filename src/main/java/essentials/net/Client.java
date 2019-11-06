@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static essentials.EssentialConfig.*;
+import static essentials.Config.*;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;

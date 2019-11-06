@@ -1,6 +1,6 @@
 package essentials;
 
-public class Essentialmap {
+public class map {
     public void main(){
 
     }
