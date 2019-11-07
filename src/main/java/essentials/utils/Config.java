@@ -19,44 +19,162 @@ import java.util.concurrent.Executors;
 import static essentials.Global.printStackTrace;
 
 public class Config {
-    public static String clienthost;
-    public static int clientport;
-    public static int serverport;
-    public static boolean realname;
-    public static boolean detectreactor;
-    public static boolean serverenable;
-    public static boolean clientenable;
-    public static double basexp;
-    public static double exponent;
-    public static int cupdatei;
-    public static boolean banshare;
-    public static boolean antivpn;
-    public static boolean query;
-    private int version;
-    private String language;
-    public static boolean enableantirush;
-    public static Calendar antirushtime;
-    public static boolean explimit;
-    public static boolean logging;
-    public static boolean update;
-    public static boolean levelupalarm;
-    public static boolean sqlite;
-    private String dburl;
-    public static boolean loginenable;
-    public static String url;
-    public static String dbid;
-    public static String dbpw;
-    public static String clientId;
-    public static String clientSecret;
-    public static boolean debug;
+    private Yaml yaml = new Yaml();
+    private Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
+
     public static JSONArray jumpzone = new JSONArray();
     public static JSONArray jumpcount = new JSONArray();
     public static JSONArray jumpall = new JSONArray();
-    public static int savetime;
-    public static int slotnumber;
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6);
     public final static String servername = Core.settings.getString("servername");
+
+    public String getClienthost(){
+        return obj.get("client-enable") != null ? (String) obj.get("client-host") : "mindustry.kr";
+    }
+
+    public int getClientport(){
+        return obj.get("client-port") != null ? (int) obj.get("client-port") : 20000;
+    }
+
+    public int getServerport(){
+        return obj.get("server-port") != null ? (int) obj.get("server-port") : 25000;
+    }
+
+    public boolean isRealname(){
+        return obj.get("realname") == null || (boolean) obj.get("realname");
+    }
+
+    public boolean isDetectreactor(){
+        return obj.get("detectreactor") == null || (boolean) obj.get("detectreactor");
+    }
+
+    public boolean isServerenable(){
+        return obj.get("server-enable") == null || (boolean) obj.get("server-enable");
+    }
+
+    public boolean isClientenable(){
+        return obj.get("client-enable") == null || (boolean) obj.get("client-enable");
+    }
+
+    public double getBasexp(){
+        return obj.get("basexp") != null ? (double) obj.get("basexp") : 500;
+    }
+
+    public double getExponent(){
+        return obj.get("exponent") != null ? (double) obj.get("exponent") : 500;
+    }
+
+    public int getCupdatei(){
+        return obj.get("cupdatei") != null ? (int) obj.get("cupdatei") : 1000;
+    }
+
+    public boolean isBanshare(){
+        return obj.get("banshare") == null || (boolean) obj.get("banshare");
+    }
+
+    public boolean isAntivpn(){
+        return obj.get("antivpn") == null || (boolean) obj.get("antivpn");
+    }
+
+    public boolean isQuery(){
+        return obj.get("query") == null || (boolean) obj.get("query");
+    }
+
+    public String getLanguage(){
+        return obj.get("language") != null ? (String) obj.get("language") : "en";
+    }
+
+    public boolean isEnableantirush(){
+        return obj.get("enableantirush") == null || (boolean) obj.get("enableantirush");
+    }
+
+    public Calendar getAntirushtime() {
+        SimpleDateFormat format = new SimpleDateFormat("mm.ss");
+        Calendar cal = Calendar.getInstance();
+        if(obj.get("antirushtime") != null) {
+            try {
+                Date d = format.parse((String) obj.get("antirushtime"));
+                cal.setTime(d);
+            } catch (Exception e) {
+                printStackTrace(e);
+                Global.loge("Invalid settings! - antirushtime");
+                Global.loge("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
+            }
+        } else {
+            try{
+                Date d = format.parse("10.00");
+                cal.setTime(d);
+            } catch (Exception e){
+                printStackTrace(e);
+            }
+        }
+        return cal;
+    }
+
+    public boolean isExplimit(){
+        return obj.get("explimit") == null || (boolean) obj.get("explimit");
+    }
+
+    public boolean isLogging(){
+        return obj.get("logging") == null || (boolean) obj.get("logging");
+    }
+
+    public boolean isUpdate(){
+        return obj.get("update") == null || (boolean) obj.get("update");
+    }
+
+    public boolean isLevelupalarm(){
+        return obj.get("levelupalarm") == null || (boolean) obj.get("levelupalarm");
+    }
+
+    public boolean isSqlite(){
+        return obj.get("sqlite") == null || (boolean) obj.get("sqlite");
+    }
+
+    public boolean isLoginenable(){
+        return obj.get("loginenable") == null || (boolean) obj.get("loginenable");
+    }
+
+    public String getDBurl(){
+        return obj.get("dburl") != null ? (String) obj.get("dburl") : "";
+    }
+
+    public String getDBid(){
+        return obj.get("dbid") != null ? (String) obj.get("dbid") : "";
+    }
+
+    public String getDBpw(){
+        return obj.get("dbpw") != null ? (String) obj.get("dbpw") : "";
+    }
+
+    public String getClientId(){
+        return obj.get("clientId") != null ? (String) obj.get("clientId") : "";
+    }
+
+    public String getClientSecret(){
+        return obj.get("clientSecret") != null ? (String) obj.get("clientSecret") : "";
+    }
+
+    public boolean isDebug(){
+        return obj.get("debug") == null || (boolean) obj.get("debug");
+    }
+
+    public int getSavetime(){
+        return obj.get("savetime") != null ? (int) obj.get("savetime") : 10;
+    }
+
+    public int getSlotnumber(){
+        return obj.get("slotnumber") != null ? (int) obj.get("savetime") : 1000;
+    }
+
+    public int getVersion(){
+        return obj.get("version") != null ? (int) obj.get("version") : 4;
+    }
+
+    public String getServername(){
+        return Core.settings.getString("servername");
+    }
 
     public void main() {
         Map<String, Object> obj;
@@ -546,209 +664,11 @@ public class Config {
 
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
             // Config version
-            if(obj.get("version") != null){
-                version = Integer.parseInt(String.valueOf(obj.get("version")));
-            } else {
-                version = 3;
-            }
 
-            if(obj.get("language") != null){
-                language = (String) obj.get("language");
-            } else {
-                language = "en";
-            }
-
-            if(obj.get("server-enable") != null){
-                serverenable = Boolean.parseBoolean(String.valueOf(obj.get("server-enable")));
-            } else {
-                serverenable = false;
-            }
-            if(obj.get("server-port") != null){
-                serverport = Integer.parseInt(String.valueOf(obj.get("server-port")));
-            } else {
-                serverport = 25000;
-            }
-
-            if(obj.get("client-enable") != null){
-                clientenable = Boolean.parseBoolean(String.valueOf(obj.get("client-enable")));
-            } else {
-                clientenable = false;
-            }
-            if(obj.get("client-port") != null){
-                clientport = Integer.parseInt(String.valueOf(obj.get("client-port")));
-            } else {
-                clientport = 20000;
-            }
-            if(obj.get("client-enable") != null){
-                clienthost = (String) obj.get("client-host");
-            } else {
-                clienthost = "mindustry.kr";
-            }
-
-            if(obj.get("realname") != null){
-                realname = Boolean.parseBoolean(String.valueOf(obj.get("realname")));
-            } else {
-                realname = true;
-            }
-
-            if(obj.get("colornick update interval") != null){
-                cupdatei = Integer.parseInt(String.valueOf(obj.get("colornick update interval")));
-            } else {
-                cupdatei = 1000;
-            }
-
-            if(obj.get("detectreactor") != null){
-                detectreactor = Boolean.parseBoolean(String.valueOf(obj.get("detectreactor")));
-            } else {
-                detectreactor = true;
-            }
-
-            if(obj.get("explimit") != null){
-                explimit = Boolean.parseBoolean(String.valueOf(obj.get("explimit")));
-            } else {
-                explimit = false;
-            }
-            if(obj.get("basexp") != null){
-                basexp = Double.parseDouble(String.valueOf(obj.get("basexp")));
-            } else {
-                basexp = 500;
-            }
-            if(obj.get("exponent") != null){
-                exponent = Double.parseDouble(String.valueOf(obj.get("exponent")));
-            } else {
-                exponent = 1.12f;
-            }
-            if(obj.get("levelupalarm") != null){
-                levelupalarm = Boolean.parseBoolean(String.valueOf(obj.get("levelupalarm")));
-            } else {
-                levelupalarm = false;
-            }
-
-            if(obj.get("banshare") != null){
-                banshare = Boolean.parseBoolean(String.valueOf(obj.get("banshare")));
-            } else {
-                banshare = false;
-            }
-
-            if(obj.get("query") != null){
-                query = Boolean.parseBoolean(String.valueOf(obj.get("query")));
-            } else {
-                query = false;
-            }
-
-            if(obj.get("antivpn") != null){
-                antivpn = Boolean.parseBoolean(String.valueOf(obj.get("antivpn")));
-            } else {
-                antivpn = true;
-            }
-
-            if(obj.get("enableantirush") != null){
-                enableantirush = Boolean.parseBoolean(String.valueOf(obj.get("enableantirush")));
-            } else {
-                enableantirush = true;
-            }
-            if(obj.get("antirushtime") != null){
-                try{
-                    SimpleDateFormat format = new SimpleDateFormat("mm.ss");
-                    Calendar cal;
-                    Date d = format.parse(String.valueOf(obj.get("antirushtime")));
-                    cal = Calendar.getInstance();
-                    cal.setTime(d);
-                    antirushtime = cal;
-                } catch (Exception e){
-                    printStackTrace(e);
-                    Global.loge("Invalid settings! - antirushtime");
-                    Global.loge("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
-                }
-            } else {
-                try{
-                    SimpleDateFormat format = new SimpleDateFormat("mm.ss");
-                    Calendar cal;
-                    Date d = format.parse("10.00");
-                    cal = Calendar.getInstance();
-                    cal.setTime(d);
-                    antirushtime = cal;
-                } catch (Exception e){
-                    printStackTrace(e);
-                }
-            }
-
-            if(obj.get("update") != null){
-                update = Boolean.parseBoolean(String.valueOf(obj.get("update")));
-            } else {
-                update = true;
-            }
-
-            if(obj.get("logging") != null){
-                logging = Boolean.parseBoolean(String.valueOf(obj.get("logging")));
-            } else {
-                logging = false;
-            }
-
-            if(obj.get("sqlite") != null){
-                sqlite = Boolean.parseBoolean(String.valueOf(obj.get("sqlite")));
-                if(sqlite){
-                    url = "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
-                } else {
-                    dburl = (String) obj.get("dburl");
-                    url = "jdbc:"+dburl;
-                }
-            } else {
-                sqlite = true;
-                url = "jdbc:sqlite:" + Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
-            }
-
-            if(obj.get("dbid") != null){
-                dbid = (String) obj.get("dbid");
-            } else {
-                dbid = "";
-            }
-
-            if(obj.get("dbpw") != null){
-                dbpw = (String) obj.get("dbpw");
-            } else {
-                dbpw = "";
-            }
-
-            if(obj.get("loginenable") != null){
-                loginenable = Boolean.parseBoolean(String.valueOf(obj.get("loginenable")));
-            } else {
-                loginenable = true;
-            }
-
-            if(obj.get("clientId") != null){
-                clientId = (String) obj.get("clientId");
-            } else {
-                clientId = "";
-            }
-
-            if(obj.get("clientSecret") != null){
-                clientSecret = (String) obj.get("clientSecret");
-            } else {
-                clientSecret = "";
-            }
-
-            if(obj.get("debug") != null){
-                debug = Boolean.parseBoolean(String.valueOf(obj.get("debug")));
-            } else {
-                debug = false;
-            }
-
-            if(obj.get("savetime") != null){
-                savetime = Integer.parseInt(String.valueOf(obj.get("savetime")));
-            } else {
-                savetime = 10;
-            }
-
-            if(obj.get("slotnumber") != null){
-                slotnumber = Integer.parseInt(String.valueOf(obj.get("slotnumber")));
-            } else {
-                slotnumber = 1000;
-            }
             Global.log("config file loaded!");
         }
 
-        if(version < 4){
+        /*if(version < 4){
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
 
@@ -825,6 +745,6 @@ public class Config {
                     "slotnumber: "+slotnumber;
             Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
             Global.log("config file updated!");
-        }
+        }*/
     }
 }
