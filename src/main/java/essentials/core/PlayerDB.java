@@ -2,6 +2,7 @@ package essentials.core;
 
 import essentials.Global;
 import essentials.Threads;
+import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -39,13 +40,14 @@ public class PlayerDB {
     private static boolean loginresult;
     private static boolean registerresult;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
+    public Config config = new Config();
 
-    public static void createNewDataFile(){
+    public void createNewDataFile(){
         try {
             String sql = null;
-            if(sqlite){
+            if(config.isSqlite()){
                 Class.forName("org.sqlite.JDBC");
-                conn = DriverManager.getConnection(url);
+                conn = DriverManager.getConnection(config.getDBurl());
                 sql = "CREATE TABLE IF NOT EXISTS players (\n" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
                         "name TEXT,\n" +
@@ -85,10 +87,10 @@ public class PlayerDB {
                         "accountpw TEXT\n" +
                         ");";
             } else {
-                if(!dbid.isEmpty()){
+                if(!config.getDBid().isEmpty()){
                     Class.forName("org.mariadb.jdbc.Driver");
                     Class.forName("com.mysql.jdbc.Driver");
-                    conn = DriverManager.getConnection(url, dbid, dbpw);
+                    conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
                     sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
                             "`id` INT(11) NOT NULL AUTO_INCREMENT,\n" +
                             "`name` TEXT NULL DEFAULT NULL,\n" +
@@ -145,14 +147,14 @@ public class PlayerDB {
         }
     }
 
-	private static void createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
+	private void createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
                 String sql;
-                if(sqlite){
+                if(config.isSqlite()){
                     sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
                     sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -321,25 +323,30 @@ public class PlayerDB {
 
          */
     }
-    public static void openconnect(){
-        try{
-            if(sqlite){
-                Class.forName("org.sqlite.JDBC");
-                conn = DriverManager.getConnection(url);
+    public void openconnect() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            Class.forName("org.mariadb.jdbc.Driver");
+            Class.forName("com.mysql.jdbc.Driver");
+
+            if (config.isSqlite()) {
+                conn = DriverManager.getConnection(config.getDBurl());
                 Global.log("Database type: SQLite");
             } else {
-                Class.forName("org.mariadb.jdbc.Driver");
-                Class.forName("com.mysql.jdbc.Driver");
-                if(!dbid.isEmpty()){
-                    conn = DriverManager.getConnection(url, dbid, dbpw);
+                if (!config.getDBid().isEmpty()) {
+                    conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
                     Global.log("Database type: MariaDB/MySQL");
                 } else {
-                    conn = DriverManager.getConnection(url);
+                    conn = DriverManager.getConnection(config.getDBurl());
                     Global.log("Database type: Invalid");
                 }
             }
-        } catch (Exception e) {
+        } catch (ClassNotFoundException e) {
             printStackTrace(e);
+            Global.loge("Class not found!");
+        } catch (SQLException e){
+            printStackTrace(e);
+            Global.loge("SQL ERROR!");
         }
     }
 
@@ -366,7 +373,7 @@ public class PlayerDB {
         t.start();
 	}
 
-	public static boolean register(Player player, String id, String pw, String pw2){
+	public boolean register(Player player, String id, String pw, String pw2){
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             // Check password security
@@ -556,7 +563,7 @@ public class PlayerDB {
         return registerresult;
     }
 
-    public static boolean register(Player player){
+    public boolean register(Player player){
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             try {
@@ -707,7 +714,7 @@ public class PlayerDB {
         return loginresult;
     }
 
-    public static void load(Player player, String id) {
+    public void load(Player player, String id) {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
@@ -747,7 +754,7 @@ public class PlayerDB {
         }
 
         // Check if realname enabled
-        if(realname){
+        if(config.isRealname()){
             player.name = db.getString("name");
         }
 
@@ -756,10 +763,10 @@ public class PlayerDB {
 
         // Color nickname
         boolean colornick = (boolean) db.get("colornick");
-        if(realname && colornick){
+        if(config.isRealname() && colornick){
             ColorNick color = new ColorNick();
             color.main(player);
-        } else if(!realname && colornick){
+        } else if(!config.isRealname() && colornick){
             Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }

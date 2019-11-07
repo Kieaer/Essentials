@@ -67,59 +67,47 @@ import static essentials.Threads.process;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
 import static essentials.net.Client.update;
-import static essentials.utils.Config.antivpn;
-import static essentials.utils.Config.banshare;
-import static essentials.utils.Config.clientenable;
-import static essentials.utils.Config.detectreactor;
-import static essentials.utils.Config.enableantirush;
-import static essentials.utils.Config.executorService;
-import static essentials.utils.Config.jumpall;
-import static essentials.utils.Config.jumpcount;
-import static essentials.utils.Config.jumpzone;
-import static essentials.utils.Config.logging;
-import static essentials.utils.Config.loginenable;
-import static essentials.utils.Config.realname;
-import static essentials.utils.Config.savetime;
-import static essentials.utils.Config.serverenable;
-import static essentials.utils.Config.update;
+import static essentials.utils.Config.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin {
+	public Config config = new Config();
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
 	private ArrayList<Tile> nukedata = new ArrayList<>();
 
 	public Main() {
+		StringBuilder features;
 		// Start config file
-		Config config = new Config();
 		config.main();
 
 		// Client connection test
-		if(clientenable){
+		if(config.isClientenable()){
 			Global.log("EssentialsClient is attempting to connect to the server.");
 			Client client = new Client();
 			client.main(null, null, null);
 		}
 
 		// Database
-		openconnect();
+		PlayerDB playerdb = new PlayerDB();
+		playerdb.openconnect();
 
 		// Make player DB
-		createNewDataFile();
+		playerdb.createNewDataFile();
 
 		// Reset all connected status
 		writeData("UPDATE players SET connected = 0");
 
 	    // Start log
-		if(logging){
+		if(config.isLogging()){
             executorService.execute(new Log());
 		}
 
 		//EssentialAI.main();
 
 		// Update check
-		if(update) {
+		if(config.isUpdate()) {
 			Global.log("Update checking...");
 			update();
 		}
@@ -128,12 +116,13 @@ public class Main extends Plugin {
 		PlayerDB.Upgrade();
 
 		// Start ban/chat server
-		if(serverenable){
+		if(config.isServerenable()){
 			new essentials.net.Server().ChatServer();
 		}
 
 		// Essentials EPG Features
-        EPG.main();
+		EPG epg = new EPG();
+        epg.main();
 
 		// If desync (May work)
 		Events.on(ValidateException.class, e -> {
@@ -242,7 +231,7 @@ public class Main extends Plugin {
 		});
 
         Events.on(PlayerJoin.class, e -> {
-        	if(loginenable){
+        	if(config.isLoginenable()){
 				e.player.isAdmin = false;
 
 				if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
@@ -250,7 +239,7 @@ public class Main extends Plugin {
 					if (db.has("uuid")) {
 						if (db.getString("uuid").equals(e.player.uuid)) {
 							bundle(e.player, "autologin");
-							PlayerDB.load(e.player, null);
+							playerdb.load(e.player, null);
 						}
 					} else {
 						Team no_core = getTeamNoCore(e.player);
@@ -277,8 +266,8 @@ public class Main extends Plugin {
 					Call.onInfoMessage(e.player.con, message);
 				}
 			} else {
-        		if(PlayerDB.register(e.player)) {
-					PlayerDB.load(e.player, null);
+        		if(playerdb.register(e.player)) {
+					playerdb.load(e.player, null);
 				} else {
         			Call.onKick(e.player.con, "Plugin error! Please contact server admin!");
 				}
@@ -302,7 +291,7 @@ public class Main extends Plugin {
 				}
 
 				// Check VPN
-				if(antivpn){
+				if(config.isAntivpn()){
 					try (InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
 						 BufferedReader br = new BufferedReader(new InputStreamReader(reader))){
 
@@ -322,7 +311,7 @@ public class Main extends Plugin {
 			executorService.execute(playerthread);
 
 			// PvP placetime (WorldLoadEvent isn't work.)
-			if(enableantirush && Vars.state.rules.pvp) {
+			if(config.isEnableantirush() && Vars.state.rules.pvp) {
 				state.rules.playerDamageMultiplier = 0f;
 				state.rules.playerHealthMultiplier = 0.001f;
 			}
@@ -358,7 +347,8 @@ public class Main extends Plugin {
 					});
 					executorService.execute(t);
 
-					Translate.main(e.player, e.message);
+					Translate tr = new Translate();
+					tr.main(e.player, e.message);
 
 					boolean crosschat;
 					if(db.has("crosschat")){
@@ -368,12 +358,12 @@ public class Main extends Plugin {
 					}
 
 
-					if (clientenable) {
+					if (config.isClientenable()) {
 						if (crosschat) {
 							Client client = new Client();
 							client.main("chat", e.player, e.message);
 						}
-						if (crosschat && serverenable) {
+						if (crosschat && config.isServerenable()) {
 							// send message to all clients
 							try {
 								for (int i = 0; i < Server.list.size(); i++) {
@@ -386,7 +376,7 @@ public class Main extends Plugin {
 							}
 						}
 					}
-					if (!clientenable && !serverenable && crosschat) {
+					if (!config.isClientenable() && !config.isServerenable() && crosschat) {
 						e.player.sendMessage("Currently server isn't enable any network features!");
 						writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + e.player.uuid + "'");
 					}
@@ -565,7 +555,7 @@ public class Main extends Plugin {
 		});
 		*/
 
-		if(loginenable){
+		if(config.isLoginenable()){
 			Timer alerttimer = new Timer(true);
 			alerttimer.scheduleAtFixedRate(new login(), 60000, 60000);
 		}
@@ -574,7 +564,7 @@ public class Main extends Plugin {
 		timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
 
 		Timer rt = new Timer(true);
-		rt.scheduleAtFixedRate(new AutoRollback(), savetime*60000, savetime*60000);
+		rt.scheduleAtFixedRate(new AutoRollback(), config.getSavetime()*60000, config.getSavetime()*60000);
 
 		// Set main thread works
 		Core.app.addListener(new ApplicationListener(){
@@ -684,7 +674,7 @@ public class Main extends Plugin {
 				closeconnect();
 
 				// Stop server
-				if(serverenable){
+				if(config.isServerenable()){
 					try {
 						Server.active = false;
 						Server.serverSocket.close();
@@ -718,17 +708,9 @@ public class Main extends Plugin {
             }
 		});
 
-        // Alert Realname event
-        if(realname){
-			Global.log("Realname enabled.");
-        }
-
-        // Alert thorium reactor explode detect event
-        if(detectreactor){
-			Global.log("Thorium reactor overheat detect enabled.");
-        }
-
         Threads.uptime = "00:00.00";
+
+        Global.log("Enabled features: "+config.checkfeatures());
 	}
 
 	@Override
@@ -788,7 +770,7 @@ public class Main extends Plugin {
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
-					if(banshare && clientenable) {
+					if(config.isBanshare() && config.isClientenable()) {
 						client.main("bansync", null, null);
 					}
 					Global.log("Banned.");
@@ -797,7 +779,7 @@ public class Main extends Plugin {
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						if(banshare && clientenable) {
+						if(config.isBanshare() && config.isClientenable()) {
 							client.main("bansync", null, null);
 						}
 						Global.log("Banned.");
@@ -807,7 +789,7 @@ public class Main extends Plugin {
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					if(banshare && clientenable) {
+					if(config.isBanshare() && config.isClientenable()) {
 						client.main("bansync", null, null);
 					}
 					Global.log("Banned.");
@@ -825,8 +807,8 @@ public class Main extends Plugin {
 			}
 		});
 		handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
-			if(!serverenable){
-				if(banshare){
+			if(!config.isServerenable()){
+				if(config.isBanshare()){
 					String db = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
 					JSONTokener parser = new JSONTokener(db);
 					JSONObject object = new JSONObject(parser);
@@ -1011,7 +993,7 @@ public class Main extends Plugin {
 					break;
 			}
 			Call.onKick(other.con, "Tempban kicked");
-			if(clientenable){
+			if(config.isClientenable()){
 				Client client = new Client();
 				client.main("bansync", null, null);
 			}
@@ -1343,7 +1325,7 @@ public class Main extends Plugin {
 			}
 		});
 		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
-			if (loginenable) {
+			if (config.isLoginenable()) {
 				if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
 					player.sendMessage("[green][Essentials] [orange]You are already logged in");
 					return;
@@ -1351,7 +1333,8 @@ public class Main extends Plugin {
 
 				if (PlayerDB.login(player, arg[0], arg[1])) {
 					player.sendMessage("[green][Essentials] [orange]Login success!");
-					PlayerDB.load(player, arg[0]);
+					PlayerDB playerdb = new PlayerDB();
+					playerdb.load(player, arg[0]);
 				} else {
 					player.sendMessage("[green][Essentials] [scarlet]Login failed!");
 				}
@@ -1388,8 +1371,9 @@ public class Main extends Plugin {
 			}
 		});
 		handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player) -> {
-			if (loginenable) {
-				if (PlayerDB.register(player, arg[0], arg[1], arg[2])) {
+			if (config.isLoginenable()) {
+				PlayerDB playerdb = new PlayerDB();
+				if (playerdb.register(player, arg[0], arg[1], arg[2])) {
 					if (Vars.state.rules.pvp) {
 						int index = player.getTeam().ordinal() + 1;
 						while (index != player.getTeam().ordinal()) {

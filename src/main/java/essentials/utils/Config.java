@@ -7,20 +7,26 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
+import java.io.*;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import static essentials.Global.printStackTrace;
 
 public class Config {
-    private Yaml yaml = new Yaml();
-    private Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
+    private Map<String, Object> obj;
+
+    public Config(){
+        if(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
+            Yaml yaml = new Yaml();
+            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
+        }
+    }
 
     public static JSONArray jumpzone = new JSONArray();
     public static JSONArray jumpcount = new JSONArray();
@@ -71,6 +77,16 @@ public class Config {
 
     public boolean isBanshare(){
         return obj.get("banshare") == null || (boolean) obj.get("banshare");
+    }
+
+    public String[] getBantrust(){
+        if(obj.get("bantrust") != null) {
+            String ban = (String) obj.get("bantrust");
+            String data[] = ban.split(",");
+            return data;
+        } else {
+            return new String[0];
+        }
     }
 
     public boolean isAntivpn(){
@@ -137,7 +153,11 @@ public class Config {
     }
 
     public String getDBurl(){
-        return obj.get("dburl") != null ? (String) obj.get("dburl") : "";
+        if(isSqlite()){
+            return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
+        } else {
+            return obj.get("dburl") != null ? (String) obj.get("dburl") : "";
+        }
     }
 
     public String getDBid(){
@@ -176,575 +196,266 @@ public class Config {
         return Core.settings.getString("servername");
     }
 
+    boolean validfile(){
+        return Core.settings.getDataDirectory().child("mods/Essentials/").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/data/powerblock.json").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/block.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/chat.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/deposit.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/error.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/griefer.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/non-block.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/player.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/withdraw.log").exists();
+    }
+
+    public String checkfeatures(){
+        StringBuilder features = new StringBuilder();
+        if(isServerenable()) features.append("Network Server, ");
+        if(isClientenable()) features.append("Network Client, ");
+        if(isRealname()) features.append("Realname, ");
+        if(isDetectreactor()) features.append("Detect reactor, ");
+        if(isExplimit()) features.append("Exp limit");
+        if(isBanshare()) features.append("Ban sharing, ");
+        if(isQuery()) features.append("Query, ");
+        if(isAntivpn()) features.append("Anti-VPN, ");
+        if(isEnableantirush()) features.append("PvP Anti-rush, ");
+        if(isLogging()) features.append("Logging, ");
+        if(isLoginenable()) features.append("Login, ");
+        if(isDebug()) features.append("Debug");
+        return features.toString().substring(0,features.length()-2);
+    }
+
     public void main() {
-        Map<String, Object> obj;
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()) {
-            String text = "# Config version (Don't touch this!)\n" +
-                    "version: 4\n\n" +
+        final String path = "config";
+        final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
 
-                    "# Plugin language\n" +
-                    "language: en\n\n" +
-
-                    "# Server / client port settings\n#It will enable server as server chat function.\n" +
-                    "server-enable: false\n" +
-                    "server-port: 25000\n\n" +
-
-                    "client-enable: false\n" +
-                    "client-port: 20000\n" +
-                    "client-host: mindustry.kr\n\n" +
-
-                    "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
-                    "# If you want colornick features, must enable this.\n" +
-                    "realname: true\n\n" +
-
-                    "# Color nickname update interval. 1sec = 1000\n" +
-                    "colornick update interval: 1000\n\n" +
-
-                    "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
-                    "detectreactor: true\n\n" +
-
-                    "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n" +
-                    "explimit: false\n" +
-                    "basexp: 500\n" +
-                    "exponent: 1.12f\n" +
-                    "levelupalarm: false\n\n" +
-
-                    "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
-                    "banshare: false\n\n" +
-
-                    "# Ban sharing trust list\n" +
-                    "bantrust: \n\n" +
-
-                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n# Ranking page address is http://localhost:server_port/rank\n" +
-                    "query: false\n\n" +
-
-                    "# Enable Anti-VPN service.\n" +
-                    "antivpn: true\n\n" +
-
-                    "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
-                    "enableantirush: true\n" +
-                    "antirushtime: 10.00\n\n"+
-                    
-                    "# Logging enable\n" +
-                    "logging: false\n\n" +
-
-                    "# update check enable\n" +
-                    "update: true\n\n" +
-
-                    "# Database type setting (Default is SQLite)\n# Example - mariadb://localhost:3306/dbname\n# If you want to use MySQL/MariaDB, You must create a new database yourself.\n# dburl\n" +
-                    "sqlite: true\n" +
-                    "dburl: \n" +
-                    "dbid: \n" +
-                    "dbpw: \n\n" +
-
-                    "# Login features setting\n" +
-                    "loginenable: true\n\n" +
-
-                    "# Papago translate API Key\n" +
-                    "# The api key can be obtained from developers.naver.com.\n" +
-                    "clientId: \n" +
-                    "clientSecret: \n\n" +
-
-                    "# The error message is output immediately.\n" +
-                    "debug: false\n\n" +
-
-                    "# Map auto save time. Time unit: 1 minute\n" +
-                    "savetime: 10\n\n" +
-
-                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
-                    "slotnumber: 1000";
-
-            Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
-            Global.log("config file created!");
-        }
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").exists()) {
-            String text = "# crafting\n" +
-                    "graphite-press: 5\n" +
-                    "multi-press: 15\n" +
-                    "silicon-smelter: 5\n" +
-                    "kiln: 8\n" +
-                    "plastanium-compressor: 20\n" +
-                    "phase-weaver: 35\n" +
-                    "alloy-smelter: 30\n" +
-                    "cryofluidmixer: 15\n" +
-                    "blast-mixer: 8\n" +
-                    "pyratite-mixer: 12\n" +
-                    "melter: 3\n" +
-                    "separator: 6\n" +
-                    "spore-press: 5\n" +
-                    "pulverizer: 2\n" +
-                    "coal-centrifuge: 3\n" +
-                    "incinerator: 2\n\n" +
-
-                    "# Sandbox\n" +
-                    "power-void: 0\n" +
-                    "power-source: 0\n" +
-                    "item-source: 0\n" +
-                    "item-void: 0\n" +
-                    "liquid-source: 0\n" +
-                    "message: 0\n\n" +
-
-                    "# Defence\n" +
-                    "scrap-wall: 0\n" +
-                    "scrap-wall-large: 0\n" +
-                    "scrap-wall-huge: 0\n" +
-                    "scrap-wall-gigantic: 0\n" +
-                    "thruster: 0\n" +
-                    "copper-wall: 1\n" +
-                    "copper-wall-large: 4\n" +
-                    "titanium-wall: 2\n" +
-                    "titanium-wall-large: 8\n" +
-                    "thorium-wall: 3\n" +
-                    "thorium-wall-large: 12\n" +
-                    "phase-wall: 4\n" +
-                    "phase-wall-large: 16\n" +
-                    "surge-wall: 5\n" +
-                    "surge-wall-large: 20\n" +
-                    "door: 2\n" +
-                    "door-large: 6\n" +
-                    "mender: 2\n" +
-                    "mend-projector: 10\n" +
-                    "overdrive-projector: 12\n" +
-                    "force-projector: 35\n" +
-                    "shock-mine: 5\n\n" +
-
-                    "# Distribution\n" +
-                    "conveyor: 1\n" +
-                    "titanium-conveyor: 2\n" +
-                    "armored-conveyor: 3\n" +
-                    "junction: 1\n" +
-                    "bridge-conveyor: 1\n" +
-                    "phase-conveyor: 5\n" +
-                    "sorter: 2\n" +
-                    "router: 1\n" +
-                    "distributor: 1\n" +
-                    "overflow-gate: 2\n" +
-                    "mass-driver: 15\n\n" +
-
-                    "# Liquid\n" +
-                    "mechanical-pump: 2\n" +
-                    "rotary-pump: 8\n" +
-                    "thermal-pump: 15\n" +
-                    "conduit: 2\n" +
-                    "pulse-conduit: 4\n" +
-                    "liquid-router: 3\n" +
-                    "liquid-tank: 10\n" +
-                    "liquid-junction: 2\n" +
-                    "bridge-conduit: 2\n" +
-                    "phase-conduit: 5\n\n" +
-
-                    "# Power\n" +
-                    "power-node: 1\n" +
-                    "power-node-large: 3\n" +
-                    "surge-tower: 10\n" +
-                    "battery: 3\n" +
-                    "battery-large: 21\n" +
-                    "combustion-generator: 5\n" +
-                    "thermal-generator: 8\n" +
-                    "turbine-generator: 12\n" +
-                    "differential-generator: 20\n" +
-                    "rtg-generator: 15\n" +
-                    "solar-panel: 6\n" +
-                    "solar-panel-large: 18\n" +
-                    "thorium-reactor: 25\n" +
-                    "impact-reactor: 200\n\n" +
-
-                    "# Production\n" +
-                    "mechanical-drill: 2\n" +
-                    "pneumatic-drill: 5\n" +
-                    "laser-drill: 10\n" +
-                    "blast-drill: 15\n" +
-                    "water-extractor: 3\n" +
-                    "cultivator: 7\n" +
-                    "oil-extractor: 15\n\n" +
-
-                    "# Storage\n" +
-                    "vault: 20\n" +
-                    "container: 7\n" +
-                    "unloader: 3\n\n" +
-
-                    "# Turrets\n" +
-                    "duo: 3\n" +
-                    "scatter: 5\n" +
-                    "scorch: 8\n" +
-                    "hail: 10\n" +
-                    "wave: 12\n" +
-                    "lancer: 15\n" +
-                    "arc: 18\n" +
-                    "swarmer: 30\n" +
-                    "salvo: 24\n" +
-                    "fuse: 40\n" +
-                    "ripple: 50\n" +
-                    "cyclone: 60\n" +
-                    "spectre: 100\n" +
-                    "meltdown: 250\n\n" +
-
-                    "# Units\n" +
-                    "draug-factory: 8\n" +
-                    "spirit-factory: 12\n" +
-                    "phantom-factory: 18\n" +
-                    "command-center: 30\n" +
-                    "wraith-factory: 15\n" +
-                    "ghoul-factory: 25\n" +
-                    "revenant-factory: 40\n" +
-                    "dagger-factory: 6\n" +
-                    "crawler-factory: 8\n" +
-                    "titan-factory: 12\n" +
-                    "fortress-factory: 18\n" +
-                    "repair-point: 2\n\n" +
-
-                    "# Upgrade\n" +
-                    "dart-mech-pad: 15\n" +
-                    "delta-mech-pad: 30\n" +
-                    "tau-mech-pad: 40\n" +
-                    "omega-mech-pad: 150\n" +
-                    "javelin-ship-pad: 35\n" +
-                    "trident-ship-pad: 45\n" +
-                    "glaive-ship-pad: 150";
-
-            Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").writeString(text);
-            Global.log("Exp config file created!");
-        }
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.txt").exists()) {
-            String text = "# crafting\n" +
-                    "graphite-press: 3\n" +
-                    "multi-press: 15\n" +
-                    "silicon-smelter: 6\n" +
-                    "kiln: 9\n" +
-                    "plastanium-compressor: 16\n" +
-                    "phase-weaver: 23\n" +
-                    "alloy-smelter: 22\n" +
-                    "cryofluidmixer: 22\n" +
-                    "blast-mixer: 15\n" +
-                    "pyratite-mixer: 6\n" +
-                    "melter: 14\n" +
-                    "separator: 18\n" +
-                    "spore-press: 9\n" +
-                    "pulverizer: 25\n" +
-                    "coal-centrifuge: 13\n" +
-                    "incinerator: 10\n\n" +
-
-                    "# Sandbox\n" +
-                    "power-void: 1\n" +
-                    "power-source: 1\n" +
-                    "item-source: 1\n" +
-                    "item-void: 1\n" +
-                    "liquid-source: 1\n" +
-                    "message: 5\n\n" +
-
-                    "# Defence\n" +
-                    "scrap-wall: \1n" +
-                    "scrap-wall-large: 1\n" +
-                    "scrap-wall-huge: 1\n" +
-                    "scrap-wall-gigantic: 1\n" +
-                    "thruster: 1\n" +
-                    "copper-wall: 3\n" +
-                    "copper-wall-large: 6\n" +
-                    "titanium-wall: 6\n" +
-                    "titanium-wall-large: 8\n" +
-                    "thorium-wall: 8\n" +
-                    "thorium-wall-large: 12\n" +
-                    "phase-wall: 16\n" +
-                    "phase-wall-large: 20\n" +
-                    "surge-wall: 12\n" +
-                    "surge-wall-large: 16\n" +
-                    "door: 9\n" +
-                    "door-large: 12\n" +
-                    "mender: 8\n" +
-                    "mend-projector: 16\n" +
-                    "overdrive-projector: 27\n" +
-                    "force-projector: 20\n" +
-                    "shock-mine: 16\n\n" +
-
-                    "# Distribution\n" +
-                    "conveyor: 1\n" +
-                    "titanium-conveyor: 7\n" +
-                    "armored-conveyor: 15\n" +
-                    "junction: 1\n" +
-                    "bridge-conveyor: 5\n" +
-                    "phase-conveyor: 20\n" +
-                    "sorter: 5\n" +
-                    "router: 3\n" +
-                    "distributor: 5\n" +
-                    "overflow-gate: 7\n" +
-                    "mass-driver: 30\n\n" +
-
-                    "# Liquid\n" +
-                    "mechanical-pump: 3\n" +
-                    "rotary-pump: 17\n" +
-                    "thermal-pump: 23\n" +
-                    "conduit: 9\n" +
-                    "pulse-conduit: 17\n" +
-                    "liquid-router: 14\n" +
-                    "liquid-tank: 17\n" +
-                    "liquid-junction: 11\n" +
-                    "bridge-conduit: 14\n" +
-                    "phase-conduit: 23\n\n" +
-
-                    "# Power\n" +
-                    "power-node: 3\n" +
-                    "power-node-large: 7\n" +
-                    "surge-tower: 20\n" +
-                    "battery: 5\n" +
-                    "battery-large: 15\n" +
-                    "combustion-generator: 6\n" +
-                    "thermal-generator: 16\n" +
-                    "turbine-generator: 12\n" +
-                    "differential-generator: 23\n" +
-                    "rtg-generator: 40\n" +
-                    "solar-panel: 7\n" +
-                    "solar-panel-large: 11\n" +
-                    "thorium-reactor: 30\n" +
-                    "impact-reactor: 50\n\n" +
-
-                    "# Production\n" +
-                    "mechanical-drill: 1\n" +
-                    "pneumatic-drill: 6\n" +
-                    "laser-drill: 12\n" +
-                    "blast-drill: 16\n" +
-                    "water-extractor: 16\n" +
-                    "cultivator: 12\n" +
-                    "oil-extractor: 20\n\n" +
-
-                    "# Storage\n" +
-                    "vault: 23\n" +
-                    "container: 10\n" +
-                    "unloader: 13\n\n" +
-
-                    "# Turrets\n" +
-                    "duo: 1\n" +
-                    "scatter: 3\n" +
-                    "scorch: 5\n" +
-                    "hail: 8\n" +
-                    "wave: 13\n" +
-                    "lancer: 15\n" +
-                    "arc: 10\n" +
-                    "swarmer: 28\n" +
-                    "salvo: 12\n" +
-                    "fuse: 25\n" +
-                    "ripple: 20\n" +
-                    "cyclone: 30\n" +
-                    "spectre: 40\n" +
-                    "meltdown: 50\n\n" +
-
-                    "# Units\n" +
-                    "draug-factory: 6\n" +
-                    "spirit-factory: 10\n" +
-                    "phantom-factory: 16\n" +
-                    "command-center: 14\n" +
-                    "wraith-factory: 17\n" +
-                    "ghoul-factory: 20\n" +
-                    "revenant-factory: 25\n" +
-                    "dagger-factory: 8\n" +
-                    "crawler-factory: 13\n" +
-                    "titan-factory: 22\n" +
-                    "fortress-factory: 25\n" +
-                    "repair-point: 20\n\n" +
-
-                    "# Upgrade\n" +
-                    "dart-mech-pad: 10\n" +
-                    "delta-mech-pad: 15\n" +
-                    "tau-mech-pad: 20\n" +
-                    "omega-mech-pad: 25\n" +
-                    "javelin-ship-pad: 20\n" +
-                    "trident-ship-pad: 25\n" +
-                    "glaive-ship-pad: 30\n";
-            Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.txt").writeString(text);
-            Global.log("BlockReqExp config file created!");
-        }
-
-        // Move folder
-        try{
-            File f1 = new File(Core.settings.getDataDirectory().child("mods/Essentials").path());
-            File f2 = new File(Core.settings.getDataDirectory().child("mods/Essentials/data").path());
-
-            if(!f2.exists()){
-                if(!f2.mkdirs()){
-                    Global.log("create data folder failed!");
-                }
-            }
-
-            File[] files = f1.listFiles();
-            for (File file : Objects.requireNonNull(files)) {
-                if (file.getName().endsWith(".json")) {
-                    if (!file.renameTo(new File(f2, file.getName()))) {
-                        Global.log(file.getName() + " file move failed!");
+        if(jarFile.isFile() && !validfile()) {
+            try {
+                final JarFile jar = new JarFile(jarFile);
+                final Enumeration<JarEntry> entries = jar.entries();
+                while (entries.hasMoreElements()) {
+                    String name = entries.nextElement().getName();
+                    if (name.startsWith(path + "/")) {
+                        if(!name.equals("config/")) {
+                            if (!name.contains(".")) {
+                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace("config/", "")).mkdirs();
+                                continue;
+                            }
+                            InputStream reader = getClass().getResourceAsStream("/"+name);
+                            if(name.contains("config/config_en.yml")){
+                                Core.settings.getDataDirectory().child("mods/Essentials/config.yml").write(reader, false);
+                            } else if (!name.contains("config/config_ko.yml")){
+                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace("config/", "")).write(reader, false);
+                            }
+                        }
                     }
                 }
+                jar.close();
+
+                Yaml yaml = new Yaml();
+                obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        }catch (Exception e){
-            printStackTrace(e);
-        }
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").exists()) {
-            JSONObject object = new JSONObject();
-            object.put("banall", "true");
-            object.put("servername", Core.settings.getString("servername"));
-            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
-        } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-            JSONTokener temp2 = new JSONTokener(temp1);
-            JSONObject data = new JSONObject(temp2);
-            if(data.isNull("servername")){
-                data.put("servername", Core.settings.getString("servername"));
-                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(data));
-            } else {
-                Core.settings.put("servername", data.getString("servername"));
-                Core.settings.save();
-            }
-        }
-
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").exists()){
-            JSONArray ban = new JSONArray();
-            String json = ban.toString();
-            Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(json);
-            Global.log("banned file created!");
-        }
-
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").exists()){
-            String msg = "To edit this message, modify the [green]motd.txt[] file in the [green]config/mods/Essentials/[] folder.";
-            Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").writeString(msg);
-            Global.log("motd file created.");
-        }
-
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").exists()){
-            String msg = "이 메시지를 바꿀려면 [green]config/mods/Essentials/[] 폴더에서 [green]motd.txt[] 파일을 수정하세요.";
-            Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").writeString(msg);
-            Global.log("motd_ko file created.");
-        }
-
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").exists()){
-            JSONArray blacklist = new JSONArray();
-            String json = blacklist.toString();
-            Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(json);
-            Global.log("blacklist file created!");
-        }
-
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/data/powerblock.json").exists()){
-            Core.settings.getDataDirectory().child("mods/Essentials/data/powerblock.json").writeString("[]");
-            Global.log("powerblock file created!");
-        }
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log").writeString("");
-            Global.log("error.log created.");
-        }
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(new JSONArray().toString());
-            Global.log("jumpzone created.");
-        } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").readString();
-            JSONTokener temp2 = new JSONTokener(temp1);
-            jumpzone = new JSONArray(temp2);
-        }
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(new JSONArray().toString());
-            Global.log("jumpcount created.");
-        } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").readString();
-            JSONTokener temp2 = new JSONTokener(temp1);
-            jumpcount = new JSONArray(temp2);
-        }
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(new JSONArray().toString());
-            Global.log("jumpall created.");
-        } else {
-            String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").readString();
-            JSONTokener temp2 = new JSONTokener(temp1);
-            jumpall = new JSONArray(temp2);
-        }
-
-        if (Core.settings.getDataDirectory().child("mods/Essentials/config.txt").exists()){
+        } else if (Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()){
             Yaml yaml = new Yaml();
-
-            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
-            // Config version
-
+            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
             Global.log("config file loaded!");
+
+            if(getVersion() < 5){
+                obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
+
+                String text;
+                if(getLanguage().equals("ko")) {
+                    text = "# 플러그인 버전 (절대 수정하지 마세요!)\n" +
+                            "version: 5\n" +
+                            "\n" +
+                            "# 플러그인 언어\n" +
+                            "language: ko\n" +
+                            "\n" +
+                            "# 서버/클라이언트 포트 설정\n" +
+                            "# 이것은 플러그인의 네트워크 기능에 사용됩니다.\n" +
+                            "server-enable: "+isServerenable()+"\n" +
+                            "server-port: "+getServerport()+"\n" +
+                            "\n" +
+                            "client-enable: "+isClientenable()+"\n" +
+                            "client-port: "+getClientport()+"\n" +
+                            "client-host: "+getClienthost()+"\n" +
+                            "\n" +
+                            "# realname를 켜면 플레이어가 닉네임을 변경하더라도 이전 닉네임으로 설정됩니다.\n" +
+                            "# 컬러닉 기능을 원하는 경우 이것을 활성화해야 합니다.\n" +
+                            "realname: "+isRealname()+"\n" +
+                            "\n" +
+                            "# 컬러닉 갱신 시간설정. 1초 = 1000\n" +
+                            "colornick update interval: "+getCupdatei()+"\n" +
+                            "\n" +
+                            "# 원자로 감지를 켜면 토륨 원자로가 과열되어 폭발 하기 직전일 때 즉시 블럭이 파괴됩니다.\n" +
+                            "detectreactor: "+isDetectreactor()+"\n" +
+                            "\n" +
+                            "# 경험치 값 설정.\n" +
+                            "# explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.\n" +
+                            "# Base xp는 레벨 1에서 2로 오르는데 필요한 경험치 수치입니다.\n" +
+                            "# exponent는 다음 레벨로 올리기 위한 요구 경험치 배수입니다.\n" +
+                            "# levelupalarm 를 활성화 하면 일정레벨 이상에서 레벨이 오를때, 메세지로 띄워줍니다.\n" +
+                            "explimit: "+isExplimit()+"\n" +
+                            "basexp: "+getBasexp()+"\n" +
+                            "exponent: "+getExponent()+"\n" +
+                            "levelupalarm: "+isLevelupalarm()+"\n" +
+                            "\n" +
+                            "# 밴 공유서버 설정\n" +
+                            "# 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.\n" +
+                            "banshare: "+isBanshare()+"\n" +
+                            "\n" +
+                            "# 신뢰가능한 밴 공유 IP 설정\n" +
+                            "# 예시 - 127.0.0.1,localhost,192.168.0.0\n" +
+                            "bantrust: "+obj.get("bantrust")+"\n" +
+                            "\n" +
+                            "# 서버 요청 설정\n" +
+                            "# 이 기능을 켜면 서버 포트에서 서버 정보를 얻어올 수 있게 됩니다.\n" +
+                            "# 랭킹 사이트는 http://localhost:서버포트/rank/kr 으로 들어가면 됩니다.\n" +
+                            "query: "+isQuery()+"\n" +
+                            "\n" +
+                            "# 이 기능을 켜면 VPN 서비스가 켜집니다.\n" +
+                            "antivpn: "+isAntivpn()+"\n" +
+                            "\n" +
+                            "# 이 기능을 켜면 PvP 초반 러시 방지기능을 활성화 합니다. 시간 단위: 1초\n" +
+                            "enableantirush: "+isEnableantirush()+"\n" +
+                            "antirushtime: "+obj.get("antirushtime")+"\n" +
+                            "\n" +
+                            "# 서버 로그 활성화 (이 기능을 켜면 많은 디스크 작업이 일어납니다!)\n" +
+                            "logging: "+isLogging()+"\n" +
+                            "\n" +
+                            "# 플러그인 업데이트 확인 기능\n" +
+                            "update: "+isUpdate()+"\n" +
+                            "\n" +
+                            "# 데이터베이스 종류 설정 (Default is SQLite)\n" +
+                            "# 예시 - mariadb://localhost:3306/DB이름\n" +
+                            "# 만약 MySQL/MariaDB 를 사용하고 싶다면, SQLite를 비활성화 하고 새 데이터베이스를 직접 만드셔야 합니다!\n" +
+                            "sqlite: "+isSqlite()+"\n" +
+                            "dburl: "+getDBurl()+"\n" +
+                            "dbid: "+getDBid()+"\n" +
+                            "dbpw: "+getDBpw()+"\n" +
+                            "\n" +
+                            "# 로그인 기능 설정\n" +
+                            "loginenable: "+isLoginenable()+"\n" +
+                            "\n" +
+                            "# 파파고 번역 API 키\n" +
+                            "# 이 키는 developers.naver.com 에서 유료로 얻을 수 있습니다.\n" +
+                            "clientId: "+getClientId()+"\n" +
+                            "clientSecret: "+getClientSecret()+"\n" +
+                            "\n" +
+                            "# 이 기능을 켜면 오류 메세지가 저장되지 않고 즉시 콘솔로 출력됩니다.\n" +
+                            "debug: "+isDebug()+"\n" +
+                            "\n" +
+                            "# 맵 자동저장 시간. 시간 단위는 1분입니다.\n" +
+                            "savetime: "+getSavetime()+"\n" +
+                            "\n" +
+                            "# 빽섭할 맵 저장 슬롯\n" +
+                            "# 예시 - 만약 값을 1000으로 설정한다면, 빽섭할 맵의 파일명이 1000.msav 으로 저장됩니다.\n" +
+                            "slotnumber: "+getSlotnumber()+";";
+                } else {
+                    text = "# Config version (Don't touch this!)\n" +
+                            "version: 5\n" +
+                            "\n" +
+                            "# Plugin language\n" +
+                            "language: ko\n" +
+                            "\n" +
+                            "# Server/client port settings\n" +
+                            "# This's used for the network function of the plugin.\n" +
+                            "server-enable: "+isServerenable()+"\n" +
+                            "server-port: "+getServerport()+"\n" +
+                            "\n" +
+                            "client-enable: "+isClientenable()+"\n" +
+                            "client-port: "+getClientport()+"\n" +
+                            "client-host: "+getClienthost()+"\n" +
+                            "\n" +
+                            "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
+                            "# If you want colornick features, must enable this.\n" +
+                            "realname: "+isRealname()+"\n" +
+                            "\n" +
+                            "# Color nickname update interval. 1sec = 1000\n" +
+                            "colornick update interval: "+getCupdatei()+"\n" +
+                            "\n" +
+                            "# If turn on detectreactor, destory reactor when the thorium reactor is overheated.\n" +
+                            "detectreactor: "+isDetectreactor()+"\n" +
+                            "\n" +
+                            "# Experience value setting.\n" +
+                            "# When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.\n" +
+                            "# Base xp is required experience to level up from 1 to 2\n" +
+                            "# exponent is EXP multiplier required for the next level.\n" +
+                            "# When turn on levelupalarm, a message is displayed when the level rises above a certain level.\n" +
+                            "explimit: "+isExplimit()+"\n" +
+                            "basexp: "+getBasexp()+"\n" +
+                            "exponent: "+getExponent()+"\n" +
+                            "levelupalarm: "+isLevelupalarm()+"\n" +
+                            "\n" +
+                            "# Ban sharing server config\n" +
+                            "# If you enable this, your ban list will send to another public servers.\n" +
+                            "banshare: "+isBanshare()+"\n" +
+                            "\n" +
+                            "# Ban sharing trust list\n" +
+                            "# Example - 127.0.0.1,localhost,192.168.0.0\n" +
+                            "bantrust: "+obj.get("bantrust")+"\n" +
+                            "\n" +
+                            "# Server query config\n" +
+                            "# If you enable this, You will be able to get server information from the server port.\n" +
+                            "# Ranking page address is http://localhost:server_port/rank\n" +
+                            "query: "+isQuery()+"\n" +
+                            "\n" +
+                            "# Enable Anti-VPN service.\n" +
+                            "antivpn: "+isAntivpn()+"\n" +
+                            "\n" +
+                            "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
+                            "enableantirush: "+isEnableantirush()+"\n" +
+                            "antirushtime: "+obj.get("antirushtime")+"\n" +
+                            "\n" +
+                            "# Logging enable (This features may take heavy disk read/write work!)\n" +
+                            "logging: "+isLogging()+"\n" +
+                            "\n" +
+                            "# update check enable\n" +
+                            "update: "+isUpdate()+"\n" +
+                            "\n" +
+                            "# Database type setting (Default is SQLite)\n" +
+                            "# Example - mariadb://localhost:3306/dbname\n" +
+                            "# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.# dburl\n" +
+                            "sqlite: "+isSqlite()+"\n" +
+                            "dburl: "+getDBurl()+"\n" +
+                            "dbid: "+getDBid()+"\n" +
+                            "dbpw: "+getDBpw()+"\n" +
+                            "\n" +
+                            "# Login features setting\n" +
+                            "loginenable: "+isLoginenable()+"\n" +
+                            "\n" +
+                            "# Papago translate API Key\n" +
+                            "# The api key can be obtained from developers.naver.com.\n" +
+                            "clientId: "+getClientId()+"\n" +
+                            "clientSecret: "+getClientSecret()+"\n" +
+                            "\n" +
+                            "# The error message is output immediately.\n" +
+                            "debug: "+isDebug()+"\n" +
+                            "\n" +
+                            "# Map auto save time. Time unit: 1 minute\n" +
+                            "savetime: "+getSavetime()+"\n" +
+                            "\n" +
+                            "# Rollback map save slot number.\n" +
+                            "# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
+                            "slotnumber: "+getSlotnumber()+";";
+                }
+                Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
+                Global.log("config file updated!");
+            }
         }
-
-        /*if(version < 4){
-            Yaml yaml = new Yaml();
-            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.txt").readString()));
-
-            String text = "# Config version (Don't touch this!)\n" +
-                    "version: 4\n\n" +
-
-                    "# Plugin language\n" +
-                    "language: en\n\n" +
-
-                    "# Server / client port settings\n#It will enable server as server chat function.\n" +
-                    "server-enable: "+serverenable+"\n" +
-                    "server-port: "+serverport+"\n\n" +
-
-                    "client-enable: "+clientenable+"\n" +
-                    "client-port: "+clientport+"\n" +
-                    "client-host: "+clienthost+"\n\n" +
-
-                    "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
-                    "# If you want colornick features, must enable this.\n" +
-                    "realname: "+realname+"\n\n" +
-
-                    "# Color nickname update interval. 1sec = 1000\n" +
-                    "colornick update interval: "+ cupdatei+"\n\n" +
-
-                    "# If turn on detectreactor, send alert message when the thorium reactor is overheated and explodes.\n" +
-                    "detectreactor: "+detectreactor+"\n\n" +
-
-                    "# Experience value setting.\n# Base xp is required experience to level up from 1 to 2\n# exponent is EXP multiplier required for the next level.\n\n" +
-                    "explimit: "+explimit+"\n" +
-                    "basexp: "+ basexp+"\n" +
-                    "exponent: "+ exponent+"\n" +
-                    "levelupalarm: "+ levelupalarm+"\n\n" +
-
-                    "# Ban sharing server config\n# If you enable this, your ban list will send to another public servers.\n" +
-                    "banshare: "+banshare+"\n\n" +
-
-                    "# Server query config\n# If you enable this, You will be able to get server information from the server port.\n# Ranking page address is http://localhost:server_port/rank\n" +
-                    "query: "+query+"\n\n" +
-
-                    "# Enable Anti-VPN service.\n" +
-                    "antivpn: "+antivpn+"\n\n" +
-
-                    "# Enable Anti PvP early time rushing\n" +
-                    "enableantirush: "+enableantirush+"\n" +
-                    "antirushtime: "+obj.get("antirushtime")+"\n\n"+
-                    
-                    "# Logging enable\n" +
-                    "logging: "+logging+"\n\n" +
-
-                    "# Update check enable\n" +
-                    "update: "+update+"\n\n" +
-
-                    "# Database type setting (Default is SQLite)\n# Example - mariadb://localhost:3306/dbname\n#If you want to use MySQL/MariaDB, You must create a new database yourself.\n" +
-                    "sqlite: "+sqlite+"\n" +
-                    "dburl: "+this.dburl+"\n" +
-                    "dbid: "+dbid+"\n" +
-                    "dbpw: "+dbpw+"\n\n" +
-
-                    "# Login features setting\n" +
-                    "loginenable: "+loginenable+"\n\n" +
-
-                    "# Papago translate API Key\n" +
-                    "# The api key can be obtained from developers.naver.com.\n" +
-                    "clientId: "+clientId+"\n" +
-                    "clientSecret: "+clientSecret+"\n\n" +
-
-                    "# The error message is output immediately.\n" +
-                    "debug: "+debug+"\n\n" +
-
-                    "# Map auto save time. Time unit: 1 minute\n" +
-                    "savetime: "+savetime+"\n\n" +
-
-                    "# Rollback map save slot number.\n# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
-                    "slotnumber: "+slotnumber;
-            Core.settings.getDataDirectory().child("mods/Essentials/config.txt").writeString(text);
-            Global.log("config file updated!");
-        }*/
     }
 }

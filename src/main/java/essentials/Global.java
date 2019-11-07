@@ -1,6 +1,7 @@
 package essentials;
 
 import essentials.utils.Bundle;
+import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
@@ -20,10 +21,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import static essentials.core.PlayerDB.getData;
-import static essentials.utils.Config.debug;
 import static io.anuke.mindustry.Vars.world;
 
 public class Global {
+    public static Config config = new Config();
+
     public static void log(String msg){
         Log.info("[Essential] "+msg);
     }
@@ -69,7 +71,7 @@ public class Global {
     }
 
     public static void printStackTrace(Throwable e) {
-        if(!debug){
+        if(!config.isDebug()){
             StringBuilder sb = new StringBuilder();
             try {
                 sb.append(e.toString());

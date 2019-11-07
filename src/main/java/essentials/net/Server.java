@@ -3,6 +3,7 @@ package essentials.net;
 import essentials.Global;
 import essentials.core.PlayerDB;
 import essentials.special.gifimage;
+import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
 import io.anuke.mindustry.core.GameState;
@@ -36,6 +37,7 @@ import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.*;
 
 public class Server implements Runnable {
+    public Config config = new Config();
     public static boolean active = true;
     public static ServerSocket serverSocket;
     public static ArrayList<Service> list = new ArrayList<>();
@@ -43,7 +45,7 @@ public class Server implements Runnable {
 
     public void ChatServer() {
         try {
-            serverSocket = new ServerSocket(serverport);
+            serverSocket = new ServerSocket(config.getServerport());
             new Thread(this).start();
         } catch (Exception e) {
             printStackTrace(e);
@@ -134,7 +136,7 @@ public class Server implements Runnable {
                         list.remove(this);
                         socket.shutdownOutput();
                         return;
-                    } else if (banshare) {
+                    } else if (config.isBanshare()) {
                         try {
                             JSONTokener convert = new JSONTokener(data);
                             JSONArray bandata = new JSONArray(convert);
@@ -702,7 +704,7 @@ public class Server implements Runnable {
                 try {
                     OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                     BufferedWriter bw = new BufferedWriter(osw);
-                    if (query) {
+                    if (config.isQuery()) {
                         if (receive.matches("GET / HTTP/.*")) {
                             String data = query();
                             bw.write("HTTP/1.1 200 OK\r\n");

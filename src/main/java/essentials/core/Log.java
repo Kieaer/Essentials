@@ -32,10 +32,6 @@ public class Log implements Runnable{
             Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log").writeString("");
             Global.log("Player.log created.");
         }
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log").writeString("");
-            Global.log("Total.log created.");
-        }
         if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log").exists()) {
             Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log").writeString("");
             Global.log("Griefer.log created.");

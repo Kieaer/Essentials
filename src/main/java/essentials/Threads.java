@@ -93,7 +93,7 @@ public class Threads extends TimerTask implements Runnable{
         }
     }
 
-    static class playtime extends Thread {
+    class playtime extends Thread {
         @Override
         public void run(){
             try{
@@ -186,7 +186,7 @@ public class Threads extends TimerTask implements Runnable{
                     cal1.add(Calendar.SECOND, 1);
                     playtime = format.format(cal1.getTime());
                     // Anti PvP rushing timer
-                    if(enableantirush && Vars.state.rules.pvp && cal1.equals(antirushtime)) {
+                    if(config.isEnableantirush() && Vars.state.rules.pvp && cal1.equals(config.getAntirushtime())) {
                         Call.sendMessage("[scarlet]== NOTICE ==");
                         Call.sendMessage("[green]Peace time is over!");
                         Call.sendMessage("[green]You can now attack other teams using your own mechs!");
@@ -625,7 +625,7 @@ public class Threads extends TimerTask implements Runnable{
     public static class AutoRollback extends TimerTask {
         private boolean save() {
             try {
-                FileHandle file = saveDirectory.child(slotnumber + "." + saveExtension);
+                FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.save(file);
                 return true;
             } catch (Exception e) {
@@ -640,7 +640,7 @@ public class Threads extends TimerTask implements Runnable{
             players.addAll(all);
 
             try {
-                FileHandle file = saveDirectory.child(slotnumber + "." + saveExtension);
+                FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.load(file);
             } catch (SaveIO.SaveException e) {
                 printStackTrace(e);
@@ -989,7 +989,7 @@ public class Threads extends TimerTask implements Runnable{
     }
     public static class ColorNick {
         private static int colorOffset = 0;
-        private static long updateIntervalMs = cupdatei;
+        private static long updateIntervalMs = config.getCupdatei();
 
         public void main(Player player){
             Thread thread = new Thread(() -> {

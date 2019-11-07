@@ -1,6 +1,7 @@
 package essentials.core;
 
 import essentials.Global;
+import essentials.utils.Config;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
@@ -19,12 +20,13 @@ import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Translate {
+    public Config config = new Config();
     private static URL url;
     private static HttpURLConnection c;
     private static BufferedReader in;
 
-    public static void main(Player player, String message) {
-        if (!clientId.equals("") && !clientSecret.equals("")) {
+    public void main(Player player, String message) {
+        if (!config.getClientId().equals("") && !config.getClientSecret().equals("")) {
             Thread t = new Thread(() -> {
                 try {
                     JSONObject orignaldata = getData(player.uuid);
@@ -49,8 +51,8 @@ public class Translate {
                                     url = new URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation");
                                     c = (HttpURLConnection) url.openConnection();
                                     c.setRequestMethod("POST");
-                                    c.setRequestProperty("X-NCP-APIGW-API-KEY-ID", clientId);
-                                    c.setRequestProperty("X-NCP-APIGW-API-KEY", clientSecret);
+                                    c.setRequestProperty("X-NCP-APIGW-API-KEY-ID", config.getClientId());
+                                    c.setRequestProperty("X-NCP-APIGW-API-KEY", config.getClientSecret());
                                     String postParams;
                                     if(orignal.equals("zh")){
                                         if(data.getString("language").equals("zh")){

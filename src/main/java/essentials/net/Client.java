@@ -1,6 +1,7 @@
 package essentials.net;
 
 import essentials.Global;
+import essentials.utils.Config;
 import io.anuke.arc.collection.Array;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -23,6 +24,7 @@ import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Client extends Thread{
+    public Config config = new Config();
     public static Socket socket;
     public static BufferedReader br;
     public static BufferedWriter bw;
@@ -78,8 +80,8 @@ public class Client extends Thread{
     public void main(String option, Player player, String message){
         if(!serverconn){
             try {
-                InetAddress address = InetAddress.getByName(clienthost);
-                socket = new Socket(address, clientport);
+                InetAddress address = InetAddress.getByName(config.getClienthost());
+                socket = new Socket(address, config.getClientport());
                 OutputStream os = socket.getOutputStream();
                 OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                 bw = new BufferedWriter(osw);
@@ -128,7 +130,7 @@ public class Client extends Thread{
                         bw.write(msg + "\n");
                         bw.flush();
                         Call.sendMessage("[#357EC7][SC] " + msg);
-                        Global.logc("Message sent to " + clienthost + " - " + message + "");
+                        Global.logc("Message sent to " + config.getClienthost() + " - " + message + "");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -171,7 +173,7 @@ public class Client extends Thread{
                             }
                         }
                     }
-                } else if(banshare){
+                } else if(config.isBanshare()){
                     try{
                         JSONTokener test = new JSONTokener(data);
                         JSONArray result = new JSONArray(test);
@@ -197,15 +199,15 @@ public class Client extends Thread{
             } catch (IOException e) {
                 String msg = e.getMessage();
                 if (msg.equals("Connection reset")) {
-                    Global.logs(clienthost + " Server disconnected");
+                    Global.logs(config.getClienthost() + " Server disconnected");
                     return;
                 }
                 if (msg.equals("socket closed")) {
-                    Global.logs(clienthost + " Server disconnected");
+                    Global.logs(config.getClienthost() + " Server disconnected");
                     return;
                 }
                 if (msg.equals("Stream closed")) {
-                    Global.logs(clienthost + " Server disconnected");
+                    Global.logs(config.getClienthost() + " Server disconnected");
                     return;
                 }
                 serverconn = false;

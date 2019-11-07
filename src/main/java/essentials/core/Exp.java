@@ -1,5 +1,6 @@
 package essentials.core;
 
+import essentials.utils.Config;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 
@@ -7,8 +8,9 @@ import static essentials.core.PlayerDB.writeData;
 import static essentials.utils.Config.*;
 
 public class Exp {
-    private static final double BASE_XP = basexp;
-    private static final double EXPONENT = exponent;
+    public static Config config = new Config();
+    private static double BASE_XP = config.getBasexp();
+    private static double EXPONENT = config.getExponent();
 
     public static void exp(String name, String uuid) {
         JSONObject db = PlayerDB.getData(uuid);
@@ -25,7 +27,7 @@ public class Exp {
         writeData("UPDATE players SET reqexp = '"+reqexp+"', level = '"+level+"', reqtotalexp = '"+reqtotalexp+"' WHERE uuid = '"+uuid+"'");
 
         int curlevel = (int) db.get("level");
-        if(curlevel < level && curlevel > 20 && levelupalarm){
+        if(curlevel < level && curlevel > 20 && config.isLevelupalarm()){
             Call.sendMessage("[yellow]Congratulations![white] "+name+"[white] achieved level [green]"+level+"!");
         }
     }
