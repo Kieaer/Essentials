@@ -1,5 +1,8 @@
 package essentials;
 
+import essentials.core.Exp;
+import essentials.core.PlayerDB;
+import essentials.utils.Bundle;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -38,11 +41,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static essentials.Config.*;
 import static essentials.Global.*;
-import static essentials.PlayerDB.getData;
-import static essentials.PlayerDB.writeData;
+import static essentials.core.PlayerDB.getData;
+import static essentials.core.PlayerDB.writeData;
 import static essentials.special.PingServer.pingServer;
+import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.*;
 
 public class Threads extends TimerTask implements Runnable{
@@ -90,7 +93,7 @@ public class Threads extends TimerTask implements Runnable{
         }
     }
 
-    class playtime extends Thread {
+    static class playtime extends Thread {
         @Override
         public void run(){
             try{
@@ -139,7 +142,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class bantime extends Thread {
+    static class bantime extends Thread {
         @Override
         public void run(){
             try{
@@ -170,7 +173,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class maptime extends Thread {
+    static class maptime extends Thread {
         @Override
         public void run(){
             if(playtime != null){
@@ -201,7 +204,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class uptime extends Thread {
+    static class uptime extends Thread {
         @Override
         public void run(){
             if(uptime != null){
@@ -219,7 +222,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class jumpzone extends Thread {
+    static class jumpzone extends Thread {
         @Override
         public void run(){
             if (playerGroup.size() > 0) {
@@ -277,7 +280,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    static class checkgrief extends Thread {
+    public static class checkgrief extends Thread {
         Player player;
         int routercount;
         int breakcount;
@@ -288,7 +291,7 @@ public class Threads extends TimerTask implements Runnable{
         ArrayList<Block> impblock = new ArrayList<>();
         ArrayList<Block> block = new ArrayList<>();
 
-        checkgrief(Player player){
+        public checkgrief(Player player){
             this.player = player;
             new Thread(this).start();
         }
@@ -375,7 +378,7 @@ public class Threads extends TimerTask implements Runnable{
             });
         }
     }
-    class checkthorium extends Thread {
+    static class checkthorium extends Thread {
         public Tile getNear(Tile tile, int count){
             int x = tile.x;
             int y = tile.y;
@@ -498,7 +501,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class checkvote extends Thread {
+    static class checkvote extends Thread {
         @Override
         public void run() {
             if(!Vote.isvoting){
@@ -509,7 +512,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class jumpcheck extends Thread {
+    static class jumpcheck extends Thread {
         // Source from Anuken/CoreBot
         @Override
         public void run() {
@@ -556,7 +559,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class jumpall extends Thread {
+    static class jumpall extends Thread {
         @Override
         public void run() {
             for (int i=0;i<jumpall.length();i++) {
@@ -601,7 +604,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    class changename extends Thread {
+    static class changename extends Thread {
         @Override
         public void run(){
             if(jumpcount.length() > 1){
@@ -688,7 +691,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
 
-        public class Service extends Thread {
+        public static class Service extends Thread {
             String roomname;
             String map;
             String gamemode;
@@ -705,7 +708,7 @@ public class Threads extends TimerTask implements Runnable{
             @Override
             public void run(){
                 try {
-                    Process p = null;
+                    Process p;
                     ProcessBuilder pb;
                     if(gamemode.equals("wave")){
                         pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "port", String.valueOf(customport), ",host", map);
@@ -984,7 +987,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         });
     }
-    static class ColorNick {
+    public static class ColorNick {
         private static int colorOffset = 0;
         private static long updateIntervalMs = cupdatei;
 
@@ -1041,7 +1044,7 @@ public class Threads extends TimerTask implements Runnable{
             player.name = stringBuilder.toString();
         }
     }
-    class monitorresource extends Thread {
+    static class monitorresource extends Thread {
         Array<Integer> pre = new Array<>();
         Array<Integer> cur = new Array<>();
         Array<Item> name = new Array<>();
@@ -1078,7 +1081,7 @@ public class Threads extends TimerTask implements Runnable{
                                 //if(p.buildRequest().block.requirements[c].item != null) continue;
                                 Item ad = p.buildRequest().block.requirements[c].item;
                                 if(ad == name.get(a)){
-                                    using.append(p.name+", ");
+                                    using.append(p.name).append(", ");
                                 }
                             }
                         }
@@ -1095,7 +1098,6 @@ public class Threads extends TimerTask implements Runnable{
                     pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
                 }
             }
-            a=0;
         }
     }
 }

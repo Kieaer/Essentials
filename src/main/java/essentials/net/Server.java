@@ -1,7 +1,7 @@
 package essentials.net;
 
 import essentials.Global;
-import essentials.PlayerDB;
+import essentials.core.PlayerDB;
 import essentials.special.gifimage;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
@@ -29,10 +29,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 
-import static essentials.Config.*;
 import static essentials.Global.printStackTrace;
 import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
+import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.*;
 
 public class Server implements Runnable {
@@ -119,8 +119,7 @@ public class Server implements Runnable {
                         }
 
                         // send message to all clients
-                        for (int i = 0; i < list.size(); i++) {
-                            Service ser = list.get(i);
+                        for (Service ser : list) {
                             ser.bw.write(data + "\n");
                             ser.bw.flush();
                         }
@@ -170,10 +169,8 @@ public class Server implements Runnable {
                             os.write((data1 + "\n").getBytes(StandardCharsets.UTF_8));
 
                             // send message to all clients
-                            for (int i = 0; i < list.size(); i++) {
-                                Service ser = list.get(i);
-
-                                ser.os.write((data1+"\n").getBytes(StandardCharsets.UTF_8));
+                            for (Service ser : list) {
+                                ser.os.write((data1 + "\n").getBytes(StandardCharsets.UTF_8));
                                 ser.os.flush();
                             }
 
@@ -243,9 +240,8 @@ public class Server implements Runnable {
                 int playercount = playerGroup.size();
                 StringBuilder playerdata = new StringBuilder();
                 for (Player p : playerGroup.all()) {
-                    playerdata.append(p.name + ",");
+                    playerdata.append(p.name).append(",");
                 }
-                String players = "Empty";
                 if (playerdata.length() != 0) {
                     playerdata.substring(playerdata.length() - 1, playerdata.length());
                 }
@@ -256,13 +252,13 @@ public class Server implements Runnable {
                 StringBuilder items = new StringBuilder();
                 for (Item item : content.items()) {
                     if (item.type == ItemType.material) {
-                        items.append(item.name + ": " + state.teams.get(Team.sharded).cores.first().entity.items.get(item) + "<br>");
+                        items.append(item.name).append(": ").append(state.teams.get(Team.sharded).cores.first().entity.items.get(item)).append("<br>");
                     }
                 }
                 String coreitem = items.toString();
 
                 return "Player count: " + playercount + "<br>" +
-                        "Player list: " + players + "<br>" +
+                        "Player list: " + playerdata + "<br>" +
                         "Version: " + version + "<br>" +
                         "Description: " + description + "<br>" +
                         "World playtime: " + worldtime + "<br>" +
@@ -299,51 +295,37 @@ public class Server implements Runnable {
                 Statement stmt = PlayerDB.conn.createStatement();
                 ResultSet rs1 = stmt.executeQuery(sql[0]);
                 while (rs1.next()) {
-                    placecount.append("<tr><td>" + rs1.getString("name") + "</td>\n" +
-                            "<td>" + rs1.getString("country") + "</td>\n" +
-                            "<td>" + rs1.getInt("placecount") + "</td></tr>\n");
+                    placecount.append("<tr><td>").append(rs1.getString("name")).append("</td>\n").append("<td>").append(rs1.getString("country")).append("</td>\n").append("<td>").append(rs1.getInt("placecount")).append("</td></tr>\n");
                 }
                 rs1.close();
                 ResultSet rs2 = stmt.executeQuery(sql[1]);
                 while (rs2.next()) {
-                    breakcount.append("<tr><td>" + rs2.getString("name") + "</td>\n" +
-                            "<td>" + rs2.getString("country") + "</td>\n" +
-                            "<td>" + rs2.getInt("breakcount") + "</td></tr>\n");
+                    breakcount.append("<tr><td>").append(rs2.getString("name")).append("</td>\n").append("<td>").append(rs2.getString("country")).append("</td>\n").append("<td>").append(rs2.getInt("breakcount")).append("</td></tr>\n");
                 }
                 rs2.close();
                 ResultSet rs3 = stmt.executeQuery(sql[2]);
                 while (rs3.next()) {
-                    killcount.append("<tr><td>" + rs3.getString("name") + "</td>\n" +
-                            "<td>" + rs3.getString("country") + "</td>\n" +
-                            "<td>" + rs3.getInt("killcount") + "</td></tr>\n");
+                    killcount.append("<tr><td>").append(rs3.getString("name")).append("</td>\n").append("<td>").append(rs3.getString("country")).append("</td>\n").append("<td>").append(rs3.getInt("killcount")).append("</td></tr>\n");
                 }
                 rs3.close();
                 ResultSet rs4 = stmt.executeQuery(sql[3]);
                 while (rs4.next()) {
-                    joincount.append("<tr><td>" + rs4.getString("name") + "</td>\n" +
-                            "<td>" + rs4.getString("country") + "</td>\n" +
-                            "<td>" + rs4.getInt("joincount") + "</td></tr>\n");
+                    joincount.append("<tr><td>").append(rs4.getString("name")).append("</td>\n").append("<td>").append(rs4.getString("country")).append("</td>\n").append("<td>").append(rs4.getInt("joincount")).append("</td></tr>\n");
                 }
                 rs4.close();
                 ResultSet rs5 = stmt.executeQuery(sql[4]);
                 while (rs5.next()) {
-                    kickcount.append("<tr><td>" + rs5.getString("name") + "</td>\n" +
-                            "<td>" + rs5.getString("country") + "</td>\n" +
-                            "<td>" + rs5.getInt("kickcount") + "</td></tr>\n");
+                    kickcount.append("<tr><td>").append(rs5.getString("name")).append("</td>\n").append("<td>").append(rs5.getString("country")).append("</td>\n").append("<td>").append(rs5.getInt("kickcount")).append("</td></tr>\n");
                 }
                 rs5.close();
                 ResultSet rs6 = stmt.executeQuery(sql[5]);
                 while (rs6.next()) {
-                    expcount.append("<tr><td>" + rs6.getString("name") + "</td>\n" +
-                            "<td>" + rs6.getString("country") + "</td>\n" +
-                            "<td>" + rs6.getInt("exp") + "</td></tr>\n");
+                    expcount.append("<tr><td>").append(rs6.getString("name")).append("</td>\n").append("<td>").append(rs6.getString("country")).append("</td>\n").append("<td>").append(rs6.getInt("exp")).append("</td></tr>\n");
                 }
                 rs6.close();
                 ResultSet rs7 = stmt.executeQuery(sql[6]);
                 while (rs7.next()) {
-                    playtime.append("<tr><td>" + rs7.getString("name") + "</td>\n" +
-                            "<td>" + rs7.getString("country") + "</td>\n" +
-                            "<td>" + rs7.getString("playtime") + "</td></tr>\n");
+                    playtime.append("<tr><td>").append(rs7.getString("name")).append("</td>\n").append("<td>").append(rs7.getString("country")).append("</td>\n").append("<td>").append(rs7.getString("playtime")).append("</td></tr>\n");
                 }
                 rs7.close();
                 ResultSet rs8 = stmt.executeQuery(sql[7]);
@@ -354,18 +336,12 @@ public class Server implements Runnable {
                     } catch (Exception e) {
                         percent = 0;
                     }
-                    pvpcount.append("<tr><td>" + rs8.getString("name") + "</td>\n" +
-                            "<td>" + rs8.getString("country") + "</td>\n" +
-                            "<td>" + rs8.getInt("pvpwincount") + "</td>\n" +
-                            "<td>" + rs8.getInt("pvplosecount") + "</td>\n" +
-                            "<td>" + percent + "%</td></tr>\n");
+                    pvpcount.append("<tr><td>").append(rs8.getString("name")).append("</td>\n").append("<td>").append(rs8.getString("country")).append("</td>\n").append("<td>").append(rs8.getInt("pvpwincount")).append("</td>\n").append("<td>").append(rs8.getInt("pvplosecount")).append("</td>\n").append("<td>").append(percent).append("%</td></tr>\n");
                 }
                 rs8.close();
                 ResultSet rs9 = stmt.executeQuery(sql[8]);
                 while (rs9.next()) {
-                    reactorcount.append("<tr><td>" + rs9.getString("name") + "</td>\n" +
-                            "<td>" + rs9.getString("country") + "</td>\n" +
-                            "<td>" + rs9.getString("reactorcount") + "</td></tr>\n");
+                    reactorcount.append("<tr><td>").append(rs9.getString("name")).append("</td>\n").append("<td>").append(rs9.getString("country")).append("</td>\n").append("<td>").append(rs9.getString("reactorcount")).append("</td></tr>\n");
                 }
                 rs9.close();
                 stmt.close();

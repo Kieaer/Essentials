@@ -1,5 +1,6 @@
-package essentials;
+package essentials.utils;
 
+import essentials.Global;
 import io.anuke.arc.Core;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -11,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -20,7 +22,7 @@ public class Config {
     public static String clienthost;
     public static int clientport;
     public static int serverport;
-    static boolean realname;
+    public static boolean realname;
     public static boolean detectreactor;
     public static boolean serverenable;
     public static boolean clientenable;
@@ -37,7 +39,7 @@ public class Config {
     public static boolean explimit;
     public static boolean logging;
     public static boolean update;
-    static boolean levelupalarm;
+    public static boolean levelupalarm;
     public static boolean sqlite;
     private String dburl;
     public static boolean loginenable;
@@ -443,11 +445,11 @@ public class Config {
             if(!f2.exists()){
                 if(!f2.mkdirs()){
                     Global.log("create data folder failed!");
-                };
+                }
             }
 
             File[] files = f1.listFiles();
-            for (File file : files) {
+            for (File file : Objects.requireNonNull(files)) {
                 if (file.getName().endsWith(".json")) {
                     if (!file.renameTo(new File(f2, file.getName()))) {
                         Global.log(file.getName() + " file move failed!");

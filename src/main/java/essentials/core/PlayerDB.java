@@ -1,5 +1,7 @@
-package essentials;
+package essentials.core;
 
+import essentials.Global;
+import essentials.Threads;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -24,9 +26,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static essentials.Config.*;
 import static essentials.Global.printStackTrace;
 import static essentials.Threads.ColorNick;
+import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
@@ -38,7 +40,7 @@ public class PlayerDB {
     private static boolean registerresult;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
 
-    static void createNewDataFile(){
+    public static void createNewDataFile(){
         try {
             String sql = null;
             if(sqlite){
@@ -301,7 +303,7 @@ public class PlayerDB {
     private static final String v1sql = "ALTER TABLE players ADD COLUMN string;";
     //private static final String v2sql = "ALTER TABLE players ADD COLUMN string;";
 
-    static void Upgrade() {
+    public static void Upgrade() {
         /*
         if(dbversion < 2){
             try {
@@ -319,7 +321,7 @@ public class PlayerDB {
 
          */
     }
-    static void openconnect(){
+    public static void openconnect(){
         try{
             if(sqlite){
                 Class.forName("org.sqlite.JDBC");
@@ -341,7 +343,7 @@ public class PlayerDB {
         }
     }
 
-    static void closeconnect(){
+    public static void closeconnect(){
         try{
             conn.close();
         } catch (Exception e) {
@@ -349,7 +351,7 @@ public class PlayerDB {
         }
     }
 
-	static void writeData(String sql){
+	public static void writeData(String sql){
         Thread t = new Thread(() -> {
             Thread.currentThread().setName("DB Thread");
             try {
@@ -364,7 +366,7 @@ public class PlayerDB {
         t.start();
 	}
 
-	static boolean register(Player player, String id, String pw, String pw2){
+	public static boolean register(Player player, String id, String pw, String pw2){
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             // Check password security
@@ -554,7 +556,7 @@ public class PlayerDB {
         return registerresult;
     }
 
-    static boolean register(Player player){
+    public static boolean register(Player player){
         Thread db = new Thread(() -> {
             Thread.currentThread().setName("DB Register Thread");
             try {
@@ -664,7 +666,7 @@ public class PlayerDB {
         return registerresult;
     }
 
-    static boolean login(Player player, String id, String pw) {
+    public static boolean login(Player player, String id, String pw) {
         Thread db = new Thread(() -> {
             try{
                 PreparedStatement pstm = conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
@@ -705,7 +707,7 @@ public class PlayerDB {
         return loginresult;
     }
 
-    static void load(Player player, String id) {
+    public static void load(Player player, String id) {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);

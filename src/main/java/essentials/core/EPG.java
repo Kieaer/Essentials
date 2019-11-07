@@ -1,5 +1,6 @@
-package essentials;
+package essentials.core;
 
+import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.mindustry.entities.type.Player;
@@ -10,8 +11,8 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
-import static essentials.Config.explimit;
-import static essentials.PlayerDB.getData;
+import static essentials.core.PlayerDB.getData;
+import static essentials.utils.Config.explimit;
 
 public class EPG {
     public static void main(){

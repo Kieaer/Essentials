@@ -1,4 +1,4 @@
-package essentials;
+package essentials.core;
 
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.world.Tile;

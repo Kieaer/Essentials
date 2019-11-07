@@ -1,5 +1,6 @@
 package essentials;
 
+import essentials.utils.Bundle;
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
@@ -18,8 +19,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import static essentials.Config.debug;
-import static essentials.PlayerDB.getData;
+import static essentials.core.PlayerDB.getData;
+import static essentials.utils.Config.debug;
 import static io.anuke.mindustry.Vars.world;
 
 public class Global {

@@ -1,5 +1,6 @@
-package essentials;
+package essentials.core;
 
+import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.mindustry.Vars;
@@ -16,7 +17,7 @@ import java.sql.Statement;
 
 import static essentials.Global.gettime;
 import static essentials.Global.printStackTrace;
-import static essentials.PlayerDB.conn;
+import static essentials.core.PlayerDB.conn;
 
 public class Log implements Runnable{
     @Override

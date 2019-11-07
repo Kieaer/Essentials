@@ -1,16 +1,16 @@
-package essentials;
+package essentials.core;
 
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONObject;
 
-import static essentials.Config.*;
-import static essentials.PlayerDB.writeData;
+import static essentials.core.PlayerDB.writeData;
+import static essentials.utils.Config.*;
 
-class Exp {
+public class Exp {
     private static final double BASE_XP = basexp;
     private static final double EXPONENT = exponent;
 
-    static void exp(String name, String uuid) {
+    public static void exp(String name, String uuid) {
         JSONObject db = PlayerDB.getData(uuid);
 
         int currentlevel = db.getInt("level");
@@ -51,7 +51,7 @@ class Exp {
         return level;
     }
 
-    static void joinexp(String uuid){
+    public static void joinexp(String uuid){
         JSONObject db = PlayerDB.getData(uuid);
 
         int exp = (int) db.get("exp");

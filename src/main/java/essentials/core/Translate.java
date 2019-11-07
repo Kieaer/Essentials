@@ -1,5 +1,6 @@
-package essentials;
+package essentials.core;
 
+import essentials.Global;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
@@ -12,12 +13,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.Config.*;
-import static essentials.PlayerDB.getData;
 import static essentials.Global.printStackTrace;
+import static essentials.core.PlayerDB.getData;
+import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.playerGroup;
 
-class Translate {
+public class Translate {
     private static URL url;
     private static HttpURLConnection c;
     private static BufferedReader in;

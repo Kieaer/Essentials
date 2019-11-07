@@ -1,13 +1,18 @@
 package essentials;
 
-import BaseUnit;
 import essentials.Threads.AutoRollback;
 import essentials.Threads.Vote;
 import essentials.Threads.login;
+import essentials.core.EPG;
+import essentials.core.Log;
+import essentials.core.PlayerDB;
+import essentials.core.Translate;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
 import essentials.special.PingServer;
+import essentials.utils.Bundle;
+import essentials.utils.Config;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -18,6 +23,7 @@ import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.content.UnitTypes;
+import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType.*;
@@ -55,27 +61,27 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
 
-import static essentials.Config.antivpn;
-import static essentials.Config.banshare;
-import static essentials.Config.clientenable;
-import static essentials.Config.detectreactor;
-import static essentials.Config.enableantirush;
-import static essentials.Config.executorService;
-import static essentials.Config.jumpall;
-import static essentials.Config.jumpcount;
-import static essentials.Config.jumpzone;
-import static essentials.Config.logging;
-import static essentials.Config.loginenable;
-import static essentials.Config.realname;
-import static essentials.Config.savetime;
-import static essentials.Config.serverenable;
-import static essentials.Config.update;
 import static essentials.Global.*;
-import static essentials.PlayerDB.*;
 import static essentials.Threads.nukeposition;
 import static essentials.Threads.process;
+import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
 import static essentials.net.Client.update;
+import static essentials.utils.Config.antivpn;
+import static essentials.utils.Config.banshare;
+import static essentials.utils.Config.clientenable;
+import static essentials.utils.Config.detectreactor;
+import static essentials.utils.Config.enableantirush;
+import static essentials.utils.Config.executorService;
+import static essentials.utils.Config.jumpall;
+import static essentials.utils.Config.jumpcount;
+import static essentials.utils.Config.jumpzone;
+import static essentials.utils.Config.logging;
+import static essentials.utils.Config.loginenable;
+import static essentials.utils.Config.realname;
+import static essentials.utils.Config.savetime;
+import static essentials.utils.Config.serverenable;
+import static essentials.utils.Config.update;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
@@ -83,7 +89,6 @@ public class Main extends Plugin {
 	private JSONArray powerblock = new JSONArray();
 	private JSONArray nukeblock = new JSONArray();
 	private ArrayList<Tile> nukedata = new ArrayList<>();
-	private ArrayList<String> ports = new ArrayList<>();
 
 	public Main() {
 		// Start config file
@@ -245,7 +250,6 @@ public class Main extends Plugin {
 					if (db.has("uuid")) {
 						if (db.getString("uuid").equals(e.player.uuid)) {
 							bundle(e.player, "autologin");
-							JSONObject db2 = getData(e.player.uuid);
 							PlayerDB.load(e.player, null);
 						}
 					} else {
