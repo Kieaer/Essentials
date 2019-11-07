@@ -3,12 +3,9 @@ package essentials.utils;
 import essentials.Global;
 import io.anuke.arc.Core;
 import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -248,16 +245,16 @@ public class Config {
                 while (entries.hasMoreElements()) {
                     String name = entries.nextElement().getName();
                     if (name.startsWith(path + "/")) {
-                        if(!name.equals("config/")) {
+                        if(!name.equals("configs/")) {
                             if (!name.contains(".")) {
-                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace("config/", "")).mkdirs();
+                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace("configs/", "")).mkdirs();
                                 continue;
                             }
                             InputStream reader = getClass().getResourceAsStream("/"+name);
                             if(name.contains("config/config_en.yml")){
                                 Core.settings.getDataDirectory().child("mods/Essentials/config.yml").write(reader, false);
                             } else if (!name.contains("config/config_ko.yml")){
-                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace("config/", "")).write(reader, false);
+                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace("configs/", "")).write(reader, false);
                             }
                         }
                     }
