@@ -85,7 +85,7 @@ public class Threads extends TimerTask implements Runnable{
             executorService.execute(new jumpall());
 
             // check resource use fast
-            if(config.isScanresource()) {
+            if(config.isScanresource() && !Vars.state.teams.get(Team.sharded).cores.isEmpty()) {
                 executorService.execute(new monitorresource());
             }
 
@@ -619,7 +619,8 @@ public class Threads extends TimerTask implements Runnable{
                 JSONTokener temp2 = new JSONTokener(temp1);
                 JSONObject data = new JSONObject(temp2);
 
-                Core.settings.put("servername", data.getString("servername")+", "+result+" players");
+                //Core.settings.put("servername", data.getString("servername")+", "+result+" players");
+                Core.settings.put("servername", config.getServername()+", "+result+" players");
             }
         }
     }

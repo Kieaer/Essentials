@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.printStackTrace;
 import static essentials.Threads.ColorNick;
-import static essentials.utils.Config.*;
+import static essentials.utils.Config.executorService;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
@@ -135,7 +135,11 @@ public class PlayerDB {
                             "AUTO_INCREMENT=1\n" +
                             ";";
                 } else {
-                    Global.loge("Database address isn't set!");
+                    if(config.getLanguage().equals("ko")){
+                        Global.loge("데이터베이스 주소값이 설정되지 않았습니다!");
+                    } else {
+                        Global.loge("Database address isn't set!");
+                    }
                 }
             }
 
@@ -197,7 +201,11 @@ public class PlayerDB {
                 pstmt.setString(35, accountpw);
                 pstmt.executeUpdate();
                 pstmt.close();
-                Global.log(name +" Player database created!");
+                if(config.getLanguage().equals("ko")){
+                    Global.logp(name +" 플레이어의 DB가 생성되었습니다!");
+                } else {
+                    Global.logp(name +" Player database created!");
+                }
             }
             rs.close();
             stmt.close();
@@ -253,7 +261,7 @@ public class PlayerDB {
             rs.close();
             stmt.close();
             if(json.toString().equals("{}")){
-                Global.loge("Invalid data!");
+                Global.logpe(uuid+" Player data is empty.");
                 // todo make invalid player information
             }
             queryresult = true;
@@ -452,7 +460,8 @@ public class PlayerDB {
                 ResultSet rs1 = pstm1.executeQuery();
                 if(rs1.next()){
                     if(rs1.getString("accountid").equals(id)){
-                        player.sendMessage("[green][Essentials] [orange]This ID is already in use!");
+                        player.sendMessage("[green][Essentials] [orange]This ID is already in use!\n" +
+                                "[green][Essentials] [orange]이 ID는 이미 사용중입니다!");
                         registerresult = false;
                         return;
                     }
@@ -544,18 +553,28 @@ public class PlayerDB {
                     int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
                     int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
-                    player.sendMessage("[green]Your nickname is now [white]"+player.name+".");
+                    if(lang.equals("ko")){
+                        player.sendMessage("[green]플레이어의 닉네임이 [white]"+player.name+" 으로 설정되었습니다.");
+                    } else {
+                        player.sendMessage("[green]Your nickname is now [white]"+player.name+".");
+                    }
 
                     try {
                         createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, id, hashed);
                         registerresult = true;
                     } catch (Exception e){
                         printStackTrace(e);
-                        Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
-                        player.con.kick("You have been kicked due to a plugin error.");
+                        if(lang.equals("ko")){
+                            Call.onInfoMessage(player.con, "플레이어 로드 실패!\n이 버그를 플러그인 개발자에게 제보 해 주세요!\n"+ Arrays.toString(e.getStackTrace()));
+                            player.con.kick("플러그인 오류로 인해 추방되었습니다.");
+                        } else {
+                            Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
+                            player.con.kick("You have been kicked due to a plugin error.");
+                        }
                     }
                 } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)){
-                    player.sendMessage("[green][Essentials] [orange]This account already exists!");
+                    player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
+                            "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
                     registerresult = false;
                 } else {
                     registerresult = false;
@@ -657,7 +676,11 @@ public class PlayerDB {
                     int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
                     int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
-                    player.sendMessage("[green]Your nickname is now [white]" + player.name + ".");
+                    if(lang.equals("ko")){
+                        player.sendMessage("[green]플레이어의 닉네임이 [white]"+player.name+" 으로 설정되었습니다.");
+                    } else {
+                        player.sendMessage("[green]Your nickname is now [white]"+player.name+".");
+                    }
 
                     try {
                         createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, "blank", "blank");
@@ -665,8 +688,13 @@ public class PlayerDB {
                     } catch (Exception e) {
                         registerresult = false;
                         printStackTrace(e);
-                        Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n" + Arrays.toString(e.getStackTrace()));
-                        player.con.kick("You have been kicked due to a plugin error.");
+                        if(lang.equals("ko")){
+                            Call.onInfoMessage(player.con, "플레이어 로드 실패!\n이 버그를 플러그인 개발자에게 제보 해 주세요!\n"+ Arrays.toString(e.getStackTrace()));
+                            player.con.kick("플러그인 오류로 인해 추방되었습니다.");
+                        } else {
+                            Call.onInfoMessage(player.con, "Player load failed!\nPlease submit this bug to the plugin developer!\n"+ Arrays.toString(e.getStackTrace()));
+                            player.con.kick("You have been kicked due to a plugin error.");
+                        }
                     }
                 } else {
                     registerresult = true;
@@ -688,7 +716,11 @@ public class PlayerDB {
                 ResultSet rs = pstm.executeQuery();
                 if (rs.next()){
                     if(rs.getBoolean("connected")){
-                        player.con.kick("You have tried to access an account that is already in use!");
+                        if(rs.getString("language").equals("ko")){
+                            player.con.kick("당신은 현재 접속중인 계정에 로그인을 시도했습니다!");
+                        } else {
+                            player.con.kick("You have tried to access an account that is already in use!");
+                        }
                         loginresult = false;
                     } else if (BCrypt.checkpw(pw, rs.getString("accountpw"))){
                         if(rs.getBoolean("isadmin")){
@@ -774,7 +806,11 @@ public class PlayerDB {
             ColorNick color = new ColorNick();
             color.main(player);
         } else if(!config.isRealname() && colornick){
-            Global.logw("Color nickname must be enabled before 'realname' can be enabled.");
+            if(config.getLanguage().equals("ko")){
+                Global.logpw("컬러닉을 사용하기 전에 반드시 설정 파일에서 realname 기능을 활성화 해야 합니다.");
+            } else {
+                Global.logpw("Color nickname must be enabled before 'realname' can be enabled.");
+            }
             writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
         }
 

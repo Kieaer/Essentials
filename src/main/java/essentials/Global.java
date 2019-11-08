@@ -21,6 +21,7 @@ import static io.anuke.mindustry.Vars.world;
 public class Global {
     public static Config config = new Config();
 
+    // 일반 기록
     public static void log(String msg){
         Log.info("[Essential] "+msg);
     }
@@ -33,23 +34,48 @@ public class Global {
         Log.info("[Essential] "+msg);
     }
 
+    // 경고
     public static void logw(String msg){
         Log.warn("[Essential] "+msg);
     }
 
+    // 오류
     public static void loge(String msg){
         Log.err("[Essential] "+msg);
     }
 
+    // 서버
     public static void logs(String msg){
         Log.info("[EssentialServer] "+msg);
     }
 
+    // 클라이언트
     public static void logc(String msg){
         Log.info("[EssentialClient] "+msg);
     }
 
+    // 그냥 출력
     public static void logn(String msg) { Log.info(msg); }
+
+    // 설정
+    public static void logco(String msg){
+        Log.info("[EssentialConfig] "+msg);
+    }
+
+    // PlayerDB
+    public static void logp(String msg){
+        Log.info("[EssentialPlayer] "+msg);
+    }
+
+    // PlayerDB 경고
+    public static void logpw(String msg){
+        Log.warn("[EssentialPlayer] "+msg);
+    }
+
+    // PlayerDB 오류
+    public static void logpe(String msg){
+        Log.err("[EssentialPlayer] "+msg);
+    }
 
     public static Team getTeamNoCore(Player player){
         int index = player.getTeam().ordinal()+1;

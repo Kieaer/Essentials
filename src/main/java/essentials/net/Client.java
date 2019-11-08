@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.printStackTrace;
-import static essentials.utils.Config.*;
+import static essentials.utils.Config.executorService;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
@@ -112,6 +112,11 @@ public class Client extends Thread{
                     Global.logc(line);
                     serverconn = true;
                     executorService.execute(new Thread(this));
+                    if(config.getLanguage().equals("ko")){
+                        Global.logc("클라이언트 기능이 활성화 되었습니다!");
+                    } else {
+                        Global.logc("Client enabled!");
+                    }
                 }
             } catch (UnknownHostException e) {
                 Global.loge("Invalid host!");
@@ -137,7 +142,11 @@ public class Client extends Thread{
                         }
                         bw.write(bandata + "\n");
                         bw.flush();
-                        Global.logc("Ban list sented!");
+                        if(config.getLanguage().equals("ko")){
+                            Global.logc("밴 목록을 서버로 전송했습니다!");
+                        } else {
+                            Global.logc("Ban list sented!");
+                        }
                     } catch (IOException e) {
                         printStackTrace(e);
                     }
@@ -148,7 +157,11 @@ public class Client extends Thread{
                         bw.write(msg + "\n");
                         bw.flush();
                         Call.sendMessage("[#357EC7][SC] " + msg);
-                        Global.logc("Message sent to " + config.getClienthost() + " - " + message + "");
+                        if(config.getLanguage().equals("ko")){
+                            Global.logc("메세지를 " + config.getClienthost() + " 으로 전송했습니다. - " + message + "");
+                        } else {
+                            Global.logc("Message sent to " + config.getClienthost() + " - " + message + "");
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -165,6 +178,14 @@ public class Client extends Thread{
                         this.interrupt();
                         return;
                     } catch (IOException e) {
+                        printStackTrace(e);
+                    }
+                    break;
+                case "unban":
+                    try {
+                        bw.write("[\""+message + "\"]unban\n");
+                        bw.flush();
+                    }catch (IOException e){
                         printStackTrace(e);
                     }
                     break;
@@ -193,21 +214,52 @@ public class Client extends Thread{
                     }
                 } else if(config.isBanshare()){
                     try{
-                        JSONTokener test = new JSONTokener(data);
-                        JSONArray result = new JSONArray(test);
-                        for (int i = 0; i < result.length(); i++) {
-                            String[] array = result.getString(i).split("\\|", -1);
-                            if (array[0].length() == 12) {
-                                netServer.admins.banPlayerID(array[0]);
-                                if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                        if(data.substring(data.length()-5).equals("unban")){
+                            JSONTokener convert = new JSONTokener(data);
+                            JSONArray bandata = new JSONArray(convert);
+                            if(config.getLanguage().equals("ko")){
+                                Global.logc("서버에서 밴 해제 요청을 했습니다.");
+                            } else {
+                                Global.logc("Unban request received from remote server.");
+                            }
+                            for (int i = 0; i < bandata.length(); i++) {
+                                String[] array = bandata.getString(i).split("\\|", -1);
+                                if (array[0].length() == 12) {
+                                    netServer.admins.unbanPlayerID(array[0]);
+                                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                                        netServer.admins.unbanPlayerIP(array[1]);
+                                    }
+                                }
+                                if (array[0].equals("<unknown>")) {
+                                    netServer.admins.unbanPlayerIP(array[1]);
+                                }
+                                if(config.getLanguage().equals("ko")){
+                                    Global.logc(bandata.getString(i)+" 플레이어 밴 해제 완료.");
+                                } else {
+                                    Global.logc(bandata.getString(i) + " Player unbanned.");
+                                }
+                            }
+                        } else {
+                            JSONTokener test = new JSONTokener(data);
+                            JSONArray result = new JSONArray(test);
+                            for (int i = 0; i < result.length(); i++) {
+                                String[] array = result.getString(i).split("\\|", -1);
+                                if (array[0].length() == 12) {
+                                    netServer.admins.banPlayerID(array[0]);
+                                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
+                                        netServer.admins.banPlayerIP(array[1]);
+                                    }
+                                }
+                                if (array[0].equals("<unknown>")) {
                                     netServer.admins.banPlayerIP(array[1]);
                                 }
                             }
-                            if (array[0].equals("<unknown>")) {
-                                netServer.admins.banPlayerIP(array[1]);
+                            if(config.getLanguage().equals("ko")){
+                                Global.logc("밴 데이터를 수신했습니다!");
+                            } else {
+                                Global.logc("Ban data received!");
                             }
                         }
-                        Global.logc("Ban data received!");
                     }catch (Exception e){
                         printStackTrace(e);
                     }
@@ -215,19 +267,12 @@ public class Client extends Thread{
                     Global.logw("Unknown data! - "+data);
                 }
             } catch (IOException e) {
-                String msg = e.getMessage();
-                if (msg.equals("Connection reset")) {
-                    Global.logs(config.getClienthost() + " Server disconnected");
-                    return;
+                if(config.getLanguage().equals("ko")){
+                    Global.logc(config.getClienthost()+" 서버와 연결이 해제되었습니다.");
+                } else {
+                    Global.logc(config.getClienthost()+" Server disconnected.");
                 }
-                if (msg.equals("socket closed")) {
-                    Global.logs(config.getClienthost() + " Server disconnected");
-                    return;
-                }
-                if (msg.equals("Stream closed")) {
-                    Global.logs(config.getClienthost() + " Server disconnected");
-                    return;
-                }
+
                 serverconn = false;
                 try {
                     bw.close();
@@ -236,7 +281,6 @@ public class Client extends Thread{
                 } catch (IOException ex) {
                     printStackTrace(ex);
                 }
-                Global.log(msg);
                 return;
             }
         }

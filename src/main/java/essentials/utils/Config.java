@@ -161,7 +161,7 @@ public class Config {
         if(isSqlite()){
             return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
         } else {
-            return obj.get("dburl") != null ? (String) obj.get("dburl") : "";
+            return obj.get("dburl") != null ? "jdbc:"+obj.get("dburl") : "";
         }
     }
 
@@ -190,7 +190,7 @@ public class Config {
     }
 
     public int getSlotnumber(){
-        return obj.get("slotnumber") != null ? (int) obj.get("savetime") : 1000;
+        return obj.get("slotnumber") != null ? (int) obj.get("slotnumber") : 1000;
     }
 
     private int getVersion(){
@@ -198,7 +198,7 @@ public class Config {
     }
 
     public String getServername(){
-        return Core.settings.getString("servername");
+        return servername;
     }
 
     private void validfile(){
@@ -220,7 +220,9 @@ public class Config {
                                 }
                                 InputStream reader = getClass().getResourceAsStream("/" + name);
                                 if (name.contains(path + "/config_en.yml")) {
-                                    Core.settings.getDataDirectory().child("mods/Essentials/config.yml").write(reader, false);
+                                    if(!Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
+                                        Core.settings.getDataDirectory().child("mods/Essentials/config.yml").write(reader, false);
+                                    }
                                 } else if (!name.contains(path + "/config_ko.yml")) {
                                     Core.settings.getDataDirectory().child("mods/Essentials/" + name.replaceFirst("configs/", "")).write(reader, false);
                                 }
@@ -229,6 +231,9 @@ public class Config {
                     }
                 }
                 jar.close();
+
+                Yaml yaml = new Yaml();
+                obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -459,17 +464,15 @@ public class Config {
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
         if (getLanguage().equals("ko")) {
-            Global.log("설정 파일을 정상적으로 불러왔습니다!");
+            Global.logco("설정 파일을 정상적으로 불러왔습니다!");
             if (getVersion() < 5) {
-                Global.log("설정 파일이 업데이트 되었습니다!");
+                Global.logco("설정 파일이 업데이트 되었습니다!");
             }
         } else {
-            Global.log("config file loaded!");
+            Global.logco("config file loaded!");
             if (getVersion() < 5) {
-                Global.log("config file updated!");
+                Global.logco("config file updated!");
             }
         }
-
-        Global.log(obj.toString());
     }
 }

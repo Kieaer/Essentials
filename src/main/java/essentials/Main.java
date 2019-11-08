@@ -31,7 +31,6 @@ import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
-import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
 import io.anuke.mindustry.world.Block;
@@ -82,7 +81,11 @@ public class Main extends Plugin {
 
 		// Client connection test
 		if(config.isClientenable()){
-			Global.log("EssentialsClient is attempting to connect to the server.");
+			if(config.getLanguage().equals("ko")){
+				Global.logc("EssentialClient 가 서버에 연결을 시도하고 있습니다...");
+			} else {
+				Global.logc("EssentialClient is attempting to connect to the server...");
+			}
 			Client client = new Client();
 			client.main(null, null, null);
 		}
@@ -122,7 +125,7 @@ public class Main extends Plugin {
 		// Essentials EPG Features
 		EPG epg = new EPG();
         epg.main();
-
+/*
         Events.on(TapEvent.class, e-> {
         	if(e.tile.entity != null) {
 				Global.log("TapEvent");
@@ -148,7 +151,7 @@ public class Main extends Plugin {
 			Call.onInfoMessage(e.player.con, "You're desynced! The server will send data again.");
 			Call.onWorldDataBegin(e.player.con);
 			netServer.sendWorldData(e.player);
-		});
+		});*/
 
 		Events.on(GameOverEvent.class, e -> {
 			if(Vars.state.rules.pvp){
@@ -187,29 +190,6 @@ public class Main extends Plugin {
 		Events.on(DepositEvent.class, e -> {
 			// If deposit block name is thorium reactor
 			if(e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor()){
-				// Prevent the main thread from hanging when thread.sleep
-				Thread t = new Thread(() -> {
-					try {
-						NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) e.tile.entity;
-						Thread.sleep(50);
-						// If thorium reactor overheat
-						if (entity.heat >= 0.01) {
-							// Will show alert message
-							Call.sendMessage("ALERT! [scarlet]" + e.player + "[white] put [pink]thorium[] in [green]Thorium Reactor[] without [sky]Cryofluid[]!\n");
-							// then, destroy overheated reactor
-							Call.onTileDestroyed(e.tile);
-						}
-					} catch (Exception ex){
-						ex.printStackTrace();
-					}
-				});
-				executorService.execute(t);
-			}
-			Call.sendMessage("[Essentials] " + e.player + "[white] put [pink]"+e.player.item().item.name+"[] in [green]"+e.tile.block().name+"[].\n");
-		});
-
-		Events.on(DepositEvent.class, e -> {
-			if(e.tile.block() == Blocks.thoriumReactor){
 				nukeblock.put(e.tile.entity.tileX()+"/"+e.tile.entity.tileY()+"/"+e.player.name);
 				Thread t = new Thread(() -> {
 					try{
@@ -248,17 +228,19 @@ public class Main extends Plugin {
 				});
 				executorService.execute(t);
 			}
+			Call.sendMessage("[green][Essentials][white] " + e.player.name + "[white] put [pink]"+e.player.item().item.name+"[] in [cyan]"+e.tile.block().name+"[].");
 		});
 
         Events.on(PlayerJoin.class, e -> {
         	if(config.isLoginenable()){
 				e.player.isAdmin = false;
 
-				if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-					JSONObject db = getData(e.player.uuid);
+				JSONObject db = getData(e.player.uuid);
+
+				if(!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty() || db.toString().equals("{}")) {
 					if (db.has("uuid")) {
 						if (db.getString("uuid").equals(e.player.uuid)) {
-							player.sendMessage(bundle(e.player, "autologin"));
+							e.player.sendMessage(bundle(e.player, "autologin"));
 							playerdb.load(e.player, null);
 						}
 					} else {
@@ -569,12 +551,6 @@ public class Main extends Plugin {
             }
 		});
 
-		/*
-		Events.on(EventType.WithdrawEvent.class, e -> {
-		//	e.player.sendMessage("WithdrawEvent done!");
-		});
-		*/
-
 		if(config.isLoginenable()){
 			Timer alerttimer = new Timer(true);
 			alerttimer.scheduleAtFixedRate(new login(), 60000, 60000);
@@ -639,7 +615,11 @@ public class Main extends Plugin {
 				// Kill timer thread
 				try{
 					timer.cancel();
-					Global.log("Play/bantime counting thread disabled.");
+					if(config.getLanguage().equals("ko")){
+						Global.log("플레이/밴 시간 카운트 스레드 비활성화됨.");
+					} else {
+						Global.log("Play/bantime counting thread disabled.");
+					}
 				} catch (Exception e){
 					err("[Essentials] Failure to disable Playtime counting thread!");
 					printStackTrace(e);
@@ -650,9 +630,19 @@ public class Main extends Plugin {
 				// Stop server
 				if(config.isServerenable()){
 					try {
+						for (Server.Service ser : Server.list) {
+							ser.interrupt();
+							Server.list.remove(ser);
+						}
+
 						Server.active = false;
 						Server.serverSocket.close();
-						Global.log("Server thread disabled.");
+
+						if(config.getLanguage().equals("ko")){
+							Global.log("서버 스레드 비활성화됨.");
+						} else {
+							Global.log("Server thread disabled.");
+						}
 					} catch (Exception e){
 						printStackTrace(e);
 						err("[Essentials] Failure to disable Chat server thread!");
@@ -660,11 +650,15 @@ public class Main extends Plugin {
 				}
 
 				// Stop client
-				if(serverconn){
+				if(config.isClientenable()){
 					Client client = new Client();
 					client.main("exit", null, null);
 					//client.interrupt();
-					Global.log("Client thread disabled.");
+					if(config.getLanguage().equals("ko")){
+						Global.log("클라이언트 스레드 비활성화됨.");
+					} else {
+						Global.log("Client thread disabled.");
+					}
 				}
 
 				for (Process value : process) {
@@ -739,7 +733,7 @@ public class Main extends Plugin {
 				}
 			});
 		}
-        Global.log(config.checkfeatures());
+        Global.logco(config.checkfeatures());
 	}
 
 	@Override
@@ -795,22 +789,15 @@ public class Main extends Plugin {
 			executorService.execute(t);
 		});
 		handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
-			Client client = new Client();
 			switch (arg[0]) {
 				case "id":
 					netServer.admins.banPlayerID(arg[1]);
-					if(config.isBanshare() && config.isClientenable()) {
-						client.main("bansync", null, null);
-					}
 					Global.log("Banned.");
 					break;
 				case "name":
 					Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
 					if (target != null) {
 						netServer.admins.banPlayer(target.uuid);
-						if(config.isBanshare() && config.isClientenable()) {
-							client.main("bansync", null, null);
-						}
 						Global.log("Banned.");
 					} else {
 						err("No matches found.");
@@ -818,14 +805,16 @@ public class Main extends Plugin {
 					break;
 				case "ip":
 					netServer.admins.banPlayerIP(arg[1]);
-					if(config.isBanshare() && config.isClientenable()) {
-						client.main("bansync", null, null);
-					}
 					Global.log("Banned.");
 					break;
 				default:
 					err("Invalid type.");
 					break;
+			}
+
+			if(config.isBanshare() && config.isClientenable()) {
+				Client client = new Client();
+				client.main("bansync", null, null);
 			}
 
 			for(Player player : playerGroup.all()){
@@ -838,11 +827,6 @@ public class Main extends Plugin {
 		handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
 			if(!config.isServerenable()){
 				if(config.isBanshare()){
-					String db = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-					JSONTokener parser = new JSONTokener(db);
-					JSONObject object = new JSONObject(parser);
-					object.put("banall", "true");
-					Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
 					Client client = new Client();
 					client.main("bansync", null, null);
 				} else {
@@ -930,6 +914,32 @@ public class Main extends Plugin {
 					break;
 			}
 		});
+		handler.register("reload", "Reload Essentials config", arg -> {
+			Config config = new Config();
+			config.main();
+			if(config.getLanguage().equals("ko")){
+				Global.logco("설정 파일을 새로 불러왔습니다.");
+			} else {
+				Global.logco("Config file reloaded!");
+			}
+		});
+		handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
+			if(config.isClientenable()){
+				if(config.getLanguage().equals("ko")){
+					Global.log("EssentialClient 가 서버에 연결을 시도하고 있습니다...");
+				} else {
+					Global.log("EssentialClient is attempting to connect to the server...");
+				}
+				Client client = new Client();
+				client.main(null, null, null);
+			} else {
+				if(config.getLanguage().equals("ko")){
+					Global.log("클라이언트 기능이 꺼져있습니다!");
+				} else {
+					Global.log("Client features is disabled!");
+				}
+			}
+		});
 		handler.register("kickall", "Kick all players.",  arg -> {
 			Vars.netServer.kickAll(KickReason.valueOf("All kick players by administrator."));
 			Global.log("It's done.");
@@ -965,6 +975,29 @@ public class Main extends Plugin {
 			}
 			*/
 			Global.log("Currently not supported!");
+		});
+		handler.register("unban", "<ip/ID>", "Completely unban a person by IP or ID.", arg -> {
+			if(arg[0].contains(".")){
+				if(netServer.admins.unbanPlayerIP(arg[0])){
+					Global.log("Unbanned player by IP: "+arg[0]+".");
+					if(serverconn) {
+                        Client client = new Client();
+                        client.main("unban", null, "<unknown>|" + arg[0]);
+                    }
+				}else{
+					err("That IP is not banned!");
+				}
+			}else{
+				if(netServer.admins.unbanPlayerID(arg[0])){
+					Global.log("Unbanned player by ID: "+arg[0]+".");
+                    if(serverconn) {
+                        Client client = new Client();
+                        client.main("unban", null, arg[0] + "|<unknown>");
+                    }
+				}else{
+					err("That ID is not banned!");
+				}
+			}
 		});
 		handler.register("sync", "<player>", "Force sync request from the target player.", arg -> {
 			Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));

@@ -110,11 +110,11 @@ public class Log{
         FileHandle mainlog = Core.settings.getDataDirectory().child("mods/Essentials/log/"+type+".log");
         FileHandle logfolder = Core.settings.getDataDirectory().child("mods/Essentials/log");
 
-        if(mainlog != null && mainlog.length() > 500){
+        if(mainlog != null && mainlog.length() > 1024 * 512){
             if(config.getLanguage().equals("ko")){
-                mainlog.writeString("[파일의 끝입니다. 날짜: " + date + "]\n", true);
+                mainlog.writeString("== 이 파일의 끝입니다. 날짜: " + date, true);
             } else {
-                mainlog.writeString("[End of log file. Date: " + date + "]\n", true);
+                mainlog.writeString("== End of log file. Date: " + date, true);
             }
 
             try {

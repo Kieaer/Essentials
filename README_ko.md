@@ -116,6 +116,8 @@ jar 파일 확장자로 된 플러그인을 ``<서버 폴더위치>/config/mods`
 | bansync |  | Ban list synchronization from main server |
 | blacklist | &lt;add/remove&gt; &lt;name&gt; | Block special nickname. |
 | reset | &lt;zone/count/total&gt; | Clear a server-to-server jumping zone data. |
+| reload |  | Reload Essentials config |
+| reconnect |  | Reconnect remote server (Essentials server only!) |
 | kickall |  | Kick all players |
 | kill | &lt;name&gt; | Kill target player |
 | nick | &lt;name&gt; &lt;new_name&gt; | Show player information |
