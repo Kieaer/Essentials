@@ -30,7 +30,13 @@ public class Client extends Thread{
     public static BufferedWriter bw;
     public static boolean serverconn;
 
-    public static void update(){
+    public void update(){
+        if(config.getLanguage().equals("ko")){
+            Global.log("플러그인 버전 확인중...");
+        } else {
+            Global.log("Checking plugin update...");
+        }
+
         HttpURLConnection con;
         try {
             String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
@@ -65,11 +71,23 @@ public class Client extends Thread{
             DefaultArtifactVersion current = new DefaultArtifactVersion("5.1.3");
 
             if(latest.compareTo(current) > 0){
-                Global.log("New version found!");
+                if(config.getLanguage().equals("ko")){
+                    Global.log("새 버전을 찾았습니다!");
+                } else {
+                    Global.log("New version found!");
+                }
             } else if(latest.compareTo(current) == 0){
-                Global.log("Current version is up to date.");
+                if(config.getLanguage().equals("ko")){
+                    Global.log("현재 버전이 최신입니다.");
+                } else {
+                    Global.log("Current version is up to date.");
+                }
             } else if(latest.compareTo(current) < 0){
-                Global.log("You're using development version!");
+                if(config.getLanguage().equals("ko")){
+                    Global.log("현재 개발버전을 사용하고 있습니다!");
+                } else {
+                    Global.log("You're using development version!");
+                }
             }
 
         } catch (Exception e){

@@ -52,6 +52,10 @@ public class Config {
         return obj.get("detectreactor") == null || (boolean) obj.get("detectreactor");
     }
 
+    public boolean isScanresource(){
+        return obj.get("scanresource") == null || (boolean) obj.get("scanresource");
+    }
+
     public boolean isServerenable(){
         return obj.get("server-enable") == null || (boolean) obj.get("server-enable");
     }
@@ -79,8 +83,7 @@ public class Config {
     public String[] getBantrust(){
         if(obj.get("bantrust") != null) {
             String ban = (String) obj.get("bantrust");
-            String data[] = ban.split(",");
-            return data;
+            return ban.split(",");
         } else {
             return new String[0];
         }
@@ -185,7 +188,7 @@ public class Config {
         return obj.get("slotnumber") != null ? (int) obj.get("savetime") : 1000;
     }
 
-    public int getVersion(){
+    private int getVersion(){
         return obj.get("version") != null ? (int) obj.get("version") : 4;
     }
 
@@ -193,7 +196,7 @@ public class Config {
         return Core.settings.getString("servername");
     }
 
-    boolean validfile(){
+    private boolean validfile(){
         return Core.settings.getDataDirectory().child("mods/Essentials/").exists() &&
                 Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").exists() &&
                 Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists() &&
@@ -219,18 +222,37 @@ public class Config {
 
     public String checkfeatures(){
         StringBuilder features = new StringBuilder();
-        if(isServerenable()) features.append("Network Server, ");
-        if(isClientenable()) features.append("Network Client, ");
-        if(isRealname()) features.append("Realname, ");
-        if(isDetectreactor()) features.append("Detect reactor, ");
-        if(isExplimit()) features.append("Exp limit");
-        if(isBanshare()) features.append("Ban sharing, ");
-        if(isQuery()) features.append("Query, ");
-        if(isAntivpn()) features.append("Anti-VPN, ");
-        if(isEnableantirush()) features.append("PvP Anti-rush, ");
-        if(isLogging()) features.append("Logging, ");
-        if(isLoginenable()) features.append("Login, ");
-        if(isDebug()) features.append("Debug");
+        if(getLanguage().equals("ko")){
+            features.append("활성화된 기능: ");
+            if(isServerenable()) features.append("서버, ");
+            if(isClientenable()) features.append("클라이언트, ");
+            if(isRealname()) features.append("고정닉, ");
+            if(isDetectreactor()) features.append("토륨 원자로 감지, ");
+            if(isScanresource()) features.append("빠른 자원소모 감지, ");
+            if(isExplimit()) features.append("경험치 제한");
+            if(isBanshare()) features.append("밴 공유, ");
+            if(isQuery()) features.append("요청기능, ");
+            if(isAntivpn()) features.append("VPN 차단, ");
+            if(isEnableantirush()) features.append("PvP 초반 러시 금지, ");
+            if(isLogging()) features.append("로그 기능, ");
+            if(isLoginenable()) features.append("로그인 기능, ");
+            if(isDebug()) features.append("디버그");
+        } else {
+            features.append("Enabled features: ");
+            if(isServerenable()) features.append("Network Server, ");
+            if(isClientenable()) features.append("Network Client, ");
+            if(isRealname()) features.append("Realname, ");
+            if(isDetectreactor()) features.append("Detect reactor, ");
+            if(isScanresource()) features.append("Scan using resource, ");
+            if(isExplimit()) features.append("Exp limit");
+            if(isBanshare()) features.append("Ban sharing, ");
+            if(isQuery()) features.append("Query, ");
+            if(isAntivpn()) features.append("Anti-VPN, ");
+            if(isEnableantirush()) features.append("PvP Anti-rush, ");
+            if(isLogging()) features.append("Logging, ");
+            if(isLoginenable()) features.append("Login, ");
+            if(isDebug()) features.append("Debug");
+        }
         return features.toString().substring(0,features.length()-2);
     }
 
@@ -269,8 +291,6 @@ public class Config {
         } else if (Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
-            Global.log("config file loaded!");
-
 
             String text;
             if (getLanguage().equals("ko")) {
@@ -298,6 +318,9 @@ public class Config {
                         "\n" +
                         "# 원자로 감지를 켜면 토륨 원자로가 과열되어 폭발 하기 직전일 때 즉시 블럭이 파괴됩니다.\n" +
                         "detectreactor: " + isDetectreactor() + "\n" +
+                        "\n" +
+                        "# 빠른 자원소모 감지를 켜면 한 자원이 매우 빠르게 소모가 되고 있을때, 그 자원을 사용하고 있는 플레이어의 명단을 띄워줍니다.\n" +
+                        "scanresource: "+ isScanresource() +"\n" +
                         "\n" +
                         "# 경험치 값 설정.\n" +
                         "# explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.\n" +
@@ -386,6 +409,9 @@ public class Config {
                         "# If turn on detectreactor, destory reactor when the thorium reactor is overheated.\n" +
                         "detectreactor: " + isDetectreactor() + "\n" +
                         "\n" +
+                        "# if turn on scanresource, show message a list of players who are using a resource when it is consuming a resource very quickly.\n" +
+                        "scanresource: "+ isScanresource() +"\n" +
+                        "\n" +
                         "# Experience value setting.\n" +
                         "# When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.\n" +
                         "# Base xp is required experience to level up from 1 to 2\n" +
@@ -449,9 +475,20 @@ public class Config {
                         "slotnumber: " + getSlotnumber() + ";";
             }
             Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
-            if (getVersion() < 5) {
-                Global.log("config file updated!");
+
+            if(getLanguage().equals("ko")){
+                Global.log("설정 파일을 정상적으로 불러왔습니다!");
+                if (getVersion() < 5) {
+                    Global.log("설정 파일이 업데이트 되었습니다!");
+                }
+            } else {
+                Global.log("config file loaded!");
+                if (getVersion() < 5) {
+                    Global.log("config file updated!");
+                }
             }
+
+
         }
     }
 }

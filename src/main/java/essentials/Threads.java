@@ -86,7 +86,9 @@ public class Threads extends TimerTask implements Runnable{
             executorService.execute(new jumpall());
 
             // check resource use fast
-            executorService.execute(new monitorresource());
+            if(config.isScanresource()) {
+                executorService.execute(new monitorresource());
+            }
 
             // Check thorium reactor in cryofluid
             // executorService.execute(new checkthorium());

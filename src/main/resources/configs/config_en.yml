@@ -23,6 +23,9 @@ colornick update interval: 1000
 # If turn on detectreactor, destory reactor when the thorium reactor is overheated.
 detectreactor: true
 
+# if turn on scanresource, show message a list of players who are using a resource when it is consuming a resource very quickly.
+scanresource: true
+
 # Experience value setting.
 # When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.
 # Base xp is required experience to level up from 1 to 2

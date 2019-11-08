@@ -329,16 +329,23 @@ public class PlayerDB {
             Class.forName("org.mariadb.jdbc.Driver");
             Class.forName("com.mysql.jdbc.Driver");
 
+            String type;
+            if(config.getLanguage().equals("ko")){
+                type = "데이터베이스 종류: ";
+            } else {
+                type = "Database type: ";
+            }
+
             if (config.isSqlite()) {
                 conn = DriverManager.getConnection(config.getDBurl());
-                Global.log("Database type: SQLite");
+                Global.log(type+"SQLite");
             } else {
                 if (!config.getDBid().isEmpty()) {
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                    Global.log("Database type: MariaDB/MySQL");
+                    Global.log(type+"MariaDB/MySQL");
                 } else {
                     conn = DriverManager.getConnection(config.getDBurl());
-                    Global.log("Database type: Invalid");
+                    Global.log(type+"Invalid");
                 }
             }
         } catch (ClassNotFoundException e) {

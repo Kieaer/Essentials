@@ -66,7 +66,6 @@ import static essentials.Threads.nukeposition;
 import static essentials.Threads.process;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
-import static essentials.net.Client.update;
 import static essentials.utils.Config.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
@@ -108,8 +107,8 @@ public class Main extends Plugin {
 
 		// Update check
 		if(config.isUpdate()) {
-			Global.log("Update checking...");
-			update();
+			Client client = new Client();
+			client.update();
 		}
 
 		// DB Upgrade check
@@ -609,55 +608,9 @@ public class Main extends Plugin {
                             Call.setMessageBlockText(null, world.tile(x, y), text);
 						}
 						delaycount = 0;
-						a1 = false;
-						a2 = false;
-						a3 = false;
-						a4 = false;
 					} catch (Exception ignored) {}
 				} else {
 					delaycount++;
-				}
-
-				// nuke block monitoring
-				for (int i = 0; i < nukedata.size(); i++) {
-					Tile target = nukedata.get(i);
-					try{
-						NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
-						if(entity.heat >= 0.2f && entity.heat <= 0.39f && !a1){
-							Call.sendMessage("[green]Thorium reactor overheat [green]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
-							a1 = true;
-						}
-						if(entity.heat >= 0.4f && entity.heat <= 0.59f && !a2){
-							Call.sendMessage("[green]Thorium reactor overheat [yellow]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
-							a2 = true;
-						}
-						if(entity.heat >= 0.6f && entity.heat <= 0.79f && !a3){
-							Call.sendMessage("[green]Thorium reactor overheat [yellow]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
-							a3 = true;
-						}
-						if(entity.heat >= 0.8f && entity.heat <= 0.95f && !a4){
-							Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
-							a4 = true;
-						}
-						if(entity.heat >= 0.95f){
-                            Call.onDeconstructFinish(target, Blocks.air, 0);
-							Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
-
-							for(int a=0;a<playerGroup.size();a++){
-								Player p = playerGroup.all().get(a);
-								if(p.isAdmin){
-									p.setNet(target.x*8, target.y*8);
-								}
-							}
-							/*state.teams.get(Team.sharded).cores.first().entity.items.add(Items.lead, 150);
-							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.metaglass, 25);
-							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.graphite, 75);
-							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.thorium, 75);
-							state.teams.get(Team.sharded).cores.first().entity.items.add(Items.silicon, 100);*/
-						}
-					}catch (Exception e){
-						nukeblock.remove(i);
-					}
 				}
 			}
 
@@ -710,7 +663,62 @@ public class Main extends Plugin {
 
         Threads.uptime = "00:00.00";
 
-        Global.log("Enabled features: "+config.checkfeatures());
+        if(config.isDetectreactor()){
+        	Core.app.addListener(new ApplicationListener() {
+				int delaycount = 0;
+				boolean a1,a2,a3,a4 = false;
+
+				@Override
+				public void update() {
+					if (delaycount == 20) {
+						delaycount = 0;
+						a1 = false;
+						a2 = false;
+						a3 = false;
+						a4 = false;
+					} else {
+						delaycount++;
+					}
+
+					for (int i = 0; i < nukedata.size(); i++) {
+						Tile target = nukedata.get(i);
+						try{
+							NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
+							if(entity.heat >= 0.2f && entity.heat <= 0.39f && !a1){
+								Call.sendMessage("[green]Thorium reactor overheat [green]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+								a1 = true;
+							}
+							if(entity.heat >= 0.4f && entity.heat <= 0.59f && !a2){
+								Call.sendMessage("[green]Thorium reactor overheat [yellow]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+								a2 = true;
+							}
+							if(entity.heat >= 0.6f && entity.heat <= 0.79f && !a3){
+								Call.sendMessage("[green]Thorium reactor overheat [yellow]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+								a3 = true;
+							}
+							if(entity.heat >= 0.8f && entity.heat <= 0.95f && !a4){
+								Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+								a4 = true;
+							}
+							if(entity.heat >= 0.95f){
+								Call.onDeconstructFinish(target, Blocks.air, 0);
+								Call.sendMessage("[green]Thorium reactor overheat [scarlet]"+Math.round(entity.heat*100)/100.0+"%[white] warning! X: "+target.x+", Y: "+target.y);
+
+								for(int a=0;a<playerGroup.size();a++){
+									Player p = playerGroup.all().get(a);
+									if(p.isAdmin){
+										p.setNet(target.x*8, target.y*8);
+									}
+								}
+							}
+						}catch (Exception e){
+							nukeblock.remove(i);
+						}
+					}
+				}
+			});
+		}
+        Global.log(config.checkfeatures());
 	}
 
 	@Override
