@@ -1,6 +1,5 @@
 package essentials.core;
 
-import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.files.FileHandle;
@@ -126,6 +125,5 @@ public class Log{
         }
 
         mainlog.writeString(text + "\n", true);
-        Global.log("work!");
     }
 }

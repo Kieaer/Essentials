@@ -86,4 +86,4 @@ savetime: 10
 
 # Rollback map save slot number.
 # Example - if set value to 1000, rollback map name will renamed to 1000.msav
-slotnumber: 1000;
+slotnumber: 1000

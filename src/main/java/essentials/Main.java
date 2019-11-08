@@ -11,7 +11,6 @@ import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
 import essentials.special.PingServer;
-import essentials.utils.Bundle;
 import essentials.utils.Config;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
@@ -167,7 +166,7 @@ public class Main extends Plugin {
 
 		Events.on(DepositEvent.class, e -> {
 			// If deposit block name is thorium reactor
-			if(e.tile.block() == Blocks.thoriumReactor){
+			if(e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor()){
 				// Prevent the main thread from hanging when thread.sleep
 				Thread t = new Thread(() -> {
 					try {
@@ -186,6 +185,7 @@ public class Main extends Plugin {
 				});
 				executorService.execute(t);
 			}
+			Call.sendMessage("[Essentials] " + e.player + "[white] put [pink]"+e.player.item().item.name+"[] in [green]"+e.tile.block().name+"[].\n");
 		});
 
 		Events.on(DepositEvent.class, e -> {
@@ -1186,54 +1186,28 @@ public class Main extends Plugin {
 
 			String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
 			JSONObject db = getData(player.uuid);
-			String datatext;
-			if (db.getString("country_code").contains("KR")) {
-				datatext = "[#DEA82A]" + Bundle.nload(true, "player-info") + "[]\n" +
+			String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
 						"[#2B60DE]========================================[]\n" +
-						"[green]" + Bundle.nload(true, "player-name") + "[] : " + player.name + "[white]\n" +
-						"[green]" + Bundle.nload(true, "player-uuid") + "[] : " + player.uuid + "\n" +
-						"[green]" + Bundle.nload(true, "player-isMobile") + "[] : " + player.isMobile + "\n" +
-						"[green]" + Bundle.nload(true, "player-ip") + "[] : " + ip + "\n" +
-						"[green]" + Bundle.nload(true, "player-country") + "[] : " + db.get("country") + "\n" +
-						"[green]" + Bundle.nload(true, "player-placecount") + "[] : " + db.get("placecount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-breakcount") + "[] : " + db.get("breakcount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-killcount") + "[] : " + db.get("killcount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-deathcount") + "[] : " + db.get("deathcount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-joincount") + "[] : " + db.get("joincount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-kickcount") + "[] : " + db.get("kickcount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-level") + "[] : " + db.get("level") + "\n" +
-						"[green]" + Bundle.nload(true, "player-reqtotalexp") + "[] : " + db.get("reqtotalexp") + "\n" +
-						"[green]" + Bundle.nload(true, "player-firstdate") + "[] : " + db.get("firstdate") + "\n" +
-						"[green]" + Bundle.nload(true, "player-lastdate") + "[] : " + db.get("lastdate") + "\n" +
-						"[green]" + Bundle.nload(true, "player-playtime") + "[] : " + db.get("playtime") + "\n" +
-						"[green]" + Bundle.nload(true, "player-attackclear") + "[] : " + db.get("attackclear") + "\n" +
-						"[green]" + Bundle.nload(true, "player-pvpwincount") + "[] : " + db.get("pvpwincount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-pvplosecount") + "[] : " + db.get("pvplosecount") + "\n" +
-						"[green]" + Bundle.nload(true, "player-pvpbreakout") + "[] : " + db.get("pvpbreakout");
-			} else {
-				datatext = "[#DEA82A]" + Bundle.nload(false, "player-info") + "[]\n" +
-						"[#2B60DE]========================================[]\n" +
-						"[green]" + Bundle.nload(false, "player-name") + "[] : " + player.name + "[white]\n" +
-						"[green]" + Bundle.nload(false, "player-uuid") + "[] : " + player.uuid + "\n" +
-						"[green]" + Bundle.nload(false, "player-isMobile") + "[] : " + player.isMobile + "\n" +
-						"[green]" + Bundle.nload(false, "player-ip") + "[] : " + ip + "\n" +
-						"[green]" + Bundle.nload(false, "player-country") + "[] : " + db.get("country") + "\n" +
-						"[green]" + Bundle.nload(false, "player-placecount") + "[] : " + db.get("placecount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-breakcount") + "[] : " + db.get("breakcount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-killcount") + "[] : " + db.get("killcount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-deathcount") + "[] : " + db.get("deathcount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-joincount") + "[] : " + db.get("joincount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-kickcount") + "[] : " + db.get("kickcount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-level") + "[] : " + db.get("level") + "\n" +
-						"[green]" + Bundle.nload(false, "player-reqtotalexp") + "[] : " + db.get("reqtotalexp") + "\n" +
-						"[green]" + Bundle.nload(false, "player-firstdate") + "[] : " + db.get("firstdate") + "\n" +
-						"[green]" + Bundle.nload(false, "player-lastdate") + "[] : " + db.get("lastdate") + "\n" +
-						"[green]" + Bundle.nload(false, "player-playtime") + "[] : " + db.get("playtime") + "\n" +
-						"[green]" + Bundle.nload(false, "player-attackclear") + "[] : " + db.get("attackclear") + "\n" +
-						"[green]" + Bundle.nload(false, "player-pvpwincount") + "[] : " + db.get("pvpwincount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-pvplosecount") + "[] : " + db.get("pvplosecount") + "\n" +
-						"[green]" + Bundle.nload(false, "player-pvpbreakout") + "[] : " + db.get("pvpbreakout");
-			}
+						"[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
+						"[green]" + nbundle(player, "player-uuid") + "[] : " + player.uuid + "\n" +
+						"[green]" + nbundle(player, "player-isMobile") + "[] : " + player.isMobile + "\n" +
+						"[green]" + nbundle(player, "player-ip") + "[] : " + ip + "\n" +
+						"[green]" + nbundle(player, "player-country") + "[] : " + db.get("country") + "\n" +
+						"[green]" + nbundle(player, "player-placecount") + "[] : " + db.get("placecount") + "\n" +
+						"[green]" + nbundle(player, "player-breakcount") + "[] : " + db.get("breakcount") + "\n" +
+						"[green]" + nbundle(player, "player-killcount") + "[] : " + db.get("killcount") + "\n" +
+						"[green]" + nbundle(player, "player-deathcount") + "[] : " + db.get("deathcount") + "\n" +
+						"[green]" + nbundle(player, "player-joincount") + "[] : " + db.get("joincount") + "\n" +
+						"[green]" + nbundle(player, "player-kickcount") + "[] : " + db.get("kickcount") + "\n" +
+						"[green]" + nbundle(player, "player-level") + "[] : " + db.get("level") + "\n" +
+						"[green]" + nbundle(player, "player-reqtotalexp") + "[] : " + db.get("reqtotalexp") + "\n" +
+						"[green]" + nbundle(player, "player-firstdate") + "[] : " + db.get("firstdate") + "\n" +
+						"[green]" + nbundle(player, "player-lastdate") + "[] : " + db.get("lastdate") + "\n" +
+						"[green]" + nbundle(player, "player-playtime") + "[] : " + db.get("playtime") + "\n" +
+						"[green]" + nbundle(player, "player-attackclear") + "[] : " + db.get("attackclear") + "\n" +
+						"[green]" + nbundle(player, "player-pvpwincount") + "[] : " + db.get("pvpwincount") + "\n" +
+						"[green]" + nbundle(player, "player-pvplosecount") + "[] : " + db.get("pvplosecount") + "\n" +
+						"[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.get("pvpbreakout");
 			Call.onInfoMessage(player.con, datatext);
 		});
 		handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
@@ -1647,11 +1621,7 @@ public class Main extends Plugin {
 			LocalDateTime now = LocalDateTime.now();
 			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
 			String nowString = now.format(dateTimeFormatter);
-			if (db.getString("country_code").contains("KR")) {
-				player.sendMessage(Bundle.load(true, "servertime") + " " + nowString);
-			} else {
-				player.sendMessage(Bundle.load(false, "servertime") + " " + nowString);
-			}
+			player.sendMessage(bundle(player, "servertime") + " " + nowString);
 		});
 		handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
 			if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {

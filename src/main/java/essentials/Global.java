@@ -2,7 +2,6 @@ package essentials;
 
 import essentials.utils.Bundle;
 import essentials.utils.Config;
-import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
@@ -12,10 +11,6 @@ import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.world.Tile;
 import org.json.JSONObject;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -85,9 +80,8 @@ public class Global {
                 sb.append("=================================================\n");
                 String text = sb.toString();
 
-                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/error.log")));
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
+                essentials.core.Log log = new essentials.core.Log();
+                log.writelog("error", text);
                 Global.loge("Internal error! - "+e.getMessage());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -103,13 +97,18 @@ public class Global {
         return "[" + now.format(dateTimeFormatter) + "] ";
     }
 
-    public static void bundle(Player player, String value){
+    public static String bundle(Player player, String value) {
         JSONObject db = getData(player.uuid);
-        if (db.getString("country_code").contains("KR")) {
-            player.sendMessage(Bundle.load(true, value));
-        } else {
-            player.sendMessage(Bundle.load(false, value));
-        }
+        Locale locale = new Locale(db.getString("language"));
+        Bundle bundle = new Bundle(locale);
+        return bundle.getBundle(value);
+    }
+
+    public static String nbundle(Player player, String value) {
+        JSONObject db = getData(player.uuid);
+        Locale locale = new Locale(db.getString("language"));
+        Bundle bundle = new Bundle(locale);
+        return bundle.getNormal(value);
     }
 
     public static void setcount(Tile tile, int count){

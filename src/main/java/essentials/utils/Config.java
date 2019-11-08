@@ -229,9 +229,6 @@ public class Config {
                     }
                 }
                 jar.close();
-
-                Yaml yaml = new Yaml();
-                obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -276,6 +273,7 @@ public class Config {
 
     public void main() {
         validfile();
+
         String text;
         if (getLanguage().equals("ko")) {
             text = "# 플러그인 버전 (절대 수정하지 마세요!)\n" +
@@ -366,13 +364,13 @@ public class Config {
                     "\n" +
                     "# 빽섭할 맵 저장 슬롯\n" +
                     "# 예시 - 만약 값을 1000으로 설정한다면, 빽섭할 맵의 파일명이 1000.msav 으로 저장됩니다.\n" +
-                    "slotnumber: " + getSlotnumber() + ";";
+                    "slotnumber: " + getSlotnumber();
         } else {
             text = "# Config version (Don't touch this!)\n" +
                     "version: 5\n" +
                     "\n" +
                     "# Plugin language\n" +
-                    "language: ko\n" +
+                    "language: en\n" +
                     "\n" +
                     "# Server/client port settings\n" +
                     "# This's used for the network function of the plugin.\n" +
@@ -456,7 +454,7 @@ public class Config {
                     "\n" +
                     "# Rollback map save slot number.\n" +
                     "# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
-                    "slotnumber: " + getSlotnumber() + ";";
+                    "slotnumber: " + getSlotnumber();
         }
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
@@ -471,5 +469,7 @@ public class Config {
                 Global.log("config file updated!");
             }
         }
+
+        Global.log(obj.toString());
     }
 }

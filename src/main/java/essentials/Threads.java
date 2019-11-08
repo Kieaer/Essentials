@@ -2,7 +2,6 @@ package essentials;
 
 import essentials.core.Exp;
 import essentials.core.PlayerDB;
-import essentials.utils.Bundle;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -677,10 +676,6 @@ public class Threads extends TimerTask implements Runnable{
         String gamemode;
         int customport;
 
-        public void ready(){
-            new Thread(this).start();
-        }
-
         @Override
         public void run() {
             try {
@@ -786,11 +781,11 @@ public class Threads extends TimerTask implements Runnable{
                         isvoting = true;
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player others = playerGroup.all().get(i);
-                            bundle(others, "vote-gameover");
+                            player.sendMessage(bundle(others, "vote-gameover"));
                         }
                         gameover.start();
                     } else {
-                        bundle(player, "vote-in-processing");
+                        player.sendMessage(bundle(player, "vote-in-processing"));
                     }
                     break;
                 case "skipwave":
@@ -798,11 +793,11 @@ public class Threads extends TimerTask implements Runnable{
                         isvoting = true;
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player others = playerGroup.all().get(i);
-                            bundle(others, "vote-skipwave");
+                            player.sendMessage(bundle(others, "vote-skipwave"));
                         }
                         skipwave.start();
                     } else {
-                        bundle(player, "vote-in-processing");
+                        player.sendMessage(bundle(player, "vote-in-processing"));
                     }
                     break;
                 case "kick":
@@ -810,11 +805,11 @@ public class Threads extends TimerTask implements Runnable{
                         isvoting = true;
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player others = playerGroup.all().get(i);
-                            bundle(others, "vote-kick");
+                            player.sendMessage(bundle(others, "vote-kick"));
                         }
                         kick.start();
                     } else {
-                        bundle(player, "vote-in-processing");
+                        player.sendMessage(bundle(player, "vote-in-processing"));
                     }
                     break;
                 case "rollback":
@@ -822,11 +817,11 @@ public class Threads extends TimerTask implements Runnable{
                         isvoting = true;
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player others = playerGroup.all().get(i);
-                            bundle(others, "vote-rollback");
+                            player.sendMessage(bundle(others, "vote-rollback"));
                         }
                         rollback.start();
                     } else {
-                        bundle(player, "vote-in-processing");
+                        player.sendMessage(bundle(player, "vote-in-processing"));
                     }
                     break;
                 default:
@@ -842,39 +837,19 @@ public class Threads extends TimerTask implements Runnable{
                     int finalI = i;
                     work = new Thread(() -> {
                         Player others = playerGroup.all().get(finalI);
-                        JSONObject db1 = getData(others.uuid);
-                        if (db1.get("country_code") == "KR") {
-                            try {
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(true, "vote-50sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(true, "vote-40sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(true, "vote-30sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(true, "vote-20sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(true, "vote-10sec"));
-                                Thread.sleep(10000);
-                            } catch (Exception e) {
-                                printStackTrace(e);
-                            }
-                        } else {
-                            try {
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(false, "vote-50sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(false, "vote-40sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(false, "vote-30sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(false, "vote-20sec"));
-                                Thread.sleep(10000);
-                                others.sendMessage(Bundle.load(false, "vote-10sec"));
-                                Thread.sleep(10000);
-                            } catch (Exception e) {
-                                printStackTrace(e);
-                            }
+                        try {
+                            Thread.sleep(10000);
+                            bundle(others, "vote-50sec");
+                            Thread.sleep(10000);
+                            bundle(others, "vote-40sec");
+                            Thread.sleep(10000);
+                            bundle(others, "vote-30sec");
+                            Thread.sleep(10000);
+                            bundle(others, "vote-20sec");
+                            Thread.sleep(10000);
+                            bundle(others, "vote-10sec");
+                        } catch (InterruptedException e) {
+                            printStackTrace(e);
                         }
                     });
                     threads.add(work);
@@ -1050,7 +1025,6 @@ public class Threads extends TimerTask implements Runnable{
         Array<Integer> pre = new Array<>();
         Array<Integer> cur = new Array<>();
         Array<Item> name = new Array<>();
-        ArrayList<String> using = new ArrayList<>();
 
         @Override
         public void run(){
