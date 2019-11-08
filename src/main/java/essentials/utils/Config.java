@@ -115,7 +115,7 @@ public class Config {
         Calendar cal = Calendar.getInstance();
         if(obj.get("antirushtime") != null) {
             try {
-                Date d = format.parse((String) obj.get("antirushtime"));
+                Date d = format.parse(String.valueOf(obj.get("antirushtime")));
                 cal.setTime(d);
             } catch (Exception e) {
                 printStackTrace(e);
@@ -161,7 +161,7 @@ public class Config {
         if(isSqlite()){
             return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
         } else {
-            return obj.get("dburl") != null ? "jdbc:"+obj.get("dburl") : "";
+            return obj.get("dburl") != null ? (String) obj.get("dburl") : "";
         }
     }
 
