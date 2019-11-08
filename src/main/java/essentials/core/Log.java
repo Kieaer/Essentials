@@ -111,7 +111,12 @@ public class Log{
         FileHandle logfolder = Core.settings.getDataDirectory().child("mods/Essentials/log");
 
         if(mainlog != null && mainlog.length() > 500){
-            mainlog.writeString("[End of log file. Date: " + date + "]\n", true);
+            if(config.getLanguage().equals("ko")){
+                mainlog.writeString("[파일의 끝입니다. 날짜: " + date + "]\n", true);
+            } else {
+                mainlog.writeString("[End of log file. Date: " + date + "]\n", true);
+            }
+
             try {
                 Files.move(newlog, oldlog, REPLACE_EXISTING);
             } catch (IOException e) {

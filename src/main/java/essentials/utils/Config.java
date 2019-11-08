@@ -279,7 +279,7 @@ public class Config {
             text = "# 플러그인 버전 (절대 수정하지 마세요!)\n" +
                     "version: 5\n" +
                     "\n" +
-                    "# 플러그인 언어\n" +
+                    "# 플러그인 언어 (지원하는 언어 - ko, en)\n" +
                     "language: ko\n" +
                     "\n" +
                     "# 서버/클라이언트 포트 설정\n" +
@@ -369,7 +369,7 @@ public class Config {
             text = "# Config version (Don't touch this!)\n" +
                     "version: 5\n" +
                     "\n" +
-                    "# Plugin language\n" +
+                    "# Plugin language (Supported language - ko, en)\n" +
                     "language: en\n" +
                     "\n" +
                     "# Server/client port settings\n" +

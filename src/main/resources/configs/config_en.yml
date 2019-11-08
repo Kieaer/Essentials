@@ -1,7 +1,7 @@
 # Config version (Don't touch this!)
 version: 5
 
-# Plugin language
+# Plugin language (Supported language - ko, en)
 language: en
 
 # Server/client port settings
