@@ -37,35 +37,35 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
     - [ ] ~~Monitoring no thorium input~~
     - [ ] ~~Make the reactor near the core~~
     - [x] Destroy thorium reactor when reactor overheated
-  - [ ] Detect non-block destroy/place griefing
-    - [ ] change mess driver
+  - [ ] Detect non-block destroy/place griefing (Pull requested to Mindustry)
+    - [ ] change mass driver 
     - [ ] change phase conveyor
     - [ ] change Tunnel
     - [ ] put bad items in any blocks
       - [ ] Conveyor
-      - [ ] Phase/tunnel/mess driver
+      - [ ] Phase/tunnel/mass driver
       - [ ] Core
       - [ ] container/Vault
     - [ ] cryofluid
-    - [ ] ALL Deposit events <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
+    - [x] ALL Deposit events
     - [ ] ALL WithDraw events
 - [ ] Make lobby features
   - [ ] Show all server players
-    - [ ] Message block
-    - [ ] Server information
+    - [ ] massage block
+    - [x] Server information
     - [x] Block drawing
   - [ ] Show client server players
-    - [ ] Message block
+    - [ ] massage block
     - [x] Block drawing
-- [x] monitoring message block
+- [x] monitoring massage block
   - [ ] Core block
   - [x] Power node
 - [ ] PvP mode rule
   - [ ] Anti coal in mech
-- [ ] Chat feature upgrade
+- [ ] Chat feature upgrade <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
   - [ ] Blocking bad words
   - [ ] Nickname prefix
-  - [ ] Remove translate before message
+  - [ ] Remove translate before massage
   - [ ] PvP Team chat without command
 - [ ] Difficulty adjustments based on the number of players
 - [x] Open player's server (submit by Kyan)
@@ -81,7 +81,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| ch | &lt;message&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
+| ch | &lt;massage&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
 | event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |

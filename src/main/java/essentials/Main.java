@@ -123,6 +123,26 @@ public class Main extends Plugin {
 		EPG epg = new EPG();
         epg.main();
 
+        Events.on(TapEvent.class, e-> {
+        	if(e.tile.entity != null) {
+				Global.log("TapEvent");
+				Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name);
+			}
+		});
+
+		Events.on(TapConfigEvent.class, e-> {
+			if(e.tile.entity != null) {
+				Global.log("TapConfigEvent");
+				Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name + ", value: " + e.value);
+			}
+		});
+
+		Events.on(WithdrawEvent.class, e->{
+			Global.log("WithdrawEvent");
+			Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name);
+			Global.log("item: "+e.item.name+", amount: "+e.amount);
+		});
+
 		// If desync (May work)
 		Events.on(ValidateException.class, e -> {
 			Call.onInfoMessage(e.player.con, "You're desynced! The server will send data again.");
@@ -238,7 +258,7 @@ public class Main extends Plugin {
 					JSONObject db = getData(e.player.uuid);
 					if (db.has("uuid")) {
 						if (db.getString("uuid").equals(e.player.uuid)) {
-							bundle(e.player, "autologin");
+							player.sendMessage(bundle(e.player, "autologin"));
 							playerdb.load(e.player, null);
 						}
 					} else {
@@ -408,7 +428,7 @@ public class Main extends Plugin {
 						int exp = db.getInt("exp");
 
 						Yaml yaml = new Yaml();
-						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
 						int blockexp;
 						if(obj.get(name) != null) {
 							blockexp = (int) obj.get(name);
@@ -477,7 +497,7 @@ public class Main extends Plugin {
 						int exp = db.getInt("exp");
 
 						Yaml yaml = new Yaml();
-						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.txt").readString()));
+						Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
 						int blockexp;
 						if (obj.get(name) != null) {
 							blockexp = (int) obj.get(name);
@@ -1027,10 +1047,10 @@ public class Main extends Plugin {
 			int set;
 			if (!value) {
 				set = 1;
-				bundle(player, "crosschat");
+				player.sendMessage(bundle(player, "crosschat"));
 			} else {
 				set = 0;
-				bundle(player, "crosschat-disable");
+				player.sendMessage(bundle(player, "crosschat-disable"));
 			}
 
 			writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
@@ -1042,17 +1062,17 @@ public class Main extends Plugin {
 			}
 
 			if (!player.isAdmin) {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			} else {
 				JSONObject db = getData(player.uuid);
 				boolean value = (boolean) db.get("colornick");
 				int set;
 				if (!value) {
 					set = 1;
-					bundle(player, "colornick");
+					player.sendMessage(bundle(player, "colornick"));
 				} else {
 					set = 0;
-					bundle(player, "colornick-disable");
+					player.sendMessage(bundle(player, "colornick-disable"));
 				}
 				writeData("UPDATE players SET colornick = '" + set + "' WHERE uuid = '" + player.uuid + "'");
 			}
@@ -1064,7 +1084,7 @@ public class Main extends Plugin {
 			}
 
 			if (!player.isAdmin) {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			} else {
 				try {
 					Difficulty.valueOf(arg[0]);
@@ -1259,12 +1279,12 @@ public class Main extends Plugin {
 
 				jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
 			} else {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			}
 		});
 		handler.<Player>register("jumpcount", "<serverip> <port>", "Add server player counting", (arg, player) -> {
 			if (!player.isAdmin) {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			} else {
 				jumpcount.put(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
 				player.sendMessage("added.");
@@ -1272,7 +1292,7 @@ public class Main extends Plugin {
 		});
 		handler.<Player>register("jumptotal", "Counting all server players", (arg, player) -> {
 			if (!player.isAdmin) {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			} else {
 				jumpall.put(player.tileX() + "/" + player.tileY() + "/0/0");
 				player.sendMessage("added.");
@@ -1285,7 +1305,7 @@ public class Main extends Plugin {
 			}
 
 			if (!player.isAdmin) {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			} else {
 				Vars.netServer.kickAll(KickReason.gameover);
 			}
@@ -1299,12 +1319,12 @@ public class Main extends Plugin {
 			if (player.isAdmin) {
 				Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 				if (other == null) {
-					bundle(player, "player-not-found");
+					player.sendMessage(bundle(player, "player-not-found"));
 					return;
 				}
 				Player.onPlayerDeath(other);
 			} else {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			}
 		});
 		handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
@@ -1393,10 +1413,10 @@ public class Main extends Plugin {
 				Core.app.post(() -> {
 					FileHandle file = saveDirectory.child("1." + saveExtension);
 					SaveIO.save(file);
-					bundle(player, "mapsaved");
+					player.sendMessage(bundle(player, "mapsaved"));
 				});
 			} else {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			}
 		});
 		handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
@@ -1449,14 +1469,14 @@ public class Main extends Plugin {
 						targetunit = UnitTypes.eradicator;
 						break;
 					default:
-						bundle(player, "mob-not-found");
+						player.sendMessage(bundle(player, "mob-not-found"));
 						return;
 				}
 				int count;
 				try {
 					count = Integer.parseInt(arg[1]);
 				} catch (NumberFormatException e) {
-					bundle(player, "mob-spawn-not-number");
+					player.sendMessage(bundle(player, "mob-spawn-not-number"));
 					return;
 				}
 				Team targetteam = null;
@@ -1481,7 +1501,7 @@ public class Main extends Plugin {
 							targetteam = Team.purple;
 							break;
 						default:
-							bundle(player, "team-not-found");
+							player.sendMessage(bundle(player, "team-not-found"));
 							return;
 					}
 				}
@@ -1489,7 +1509,7 @@ public class Main extends Plugin {
 				if (arg.length >= 4) {
 					Player target = playerGroup.find(p -> p.name.equals(arg[3]));
 					if (target == null) {
-						bundle(player, "player-not-found");
+						player.sendMessage(bundle(player, "player-not-found"));
 						return;
 					} else {
 						targetplayer = target;
@@ -1517,7 +1537,7 @@ public class Main extends Plugin {
 					}
 				}
 			} else {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			}
 		});
 		handler.<Player>register("status", "Show server status", (arg, player) -> {
@@ -1557,7 +1577,7 @@ public class Main extends Plugin {
 			if (playerGroup != null && playerGroup.size() > 0) {
 				for (int i = 0; i < playerGroup.size(); i++) {
 					Player others = playerGroup.all().get(i);
-					bundle(others, "suicide");
+					player.sendMessage(bundle(others, "suicide"));
 				}
 			}
 		});
@@ -1580,7 +1600,7 @@ public class Main extends Plugin {
 					}
 					player.kill();
 				} else {
-					bundle(player, "notadmin");
+					player.sendMessage(bundle(player, "notadmin"));
 				}
 			} else {
 				player.sendMessage("This command can use only PvP mode!");
@@ -1593,7 +1613,7 @@ public class Main extends Plugin {
 			}
 
 			if (!player.isAdmin) {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			} else {
 				Player other = null;
 				for (Player p : playerGroup.all()) {
@@ -1607,7 +1627,7 @@ public class Main extends Plugin {
 					PlayerDB.addtimeban(other.name, other.uuid, bantimeset);
 					Call.sendMessage("[green][Essentials][] Player [orange]" + other.name + "[] was killed (ban) by player [blue]" + player.name + "[]!");
 				} else {
-					bundle(player, "player-not-found");
+					player.sendMessage(bundle(player, "player-not-found"));
 				}
 			}
 		});
@@ -1637,7 +1657,7 @@ public class Main extends Plugin {
 				}
 			}
 			if (other == null) {
-				bundle(player, "player-not-found");
+				player.sendMessage(bundle(player, "player-not-found"));
 				return;
 			}
 			player.setNet(other.x, other.y);
@@ -1661,16 +1681,16 @@ public class Main extends Plugin {
 				}
 			}
 			if (!player.isAdmin) {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin"));
 			} else {
 				if (other1 == null || other2 == null) {
-					bundle(player, "player-not-found");
+					player.sendMessage(bundle(player, "player-not-found"));
 					return;
 				}
 				if (!other1.isMobile || !other2.isMobile) {
 					other1.setNet(other2.x, other2.y);
 				} else {
-					bundle(player, "tp-ismobile");
+					player.sendMessage(bundle(player, "tp-ismobile"));
 				}
 			}
 		});
@@ -1702,10 +1722,10 @@ public class Main extends Plugin {
 			int set;
 			if (!value) {
 				set = 1;
-				bundle(player, "translate");
+				player.sendMessage(bundle(player, "translate"));
 			} else {
 				set = 0;
-				bundle(player, "translate-disable");
+				player.sendMessage(bundle(player, "translate-disable"));
 			}
 
 			writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
@@ -1745,7 +1765,7 @@ public class Main extends Plugin {
 				});
 				work.start();
 			} else {
-				bundle(player, "notadmin");
+				player.sendMessage(bundle(player, "notadmin");
 			}
 
 			 */
@@ -1761,7 +1781,7 @@ public class Main extends Plugin {
 			Vote vote = new Vote();
 			Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
 			if (other == null) {
-				bundle(player, "player-not-found");
+				player.sendMessage(bundle(player, "player-not-found");
 				return;
 			}
 			vote.main(player, "kick", other.name);
