@@ -1079,7 +1079,7 @@ public class Main extends Plugin {
 				player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
 				return;
 			}
-			final String[] ip = new String[1];
+			String[] ip = new String[1];
 			Thread t = new Thread(() -> {
 				try{
 					URL whatismyip = new URL("http://checkip.amazonaws.com");

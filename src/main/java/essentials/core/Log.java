@@ -105,16 +105,15 @@ public class Log{
     }
 
     public void writelog(String type, String text){
-        String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
-        Path newlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/Logs/"+type+".log").path());
-        Path oldlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/Logs/old/"+type+".log - "+date).path());
-        FileHandle mainlog = Core.settings.getDataDirectory().child("mods/Essentials/Logs/"+type+".log");
-        FileHandle logfolder = Core.settings.getDataDirectory().child("mods/Essentials/Logs");
+        String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now());
+        Path newlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/log/"+type+".log").path());
+        Path oldlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/log/old/"+type+"/"+date+".log").path());
+        FileHandle mainlog = Core.settings.getDataDirectory().child("mods/Essentials/log/"+type+".log");
+        FileHandle logfolder = Core.settings.getDataDirectory().child("mods/Essentials/log");
 
         if(mainlog != null && mainlog.length() > 500){
             mainlog.writeString("[End of log file. Date: " + date + "]\n", true);
             try {
-                Core.settings.getDataDirectory().child("mods/Essentials/Logs/old/"+type+".log - "+date).writeString("");
                 Files.move(newlog, oldlog, REPLACE_EXISTING);
             } catch (IOException e) {
                 e.printStackTrace();

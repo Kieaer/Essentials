@@ -201,29 +201,41 @@ public class Config {
         return Core.settings.getString("servername");
     }
 
-    private boolean validfile(){
-        return Core.settings.getDataDirectory().child("mods/Essentials/").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/data/powerblock.json").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/block.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/chat.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/deposit.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/error.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/griefer.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/non-block.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/player.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/withdraw.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/old/").exists();
+    private void validfile(){
+        final String path = "configs";
+        final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+
+        if (jarFile.isFile()) {
+            try {
+                final JarFile jar = new JarFile(jarFile);
+                final Enumeration<JarEntry> entries = jar.entries();
+                while (entries.hasMoreElements()) {
+                    String name = entries.nextElement().getName();
+                    if (name.startsWith(path + "/")) {
+                        if (!name.equals(path + "/")) {
+                            if(!Core.settings.getDataDirectory().child("mods/Essentials/" + name.replaceFirst("configs/", "")).exists()) {
+                                if (!name.contains(".")) {
+                                    Core.settings.getDataDirectory().child("mods/Essentials/" + name.replaceFirst("configs/", "")).mkdirs();
+                                    continue;
+                                }
+                                InputStream reader = getClass().getResourceAsStream("/" + name);
+                                if (name.contains(path + "/config_en.yml")) {
+                                    Core.settings.getDataDirectory().child("mods/Essentials/config.yml").write(reader, false);
+                                } else if (!name.contains(path + "/config_ko.yml")) {
+                                    Core.settings.getDataDirectory().child("mods/Essentials/" + name.replaceFirst("configs/", "")).write(reader, false);
+                                }
+                            }
+                        }
+                    }
+                }
+                jar.close();
+
+                Yaml yaml = new Yaml();
+                obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public String checkfeatures(){
@@ -263,238 +275,201 @@ public class Config {
     }
 
     public void main() {
-        final String path = "configs";
-        final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+        validfile();
+        String text;
+        if (getLanguage().equals("ko")) {
+            text = "# 플러그인 버전 (절대 수정하지 마세요!)\n" +
+                    "version: 5\n" +
+                    "\n" +
+                    "# 플러그인 언어\n" +
+                    "language: ko\n" +
+                    "\n" +
+                    "# 서버/클라이언트 포트 설정\n" +
+                    "# 이것은 플러그인의 네트워크 기능에 사용됩니다.\n" +
+                    "server-enable: " + isServerenable() + "\n" +
+                    "server-port: " + getServerport() + "\n" +
+                    "\n" +
+                    "client-enable: " + isClientenable() + "\n" +
+                    "client-port: " + getClientport() + "\n" +
+                    "client-host: " + getClienthost() + "\n" +
+                    "\n" +
+                    "# realname를 켜면 플레이어가 닉네임을 변경하더라도 이전 닉네임으로 설정됩니다.\n" +
+                    "# 컬러닉 기능을 원하는 경우 이것을 활성화해야 합니다.\n" +
+                    "realname: " + isRealname() + "\n" +
+                    "\n" +
+                    "# 컬러닉 갱신 시간설정. 1초 = 1000\n" +
+                    "colornick update interval: " + getCupdatei() + "\n" +
+                    "\n" +
+                    "# 원자로 감지를 켜면 토륨 원자로가 과열되어 폭발 하기 직전일 때 즉시 블럭이 파괴됩니다.\n" +
+                    "detectreactor: " + isDetectreactor() + "\n" +
+                    "\n" +
+                    "# 빠른 자원소모 감지를 켜면 한 자원이 매우 빠르게 소모가 되고 있을때, 그 자원을 사용하고 있는 플레이어의 명단을 띄워줍니다.\n" +
+                    "scanresource: " + isScanresource() + "\n" +
+                    "\n" +
+                    "# 경험치 값 설정.\n" +
+                    "# explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.\n" +
+                    "# Base xp는 레벨 1에서 2로 오르는데 필요한 경험치 수치입니다.\n" +
+                    "# exponent는 다음 레벨로 올리기 위한 요구 경험치 배수입니다.\n" +
+                    "# levelupalarm 를 활성화 하면 일정레벨 이상에서 레벨이 오를때, 메세지로 띄워줍니다.\n" +
+                    "explimit: " + isExplimit() + "\n" +
+                    "basexp: " + getBasexp() + "\n" +
+                    "exponent: " + getExponent() + "\n" +
+                    "levelupalarm: " + isLevelupalarm() + "\n" +
+                    "\n" +
+                    "# 밴 공유서버 설정\n" +
+                    "# 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.\n" +
+                    "banshare: " + isBanshare() + "\n" +
+                    "\n" +
+                    "# 신뢰가능한 밴 공유 IP 설정\n" +
+                    "# 예시 - 127.0.0.1,localhost,192.168.0.0\n" +
+                    "bantrust: " + obj.get("bantrust") + "\n" +
+                    "\n" +
+                    "# 서버 요청 설정\n" +
+                    "# 이 기능을 켜면 서버 포트에서 서버 정보를 얻어올 수 있게 됩니다.\n" +
+                    "# 랭킹 사이트는 http://localhost:서버포트/rank/kr 으로 들어가면 됩니다.\n" +
+                    "query: " + isQuery() + "\n" +
+                    "\n" +
+                    "# 이 기능을 켜면 VPN 서비스가 켜집니다.\n" +
+                    "antivpn: " + isAntivpn() + "\n" +
+                    "\n" +
+                    "# 이 기능을 켜면 PvP 초반 러시 방지기능을 활성화 합니다. 시간 단위: 1초\n" +
+                    "enableantirush: " + isEnableantirush() + "\n" +
+                    "antirushtime: " + obj.get("antirushtime") + "\n" +
+                    "\n" +
+                    "# 서버 로그 활성화 (이 기능을 켜면 많은 디스크 작업이 일어납니다!)\n" +
+                    "logging: " + isLogging() + "\n" +
+                    "\n" +
+                    "# 플러그인 업데이트 확인 기능\n" +
+                    "update: " + isUpdate() + "\n" +
+                    "\n" +
+                    "# 데이터베이스 종류 설정 (Default is SQLite)\n" +
+                    "# 예시 - mariadb://localhost:3306/DB이름\n" +
+                    "# 만약 MySQL/MariaDB 를 사용하고 싶다면, SQLite를 비활성화 하고 새 데이터베이스를 직접 만드셔야 합니다!\n" +
+                    "sqlite: " + isSqlite() + "\n" +
+                    "dburl: " + getDBurl() + "\n" +
+                    "dbid: " + getDBid() + "\n" +
+                    "dbpw: " + getDBpw() + "\n" +
+                    "\n" +
+                    "# 로그인 기능 설정\n" +
+                    "loginenable: " + isLoginenable() + "\n" +
+                    "\n" +
+                    "# 파파고 번역 API 키\n" +
+                    "# 이 키는 developers.naver.com 에서 유료로 얻을 수 있습니다.\n" +
+                    "clientId: " + getClientId() + "\n" +
+                    "clientSecret: " + getClientSecret() + "\n" +
+                    "\n" +
+                    "# 이 기능을 켜면 오류 메세지가 저장되지 않고 즉시 콘솔로 출력됩니다.\n" +
+                    "debug: " + isDebug() + "\n" +
+                    "\n" +
+                    "# 맵 자동저장 시간. 시간 단위는 1분입니다.\n" +
+                    "savetime: " + getSavetime() + "\n" +
+                    "\n" +
+                    "# 빽섭할 맵 저장 슬롯\n" +
+                    "# 예시 - 만약 값을 1000으로 설정한다면, 빽섭할 맵의 파일명이 1000.msav 으로 저장됩니다.\n" +
+                    "slotnumber: " + getSlotnumber() + ";";
+        } else {
+            text = "# Config version (Don't touch this!)\n" +
+                    "version: 5\n" +
+                    "\n" +
+                    "# Plugin language\n" +
+                    "language: ko\n" +
+                    "\n" +
+                    "# Server/client port settings\n" +
+                    "# This's used for the network function of the plugin.\n" +
+                    "server-enable: " + isServerenable() + "\n" +
+                    "server-port: " + getServerport() + "\n" +
+                    "\n" +
+                    "client-enable: " + isClientenable() + "\n" +
+                    "client-port: " + getClientport() + "\n" +
+                    "client-host: " + getClienthost() + "\n" +
+                    "\n" +
+                    "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
+                    "# If you want colornick features, must enable this.\n" +
+                    "realname: " + isRealname() + "\n" +
+                    "\n" +
+                    "# Color nickname update interval. 1sec = 1000\n" +
+                    "colornick update interval: " + getCupdatei() + "\n" +
+                    "\n" +
+                    "# If turn on detectreactor, destory reactor when the thorium reactor is overheated.\n" +
+                    "detectreactor: " + isDetectreactor() + "\n" +
+                    "\n" +
+                    "# if turn on scanresource, show message a list of players who are using a resource when it is consuming a resource very quickly.\n" +
+                    "scanresource: " + isScanresource() + "\n" +
+                    "\n" +
+                    "# Experience value setting.\n" +
+                    "# When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.\n" +
+                    "# Base xp is required experience to level up from 1 to 2\n" +
+                    "# exponent is EXP multiplier required for the next level.\n" +
+                    "# When turn on levelupalarm, a message is displayed when the level rises above a certain level.\n" +
+                    "explimit: " + isExplimit() + "\n" +
+                    "basexp: " + getBasexp() + "\n" +
+                    "exponent: " + getExponent() + "\n" +
+                    "levelupalarm: " + isLevelupalarm() + "\n" +
+                    "\n" +
+                    "# Ban sharing server config\n" +
+                    "# If you enable this, your ban list will send to another public servers.\n" +
+                    "banshare: " + isBanshare() + "\n" +
+                    "\n" +
+                    "# Ban sharing trust list\n" +
+                    "# Example - 127.0.0.1,localhost,192.168.0.0\n" +
+                    "bantrust: " + obj.get("bantrust") + "\n" +
+                    "\n" +
+                    "# Server query config\n" +
+                    "# If you enable this, You will be able to get server information from the server port.\n" +
+                    "# Ranking page address is http://localhost:server_port/rank\n" +
+                    "query: " + isQuery() + "\n" +
+                    "\n" +
+                    "# Enable Anti-VPN service.\n" +
+                    "antivpn: " + isAntivpn() + "\n" +
+                    "\n" +
+                    "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
+                    "enableantirush: " + isEnableantirush() + "\n" +
+                    "antirushtime: " + obj.get("antirushtime") + "\n" +
+                    "\n" +
+                    "# Logging enable (This features may take heavy disk read/write work!)\n" +
+                    "logging: " + isLogging() + "\n" +
+                    "\n" +
+                    "# update check enable\n" +
+                    "update: " + isUpdate() + "\n" +
+                    "\n" +
+                    "# Database type setting (Default is SQLite)\n" +
+                    "# Example - mariadb://localhost:3306/dbname\n" +
+                    "# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.# dburl\n" +
+                    "sqlite: " + isSqlite() + "\n" +
+                    "dburl: " + getDBurl() + "\n" +
+                    "dbid: " + getDBid() + "\n" +
+                    "dbpw: " + getDBpw() + "\n" +
+                    "\n" +
+                    "# Login features setting\n" +
+                    "loginenable: " + isLoginenable() + "\n" +
+                    "\n" +
+                    "# Papago translate API Key\n" +
+                    "# The api key can be obtained from developers.naver.com.\n" +
+                    "clientId: " + getClientId() + "\n" +
+                    "clientSecret: " + getClientSecret() + "\n" +
+                    "\n" +
+                    "# The error message is output immediately.\n" +
+                    "debug: " + isDebug() + "\n" +
+                    "\n" +
+                    "# Map auto save time. Time unit: 1 minute\n" +
+                    "savetime: " + getSavetime() + "\n" +
+                    "\n" +
+                    "# Rollback map save slot number.\n" +
+                    "# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
+                    "slotnumber: " + getSlotnumber() + ";";
+        }
+        Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
-        if (jarFile.isFile() && !validfile()) {
-            try {
-                final JarFile jar = new JarFile(jarFile);
-                final Enumeration<JarEntry> entries = jar.entries();
-                while (entries.hasMoreElements()) {
-                    String name = entries.nextElement().getName();
-                    if (name.startsWith(path + "/")) {
-                        if (!name.equals(path + "/")) {
-                            if (!name.contains(".")) {
-                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace(path + "/", "")).mkdirs();
-                                continue;
-                            }
-                            InputStream reader = getClass().getResourceAsStream("/" + name);
-                            if (name.contains(path + "/config_en.yml")) {
-                                Core.settings.getDataDirectory().child("mods/Essentials/config.yml").write(reader, false);
-                            } else if (!name.contains(path + "/config_ko.yml")) {
-                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replace(path + "/", "")).write(reader, false);
-                            }
-                        }
-                    }
-                }
-                jar.close();
-
-                Yaml yaml = new Yaml();
-                obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
-            } catch (IOException e) {
-                e.printStackTrace();
+        if (getLanguage().equals("ko")) {
+            Global.log("설정 파일을 정상적으로 불러왔습니다!");
+            if (getVersion() < 5) {
+                Global.log("설정 파일이 업데이트 되었습니다!");
             }
-        } else if (Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
-            Yaml yaml = new Yaml();
-            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
-
-            String text;
-            if (getLanguage().equals("ko")) {
-                text = "# 플러그인 버전 (절대 수정하지 마세요!)\n" +
-                        "version: 5\n" +
-                        "\n" +
-                        "# 플러그인 언어\n" +
-                        "language: ko\n" +
-                        "\n" +
-                        "# 서버/클라이언트 포트 설정\n" +
-                        "# 이것은 플러그인의 네트워크 기능에 사용됩니다.\n" +
-                        "server-enable: " + isServerenable() + "\n" +
-                        "server-port: " + getServerport() + "\n" +
-                        "\n" +
-                        "client-enable: " + isClientenable() + "\n" +
-                        "client-port: " + getClientport() + "\n" +
-                        "client-host: " + getClienthost() + "\n" +
-                        "\n" +
-                        "# realname를 켜면 플레이어가 닉네임을 변경하더라도 이전 닉네임으로 설정됩니다.\n" +
-                        "# 컬러닉 기능을 원하는 경우 이것을 활성화해야 합니다.\n" +
-                        "realname: " + isRealname() + "\n" +
-                        "\n" +
-                        "# 컬러닉 갱신 시간설정. 1초 = 1000\n" +
-                        "colornick update interval: " + getCupdatei() + "\n" +
-                        "\n" +
-                        "# 원자로 감지를 켜면 토륨 원자로가 과열되어 폭발 하기 직전일 때 즉시 블럭이 파괴됩니다.\n" +
-                        "detectreactor: " + isDetectreactor() + "\n" +
-                        "\n" +
-                        "# 빠른 자원소모 감지를 켜면 한 자원이 매우 빠르게 소모가 되고 있을때, 그 자원을 사용하고 있는 플레이어의 명단을 띄워줍니다.\n" +
-                        "scanresource: "+ isScanresource() +"\n" +
-                        "\n" +
-                        "# 경험치 값 설정.\n" +
-                        "# explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.\n" +
-                        "# Base xp는 레벨 1에서 2로 오르는데 필요한 경험치 수치입니다.\n" +
-                        "# exponent는 다음 레벨로 올리기 위한 요구 경험치 배수입니다.\n" +
-                        "# levelupalarm 를 활성화 하면 일정레벨 이상에서 레벨이 오를때, 메세지로 띄워줍니다.\n" +
-                        "explimit: " + isExplimit() + "\n" +
-                        "basexp: " + getBasexp() + "\n" +
-                        "exponent: " + getExponent() + "\n" +
-                        "levelupalarm: " + isLevelupalarm() + "\n" +
-                        "\n" +
-                        "# 밴 공유서버 설정\n" +
-                        "# 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.\n" +
-                        "banshare: " + isBanshare() + "\n" +
-                        "\n" +
-                        "# 신뢰가능한 밴 공유 IP 설정\n" +
-                        "# 예시 - 127.0.0.1,localhost,192.168.0.0\n" +
-                        "bantrust: " + obj.get("bantrust") + "\n" +
-                        "\n" +
-                        "# 서버 요청 설정\n" +
-                        "# 이 기능을 켜면 서버 포트에서 서버 정보를 얻어올 수 있게 됩니다.\n" +
-                        "# 랭킹 사이트는 http://localhost:서버포트/rank/kr 으로 들어가면 됩니다.\n" +
-                        "query: " + isQuery() + "\n" +
-                        "\n" +
-                        "# 이 기능을 켜면 VPN 서비스가 켜집니다.\n" +
-                        "antivpn: " + isAntivpn() + "\n" +
-                        "\n" +
-                        "# 이 기능을 켜면 PvP 초반 러시 방지기능을 활성화 합니다. 시간 단위: 1초\n" +
-                        "enableantirush: " + isEnableantirush() + "\n" +
-                        "antirushtime: " + obj.get("antirushtime") + "\n" +
-                        "\n" +
-                        "# 서버 로그 활성화 (이 기능을 켜면 많은 디스크 작업이 일어납니다!)\n" +
-                        "logging: " + isLogging() + "\n" +
-                        "\n" +
-                        "# 플러그인 업데이트 확인 기능\n" +
-                        "update: " + isUpdate() + "\n" +
-                        "\n" +
-                        "# 데이터베이스 종류 설정 (Default is SQLite)\n" +
-                        "# 예시 - mariadb://localhost:3306/DB이름\n" +
-                        "# 만약 MySQL/MariaDB 를 사용하고 싶다면, SQLite를 비활성화 하고 새 데이터베이스를 직접 만드셔야 합니다!\n" +
-                        "sqlite: " + isSqlite() + "\n" +
-                        "dburl: " + getDBurl() + "\n" +
-                        "dbid: " + getDBid() + "\n" +
-                        "dbpw: " + getDBpw() + "\n" +
-                        "\n" +
-                        "# 로그인 기능 설정\n" +
-                        "loginenable: " + isLoginenable() + "\n" +
-                        "\n" +
-                        "# 파파고 번역 API 키\n" +
-                        "# 이 키는 developers.naver.com 에서 유료로 얻을 수 있습니다.\n" +
-                        "clientId: " + getClientId() + "\n" +
-                        "clientSecret: " + getClientSecret() + "\n" +
-                        "\n" +
-                        "# 이 기능을 켜면 오류 메세지가 저장되지 않고 즉시 콘솔로 출력됩니다.\n" +
-                        "debug: " + isDebug() + "\n" +
-                        "\n" +
-                        "# 맵 자동저장 시간. 시간 단위는 1분입니다.\n" +
-                        "savetime: " + getSavetime() + "\n" +
-                        "\n" +
-                        "# 빽섭할 맵 저장 슬롯\n" +
-                        "# 예시 - 만약 값을 1000으로 설정한다면, 빽섭할 맵의 파일명이 1000.msav 으로 저장됩니다.\n" +
-                        "slotnumber: " + getSlotnumber() + ";";
-            } else {
-                text = "# Config version (Don't touch this!)\n" +
-                        "version: 5\n" +
-                        "\n" +
-                        "# Plugin language\n" +
-                        "language: ko\n" +
-                        "\n" +
-                        "# Server/client port settings\n" +
-                        "# This's used for the network function of the plugin.\n" +
-                        "server-enable: " + isServerenable() + "\n" +
-                        "server-port: " + getServerport() + "\n" +
-                        "\n" +
-                        "client-enable: " + isClientenable() + "\n" +
-                        "client-port: " + getClientport() + "\n" +
-                        "client-host: " + getClienthost() + "\n" +
-                        "\n" +
-                        "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
-                        "# If you want colornick features, must enable this.\n" +
-                        "realname: " + isRealname() + "\n" +
-                        "\n" +
-                        "# Color nickname update interval. 1sec = 1000\n" +
-                        "colornick update interval: " + getCupdatei() + "\n" +
-                        "\n" +
-                        "# If turn on detectreactor, destory reactor when the thorium reactor is overheated.\n" +
-                        "detectreactor: " + isDetectreactor() + "\n" +
-                        "\n" +
-                        "# if turn on scanresource, show message a list of players who are using a resource when it is consuming a resource very quickly.\n" +
-                        "scanresource: "+ isScanresource() +"\n" +
-                        "\n" +
-                        "# Experience value setting.\n" +
-                        "# When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.\n" +
-                        "# Base xp is required experience to level up from 1 to 2\n" +
-                        "# exponent is EXP multiplier required for the next level.\n" +
-                        "# When turn on levelupalarm, a message is displayed when the level rises above a certain level.\n" +
-                        "explimit: " + isExplimit() + "\n" +
-                        "basexp: " + getBasexp() + "\n" +
-                        "exponent: " + getExponent() + "\n" +
-                        "levelupalarm: " + isLevelupalarm() + "\n" +
-                        "\n" +
-                        "# Ban sharing server config\n" +
-                        "# If you enable this, your ban list will send to another public servers.\n" +
-                        "banshare: " + isBanshare() + "\n" +
-                        "\n" +
-                        "# Ban sharing trust list\n" +
-                        "# Example - 127.0.0.1,localhost,192.168.0.0\n" +
-                        "bantrust: " + obj.get("bantrust") + "\n" +
-                        "\n" +
-                        "# Server query config\n" +
-                        "# If you enable this, You will be able to get server information from the server port.\n" +
-                        "# Ranking page address is http://localhost:server_port/rank\n" +
-                        "query: " + isQuery() + "\n" +
-                        "\n" +
-                        "# Enable Anti-VPN service.\n" +
-                        "antivpn: " + isAntivpn() + "\n" +
-                        "\n" +
-                        "# Enable Anti PvP early time rushing. Time unit: 1 second\n" +
-                        "enableantirush: " + isEnableantirush() + "\n" +
-                        "antirushtime: " + obj.get("antirushtime") + "\n" +
-                        "\n" +
-                        "# Logging enable (This features may take heavy disk read/write work!)\n" +
-                        "logging: " + isLogging() + "\n" +
-                        "\n" +
-                        "# update check enable\n" +
-                        "update: " + isUpdate() + "\n" +
-                        "\n" +
-                        "# Database type setting (Default is SQLite)\n" +
-                        "# Example - mariadb://localhost:3306/dbname\n" +
-                        "# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.# dburl\n" +
-                        "sqlite: " + isSqlite() + "\n" +
-                        "dburl: " + getDBurl() + "\n" +
-                        "dbid: " + getDBid() + "\n" +
-                        "dbpw: " + getDBpw() + "\n" +
-                        "\n" +
-                        "# Login features setting\n" +
-                        "loginenable: " + isLoginenable() + "\n" +
-                        "\n" +
-                        "# Papago translate API Key\n" +
-                        "# The api key can be obtained from developers.naver.com.\n" +
-                        "clientId: " + getClientId() + "\n" +
-                        "clientSecret: " + getClientSecret() + "\n" +
-                        "\n" +
-                        "# The error message is output immediately.\n" +
-                        "debug: " + isDebug() + "\n" +
-                        "\n" +
-                        "# Map auto save time. Time unit: 1 minute\n" +
-                        "savetime: " + getSavetime() + "\n" +
-                        "\n" +
-                        "# Rollback map save slot number.\n" +
-                        "# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
-                        "slotnumber: " + getSlotnumber() + ";";
+        } else {
+            Global.log("config file loaded!");
+            if (getVersion() < 5) {
+                Global.log("config file updated!");
             }
-            Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
-
-            if(getLanguage().equals("ko")){
-                Global.log("설정 파일을 정상적으로 불러왔습니다!");
-                if (getVersion() < 5) {
-                    Global.log("설정 파일이 업데이트 되었습니다!");
-                }
-            } else {
-                Global.log("config file loaded!");
-                if (getVersion() < 5) {
-                    Global.log("config file updated!");
-                }
-            }
-
-
         }
     }
 }
