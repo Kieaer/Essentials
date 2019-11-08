@@ -3,6 +3,7 @@ package essentials.core;
 import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
+import io.anuke.arc.files.FileHandle;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.EventType.*;
@@ -11,50 +12,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
+import static essentials.Global.config;
 import static essentials.Global.gettime;
-import static essentials.Global.printStackTrace;
-import static essentials.core.PlayerDB.conn;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-public class Log implements Runnable{
-    @Override
-    public void run() {
-        Thread.currentThread().setName("Logging thread");
-
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log").writeString("");
-            Global.log("Block.log created.");
-        }
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log").writeString("");
-            Global.log("Player.log created.");
-        }
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Griefer.log").writeString("");
-            Global.log("Griefer.log created.");
-        }
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/Logs/Chat.log").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/Logs/Chat.log").writeString("");
-            Global.log("Chat.log created.");
-        }
-
+public class Log{
+    public void main() {
+        // No error, griefer, non-block, withdraw event
         Events.on(PlayerChatEvent.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Chat.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-            try {
-                String text = gettime() + e.player.name + ": " + e.message + "\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            } catch (IOException error) {
-                printStackTrace(error);
-            }
+            writelog("chat", gettime() + e.player.name + ": " + e.message);
         });
 
-        Events.on(WorldLoadEvent.class, e -> {
+        /*Events.on(WorldLoadEvent.class, e -> {
             Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
             try {
                 String text = gettime() + "World loaded!\n";
@@ -63,156 +35,98 @@ public class Log implements Runnable{
             } catch (IOException error) {
                 printStackTrace(error);
             }
-        });
+        });*/
 
         Events.on(BlockBuildEndEvent.class, e -> {
-            if(!e.breaking && e.tile.entity() != null && e.player != null){
-                if(e.tile.entity.block != null && e.player.name != null){
-                    //Thread t = new Thread(() -> {
-                        Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
-                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-                        try {
-                            String text = gettime()+e.player.name+" Player place " +e.tile.entity.block.name+".\n";
-                            byte[] result = text.getBytes();
-                            Files.write(block, result, StandardOpenOption.APPEND);
-                            Files.write(total, result, StandardOpenOption.APPEND);
-                        }catch (IOException error) {
-                            printStackTrace(error);
-                        }
-                    //});
-                    //t.start();
+            if(!e.breaking && e.tile.entity() != null && e.player != null && e.tile.entity.block != null && e.player.name != null) {
+                if (config.getLanguage().equals("ko")) {
+                    writelog("block", gettime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭을 만들었습니다.");
+                } else {
+                    writelog("block", gettime() + e.player.name + " Player place " + e.tile.entity.block.name + ".");
                 }
             }
         });
 
         Events.on(BuildSelectEvent.class, e -> {
-            try{
-                if(e.breaking && e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
-                    Thread t = new Thread(() -> {
-                        Path block = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Block.log")));
-                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-                        try {
-                            String text = gettime()+((Player)e.builder).name+" Player break " +e.builder.buildRequest().block.name+".\n";
-                            byte[] result = text.getBytes();
-                            Files.write(block, result, StandardOpenOption.APPEND);
-                            Files.write(total, result, StandardOpenOption.APPEND);
-                        }catch (IOException error) {
-                            printStackTrace(error);
-                        }
-                    });
-                    t.start();
+            if(e.breaking && e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
+                if (config.getLanguage().equals("ko")) {
+                    writelog("block", gettime() + ((Player) e.builder).name + " 플레이어가 " + e.builder.buildRequest().block.name + " 블럭을 파괴했습니다.");
+                } else {
+                    writelog("block", gettime() + ((Player) e.builder).name + " Player break " + e.builder.buildRequest().block.name + ".");
                 }
-            }catch (Exception error){
-                printStackTrace(error);
             }
         });
 
         Events.on(MechChangeEvent.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-            try {
-                String text = gettime() + e.player.name + " has change mech to " + e.mech.name + ".\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            } catch (IOException error) {
-                printStackTrace(error);
+            if(config.getLanguage().equals("ko")) {
+                writelog("player", gettime() + e.player.name + " 플레이어가 기체를 " + e.mech.name + " 으로 변경했습니다.");
+            } else {
+                writelog("player", gettime() + e.player.name + " has change mech to " + e.mech.name + ".");
             }
         });
 
         Events.on(PlayerJoin.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-            try {
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String sql = "SELECT * FROM players WHERE name='" + e.player.uuid + "'";
+            String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
 
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(sql);
-                if (rs.next()) {
-                    String text = gettime()+"\nPlayer Information\n" +
-                            "========================================\n" +
-                            "Name: " + rs.getString("name") + "\n" +
-                            "UUID: " + rs.getString("uuid") + "\n" +
-                            "IP: " + ip + "\n" +
-                            "Country: " + rs.getString("country") + "\n" +
-                            "Block place: " + rs.getInt("placecount") + "\n" +
-                            "Block break: " + rs.getInt("breakcount") + "\n" +
-                            "Kill units: " + rs.getInt("killcount") + "\n" +
-                            "Death count: " + rs.getInt("deathcount") + "\n" +
-                            "Join count: " + rs.getInt("joincount") + "\n" +
-                            "Kick count: " + rs.getInt("kickcount") + "\n" +
-                            "Level: " + rs.getInt("level") + "\n" +
-                            "XP: " + rs.getString("reqtotalexp") + "\n" +
-                            "First join: " + rs.getString("firstdate") + "\n" +
-                            "Last join: " + rs.getString("lastdate") + "\n" +
-                            "Playtime: " + rs.getString("playtime") + "\n" +
-                            "Attack clear: " + rs.getInt("attackclear") + "\n" +
-                            "PvP Win: " + rs.getInt("pvpwincount") + "\n" +
-                            "PvP Lose: " + rs.getInt("pvplosecount") + "\n" +
-                            "PvP Surrender: " + rs.getInt("pvpbreakout");
-                    byte[] result = text.getBytes();
-                    Files.write(path, result, StandardOpenOption.APPEND);
-                    Files.write(total, result, StandardOpenOption.APPEND);
-                }
-            } catch (Exception ex) {
-                printStackTrace(ex);
+            if(config.getLanguage().equals("ko")) {
+                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " 플레이어가 서버에 입장했습니다.");
+            } else {
+                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player joined.");
             }
         });
 
         Events.on(PlayerConnect.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-            try {
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player connected.\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            } catch (IOException error) {
-                printStackTrace(error);
+            String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+
+            if(config.getLanguage().equals("ko")) {
+                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " 플레이어가 서버에 연결했습니다.");
+            } else {
+                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player connected.");
             }
         });
 
         Events.on(PlayerLeave.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-            try {
-                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                String text = gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player disconnected.\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            } catch (IOException error) {
-                printStackTrace(error);
+            String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+
+            if(config.getLanguage().equals("ko")) {
+                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " 플레이어가 서버에서 나갔습니다.");
+            } else {
+                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player disconnected.");
             }
         });
 
         Events.on(DepositEvent.class, e -> {
-            Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-            Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-            try {
-                String text = gettime() + e.player.name+" Player has moved item "+e.player.item().item.name+" to "+e.tile.block().name+".\n";
-                byte[] result = text.getBytes();
-                Files.write(path, result, StandardOpenOption.APPEND);
-                Files.write(total, result, StandardOpenOption.APPEND);
-            } catch (IOException error) {
-                printStackTrace(error);
+            if(config.getLanguage().equals("ko")) {
+                writelog("deposit", gettime() + e.player.name + " 플레이어가 " + e.player.item().item.name + " 아이템을 " + e.tile.block().name + " 으로 직접 옮겼습니다.");
+            } else {
+                writelog("deposit", gettime() + e.player.name + " Player has moved item " + e.player.item().item.name + " to " + e.tile.block().name + ".");
             }
         });
+    }
 
-        /*Path path = Core.settings.getDataDirectory().child("mods/Essentials/Logs/").path();
-        try (Stream<String> lines = Files.lines(path, Charset.defaultCharset())) {
-            long numOfLines = lines.count();
+    public void writelog(String type, String text){
+        String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
+        Path newlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/Logs/"+type+".log").path());
+        Path oldlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/Logs/old/"+type+".log - "+date).path());
+        FileHandle mainlog = Core.settings.getDataDirectory().child("mods/Essentials/Logs/"+type+".log");
+        FileHandle logfolder = Core.settings.getDataDirectory().child("mods/Essentials/Logs");
+
+        if(mainlog != null && mainlog.length() > 500){
+            mainlog.writeString("[End of log file. Date: " + date + "]\n", true);
+            try {
+                Core.settings.getDataDirectory().child("mods/Essentials/Logs/old/"+type+".log - "+date).writeString("");
+                Files.move(newlog, oldlog, REPLACE_EXISTING);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mainlog = null;
         }
-        try {
-            int result;
-            FileReader input = new FileReader(Core.settings.getDataDirectory().child("mods/Essentials/Logs/").file());
-            LineNumberReader count = new LineNumberReader(input);
-            while (count.skip(Long.MAX_VALUE) > 0) { }
-            result = count.getLineNumber() + 1;
-        }catch (IOException e){
-            printStackTrace(e);
-        }*/
+
+        if(mainlog == null){
+            mainlog = logfolder.child(type+".log");
+        }
+
+        mainlog.writeString(text + "\n", true);
+        Global.log("work!");
     }
 }

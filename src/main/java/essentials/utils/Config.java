@@ -5,9 +5,14 @@ import io.anuke.arc.Core;
 import org.json.JSONArray;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
@@ -217,7 +222,8 @@ public class Config {
                 Core.settings.getDataDirectory().child("mods/Essentials/log/griefer.log").exists() &&
                 Core.settings.getDataDirectory().child("mods/Essentials/log/non-block.log").exists() &&
                 Core.settings.getDataDirectory().child("mods/Essentials/log/player.log").exists() &&
-                Core.settings.getDataDirectory().child("mods/Essentials/log/withdraw.log").exists();
+                Core.settings.getDataDirectory().child("mods/Essentials/log/withdraw.log").exists() &&
+                Core.settings.getDataDirectory().child("mods/Essentials/log/old/").exists();
     }
 
     public String checkfeatures(){

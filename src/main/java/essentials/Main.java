@@ -100,7 +100,8 @@ public class Main extends Plugin {
 
 	    // Start log
 		if(config.isLogging()){
-            executorService.execute(new Log());
+            Log log = new Log();
+            log.main();
 		}
 
 		//EssentialAI.main();
