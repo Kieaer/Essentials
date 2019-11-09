@@ -1,11 +1,12 @@
 package essentials.core;
 
 import essentials.utils.Config;
-import io.anuke.mindustry.gen.Call;
+import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
 
+import static essentials.Global.bundle;
 import static essentials.core.PlayerDB.writeData;
-import static essentials.utils.Config.*;
+import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Exp {
     public static Config config = new Config();
@@ -28,7 +29,10 @@ public class Exp {
 
         int curlevel = (int) db.get("level");
         if(curlevel < level && curlevel > 20 && config.isLevelupalarm()){
-            Call.sendMessage("[yellow]Congratulations![white] "+name+"[white] achieved level [green]"+level+"!");
+            for(int a=0;a<playerGroup.size();a++){
+                Player player = playerGroup.all().get(a);
+                player.sendMessage(bundle(player, "player-levelup"));
+            }
         }
     }
 

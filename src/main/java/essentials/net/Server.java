@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 
+import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
 import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
@@ -46,11 +47,7 @@ public class Server implements Runnable {
         try {
             serverSocket = new ServerSocket(config.getServerport());
             new Thread(this).start();
-            if(config.getLanguage().equals("ko")){
-                Global.logs("서버 기능이 활성화 되었습니다!");
-            } else {
-                Global.logs("Server enabled!");
-            }
+            Global.logc(nbundle("server-enabled"));
         } catch (Exception e) {
             printStackTrace(e);
         }
@@ -106,11 +103,7 @@ public class Server implements Runnable {
                         in.close();
                         socket.close();
                         list.remove(this);
-                        if(config.getLanguage().equals("ko")){
-                            Global.logs(remoteip+" 와 연결이 해제되었습니다.");
-                        } else {
-                            Global.logs(remoteip+" client disconnected.");
-                        }
+                        Global.logc(nbundle("client-disconnected"));
                         return;
                     }
 
@@ -118,11 +111,7 @@ public class Server implements Runnable {
                         httpserver(data);
                     } else if (data.matches("\\[(.*)]:.*")) {
                         String msg = data.replaceAll("\n", "");
-                        if(config.getLanguage().equals("ko")){
-                            Global.logs(remoteip+" 에서 수신된 메세지: "+msg);
-                        } else {
-                            Global.logs("Received message from " + remoteip + ": " + msg);
-                        }
+                        Global.logc(nbundle("server-message-received", remoteip, msg));
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player p = playerGroup.all().get(i);
                             if (p.isAdmin) {
@@ -142,11 +131,7 @@ public class Server implements Runnable {
                         int rnd = new Random().nextInt(msg.length);
                         bw.write(msg[rnd] + "\n");
                         bw.flush();
-                        if(config.getLanguage().equals("ko")){
-                            Global.logs(remoteip+" 에서 서버에 연결했습니다.");
-                        } else {
-                            Global.logs(remoteip+" client connected.");
-                        }
+                        Global.logc(nbundle("client-connected", remoteip));
                     } else if (data.matches("exit")){
                         bw.close();
                         os.close();
@@ -154,11 +139,7 @@ public class Server implements Runnable {
                         in.close();
                         socket.close();
                         list.remove(this);
-                        if(config.getLanguage().equals("ko")){
-                            Global.logs(remoteip+" 와 연결이 해제되었습니다.");
-                        } else {
-                            Global.logs(remoteip+" client disconnected.");
-                        }
+                        Global.logc(nbundle("client-disconnected", remoteip));
                         this.interrupt();
                         return;
                     } else if (config.isBanshare()) {
@@ -166,11 +147,7 @@ public class Server implements Runnable {
                             if(data.substring(data.length()-5).equals("unban")){
                                 JSONTokener convert = new JSONTokener(data);
                                 JSONArray bandata = new JSONArray(convert);
-                                if(config.getLanguage().equals("ko")){
-                                    Global.logs(remoteip+" 에서 밴 해제 요청을 했습니다.");
-                                } else {
-                                    Global.logs("Unban request received from " + remoteip + ".");
-                                }
+                                Global.logc(nbundle("client-request-unban", remoteip));
                                 for (int i = 0; i < bandata.length(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
                                     if (array[0].length() == 12) {
@@ -182,11 +159,7 @@ public class Server implements Runnable {
                                     if (array[0].equals("<unknown>")) {
                                         netServer.admins.unbanPlayerIP(array[1]);
                                     }
-                                    if(config.getLanguage().equals("ko")){
-                                        Global.logs(bandata.getString(i)+" 플레이어 밴 해제 완료.");
-                                    } else {
-                                        Global.logs(bandata.getString(i) + " Player unbanned.");
-                                    }
+                                    Global.logc(nbundle("unban-done", bandata.getString(i)));
                                 }
 
                                 // send message to all clients
@@ -197,22 +170,14 @@ public class Server implements Runnable {
                                         if (ip.equals(remoteip)) {
                                             ser.os.write((data + "\n").getBytes(StandardCharsets.UTF_8));
                                             ser.os.flush();
-                                            if (config.getLanguage().equals("ko")) {
-                                                Global.logs(remoteip + " 으로 데이터를 전송했습니다.");
-                                            } else {
-                                                Global.logs("Data sented to " + remoteip + ".");
-                                            }
+                                            Global.logc(nbundle("server-data-sented", remoteip));
                                         }
                                     }
                                 }
                             } else {
                                 JSONTokener convert = new JSONTokener(data);
                                 JSONArray bandata = new JSONArray(convert);
-                                if (config.getLanguage().equals("ko")) {
-                                    Global.logs(remoteip + " 에서 밴 목록 요청을 했습니다.");
-                                } else {
-                                    Global.logs("Ban list sync received from " + remoteip + ".");
-                                }
+                                Global.logc(nbundle("client-request-banlist", remoteip));
                                 for (int i = 0; i < bandata.length(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
                                     if (array[0].length() == 12) {
@@ -248,11 +213,7 @@ public class Server implements Runnable {
                                         if (ip.equals(remoteip)) {
                                             ser.os.write((data1 + "\n").getBytes(StandardCharsets.UTF_8));
                                             ser.os.flush();
-                                            if (config.getLanguage().equals("ko")) {
-                                                Global.logs(remoteip + " 으로 데이터를 전송했습니다.");
-                                            } else {
-                                                Global.logs("Data sented to " + remoteip + ".");
-                                            }
+                                            Global.logc(nbundle("server-data-sented", remoteip));
                                         }
                                     }
                                 }
@@ -265,11 +226,7 @@ public class Server implements Runnable {
                         Global.logs("Invalid data - " + data);
                     }
                 } catch (IOException e) {
-                    if(config.getLanguage().equals("ko")){
-                        Global.logs(remoteip+" 와 연결이 해제되었습니다.");
-                    } else {
-                        Global.logs(remoteip+" client disconnected.");
-                    }
+                    Global.logc(nbundle("client-disconnected", remoteip));
 
                     /*String msg = e.getMessage();
                     if (msg.equals("Connection reset") || msg.equals("Socket closed") || msg.equals("Stream closed")) {

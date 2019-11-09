@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
 
 public class Config {
@@ -463,16 +464,9 @@ public class Config {
         }
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
-        if (getLanguage().equals("ko")) {
-            Global.logco("설정 파일을 정상적으로 불러왔습니다!");
-            if (getVersion() < 5) {
-                Global.logco("설정 파일이 업데이트 되었습니다!");
-            }
-        } else {
-            Global.logco("config file loaded!");
-            if (getVersion() < 5) {
-                Global.logco("config file updated!");
-            }
+        Global.logco(nbundle("config-loaded"));
+        if(getVersion() < 5){
+            Global.logco(nbundle("config-updated"));
         }
     }
 }

@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
 import static essentials.utils.Config.executorService;
 import static io.anuke.mindustry.Vars.netServer;
@@ -31,11 +32,7 @@ public class Client extends Thread{
     public static boolean serverconn;
 
     public void update(){
-        if(config.getLanguage().equals("ko")){
-            Global.log("플러그인 버전 확인중...");
-        } else {
-            Global.log("Checking plugin update...");
-        }
+        Global.logc(nbundle("client-checking-version"));
 
         HttpURLConnection con;
         try {
@@ -71,23 +68,11 @@ public class Client extends Thread{
             DefaultArtifactVersion current = new DefaultArtifactVersion("5.1.3");
 
             if(latest.compareTo(current) > 0){
-                if(config.getLanguage().equals("ko")){
-                    Global.log("새 버전을 찾았습니다!");
-                } else {
-                    Global.log("New version found!");
-                }
+                Global.logc(nbundle("version-new"));
             } else if(latest.compareTo(current) == 0){
-                if(config.getLanguage().equals("ko")){
-                    Global.log("현재 버전이 최신입니다.");
-                } else {
-                    Global.log("Current version is up to date.");
-                }
+                Global.logc(nbundle("version-current"));
             } else if(latest.compareTo(current) < 0){
-                if(config.getLanguage().equals("ko")){
-                    Global.log("현재 개발버전을 사용하고 있습니다!");
-                } else {
-                    Global.log("You're using development version!");
-                }
+                Global.logc(nbundle("version-devel"));
             }
 
         } catch (Exception e){
@@ -112,11 +97,7 @@ public class Client extends Thread{
                     Global.logc(line);
                     serverconn = true;
                     executorService.execute(new Thread(this));
-                    if(config.getLanguage().equals("ko")){
-                        Global.logc("클라이언트 기능이 활성화 되었습니다!");
-                    } else {
-                        Global.logc("Client enabled!");
-                    }
+                    Global.logc(nbundle("client-enabled"));
                 }
             } catch (UnknownHostException e) {
                 Global.loge("Invalid host!");
@@ -142,11 +123,7 @@ public class Client extends Thread{
                         }
                         bw.write(bandata + "\n");
                         bw.flush();
-                        if(config.getLanguage().equals("ko")){
-                            Global.logc("밴 목록을 서버로 전송했습니다!");
-                        } else {
-                            Global.logc("Ban list sented!");
-                        }
+                        Global.logc(nbundle("client-banlist-sented"));
                     } catch (IOException e) {
                         printStackTrace(e);
                     }
@@ -157,11 +134,7 @@ public class Client extends Thread{
                         bw.write(msg + "\n");
                         bw.flush();
                         Call.sendMessage("[#357EC7][SC] " + msg);
-                        if(config.getLanguage().equals("ko")){
-                            Global.logc("메세지를 " + config.getClienthost() + " 으로 전송했습니다. - " + message + "");
-                        } else {
-                            Global.logc("Message sent to " + config.getClienthost() + " - " + message + "");
-                        }
+                        Global.logc(nbundle("client-sent-message", config.getClienthost(), message));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -200,8 +173,6 @@ public class Client extends Thread{
                 String data = br.readLine();
                 if (data == null || data.equals("")) return;
 
-                Global.log(socket.getRemoteSocketAddress().toString());
-
                 if(data.matches("\\[(.*)]:.*")){
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
@@ -217,11 +188,7 @@ public class Client extends Thread{
                         if(data.substring(data.length()-5).equals("unban")){
                             JSONTokener convert = new JSONTokener(data);
                             JSONArray bandata = new JSONArray(convert);
-                            if(config.getLanguage().equals("ko")){
-                                Global.logc("서버에서 밴 해제 요청을 했습니다.");
-                            } else {
-                                Global.logc("Unban request received from remote server.");
-                            }
+                            Global.logc(nbundle("server-request-unban"));
                             for (int i = 0; i < bandata.length(); i++) {
                                 String[] array = bandata.getString(i).split("\\|", -1);
                                 if (array[0].length() == 12) {
@@ -233,11 +200,7 @@ public class Client extends Thread{
                                 if (array[0].equals("<unknown>")) {
                                     netServer.admins.unbanPlayerIP(array[1]);
                                 }
-                                if(config.getLanguage().equals("ko")){
-                                    Global.logc(bandata.getString(i)+" 플레이어 밴 해제 완료.");
-                                } else {
-                                    Global.logc(bandata.getString(i) + " Player unbanned.");
-                                }
+                                Global.logc(nbundle("unban-done", bandata.getString(i)));
                             }
                         } else {
                             JSONTokener test = new JSONTokener(data);
@@ -254,11 +217,7 @@ public class Client extends Thread{
                                     netServer.admins.banPlayerIP(array[1]);
                                 }
                             }
-                            if(config.getLanguage().equals("ko")){
-                                Global.logc("밴 데이터를 수신했습니다!");
-                            } else {
-                                Global.logc("Ban data received!");
-                            }
+                            Global.logc(nbundle("client-banlist-received"));
                         }
                     }catch (Exception e){
                         printStackTrace(e);
@@ -267,11 +226,7 @@ public class Client extends Thread{
                     Global.logw("Unknown data! - "+data);
                 }
             } catch (IOException e) {
-                if(config.getLanguage().equals("ko")){
-                    Global.logc(config.getClienthost()+" 서버와 연결이 해제되었습니다.");
-                } else {
-                    Global.logc(config.getClienthost()+" Server disconnected.");
-                }
+                Global.logc(nbundle("server-disconnected"));
 
                 serverconn = false;
                 try {

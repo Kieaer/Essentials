@@ -2,6 +2,7 @@ package essentials;
 
 import essentials.utils.Bundle;
 import essentials.utils.Config;
+import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
@@ -77,6 +78,7 @@ public class Global {
         Log.err("[EssentialPlayer] "+msg);
     }
 
+    // 코어가 없는 팀 찾기
     public static Team getTeamNoCore(Player player){
         int index = player.getTeam().ordinal()+1;
         while (index != player.getTeam().ordinal()){
@@ -91,6 +93,7 @@ public class Global {
         return player.getTeam();
     }
 
+    // 오류 메세지를 파일로 복사하거나 즉시 출력
     public static void printStackTrace(Throwable e) {
         if(!config.isDebug()){
             StringBuilder sb = new StringBuilder();
@@ -117,10 +120,19 @@ public class Global {
         }
     }
 
+    // 현재 시간출력
     public static String gettime(){
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         return "[" + now.format(dateTimeFormatter) + "] ";
+    }
+
+    // Bundle 파일에서 Essentials 문구를 포함시켜 출력
+    public static String bundle(Player player, String value, Object... parameter) {
+        JSONObject db = getData(player.uuid);
+        Locale locale = new Locale(db.getString("language"));
+        Bundle bundle = new Bundle(locale);
+        return bundle.getBundle(value, parameter);
     }
 
     public static String bundle(Player player, String value) {
@@ -130,6 +142,26 @@ public class Global {
         return bundle.getBundle(value);
     }
 
+    public static String bundle(String value, Object... paramter){
+        Locale locale = new Locale(config.getLanguage());
+        Bundle bundle = new Bundle(locale);
+        return bundle.getBundle(value, paramter);
+    }
+
+    public static String bundle(String value){
+        Locale locale = new Locale(config.getLanguage());
+        Bundle bundle = new Bundle(locale);
+        return bundle.getBundle(value);
+    }
+
+    // Bundle 파일에서 Essentials 문구 없이 출력
+    public static String nbundle(Player player, String value, Object... paramter) {
+        JSONObject db = getData(player.uuid);
+        Locale locale = new Locale(db.getString("language"));
+        Bundle bundle = new Bundle(locale);
+        return bundle.getNormal(value, paramter);
+    }
+
     public static String nbundle(Player player, String value) {
         JSONObject db = getData(player.uuid);
         Locale locale = new Locale(db.getString("language"));
@@ -137,6 +169,19 @@ public class Global {
         return bundle.getNormal(value);
     }
 
+    public static String nbundle(String value, Object... paramter){
+        Locale locale = new Locale(config.getLanguage());
+        Bundle bundle = new Bundle(locale);
+        return bundle.getNormal(value, paramter);
+    }
+
+    public static String nbundle(String value){
+        Locale locale = new Locale(config.getLanguage());
+        Bundle bundle = new Bundle(locale);
+        return bundle.getNormal(value);
+    }
+
+    // 숫자 카운트
     public static void setcount(Tile tile, int count){
         String[] pos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
         int[] zero = {1,1,1,1,0,1,1,0,1,1,0,1,1,1,1};
@@ -331,6 +376,17 @@ public class Global {
                     }
                 }
                 break;
+        }
+    }
+
+    // 각 언어별 motd
+    public static String getmotd(Player player){
+        JSONObject db = getData(player.uuid);
+        Locale locale = new Locale(db.getString("language"));
+        if(Core.settings.getDataDirectory().child("mods/Essentials/motd_"+locale.getCountry()+".txt").exists()){
+            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+locale.getCountry()+".txt").readString();
+        } else {
+            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_en.txt").readString();
         }
     }
 }

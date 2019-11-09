@@ -50,6 +50,7 @@ import static io.anuke.mindustry.Vars.*;
 public class Threads extends TimerTask implements Runnable{
     public static String playtime;
     public static String uptime;
+    public static boolean peacetime;
     public static JSONArray nukeposition = new JSONArray();
     public static ArrayList<Process> process = new ArrayList<>();
 
@@ -187,15 +188,13 @@ public class Threads extends TimerTask implements Runnable{
                     cal1.add(Calendar.SECOND, 1);
                     playtime = format.format(cal1.getTime());
                     // Anti PvP rushing timer
-                    if(config.isEnableantirush() && Vars.state.rules.pvp && cal1.equals(config.getAntirushtime())) {
-                        Call.sendMessage("[scarlet]== NOTICE ==");
-                        Call.sendMessage("[green]Peace time is over!");
-                        Call.sendMessage("[green]You can now attack other teams using your own mechs!");
-
+                    if(config.isEnableantirush() && Vars.state.rules.pvp && cal1.after(config.getAntirushtime()) && peacetime) {
                         state.rules.playerDamageMultiplier = 1f;
                         state.rules.playerHealthMultiplier = 1f;
+                        peacetime = false;
                         for(int i = 0; i < playerGroup.size(); i++) {
                             Player player = playerGroup.all().get(i);
+                            player.sendMessage(bundle("pvp-peacetime"));
                             Call.onPlayerDeath(player);
                         }
                     }
@@ -1048,14 +1047,19 @@ public class Threads extends TimerTask implements Runnable{
             int a=0;
             for (Item item : content.items()) {
                 if (item.type == ItemType.material) {
-                    int resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                    int resource;
+                    if(state.teams.get(Team.sharded).cores.first().entity.items.has(item)){
+                        resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                    } else {
+                        return;
+                    }
                     int temp = resource - pre.get(a);
                     if(temp <= -50){
                         StringBuilder using = new StringBuilder();
                         for(int b=0;b<playerGroup.size();b++) {
                             Player p = playerGroup.all().get(b);
+                            if(p.buildRequest().block.requirements != null) continue;
                             for(int c=0;c<p.buildRequest().block.requirements.length;c++){
-                                //if(p.buildRequest().block.requirements[c].item != null) continue;
                                 Item ad = p.buildRequest().block.requirements[c].item;
                                 if(ad == name.get(a)){
                                     using.append(p.name).append(", ");

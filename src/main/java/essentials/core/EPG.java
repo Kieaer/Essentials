@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
+import static essentials.Global.nbundle;
 import static essentials.core.PlayerDB.getData;
 
 public class EPG {
@@ -30,14 +31,14 @@ public class EPG {
                     if(String.valueOf(obj.get(name)) != null) {
                         blockreqlevel = Integer.parseInt(String.valueOf(obj.get(name)));
                     } else if(e.tile.block().name.equals("air")){
-                        Global.loge(name+" block require level data isn't found!");
+                        Global.loge(nbundle("epg-block-not-valid", name));
                     } else {
                         return;
                     }
 
                     if(level < blockreqlevel){
                         Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player)e.builder).id);
-                        ((Player)e.builder).sendMessage(name+" block requires "+blockreqlevel+" level.");
+                        ((Player)e.builder).sendMessage(nbundle(((Player)e.builder), "epg-block-require", ((Player)e.builder).name, blockreqlevel));
                     }
                 }
             });
