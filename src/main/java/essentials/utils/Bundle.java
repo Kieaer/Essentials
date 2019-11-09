@@ -1,5 +1,7 @@
 package essentials.utils;
 
+import essentials.special.UTF8Control;
+
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -9,9 +11,9 @@ public class Bundle {
     private ResourceBundle RESOURCE_BUNDLE;
     public Bundle(Locale locale){
         try{
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale);
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
         }catch (Exception e){
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle");
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", new UTF8Control());
         }
     }
 

@@ -748,12 +748,7 @@ public class PlayerDB {
         }
 
         // Show motd
-        String motd;
-        if(db.getString("language").equals("KR")){
-            motd = Core.settings.getDataDirectory().child("mods/Essentials/motd_ko.txt").readString();
-        } else {
-            motd = Core.settings.getDataDirectory().child("mods/Essentials/motd.txt").readString();
-        }
+        String motd = getmotd(player);
         int count = motd.split("\r\n|\r|\n").length;
         if(count > 10){
             Call.onInfoMessage(player.con, motd);
