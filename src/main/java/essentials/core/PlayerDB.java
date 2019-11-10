@@ -35,7 +35,6 @@ import static io.anuke.mindustry.Vars.playerGroup;
 
 public class PlayerDB {
     private static int dbversion = 1;
-    private static boolean queryresult;
     public static Connection conn;
     private static boolean loginresult;
     private static boolean registerresult;
@@ -196,7 +195,7 @@ public class PlayerDB {
                 pstmt.setString(35, accountpw);
                 pstmt.executeUpdate();
                 pstmt.close();
-                Global.logp(nbundle("player-db-created"));
+                Global.logp(nbundle("player-db-created", name));
             }
             rs.close();
             stmt.close();
@@ -252,18 +251,15 @@ public class PlayerDB {
             rs.close();
             stmt.close();
             if(json.toString().equals("{}")){
-                Global.logpe(uuid+" Player data is empty.");
                 Config config = new Config();
                 if(config.isDebug()) {
-                    Exception e = new Exception("플레이어 데이터가 없습니다!");
-                    throw e;
+                    Global.logpe(uuid+" Player data is empty.");
+                    throw new Exception("플레이어 데이터가 없습니다!");
                 }
                 // todo make invalid player information
             }
-            queryresult = true;
         } catch (Exception e){
             printStackTrace(e);
-            queryresult = false;
         }
         return json;
     }
@@ -544,8 +540,6 @@ public class PlayerDB {
                     int timesjoined = Vars.netServer.admins.getInfo(player.uuid).timesJoined;
                     int timeskicked = Vars.netServer.admins.getInfo(player.uuid).timesKicked;
 
-                    player.sendMessage(bundle(player, "player-name-changed", player.name));
-
                     try {
                         createNewDatabase(player.name, player.uuid, geo, geocode, lang, player.isAdmin, timesjoined, timeskicked, nowString, nowString, id, hashed);
                         registerresult = true;
@@ -554,6 +548,8 @@ public class PlayerDB {
                         Call.onInfoMessage(player.con, bundle(player, "plugin-error", Arrays.toString(e.getStackTrace())));
                         player.con.kick(Global.nbundle("plugin-error-kick"));
                     }
+
+                    player.sendMessage(bundle(player, "player-name-changed", player.name));
                 } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)){
                     player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
                             "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");

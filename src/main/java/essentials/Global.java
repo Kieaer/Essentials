@@ -383,8 +383,8 @@ public class Global {
     public static String getmotd(Player player){
         JSONObject db = getData(player.uuid);
         Locale locale = new Locale(db.getString("language"));
-        if(Core.settings.getDataDirectory().child("mods/Essentials/motd_"+locale.getCountry()+".txt").exists()){
-            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+locale.getCountry()+".txt").readString();
+        if(Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").exists()){
+            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").readString();
         } else {
             return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_en.txt").readString();
         }

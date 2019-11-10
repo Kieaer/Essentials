@@ -37,7 +37,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
     - [ ] ~~Monitoring no thorium input~~
     - [ ] ~~Make the reactor near the core~~
     - [x] Destroy thorium reactor when reactor overheated
-  - [ ] Detect non-block destroy/place griefing (Pull requested to Mindustry)
+  - [ ] Detect non-block destroy/place griefing <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
     - [ ] change mass driver 
     - [ ] change phase conveyor
     - [ ] change Tunnel
@@ -62,7 +62,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [x] Power node
 - [ ] PvP mode rule
   - [ ] Anti coal in mech
-- [ ] Chat feature upgrade <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
+- [ ] Chat feature upgrade
   - [ ] Blocking bad words
   - [ ] Nickname prefix
   - [ ] Remove translate before massage

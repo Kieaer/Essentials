@@ -36,12 +36,32 @@ public class Log{
             }
         });*/
 
+        /*Events.on(TapEvent.class, e-> {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
+                if (config.getLanguage().equals("ko")) {
+                    writelog("tap", gettime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭을 건드렸습니다.");
+                } else {
+                    writelog("tap", gettime() + "Player "+e.player.name + " has touched " + e.tile.entity.block.name + ".");
+                }
+            }
+        });
+
+        Events.on(TapConfigEvent.class, e-> {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
+                if (config.getLanguage().equals("ko")) {
+                    writelog("tap", gettime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭의 설정을 변경했습니다.");
+                } else {
+                    writelog("tap", gettime() + "Player "+e.player.name + " edited " + e.tile.entity.block.name + "'s block setting.");
+                }
+            }
+        });*/
+
         Events.on(BlockBuildEndEvent.class, e -> {
             if(!e.breaking && e.tile.entity() != null && e.player != null && e.tile.entity.block != null && e.player.name != null) {
                 if (config.getLanguage().equals("ko")) {
                     writelog("block", gettime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭을 만들었습니다.");
                 } else {
-                    writelog("block", gettime() + e.player.name + " Player place " + e.tile.entity.block.name + ".");
+                    writelog("block", gettime() + "Player "+e.player.name + " has created block " + e.tile.entity.block.name + ".");
                 }
             }
         });
@@ -51,7 +71,7 @@ public class Log{
                 if (config.getLanguage().equals("ko")) {
                     writelog("block", gettime() + ((Player) e.builder).name + " 플레이어가 " + e.builder.buildRequest().block.name + " 블럭을 파괴했습니다.");
                 } else {
-                    writelog("block", gettime() + ((Player) e.builder).name + " Player break " + e.builder.buildRequest().block.name + ".");
+                    writelog("block", gettime() + "Player "+((Player) e.builder).name + " has destroyed block " + e.builder.buildRequest().block.name + ".");
                 }
             }
         });
@@ -60,7 +80,7 @@ public class Log{
             if(config.getLanguage().equals("ko")) {
                 writelog("player", gettime() + e.player.name + " 플레이어가 기체를 " + e.mech.name + " 으로 변경했습니다.");
             } else {
-                writelog("player", gettime() + e.player.name + " has change mech to " + e.mech.name + ".");
+                writelog("player", gettime() + "Player "+e.player.name + " has change mech to " + e.mech.name + ".");
             }
         });
 
@@ -70,7 +90,7 @@ public class Log{
             if(config.getLanguage().equals("ko")) {
                 writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " 플레이어가 서버에 입장했습니다.");
             } else {
-                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player joined.");
+                writelog("player", gettime() + "Player "+e.player.name + "/" + e.player.uuid + "/" + ip + " joined.");
             }
         });
 
@@ -80,7 +100,7 @@ public class Log{
             if(config.getLanguage().equals("ko")) {
                 writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " 플레이어가 서버에 연결했습니다.");
             } else {
-                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player connected.");
+                writelog("player", gettime() + "Player "+e.player.name + "/" + e.player.uuid + "/" + ip + " connected.");
             }
         });
 
@@ -90,7 +110,7 @@ public class Log{
             if(config.getLanguage().equals("ko")) {
                 writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " 플레이어가 서버에서 나갔습니다.");
             } else {
-                writelog("player", gettime() + e.player.name + "/" + e.player.uuid + "/" + ip + " Player disconnected.");
+                writelog("player", gettime() + "Player "+ e.player.name + "/" + e.player.uuid + "/" + ip + " disconnected.");
             }
         });
 
@@ -98,7 +118,7 @@ public class Log{
             if(config.getLanguage().equals("ko")) {
                 writelog("deposit", gettime() + e.player.name + " 플레이어가 " + e.player.item().item.name + " 아이템을 " + e.tile.block().name + " 으로 직접 옮겼습니다.");
             } else {
-                writelog("deposit", gettime() + e.player.name + " Player has moved item " + e.player.item().item.name + " to " + e.tile.block().name + ".");
+                writelog("deposit", gettime() + "Player "+ e.player.name + " has moved item " + e.player.item().item.name + " to " + e.tile.block().name + ".");
             }
         });
     }

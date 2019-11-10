@@ -30,6 +30,7 @@ import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets.KickReason;
+import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
 import io.anuke.mindustry.world.Block;
@@ -117,8 +118,8 @@ public class Main extends Plugin {
 		// Essentials EPG Features
 		EPG epg = new EPG();
 		epg.main();
-/*
-        Events.on(TapEvent.class, e-> {
+
+        /*Events.on(TapEvent.class, e-> {
         	if(e.tile.entity != null) {
 				Global.log("TapEvent");
 				Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name);
@@ -130,20 +131,23 @@ public class Main extends Plugin {
 				Global.log("TapConfigEvent");
 				Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name + ", value: " + e.value);
 			}
-		});
+		});*/
 
+		/*
 		Events.on(WithdrawEvent.class, e->{
 			Global.log("WithdrawEvent");
 			Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name);
 			Global.log("item: "+e.item.name+", amount: "+e.amount);
 		});
+		*/
+
 
 		// If desync (May work)
 		Events.on(ValidateException.class, e -> {
 			Call.onInfoMessage(e.player.con, "You're desynced! The server will send data again.");
 			Call.onWorldDataBegin(e.player.con);
 			netServer.sendWorldData(e.player);
-		});*/
+		});
 
 		Events.on(GameOverEvent.class, e -> {
 			if (Vars.state.rules.pvp) {
@@ -234,7 +238,8 @@ public class Main extends Plugin {
 			}
 			for (int a = 0; a < playerGroup.size(); a++) {
 				Player other = playerGroup.all().get(a);
-				other.sendMessage(bundle(other, "depositevent"));
+				if(getData(other.uuid).toString().equals("{}")) return;
+				other.sendMessage(bundle(other, "depositevent", e.player.name, e.player.item().item.name, e.tile.block().name));
 			}
 		});
 
@@ -242,15 +247,14 @@ public class Main extends Plugin {
 			if (config.isLoginenable()) {
 				e.player.isAdmin = false;
 
-				JSONObject db = getData(e.player.uuid);
-
-				if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty() || db.toString().equals("{}")) {
+				if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+					JSONObject db = getData(e.player.uuid);
 					if (db.has("uuid")) {
 						if (db.getString("uuid").equals(e.player.uuid)) {
 							e.player.sendMessage(bundle(e.player, "autologin"));
 							playerdb.load(e.player, null);
 						}
-					} else {
+					} else if(db.toString().equals("{}")){
 						Team no_core = getTeamNoCore(e.player);
 						e.player.setTeam(no_core);
 						Call.onPlayerDeath(e.player);
@@ -398,12 +402,16 @@ public class Main extends Plugin {
 					} else {
 						Vote.list.add(e.player.uuid);
 						int current = Vote.list.size();
-						for (int a = 0; a < playerGroup.size(); a++) {
-							Player other = playerGroup.all().get(a);
-							other.sendMessage(bundle(other, "vote-current"));
+						for(Player others : playerGroup.all()){
+							if(getData(others.uuid).toString().equals("{}")) return;
+							others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
 						}
-						if ((Vote.require - current) <= 0) {
-							Vote.counting.interrupt();
+						if (Vote.require - current == 0) {
+							Vote vote = new Vote();
+							vote.gameover.interrupt();
+							vote.skipwave.interrupt();
+							vote.rollback.interrupt();
+							vote.kick.interrupt();
 						}
 					}
 				}
@@ -575,6 +583,7 @@ public class Main extends Plugin {
 		// Set main thread works
 		Core.app.addListener(new ApplicationListener() {
 			int delaycount = 0;
+			boolean a1, a2, a3, a4 = false;
 
 			@Override
 			public void update() {
@@ -614,85 +623,16 @@ public class Main extends Plugin {
 							Call.setMessageBlockText(null, world.tile(x, y), text);
 						}
 						delaycount = 0;
-					} catch (Exception ignored) {
-					}
-				} else {
-					delaycount++;
-				}
-			}
-
-			public void dispose() {
-				// Kill timer thread
-				try {
-					timer.cancel();
-					Global.log(Global.nbundle("count-thread-disabled"));
-				} catch (Exception e) {
-					Global.loge(Global.nbundle("count-thread-disable-error"));
-					printStackTrace(e);
-				}
-
-				closeconnect();
-
-				// Stop server
-				if (config.isServerenable()) {
-					try {
-						for (Server.Service ser : Server.list) {
-							ser.interrupt();
-							Server.list.remove(ser);
-						}
-
-						Server.active = false;
-						Server.serverSocket.close();
-
-						Global.log(nbundle("server-thread-disabled"));
-					} catch (Exception e) {
-						printStackTrace(e);
-						Global.loge(nbundle("server-thread-disable-error"));
-					}
-				}
-
-				// Stop client
-				if (config.isClientenable()) {
-					Client client = new Client();
-					client.main("exit", null, null);
-					//client.interrupt();
-					Global.log(nbundle("client-thread-disabled"));
-				}
-
-				for (Process value : process) {
-					value.destroy();
-				}
-
-				executorService.shutdown();
-
-				PingServer.socket.close();
-
-				// save jumpzone data
-				Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
-				Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
-				Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
-			}
-		});
-
-		Threads.uptime = "00:00.00";
-
-
-		Core.app.addListener(new ApplicationListener() {
-			int delaycount = 0;
-			boolean a1, a2, a3, a4 = false;
-
-			@Override
-			public void update() {
-				if (delaycount == 20) {
-					delaycount = 0;
-					a1 = false;
-					a2 = false;
-					a3 = false;
-					a4 = false;
+						a1 = false;
+						a2 = false;
+						a3 = false;
+						a4 = false;
+					} catch (Exception ignored) {}
 				} else {
 					delaycount++;
 				}
 
+				// It must run faster
 				for (int i = 0; i < nukedata.size(); i++) {
 					Tile target = nukedata.get(i);
 					try {
@@ -746,7 +686,57 @@ public class Main extends Plugin {
 					}
 				}
 			}
+
+			public void dispose() {
+				// Kill timer thread
+				try {
+					timer.cancel();
+					Global.log(Global.nbundle("count-thread-disabled"));
+				} catch (Exception e) {
+					Global.loge(Global.nbundle("count-thread-disable-error"));
+					printStackTrace(e);
+				}
+
+				closeconnect();
+
+				// Stop server
+				if (config.isServerenable()) {
+					try {
+						for (Server.Service ser : Server.list) {
+							ser.interrupt();
+							Server.list.remove(ser);
+						}
+
+						Server.active = false;
+						Server.serverSocket.close();
+
+						Global.log(nbundle("server-thread-disabled"));
+					} catch (Exception e) {
+						printStackTrace(e);
+						Global.loge(nbundle("server-thread-disable-error"));
+					}
+				}
+
+				// Stop client
+				if (config.isClientenable()) {
+					Client client = new Client();
+					client.main("exit", null, null);
+					//client.interrupt();
+					Global.log(nbundle("client-thread-disabled"));
+				}
+
+				for (Process value : process) {
+					value.destroy();
+				}
+
+				executorService.shutdown();
+
+				PingServer.socket.close();
+			}
 		});
+
+		Threads.uptime = "00:00.00";
+
         Global.logco(config.checkfeatures());
 	}
 
@@ -1407,7 +1397,7 @@ public class Main extends Plugin {
 					PlayerDB playerdb = new PlayerDB();
 					playerdb.load(player, arg[0]);
 				} else {
-					player.sendMessage(bundle(player, "login-failed"));
+					player.sendMessage("[green][Essentials] [scarlet]Login failed/로그인 실패!!");
 				}
 			} else {
 				player.sendMessage(bundle(player, "login-not-use"));
@@ -1459,7 +1449,7 @@ public class Main extends Plugin {
 						player.sendMessage(bundle(player, "register-success"));
 					}
 				} else {
-					player.sendMessage(bundle(player, "register-fail"));
+					player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
 				}
 			} else {
 				player.sendMessage(bundle(player,"login-not-use"));
