@@ -389,4 +389,45 @@ public class Global {
             return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_en.txt").readString();
         }
     }
+
+    // No 글자 표시
+    public static void setno(Tile tile){
+        String[] pos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
+        int[] n = {1,1,1,1,0,1,1,0,1,1,0,1,1,0,1};
+        int[] o = {1,1,1,1,0,1,1,0,1,1,0,1,1,1,1};
+
+        for(int a=0;a<15;a++) {
+            String position = pos[a];
+            String[] data = position.split(",");
+            int x = Integer.parseInt(data[0]);
+            int y = Integer.parseInt(data[1]);
+            Tile target = world.tile(tile.x, tile.y);
+            if(n[a] == 1) {
+                if (world.tile(target.x + x, target.y + y).block() != Blocks.titaniumWall) {
+                    Call.onConstructFinish(world.tile(target.x + x, target.y + y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
+                }
+            } else if(n[a] == 0){
+                if(world.tile(target.x+x, target.y+y).block().solid){
+                    Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                }
+            }
+        }
+
+        for(int a=0;a<15;a++) {
+            String position = pos[a];
+            String[] data = position.split(",");
+            int x = Integer.parseInt(data[0]);
+            int y = Integer.parseInt(data[1]);
+            Tile target = world.tile(tile.x, tile.y);
+            if(o[a] == 1) {
+                if (world.tile(target.x + x, target.y + y).block() != Blocks.titaniumWall) {
+                    Call.onConstructFinish(world.tile(target.x+4+x, target.y+y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
+                }
+            } else if(o[a] == 0){
+                if(world.tile(target.x+x, target.y+y).block().solid){
+                    Call.onDeconstructFinish(world.tile(target.x+4+x,target.y+y), Blocks.air, 0);
+                }
+            }
+        }
+    }
 }

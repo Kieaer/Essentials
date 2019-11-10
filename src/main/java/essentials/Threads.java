@@ -287,12 +287,17 @@ public class Threads extends TimerTask implements Runnable{
     }
     public static class checkgrief extends Thread {
         Player player;
+
         int routercount;
         int breakcount;
         int conveyorcount;
+        int impcount;
+
         int routerlimit;
         int breaklimit;
         int conveyorlimit;
+        int implimit;
+
         ArrayList<Block> impblock = new ArrayList<>();
         ArrayList<Block> block = new ArrayList<>();
 
@@ -303,54 +308,76 @@ public class Threads extends TimerTask implements Runnable{
 
         @Override
         public void run() {
-            // Important blocks
+            // 중요 건물 추가
             impblock.add(Blocks.thoriumReactor);
             impblock.add(Blocks.impactReactor);
             impblock.add(Blocks.blastDrill);
             impblock.add(Blocks.siliconSmelter);
             impblock.add(Blocks.cryofluidMixer);
-            impblock.add(Blocks.battery);
-            impblock.add(Blocks.batteryLarge);
             impblock.add(Blocks.oilExtractor);
             impblock.add(Blocks.spectre);
             impblock.add(Blocks.meltdown);
             impblock.add(Blocks.turbineGenerator);
 
-            // Normal blocks
+            // 일반 블록 추가
             block.add(Blocks.phaseConduit);
 
+            // 기본값 설정
             routercount = 0;
             breakcount = 0;
             conveyorcount = 0;
+            impcount = 0;
 
+            // 최대값 설정 (레벨비례)
             int level = getData(player.uuid).getInt("level");
             routerlimit = 10 + (level * 2);
+            implimit = 5 + (level * 2);
             breaklimit = 30 + (level * 3);
             conveyorlimit = 20 + (level * 3);
 
-            // Break count
+            // 블럭 파괴 카운트
             Events.on(BuildSelectEvent.class, e -> {
+                // Nulldustry
                 if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                     if (e.breaking) {
-                        Block block = e.builder.buildRequest().block;
-                        if (block == Blocks.thoriumReactor) {
-                            breakcount++;
+                        // 그냥 빠른파괴
+                        breakcount++;
+                        if(breakcount > breaklimit){
+                            for (int i = 0; i < playerGroup.size(); i++) {
+                                Player other = playerGroup.all().get(i);
+                                other.sendMessage(bundle(other, "grief-fast-destroy", ((Player) e.builder).name));
+                            }
                         }
+
+                        // 중요 건물
                         for (Block value : impblock) {
                             if (e.builder.buildRequest().block == value) {
-                                breakcount++;
-                                if (breakcount > 15) {
-                                    Call.sendMessage("[scarlet]ALERT! " + ((Player) e.builder).name + "[white] player is destroying an [green]important building[]!");
+                                implimit++;
+                                if (impcount > implimit) {
+                                    for (int i = 0; i < playerGroup.size(); i++) {
+                                        Player other = playerGroup.all().get(i);
+                                        other.sendMessage(bundle(other, "grief-fast-imp", ((Player) e.builder).name));
+                                    }
                                 }
                             }
                         }
+
+                        // 컨베이어
                         if (e.builder.buildRequest().block == Blocks.conveyor || e.builder.buildRequest().block == Blocks.titaniumConveyor) {
                             conveyorcount++;
-                            if (conveyorcount > 50) {
-                                Call.sendMessage("[scarlet]ALERT! " + ((Player) e.builder).name + "[white] player is destroying an many [green]conveyors[]!");
+                            if (conveyorcount > conveyorlimit) {
+                                for (int i = 0; i < playerGroup.size(); i++) {
+                                    Player other = playerGroup.all().get(i);
+                                    other.sendMessage(bundle(other, "grief-fast-conveyor", ((Player) e.builder).name));
+                                }
                             }
                         }
                     }
+                    Global.log(((Player) e.builder).name);
+                    Global.log("분배기: "+routercount+"/"+routerlimit);
+                    Global.log("중요건물: "+impcount+"/"+implimit);
+                    Global.log("파괴: "+breakcount+"/"+breaklimit);
+                    Global.log("컨베이어: "+conveyorcount+"/"+conveyorlimit);
                 }
             });
 
@@ -365,22 +392,21 @@ public class Threads extends TimerTask implements Runnable{
                     }
                 }
             });
+            TimerTask timer = new TimerTask() {
+                @Override
+                public void run() {
+                    routercount = 0;
+                    breakcount = 0;
+                    conveyorcount = 0;
+                    impcount = 0;
+                }
+            };
+            Timer timer1 = new Timer(true);
+            timer1.scheduleAtFixedRate(timer, 20000, 20000);
             if(player == null){
+                timer1.cancel();
                 this.interrupt();
             }
-            Core.app.addListener(new ApplicationListener(){
-                int delaycount = 0;
-                @Override
-                public void update(){
-                    if(delaycount == 600){
-                        routercount = 0;
-                        breakcount = 0;
-                        conveyorcount = 0;
-                    } else {
-                        delaycount++;
-                    }
-                }
-            });
         }
     }
     static class checkthorium extends Thread {
@@ -506,7 +532,6 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-
     static class jumpcheck extends Thread {
         // Source from Anuken/CoreBot
         @Override
@@ -549,6 +574,8 @@ public class Threads extends TimerTask implements Runnable{
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
                         jumpcount.put(finalI, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
+                    } else {
+                        setno(world.tile(x, y));
                     }
                 });
             }
