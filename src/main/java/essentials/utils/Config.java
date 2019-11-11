@@ -3,6 +3,7 @@ package essentials.utils;
 import essentials.Global;
 import io.anuke.arc.Core;
 import org.json.JSONArray;
+import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -31,9 +32,9 @@ public class Config {
         }
     }
 
-    public static JSONArray jumpzone = new JSONArray();
-    public static JSONArray jumpcount = new JSONArray();
-    public static JSONArray jumpall = new JSONArray();
+    public static JSONArray jumpzone;
+    public static JSONArray jumpcount;
+    public static JSONArray jumpall;
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6);
     public final static String servername = Core.settings.getString("servername");
@@ -438,7 +439,7 @@ public class Config {
                     "\n" +
                     "# Database type setting (Default is SQLite)\n" +
                     "# Example - mariadb://localhost:3306/dbname\n" +
-                    "# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.# dburl\n" +
+                    "# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.\n" +
                     "sqlite: " + isSqlite() + "\n" +
                     "dburl: " + getDBurl() + "\n" +
                     "dbid: " + getDBid() + "\n" +
@@ -468,5 +469,10 @@ public class Config {
         if(getVersion() < 5){
             Global.logco(nbundle("config-updated"));
         }
+
+        // 서버간 이동 타일 불러오기
+        jumpzone = new JSONArray(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").readString()));
+        jumpcount = new JSONArray(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").readString()));
+        jumpall = new JSONArray(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").readString()));
     }
 }

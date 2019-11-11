@@ -27,8 +27,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,22 +59,22 @@ public class Threads extends TimerTask implements Runnable{
     @Override
     public void run() {
         // Player playtime counting
-        executorService.execute(new playtime());
+        new playtime().start();
 
         // Temporarily ban players time counting
-        executorService.execute(new bantime());
+        new bantime().start();
 
         // Map playtime counting
-        executorService.execute(new maptime());
+        new maptime().start();
 
         // Server uptime counting
-        executorService.execute(new uptime());
+        new uptime().start();
 
         // Vote monitoring
         //executorService.execute(new checkvote());
 
         // client players counting in servername
-        executorService.execute(new changename());
+        new changename().start();
 
         // Save server to server jump data
         Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
@@ -82,13 +84,13 @@ public class Threads extends TimerTask implements Runnable{
         // If world loaded
         if(state.is(GameState.State.playing)) {
             // server to server monitoring
-            executorService.execute(new jumpzone());
+            new jumpzone().start();
 
             // client players counting
-            executorService.execute(new jumpcheck());
+            new jumpcheck().start();
 
             // all client players counting
-            executorService.execute(new jumpall());
+            new jumpall().start();
 
             // check resource use fast
             if(config.isScanresource() && !Vars.state.teams.get(Team.sharded).cores.isEmpty()) {
@@ -103,50 +105,54 @@ public class Threads extends TimerTask implements Runnable{
     class playtime extends Thread {
         @Override
         public void run(){
+            
             try{
                 if(playerGroup.size() > 0){
                     for(int i = 0; i < playerGroup.size(); i++){
                         Player player = playerGroup.all().get(i);
-                        if(!Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-                            JSONObject db = new JSONObject();
-                            try {
-                                db = getData(player.uuid);
-                            }catch (Exception e){
-                                printStackTrace(e);
-                            }
-                            String data;
-                            if(db.has("playtime")){
-                                data = db.getString("playtime");
-                            } else {
-                                return;
-                            }
-                            SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-                            Date d1;
-                            Calendar cal;
-                            String newTime = null;
-                            try {
-                                d1 = format.parse(data);
-                                cal = Calendar.getInstance();
-                                cal.setTime(d1);
-                                cal.add(Calendar.SECOND, 1);
-                                newTime = format.format(cal.getTime());
-                            } catch (ParseException e1) {
-                                printStackTrace(e1);
-                            }
+                        Thread t = new Thread(() -> {
+                            if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+                                JSONObject db = new JSONObject();
+                                try {
+                                    db = getData(player.uuid);
+                                } catch (Exception e) {
+                                    printStackTrace(e);
+                                }
+                                String data;
+                                if (db.has("playtime")) {
+                                    data = db.getString("playtime");
+                                } else {
+                                    return;
+                                }
+                                SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+                                Date d1;
+                                Calendar cal;
+                                String newTime = null;
+                                try {
+                                    d1 = format.parse(data);
+                                    cal = Calendar.getInstance();
+                                    cal.setTime(d1);
+                                    cal.add(Calendar.SECOND, 1);
+                                    newTime = format.format(cal.getTime());
+                                } catch (ParseException e1) {
+                                    printStackTrace(e1);
+                                }
 
-                            // Exp caculating
-                            int exp = db.getInt("exp");
-                            int newexp = exp+(int)(Math.random()*5);
+                                // Exp caculating
+                                int exp = db.getInt("exp");
+                                int newexp = exp + (int) (Math.random() * 5);
 
-                            writeData("UPDATE players SET exp = '"+newexp+"', playtime = '"+newTime+"' WHERE uuid = '"+player.uuid+"'");
-
-                            Exp.exp(player.name, player.uuid);
-                        }
+                                writeData("UPDATE players SET exp = '" + newexp + "', playtime = '" + newTime + "' WHERE uuid = '" + player.uuid + "'");
+                                Exp.exp(player.name, player.uuid);
+                            }
+                        });
+                        t.start();
                     }
                 }
             }catch (Exception ex){
                 printStackTrace(ex);
             }
+            
         }
     }
     static class bantime extends Thread {
@@ -348,6 +354,13 @@ public class Threads extends TimerTask implements Runnable{
                                 other.sendMessage(bundle(other, "grief-fast-destroy", ((Player) e.builder).name));
                             }
                         }
+                        if(breakcount > breaklimit + 15){
+                            Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
+                            for (int i = 0; i < playerGroup.size(); i++) {
+                                Player other = playerGroup.all().get(i);
+                                other.sendMessage(bundle(other, "grief-detect", ((Player) e.builder).name));
+                            }
+                        }
 
                         // 중요 건물
                         for (Block value : impblock) {
@@ -358,6 +371,13 @@ public class Threads extends TimerTask implements Runnable{
                                         Player other = playerGroup.all().get(i);
                                         other.sendMessage(bundle(other, "grief-fast-imp", ((Player) e.builder).name));
                                     }
+                                }
+                            }
+                            if(impcount > impcount + 4){
+                                Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
+                                for (int i = 0; i < playerGroup.size(); i++) {
+                                    Player other = playerGroup.all().get(i);
+                                    other.sendMessage(bundle(other, "grief-detect", ((Player) e.builder).name));
                                 }
                             }
                         }
@@ -371,13 +391,15 @@ public class Threads extends TimerTask implements Runnable{
                                     other.sendMessage(bundle(other, "grief-fast-conveyor", ((Player) e.builder).name));
                                 }
                             }
+                            if(conveyorcount > conveyorcount + 10){
+                                Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
+                                for (int i = 0; i < playerGroup.size(); i++) {
+                                    Player other = playerGroup.all().get(i);
+                                    other.sendMessage(bundle(other, "grief-detect", ((Player) e.builder).name));
+                                }
+                            }
                         }
                     }
-                    Global.log(((Player) e.builder).name);
-                    Global.log("분배기: "+routercount+"/"+routerlimit);
-                    Global.log("중요건물: "+impcount+"/"+implimit);
-                    Global.log("파괴: "+breakcount+"/"+breaklimit);
-                    Global.log("컨베이어: "+conveyorcount+"/"+conveyorlimit);
                 }
             });
 
@@ -386,8 +408,19 @@ public class Threads extends TimerTask implements Runnable{
                 if (!e.breaking && e.player != null && e.player.buildRequest() != null && !state.teams.get(e.player.getTeam()).cores.isEmpty()) {
                     if (e.player.buildRequest().block == Blocks.router) {
                         routercount++;
-                        if (routercount > 20) {
+                        if (routercount > routerlimit) {
+                            for (int i = 0; i < playerGroup.size(); i++) {
+                                Player other = playerGroup.all().get(i);
+                                other.sendMessage(bundle(other, "grief-fast-router", e.player.name));
+                            }
                             Call.sendMessage("[scarlet]ALERT! " + e.player.name + "[white] player is spamming [gray]router[]!");
+                        }
+                        if(routercount > routerlimit + 20){
+                            Call.onKick(e.player.con, nbundle("grief-detect-kick"));
+                            for (int i = 0; i < playerGroup.size(); i++) {
+                                Player other = playerGroup.all().get(i);
+                                other.sendMessage(bundle(other, "grief-detect", e.player.name));
+                            }
                         }
                     }
                 }
@@ -536,6 +569,7 @@ public class Threads extends TimerTask implements Runnable{
         // Source from Anuken/CoreBot
         @Override
         public void run() {
+
             for (int i=0;i<jumpcount.length();i++) {
                 String jumpdata = jumpcount.getString(i);
                 String[] data = jumpdata.split("/");
@@ -885,151 +919,118 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-}
+    public static class Vote{
+        private Player player;
+        private Player target;
+        private String type;
+        static boolean isvoting;
+        static ArrayList<String> list = new ArrayList<>();
+        static int require;
 
-class Vote{
-    private static Player player;
-    private static Player target;
-    static boolean isvoting;
-    static ArrayList<String> list = new ArrayList<>();
-    static int require;
+        Vote(Player player, String type, String target){
+            this.player = player;
+            if(target != null){
+                Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(target));
+                if(other != null){
+                    this.target = other;
+                }
+            }
+            this.type = type;
+            main();
+        }
 
-    public void main(Player player, String type, String target){
-        Vote.player = player;
-        if(target != null){
-            Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(target));
-            if(other != null){
-                Vote.target = other;
+        public void main(){
+            if(playerGroup.size() <= 3){
+                player.sendMessage(bundle(player, "vote-min"));
+                return;
+            }
+            require = (int) Math.ceil((double) playerGroup.size() / 3);
+
+            switch(type) {
+                case "gameover":
+                    if(!isvoting){
+                        isvoting = true;
+                        for(Player others : playerGroup.all()){
+                            if(getData(others.uuid).toString().equals("{}")) return;
+                            others.sendMessage(bundle(others, "vote-gameover"));
+                        }
+                        gameover.start();
+                    } else {
+                        player.sendMessage(bundle(player, "vote-in-processing"));
+                    }
+                    break;
+                case "skipwave":
+                    if(!isvoting){
+                        isvoting = true;
+                        for(Player others : playerGroup.all()){
+                            others.sendMessage(bundle(others, "vote-skipwave"));
+                        }
+                        skipwave.start();
+                    } else {
+                        player.sendMessage(bundle(player, "vote-in-processing"));
+                    }
+                    break;
+                case "kick":
+                    if(!isvoting){
+                        isvoting = true;
+                        for(Player others : playerGroup.all()){
+                            others.sendMessage(bundle(others, "vote-kick"));
+                        }
+                        kick.start();
+                    } else {
+                        player.sendMessage(bundle(player, "vote-in-processing"));
+                    }
+                    break;
+                case "rollback":
+                    if(!isvoting){
+                        isvoting = true;
+                        for(Player others : playerGroup.all()){
+                            others.sendMessage(bundle(others, "vote-rollback"));
+                        }
+                        rollback.start();
+                    } else {
+                        player.sendMessage(bundle(player, "vote-in-processing"));
+                    }
+                    break;
+                default:
+                    break;
             }
         }
-        if(playerGroup.size() <= 3){
-            player.sendMessage(bundle(player, "vote-min"));
-            return;
-        }
-        require = (int) Math.ceil((double) playerGroup.size() / 3);
 
-        switch(type) {
-            case "gameover":
-                if(!isvoting){
-                    isvoting = true;
-                    for(Player others : playerGroup.all()){
-                        if(getData(others.uuid).toString().equals("{}")) return;
-                        others.sendMessage(bundle(others, "vote-gameover"));
+        static Thread counting = new Thread(() -> {
+            try {
+                if (playerGroup != null && playerGroup.size() > 0) {
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        others.sendMessage(bundle(others, "vote-50sec"));
                     }
-                    gameover.start();
-                } else {
-                    player.sendMessage(bundle(player, "vote-in-processing"));
-                }
-                break;
-            case "skipwave":
-                if(!isvoting){
-                    isvoting = true;
-                    for(Player others : playerGroup.all()){
-                        others.sendMessage(bundle(others, "vote-skipwave"));
+                    Thread.sleep(10000);
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        others.sendMessage(bundle(others, "vote-40sec"));
                     }
-                    skipwave.start();
-                } else {
-                    player.sendMessage(bundle(player, "vote-in-processing"));
-                }
-                break;
-            case "kick":
-                if(!isvoting){
-                    isvoting = true;
-                    for(Player others : playerGroup.all()){
-                        others.sendMessage(bundle(others, "vote-kick"));
+                    Thread.sleep(10000);
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        others.sendMessage(bundle(others, "vote-30sec"));
                     }
-                    kick.start();
-                } else {
-                    player.sendMessage(bundle(player, "vote-in-processing"));
-                }
-                break;
-            case "rollback":
-                if(!isvoting){
-                    isvoting = true;
-                    for(Player others : playerGroup.all()){
-                        others.sendMessage(bundle(others, "vote-rollback"));
+                    Thread.sleep(10000);
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        others.sendMessage(bundle(others, "vote-20sec"));
                     }
-                    rollback.start();
-                } else {
-                    player.sendMessage(bundle(player, "vote-in-processing"));
+                    Thread.sleep(10000);
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        others.sendMessage(bundle(others, "vote-10sec"));
+                    }
+                    Thread.sleep(10000);
                 }
-                break;
-            default:
-                break;
-        }
-    }
-
-    Thread counting = new Thread(() -> {
-        try {
-            if (playerGroup != null && playerGroup.size() > 0) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player others = playerGroup.all().get(i);
-                    others.sendMessage(bundle(others, "vote-50sec"));
-                }
-                Thread.sleep(10000);
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player others = playerGroup.all().get(i);
-                    others.sendMessage(bundle(others, "vote-40sec"));
-                }
-                Thread.sleep(10000);
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player others = playerGroup.all().get(i);
-                    others.sendMessage(bundle(others, "vote-30sec"));
-                }
-                Thread.sleep(10000);
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player others = playerGroup.all().get(i);
-                    others.sendMessage(bundle(others, "vote-20sec"));
-                }
-                Thread.sleep(10000);
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player others = playerGroup.all().get(i);
-                    others.sendMessage(bundle(others, "vote-10sec"));
-                }
-                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                printStackTrace(e);
             }
-        } catch (InterruptedException e) {
-            printStackTrace(e);
-        }
-    });
-    Thread gameover = new Thread(() -> {
-        counting.start();
-        try {
-            counting.join();
-        } catch (InterruptedException e) {
-            printStackTrace(e);
-        }
-        if (list.size() >= require && isvoting) {
-            Call.sendMessage("[green][Essentials] Gameover vote passed!");
-            Events.fire(new EventType.GameOverEvent(Team.sharded));
-        } else {
-            Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
-        }
-        list.clear();
-        isvoting = false;
-    });
-
-    Thread skipwave = new Thread(() -> {
-        counting.start();
-        try {
-            counting.join();
-        } catch (InterruptedException e) {
-            printStackTrace(e);
-        }
-        if (list.size() >= require && isvoting) {
-            Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
-            for (int i = 0; i < 10; i++) {
-                logic.runWave();
-            }
-        } else {
-            Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
-        }
-        list.clear();
-        isvoting = false;
-    });
-
-    Thread kick = new Thread(() -> {
-        if(target != null){
+        });
+        Thread gameover = new Thread(() -> {
             counting.start();
             try {
                 counting.join();
@@ -1037,52 +1038,122 @@ class Vote{
                 printStackTrace(e);
             }
             if (list.size() >= require && isvoting) {
-                Call.sendMessage("[green][Essentials] Player kick vote success!");
-                PlayerDB.addtimeban(target.name, target.uuid, 4);
-                Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
-
-                Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-                Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-                try {
-                    JSONObject other = getData(target.uuid);
-                    String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require + "\n";
-                    byte[] result = text.getBytes();
-                    Files.write(path, result, StandardOpenOption.APPEND);
-                    Files.write(total, result, StandardOpenOption.APPEND);
-                } catch (IOException error) {
-                    printStackTrace(error);
-                }
-
-                netServer.admins.banPlayer(target.uuid);
-                Call.onKick(target.con, "You're banned.");
+                Call.sendMessage("[green][Essentials] Gameover vote passed!");
+                Events.fire(new EventType.GameOverEvent(Team.sharded));
             } else {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player others = playerGroup.all().get(i);
-                    bundle(others, "vote-failed");
-                }
+                Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
             }
             list.clear();
             isvoting = false;
-        } else {
-            bundle(player, "player-not-found");
-        }
-    });
+        });
 
-    Thread rollback = new Thread(() -> {
-        counting.start();
-        try {
-            counting.join();
-        } catch (InterruptedException e) {
-            printStackTrace(e);
+        Thread skipwave = new Thread(() -> {
+            counting.start();
+            try {
+                counting.join();
+            } catch (InterruptedException e) {
+                printStackTrace(e);
+            }
+            if (list.size() >= require && isvoting) {
+                Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
+                for (int i = 0; i < 10; i++) {
+                    logic.runWave();
+                }
+            } else {
+                Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
+            }
+            list.clear();
+            isvoting = false;
+        });
+
+        Thread kick = new Thread(() -> {
+            if(target != null){
+                counting.start();
+                try {
+                    counting.join();
+                } catch (InterruptedException e) {
+                    printStackTrace(e);
+                }
+                if (list.size() >= require && isvoting) {
+                    Call.sendMessage("[green][Essentials] Player kick vote success!");
+                    PlayerDB.addtimeban(target.name, target.uuid, 4);
+                    Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
+
+                    Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
+                    Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
+                    try {
+                        JSONObject other = getData(target.uuid);
+                        String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require + "\n";
+                        byte[] result = text.getBytes();
+                        Files.write(path, result, StandardOpenOption.APPEND);
+                        Files.write(total, result, StandardOpenOption.APPEND);
+                    } catch (IOException error) {
+                        printStackTrace(error);
+                    }
+
+                    netServer.admins.banPlayer(target.uuid);
+                    Call.onKick(target.con, "You're banned.");
+                } else {
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player others = playerGroup.all().get(i);
+                        bundle(others, "vote-failed");
+                    }
+                }
+                list.clear();
+                isvoting = false;
+            } else {
+                bundle(player, "player-not-found");
+            }
+        });
+
+        Thread rollback = new Thread(() -> {
+            counting.start();
+            try {
+                counting.join();
+            } catch (InterruptedException e) {
+                printStackTrace(e);
+            }
+            if (list.size() >= require && isvoting) {
+                Call.sendMessage("[green][Essentials] Map rollback passed!!");
+                Threads.AutoRollback rl = new Threads.AutoRollback();
+                rl.load();
+            } else {
+                Call.sendMessage("[green][Essentials] [red]Map rollback failed.");
+            }
+            list.clear();
+            isvoting = false;
+        });
+    }
+    public static class votecheck{
+        static boolean isvoting = Vote.isvoting;
+        static ArrayList<String> list = Vote.list;
+        static int require = Vote.require;
+
+        public void main(){
+            if(Vote.counting.isAlive()){
+                Global.log("interrupted");
+                Vote.counting.interrupt();
+            }
         }
-        if (list.size() >= require && isvoting) {
-            Call.sendMessage("[green][Essentials] Map rollback passed!!");
-            Threads.AutoRollback rl = new Threads.AutoRollback();
-            rl.load();
-        } else {
-            Call.sendMessage("[green][Essentials] [red]Map rollback failed.");
+    }
+    public static class getip extends Thread{
+        private volatile String value;
+
+        @Override
+        public void run(){
+            try{
+                URL whatismyip = new URL("http://checkip.amazonaws.com");
+                BufferedReader in = new BufferedReader(new InputStreamReader(
+                        whatismyip.openStream()));
+
+                value = in.readLine();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
-        list.clear();
-        isvoting = false;
-    });
+
+        public String getValue(){
+            return value;
+        }
+    }
 }

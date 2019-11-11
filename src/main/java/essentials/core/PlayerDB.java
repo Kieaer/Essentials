@@ -34,7 +34,7 @@ import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class PlayerDB {
-    private static int dbversion = 1;
+    private static int dbversion = 2;
     public static Connection conn;
     private static boolean loginresult;
     private static boolean registerresult;
@@ -82,6 +82,7 @@ public class PlayerDB {
                         "crosschat TEXT,\n" +
                         "colornick TEXT,\n" +
                         "connected TEXT,\n" +
+                        "connserver TEXT,\n" +
                         "accountid TEXT,\n" +
                         "accountpw TEXT\n" +
                         ");";
@@ -125,6 +126,7 @@ public class PlayerDB {
                             "`crosschat` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`colornick` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`connected` TINYINT(4) NULL DEFAULT NULL,\n" +
+                            "`connserver` TINYTEXT NULL DEFAULT 'none',\n" +
                             "`accountid` TEXT NULL DEFAULT NULL,\n" +
                             "`accountpw` TEXT NULL DEFAULT NULL,\n" +
                             "PRIMARY KEY (`id`)\n" +
@@ -147,15 +149,25 @@ public class PlayerDB {
 
 	private void createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
         try {
+            Threads.getip getip = new Threads.getip();
+            Thread th = new Thread(getip);
+            th.start();
+            try {
+                th.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            String currentip = getip.getValue();
+
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
             if(!rs.next()){
                 String sql;
                 if(config.isSqlite()){
-                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
-                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, connserver, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 }
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
@@ -191,8 +203,9 @@ public class PlayerDB {
                 pstmt.setBoolean(31, false); // crosschat
                 pstmt.setBoolean(32, false); // colornick
                 pstmt.setBoolean(33, true); // connected
-                pstmt.setString(34, accountid);
-                pstmt.setString(35, accountpw);
+                pstmt.setString(34, currentip); // connected server ip
+                pstmt.setString(35, accountid);
+                pstmt.setString(36, accountpw);
                 pstmt.executeUpdate();
                 pstmt.close();
                 Global.logp(nbundle("player-db-created", name));
@@ -245,6 +258,7 @@ public class PlayerDB {
                 json.put("crosschat", rs.getBoolean("crosschat"));
                 json.put("colornick", rs.getBoolean("colornick"));
                 json.put("connected", rs.getBoolean("connected"));
+                json.put("connserver", rs.getString("connserver"));
                 json.put("accountid", rs.getString("accountid"));
                 json.put("accountpw", rs.getString("accountpw"));
             }
@@ -302,26 +316,24 @@ public class PlayerDB {
         netServer.admins.banPlayer(uuid);
     }
 
-    private static final String v1sql = "ALTER TABLE players ADD COLUMN string;";
+    private static final String v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER 'connected';";
     //private static final String v2sql = "ALTER TABLE players ADD COLUMN string;";
 
     public static void Upgrade() {
-        /*
-        if(dbversion < 2){
-            try {
-                Class.forName("org.sqlite.JDBC");
-                Connection conn = DriverManager.getConnection(url);
+        try {
+            DatabaseMetaData metadata = conn.getMetaData();
+            ResultSet resultSet;
+            resultSet = metadata.getColumns(null, null, "players", "connserver");
+            if (!resultSet.next()) {
                 Statement stmt = conn.createStatement();
-                if(dbversion < 2){
-                    stmt.execute(v1sql);
-                }
+                stmt.execute(v1sql);
                 stmt.close();
-            } catch (ClassNotFoundException | SQLException e) {
-                printStackTrace(e);
+                Global.logp(nbundle("db-upgrade"));
             }
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1060) return;
+            printStackTrace(e);
         }
-
-         */
     }
     public void openconnect() {
         try {
@@ -333,14 +345,14 @@ public class PlayerDB {
 
             if (config.isSqlite()) {
                 conn = DriverManager.getConnection(config.getDBurl());
-                Global.log(type+"SQLite");
+                Global.logp(type+"SQLite");
             } else {
                 if (!config.getDBid().isEmpty()) {
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                    Global.log(type+"MariaDB/MySQL");
+                    Global.logp(type+"MariaDB/MySQL");
                 } else {
                     conn = DriverManager.getConnection(config.getDBurl());
-                    Global.log(type+"Invalid");
+                    Global.logp(type+"Invalid");
                 }
             }
         } catch (ClassNotFoundException e) {
@@ -723,11 +735,21 @@ public class PlayerDB {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
 
+        Threads.getip getip = new Threads.getip();
+        Thread th = new Thread(getip);
+        th.start();
+        try {
+            th.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        String currentip = getip.getValue();
+
         // Write player connected
         if(id == null){
-            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"' WHERE uuid = '"+player.uuid+"'");
+            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', connserver = '"+currentip+"' WHERE uuid = '"+player.uuid+"'");
         } else {
-            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', uuid = '"+player.uuid+"' WHERE accountid = '"+id+"'");
+            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', connserver = '"+currentip+"', uuid = '"+player.uuid+"' WHERE accountid = '"+id+"'");
         }
 
         if (Vars.state.rules.pvp){

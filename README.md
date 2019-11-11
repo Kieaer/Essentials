@@ -93,6 +93,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | kickall |  | Kick all players without you. |
 | kill | &lt;name&gt; | Kill other players |
 | login | &lt;account id&gt; &lt;password&gt; | Login to account. |
+| logout |  | Log out of my account |
 | me | &lt;msg&gt; | Show special chat format |
 | motd |  | Show server motd <br> Can modify from ``config/plugins/Essentials/motd.txt`` |
 | register | &lt;account id&gt; &lt;new password&gt; &lt;new password repeat&gt; | Register accoun<br>Example - ``/register test test123 test123`` |

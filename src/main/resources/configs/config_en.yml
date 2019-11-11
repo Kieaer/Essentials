@@ -64,7 +64,7 @@ update: true
 
 # Database type setting (Default is SQLite)
 # Example - mariadb://localhost:3306/dbname
-# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.# dburl
+# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.
 sqlite: true
 dburl:
 dbid:

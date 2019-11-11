@@ -43,7 +43,7 @@ public class Server implements Runnable {
     public static ArrayList<Service> list = new ArrayList<>();
     private String remoteip;
 
-    public void ChatServer() {
+    public Server() {
         try {
             serverSocket = new ServerSocket(config.getServerport());
             new Thread(this).start();

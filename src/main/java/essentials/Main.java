@@ -45,9 +45,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -70,30 +70,42 @@ public class Main extends Plugin {
     private JSONArray powerblock = new JSONArray();
     private JSONArray nukeblock = new JSONArray();
     private ArrayList<Tile> nukedata = new ArrayList<>();
+    private boolean making = false;
 
     public Main() {
         StringBuilder features;
-        // Start config file
+        // 설정 시작
         config.main();
 
-        // Client connection test
+        // 클라이언트 연결 확인
         if (config.isClientenable()) {
             Global.logc(nbundle("connecting"));
             Client client = new Client();
             client.main(null, null, null);
         }
 
-        // Database
+        // 플레이어 DB 연결
         PlayerDB playerdb = new PlayerDB();
         playerdb.openconnect();
 
-        // Make player DB
+        // 플레이어 DB 생성
         playerdb.createNewDataFile();
 
-        // Reset all connected status
-        writeData("UPDATE players SET connected = 0");
+        // 모든 플레이어 연결 상태를 0으로 설정
+        try{
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT id,connserver FROM players");
+            while(rs.next()){
+                String value = rs.getString("connserver");
+                if(value.equals("none")){
+                    writeData("UPDATE players SET connected = 0 WHERE id='"+rs.getInt("id")+"'");
+                }
+            }
+        } catch (SQLException e) {
+            printStackTrace(e);
+        }
 
-        // Start log
+        // 기록 시작
         if (config.isLogging()) {
             Log log = new Log();
             log.main();
@@ -101,21 +113,21 @@ public class Main extends Plugin {
 
         //EssentialAI.main();
 
-        // Update check
+        // 업데이트 확인
         if (config.isUpdate()) {
             Client client = new Client();
             client.update();
         }
 
-        // DB Upgrade check
+        // 플레이어 DB 업그레이드
         PlayerDB.Upgrade();
 
-        // Start ban/chat server
+        // 서버기능 시작
         if (config.isServerenable()) {
-            new essentials.net.Server().ChatServer();
+            new essentials.net.Server();
         }
 
-        // Essentials EPG Features
+        // Essentials EPG 기능 시작
         EPG epg = new EPG();
         epg.main();
 
@@ -137,7 +149,7 @@ public class Main extends Plugin {
         */
 
 
-        // If desync (May work)
+        // 만약 동기화에 실패했을 경우 (아마도 될꺼임)
         Events.on(ValidateException.class, e -> {
             Call.onInfoMessage(e.player.con, "You're desynced! The server will send data again.");
             Call.onWorldDataBegin(e.player.con);
@@ -170,7 +182,7 @@ public class Main extends Plugin {
         Events.on(WorldLoadEvent.class, e -> {
             Threads.playtime = "00:00.00";
 
-            // Reset powernode information
+            // 전력 노드 정보 초기화
             powerblock = new JSONArray();
 
             peacetime = true;
@@ -273,18 +285,20 @@ public class Main extends Plugin {
                             "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
                     Call.onInfoMessage(e.player.con, message);
                 }
-            } else {
+            } else if (!config.isLoginenable()){
                 if (playerdb.register(e.player)) {
                     playerdb.load(e.player, null);
                 } else {
                     // Can't translate
                     Call.onKick(e.player.con, "Plugin error! Please contact server admin!");
                 }
+            } else {
+                Global.loge("LOGIN SYSTEM FATAL ERROR!");
             }
 
 
             // Database read/write
-            Thread playerthread = new Thread(() -> { 
+            Thread playerthread = new Thread(() -> {
                 Thread.currentThread().setName("PlayerJoin Thread");
 
                 // Check if blacklisted nickname
@@ -301,8 +315,9 @@ public class Main extends Plugin {
 
                 // Check VPN
                 if (config.isAntivpn()) {
-                    try (InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
-                         BufferedReader br = new BufferedReader(new InputStreamReader(reader))) {
+                    try {
+                        InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
+                        BufferedReader br = new BufferedReader(new InputStreamReader(reader));
 
                         String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
                         String line;
@@ -328,7 +343,7 @@ public class Main extends Plugin {
 
         Events.on(PlayerLeave.class, e -> {
             if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-                writeData("UPDATE players SET connected = '0' WHERE uuid = '" + e.player.uuid + "'");
+                writeData("UPDATE players SET connected = '0', connserver = 'NULL' WHERE uuid = '" + e.player.uuid + "'");
             }
         });
 
@@ -390,23 +405,20 @@ public class Main extends Plugin {
                     }
                 }
             }
-            if (Vote.isvoting) {
+            if (votecheck.isvoting) {
                 if (e.message.equals("y")) {
-                    if (Vote.list.contains(e.player.uuid)) {
+                    if (votecheck.list.contains(e.player.uuid)) {
                         e.player.sendMessage("[green][Essentials][scarlet] You're already voted!");
                     } else {
-                        Vote.list.add(e.player.uuid);
+                        votecheck.list.add(e.player.uuid);
                         int current = Vote.list.size();
                         for(Player others : playerGroup.all()){
                             if(getData(others.uuid).toString().equals("{}")) return;
                             others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                         }
-                        if (Vote.require - current == 0) {
-                            Vote vote = new Vote();
-                            vote.gameover.interrupt();
-                            vote.skipwave.interrupt();
-                            vote.rollback.interrupt();
-                            vote.kick.interrupt();
+                        if (votecheck.require - current == 0) {
+                            votecheck v = new votecheck();
+                            v.main();
                         }
                     }
                 }
@@ -683,7 +695,7 @@ public class Main extends Plugin {
             }
 
             public void dispose() {
-                // Kill timer thread
+                // 타이머 스레드 종료
                 try {
                     timer.cancel();
                     Global.log(Global.nbundle("count-thread-disabled"));
@@ -692,9 +704,10 @@ public class Main extends Plugin {
                     printStackTrace(e);
                 }
 
+                // DB 종료
                 closeconnect();
 
-                // Stop server
+                // 서버 종료
                 if (config.isServerenable()) {
                     try {
                         for (Server.Service ser : Server.list) {
@@ -712,7 +725,7 @@ public class Main extends Plugin {
                     }
                 }
 
-                // Stop client
+                // 클라이언트 종료
                 if (config.isClientenable()) {
                     Client client = new Client();
                     client.main("exit", null, null);
@@ -720,13 +733,24 @@ public class Main extends Plugin {
                     Global.log(nbundle("client-thread-disabled"));
                 }
 
+                // 모든 이벤트 서버 종료
                 for (Process value : process) {
                     value.destroy();
                 }
 
+                // 모든 스레드 종료
                 executorService.shutdown();
 
+                // 서버 데이터 요청 스레드 종료
                 PingServer.socket.close();
+
+                // 연결된 서버 데이터 삭제
+                for(int a=0;a<playerGroup.size();a++){
+                    Player others = playerGroup.all().get(a);
+                    if (!Vars.state.teams.get(others.getTeam()).cores.isEmpty()) {
+                        writeData("UPDATE players SET connected = '0', connserver = 'NULL' WHERE uuid = '" + others.uuid + "'");
+                    }
+                }
             }
         });
 
@@ -1152,96 +1176,96 @@ public class Main extends Plugin {
                 player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
                 return;
             }
-            String[] ip = new String[1];
-            Thread t = new Thread(() -> {
-                try{
-                    URL whatismyip = new URL("http://checkip.amazonaws.com");
-                    BufferedReader in = new BufferedReader(new InputStreamReader(
-                            whatismyip.openStream()));
 
-                    ip[0] = in.readLine();
-                }catch (Exception e){
+            Thread t = new Thread(() -> {
+                getip getip = new getip();
+                Thread th = new Thread(getip);
+                th.start();
+                try {
+                    th.join();
+                } catch (InterruptedException e) {
                     e.printStackTrace();
+                }
+                String currentip = getip.getValue();
+
+                switch (arg[0]) {
+                    case "host":
+                        Thread work = new Thread(() -> {
+                            JSONObject db = getData(player.uuid);
+                            if (db.toString().equals("{}")) return;
+                            if (db.getInt("level") > 20 || player.isAdmin) {
+                                if (arg.length == 2) {
+                                    player.sendMessage(bundle(player, "event-host-no-mapname"));
+                                    return;
+                                }
+                                if (arg.length == 3) {
+                                    player.sendMessage(bundle(player, "event-host-no-gamemode"));
+                                    return;
+                                }
+                                player.sendMessage(bundle(player, "event-making"));
+                                making = true;
+
+                                int customport = (int) (Math.random() * (7100 - 7000 + 1)) + 7000;
+                                String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
+                                JSONTokener parser = new JSONTokener(settings);
+                                JSONObject object = new JSONObject(parser);
+
+                                JSONArray array = new JSONArray();
+                                JSONObject item = new JSONObject();
+                                item.put("name", arg[1]);
+                                item.put("port", customport);
+                                array.put(item);
+
+                                object.put("servers", array);
+                                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
+
+                                Threads.eventserver es = new Threads.eventserver();
+                                es.roomname = arg[1];
+                                es.map = arg[2];
+                                if (arg[3].equals("wave")) {
+                                    es.gamemode = "wave";
+                                } else {
+                                    es.gamemode = arg[3];
+                                }
+                                es.customport = customport;
+                                es.start();
+                                try {
+                                    es.join();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                Global.log(nbundle("event-host-opened", player.name, customport));
+
+                                Call.onConnect(player.con, currentip, customport);
+                                //Call.onConnect(player.con, "localhost", customport);
+                            } else {
+                                player.sendMessage(bundle(player, "event-level"));
+                            }
+                        });
+                        if (!making) {
+                            work.start();
+                        }
+                        break;
+                    case "join":
+                        String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
+                        JSONTokener parser = new JSONTokener(settings);
+                        JSONObject object = new JSONObject(parser);
+                        JSONArray arr = object.getJSONArray("servers");
+                        for (int a = 0; a < arr.length(); a++) {
+                            JSONObject ob = arr.getJSONObject(a);
+                            String name = ob.getString("name");
+                            if (name.equals(arg[1])) {
+                                Call.onConnect(player.con, currentip, ob.getInt("port"));
+                                //Call.onConnect(player.con, "localhost", ob.getInt("port"));
+                            }
+                        }
+                        break;
+                    default:
+                        Global.log("invalid option!");
+                        break;
                 }
             });
             t.start();
-            try {
-                t.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            switch (arg[0]) {
-                case "host":
-                    // It work will stop main thread
-                    Thread work = new Thread(() -> {
-                        JSONObject db = getData(player.uuid);
-                        if (db.toString().equals("{}")) return;
-                        if (db.getInt("level") > 20 || player.isAdmin) {
-                            if (arg.length == 2) {
-                                player.sendMessage(bundle(player, "event-host-no-mapname"));
-                                return;
-                            }
-                            if (arg.length == 3) {
-                                player.sendMessage(bundle(player, "event-host-no-gamemode"));
-                                return;
-                            }
-                            int customport = (int) (Math.random() * (7100 - 7000 + 1)) + 7000;
-                            String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-                            JSONTokener parser = new JSONTokener(settings);
-                            JSONObject object = new JSONObject(parser);
-
-                            JSONArray array = new JSONArray();
-                            JSONObject item = new JSONObject();
-                            item.put("name", arg[1]);
-                            item.put("port", customport);
-                            array.put(item);
-
-                            object.put("servers", array);
-                            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
-
-                            Threads.eventserver es = new Threads.eventserver();
-                            es.roomname = arg[1];
-                            es.map = arg[2];
-                            if(arg[3].equals("wave")){
-                                es.gamemode = "wave";
-                            } else {
-                                es.gamemode = arg[3];
-                            }
-                            es.customport = customport;
-                            es.start();
-                            try {
-                                es.join();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            Global.log(nbundle("event-host-opened", player.name, customport));
-                            Call.onConnect(player.con, ip[0], customport);
-                            //Call.onConnect(player.con, "localhost", customport);
-                        } else {
-                            player.sendMessage("You must achieve level 20 or above!");
-                        }
-                    });
-                    work.start();
-                    break;
-                case "join":
-                    String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-                    JSONTokener parser = new JSONTokener(settings);
-                    JSONObject object = new JSONObject(parser);
-                    JSONArray arr = object.getJSONArray("servers");
-                    for (int a = 0; a < arr.length(); a++) {
-                        JSONObject ob = arr.getJSONObject(a);
-                        String name = ob.getString("name");
-                        if (name.equals(arg[1])) {
-                            Call.onConnect(player.con,ip[0],ob.getInt("port"));
-                            //Call.onConnect(player.con, "localhost", ob.getInt("port"));
-                        }
-                    }
-                    break;
-                default:
-                    Global.log("invalid option!");
-                    break;
-            }
         });
         handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
             if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
@@ -1397,6 +1421,14 @@ public class Main extends Plugin {
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));
             }
+        });
+        handler.<Player>register("logout","Log-out of your account.", (arg, player) -> {
+            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+                return;
+            }
+            writeData("UPDATE players SET connected = '0', uuid = 'LogoutAAAAA=' WHERE uuid = '"+player.uuid+"'");
+            Call.onKick(player.con, nbundle("logout"));
         });
         handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
             if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
@@ -1685,7 +1717,6 @@ public class Main extends Plugin {
                 return;
             }
 
-            JSONObject db = getData(player.uuid);
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
             String nowString = now.format(dateTimeFormatter);
@@ -1783,11 +1814,11 @@ public class Main extends Plugin {
                 player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
                 return;
             }
-            Vote vote = new Vote();
+
             if(arg.length == 2){
-                vote.main(player, arg[0], arg[1]);
+                new Vote(player, arg[0], arg[1]);
             } else {
-                vote.main(player, arg[0], null);
+                new Vote(player, arg[0], null);
             }
         });
 
