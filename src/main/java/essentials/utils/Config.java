@@ -3,6 +3,7 @@ package essentials.utils;
 import essentials.Global;
 import io.anuke.arc.Core;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
@@ -37,7 +38,6 @@ public class Config {
     public static JSONArray jumpall;
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6);
-    public final static String servername = Core.settings.getString("servername");
 
     public String getClienthost(){
         return obj.get("client-enable") != null ? (String) obj.get("client-host") : "mindustry.kr";
@@ -200,7 +200,8 @@ public class Config {
     }
 
     public String getServername(){
-        return servername;
+        JSONObject data = new JSONObject(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString()));
+        return data.getString("servername");
     }
 
     private void validfile(){
@@ -280,6 +281,12 @@ public class Config {
 
     public void main() {
         validfile();
+
+        JSONObject data = new JSONObject(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString()));
+        if(!data.has("servername")){
+            data.put("servername", Core.settings.getString("servername"));
+            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(data.toString());
+        }
 
         String text;
         if (getLanguage().equals("ko")) {

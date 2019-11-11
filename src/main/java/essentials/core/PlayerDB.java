@@ -735,7 +735,13 @@ public class PlayerDB {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
 
+        JSONObject db = getData(player.uuid);
         Thread t = new Thread(() -> {
+            if(db.getBoolean("connected")){
+                player.con.kick(nbundle(player, "tried-connected-account"));
+                return;
+            }
+
             Threads.getip getip = new Threads.getip();
             Thread th = new Thread(getip);
             th.start();
@@ -761,12 +767,6 @@ public class PlayerDB {
         } else {
             player.setTeam(Vars.defaultTeam);
             Call.onPlayerDeath(player);
-        }
-
-        JSONObject db = getData(player.uuid);
-        if(db.getBoolean("connected")){
-            player.con.kick(nbundle(player, "tried-connected-account"));
-            return;
         }
 
         // Show motd

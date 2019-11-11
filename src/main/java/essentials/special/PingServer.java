@@ -22,7 +22,7 @@ public class PingServer {
         try {
             socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(ip), port));
 
-            socket.setSoTimeout(2000);
+            socket.setSoTimeout(500);
 
             DatagramPacket packet = new DatagramPacket(new byte[256], 256);
 
@@ -57,13 +57,13 @@ public class PingServer {
     public static class PingResult{
         public boolean valid;
         public String players;
-        String host;
-        String error;
-        String wave;
-        String map;
-        String ip;
-        String version;
-        long ping;
+        public String host;
+        public String error;
+        public String wave;
+        public String map;
+        public String ip;
+        public String version;
+        public long ping;
 
         public PingResult(String ip, String error){
             this.valid = false;

@@ -76,18 +76,10 @@ public class Threads extends TimerTask implements Runnable{
         // client players counting in servername
         new changename().start();
 
-        // Save server to server jump data
-        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
-        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
-        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
-
         // If world loaded
         if(state.is(GameState.State.playing)) {
             // server to server monitoring
             new jumpzone().start();
-
-            // client players counting
-            new jumpcheck().start();
 
             // all client players counting
             new jumpall().start();
@@ -569,49 +561,55 @@ public class Threads extends TimerTask implements Runnable{
         // Source from Anuken/CoreBot
         @Override
         public void run() {
+            while(!currentThread().isInterrupted()) {
+                for (int i = 0; i < jumpcount.length(); i++) {
+                    String jumpdata = jumpcount.getString(i);
+                    String[] data = jumpdata.split("/");
+                    String serverip = data[0];
+                    int port = Integer.parseInt(data[1]);
+                    int x = Integer.parseInt(data[2]);
+                    int y = Integer.parseInt(data[3]);
+                    String count = data[4];
+                    int length = Integer.parseInt(data[5]);
 
-            for (int i=0;i<jumpcount.length();i++) {
-                String jumpdata = jumpcount.getString(i);
-                String[] data = jumpdata.split("/");
-                String serverip = data[0];
-                int port = Integer.parseInt(data[1]);
-                int x = Integer.parseInt(data[2]);
-                int y = Integer.parseInt(data[3]);
-                String count = data[4];
-                int length = Integer.parseInt(data[5]);
+                    int i2 = i;
+                    pingServer(serverip, port, result -> {
+                        if (result.valid) {
+                            String str = result.players;
+                            int[] digits = new int[str.length()];
+                            for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
-                int finalI = i;
-                pingServer(serverip, port, result -> {
-                    if (result.valid) {
-                        String str = result.players;
-                        int[] digits = new int[str.length()];
-                        for(int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
-
-                        Tile tile = world.tile(x, y);
-                        if(!count.equals(result.players)) {
-                            if(length != digits.length){
-                                for(int px=0;px<3;px++){
-                                    for(int py=0;py<5;py++){
-                                        Call.onDeconstructFinish(world.tile(tile.x+4+px,tile.y+py), Blocks.air, 0);
+                            Tile tile = world.tile(x, y);
+                            if (!count.equals(result.players)) {
+                                if (length != digits.length) {
+                                    for (int px = 0; px < 3; px++) {
+                                        for (int py = 0; py < 5; py++) {
+                                            Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
+                                        }
                                     }
                                 }
+                                for (int digit : digits) {
+                                    setcount(tile, digit);
+                                    tile = world.tile(tile.x + 4, tile.y);
+                                }
+                            } else {
+                                for (int l = 0; l < length; l++) {
+                                    setcount(tile, digits[l]);
+                                    tile = world.tile(x + 4, y);
+                                }
                             }
-                            for (int digit : digits) {
-                                setcount(tile, digit);
-                                tile = world.tile(tile.x+4, tile.y);
-                            }
+                            // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                            jumpcount.put(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
                         } else {
-                            for(int l=0;l<length;l++) {
-                                setcount(tile, digits[l]);
-                                tile = world.tile(x + 4, y);
-                            }
+                            setno(world.tile(x,y));
                         }
-                        // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                        jumpcount.put(finalI, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
-                    } else {
-                        setno(world.tile(x, y));
-                    }
-                });
+                    });
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -778,6 +776,16 @@ public class Threads extends TimerTask implements Runnable{
                         public void run() {
                             pingServer("localhost", customport, result -> {
                                 if (disablecount > 300) {
+                                    String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
+                                    JSONTokener parser = new JSONTokener(settings);
+                                    JSONObject object = new JSONObject(parser);
+                                    for(int a=0;a<object.getJSONArray("servers").length();a++){
+                                        if(object.getJSONArray("servers").getJSONObject(a).getInt("port") == customport){
+                                            object.getJSONArray("servers").remove(a);
+                                            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(object.toString());
+                                        }
+                                    }
+
                                     finalP.destroy();
                                     process.remove(finalP);
                                     this.cancel();

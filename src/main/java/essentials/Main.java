@@ -45,10 +45,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -73,7 +70,6 @@ public class Main extends Plugin {
     private boolean making = false;
 
     public Main() {
-        StringBuilder features;
         // 설정 시작
         config.main();
 
@@ -104,6 +100,9 @@ public class Main extends Plugin {
         } catch (SQLException e) {
             printStackTrace(e);
         }
+
+        // 클라이언트 플레이어 카운트
+        new jumpcheck().start();
 
         // 기록 시작
         if (config.isLogging()) {
@@ -695,6 +694,60 @@ public class Main extends Plugin {
             }
 
             public void dispose() {
+                // Save server to server jump data
+                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
+                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
+                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
+
+                // 연결된 서버 데이터 삭제
+                try {
+                    Class.forName("org.sqlite.JDBC");
+                    Class.forName("org.mariadb.jdbc.Driver");
+                    Class.forName("com.mysql.jdbc.Driver");
+
+                    String type = nbundle("db-type");
+
+                    Connection conn;
+
+                    if (config.isSqlite()) {
+                        conn = DriverManager.getConnection(config.getDBurl());
+                        Global.logp(type+"SQLite");
+                    } else {
+                        if (!config.getDBid().isEmpty()) {
+                            conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
+                            Global.logp(type+"MariaDB/MySQL");
+                        } else {
+                            conn = DriverManager.getConnection(config.getDBurl());
+                            Global.logp(type+"Invalid");
+                        }
+                    }
+
+                    for(int a=0;a<playerGroup.size();a++){
+                        Player others = playerGroup.all().get(a);
+                        if (!Vars.state.teams.get(others.getTeam()).cores.isEmpty()) {
+                            String sql = "UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + others.uuid + "'";
+
+                            try {
+                                PreparedStatement pstmt = conn.prepareStatement(sql);
+                                pstmt.executeUpdate();
+                                pstmt.close();
+                            } catch (Exception e) {
+                                Global.loge(sql);
+                                printStackTrace(e);
+                            }
+                        }
+                    }
+                    conn.close();
+                } catch (ClassNotFoundException e) {
+                    printStackTrace(e);
+                    Global.loge("Class not found!");
+                } catch (SQLException e){
+                    printStackTrace(e);
+                    Global.loge("SQL ERROR!");
+                }
+
+                Vars.netServer.kickAll(KickReason.serverClose);
+
                 // 타이머 스레드 종료
                 try {
                     timer.cancel();
@@ -741,16 +794,11 @@ public class Main extends Plugin {
                 // 모든 스레드 종료
                 executorService.shutdown();
 
+                // 클라이언트 플레이어 카운트 스레드 종료
+                new jumpcheck().interrupt();
+
                 // 서버 데이터 요청 스레드 종료
                 PingServer.socket.close();
-
-                // 연결된 서버 데이터 삭제
-                for(int a=0;a<playerGroup.size();a++){
-                    Player others = playerGroup.all().get(a);
-                    if (!Vars.state.teams.get(others.getTeam()).cores.isEmpty()) {
-                        writeData("UPDATE players SET connected = '0', connserver = 'NULL' WHERE uuid = '" + others.uuid + "'");
-                    }
-                }
             }
         });
 
