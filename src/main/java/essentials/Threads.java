@@ -52,7 +52,7 @@ import static io.anuke.mindustry.Vars.*;
 public class Threads extends TimerTask implements Runnable{
     public static String playtime;
     public static String uptime;
-    public static boolean peacetime;
+    static boolean peacetime;
     public static JSONArray nukeposition = new JSONArray();
     public static ArrayList<Process> process = new ArrayList<>();
 

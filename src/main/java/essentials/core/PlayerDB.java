@@ -764,8 +764,9 @@ public class PlayerDB {
         }
 
         JSONObject db = getData(player.uuid);
-        if(!db.getBoolean("connected")){
-            Global.loge("ERROR!");
+        if(db.getBoolean("connected")){
+            player.con.kick(nbundle(player, "tried-connected-account"));
+            return;
         }
 
         // Show motd

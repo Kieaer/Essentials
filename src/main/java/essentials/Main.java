@@ -343,7 +343,7 @@ public class Main extends Plugin {
 
         Events.on(PlayerLeave.class, e -> {
             if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-                writeData("UPDATE players SET connected = '0', connserver = 'NULL' WHERE uuid = '" + e.player.uuid + "'");
+                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + e.player.uuid + "'");
             }
         });
 
