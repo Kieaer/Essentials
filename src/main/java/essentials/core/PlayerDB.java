@@ -735,22 +735,25 @@ public class PlayerDB {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         String nowString = now.format(dateTimeFormatter);
 
-        Threads.getip getip = new Threads.getip();
-        Thread th = new Thread(getip);
-        th.start();
-        try {
-            th.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        String currentip = getip.getValue();
+        Thread t = new Thread(() -> {
+            Threads.getip getip = new Threads.getip();
+            Thread th = new Thread(getip);
+            th.start();
+            try {
+                th.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            String currentip = getip.getValue();
 
-        // Write player connected
-        if(id == null){
-            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', connserver = '"+currentip+"' WHERE uuid = '"+player.uuid+"'");
-        } else {
-            writeData("UPDATE players SET connected = '1', lastdate = '"+nowString+"', connserver = '"+currentip+"', uuid = '"+player.uuid+"' WHERE accountid = '"+id+"'");
-        }
+            // Write player connected
+            if (id == null) {
+                writeData("UPDATE players SET connected = '1', lastdate = '" + nowString + "', connserver = '" + currentip + "' WHERE uuid = '" + player.uuid + "'");
+            } else {
+                writeData("UPDATE players SET connected = '1', lastdate = '" + nowString + "', connserver = '" + currentip + "', uuid = '" + player.uuid + "' WHERE accountid = '" + id + "'");
+            }
+        });
+        t.start();
 
         if (Vars.state.rules.pvp){
             player.setTeam(netServer.assignTeam(player, playerGroup.all()));
