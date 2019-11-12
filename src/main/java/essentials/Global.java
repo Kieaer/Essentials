@@ -130,16 +130,24 @@ public class Global {
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
     public static String bundle(Player player, String value, Object... parameter) {
         JSONObject db = getData(player.uuid);
-        Locale locale = new Locale(db.getString("language"));
-        Bundle bundle = new Bundle(locale);
-        return bundle.getBundle(value, parameter);
+        if(db.toString().equals("{}")){
+            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
+        } else {
+            Locale locale = new Locale(db.getString("language"));
+            Bundle bundle = new Bundle(locale);
+            return bundle.getBundle(value, parameter);
+        }
     }
 
     public static String bundle(Player player, String value) {
         JSONObject db = getData(player.uuid);
-        Locale locale = new Locale(db.getString("language"));
-        Bundle bundle = new Bundle(locale);
-        return bundle.getBundle(value);
+        if(db.toString().equals("{}")){
+            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
+        } else {
+            Locale locale = new Locale(db.getString("language"));
+            Bundle bundle = new Bundle(locale);
+            return bundle.getBundle(value);
+        }
     }
 
     public static String bundle(String value, Object... paramter){
@@ -157,16 +165,24 @@ public class Global {
     // Bundle 파일에서 Essentials 문구 없이 출력
     public static String nbundle(Player player, String value, Object... paramter) {
         JSONObject db = getData(player.uuid);
-        Locale locale = new Locale(db.getString("language"));
-        Bundle bundle = new Bundle(locale);
-        return bundle.getNormal(value, paramter);
+        if(db.toString().equals("{}")){
+            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
+        } else {
+            Locale locale = new Locale(db.getString("language"));
+            Bundle bundle = new Bundle(locale);
+            return bundle.getNormal(value, paramter);
+        }
     }
 
     public static String nbundle(Player player, String value) {
         JSONObject db = getData(player.uuid);
-        Locale locale = new Locale(db.getString("language"));
-        Bundle bundle = new Bundle(locale);
-        return bundle.getNormal(value);
+        if(db.toString().equals("{}")){
+            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
+        } else {
+            Locale locale = new Locale(db.getString("language"));
+            Bundle bundle = new Bundle(locale);
+            return bundle.getNormal(value);
+        }
     }
 
     public static String nbundle(String value, Object... paramter){

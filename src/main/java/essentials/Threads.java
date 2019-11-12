@@ -894,6 +894,7 @@ public class Threads extends TimerTask implements Runnable{
             for (Item item : content.items()) {
                 if (item.type == ItemType.material) {
                     int resource;
+                    if(state.teams.get(Team.sharded).cores.isEmpty()) return;
                     if(state.teams.get(Team.sharded).cores.first().entity.items.has(item)){
                         resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
                     } else {
@@ -904,7 +905,7 @@ public class Threads extends TimerTask implements Runnable{
                         StringBuilder using = new StringBuilder();
                         for(int b=0;b<playerGroup.size();b++) {
                             Player p = playerGroup.all().get(b);
-                            if(p.buildRequest().block.requirements == null) return;
+                            if(p.buildRequest().block == null) return;
                             for(int c=0;c<p.buildRequest().block.requirements.length;c++){
                                 Item ad = p.buildRequest().block.requirements[c].item;
                                 if(ad == name.get(a)){

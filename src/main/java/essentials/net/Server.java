@@ -103,7 +103,7 @@ public class Server implements Runnable {
                         in.close();
                         socket.close();
                         list.remove(this);
-                        Global.logc(nbundle("client-disconnected"));
+                        Global.logc(nbundle("client-disconnected", remoteip));
                         return;
                     }
 

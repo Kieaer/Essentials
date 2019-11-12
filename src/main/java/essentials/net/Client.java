@@ -226,7 +226,7 @@ public class Client extends Thread{
                     Global.logw("Unknown data! - "+data);
                 }
             } catch (IOException e) {
-                Global.logc(nbundle("server-disconnected", config.getServername()));
+                Global.logc(nbundle("server-disconnected", config.getClienthost()));
 
                 serverconn = false;
                 try {
