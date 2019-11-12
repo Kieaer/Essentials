@@ -34,50 +34,53 @@ public class Client extends Thread{
     public void update(){
         Global.logc(nbundle("client-checking-version"));
 
-        HttpURLConnection con;
-        try {
-            String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
-            URL url = new URL(apiURL);
-            con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-            con.setRequestProperty("Content-length", "0");
-            con.setUseCaches(false);
-            con.setAllowUserInteraction(false);
-            con.setConnectTimeout(3000);
-            con.setReadTimeout(3000);
-            con.connect();
-            int status = con.getResponseCode();
-            StringBuilder response = new StringBuilder();
+        Thread t = new Thread(() -> {
+            HttpURLConnection con;
+            try {
+                String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
+                URL url = new URL(apiURL);
+                con = (HttpURLConnection) url.openConnection();
+                con.setRequestMethod("GET");
+                con.setRequestProperty("Content-length", "0");
+                con.setUseCaches(false);
+                con.setAllowUserInteraction(false);
+                con.setConnectTimeout(3000);
+                con.setReadTimeout(3000);
+                con.connect();
+                int status = con.getResponseCode();
+                StringBuilder response = new StringBuilder();
 
-            switch (status) {
-                case 200:
-                case 201:
-                    BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        response.append(line).append("\n");
-                    }
-                    br.close();
-                    con.disconnect();
+                switch (status) {
+                    case 200:
+                    case 201:
+                        BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                        String line;
+                        while ((line = br.readLine()) != null) {
+                            response.append(line).append("\n");
+                        }
+                        br.close();
+                        con.disconnect();
+                }
+
+                JSONTokener parser = new JSONTokener(response.toString());
+                JSONObject object = new JSONObject(parser);
+
+                DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
+                DefaultArtifactVersion current = new DefaultArtifactVersion("5.1.3");
+
+                if (latest.compareTo(current) > 0) {
+                    Global.logc(nbundle("version-new"));
+                } else if (latest.compareTo(current) == 0) {
+                    Global.logc(nbundle("version-current"));
+                } else if (latest.compareTo(current) < 0) {
+                    Global.logc(nbundle("version-devel"));
+                }
+
+            } catch (Exception e) {
+                printStackTrace(e);
             }
-
-            JSONTokener parser = new JSONTokener(response.toString());
-            JSONObject object = new JSONObject(parser);
-
-            DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
-            DefaultArtifactVersion current = new DefaultArtifactVersion("5.1.3");
-
-            if(latest.compareTo(current) > 0){
-                Global.logc(nbundle("version-new"));
-            } else if(latest.compareTo(current) == 0){
-                Global.logc(nbundle("version-current"));
-            } else if(latest.compareTo(current) < 0){
-                Global.logc(nbundle("version-devel"));
-            }
-
-        } catch (Exception e){
-            printStackTrace(e);
-        }
+        });
+        t.start();
     }
 
     public void main(String option, Player player, String message){

@@ -45,7 +45,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -90,19 +93,25 @@ public class Main extends Plugin {
         // 모든 플레이어 연결 상태를 0으로 설정
         try{
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT id,connserver FROM players");
+            ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
             while(rs.next()){
-                String value = rs.getString("connserver");
-                if(value.equals("none")){
-                    writeData("UPDATE players SET connected = 0 WHERE id='"+rs.getInt("id")+"'");
+                if(isLoginold(rs.getString("lastdate"))){
+                    writeData("UPDATE players SET connected = 0, connserver = 'none' WHERE id='"+rs.getInt("id")+"'");
                 }
             }
         } catch (SQLException e) {
             printStackTrace(e);
         }
 
-        // 클라이언트 플레이어 카운트
-        new jumpcheck().start();
+        // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
+        Thread jumpcheck = new Thread(new jumpcheck());
+        jumpcheck.start();
+
+        // 코어 자원소모 감시 시작
+        Thread monitorresource = new Thread(new monitorresource());
+        if(config.isScanresource()) {
+            monitorresource.start();
+        }
 
         // 기록 시작
         if (config.isLogging()) {
@@ -155,6 +164,7 @@ public class Main extends Plugin {
             netServer.sendWorldData(e.player);
         });
 
+        // 게임오버가 되었을 때
         Events.on(GameOverEvent.class, e -> {
             if (Vars.state.rules.pvp) {
                 if (playerGroup != null && playerGroup.size() > 0) {
@@ -166,7 +176,7 @@ public class Main extends Plugin {
                                 int pvpwin = db.getInt("pvpwincount");
                                 pvpwin++;
                                 writeData("UPDATE players SET pvpwincount = '" + pvpwin + "' WHERE uuid = '" + player.uuid + "'");
-                            } else {
+                            } else if (!player.getTeam().name().equals(e.winner.name())){
                                 JSONObject db = getData(player.uuid);
                                 int pvplose = db.getInt("pvplosecount");
                                 pvplose++;
@@ -178,6 +188,7 @@ public class Main extends Plugin {
             }
         });
 
+        // 맵이 불러와졌을 때
         Events.on(WorldLoadEvent.class, e -> {
             Threads.playtime = "00:00.00";
 
@@ -191,6 +202,7 @@ public class Main extends Plugin {
 
         });
 
+        // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(DepositEvent.class, e -> {
             // If deposit block name is thorium reactor
             if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor()) {
@@ -213,9 +225,9 @@ public class Main extends Plugin {
 
                                 Log log = new Log();
                                 if (Global.config.getLanguage().equals("ko")) {
-                                    log.writelog("griefer", gettime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                    log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                 } else {
-                                    log.writelog("griefer", gettime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                    log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                 }
                                 Call.onTileDestroyed(world.tile(x, y));
                             } else {
@@ -228,9 +240,9 @@ public class Main extends Plugin {
 
                                     Log log = new Log();
                                     if (Global.config.getLanguage().equals("ko")) {
-                                        log.writelog("griefer", gettime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                        log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                     } else {
-                                        log.writelog("griefer", gettime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                        log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                     }
                                     Call.onTileDestroyed(world.tile(x, y));
                                 }
@@ -240,67 +252,65 @@ public class Main extends Plugin {
                         printStackTrace(ex);
                     }
                 });
-                executorService.execute(t);
+                t.start();
             }
-            for (int a = 0; a < playerGroup.size(); a++) {
-                Player other = playerGroup.all().get(a);
-                if(getData(other.uuid).toString().equals("{}")) return;
-                other.sendMessage(bundle(other, "depositevent", e.player.name, e.player.item().item.name, e.tile.block().name));
-            }
+            allsendMessage("depositevent", e.player.name, e.player.item().item.name, e.tile.block().name);
         });
 
+        // 플레이어가 서버에 들어왔을 때
         Events.on(PlayerJoin.class, e -> {
-            if (config.isLoginenable()) {
-                e.player.isAdmin = false;
+            e.player.isAdmin = false;
 
-                if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+            Team no_core = getTeamNoCore(e.player);
+            e.player.setTeam(no_core);
+            Call.onPlayerDeath(e.player);
+
+            if (config.isLoginenable()) {
+                if (isNocore(e.player)) {
                     JSONObject db = getData(e.player.uuid);
                     if (db.has("uuid")) {
                         if (db.getString("uuid").equals(e.player.uuid)) {
                             e.player.sendMessage(bundle(e.player, "autologin"));
                             playerdb.load(e.player, null);
                         }
-                    } else if(db.toString().equals("{}")){
-                        Team no_core = getTeamNoCore(e.player);
-                        e.player.setTeam(no_core);
-                        Call.onPlayerDeath(e.player);
-
-                        // Login require
+                    } else {
+                        // 로그인 요구
                         String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
                                 "If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
                                 "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
                                 "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
                         Call.onInfoMessage(e.player.con, message);
                     }
-                } else {
-                    Team no_core = getTeamNoCore(e.player);
-                    e.player.setTeam(no_core);
-                    Call.onPlayerDeath(e.player);
-
-                    // Login require
-                    String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-                            "If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
-                            "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-                            "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
-                    Call.onInfoMessage(e.player.con, message);
                 }
             } else if (!config.isLoginenable()){
+                // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
                 if (playerdb.register(e.player)) {
                     playerdb.load(e.player, null);
                 } else {
-                    // Can't translate
-                    Call.onKick(e.player.con, "Plugin error! Please contact server admin!");
+                    Call.onKick(e.player.con, nbundle("plugin-error-kick"));
                 }
             } else {
-                Global.loge("LOGIN SYSTEM FATAL ERROR!");
+                Call.onKick(e.player.con, nbundle("plugin-error-kick"));
+                Global.loge("!! Account system fatal error occurred !!");
+                try {
+                    throw new Exception("Account system failed");
+                } catch (Exception ex) {
+                    Global.loge("Be sure to send this issue to the plugin developer!");
+                    JSONObject db = getData(player.uuid);
+                    Global.loge("Target player data: "+db.toString());
+                    Global.loge("====== Stacktrace info start ======");
+                    ex.printStackTrace();
+                    Global.loge("====== Stacktrace info end ======");
+                    net.dispose();
+                    Core.app.exit();
+                }
             }
 
-
-            // Database read/write
-            Thread playerthread = new Thread(() -> {
+            // DB 작업
+            Thread t = new Thread(() -> {
                 Thread.currentThread().setName("PlayerJoin Thread");
 
-                // Check if blacklisted nickname
+                // 닉네임이 블랙리스트에 등록되어 있는지 확인
                 String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
                 JSONTokener parser = new JSONTokener(blacklist);
                 JSONArray array = new JSONArray(parser);
@@ -312,7 +322,7 @@ public class Main extends Plugin {
                     }
                 }
 
-                // Check VPN
+                // VPN을 사용중인지 확인
                 if (config.isAntivpn()) {
                     try {
                         InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
@@ -331,29 +341,32 @@ public class Main extends Plugin {
                     }
                 }
             });
-            executorService.execute(playerthread);
+            t.start();
 
-            // PvP placetime (WorldLoadEvent isn't work.)
+            // PvP 평화시간 설정
             if (config.isEnableantirush() && Vars.state.rules.pvp && peacetime) {
                 state.rules.playerDamageMultiplier = 0f;
                 state.rules.playerHealthMultiplier = 0.001f;
             }
         });
 
+        // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
-            if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+            if (!isNocore(e.player)) {
                 writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + e.player.uuid + "'");
             }
         });
 
+        // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent.class, e -> {
-            String check = String.valueOf(e.message.charAt(0));
-            //check if command
-            if (!Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+            if (isNocore(e.player)) {
+                String check = String.valueOf(e.message.charAt(0));
+
+                // 명령어인지 확인
                 if (!check.equals("/")) {
                     JSONObject db = getData(e.player.uuid);
 
-                    // Set lastchat data
+                    // 마지막 대화 데이터를 DB에 저장함
                     Thread t = new Thread(() -> {
                         Thread.currentThread().setName("DB Thread");
                         String sql = "UPDATE players SET lastchat = ? WHERE uuid = ?";
@@ -368,25 +381,21 @@ public class Main extends Plugin {
                             printStackTrace(ex);
                         }
                     });
-                    executorService.execute(t);
+                    t.start();
 
+                    // 번역기능 작동
                     Translate tr = new Translate();
                     tr.main(e.player, e.message);
 
-                    boolean crosschat;
-                    if (db.has("crosschat")) {
-                        crosschat = db.getBoolean("crosschat");
-                    } else {
-                        return;
-                    }
-
+                    // 서버간 대화기능 작동
+                    boolean crosschat = db.getBoolean("crosschat");
                     if (config.isClientenable()) {
                         if (crosschat) {
                             Client client = new Client();
                             client.main("chat", e.player, e.message);
                         }
                         if (crosschat && config.isServerenable()) {
-                            // send message to all clients
+                            // 메세지를 모든 클라이언트에게 전송함
                             try {
                                 for (int i = 0; i < Server.list.size(); i++) {
                                     Server.Service ser = Server.list.get(i);
@@ -397,36 +406,37 @@ public class Main extends Plugin {
                                 ex.printStackTrace();
                             }
                         }
-                    }
-                    if (!config.isClientenable() && !config.isServerenable() && crosschat) {
+                    } else if (!config.isClientenable() && !config.isServerenable() && crosschat) {
                         e.player.sendMessage(bundle(e.player, "no-any-network"));
                         writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + e.player.uuid + "'");
                     }
                 }
-            }
-            if (votecheck.isvoting) {
-                if (e.message.equals("y")) {
-                    if (votecheck.list.contains(e.player.uuid)) {
-                        e.player.sendMessage("[green][Essentials][scarlet] You're already voted!");
-                    } else {
-                        votecheck.list.add(e.player.uuid);
-                        int current = Vote.list.size();
-                        for(Player others : playerGroup.all()){
-                            if(getData(others.uuid).toString().equals("{}")) return;
-                            others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
-                        }
-                        if (votecheck.require - current == 0) {
-                            votecheck v = new votecheck();
-                            v.main();
+
+                // 투표가 진행중일때
+                if (Vote.isvoting) {
+                    if (e.message.equals("y")) {
+                        if (Vote.list.contains(e.player.uuid)) {
+                            e.player.sendMessage(bundle(player, "vote-already"));
+                        } else {
+                            Vote.list.add(e.player.uuid);
+                            int current = Vote.list.size();
+                            for(Player others : playerGroup.all()){
+                                if(getData(others.uuid).toString().equals("{}")) return;
+                                others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
+                            }
+                            if (Vote.require - current == 0) {
+                                Vote.counting.interrupt();
+                            }
                         }
                     }
                 }
             }
         });
 
+        // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
-            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !Vars.state.teams.get(e.player.getTeam()).cores.isEmpty()) {
-                Thread expthread = new Thread(() -> {
+            if (!e.breaking && e.player != null && e.player.buildRequest() != null && isNocore(e.player)) {
+                Thread t = new Thread(() -> {
                     JSONObject db = getData(e.player.uuid);
                     String name = e.tile.block().name;
                     try {
@@ -446,18 +456,18 @@ public class Main extends Plugin {
 
                         writeData("UPDATE players SET lastplacename = '" + e.tile.block().name + "', placecount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + e.player.uuid + "'");
 
-                        if (e.player.buildRequest() != null && e.player.buildRequest().block == Blocks.thoriumReactor) {
+                        if (e.player.buildRequest().block == Blocks.thoriumReactor) {
                             int reactorcount = db.getInt("reactorcount");
                             reactorcount++;
                             writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + e.player.uuid + "'");
                         }
                     } catch (Exception ex) {
                         printStackTrace(ex);
-                        Call.onKick(e.player.con, "You're not logged!");
                     }
                 });
-                executorService.execute(expthread);
+                t.start();
 
+                // 메세지 블럭을 설치했을 경우, 해당 블럭에다 전력 상태를 표시할 수 있도록 위치를 저장함
                 if (e.tile.entity.block == Blocks.message) {
                     try {
                         int x = e.tile.x;
@@ -486,6 +496,7 @@ public class Main extends Plugin {
                     }
                 }
 
+                // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
                 if (e.tile.entity.block == Blocks.thoriumReactor) {
                     nukeposition.put(e.tile.entity.tileX() + "/" + e.tile.entity.tileY());
                     nukedata.add(e.tile);
@@ -493,6 +504,7 @@ public class Main extends Plugin {
             }
         });
 
+        // 플레이어가 블럭을 뽀갰을 때
         Events.on(BuildSelectEvent.class, e -> {
             if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                 if (e.breaking) {
@@ -524,6 +536,8 @@ public class Main extends Plugin {
                         printStackTrace(ex);
                         Call.onKick(((Player) e.builder).con, "You're not logged!");
                     }
+
+                    // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
                     if (e.builder.buildRequest().block == Blocks.message) {
                         try {
                             for (int i = 0; i < powerblock.length(); i++) {
@@ -546,7 +560,9 @@ public class Main extends Plugin {
             }
         });
 
+        // 유닛을 박살냈을 때
         Events.on(UnitDestroyEvent.class, e -> {
+            // 뒤진(?) 유닛이 플레이어일때
             if (e.unit instanceof Player) {
                 Player player = (Player) e.unit;
                 JSONObject db = getData(player.uuid);
@@ -557,45 +573,52 @@ public class Main extends Plugin {
                 }
             }
 
+            // 터진 유닛수만큼 카운트해줌
             if (playerGroup != null && playerGroup.size() > 0) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player player = playerGroup.all().get(i);
-                    if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                        JSONObject db = getData(player.uuid);
-                        int killcount;
-                        if (db.has("killcount")) {
-                            killcount = db.getInt("killcount");
-                        } else {
-                            return;
+                Thread t = new Thread(() -> {
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player player = playerGroup.all().get(i);
+                        if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+                            JSONObject db = getData(player.uuid);
+                            int killcount;
+                            if (db.has("killcount")) {
+                                killcount = db.getInt("killcount");
+                            } else {
+                                return;
+                            }
+                            killcount++;
+                            writeData("UPDATE players SET killcount = '" + killcount + "' WHERE uuid = '" + player.uuid + "'");
                         }
-                        killcount++;
-                        writeData("UPDATE players SET killcount = '" + killcount + "' WHERE uuid = '" + player.uuid + "'");
                     }
-                }
+                });
+                t.start();
             }
         });
 
+        // 로그인 기능이 켜져있을때, 비 로그인 사용자들에게 알림을 해줌
         if (config.isLoginenable()) {
             Timer alerttimer = new Timer(true);
             alerttimer.scheduleAtFixedRate(new login(), 60000, 60000);
         }
 
+        // 1초마다 실행되는 작업 시작
         Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
 
+        // 롤백 명령어에서 사용될 자동 저장작업 시작
         Timer rt = new Timer(true);
         rt.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
 
-        // Set main thread works
+        // 0.016초마다 실행 및 서버 종료시 실행할 작업
         Core.app.addListener(new ApplicationListener() {
             int delaycount = 0;
-            boolean a1, a2, a3, a4 = false;
+            boolean a1, a2, a3 = false;
 
             @Override
             public void update() {
-                // Power node monitoring
-                if (delaycount == 20) {
+                if (delaycount == 30) {
                     try {
+                        // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
                         for (int i = 0; i < powerblock.length(); i++) {
                             String raw = powerblock.getString(i);
 
@@ -628,125 +651,61 @@ public class Main extends Plugin {
                                     "Production: [green]" + Math.round(product) + "[]";
                             Call.setMessageBlockText(null, world.tile(x, y), text);
                         }
+
+                        // 타이머 초기화
                         delaycount = 0;
                         a1 = false;
                         a2 = false;
                         a3 = false;
-                        a4 = false;
                     } catch (Exception ignored) {}
                 } else {
                     delaycount++;
                 }
 
-                // It must run faster
-                for (int i = 0; i < nukedata.size(); i++) {
-                    Tile target = nukedata.get(i);
-                    try {
-                        NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
-                        if (entity.heat >= 0.2f && entity.heat <= 0.39f && !a1) {
-                            for (int a = 0; a < playerGroup.size(); a++) {
-                                Player other = playerGroup.all().get(a);
-                                other.sendMessage(bundle(other, "thorium-overheat-green", Math.round(entity.heat * 100), target.x, target.y));
+                // 핵 폭발감지
+                if(config.isDetectreactor()) {
+                    for (int i = 0; i < nukedata.size(); i++) {
+                        Tile target = nukedata.get(i);
+                        try {
+                            NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
+                            if (entity.heat >= 0.2f && entity.heat <= 0.39f && !a1) {
+                                allsendMessage("thorium-overheat-green", Math.round(entity.heat * 100), target.x, target.y);
+                                a1 = true;
                             }
-                            a1 = true;
-                        }
-                        if (entity.heat >= 0.4f && entity.heat <= 0.59f && !a2) {
-                            for (int a = 0; a < playerGroup.size(); a++) {
-                                Player other = playerGroup.all().get(a);
-                                other.sendMessage(bundle(other, "thorium-overheat-yellow", Math.round(entity.heat * 100), target.x, target.y));
+                            if (entity.heat >= 0.4f && entity.heat <= 0.79f && !a2) {
+                                allsendMessage("thorium-overheat-yellow", Math.round(entity.heat * 100), target.x, target.y);
+                                a2 = true;
                             }
-                            a2 = true;
-                        }
-                        if (entity.heat >= 0.6f && entity.heat <= 0.79f && !a3) {
-                            for (int a = 0; a < playerGroup.size(); a++) {
-                                Player other = playerGroup.all().get(a);
-                                other.sendMessage(bundle(other, "thorium-overheat-yellow", Math.round(entity.heat * 100), target.x, target.y));
+                            if (entity.heat >= 0.8f && entity.heat <= 0.95f && !a3) {
+                                allsendMessage("thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y);
+                                a3 = true;
                             }
-                            a3 = true;
-                        }
-                        if (entity.heat >= 0.8f && entity.heat <= 0.95f && !a4) {
-                            for (int a = 0; a < playerGroup.size(); a++) {
-                                Player other = playerGroup.all().get(a);
-                                other.sendMessage(bundle(other, "thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y));
-                            }
-                            a4 = true;
-                        }
-                        if (entity.heat >= 0.95f) {
-                            for (int a = 0; a < playerGroup.size(); a++) {
-                                Player p = playerGroup.all().get(a);
-                                p.sendMessage(bundle(p, "thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y));
-                                if (p.isAdmin) {
-                                    p.setNet(target.x * 8, target.y * 8);
-                                }
-                            }
-                            if(config.isDetectreactor()) {
-                                Call.onDeconstructFinish(target, Blocks.air, 0);
+                            if (entity.heat >= 0.95f) {
                                 for (int a = 0; a < playerGroup.size(); a++) {
                                     Player p = playerGroup.all().get(a);
-                                    p.sendMessage(bundle(p, "thorium-removed"));
+                                    p.sendMessage(bundle(p, "thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y));
+                                    if (p.isAdmin) {
+                                        p.setNet(target.x * 8, target.y * 8);
+                                    }
                                 }
+                                Call.onDeconstructFinish(target, Blocks.air, 0);
+                                allsendMessage("thorium-removed");
                             }
+                        } catch (Exception e) {
+                            nukeblock.remove(i);
                         }
-                    } catch (Exception e) {
-                        nukeblock.remove(i);
                     }
                 }
             }
 
             public void dispose() {
-                // Save server to server jump data
+                // 서버간 이동 데이터 저장
                 Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
                 Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
                 Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
 
-                // 연결된 서버 데이터 삭제
-                try {
-                    Class.forName("org.sqlite.JDBC");
-                    Class.forName("org.mariadb.jdbc.Driver");
-                    Class.forName("com.mysql.jdbc.Driver");
-
-                    String type = nbundle("db-type");
-
-                    Connection conn;
-
-                    if (config.isSqlite()) {
-                        conn = DriverManager.getConnection(config.getDBurl());
-                        Global.logp(type+"SQLite");
-                    } else {
-                        if (!config.getDBid().isEmpty()) {
-                            conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                            Global.logp(type+"MariaDB/MySQL");
-                        } else {
-                            conn = DriverManager.getConnection(config.getDBurl());
-                            Global.logp(type+"Invalid");
-                        }
-                    }
-
-                    for(int a=0;a<playerGroup.size();a++){
-                        Player others = playerGroup.all().get(a);
-                        if (!Vars.state.teams.get(others.getTeam()).cores.isEmpty()) {
-                            String sql = "UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + others.uuid + "'";
-
-                            try {
-                                PreparedStatement pstmt = conn.prepareStatement(sql);
-                                pstmt.executeUpdate();
-                                pstmt.close();
-                            } catch (Exception e) {
-                                Global.loge(sql);
-                                printStackTrace(e);
-                            }
-                        }
-                    }
-                    conn.close();
-                } catch (ClassNotFoundException e) {
-                    printStackTrace(e);
-                    Global.loge("Class not found!");
-                } catch (SQLException e){
-                    printStackTrace(e);
-                    Global.loge("SQL ERROR!");
-                }
-
-                Vars.netServer.kickAll(KickReason.serverClose);
+                // 자원감시 종료
+                monitorresource.interrupt();
 
                 // 타이머 스레드 종료
                 try {
@@ -795,15 +754,17 @@ public class Main extends Plugin {
                 executorService.shutdown();
 
                 // 클라이언트 플레이어 카운트 스레드 종료
-                new jumpcheck().interrupt();
+                jumpcheck.interrupt();
 
                 // 서버 데이터 요청 스레드 종료
                 PingServer.socket.close();
             }
         });
 
+        // 서버가 켜진 시간을 0으로 설정
         Threads.uptime = "00:00.00";
 
+        // 활성화된 기능 목록들을 표시함
         Global.logco(config.checkfeatures());
     }
 
@@ -1162,10 +1123,7 @@ public class Main extends Plugin {
         handler.removeCommand("votekick");
 
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
+            if(checklogin(player)) return;
 
             JSONObject db = getData(player.uuid);
             boolean value = (boolean) db.get("crosschat");
@@ -1181,10 +1139,7 @@ public class Main extends Plugin {
             writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
+            if(checklogin(player)) return;
 
             if (!player.isAdmin) {
                 player.sendMessage(bundle(player, "notadmin"));
@@ -1203,38 +1158,24 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
+            if(checklogin(player)) return;
 
             if (!player.isAdmin) {
                 player.sendMessage(bundle(player, "notadmin"));
             } else {
                 try {
                     Difficulty.valueOf(arg[0]);
-                    player.sendMessage("Difficulty set to '" + arg[0] + "'.");
+                    player.sendMessage(bundle(player, "difficulty-set"));
                 } catch (IllegalArgumentException e) {
-                    player.sendMessage("No difficulty with name '" + arg[0] + "' found.");
+                    player.sendMessage(bundle(player, "difficulty-not-found"));
                 }
             }
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
+            if(checklogin(player)) return;
 
             Thread t = new Thread(() -> {
-                getip getip = new getip();
-                Thread th = new Thread(getip);
-                th.start();
-                try {
-                    th.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                String currentip = getip.getValue();
+                String currentip = new getip().main();
 
                 switch (arg[0]) {
                     case "host":
@@ -1309,25 +1250,18 @@ public class Main extends Plugin {
                         }
                         break;
                     default:
-                        Global.log("invalid option!");
+                        player.sendMessage(bundle(player, "wrong-command"));
                         break;
                 }
             });
             t.start();
         });
         handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
+            if(checklogin(player)) return;
             player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
         });
         handler.<Player>register("info", "Show your information", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
             JSONObject db = getData(player.uuid);
             String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
@@ -1355,6 +1289,7 @@ public class Main extends Plugin {
             Call.onInfoMessage(player.con, datatext);
         });
         handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
+            if(checklogin(player)) return;
             if(player.isAdmin){
                 int size;
                 try{
@@ -1408,6 +1343,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("jumpcount", "<serverip> <port>", "Add server player counting", (arg, player) -> {
+            if(checklogin(player)) return;
             if (!player.isAdmin) {
                 player.sendMessage(bundle(player, "notadmin"));
             } else {
@@ -1416,6 +1352,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("jumptotal", "Counting all server players", (arg, player) -> {
+            if(checklogin(player)) return;
             if (!player.isAdmin) {
                 player.sendMessage(bundle(player, "notadmin"));
             } else {
@@ -1424,11 +1361,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             if (!player.isAdmin) {
                 player.sendMessage(bundle(player, "notadmin"));
             } else {
@@ -1436,11 +1369,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             if (player.isAdmin) {
                 Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
                 if (other == null) {
@@ -1454,13 +1383,8 @@ public class Main extends Plugin {
         });
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             if (config.isLoginenable()) {
-                if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                    player.sendMessage("[green][Essentials] [orange]You are already logged in");
-                    return;
-                }
-
                 if (PlayerDB.login(player, arg[0], arg[1])) {
-                    player.sendMessage("[green][Essentials] [scarlet]Login success/로그인 성공.");
+                    player.sendMessage(bundle(player, "login-success"));
                     PlayerDB playerdb = new PlayerDB();
                     playerdb.load(player, arg[0]);
                 } else {
@@ -1471,27 +1395,16 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("logout","Log-out of your account.", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
+            if(checklogin(player)) return;
             writeData("UPDATE players SET connected = '0', uuid = 'LogoutAAAAA=' WHERE uuid = '"+player.uuid+"'");
             Call.onKick(player.con, nbundle("logout"));
         });
         handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             Call.sendMessage("[orange]*[] " + player.name + "[white] : " + arg[0]);
         });
         handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             String motd = getmotd(player);
             int count = motd.split("\r\n|\r|\n").length;
             if (count > 10) {
@@ -1531,11 +1444,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("save", "Map save", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             if (player.isAdmin) {
                 Core.app.post(() -> {
                     FileHandle file = saveDirectory.child("1." + saveExtension);
@@ -1547,6 +1456,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
+            if(checklogin(player)) return;
             if(player.isAdmin) {
                 UnitType targetunit;
                 switch (arg[0]) {
@@ -1668,11 +1578,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("status", "Show server status", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             player.sendMessage(nbundle(player, "server-status"));
             player.sendMessage("[#2B60DE]========================================[]");
             float fps = Math.round((int) 60f / Time.delta());
@@ -1693,25 +1599,14 @@ public class Main extends Plugin {
             player.sendMessage(nbundle(player, "server-status-banstat", bancount, idb, ipb, Threads.playtime, Threads.uptime));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             Player.onPlayerDeath(player);
             if (playerGroup != null && playerGroup.size() > 0) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player others = playerGroup.all().get(i);
-                    player.sendMessage(bundle(others, "suicide", player.name));
-                }
+                allsendMessage("suicide");
             }
         });
         handler.<Player>register("team", "Change team (PvP only)", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             if (Vars.state.rules.pvp) {
                 if (player.isAdmin) {
                     int i = player.getTeam().ordinal() + 1;
@@ -1732,11 +1627,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             if (!player.isAdmin) {
                 player.sendMessage(bundle(player, "notadmin"));
             } else {
@@ -1760,22 +1651,14 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("time", "Show server time", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
             String nowString = now.format(dateTimeFormatter);
             player.sendMessage(bundle(player, "servertime", nowString));
         });
         handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             Player other = null;
             for (Player p : playerGroup.all()) {
                 boolean result = p.name.contains(arg[0]);
@@ -1790,11 +1673,7 @@ public class Main extends Plugin {
             player.setNet(other.x, other.y);
         });
         handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             Player other1 = null;
             Player other2 = null;
             for (Player p : playerGroup.all()) {
@@ -1822,11 +1701,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             int x;
             int y;
             try{
@@ -1839,11 +1714,7 @@ public class Main extends Plugin {
             player.setNet(x, y);
         });
         handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             JSONObject db = getData(player.uuid);
             boolean value = (boolean) db.get("translate");
             int set;
@@ -1858,11 +1729,7 @@ public class Main extends Plugin {
             writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
         });
         handler.<Player>register("vote", "<gameover/skipwave/kick/rollback> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
-            if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
-                return;
-            }
-
+            if(checklogin(player)) return;
             if(arg.length == 2){
                 new Vote(player, arg[0], arg[1]);
             } else {

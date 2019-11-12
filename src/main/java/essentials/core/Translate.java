@@ -2,7 +2,6 @@ package essentials.core;
 
 import essentials.Global;
 import essentials.utils.Config;
-import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -14,9 +13,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import static essentials.Global.isNocore;
 import static essentials.Global.printStackTrace;
 import static essentials.core.PlayerDB.getData;
-import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.playerGroup;
 
 public class Translate {
@@ -26,16 +25,15 @@ public class Translate {
     private static BufferedReader in;
 
     public void main(Player player, String message) {
+        // 클라이언트 ID/PW 값이 비었는지 확인
         if (!config.getClientId().equals("") && !config.getClientSecret().equals("")) {
             Thread t = new Thread(() -> {
                 try {
                     JSONObject orignaldata = getData(player.uuid);
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player p = playerGroup.all().get(i);
-                        if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+                        if (isNocore(player)) {
                             JSONObject data = getData(p.uuid);
-                            // Null check?
-                            if(data.toString().equals("{}") || !data.has("language")) return;
                             String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
                             String language = data.getString("language");
                             String orignal = orignaldata.getString("language");
@@ -99,7 +97,7 @@ public class Translate {
                     printStackTrace(e);
                 }
             });
-            executorService.execute(t);
+            t.start();
         }
     }
 }

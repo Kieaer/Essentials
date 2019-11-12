@@ -11,12 +11,23 @@ import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.world.Tile;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 import static essentials.core.PlayerDB.getData;
+import static io.anuke.mindustry.Vars.playerGroup;
 import static io.anuke.mindustry.Vars.world;
 
 public class Global {
@@ -121,10 +132,16 @@ public class Global {
     }
 
     // 현재 시간출력
-    public static String gettime(){
+    public static String getTime(){
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
         return "[" + now.format(dateTimeFormatter) + "] ";
+    }
+
+    public static String getnTime(){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+        return now.format(dateTimeFormatter);
     }
 
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
@@ -444,6 +461,131 @@ public class Global {
                     Call.onDeconstructFinish(world.tile(target.x+4+x,target.y+y), Blocks.air, 0);
                 }
             }
+        }
+    }
+
+    // 모든 플레이어에게 메세지 표시
+    public static void allsendMessage(String name){
+        Thread t = new Thread(() -> {
+            for (int i = 0; i < playerGroup.size(); i++) {
+                Player other = playerGroup.all().get(i);
+                other.sendMessage(bundle(other, name));
+            }
+        });
+        t.start();
+    }
+
+    public static void allsendMessage(String name, Object... parameter){
+        Thread t = new Thread(() -> {
+            for (int i = 0; i < playerGroup.size(); i++) {
+                Player other = playerGroup.all().get(i);
+                other.sendMessage(bundle(other, name, parameter));
+            }
+        });
+        t.start();
+    }
+
+    // 본인의 코어가 있는지 없는지 확인
+    public static boolean isNocore(Player player){
+        return Vars.state.teams.get(player.getTeam()).cores.isEmpty();
+    }
+
+    // 플레이어 지역 위치 확인
+    public static JSONObject geolocation(Player player) {
+        String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+        JSONObject list = new JSONObject();
+
+        try {
+            String apiURL = "http://ipapi.co/" + ip + "/json";
+            URL url = new URL(apiURL);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setReadTimeout(5000);
+            con.setRequestMethod("POST");
+
+            boolean redirect = false;
+
+            int status = con.getResponseCode();
+            if (status != HttpURLConnection.HTTP_OK) {
+                if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+                    redirect = true;
+            }
+
+            if (redirect) {
+                String newUrl = con.getHeaderField("Location");
+                String cookies = con.getHeaderField("Set-Cookie");
+
+                con = (HttpURLConnection) new URL(newUrl).openConnection();
+                con.setRequestProperty("Cookie", cookies);
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = br.readLine()) != null) {
+                response.append(inputLine);
+            }
+            br.close();
+            JSONTokener parser = new JSONTokener(response.toString());
+            JSONObject result = new JSONObject(parser);
+
+            if (result.has("reserved")) {
+                list.put("geo", "Local IP");
+                list.put("geocode", "LC");
+                list.put("lang", "en");
+            } else {
+                list.put("geo", result.getString("country_name"));
+                list.put("geocode", result.getString("country"));
+                list.put("lang", result.getString("languages").substring(0, 1));
+            }
+        } catch (IOException e) {
+            printStackTrace(e);
+            list.put("geo", "invalid");
+            list.put("geocode", "invalid");
+            list.put("lang", "en");
+        }
+
+        return list;
+    }
+
+    // 로그인 유무 확인
+    public static boolean isLogin(Player player){
+        JSONObject db = getData(player.uuid);
+        if(db.toString().equals("{}")) return false;
+        return db.getBoolean("connected");
+    }
+
+    // 비 로그인 유저 확인
+    public static boolean checklogin(Player player){
+        if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
+            player.sendMessage(bundle("not-login"));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // 로그인 시간 확인
+    public static boolean isLoginold(String date){
+        try {
+            // 플레이어 시간
+            SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+            Calendar cal1 = Calendar.getInstance();
+            Date d = format.parse(String.valueOf(date));
+            cal1.setTime(d);
+            // 로그인 만료시간 설정 (3시간)
+            cal1.add(Calendar.HOUR, 3);
+
+            // 서버 시간
+            LocalDateTime now = LocalDateTime.now();
+            Calendar cal2 = Calendar.getInstance();
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+            Date d1 = format.parse(now.format(dateTimeFormatter));
+            cal2.setTime(d1);
+
+            return cal1.after(cal2);
+        } catch (ParseException e) {
+            printStackTrace(e);
+            return true;
         }
     }
 }

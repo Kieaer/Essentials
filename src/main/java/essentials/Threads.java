@@ -58,43 +58,38 @@ public class Threads extends TimerTask implements Runnable{
 
     @Override
     public void run() {
-        // Player playtime counting
+        // 플레이어 플탐 카운트
         new playtime().start();
 
-        // Temporarily ban players time counting
+        // 임시로 밴한 플레이어들 밴 해제시간 카운트
         new bantime().start();
 
-        // Map playtime counting
+        // 맵 플탐 카운트
         new maptime().start();
 
-        // Server uptime counting
+        // 서버 켜진시간 카운트
         new uptime().start();
 
-        // Vote monitoring
+        // 투표 확인
         //executorService.execute(new checkvote());
 
-        // client players counting in servername
+        // 현재 서버 이름에다가 클라이언트 서버에 대한 인원 새기기
         new changename().start();
 
-        // If world loaded
+        // 맵이 돌아가고 있을 때
         if(state.is(GameState.State.playing)) {
-            // server to server monitoring
+            // 서버간 이동 패드에 플레이어가 있는지 확인
             new jumpzone().start();
 
-            // all client players counting
+            // 모든 클라이언트 서버에 대한 인원 총합 카운트
             new jumpall().start();
 
-            // check resource use fast
-            if(config.isScanresource() && !Vars.state.teams.get(Team.sharded).cores.isEmpty()) {
-                executorService.execute(new monitorresource());
-            }
-
-            // Check thorium reactor in cryofluid
+            // 냉각수 감시
             // executorService.execute(new checkthorium());
         }
     }
 
-    class playtime extends Thread {
+    static class playtime extends Thread {
         @Override
         public void run(){
             
@@ -341,17 +336,11 @@ public class Threads extends TimerTask implements Runnable{
                         // 그냥 빠른파괴
                         breakcount++;
                         if(breakcount > breaklimit){
-                            for (int i = 0; i < playerGroup.size(); i++) {
-                                Player other = playerGroup.all().get(i);
-                                other.sendMessage(bundle(other, "grief-fast-destroy", ((Player) e.builder).name));
-                            }
+                            allsendMessage("grief-fast-destroy");
                         }
                         if(breakcount > breaklimit + 15){
                             Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
-                            for (int i = 0; i < playerGroup.size(); i++) {
-                                Player other = playerGroup.all().get(i);
-                                other.sendMessage(bundle(other, "grief-detect", ((Player) e.builder).name));
-                            }
+                            allsendMessage("grief-detect");
                         }
 
                         // 중요 건물
@@ -359,18 +348,12 @@ public class Threads extends TimerTask implements Runnable{
                             if (e.builder.buildRequest().block == value) {
                                 implimit++;
                                 if (impcount > implimit) {
-                                    for (int i = 0; i < playerGroup.size(); i++) {
-                                        Player other = playerGroup.all().get(i);
-                                        other.sendMessage(bundle(other, "grief-fast-imp", ((Player) e.builder).name));
-                                    }
+                                    allsendMessage("grief-fast-imp");
                                 }
                             }
                             if(impcount > impcount + 4){
                                 Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
-                                for (int i = 0; i < playerGroup.size(); i++) {
-                                    Player other = playerGroup.all().get(i);
-                                    other.sendMessage(bundle(other, "grief-detect", ((Player) e.builder).name));
-                                }
+                                allsendMessage("grief-detect");
                             }
                         }
 
@@ -378,17 +361,11 @@ public class Threads extends TimerTask implements Runnable{
                         if (e.builder.buildRequest().block == Blocks.conveyor || e.builder.buildRequest().block == Blocks.titaniumConveyor) {
                             conveyorcount++;
                             if (conveyorcount > conveyorlimit) {
-                                for (int i = 0; i < playerGroup.size(); i++) {
-                                    Player other = playerGroup.all().get(i);
-                                    other.sendMessage(bundle(other, "grief-fast-conveyor", ((Player) e.builder).name));
-                                }
+                                allsendMessage("grief-fast-conveyor");
                             }
                             if(conveyorcount > conveyorcount + 10){
                                 Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
-                                for (int i = 0; i < playerGroup.size(); i++) {
-                                    Player other = playerGroup.all().get(i);
-                                    other.sendMessage(bundle(other, "grief-detect", ((Player) e.builder).name));
-                                }
+                                allsendMessage("grief-detect");
                             }
                         }
                     }
@@ -401,18 +378,11 @@ public class Threads extends TimerTask implements Runnable{
                     if (e.player.buildRequest().block == Blocks.router) {
                         routercount++;
                         if (routercount > routerlimit) {
-                            for (int i = 0; i < playerGroup.size(); i++) {
-                                Player other = playerGroup.all().get(i);
-                                other.sendMessage(bundle(other, "grief-fast-router", e.player.name));
-                            }
-                            Call.sendMessage("[scarlet]ALERT! " + e.player.name + "[white] player is spamming [gray]router[]!");
+                            allsendMessage("grief-fast-router");
                         }
                         if(routercount > routerlimit + 20){
                             Call.onKick(e.player.con, nbundle("grief-detect-kick"));
-                            for (int i = 0; i < playerGroup.size(); i++) {
-                                Player other = playerGroup.all().get(i);
-                                other.sendMessage(bundle(other, "grief-detect", e.player.name));
-                            }
+                            allsendMessage("grief-detect");
                         }
                     }
                 }
@@ -561,54 +531,57 @@ public class Threads extends TimerTask implements Runnable{
         // Source from Anuken/CoreBot
         @Override
         public void run() {
+            Thread.currentThread().setName("Server to server thread");
             while(!currentThread().isInterrupted()) {
-                for (int i = 0; i < jumpcount.length(); i++) {
-                    String jumpdata = jumpcount.getString(i);
-                    String[] data = jumpdata.split("/");
-                    String serverip = data[0];
-                    int port = Integer.parseInt(data[1]);
-                    int x = Integer.parseInt(data[2]);
-                    int y = Integer.parseInt(data[3]);
-                    String count = data[4];
-                    int length = Integer.parseInt(data[5]);
+                if(state.is(GameState.State.playing)) {
+                    for (int i = 0; i < jumpcount.length(); i++) {
+                        String jumpdata = jumpcount.getString(i);
+                        String[] data = jumpdata.split("/");
+                        String serverip = data[0];
+                        int port = Integer.parseInt(data[1]);
+                        int x = Integer.parseInt(data[2]);
+                        int y = Integer.parseInt(data[3]);
+                        String count = data[4];
+                        int length = Integer.parseInt(data[5]);
 
-                    int i2 = i;
-                    pingServer(serverip, port, result -> {
-                        if (result.valid) {
-                            String str = result.players;
-                            int[] digits = new int[str.length()];
-                            for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
+                        int i2 = i;
+                        pingServer(serverip, port, result -> {
+                            if (result.valid) {
+                                String str = result.players;
+                                int[] digits = new int[str.length()];
+                                for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
-                            Tile tile = world.tile(x, y);
-                            if (!count.equals(result.players)) {
-                                if (length != digits.length) {
-                                    for (int px = 0; px < 3; px++) {
-                                        for (int py = 0; py < 5; py++) {
-                                            Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
+                                Tile tile = world.tile(x, y);
+                                if (!count.equals(result.players)) {
+                                    if (length != digits.length) {
+                                        for (int px = 0; px < 3; px++) {
+                                            for (int py = 0; py < 5; py++) {
+                                                Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
+                                            }
                                         }
                                     }
+                                    for (int digit : digits) {
+                                        setcount(tile, digit);
+                                        tile = world.tile(tile.x + 4, tile.y);
+                                    }
+                                } else {
+                                    for (int l = 0; l < length; l++) {
+                                        setcount(tile, digits[l]);
+                                        tile = world.tile(x + 4, y);
+                                    }
                                 }
-                                for (int digit : digits) {
-                                    setcount(tile, digit);
-                                    tile = world.tile(tile.x + 4, tile.y);
-                                }
+                                // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                                jumpcount.put(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
                             } else {
-                                for (int l = 0; l < length; l++) {
-                                    setcount(tile, digits[l]);
-                                    tile = world.tile(x + 4, y);
-                                }
+                                setno(world.tile(x, y));
                             }
-                            // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                            jumpcount.put(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
-                        } else {
-                            setno(world.tile(x,y));
-                        }
-                    });
+                        });
+                    }
                 }
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -810,28 +783,31 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
     }
-    public static class ColorNick {
+    public static class ColorNick implements Runnable{
         private static int colorOffset = 0;
         private static long updateIntervalMs = config.getCupdatei();
+        Player player;
 
-        public void main(Player player){
-            Thread thread = new Thread(() -> {
-                Thread.currentThread().setName("Color nickname thread");
-                JSONObject db = PlayerDB.getData(player.uuid);
-                boolean connected = db.getBoolean("connected");
-                while (connected) {
-                    connected = PlayerDB.getData(player.uuid).getBoolean("connected");
-                    String name = db.getString("name").replaceAll("\\[(.*?)]", "");
-                    try {
-                        Thread.sleep(updateIntervalMs);
-                        nickcolor(name, player);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
+        public ColorNick(Player player){
+            this.player = player;
+        }
+
+        @Override
+        public void run() {
+            Thread.currentThread().setName(player.name+" color nickname thread");
+            JSONObject db = getData(player.uuid);
+            boolean connected = db.getBoolean("connected");
+            while (connected) {
+                connected = db.getBoolean("connected");
+                String name = db.getString("name").replaceAll("\\[(.*?)]", "");
+                try {
+                    Thread.sleep(updateIntervalMs);
+                    nickcolor(name, player);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
-            });
-            executorService.execute(thread);
+            }
         }
 
         private void nickcolor(String name, Player player) {
@@ -874,56 +850,67 @@ public class Threads extends TimerTask implements Runnable{
 
         @Override
         public void run(){
-            for (Item item : content.items()) {
-                if (item.type == ItemType.material) {
-                    pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
-                }
-            }
-
-            for (Item item : content.items()) {
-                if (item.type == ItemType.material) {
-                    name.add(item);
-                }
-            }
-
-            try {
-                Thread.sleep(750);
-            } catch (InterruptedException ignored) {}
-
-            int a=0;
-            for (Item item : content.items()) {
-                if (item.type == ItemType.material) {
-                    int resource;
-                    if(state.teams.get(Team.sharded).cores.isEmpty()) return;
-                    if(state.teams.get(Team.sharded).cores.first().entity.items.has(item)){
-                        resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
-                    } else {
-                        return;
-                    }
-                    int temp = resource - pre.get(a);
-                    if(temp <= -50){
-                        StringBuilder using = new StringBuilder();
-                        for(int b=0;b<playerGroup.size();b++) {
-                            Player p = playerGroup.all().get(b);
-                            if(p.buildRequest().block == null) return;
-                            for(int c=0;c<p.buildRequest().block.requirements.length;c++){
-                                Item ad = p.buildRequest().block.requirements[c].item;
-                                if(ad == name.get(a)){
-                                    using.append(p.name).append(", ");
-                                }
-                            }
+            Thread.currentThread().setName("Resource monitoring thread");
+            while(!currentThread().isInterrupted()) {
+                if(state.is(GameState.State.playing)) {
+                    for (Item item : content.items()) {
+                        if (item.type == ItemType.material) {
+                            pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
                         }
-                        Call.sendMessage(name.get(a).name+" Resource usage is so fast!");
-                        Call.sendMessage("Resource "+name.get(a).name+" is using by "+using.substring(0,using.length()-2));
                     }
-                    cur.add(a, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
-                    a++;
-                }
-            }
 
-            for (Item item : content.items()) {
-                if (item.type == ItemType.material) {
-                    pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                    for (Item item : content.items()) {
+                        if (item.type == ItemType.material) {
+                            name.add(item);
+                        }
+                    }
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
+                    }
+
+                    int a = 0;
+                    for (Item item : content.items()) {
+                        if (item.type == ItemType.material) {
+                            int resource;
+                            if (state.teams.get(Team.sharded).cores.isEmpty()) return;
+                            if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                            } else {
+                                return;
+                            }
+                            int temp = resource - pre.get(a);
+                            if (temp <= -75) {
+                                StringBuilder using = new StringBuilder();
+                                for (int b = 0; b < playerGroup.size(); b++) {
+                                    Player p = playerGroup.all().get(b);
+                                    if (p.buildRequest().block == null) return;
+                                    for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
+                                        Item ad = p.buildRequest().block.requirements[c].item;
+                                        if (ad == name.get(a)) {
+                                            using.append(p.name).append(", ");
+                                        }
+                                    }
+                                }
+                                allsendMessage("resource-fast", name.get(a).name);
+                                allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
+                            }
+                            cur.add(a, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                            a++;
+                        }
+                    }
+
+                    for (Item item : content.items()) {
+                        if (item.type == ItemType.material) {
+                            pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                        }
+                    }
+                } else {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
         }
@@ -1009,30 +996,15 @@ public class Threads extends TimerTask implements Runnable{
         static Thread counting = new Thread(() -> {
             try {
                 if (playerGroup != null && playerGroup.size() > 0) {
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player others = playerGroup.all().get(i);
-                        others.sendMessage(bundle(others, "vote-50sec"));
-                    }
+                    allsendMessage("vote-50sec");
                     Thread.sleep(10000);
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player others = playerGroup.all().get(i);
-                        others.sendMessage(bundle(others, "vote-40sec"));
-                    }
+                    allsendMessage("vote-40sec");
                     Thread.sleep(10000);
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player others = playerGroup.all().get(i);
-                        others.sendMessage(bundle(others, "vote-30sec"));
-                    }
+                    allsendMessage("vote-30sec");
                     Thread.sleep(10000);
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player others = playerGroup.all().get(i);
-                        others.sendMessage(bundle(others, "vote-20sec"));
-                    }
+                    allsendMessage("vote-20sec");
                     Thread.sleep(10000);
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player others = playerGroup.all().get(i);
-                        others.sendMessage(bundle(others, "vote-10sec"));
-                    }
+                    allsendMessage("vote-10sec");
                     Thread.sleep(10000);
                 }
             } catch (InterruptedException e) {
@@ -1103,15 +1075,12 @@ public class Threads extends TimerTask implements Runnable{
                     netServer.admins.banPlayer(target.uuid);
                     Call.onKick(target.con, "You're banned.");
                 } else {
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player others = playerGroup.all().get(i);
-                        bundle(others, "vote-failed");
-                    }
+                    allsendMessage("vote-failed");
                 }
                 list.clear();
                 isvoting = false;
             } else {
-                bundle(player, "player-not-found");
+                player.sendMessage(bundle(player, "player-not-found"));
             }
         });
 
@@ -1133,36 +1102,16 @@ public class Threads extends TimerTask implements Runnable{
             isvoting = false;
         });
     }
-    public static class votecheck{
-        static boolean isvoting = Vote.isvoting;
-        static ArrayList<String> list = Vote.list;
-        static int require = Vote.require;
-
-        public void main(){
-            if(Vote.counting.isAlive()){
-                Global.log("interrupted");
-                Vote.counting.interrupt();
-            }
-        }
-    }
-    public static class getip extends Thread{
-        private volatile String value;
-
-        @Override
-        public void run(){
+    public static class getip{
+        public String main(){
             try{
                 URL whatismyip = new URL("http://checkip.amazonaws.com");
-                BufferedReader in = new BufferedReader(new InputStreamReader(
-                        whatismyip.openStream()));
-
-                value = in.readLine();
+                BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
+                return in.readLine();
             }catch (Exception e){
                 e.printStackTrace();
+                return "127.0.0.1";
             }
-        }
-
-        public String getValue(){
-            return value;
         }
     }
 }

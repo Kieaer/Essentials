@@ -22,6 +22,7 @@ Disk: SSD capable of more than 30MB/s random read/write.
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 ## 6.0 version plans
+- [ ] Plugin performance optmizing
 - [x] Make RPG using player DB
   - [x] Lock blocks
 - [ ] Monitoring resource consumption

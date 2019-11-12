@@ -31,7 +31,9 @@ public class PingServer {
 
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
             listener.accept(readServerData(buffer, ip, System.currentTimeMillis() - start));
+            buffer.clear();
             socket.disconnect();
+            socket.close();
         } catch (Exception ignored) {}
     }
 
