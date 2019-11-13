@@ -526,6 +526,24 @@ public class PlayerDB {
     public void load(Player player, String id) {
         Thread t = new Thread(() -> {
             JSONObject db = getData(player.uuid);
+            // 만약에 새 기기로 기존 계정에 로그인 했을때, 계정에 있던 DB를 가져와서 검사함
+            if(db.toString().equals("{}")){
+                String uuid = "";
+                try{
+                    String sql = "SELECT uuid FROM players WHERE accountid='"+id+"'";
+                    Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery(sql);
+                    while(rs.next()){
+                        uuid = rs.getString("uuid");
+                    }
+                    rs.close();
+                    stmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                db = getData(uuid);
+            }
+
             if(db.getBoolean("connected")){
                 player.con.kick(nbundle(player, "tried-connected-account"));
                 return;

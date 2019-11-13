@@ -61,9 +61,6 @@ public class Threads extends TimerTask implements Runnable{
         // 플레이어 플탐 카운트
         new playtime().start();
 
-        // 임시로 밴한 플레이어들 밴 해제시간 카운트
-        new bantime().start();
-
         // 맵 플탐 카운트
         new maptime().start();
 
@@ -145,31 +142,39 @@ public class Threads extends TimerTask implements Runnable{
     static class bantime extends Thread {
         @Override
         public void run(){
-            try{
-                String db = Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").readString();
-                JSONTokener parser = new JSONTokener(db);
-                JSONArray object = new JSONArray(parser);
+            Thread.currentThread().setName("Resource monitoring thread");
+            while(!currentThread().isInterrupted()) {
+                try {
+                    String db = Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").readString();
+                    JSONTokener parser = new JSONTokener(db);
+                    JSONArray object = new JSONArray(parser);
 
-                LocalDateTime now = LocalDateTime.now();
-                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-                String myTime = now.format(dateTimeFormatter);
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+                    String myTime = now.format(dateTimeFormatter);
 
-                for(int i = 0; i < object.length(); i++) {
-                    JSONObject value1 = object.getJSONObject(i);
-                    String date = (String) value1.get("date");
-                    String uuid = (String) value1.get("uuid");
-                    String name = (String) value1.get("name");
+                    for (int i = 0; i < object.length(); i++) {
+                        JSONObject value1 = object.getJSONObject(i);
+                        String date = (String) value1.get("date");
+                        String uuid = (String) value1.get("uuid");
+                        String name = (String) value1.get("name");
 
-                    if (date.equals(myTime)) {
-                        Log.info(myTime);
-                        object.remove(i);
-                        Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
-                        netServer.admins.unbanPlayerID(uuid);
-                        Global.log("["+myTime+"] [Bantime]"+name+"/"+uuid+" player unbanned!");
+                        if (date.equals(myTime)) {
+                            Log.info(myTime);
+                            object.remove(i);
+                            Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
+                            netServer.admins.unbanPlayerID(uuid);
+                            Global.log("[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
+                        }
                     }
+                } catch (Exception ex) {
+                    printStackTrace(ex);
                 }
-            }catch (Exception ex){
-                printStackTrace(ex);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }
@@ -187,8 +192,8 @@ public class Threads extends TimerTask implements Runnable{
                     playtime = format.format(cal1.getTime());
                     // Anti PvP rushing timer
                     if(config.isEnableantirush() && Vars.state.rules.pvp && cal1.after(config.getAntirushtime()) && peacetime) {
-                        state.rules.playerDamageMultiplier = 1f;
-                        state.rules.playerHealthMultiplier = 1f;
+                        state.rules.playerDamageMultiplier = 0.66f;
+                        state.rules.playerHealthMultiplier = 0.8f;
                         peacetime = false;
                         for(int i = 0; i < playerGroup.size(); i++) {
                             Player player = playerGroup.all().get(i);
@@ -909,7 +914,8 @@ public class Threads extends TimerTask implements Runnable{
                 } else {
                     try {
                         Thread.sleep(1000);
-                    } catch (InterruptedException ignored) {
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                     }
                 }
             }

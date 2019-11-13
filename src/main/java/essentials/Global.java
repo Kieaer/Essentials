@@ -148,6 +148,11 @@ public class Global {
     public static String bundle(Player player, String value, Object... parameter) {
         JSONObject db = getData(player.uuid);
         if(db.toString().equals("{}")){
+            try {
+                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
         } else {
             Locale locale = new Locale(db.getString("language"));
@@ -159,6 +164,11 @@ public class Global {
     public static String bundle(Player player, String value) {
         JSONObject db = getData(player.uuid);
         if(db.toString().equals("{}")){
+            try {
+                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
         } else {
             Locale locale = new Locale(db.getString("language"));
@@ -183,6 +193,11 @@ public class Global {
     public static String nbundle(Player player, String value, Object... paramter) {
         JSONObject db = getData(player.uuid);
         if(db.toString().equals("{}")){
+            try {
+                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
         } else {
             Locale locale = new Locale(db.getString("language"));
@@ -194,6 +209,11 @@ public class Global {
     public static String nbundle(Player player, String value) {
         JSONObject db = getData(player.uuid);
         if(db.toString().equals("{}")){
+            try {
+                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
         } else {
             Locale locale = new Locale(db.getString("language"));

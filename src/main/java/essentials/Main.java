@@ -113,6 +113,9 @@ public class Main extends Plugin {
             monitorresource.start();
         }
 
+        // 임시로 밴한 플레이어들 밴 해제시간 카운트
+        Thread bantime = new Thread(new bantime());
+
         // 기록 시작
         if (config.isLogging()) {
             Log log = new Log();
@@ -265,51 +268,50 @@ public class Main extends Plugin {
             e.player.setTeam(no_core);
             Call.onPlayerDeath(e.player);
 
-            if (config.isLoginenable()) {
-                if (isNocore(e.player)) {
-                    JSONObject db = getData(e.player.uuid);
-                    if (db.has("uuid")) {
-                        if (db.getString("uuid").equals(e.player.uuid)) {
-                            e.player.sendMessage(bundle(e.player, "autologin"));
-                            playerdb.load(e.player, null);
-                        }
-                    } else {
-                        // 로그인 요구
-                        String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-                                "If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
-                                "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
-                        Call.onInfoMessage(e.player.con, message);
-                    }
-                }
-            } else if (!config.isLoginenable()){
-                // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                if (playerdb.register(e.player)) {
-                    playerdb.load(e.player, null);
-                } else {
-                    Call.onKick(e.player.con, nbundle("plugin-error-kick"));
-                }
-            } else {
-                Call.onKick(e.player.con, nbundle("plugin-error-kick"));
-                Global.loge("!! Account system fatal error occurred !!");
-                try {
-                    throw new Exception("Account system failed");
-                } catch (Exception ex) {
-                    Global.loge("Be sure to send this issue to the plugin developer!");
-                    JSONObject db = getData(player.uuid);
-                    Global.loge("Target player data: "+db.toString());
-                    Global.loge("====== Stacktrace info start ======");
-                    ex.printStackTrace();
-                    Global.loge("====== Stacktrace info end ======");
-                    net.dispose();
-                    Core.app.exit();
-                }
-            }
-
-            // DB 작업
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName("PlayerJoin Thread");
+                if (config.isLoginenable()) {
+                    if (isNocore(e.player)) {
+                        JSONObject db = getData(e.player.uuid);
+                        if (db.has("uuid")) {
+                            if (db.getString("uuid").equals(e.player.uuid)) {
+                                e.player.sendMessage(bundle(e.player, "autologin"));
+                                playerdb.load(e.player, null);
+                            }
+                        } else {
+                            // 로그인 요구
+                            String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
+                                    "If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].\n\n" +
+                                    "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
+                                    "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
+                            Call.onInfoMessage(e.player.con, message);
+                        }
+                    }
+                } else if (!config.isLoginenable()) {
+                    // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
+                    if (playerdb.register(e.player)) {
+                        playerdb.load(e.player, null);
+                    } else {
+                        Call.onKick(e.player.con, nbundle("plugin-error-kick"));
+                    }
+                } else {
+                    Call.onKick(e.player.con, nbundle("plugin-error-kick"));
+                    Global.loge("!! Account system fatal error occurred !!");
+                    try {
+                        throw new Exception("Account system failed");
+                    } catch (Exception ex) {
+                        Global.loge("Be sure to send this issue to the plugin developer!");
+                        JSONObject db = getData(player.uuid);
+                        Global.loge("Target player data: " + db.toString());
+                        Global.loge("====== Stacktrace info start ======");
+                        ex.printStackTrace();
+                        Global.loge("====== Stacktrace info end ======");
+                        net.dispose();
+                        Core.app.exit();
+                    }
+                }
 
+                // DB 작업
                 // 닉네임이 블랙리스트에 등록되어 있는지 확인
                 String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
                 JSONTokener parser = new JSONTokener(blacklist);
@@ -359,7 +361,7 @@ public class Main extends Plugin {
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent.class, e -> {
-            if (isNocore(e.player)) {
+            if (isNocore(e.player) && isLogin(e.player)) {
                 String check = String.valueOf(e.message.charAt(0));
 
                 // 명령어인지 확인
@@ -707,6 +709,9 @@ public class Main extends Plugin {
                 // 자원감시 종료
                 monitorresource.interrupt();
 
+                // 임시로 밴한 유저들 시간 카운트 종료
+                bantime.interrupt();
+
                 // 타이머 스레드 종료
                 try {
                     timer.cancel();
@@ -853,16 +858,15 @@ public class Main extends Plugin {
                     break;
                 default:
                     err("Invalid type.");
-                    break;
+                    return;
             }
-
             if(config.isBanshare() && config.isClientenable()) {
                 Client client = new Client();
                 client.main("bansync", null, null);
             }
 
             for(Player player : playerGroup.all()){
-                player.sendMessage(bundle(player, "player-banned"));
+                player.sendMessage(bundle(player, "player-banned", arg[0]));
                 if(netServer.admins.isIDBanned(player.uuid)){
                     player.con.kick(KickReason.banned);
                 }
@@ -1384,11 +1388,15 @@ public class Main extends Plugin {
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             if (config.isLoginenable()) {
                 if (PlayerDB.login(player, arg[0], arg[1])) {
-                    player.sendMessage(bundle(player, "login-success"));
                     PlayerDB playerdb = new PlayerDB();
                     playerdb.load(player, arg[0]);
+                    if(getData(player.uuid).toString().equals("{}")){
+                        player.sendMessage("[green][EssentialPlayers][] Login successful!/로그인 성공!");
+                    } else {
+                        player.sendMessage(bundle(player, "login-success"));
+                    }
                 } else {
-                    player.sendMessage("[green][Essentials] [scarlet]Login failed/로그인 실패!!");
+                    player.sendMessage("[green][EssentialPlayers] [scarlet]Login failed/로그인 실패!!");
                 }
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));
