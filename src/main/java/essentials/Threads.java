@@ -341,11 +341,11 @@ public class Threads extends TimerTask implements Runnable{
                         // 그냥 빠른파괴
                         breakcount++;
                         if(breakcount > breaklimit){
-                            allsendMessage("grief-fast-destroy");
+                            allsendMessage("grief-fast-destroy", player.name);
                         }
                         if(breakcount > breaklimit + 15){
                             Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
-                            allsendMessage("grief-detect");
+                            allsendMessage("grief-detect", player.name);
                         }
 
                         // 중요 건물
@@ -353,12 +353,12 @@ public class Threads extends TimerTask implements Runnable{
                             if (e.builder.buildRequest().block == value) {
                                 implimit++;
                                 if (impcount > implimit) {
-                                    allsendMessage("grief-fast-imp");
+                                    allsendMessage("grief-fast-imp", player.name);
                                 }
                             }
                             if(impcount > impcount + 4){
                                 Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
-                                allsendMessage("grief-detect");
+                                allsendMessage("grief-detect", player.name);
                             }
                         }
 
@@ -366,11 +366,11 @@ public class Threads extends TimerTask implements Runnable{
                         if (e.builder.buildRequest().block == Blocks.conveyor || e.builder.buildRequest().block == Blocks.titaniumConveyor) {
                             conveyorcount++;
                             if (conveyorcount > conveyorlimit) {
-                                allsendMessage("grief-fast-conveyor");
+                                allsendMessage("grief-fast-conveyor", player.name);
                             }
                             if(conveyorcount > conveyorcount + 10){
                                 Call.onKick(((Player) e.builder).con, nbundle("grief-detect-kick"));
-                                allsendMessage("grief-detect");
+                                allsendMessage("grief-detect", player.name);
                             }
                         }
                     }
@@ -383,11 +383,11 @@ public class Threads extends TimerTask implements Runnable{
                     if (e.player.buildRequest().block == Blocks.router) {
                         routercount++;
                         if (routercount > routerlimit) {
-                            allsendMessage("grief-fast-router");
+                            allsendMessage("grief-fast-router", player.name);
                         }
                         if(routercount > routerlimit + 20){
                             Call.onKick(e.player.con, nbundle("grief-detect-kick"));
-                            allsendMessage("grief-detect");
+                            allsendMessage("grief-detect", player.name);
                         }
                     }
                 }

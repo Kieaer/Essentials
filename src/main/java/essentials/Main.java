@@ -363,7 +363,6 @@ public class Main extends Plugin {
         Events.on(PlayerChatEvent.class, e -> {
             if (isNocore(e.player) && isLogin(e.player)) {
                 String check = String.valueOf(e.message.charAt(0));
-
                 // 명령어인지 확인
                 if (!check.equals("/")) {
                     JSONObject db = getData(e.player.uuid);
@@ -1626,7 +1625,7 @@ public class Main extends Plugin {
                         }
                         i++;
                     }
-                    player.kill();
+                    Call.onPlayerDeath(player);
                 } else {
                     player.sendMessage(bundle(player, "notadmin"));
                 }
