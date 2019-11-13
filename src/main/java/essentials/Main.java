@@ -989,7 +989,10 @@ public class Main extends Plugin {
             }
         });
         handler.register("kickall", "Kick all players.",  arg -> {
-            Vars.netServer.kickAll(KickReason.valueOf("All kick players by administrator."));
+            for(int a=0;a<playerGroup.size();a++){
+                Player others = playerGroup.all().get(a);
+                Call.onKick(others.con, "All kick players by administrator.");
+            }
             Global.log("It's done.");
         });
         handler.register("kill", "<username>", "Kill target player.", arg -> {
