@@ -66,10 +66,11 @@ public class Client extends Thread{
                 JSONObject object = new JSONObject(parser);
 
                 DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
-                DefaultArtifactVersion current = new DefaultArtifactVersion("5.1.3");
+                DefaultArtifactVersion current = new DefaultArtifactVersion("6.0-beta-1");
 
                 if (latest.compareTo(current) > 0) {
                     Global.logc(nbundle("version-new"));
+
                 } else if (latest.compareTo(current) == 0) {
                     Global.logc(nbundle("version-current"));
                 } else if (latest.compareTo(current) < 0) {

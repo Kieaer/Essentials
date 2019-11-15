@@ -432,6 +432,7 @@ public class PlayerDB {
                                 "[green][Essentials] [orange]이 ID는 이미 사용중입니다!");
                         result = false;
                     } else {
+                        // email source here
                         PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
                         ResultSet rs2 = pstm2.executeQuery();
                         String isuuid = null;

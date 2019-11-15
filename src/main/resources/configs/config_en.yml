@@ -71,7 +71,9 @@ dbid:
 dbpw:
 
 # Login features setting
+# loginmethod is account register method. (password, email method avaliable.)
 loginenable: true
+loginmethod: password
 
 # Papago translate API Key
 # The api key can be obtained from developers.naver.com.

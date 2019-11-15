@@ -354,7 +354,7 @@ public class Main extends Plugin {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
-            if (!isNocore(e.player)) {
+            if (isLogin(e.player)) {
                 writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + e.player.uuid + "'");
             }
         });
@@ -1440,11 +1440,11 @@ public class Main extends Plugin {
                             index++;
                         }
                         Call.onPlayerDeath(player);
-                        player.sendMessage(bundle(player, "register-success"));
+                        player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                     } else {
                         player.setTeam(Vars.defaultTeam);
                         Call.onPlayerDeath(player);
-                        player.sendMessage(bundle(player, "register-success"));
+                        player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                     }
                 } else {
                     player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
@@ -1612,7 +1612,7 @@ public class Main extends Plugin {
             if(checklogin(player)) return;
             Player.onPlayerDeath(player);
             if (playerGroup != null && playerGroup.size() > 0) {
-                allsendMessage("suicide");
+                allsendMessage("suicide", player.name);
             }
         });
         handler.<Player>register("team", "Change team (PvP only)", (arg, player) -> {

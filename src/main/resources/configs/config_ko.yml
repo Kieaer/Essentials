@@ -62,7 +62,7 @@ logging: false
 # 플러그인 업데이트 확인 기능
 update: true
 
-# 데이터베이스 종류 설정 (Default is SQLite)
+# 데이터베이스 종류 설정 (기본값은 SQLite 입니다.)
 # 예시 - mariadb://localhost:3306/DB이름
 # 만약 MySQL/MariaDB 를 사용하고 싶다면, SQLite를 비활성화 하고 새 데이터베이스를 직접 만드셔야 합니다!
 sqlite: true
@@ -71,7 +71,9 @@ dbid:
 dbpw:
 
 # 로그인 기능 설정
+# loginmethod 는 계정 등록방식 입니다. (password, email 방식이 가능함)
 loginenable: true
+loginmethod: password
 
 # 파파고 번역 API 키
 # 이 키는 developers.naver.com 에서 유료로 얻을 수 있습니다.
