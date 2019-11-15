@@ -256,6 +256,10 @@ public class PlayerDB {
                 // todo make invalid player information
             }
         } catch (Exception e){
+            if(e.getMessage().contains("Connection is closed")){
+                PlayerDB db = new PlayerDB();
+                db.openconnect();
+            }
             printStackTrace(e);
         }
         return json;
@@ -363,6 +367,10 @@ public class PlayerDB {
                 pstmt.executeUpdate();
                 pstmt.close();
             } catch (Exception e) {
+                if(e.getMessage().contains("Connection is closed")){
+                    PlayerDB db = new PlayerDB();
+                    db.openconnect();
+                }
                 Global.loge(sql);
                 printStackTrace(e);
             }

@@ -31,7 +31,7 @@ dependencies{
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
     compile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
     compile group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
-    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.0'
+    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.1'
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
     compile group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
