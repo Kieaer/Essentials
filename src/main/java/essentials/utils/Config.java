@@ -171,6 +171,10 @@ public class Config {
         return obj.get("loginmethod") != null ? (String) obj.get("loginmethod") : "password";
     }
 
+    public boolean isValidconnect(){
+        return obj.get("validconnect") == null || (boolean) obj.get("validconnect");
+    }
+
     public String getDBurl(){
         if(isSqlite()){
             return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
@@ -380,8 +384,10 @@ public class Config {
                     "\n" +
                     "# 로그인 기능 설정\n" +
                     "# loginmethod 는 계정 등록방식 입니다. (password, email 방식이 가능함)\n" +
+                    "# validconnect 는 해당 플레이어가 서버 이미 있을경우 강퇴하는 기능입니다.\n" +
                     "loginenable: " + isLoginenable() + "\n" +
                     "loginmethod: " + getPasswordmethod() + "\n" +
+                    "validconnect: " + isValidconnect() + "\n" +
                     "\n" +
                     "# 파파고 번역 API 키\n" +
                     "# 이 키는 developers.naver.com 에서 유료로 얻을 수 있습니다.\n" +
@@ -476,8 +482,10 @@ public class Config {
                     "\n" +
                     "# Login features setting\n" +
                     "# loginmethod is account register method. (password, email method avaliable.)\n" +
+                    "# validconnect is a feature that kick if the player already exists on the server.\n" +
                     "loginenable: " + isLoginenable() + "\n" +
                     "loginmethod: " + getPasswordmethod() + "\n" +
+                    "validconnect: " + isValidconnect() + "\n" +
                     "\n" +
                     "# Papago translate API Key\n" +
                     "# The api key can be obtained from developers.naver.com.\n" +

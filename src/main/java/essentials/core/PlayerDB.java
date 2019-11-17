@@ -553,7 +553,7 @@ public class PlayerDB {
                 db = getData(uuid);
             }
 
-            if(db.getBoolean("connected")){
+            if(db.getBoolean("connected") && config.isValidconnect()){
                 player.con.kick(nbundle(player, "tried-connected-account"));
                 return;
             }

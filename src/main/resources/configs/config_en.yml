@@ -76,8 +76,10 @@ dbpw:
 
 # Login features setting
 # loginmethod is account register method. (password, email method avaliable.)
+# validconnect is a feature that kick if the player already exists on the server.
 loginenable: true
 loginmethod: password
+validconnect: false
 
 # Papago translate API Key
 # The api key can be obtained from developers.naver.com.
