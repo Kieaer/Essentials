@@ -604,7 +604,9 @@ public class PlayerDB {
             }
 
             // 플레이어별 테러 감지 시작
-            new Threads.checkgrief(player);
+            if(config.isAntigrief()) {
+                new Threads.checkgrief(player);
+            }
 
             // 플레이어가 관리자일 경우 관리자모드 설정
             if (db.getBoolean("isadmin")) {

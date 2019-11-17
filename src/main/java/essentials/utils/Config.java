@@ -135,6 +135,10 @@ public class Config {
         return cal;
     }
 
+    public boolean isAntigrief(){
+        return obj.get("antigrief") == null || (boolean) obj.get("antigrief");
+    }
+
     public boolean isExplimit(){
         return obj.get("explimit") == null || (boolean) obj.get("explimit");
     }
@@ -322,6 +326,9 @@ public class Config {
                     "# 빠른 자원소모 감지를 켜면 한 자원이 매우 빠르게 소모가 되고 있을때, 그 자원을 사용하고 있는 플레이어의 명단을 띄워줍니다.\n" +
                     "scanresource: " + isScanresource() + "\n" +
                     "\n" +
+                    "# 이 기능을 켜면 각 플레이어의 블럭 설치/파괴에 대한 테러방지 기능이 작동합니다.\n" +
+                    "antigrief: "+ isAntigrief() +"\n" +
+                    "\n" +
                     "# 경험치 값 설정.\n" +
                     "# explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.\n" +
                     "# Base xp는 레벨 1에서 2로 오르는데 필요한 경험치 수치입니다.\n" +
@@ -413,6 +420,9 @@ public class Config {
                     "\n" +
                     "# if turn on scanresource, show message a list of players who are using a resource when it is consuming a resource very quickly.\n" +
                     "scanresource: " + isScanresource() + "\n" +
+                    "\n" +
+                    "# Turn this feature on to activate anti-grief against block place/break of each player.\n" +
+                    "antigrief: "+ isAntigrief() +"\n"+
                     "\n" +
                     "# Experience value setting.\n" +
                     "# When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.\n" +
