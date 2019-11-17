@@ -62,6 +62,7 @@ public class Server implements Runnable {
                 service.start();
                 list.add(service);
             } catch (Exception e) {
+                if(e.getMessage().equals("Socket closed")) return;
                 printStackTrace(e);
             }
         }

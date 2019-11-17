@@ -1433,15 +1433,15 @@ public class Main extends Plugin {
                         PlayerDB playerdb = new PlayerDB();
                         playerdb.load(player, arg[0]);
                         if (getData(player.uuid).toString().equals("{}")) {
-                            player.sendMessage("[green][EssentialPlayers][] Login successful!/로그인 성공!");
+                            player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
                         } else {
                             player.sendMessage(bundle(player, "login-success"));
                         }
                     } else {
-                        player.sendMessage("[green][EssentialPlayers] [scarlet]Login failed/로그인 실패!!");
+                        player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
                     }
                 } else {
-                    player.sendMessage("[green][EssentialPlayers] [scarlet]You're already logged./이미 로그인한 상태입니다.");
+                    player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
                 }
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));
@@ -1466,10 +1466,10 @@ public class Main extends Plugin {
                 player.sendMessage(motd);
             }
         });
-        handler.<Player>register("register", "<id> <password> <password_repeat>", "Register account", (arg, player) -> {
+        handler.<Player>register("register", "<password>", "Register account", (arg, player) -> {
             if (config.isLoginenable()) {
                 PlayerDB playerdb = new PlayerDB();
-                if (playerdb.register(player, arg[0], arg[1], arg[2])) {
+                if (playerdb.register(player, arg[0])) {
                     if (Vars.state.rules.pvp) {
                         int index = player.getTeam().ordinal() + 1;
                         while (index != player.getTeam().ordinal()) {

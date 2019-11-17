@@ -196,12 +196,13 @@ public class PlayerDB {
                 pstmt.setString(36, accountpw);
                 pstmt.executeUpdate();
                 pstmt.close();
+                player.sendMessage(nbundle("player-id", player.name));
                 Global.logp(nbundle("player-db-created", name));
                 result = true;
             } else if(rs.next()){
                 player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
                         "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                player.sendMessage("[green][Essentials] ID: "+rs.getString("accountid"));
+                player.sendMessage("[green][Essentials] ID: "+rs.getString(player.name));
             }
             rs.close();
             stmt.close();
@@ -390,7 +391,7 @@ public class PlayerDB {
 	}
 
 	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String id, String pw, String pw2) {
+	public boolean register(Player player, String pw) {
         boolean result = true;
 
         // 비밀번호 보안 확인
@@ -402,27 +403,28 @@ public class PlayerDB {
         pwPattern = "(.)\\1\\1\\1";
         Matcher matcher2 = Pattern.compile(pwPattern).matcher(pw);
 
-        if (!pw.equals(pw2)) {
+        /*if (!pw.equals(pw2)) {
             // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password isn't the same.\n" +
                     "[green][Essentials] [sky]비밀번호가 똑같지 않습니다.");
             result = false;
-        } else if (!matcher.matches()) {
+        } else */
+        if (!matcher.matches()) {
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
             result = false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
-            player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
-                    "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
+            player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
+                    "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
             result = false;
-        } else if (pw.contains(id)) {
+        } else /*if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
-            player.sendMessage("[green][Essentials] [sky]Passwords can't be set similar to ID!\n" +
-                    "[green][Essentials] [sky]비밀번호는 ID는 비슷하게 설정할 수 없습니다!");
+            player.sendMessage("[green][Essentials] [sky]Password shouldn't be the same as your nickname.\n" +
+                    "[green][Essentials] [sky]비밀번호는 ID는 똑같이 설정할 수 없습니다!");
             result = false;
-        } else if (pw.contains(" ")) {
+        } else*/ if (pw.contains(" ")) {
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
@@ -430,9 +432,9 @@ public class PlayerDB {
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
             player.sendMessage("[green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!\n" +
-                    "[green][Essentials] [sky]Use /register accountname password password\n" +
+                    "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
-                    "[green][Essentials] [sky]/register accountname password password 형식으로 사용하세요.");
+                    "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
             player.sendMessage("");
             result = false;
         }
@@ -443,12 +445,12 @@ public class PlayerDB {
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
                 String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
 
-                PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE accountid = '" + id + "'");
+                PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE name = '" + player.name + "'");
                 ResultSet rs1 = pstm1.executeQuery();
                 if (rs1.next()) {
-                    if (rs1.getString("accountid").equals(id)) {
-                        player.sendMessage("[green][Essentials] [orange]This ID is already in use!\n" +
-                                "[green][Essentials] [orange]이 ID는 이미 사용중입니다!");
+                    if (rs1.getString("name").equals(player.name)) {
+                        player.sendMessage("[green][Essentials] [orange]This username is already in use!\n" +
+                                "[green][Essentials] [orange]이 사용자 이름은 이미 사용중입니다!");
                         result = false;
                     }
                 } else {
@@ -469,7 +471,7 @@ public class PlayerDB {
                         Statement stmt  = conn.createStatement();
                         ResultSet rs = stmt.executeQuery(find);
                         if(!rs.next()){
-                            result = createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, id, hashed, player);
+                            result = createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, player.name, hashed, player);
                         } else if(rs.next()){
                             player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                     "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
@@ -497,7 +499,7 @@ public class PlayerDB {
             JSONObject list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
 
-            return createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), "blank", "blank", player);
+            return createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), player.name, "blank", player);
         } else {
             return true;
         }
