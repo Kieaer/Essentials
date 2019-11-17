@@ -3,23 +3,13 @@ package essentials.special;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 public class PingServer {
-    public static DatagramSocket socket;
-
-    static {
-        try {
-            socket = new DatagramSocket();
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static void pingServer(String ip, int port, Consumer<PingResult> listener) {
         try {
+            DatagramSocket socket = new DatagramSocket();
             socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(ip), port));
 
             socket.setSoTimeout(500);

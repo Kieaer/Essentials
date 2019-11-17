@@ -76,7 +76,7 @@ public class Threads extends TimerTask implements Runnable{
         // 맵이 돌아가고 있을 때
         if(state.is(GameState.State.playing)) {
             // 서버간 이동 패드에 플레이어가 있는지 확인
-            new jumpzone().start();
+            // new jumpzone().start();
 
             // 모든 클라이언트 서버에 대한 인원 총합 카운트
             new jumpall().start();
@@ -275,6 +275,7 @@ public class Threads extends TimerTask implements Runnable{
                         Player player = playerGroup.all().get(ix);
                         if (player.tileX() > startx && player.tileX() < tilex) {
                             if (player.tileY() > starty && player.tileY() < tiley) {
+                                Global.log(nbundle("player-jumped", player.name, serverip+":"+serverport));
                                 Call.onConnect(player.con, serverip, serverport);
                             }
                         }
@@ -328,10 +329,10 @@ public class Threads extends TimerTask implements Runnable{
 
             // 최대값 설정 (레벨비례)
             int level = getData(player.uuid).getInt("level");
-            routerlimit = 10 + (level * 2);
-            implimit = 5 + (level * 2);
-            breaklimit = 30 + (level * 3);
-            conveyorlimit = 20 + (level * 3);
+            routerlimit = 20 + (level * 3);
+            implimit = 10 + (level * 3);
+            breaklimit = 40 + (level * 4);
+            conveyorlimit = 40 + (level * 4);
 
             // 블럭 파괴 카운트
             Events.on(BuildSelectEvent.class, e -> {

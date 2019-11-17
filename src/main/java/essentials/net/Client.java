@@ -106,7 +106,7 @@ public class Client extends Thread{
             } catch (UnknownHostException e) {
                 Global.loge("Invalid host!");
             } catch (IOException e) {
-                Global.loge("I/O Exception");
+                Global.logc(nbundle("remote-server-dead"));
             }
         } else {
             switch (option) {

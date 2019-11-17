@@ -9,7 +9,6 @@ import essentials.core.Translate;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
-import essentials.special.PingServer;
 import essentials.utils.Config;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
@@ -21,6 +20,7 @@ import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.content.UnitTypes;
+import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
@@ -64,6 +64,7 @@ import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
+import static io.anuke.mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     public Config config = new Config();
@@ -73,6 +74,8 @@ public class Main extends Plugin {
     private boolean making = false;
 
     public Main() {
+        NetClient.visual = false;
+
         // 설정 시작
         config.main();
 
@@ -142,14 +145,36 @@ public class Main extends Plugin {
         EPG epg = new EPG();
         epg.main();
 
-        /*Events.on(TapConfigEvent.class, e-> {
+        Events.on(TapConfigEvent.class, e-> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player other = playerGroup.all().get(i);
-                    other.sendMessage(bundle(other, "tap-config"));
-                }
+                allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
             }
-        });*/
+        });
+
+        Events.on(TapEvent.class, e -> {
+            if(isLogin(e.player)) {
+                Thread t = new Thread(() -> {
+                    for (int i = 0; i < jumpzone.length(); i++) {
+                        String jumpdata = jumpzone.getString(i);
+                        if (jumpdata.equals("")) return;
+                        String[] data = jumpdata.split("/");
+                        int startx = Integer.parseInt(data[0]);
+                        int starty = Integer.parseInt(data[1]);
+                        int tilex = Integer.parseInt(data[2]);
+                        int tiley = Integer.parseInt(data[3]);
+                        String serverip = data[4];
+                        int serverport = Integer.parseInt(data[5]);
+                        if (e.tile.x > startx && e.tile.x < tilex) {
+                            if (e.tile.y > starty && e.tile.y < tiley) {
+                                Global.log(nbundle("player-jumped", e.player.name, serverip + ":" + serverport));
+                                Call.onConnect(e.player.con, serverip, serverport);
+                            }
+                        }
+                    }
+                });
+                t.start();
+            }
+        });
 
         /*
         Events.on(WithdrawEvent.class, e->{
@@ -157,8 +182,7 @@ public class Main extends Plugin {
             Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name);
             Global.log("item: "+e.item.name+", amount: "+e.amount);
         });
-        */
-
+         */
 
         // 만약 동기화에 실패했을 경우 (아마도 될꺼임)
         Events.on(ValidateException.class, e -> {
@@ -361,72 +385,90 @@ public class Main extends Plugin {
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent.class, e -> {
-            if (isNocore(e.player) && isLogin(e.player)) {
+            if(isLogin(e.player)){
                 String check = String.valueOf(e.message.charAt(0));
-                // 명령어인지 확인
                 if (!check.equals("/")) {
-                    JSONObject db = getData(e.player.uuid);
-
-                    // 마지막 대화 데이터를 DB에 저장함
-                    Thread t = new Thread(() -> {
-                        Thread.currentThread().setName("DB Thread");
-                        String sql = "UPDATE players SET lastchat = ? WHERE uuid = ?";
-                        try {
-                            PreparedStatement pstmt = conn.prepareStatement(sql);
-                            pstmt.setString(1, e.message);
-                            pstmt.setString(2, e.player.uuid);
-                            pstmt.executeUpdate();
-                            pstmt.close();
-                        } catch (Exception ex) {
-                            Global.loge(sql);
-                            printStackTrace(ex);
+                    NetClient.visual = true;
+                    if (e.message.matches("(.*쌍[\\S\\s]{0,2}(년|놈).*)|(.*(씨|시)[\\S\\s]{0,2}(벌|빨|발|바).*)|(.*장[\\S\\s]{0,2}애.*)|(.*(병|븅)[\\S\\s]{0,2}(신|쉰|싄).*)|(.*(좆|존|좃)[\\S\\s]{0,2}(같|되|는|나).*)|(.*(개|게)[\\S\\s]{0,2}(같|갓|새|세|쉐).*)|(.*(걸|느)[\\S\\s]{0,2}(레|금).*)|(.*(꼬|꽂|고)[\\S\\s]{0,2}(추|츄).*)|(.*(니|너)[\\S\\s]{0,2}(어|엄|엠|애|m|M).*)|(.*(노)[\\S\\s]{0,1}(애|앰).*)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(ㅅㅂ|ㅄ|ㄷㅊ)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(.*s[\\S\\s]{0,1}e[\\S\\s]{0,1}x.*)")) {
+                        Call.onKick(e.player.con, "You're kicked because using bad words.\n욕설 사용에 의해 강퇴되었습니다.");
+                    } else {
+                        if (e.player.uuid.equals("hMHCIDJpHKQ=")) {
+                            Call.sendMessage("[sky][Owner] " + colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
+                        } else if (e.player.isAdmin) {
+                            Call.sendMessage("[green][Admin] " + colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
+                        } else {
+                            Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
                         }
-                    });
-                    t.start();
-
-                    // 번역기능 작동
-                    Translate tr = new Translate();
-                    tr.main(e.player, e.message);
-
-                    // 서버간 대화기능 작동
-                    boolean crosschat = db.getBoolean("crosschat");
-                    if (config.isClientenable()) {
-                        if (crosschat) {
-                            Client client = new Client();
-                            client.main("chat", e.player, e.message);
-                        }
-                        if (crosschat && config.isServerenable()) {
-                            // 메세지를 모든 클라이언트에게 전송함
-                            try {
-                                for (int i = 0; i < Server.list.size(); i++) {
-                                    Server.Service ser = Server.list.get(i);
-                                    ser.bw.write(data + "\n");
-                                    ser.bw.flush();
-                                }
-                            } catch (IOException ex) {
-                                ex.printStackTrace();
-                            }
-                        }
-                    } else if (!config.isClientenable() && !config.isServerenable() && crosschat) {
-                        e.player.sendMessage(bundle(e.player, "no-any-network"));
-                        writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + e.player.uuid + "'");
                     }
+                    NetClient.visual = false;
                 }
 
-                // 투표가 진행중일때
-                if (Vote.isvoting) {
-                    if (e.message.equals("y")) {
-                        if (Vote.list.contains(e.player.uuid)) {
-                            e.player.sendMessage(bundle(player, "vote-already"));
-                        } else {
-                            Vote.list.add(e.player.uuid);
-                            int current = Vote.list.size();
-                            for(Player others : playerGroup.all()){
-                                if(getData(others.uuid).toString().equals("{}")) return;
-                                others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
+                if (isNocore(e.player) && isLogin(e.player)) {
+                    // 명령어인지 확인
+                    if (!check.equals("/")) {
+                        JSONObject db = getData(e.player.uuid);
+
+                        // 마지막 대화 데이터를 DB에 저장함
+                        Thread t = new Thread(() -> {
+                            Thread.currentThread().setName("DB Thread");
+                            String sql = "UPDATE players SET lastchat = ? WHERE uuid = ?";
+                            try {
+                                PreparedStatement pstmt = conn.prepareStatement(sql);
+                                pstmt.setString(1, e.message);
+                                pstmt.setString(2, e.player.uuid);
+                                pstmt.executeUpdate();
+                                pstmt.close();
+                            } catch (Exception ex) {
+                                Global.loge(sql);
+                                printStackTrace(ex);
                             }
-                            if (Vote.require - current == 0) {
-                                Vote.counting.interrupt();
+                        });
+                        t.start();
+
+                        // 번역기능 작동
+                        Translate tr = new Translate();
+                        tr.main(e.player, e.message);
+
+                        // 서버간 대화기능 작동
+                        boolean crosschat = db.getBoolean("crosschat");
+                        if (config.isClientenable()) {
+                            if (crosschat) {
+                                Client client = new Client();
+                                client.main("chat", e.player, e.message);
+                            }
+                            if (crosschat && config.isServerenable()) {
+                                // 메세지를 모든 클라이언트에게 전송함
+                                try {
+                                    for (int i = 0; i < Server.list.size(); i++) {
+                                        Server.Service ser = Server.list.get(i);
+                                        ser.bw.write(data + "\n");
+                                        ser.bw.flush();
+                                    }
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        } else if (!config.isClientenable() && !config.isServerenable() && crosschat) {
+                            e.player.sendMessage(bundle(e.player, "no-any-network"));
+                            writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + e.player.uuid + "'");
+                        }
+                    }
+
+                    // 투표가 진행중일때
+                    if (Vote.isvoting) {
+                        if (e.message.equals("y")) {
+                            if (Vote.list.contains(e.player.uuid)) {
+                                e.player.sendMessage(bundle(player, "vote-already"));
+                            } else {
+                                Vote.list.add(e.player.uuid);
+                                int current = Vote.list.size();
+                                for(Player others : playerGroup.all()){
+                                    if(getData(others.uuid).toString().equals("{}")) return;
+                                    others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
+                                }
+                                if (Vote.require - current == 0) {
+                                    Vote.counting.interrupt();
+                                }
                             }
                         }
                     }
@@ -759,9 +801,6 @@ public class Main extends Plugin {
 
                 // 클라이언트 플레이어 카운트 스레드 종료
                 jumpcheck.interrupt();
-
-                // 서버 데이터 요청 스레드 종료
-                PingServer.socket.close();
             }
         });
 
@@ -1389,16 +1428,20 @@ public class Main extends Plugin {
         });
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             if (config.isLoginenable()) {
-                if (PlayerDB.login(player, arg[0], arg[1])) {
-                    PlayerDB playerdb = new PlayerDB();
-                    playerdb.load(player, arg[0]);
-                    if(getData(player.uuid).toString().equals("{}")){
-                        player.sendMessage("[green][EssentialPlayers][] Login successful!/로그인 성공!");
+                if(!isLogin(player)) {
+                    if (PlayerDB.login(player, arg[0], arg[1])) {
+                        PlayerDB playerdb = new PlayerDB();
+                        playerdb.load(player, arg[0]);
+                        if (getData(player.uuid).toString().equals("{}")) {
+                            player.sendMessage("[green][EssentialPlayers][] Login successful!/로그인 성공!");
+                        } else {
+                            player.sendMessage(bundle(player, "login-success"));
+                        }
                     } else {
-                        player.sendMessage(bundle(player, "login-success"));
+                        player.sendMessage("[green][EssentialPlayers] [scarlet]Login failed/로그인 실패!!");
                     }
                 } else {
-                    player.sendMessage("[green][EssentialPlayers] [scarlet]Login failed/로그인 실패!!");
+                    player.sendMessage("[green][EssentialPlayers] [scarlet]You're already logged./이미 로그인한 상태입니다.");
                 }
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));

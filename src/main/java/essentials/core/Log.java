@@ -36,12 +36,12 @@ public class Log{
             }
         });*/
 
-        /*Events.on(TapEvent.class, e-> {
+        Events.on(TapEvent.class, e-> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
                 if (config.getLanguage().equals("ko")) {
-                    writelog("tap", gettime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭을 건드렸습니다.");
+                    writelog("tap", getTime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭을 건드렸습니다.");
                 } else {
-                    writelog("tap", gettime() + "Player "+e.player.name + " has touched " + e.tile.entity.block.name + ".");
+                    writelog("tap", getTime() + "Player "+e.player.name + " has touched " + e.tile.entity.block.name + ".");
                 }
             }
         });
@@ -49,12 +49,12 @@ public class Log{
         Events.on(TapConfigEvent.class, e-> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
                 if (config.getLanguage().equals("ko")) {
-                    writelog("tap", gettime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭의 설정을 변경했습니다.");
+                    writelog("tap", getTime() + e.player.name + " 플레이어가 " + e.tile.entity.block.name + " 블럭의 설정을 변경했습니다.");
                 } else {
-                    writelog("tap", gettime() + "Player "+e.player.name + " edited " + e.tile.entity.block.name + "'s block setting.");
+                    writelog("tap", getTime() + "Player "+e.player.name + " edited " + e.tile.entity.block.name + "'s block setting.");
                 }
             }
-        });*/
+        });
 
         Events.on(BlockBuildEndEvent.class, e -> {
             if(!e.breaking && e.tile.entity() != null && e.player != null && e.tile.entity.block != null && e.player.name != null) {

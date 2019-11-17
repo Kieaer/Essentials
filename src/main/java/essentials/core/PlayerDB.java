@@ -17,8 +17,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
-import java.util.*;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -139,12 +141,15 @@ public class PlayerDB {
         }
     }
 
-	private void createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw) {
+	private boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw, Player player) {
+        boolean result = false;
         try {
             String currentip = new Threads.getip().main();
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
+            Global.log(String.valueOf(rs.next()));
+
             if(!rs.next()){
                 String sql;
                 if(config.isSqlite()){
@@ -192,12 +197,18 @@ public class PlayerDB {
                 pstmt.executeUpdate();
                 pstmt.close();
                 Global.logp(nbundle("player-db-created", name));
+                result = true;
+            } else if(rs.next()){
+                player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
+                        "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
+                player.sendMessage("[green][Essentials] ID: "+rs.getString("accountid"));
             }
             rs.close();
             stmt.close();
         } catch (Exception e){
             printStackTrace(e);
         }
+        return result;
 	}
 
 	public static JSONObject getData(String uuid){
@@ -439,37 +450,38 @@ public class PlayerDB {
                         player.sendMessage("[green][Essentials] [orange]This ID is already in use!\n" +
                                 "[green][Essentials] [orange]이 ID는 이미 사용중입니다!");
                         result = false;
+                    }
+                } else {
+                    // email source here
+                    PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
+                    ResultSet rs2 = pstm2.executeQuery();
+                    String isuuid = null;
+                    while (rs2.next()) {
+                        isuuid = rs2.getString("uuid");
+                    }
+                    if (isuuid == null || isuuid.length() == 0) {
+                        LocalDateTime now = LocalDateTime.now();
+                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                        String nowString = now.format(dateTimeFormatter);
+                        JSONObject list = geolocation(player);
+
+                        String find = "SELECT * FROM players WHERE uuid = '"+player.uuid+"'";
+                        Statement stmt  = conn.createStatement();
+                        ResultSet rs = stmt.executeQuery(find);
+                        if(!rs.next()){
+                            result = createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, id, hashed, player);
+                        } else if(rs.next()){
+                            player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
+                                    "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
+                            result = false;
+                        }
+                        player.sendMessage(bundle(player, "player-name-changed", player.name));
+                    } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)) {
+                        player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
+                                "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
+                        result = false;
                     } else {
-                        // email source here
-                        PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
-                        ResultSet rs2 = pstm2.executeQuery();
-                        String isuuid = null;
-                        while (rs2.next()) {
-                            isuuid = rs2.getString("uuid");
-                        }
-                        if (isuuid == null || isuuid.length() == 0) {
-                            LocalDateTime now = LocalDateTime.now();
-                            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                            String nowString = now.format(dateTimeFormatter);
-                            JSONObject list = geolocation(player);
-
-                            try {
-                                createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, id, hashed);
-                            } catch (Exception e) {
-                                printStackTrace(e);
-                                Call.onInfoMessage(player.con, bundle(player, "plugin-error", Arrays.toString(e.getStackTrace())));
-                                player.con.kick(Global.nbundle("plugin-error-kick"));
-                                result = false;
-                            }
-
-                            player.sendMessage(bundle(player, "player-name-changed", player.name));
-                        } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)) {
-                            player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
-                                    "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                            result = false;
-                        } else {
-                            result = false;
-                        }
+                        result = false;
                     }
                 }
             } catch (Exception e) {
@@ -485,15 +497,7 @@ public class PlayerDB {
             JSONObject list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
 
-            try {
-                createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), "blank", "blank");
-                return true;
-            } catch (Exception e) {
-                printStackTrace(e);
-                Call.onInfoMessage(player.con, bundle(player, "plugin-error", Arrays.toString(e.getStackTrace())));
-                player.con.kick(Global.nbundle("plugin-error-kick"));
-                return false;
-            }
+            return createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, Vars.netServer.admins.getInfo(player.uuid).timesJoined, Vars.netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), "blank", "blank", player);
         } else {
             return true;
         }

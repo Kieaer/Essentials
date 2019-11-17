@@ -146,34 +146,24 @@ public class Global {
 
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
     public static String bundle(Player player, String value, Object... parameter) {
-        JSONObject db = getData(player.uuid);
-        if(db.toString().equals("{}")){
-            try {
-                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
-        } else {
+        if(isLogin(player)){
+            JSONObject db = getData(player.uuid);
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
             return bundle.getBundle(value, parameter);
+        } else {
+            return "";
         }
     }
 
     public static String bundle(Player player, String value) {
-        JSONObject db = getData(player.uuid);
-        if(db.toString().equals("{}")){
-            try {
-                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
-        } else {
+        if(isLogin(player)){
+            JSONObject db = getData(player.uuid);
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
             return bundle.getBundle(value);
+        } else {
+            return "";
         }
     }
 
@@ -192,33 +182,23 @@ public class Global {
     // Bundle 파일에서 Essentials 문구 없이 출력
     public static String nbundle(Player player, String value, Object... paramter) {
         JSONObject db = getData(player.uuid);
-        if(db.toString().equals("{}")){
-            try {
-                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
-        } else {
+        if(isLogin(player)){
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
             return bundle.getNormal(value, paramter);
+        } else {
+            return "";
         }
     }
 
     public static String nbundle(Player player, String value) {
-        JSONObject db = getData(player.uuid);
-        if(db.toString().equals("{}")){
-            try {
-                throw new Exception("썩어빠질 오류를 발견한걸 축하함 ㅋㅋ");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return "Powerful nullpointerexception! It's not null error. invalid data player problem.";
-        } else {
+        if(isLogin(player)){
+            JSONObject db = getData(player.uuid);
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
             return bundle.getNormal(value);
+        } else {
+            return "";
         }
     }
 
@@ -499,6 +479,7 @@ public class Global {
         Thread t = new Thread(() -> {
             for (int i = 0; i < playerGroup.size(); i++) {
                 Player other = playerGroup.all().get(i);
+                if(other == null) return;
                 other.sendMessage(bundle(other, name, parameter));
             }
         });
