@@ -28,7 +28,7 @@ public class Exp {
         writeData("UPDATE players SET reqexp = '"+reqexp+"', level = '"+level+"', reqtotalexp = '"+reqtotalexp+"' WHERE uuid = '"+uuid+"'");
 
         int curlevel = (int) db.get("level");
-        if(curlevel < level && curlevel > 20 && config.isLevelupalarm()){
+        if(curlevel < level && curlevel > config.getAlarmlevel() && config.isLevelupalarm()){
             for(int a=0;a<playerGroup.size();a++){
                 Player player = playerGroup.all().get(a);
                 player.sendMessage(bundle(player, "player-levelup"));

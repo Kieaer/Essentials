@@ -38,6 +38,7 @@ explimit: false
 basexp: 500
 exponent: 1.12f
 levelupalarm: false
+alarm-minimal-level: 20
 
 # Ban sharing server config
 # If you enable this, your ban list will send to another public servers.

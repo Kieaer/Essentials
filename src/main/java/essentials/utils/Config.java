@@ -155,6 +155,10 @@ public class Config {
         return obj.get("levelupalarm") == null || (boolean) obj.get("levelupalarm");
     }
 
+    public int getAlarmlevel(){
+        return obj.get("alarm-minimal-level") != null ? (int) obj.get("alarm-minimal-level") : 20;
+    }
+
     public boolean isSqlite(){
         return obj.get("sqlite") == null || (boolean) obj.get("sqlite");
     }
@@ -338,6 +342,7 @@ public class Config {
                     "basexp: " + getBasexp() + "\n" +
                     "exponent: " + getExponent() + "\n" +
                     "levelupalarm: " + isLevelupalarm() + "\n" +
+                    "alarm-minimal-level: " + getAlarmlevel() + "\n" +
                     "\n" +
                     "# 밴 공유서버 설정\n" +
                     "# 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.\n" +
@@ -433,6 +438,7 @@ public class Config {
                     "basexp: " + getBasexp() + "\n" +
                     "exponent: " + getExponent() + "\n" +
                     "levelupalarm: " + isLevelupalarm() + "\n" +
+                    "alarm-minimal-level: " + getAlarmlevel() + "\n" +
                     "\n" +
                     "# Ban sharing server config\n" +
                     "# If you enable this, your ban list will send to another public servers.\n" +

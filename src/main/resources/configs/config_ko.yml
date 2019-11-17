@@ -38,6 +38,7 @@ explimit: false
 basexp: 500
 exponent: 1.12f
 levelupalarm: false
+alarm-minimal-level: 20
 
 # 밴 공유서버 설정
 # 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.
