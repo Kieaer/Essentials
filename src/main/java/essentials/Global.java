@@ -46,6 +46,10 @@ public class Global {
         Log.info("[Essential] "+msg);
     }
 
+    public static void log(boolean msg){
+        Log.info("[Essential] "+msg);
+    }
+
     // 경고
     public static void logw(String msg){
         Log.warn("[Essential] "+msg);

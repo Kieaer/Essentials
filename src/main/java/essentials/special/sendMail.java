@@ -1,10 +1,7 @@
 package essentials.special;
 
-import javax.mail.*;
-import java.util.Properties;
-
 public class sendMail {
-    public static void check(String host, String storeType, String user, String password){
+    /*public static void check(String host, String storeType, String user, String password){
         try {
             // create properties field
             Properties properties = new Properties();
@@ -67,6 +64,6 @@ public class sendMail {
 
         check(host, mailStoreType, username, password);
 
-    }
+    }*/
 
 }

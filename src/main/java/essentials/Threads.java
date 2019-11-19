@@ -524,9 +524,9 @@ public class Threads extends TimerTask implements Runnable{
                     Player player = playerGroup.all().get(i);
                     if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
                         String message1 = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-                                "If you don't have an account, use the command [accent]/register <username> <password> <password repeat>[].";
+                                "If you don't have an account, use the command [accent]/register <password>[].";
                         String message2 = "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                "만약 계정이 없다면 [accent]/register <사용자 이름> <비밀번호> <비밀번호 재입력>[]를 입력해야 합니다.";
+                                "만약 계정이 없다면 [accent]/register <비밀번호>[]를 입력해야 합니다.";
                         player.sendMessage(message1);
                         player.sendMessage(message2);
                     }

@@ -69,11 +69,11 @@ public class Server implements Runnable {
     }
 
     public class Service extends Thread {
-        BufferedReader in;
+        public BufferedReader in;
         public BufferedWriter bw;
-        OutputStreamWriter osw;
-        OutputStream os;
-        Socket socket;
+        public OutputStreamWriter osw;
+        public OutputStream os;
+        public Socket socket;
 
         public Service(Socket socket) {
             try {
@@ -169,8 +169,8 @@ public class Server implements Runnable {
                                     for (int a = 0; a < config.getBantrust().length; a++) {
                                         String ip = config.getBantrust()[a];
                                         if (ip.equals(remoteip)) {
-                                            ser.os.write((data + "\n").getBytes(StandardCharsets.UTF_8));
-                                            ser.os.flush();
+                                            ser.bw.write(data + "\n");
+                                            ser.bw.flush();
                                             Global.logc(nbundle("server-data-sented", remoteip));
                                         }
                                     }
@@ -212,8 +212,8 @@ public class Server implements Runnable {
                                     for (int a = 0; a < config.getBantrust().length; a++) {
                                         String ip = config.getBantrust()[a];
                                         if (ip.equals(remoteip)) {
-                                            ser.os.write((data1 + "\n").getBytes(StandardCharsets.UTF_8));
-                                            ser.os.flush();
+                                            ser.bw.write(data1 + "\n");
+                                            ser.bw.flush();
                                             Global.logc(nbundle("server-data-sented", remoteip));
                                         }
                                     }

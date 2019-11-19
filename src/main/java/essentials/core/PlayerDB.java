@@ -315,10 +315,16 @@ public class PlayerDB {
         netServer.admins.banPlayer(uuid);
     }
 
-    private static final String v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER 'connected';";
+    private static String v1sql;
     //private static final String v2sql = "ALTER TABLE players ADD COLUMN string;";
 
     public static void Upgrade() {
+        Config config = new Config();
+        if(config.isSqlite()){
+            v1sql = "ALTER TABLE players ADD COLUMN connserver TEXT AFTER connected;";
+        } else {
+            v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER 'connected';";
+        }
         try {
             DatabaseMetaData metadata = conn.getMetaData();
             ResultSet resultSet;

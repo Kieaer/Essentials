@@ -34,9 +34,9 @@ dependencies{
     compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.1'
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
-    compile group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
+    //compile group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
     //compile 'org.springframework:spring-context-support:${org.springframework-version}'
-    compile "org.javacord:javacord:3.0.4"
+    //compile "org.javacord:javacord:3.0.4"
 
     //compile group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.2.0.RELEASE'
 
