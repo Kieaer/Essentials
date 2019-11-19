@@ -312,7 +312,6 @@ public class PlayerDB {
 
         // Write player data
         writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"' WHERE uuid = '"+uuid+"'");
-        netServer.admins.banPlayer(uuid);
     }
 
     private static String v1sql;

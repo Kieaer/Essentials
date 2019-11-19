@@ -27,7 +27,11 @@ detectreactor: true
 scanresource: true
 
 # 이 기능을 켜면 각 플레이어의 블럭 설치/파괴에 대한 테러방지 기능이 작동합니다.
+# blockdetect 는 블록의 설정을 바꿨을 때 메세지로 알려주는 기능입니다.
+# alertdeposit 는 아이템을 직접 집어서 다른 블록에 넣었을 때 메세지로 알려주는 기능입니다.
 antigrief: false
+blockdetect: false
+alertdeposit: false
 
 # 경험치 값 설정.
 # explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.

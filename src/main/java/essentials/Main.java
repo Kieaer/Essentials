@@ -146,7 +146,7 @@ public class Main extends Plugin {
         epg.main();
 
         Events.on(TapConfigEvent.class, e-> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null && config.isBlockdetect()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
             }
         });
@@ -226,7 +226,9 @@ public class Main extends Plugin {
         });
 
         Events.on(PlayerConnect.class, e -> {
-
+            if(e.player.name.contains("Owner") || e.player.name.contains("Admin")){
+                Call.onKick(e.player.con, "You're tried bad nickname!");
+            }
         });
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
@@ -281,7 +283,9 @@ public class Main extends Plugin {
                 });
                 t.start();
             }
-            allsendMessage("depositevent", e.player.name, e.player.item().item.name, e.tile.block().name);
+            if(config.isAlertdeposit()) {
+                allsendMessage("depositevent", e.player.name, e.player.item().item.name, e.tile.block().name);
+            }
         });
 
         // 플레이어가 서버에 들어왔을 때
@@ -744,11 +748,6 @@ public class Main extends Plugin {
             }
 
             public void dispose() {
-                // 서버간 이동 데이터 저장
-                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
-                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
-                Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
-
                 // 자원감시 종료
                 monitorresource.interrupt();
 

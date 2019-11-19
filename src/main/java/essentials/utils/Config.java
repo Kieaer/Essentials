@@ -64,11 +64,11 @@ public class Config {
     }
 
     public boolean isServerenable(){
-        return obj.get("server-enable") == null || (boolean) obj.get("server-enable");
+        return obj.get("server-enable") != null || (boolean) obj.get("server-enable");
     }
 
     public boolean isClientenable(){
-        return obj.get("client-enable") == null || (boolean) obj.get("client-enable");
+        return obj.get("client-enable") != null || (boolean) obj.get("client-enable");
     }
 
     public double getBasexp(){
@@ -101,7 +101,7 @@ public class Config {
     }
 
     public boolean isQuery(){
-        return obj.get("query") == null || (boolean) obj.get("query");
+        return obj.get("query") != null || (boolean) obj.get("query");
     }
 
     public String getLanguage(){
@@ -139,12 +139,20 @@ public class Config {
         return obj.get("antigrief") == null || (boolean) obj.get("antigrief");
     }
 
+    public boolean isBlockdetect(){
+        return obj.get("blockdetect") != null || (boolean) obj.get("blockdetect");
+    }
+
+    public boolean isAlertdeposit(){
+        return obj.get("alertdeposit") != null || (boolean) obj.get("alertdeposit");
+    }
+
     public boolean isExplimit(){
-        return obj.get("explimit") == null || (boolean) obj.get("explimit");
+        return obj.get("explimit") != null || (boolean) obj.get("explimit");
     }
 
     public boolean isLogging(){
-        return obj.get("logging") == null || (boolean) obj.get("logging");
+        return obj.get("logging") != null || (boolean) obj.get("logging");
     }
 
     public boolean isUpdate(){
@@ -152,7 +160,7 @@ public class Config {
     }
 
     public boolean isLevelupalarm(){
-        return obj.get("levelupalarm") == null || (boolean) obj.get("levelupalarm");
+        return obj.get("levelupalarm") != null || (boolean) obj.get("levelupalarm");
     }
 
     public int getAlarmlevel(){
@@ -200,7 +208,7 @@ public class Config {
     }
 
     public boolean isDebug(){
-        return obj.get("debug") == null || (boolean) obj.get("debug");
+        return obj.get("debug") != null || (boolean) obj.get("debug");
     }
 
     public int getSavetime(){
@@ -335,7 +343,11 @@ public class Config {
                     "scanresource: " + isScanresource() + "\n" +
                     "\n" +
                     "# 이 기능을 켜면 각 플레이어의 블럭 설치/파괴에 대한 테러방지 기능이 작동합니다.\n" +
-                    "antigrief: "+ isAntigrief() +"\n" +
+                    "# blockdetect 는 블록의 설정을 바꿨을 때 메세지로 알려주는 기능입니다.\n" +
+                    "# alertdeposit 는 아이템을 직접 집어서 다른 블록에 넣었을 때 메세지로 알려주는 기능입니다.\n" +
+                    "antigrief: "+ isAntigrief() + "\n" +
+                    "blockdetect: "+ isBlockdetect() + "\n" +
+                    "alertdeposit: " + isAlertdeposit() + "\n" +
                     "\n" +
                     "# 경험치 값 설정.\n" +
                     "# explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.\n" +
@@ -433,7 +445,10 @@ public class Config {
                     "scanresource: " + isScanresource() + "\n" +
                     "\n" +
                     "# Turn this feature on to activate anti-grief against block place/break of each player.\n" +
-                    "antigrief: "+ isAntigrief() +"\n"+
+                    "# blockdetect is a function that notifies players when a any block config is changed.\n" +
+                    "antigrief: "+ isAntigrief() + "\n" +
+                    "blockdetect: "+ isBlockdetect() +"\n" +
+                    "alertdeposit: " + isAlertdeposit() + "\n" +
                     "\n" +
                     "# Experience value setting.\n" +
                     "# When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.\n" +

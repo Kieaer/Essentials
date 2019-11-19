@@ -7,7 +7,6 @@ import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
 import io.anuke.arc.files.FileHandle;
-import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.core.GameState;
@@ -84,6 +83,11 @@ public class Threads extends TimerTask implements Runnable{
             // 냉각수 감시
             // executorService.execute(new checkthorium());
         }
+
+        // 서버간 이동 데이터 저장
+        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
+        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
+        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
     }
 
     static class playtime extends Thread {
@@ -151,16 +155,17 @@ public class Threads extends TimerTask implements Runnable{
 
                     LocalDateTime now = LocalDateTime.now();
                     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-                    String myTime = now.format(dateTimeFormatter);
+                    SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+                    Date myTime = format.parse(dateTimeFormatter.format(now));
 
                     for (int i = 0; i < object.length(); i++) {
                         JSONObject value1 = object.getJSONObject(i);
-                        String date = (String) value1.get("date");
-                        String uuid = (String) value1.get("uuid");
-                        String name = (String) value1.get("name");
+                        Date d = format.parse(value1.getString("date"));
 
-                        if (date.equals(myTime)) {
-                            Log.info(myTime);
+                        String uuid = value1.getString("uuid");
+                        String name = value1.getString("name");
+
+                        if (d.after(myTime)) {
                             object.remove(i);
                             Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
                             netServer.admins.unbanPlayerID(uuid);

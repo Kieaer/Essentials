@@ -27,7 +27,11 @@ detectreactor: true
 scanresource: true
 
 # Turn this feature on to activate anti-grief against block place/break of each player.
+# blockdetect is a feature that notifies players when a any block config is changed.
+# alertdeposit is a feature that notifies you when an item is picked up and put into another block.
 antigrief: false
+blockdetect: false
+alertdeposit: false
 
 # Experience value setting.
 # When turn on explimit, cancels the construction itself if the player doesn't reach the level of the block they are trying to build.
