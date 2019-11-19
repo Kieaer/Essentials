@@ -56,19 +56,19 @@ public class Config {
     }
 
     public boolean isDetectreactor(){
-        return obj.get("detectreactor") == null || (boolean) obj.get("detectreactor");
+        return obj.get("detectreactor") != null && (boolean) obj.get("detectreactor");
     }
 
     public boolean isScanresource(){
-        return obj.get("scanresource") == null || (boolean) obj.get("scanresource");
+        return obj.get("scanresource") != null && (boolean) obj.get("scanresource");
     }
 
     public boolean isServerenable(){
-        return obj.get("server-enable") != null || (boolean) obj.get("server-enable");
+        return obj.get("server-enable") != null && (boolean) obj.get("server-enable");
     }
 
     public boolean isClientenable(){
-        return obj.get("client-enable") != null || (boolean) obj.get("client-enable");
+        return obj.get("client-enable") != null && (boolean) obj.get("client-enable");
     }
 
     public double getBasexp(){
@@ -136,31 +136,31 @@ public class Config {
     }
 
     public boolean isAntigrief(){
-        return obj.get("antigrief") == null || (boolean) obj.get("antigrief");
+        return obj.get("antigrief") == null && (boolean) obj.get("antigrief");
     }
 
     public boolean isBlockdetect(){
-        return obj.get("blockdetect") != null || (boolean) obj.get("blockdetect");
+        return obj.get("blockdetect") != null && (boolean) obj.get("blockdetect");
     }
 
     public boolean isAlertdeposit(){
-        return obj.get("alertdeposit") != null || (boolean) obj.get("alertdeposit");
+        return obj.get("alertdeposit") != null && (boolean) obj.get("alertdeposit");
     }
 
     public boolean isExplimit(){
-        return obj.get("explimit") != null || (boolean) obj.get("explimit");
+        return obj.get("explimit") != null && (boolean) obj.get("explimit");
     }
 
     public boolean isLogging(){
-        return obj.get("logging") != null || (boolean) obj.get("logging");
+        return obj.get("logging") != null && (boolean) obj.get("logging");
     }
 
     public boolean isUpdate(){
-        return obj.get("update") == null || (boolean) obj.get("update");
+        return obj.get("update") != null || (boolean) obj.get("update");
     }
 
     public boolean isLevelupalarm(){
-        return obj.get("levelupalarm") != null || (boolean) obj.get("levelupalarm");
+        return obj.get("levelupalarm") != null && (boolean) obj.get("levelupalarm");
     }
 
     public int getAlarmlevel(){
@@ -208,7 +208,7 @@ public class Config {
     }
 
     public boolean isDebug(){
-        return obj.get("debug") != null || (boolean) obj.get("debug");
+        return obj.get("debug") != null && (boolean) obj.get("debug");
     }
 
     public int getSavetime(){
@@ -446,6 +446,7 @@ public class Config {
                     "\n" +
                     "# Turn this feature on to activate anti-grief against block place/break of each player.\n" +
                     "# blockdetect is a function that notifies players when a any block config is changed.\n" +
+                    "# alertdeposit is a feature that notifies you when an item is picked up and put into another block.\n" +
                     "antigrief: "+ isAntigrief() + "\n" +
                     "blockdetect: "+ isBlockdetect() +"\n" +
                     "alertdeposit: " + isAlertdeposit() + "\n" +
