@@ -20,7 +20,6 @@ import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.content.UnitTypes;
-import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
@@ -64,7 +63,6 @@ import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
-import static io.anuke.mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     public Config config = new Config();
@@ -74,14 +72,14 @@ public class Main extends Plugin {
     private boolean making = false;
 
     public Main() {
-        NetClient.visual = false;
+        //NetClient.visual = false;
 
         // 설정 시작
         config.main();
 
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
-            Global.logc(nbundle("connecting"));
+            Global.logc(nbundle("server-connecting"));
             Client client = new Client();
             client.main(null, null, null);
         }
@@ -389,6 +387,75 @@ public class Main extends Plugin {
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent.class, e -> {
+            if (isLogin(e.player)) {
+                String check = String.valueOf(e.message.charAt(0));
+                // 명령어인지 확인
+                if (!check.equals("/")) {
+                    JSONObject db = getData(e.player.uuid);
+
+                    if (e.message.equals("y") && Vote.isvoting) {
+                        // 투표가 진행중일때
+                        if (Vote.list.contains(e.player.uuid)) {
+                            e.player.sendMessage(bundle(player, "vote-already"));
+                        } else {
+                            Vote.list.add(e.player.uuid);
+                            int current = Vote.list.size();
+                            for (Player others : playerGroup.all()) {
+                                if (getData(others.uuid).toString().equals("{}")) return;
+                                others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
+                            }
+                            if (Vote.require - current == 0) {
+                                Vote.counting.interrupt();
+                            }
+                        }
+                    }
+
+                    // 서버간 대화기능 작동
+                    if (db.getBoolean("crosschat")) {
+                        if (config.isClientenable()) {
+                            Client client = new Client();
+                            client.main("chat", e.player, e.message);
+                        } else if (config.isServerenable()) {
+                            // 메세지를 모든 클라이언트에게 전송함
+                            String msg = "[" + e.player.name + "]: " + e.message;
+                            try {
+                                for (Server.Service ser : Server.list) {
+                                    ser.bw.write(msg + "\n");
+                                    ser.bw.flush();
+                                }
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
+                        } else if (!config.isClientenable() && !config.isServerenable()) {
+                            e.player.sendMessage(bundle(e.player, "no-any-network"));
+                            writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + e.player.uuid + "'");
+                        }
+                    }
+                }
+
+                // 마지막 대화 데이터를 DB에 저장함
+                Thread t = new Thread(() -> {
+                    Thread.currentThread().setName("DB Thread");
+                    String sql = "UPDATE players SET lastchat = ? WHERE uuid = ?";
+                    try {
+                        PreparedStatement pstmt = conn.prepareStatement(sql);
+                        pstmt.setString(1, e.message);
+                        pstmt.setString(2, e.player.uuid);
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                    } catch (Exception ex) {
+                        Global.loge(sql);
+                        printStackTrace(ex);
+                    }
+                });
+                t.start();
+
+                // 번역기능 작동
+                Translate tr = new Translate();
+                tr.main(e.player, e.message);
+            }
+        });
+        /*Events.on(PlayerChatEvent.class, e -> {
             if(isLogin(e.player)) {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
@@ -480,7 +547,7 @@ public class Main extends Plugin {
                     tr.main(e.player, e.message);
                 }
             }
-        });
+        });*/
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
@@ -1018,7 +1085,7 @@ public class Main extends Plugin {
         });
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
-                Global.logc(nbundle("connecting"));
+                Global.logc(nbundle("server-connecting"));
 
                 if(serverconn){
                     Client client = new Client();
@@ -1026,9 +1093,15 @@ public class Main extends Plugin {
                 }
                 Client client = new Client();
                 client.main(null, null, null);
+
             } else {
                 Global.log(nbundle("client-disabled"));
             }
+
+            Global.logc(nbundle("db-connecting"));
+            closeconnect();
+            PlayerDB db = new PlayerDB();
+            db.openconnect();
         });
         handler.register("kickall", "Kick all players.",  arg -> {
             for(int a=0;a<playerGroup.size();a++){
