@@ -9,7 +9,6 @@ import io.anuke.arc.collection.Array;
 import io.anuke.mindustry.core.GameState;
 import io.anuke.mindustry.core.Version;
 import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.net.Administration;
 import io.anuke.mindustry.type.Item;
@@ -270,13 +269,23 @@ public class Server implements Runnable {
                 }
             }
 
+            boolean online = false;
+            for(int a=0;a<playerGroup.size();a++){
+                Player target = playerGroup.all().get(a);
+                if(target.isAdmin){
+                    online = true;
+                }
+            }
+
             json.put("players", playerGroup.size());
             json.put("playerlist", array);
             json.put("version", Version.build);
             json.put("name", Core.settings.getString("servername"));
             json.put("playtime", playtime);
-            json.put("difficulty", Difficulty.values());
             json.put("resource", items);
+            json.put("mapname", world.getMap().name());
+            json.put("wave", state.wave);
+            json.put("admin_online", online);
             return json.toString();
         }
 

@@ -20,6 +20,7 @@ import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.content.UnitTypes;
+import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
@@ -63,6 +64,7 @@ import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
+import static io.anuke.mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     public Config config = new Config();
@@ -72,7 +74,7 @@ public class Main extends Plugin {
     private boolean making = false;
 
     public Main() {
-        //NetClient.visual = false;
+        NetClient.visual = false;
 
         // 설정 시작
         config.main();
@@ -386,7 +388,7 @@ public class Main extends Plugin {
         });
 
         // 플레이어가 수다떨었을 때
-        Events.on(PlayerChatEvent.class, e -> {
+        /*Events.on(PlayerChatEvent.class, e -> {
             if (isLogin(e.player)) {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
@@ -454,8 +456,8 @@ public class Main extends Plugin {
                 Translate tr = new Translate();
                 tr.main(e.player, e.message);
             }
-        });
-        /*Events.on(PlayerChatEvent.class, e -> {
+        });*/
+        Events.on(PlayerChatEvent.class, e -> {
             if(isLogin(e.player)) {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
@@ -547,7 +549,7 @@ public class Main extends Plugin {
                     tr.main(e.player, e.message);
                 }
             }
-        });*/
+        });
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
