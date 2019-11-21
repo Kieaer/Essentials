@@ -167,7 +167,7 @@ public class Main extends Plugin {
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
                                 Global.log(nbundle("player-jumped", e.player.name, serverip + ":" + serverport));
-                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + player.uuid + "'");
+                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + e.player.uuid + "'");
                                 Call.onConnect(e.player.con, serverip, serverport);
                             }
                         }
@@ -195,21 +195,19 @@ public class Main extends Plugin {
         // 게임오버가 되었을 때
         Events.on(GameOverEvent.class, e -> {
             if (Vars.state.rules.pvp) {
-                if (playerGroup != null && playerGroup.size() > 0) {
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player player = playerGroup.all().get(i);
-                        if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                            if (player.getTeam().name().equals(e.winner.name())) {
-                                JSONObject db = getData(player.uuid);
-                                int pvpwin = db.getInt("pvpwincount");
-                                pvpwin++;
-                                writeData("UPDATE players SET pvpwincount = '" + pvpwin + "' WHERE uuid = '" + player.uuid + "'");
-                            } else if (!player.getTeam().name().equals(e.winner.name())){
-                                JSONObject db = getData(player.uuid);
-                                int pvplose = db.getInt("pvplosecount");
-                                pvplose++;
-                                writeData("UPDATE players SET pvplosecount = '" + pvplose + "' WHERE uuid = '" + player.uuid + "'");
-                            }
+                for (int i = 0; i < playerGroup.size(); i++) {
+                    Player player = playerGroup.all().get(i);
+                    if (isLogin(player)) {
+                        if (player.getTeam().name().equals(e.winner.name())) {
+                            JSONObject db = getData(player.uuid);
+                            int pvpwin = db.getInt("pvpwincount");
+                            pvpwin++;
+                            writeData("UPDATE players SET pvpwincount = '" + pvpwin + "' WHERE uuid = '" + player.uuid + "'");
+                        } else if (!player.getTeam().name().equals(e.winner.name())) {
+                            JSONObject db = getData(player.uuid);
+                            int pvplose = db.getInt("pvplosecount");
+                            pvplose++;
+                            writeData("UPDATE players SET pvplosecount = '" + pvplose + "' WHERE uuid = '" + player.uuid + "'");
                         }
                     }
                 }
