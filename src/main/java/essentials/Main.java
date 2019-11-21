@@ -106,6 +106,9 @@ public class Main extends Plugin {
             printStackTrace(e);
         }
 
+        // 플레이어 DB 업그레이드
+        PlayerDB.Upgrade();
+
         // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
         Thread jumpcheck = new Thread(new jumpcheck());
         jumpcheck.start();
@@ -132,9 +135,6 @@ public class Main extends Plugin {
             Client client = new Client();
             client.update();
         }
-
-        // 플레이어 DB 업그레이드
-        PlayerDB.Upgrade();
 
         // 서버기능 시작
         if (config.isServerenable()) {
@@ -167,6 +167,7 @@ public class Main extends Plugin {
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
                                 Global.log(nbundle("player-jumped", e.player.name, serverip + ":" + serverport));
+                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + player.uuid + "'");
                                 Call.onConnect(e.player.con, serverip, serverport);
                             }
                         }
@@ -254,9 +255,9 @@ public class Main extends Plugin {
 
                                 Log log = new Log();
                                 if (Global.config.getLanguage().equals("ko")) {
-                                    log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                    Log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                 } else {
-                                    log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                    Log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                 }
                                 Call.onTileDestroyed(world.tile(x, y));
                             } else {
@@ -269,9 +270,9 @@ public class Main extends Plugin {
 
                                     Log log = new Log();
                                     if (Global.config.getLanguage().equals("ko")) {
-                                        log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                        Log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                     } else {
-                                        log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                        Log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                     }
                                     Call.onTileDestroyed(world.tile(x, y));
                                 }
@@ -297,7 +298,7 @@ public class Main extends Plugin {
             Call.onPlayerDeath(e.player);
 
             Thread t = new Thread(() -> {
-                Thread.currentThread().setName("PlayerJoin Thread");
+                Thread.currentThread().setName(e.player.name+" Player Join");
                 if (config.isLoginenable()) {
                     if (isNocore(e.player)) {
                         JSONObject db = getData(e.player.uuid);
@@ -582,43 +583,44 @@ public class Main extends Plugin {
                     } catch (Exception ex) {
                         printStackTrace(ex);
                     }
-                });
-                t.start();
 
-                // 메세지 블럭을 설치했을 경우, 해당 블럭에다 전력 상태를 표시할 수 있도록 위치를 저장함
-                if (e.tile.entity.block == Blocks.message) {
-                    try {
-                        int x = e.tile.x;
-                        int y = e.tile.y;
-                        int target_x;
-                        int target_y;
 
-                        if (e.tile.getNearby(0).entity != null) {
-                            target_x = e.tile.getNearby(0).x;
-                            target_y = e.tile.getNearby(0).y;
-                        } else if (e.tile.getNearby(1).entity != null) {
-                            target_x = e.tile.getNearby(1).x;
-                            target_y = e.tile.getNearby(1).y;
-                        } else if (e.tile.getNearby(2).entity != null) {
-                            target_x = e.tile.getNearby(2).x;
-                            target_y = e.tile.getNearby(2).y;
-                        } else if (e.tile.getNearby(3).entity != null) {
-                            target_x = e.tile.getNearby(3).x;
-                            target_y = e.tile.getNearby(3).y;
-                        } else {
-                            return;
+                    // 메세지 블럭을 설치했을 경우, 해당 블럭에다 전력 상태를 표시할 수 있도록 위치를 저장함
+                    if (e.tile.entity.block == Blocks.message) {
+                        try {
+                            int x = e.tile.x;
+                            int y = e.tile.y;
+                            int target_x;
+                            int target_y;
+
+                            if (e.tile.getNearby(0).entity != null) {
+                                target_x = e.tile.getNearby(0).x;
+                                target_y = e.tile.getNearby(0).y;
+                            } else if (e.tile.getNearby(1).entity != null) {
+                                target_x = e.tile.getNearby(1).x;
+                                target_y = e.tile.getNearby(1).y;
+                            } else if (e.tile.getNearby(2).entity != null) {
+                                target_x = e.tile.getNearby(2).x;
+                                target_y = e.tile.getNearby(2).y;
+                            } else if (e.tile.getNearby(3).entity != null) {
+                                target_x = e.tile.getNearby(3).x;
+                                target_y = e.tile.getNearby(3).y;
+                            } else {
+                                return;
+                            }
+                            powerblock.put(x + "/" + y + "/" + target_x + "/" + target_y);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
                         }
-                        powerblock.put(x + "/" + y + "/" + target_x + "/" + target_y);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
                     }
-                }
 
-                // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
-                if (e.tile.entity.block == Blocks.thoriumReactor) {
-                    nukeposition.put(e.tile.entity.tileX() + "/" + e.tile.entity.tileY());
-                    nukedata.add(e.tile);
-                }
+                    // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
+                    if (e.tile.entity.block == Blocks.thoriumReactor) {
+                        nukeposition.put(e.tile.entity.tileX() + "/" + e.tile.entity.tileY());
+                        nukedata.add(e.tile);
+                    }
+                });
+                PlayerDB.ex.submit(t);
             }
         });
 
@@ -626,54 +628,56 @@ public class Main extends Plugin {
         Events.on(BuildSelectEvent.class, e -> {
             if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                 if (e.breaking) {
-                    JSONObject db = getData(((Player) e.builder).uuid);
-                    String name = e.tile.block().name;
-                    try {
-                        int data = db.getInt("breakcount");
-                        int exp = db.getInt("exp");
-
-                        Yaml yaml = new Yaml();
-                        Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
-                        int blockexp;
-                        if (obj.get(name) != null) {
-                            blockexp = (int) obj.get(name);
-                        } else {
-                            blockexp = 0;
-                        }
-                        int newexp = exp + blockexp;
-                        data++;
-
-                        writeData("UPDATE players SET lastplacename = '" + e.tile.block().name + "', breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
-
-                        if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
-                            int reactorcount = db.getInt("reactorcount");
-                            reactorcount++;
-                            writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
-                        }
-                    } catch (Exception ex) {
-                        printStackTrace(ex);
-                        Call.onKick(((Player) e.builder).con, "You're not logged!");
-                    }
-
-                    // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
-                    if (e.builder.buildRequest().block == Blocks.message) {
+                    Thread t = new Thread(() -> {
+                        JSONObject db = getData(((Player) e.builder).uuid);
+                        String name = e.tile.block().name;
                         try {
-                            for (int i = 0; i < powerblock.length(); i++) {
-                                String raw = powerblock.getString(i);
-                                String[] data = raw.split("/");
+                            int data = db.getInt("breakcount");
+                            int exp = db.getInt("exp");
 
-                                int x = Integer.parseInt(data[0]);
-                                int y = Integer.parseInt(data[1]);
+                            Yaml yaml = new Yaml();
+                            Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
+                            int blockexp;
+                            if (obj.get(name) != null) {
+                                blockexp = (int) obj.get(name);
+                            } else {
+                                blockexp = 0;
+                            }
+                            int newexp = exp + blockexp;
+                            data++;
 
-                                if (x == e.tile.x && y == e.tile.y) {
-                                    powerblock.remove(i);
-                                }
+                            writeData("UPDATE players SET lastplacename = '" + e.tile.block().name + "', breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
+
+                            if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
+                                int reactorcount = db.getInt("reactorcount");
+                                reactorcount++;
+                                writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
                             }
                         } catch (Exception ex) {
                             printStackTrace(ex);
+                            Call.onKick(((Player) e.builder).con, "You're not logged!");
                         }
-                    }
 
+                        // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
+                        if (e.builder.buildRequest().block == Blocks.message) {
+                            try {
+                                for (int i = 0; i < powerblock.length(); i++) {
+                                    String raw = powerblock.getString(i);
+                                    String[] data = raw.split("/");
+
+                                    int x = Integer.parseInt(data[0]);
+                                    int y = Integer.parseInt(data[1]);
+
+                                    if (x == e.tile.x && y == e.tile.y) {
+                                        powerblock.remove(i);
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                printStackTrace(ex);
+                            }
+                        }
+                    });
+                    PlayerDB.ex.submit(t);
                 }
             }
         });
@@ -709,7 +713,7 @@ public class Main extends Plugin {
                         }
                     }
                 });
-                t.start();
+                PlayerDB.ex.submit(t);
             }
         });
 
@@ -832,9 +836,6 @@ public class Main extends Plugin {
                     printStackTrace(e);
                 }
 
-                // DB 종료
-                closeconnect();
-
                 // 서버 종료
                 if (config.isServerenable()) {
                     try {
@@ -868,6 +869,11 @@ public class Main extends Plugin {
 
                 // 모든 스레드 종료
                 executorService.shutdown();
+                Log.ex.shutdown();
+                PlayerDB.ex.shutdown();
+
+                // DB 종료
+                closeconnect();
 
                 // 클라이언트 플레이어 카운트 스레드 종료
                 jumpcheck.interrupt();
@@ -1230,7 +1236,7 @@ public class Main extends Plugin {
                     err("Invalid type.");
                     break;
             }
-            Call.onKick(other.con, "Tempban kicked");
+            Call.onKick(other.con, "Temp kicked");
             if(config.isClientenable()){
                 Client client = new Client();
                 client.main("bansync", null, null);
@@ -1317,7 +1323,7 @@ public class Main extends Plugin {
                                 player.sendMessage(bundle(player, "event-making"));
                                 making = true;
 
-                                int customport = (int) (Math.random() * (7100 - 7000 + 1)) + 7000;
+                                int customport = (int) (Math.random() * (8000 - 7950 + 1)) + 8000;
                                 String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
                                 JSONTokener parser = new JSONTokener(settings);
                                 JSONObject object = new JSONObject(parser);
@@ -1348,8 +1354,8 @@ public class Main extends Plugin {
                                 }
                                 Global.log(nbundle("event-host-opened", player.name, customport));
 
+                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + player.uuid + "'");
                                 Call.onConnect(player.con, currentip, customport);
-                                //Call.onConnect(player.con, "localhost", customport);
                             } else {
                                 player.sendMessage(bundle(player, "event-level"));
                             }
@@ -1367,9 +1373,9 @@ public class Main extends Plugin {
                             JSONObject ob = arr.getJSONObject(a);
                             String name = ob.getString("name");
                             if (name.equals(arg[1])) {
+                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + player.uuid + "'");
                                 Call.onConnect(player.con, currentip, ob.getInt("port"));
                                 break;
-                                //Call.onConnect(player.con, "localhost", ob.getInt("port"));
                             }
                         }
                         break;
@@ -1385,10 +1391,11 @@ public class Main extends Plugin {
             player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
         });
         handler.<Player>register("info", "Show your information", (arg, player) -> {
-            if(checklogin(player)) return;
-            String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-            JSONObject db = getData(player.uuid);
-            String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
+            Thread t = new Thread(() -> {
+                if (checklogin(player)) return;
+                String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+                JSONObject db = getData(player.uuid);
+                String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
                         "[#2B60DE]========================================[]\n" +
                         "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
                         "[green]" + nbundle(player, "player-uuid") + "[] : " + player.uuid + "\n" +
@@ -1410,7 +1417,9 @@ public class Main extends Plugin {
                         "[green]" + nbundle(player, "player-pvpwincount") + "[] : " + db.get("pvpwincount") + "\n" +
                         "[green]" + nbundle(player, "player-pvplosecount") + "[] : " + db.get("pvplosecount") + "\n" +
                         "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.get("pvpbreakout");
-            Call.onInfoMessage(player.con, datatext);
+                Call.onInfoMessage(player.con, datatext);
+            });
+            PlayerDB.ex.submit(t);
         });
         handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
             if(checklogin(player)) return;
@@ -1773,6 +1782,7 @@ public class Main extends Plugin {
                 if (other != null) {
                     int bantimeset = Integer.parseInt(arg[1]);
                     PlayerDB.addtimeban(other.name, other.uuid, bantimeset);
+                    Call.onKick(other.con, "Temp kicked");
                     for(int a=0;a<playerGroup.size();a++){
                         Player current = playerGroup.all().get(a);
                         current.sendMessage(bundle(current, "ban-temp", other.name, player.name));

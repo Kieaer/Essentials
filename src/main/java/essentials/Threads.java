@@ -58,7 +58,7 @@ public class Threads extends TimerTask implements Runnable{
     @Override
     public void run() {
         // 플레이어 플탐 카운트
-        new playtime().start();
+        PlayerDB.ex.submit(new playtime());
 
         // 맵 플탐 카운트
         new maptime().start();
@@ -93,54 +93,51 @@ public class Threads extends TimerTask implements Runnable{
     static class playtime extends Thread {
         @Override
         public void run(){
-            
             try{
                 if(playerGroup.size() > 0){
-                    for(int i = 0; i < playerGroup.size(); i++){
+                    for(int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
-                        Thread t = new Thread(() -> {
-                            if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                                JSONObject db = new JSONObject();
-                                try {
-                                    db = getData(player.uuid);
-                                } catch (Exception e) {
-                                    printStackTrace(e);
-                                }
-                                String data;
-                                if (db.has("playtime")) {
-                                    data = db.getString("playtime");
-                                } else {
-                                    return;
-                                }
-                                SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-                                Date d1;
-                                Calendar cal;
-                                String newTime = null;
-                                try {
-                                    d1 = format.parse(data);
-                                    cal = Calendar.getInstance();
-                                    cal.setTime(d1);
-                                    cal.add(Calendar.SECOND, 1);
-                                    newTime = format.format(cal.getTime());
-                                } catch (ParseException e1) {
-                                    printStackTrace(e1);
-                                }
 
-                                // Exp caculating
-                                int exp = db.getInt("exp");
-                                int newexp = exp + (int) (Math.random() * 5);
-
-                                writeData("UPDATE players SET exp = '" + newexp + "', playtime = '" + newTime + "' WHERE uuid = '" + player.uuid + "'");
-                                Exp.exp(player.name, player.uuid);
+                        if (isLogin(player)) {
+                            JSONObject db = new JSONObject();
+                            try {
+                                db = getData(player.uuid);
+                            } catch (Exception e) {
+                                printStackTrace(e);
                             }
-                        });
-                        t.start();
+                            String data;
+                            if (db.has("playtime")) {
+                                data = db.getString("playtime");
+                            } else {
+                                return;
+                            }
+                            SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+                            Date d1;
+                            Calendar cal;
+                            String newTime = null;
+                            try {
+                                d1 = format.parse(data);
+                                cal = Calendar.getInstance();
+                                cal.setTime(d1);
+                                cal.add(Calendar.SECOND, 1);
+                                newTime = format.format(cal.getTime());
+                            } catch (ParseException e1) {
+                                printStackTrace(e1);
+                            }
+
+                            // Exp caculating
+                            int exp = db.getInt("exp");
+                            int newexp = exp + (int) (Math.random() * 5);
+
+                            writeData("UPDATE players SET exp = '" + newexp + "', playtime = '" + newTime + "' WHERE uuid = '" + player.uuid + "'");
+                            Exp.exp(player.name, player.uuid);
+                        }
                     }
                 }
             }catch (Exception ex){
                 printStackTrace(ex);
             }
-            
+
         }
     }
     static class bantime extends Thread {
@@ -1020,8 +1017,8 @@ public class Threads extends TimerTask implements Runnable{
                     allsendMessage("vote-10sec");
                     Thread.sleep(10000);
                 }
-            } catch (InterruptedException e) {
-                printStackTrace(e);
+            } catch (InterruptedException ignored) {
+                Global.log(nbundle("vote-passed"));
             }
         });
         Thread gameover = new Thread(() -> {
@@ -1032,10 +1029,10 @@ public class Threads extends TimerTask implements Runnable{
                 printStackTrace(e);
             }
             if (list.size() >= require && isvoting) {
-                Call.sendMessage("[green][Essentials] Gameover vote passed!");
+                allsendMessage("vote-gameover-done");
                 Events.fire(new EventType.GameOverEvent(Team.sharded));
             } else {
-                Call.sendMessage("[green][Essentials] [red]Gameover vote failed.");
+                allsendMessage("vote-gameover-fail");
             }
             list.clear();
             isvoting = false;
@@ -1049,12 +1046,12 @@ public class Threads extends TimerTask implements Runnable{
                 printStackTrace(e);
             }
             if (list.size() >= require && isvoting) {
-                Call.sendMessage("[green][Essentials] Skip 10 wave vote passed!");
+                allsendMessage("vote-skipwave-done");
                 for (int i = 0; i < 10; i++) {
                     logic.runWave();
                 }
             } else {
-                Call.sendMessage("[green][Essentials] [red]Skip 10 wave vote failed.");
+                allsendMessage("vote-skipwave-fail");
             }
             list.clear();
             isvoting = false;
@@ -1069,9 +1066,10 @@ public class Threads extends TimerTask implements Runnable{
                     printStackTrace(e);
                 }
                 if (list.size() >= require && isvoting) {
-                    Call.sendMessage("[green][Essentials] Player kick vote success!");
+                    allsendMessage("vote-kick-done", target.name);
                     PlayerDB.addtimeban(target.name, target.uuid, 4);
                     Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
+
 
                     Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
                     Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));

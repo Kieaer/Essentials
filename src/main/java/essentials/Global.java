@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.ThreadFactory;
 
 import static essentials.core.PlayerDB.getData;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -591,6 +592,20 @@ public class Global {
         } catch (ParseException e) {
             printStackTrace(e);
             return true;
+        }
+    }
+
+    // Thread name
+    public static class threadname implements ThreadFactory {
+        String name;
+        int count = 0;
+        public threadname(String name){
+            this.name = name;
+        }
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r, name+"-" + ++count);
         }
     }
 }

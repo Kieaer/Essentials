@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,11 +31,12 @@ import static essentials.Threads.ColorNick;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
-public class PlayerDB {
+public class PlayerDB{
     private static int dbversion = 2;
     public static Connection conn;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
     public Config config = new Config();
+    public static ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()/2, new Global.threadname("EssentialPlayer"));
 
     public void createNewDataFile(){
         try {
@@ -378,7 +381,6 @@ public class PlayerDB {
 
 	public static void writeData(String sql){
         Thread t = new Thread(() -> {
-            Thread.currentThread().setName("DB Thread");
             try {
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.executeUpdate();
@@ -392,7 +394,7 @@ public class PlayerDB {
                 printStackTrace(e);
             }
         });
-        t.start();
+        ex.submit(t);
 	}
 
 	// 로그인 기능 사용시 계정 등록

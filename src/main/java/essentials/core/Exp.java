@@ -60,8 +60,8 @@ public class Exp {
     public static void joinexp(String uuid){
         JSONObject db = PlayerDB.getData(uuid);
 
-        int exp = (int) db.get("exp");
-        int joincount = (int) db.get("joincount");
+        int exp = db.getInt("exp");
+        int joincount = db.getInt("joincount");
 
         int result = exp+joincount;
 

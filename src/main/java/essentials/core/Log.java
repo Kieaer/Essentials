@@ -1,5 +1,6 @@
 package essentials.core;
 
+import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.files.FileHandle;
@@ -13,12 +14,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static essentials.Global.config;
 import static essentials.Global.getTime;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Log{
+    public static ExecutorService ex = Executors.newSingleThreadExecutor(new Global.threadname("EssentialLog"));
+
     public void main() {
         // No error, griefer, non-block, withdraw event
         Events.on(PlayerChatEvent.class, e -> {
@@ -123,7 +128,7 @@ public class Log{
         });
     }
 
-    public void writelog(String type, String text){
+    public static void writelog(String type, String text){
         Thread t = new Thread(() -> {
             String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now());
             Path newlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/log/" + type + ".log").path());
@@ -152,6 +157,6 @@ public class Log{
 
             mainlog.writeString(text + "\n", true);
         });
-        t.start();
+        ex.submit(t);
     }
 }
