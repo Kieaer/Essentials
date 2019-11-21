@@ -22,6 +22,7 @@ import java.util.jar.JarFile;
 
 import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
+import static io.anuke.mindustry.Vars.net;
 
 public class Config {
     private Map<String, Object> obj;
@@ -264,6 +265,11 @@ public class Config {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else {
+            // If folder name has space
+            Global.loge("The plugin file or folder path is invalid. Please check your server path!");
+            net.dispose();
+            Core.app.exit();
         }
     }
 
