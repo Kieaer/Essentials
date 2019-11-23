@@ -442,7 +442,6 @@ public class PlayerDB{
                     "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
-            player.sendMessage("");
             result = false;
         }
         // 보안검사 끝

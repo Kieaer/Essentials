@@ -556,7 +556,7 @@ public class Global {
     // 로그인 유무 확인
     public static boolean isLogin(Player player){
         JSONObject db = getData(player.uuid);
-        if(db.toString().equals("{}")) return false;
+        if(db.toString().equals("{}") || player.uuid == null) return false;
         return db.getBoolean("connected");
     }
 

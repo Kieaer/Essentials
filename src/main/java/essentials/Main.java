@@ -145,7 +145,7 @@ public class Main extends Plugin {
         EPG epg = new EPG();
         epg.main();
 
-        Events.on(TapConfigEvent.class, e-> {
+        Events.on(TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null && config.isBlockdetect()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
             }
@@ -465,23 +465,19 @@ public class Main extends Plugin {
                         Call.onKick(e.player.con, "You're kicked because using bad words.\n욕설 사용에 의해 강퇴되었습니다.");
                     } else {
                         JSONObject db = getData(e.player.uuid);
+                        NetClient.visual = true;
                         if (e.player.uuid.equals("hMHCIDJpHKQ=")) {
                             if(!db.getBoolean("crosschat")){
-                                NetClient.visual = true;
                                 Call.sendMessage("[sky][Owner] " + colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
-                                NetClient.visual = false;
                             }
                         } else if (e.player.isAdmin) {
                             if(!db.getBoolean("crosschat")) {
-                                NetClient.visual = true;
                                 Call.sendMessage("[green][Admin] " + colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
-                                NetClient.visual = false;
                             }
                         } else {
-                            NetClient.visual = true;
                             Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
-                            NetClient.visual = false;
                         }
+                        NetClient.visual = false;
 
                         if (e.message.equals("y") && Vote.isvoting) {
                             // 투표가 진행중일때
@@ -546,6 +542,11 @@ public class Main extends Plugin {
                     // 번역기능 작동
                     Translate tr = new Translate();
                     tr.main(e.player, e.message);
+                }
+            } else {
+                String check = String.valueOf(e.message.charAt(0));
+                if (!check.equals("/")) {
+                    e.player.sendMessage("You're not logged!/로그인 하지 않은 상태에서는 채팅을 칠 수 없습니다.");
                 }
             }
         });
