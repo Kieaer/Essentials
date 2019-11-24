@@ -224,6 +224,26 @@ public class Config {
         return obj.get("version") != null ? (int) obj.get("version") : 4;
     }
 
+    public boolean isAutodifficulty(){
+        return obj.get("auto-difficulty") != null && (boolean) obj.get("auto-difficulty");
+    }
+
+    public int getEasy(){
+        return obj.get("easy") != null ? (int) obj.get("easy") : 2;
+    }
+
+    public int getNormal(){
+        return obj.get("normal") != null ? (int) obj.get("normal") : 4;
+    }
+
+    public int getHard(){
+        return obj.get("hard") != null ? (int) obj.get("hard") : 6;
+    }
+
+    public int getInsane(){
+        return obj.get("insane") != null ? (int) obj.get("insane") : 10;
+    }
+
     public String getServername(){
         JSONObject data = new JSONObject(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString()));
         return data.getString("servername");
@@ -321,7 +341,7 @@ public class Config {
         String text;
         if (getLanguage().equals("ko")) {
             text = "# 플러그인 버전 (절대 수정하지 마세요!)\n" +
-                    "version: 5\n" +
+                    "version: 6\n" +
                     "\n" +
                     "# 플러그인 언어 (지원하는 언어 - ko, en)\n" +
                     "language: ko\n" +
@@ -329,11 +349,11 @@ public class Config {
                     "# 서버/클라이언트 포트 설정\n" +
                     "# 이것은 플러그인의 네트워크 기능에 사용됩니다.\n" +
                     "server-enable: " + isServerenable() + "\n" +
-                    "server-port: " + getServerport() + "\n" +
+                    "  server-port: " + getServerport() + "\n" +
                     "\n" +
                     "client-enable: " + isClientenable() + "\n" +
-                    "client-port: " + getClientport() + "\n" +
-                    "client-host: " + getClienthost() + "\n" +
+                    "  client-port: " + getClientport() + "\n" +
+                    "  client-host: " + getClienthost() + "\n" +
                     "\n" +
                     "# realname를 켜면 플레이어가 닉네임을 변경하더라도 이전 닉네임으로 설정됩니다.\n" +
                     "# 컬러닉 기능을 원하는 경우 이것을 활성화해야 합니다.\n" +
@@ -361,10 +381,10 @@ public class Config {
                     "# exponent는 다음 레벨로 올리기 위한 요구 경험치 배수입니다.\n" +
                     "# levelupalarm 를 활성화 하면 일정레벨 이상에서 레벨이 오를때, 메세지로 띄워줍니다.\n" +
                     "explimit: " + isExplimit() + "\n" +
-                    "basexp: " + getBasexp() + "\n" +
-                    "exponent: " + getExponent() + "\n" +
-                    "levelupalarm: " + isLevelupalarm() + "\n" +
-                    "alarm-minimal-level: " + getAlarmlevel() + "\n" +
+                    "  basexp: " + getBasexp() + "\n" +
+                    "  exponent: " + getExponent() + "\n" +
+                    "  levelupalarm: " + isLevelupalarm() + "\n" +
+                    "  alarm-minimal-level: " + getAlarmlevel() + "\n" +
                     "\n" +
                     "# 밴 공유서버 설정\n" +
                     "# 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.\n" +
@@ -396,9 +416,9 @@ public class Config {
                     "# 예시 - mariadb://localhost:3306/DB이름\n" +
                     "# 만약 MySQL/MariaDB 를 사용하고 싶다면, SQLite를 비활성화 하고 새 데이터베이스를 직접 만드셔야 합니다!\n" +
                     "sqlite: " + isSqlite() + "\n" +
-                    "dburl: " + getDBurl() + "\n" +
-                    "dbid: " + getDBid() + "\n" +
-                    "dbpw: " + getDBpw() + "\n" +
+                    "  dburl: " + getDBurl() + "\n" +
+                    "  dbid: " + getDBid() + "\n" +
+                    "  dbpw: " + getDBpw() + "\n" +
                     "\n" +
                     "# 로그인 기능 설정\n" +
                     "# loginmethod 는 계정 등록방식 입니다. (password, email 방식이 가능함)\n" +
@@ -420,10 +440,17 @@ public class Config {
                     "\n" +
                     "# 빽섭할 맵 저장 슬롯\n" +
                     "# 예시 - 만약 값을 1000으로 설정한다면, 빽섭할 맵의 파일명이 1000.msav 으로 저장됩니다.\n" +
-                    "slotnumber: " + getSlotnumber();
+                    "slotnumber: " + getSlotnumber() + "\n" +
+                    "\n" +
+                    "# 플레이어 인원별 난이도 조절\n" +
+                    "auto-difficulty: false\n" +
+                    "  easy: 2\n" +
+                    "  normal: 4\n" +
+                    "  hard: 6\n" +
+                    "  insane: 10";
         } else {
             text = "# Config version (Don't touch this!)\n" +
-                    "version: 5\n" +
+                    "version: 6\n" +
                     "\n" +
                     "# Plugin language (Supported language - ko, en)\n" +
                     "language: en\n" +
@@ -431,11 +458,11 @@ public class Config {
                     "# Server/client port settings\n" +
                     "# This's used for the network function of the plugin.\n" +
                     "server-enable: " + isServerenable() + "\n" +
-                    "server-port: " + getServerport() + "\n" +
+                    "  server-port: " + getServerport() + "\n" +
                     "\n" +
                     "client-enable: " + isClientenable() + "\n" +
-                    "client-port: " + getClientport() + "\n" +
-                    "client-host: " + getClienthost() + "\n" +
+                    "  client-port: " + getClientport() + "\n" +
+                    "  client-host: " + getClienthost() + "\n" +
                     "\n" +
                     "# If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.\n" +
                     "# If you want colornick features, must enable this.\n" +
@@ -463,10 +490,10 @@ public class Config {
                     "# exponent is EXP multiplier required for the next level.\n" +
                     "# When turn on levelupalarm, a message is displayed when the level rises above a certain level.\n" +
                     "explimit: " + isExplimit() + "\n" +
-                    "basexp: " + getBasexp() + "\n" +
-                    "exponent: " + getExponent() + "\n" +
-                    "levelupalarm: " + isLevelupalarm() + "\n" +
-                    "alarm-minimal-level: " + getAlarmlevel() + "\n" +
+                    "  basexp: " + getBasexp() + "\n" +
+                    "  exponent: " + getExponent() + "\n" +
+                    "  levelupalarm: " + isLevelupalarm() + "\n" +
+                    "  alarm-minimal-level: " + getAlarmlevel() + "\n" +
                     "\n" +
                     "# Ban sharing server config\n" +
                     "# If you enable this, your ban list will send to another public servers.\n" +
@@ -498,9 +525,9 @@ public class Config {
                     "# Example - mariadb://localhost:3306/dbname\n" +
                     "# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.\n" +
                     "sqlite: " + isSqlite() + "\n" +
-                    "dburl: " + getDBurl() + "\n" +
-                    "dbid: " + getDBid() + "\n" +
-                    "dbpw: " + getDBpw() + "\n" +
+                    "  dburl: " + getDBurl() + "\n" +
+                    "  dbid: " + getDBid() + "\n" +
+                    "  dbpw: " + getDBpw() + "\n" +
                     "\n" +
                     "# Login features setting\n" +
                     "# loginmethod is account register method. (password, email method avaliable.)\n" +
@@ -522,12 +549,19 @@ public class Config {
                     "\n" +
                     "# Rollback map save slot number.\n" +
                     "# Example - if set value to 1000, rollback map name will renamed to 1000.msav\n" +
-                    "slotnumber: " + getSlotnumber();
+                    "slotnumber: " + getSlotnumber() + "\n" +
+                    "\n" +
+                    "# Set the difficulty per player\n" +
+                    "auto-difficulty: false\n" +
+                    "  easy: 2\n" +
+                    "  normal: 4\n" +
+                    "  hard: 6\n" +
+                    "  insane: 10";
         }
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
         Global.logco(nbundle("config-loaded"));
-        if(getVersion() < 5){
+        if(getVersion() < 6){
             Global.logco(nbundle("config-updated"));
         }
 

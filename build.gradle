@@ -10,21 +10,20 @@ configurations.all {
 }
 
 repositories{
-    //mavenCentral()
     jcenter()
     maven{ url 'https://www.jitpack.io' }
 }
 
 ext{
-    //targetversion = '-9122fbe141-1'
-    targetversion = 'v100'
+    //targetversion = 'v100'
+    targetversion = '-SNAPSHOT'
 }
 
 compileJava {options.encoding = "UTF-8"}
 
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$targetversion"
-    //compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
+    compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
 
     compile group: 'org.json', name: 'json', version: '20190722'
     compile group: 'org.yaml', name: 'snakeyaml', version: '1.25'
@@ -46,7 +45,7 @@ dependencies{
     //compile "com.github.ariejan:slick2d:master-6a9d179731-1"
     //compile "com.github.xaguzman:pathfinding:0.2.6"
 
-    compileOnly files('C:/Users/cloud/Desktop/Mindustry-100/core/build/libs/core-release.jar')
+    //compileOnly files('C:/Users/cloud/Desktop/Mindustry-100/core/build/libs/core-release.jar')
     //compileOnly files('C:/Users/cloud/Desktop/Arc-99/arc-core/build/libs/arc-core-1.0.jar')
 
     //compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.0.pr2'

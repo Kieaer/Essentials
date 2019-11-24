@@ -397,11 +397,8 @@ public class PlayerDB{
         ex.submit(t);
 	}
 
-	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String pw) {
+	public static boolean checkpw(Player player, String pw){
         boolean result = true;
-
-        // 비밀번호 보안 확인
         // 영문(소문자), 숫자, 7~20자리
         String pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$";
         Matcher matcher = Pattern.compile(pwPattern).matcher(pw);
@@ -444,6 +441,14 @@ public class PlayerDB{
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
             result = false;
         }
+        return result;
+    }
+	// 로그인 기능 사용시 계정 등록
+	public boolean register(Player player, String pw) {
+        boolean result = true;
+
+        // 비밀번호 보안 확인
+        if(!checkpw(player,pw)) result = false;
         // 보안검사 끝
 
         if(result){

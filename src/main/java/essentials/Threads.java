@@ -21,6 +21,7 @@ import io.anuke.mindustry.type.Item;
 import io.anuke.mindustry.type.ItemType;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
+import io.anuke.mindustry.world.blocks.logic.MessageBlock;
 import org.codehaus.plexus.util.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -42,6 +43,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static essentials.Global.*;
+import static essentials.Main.messagemonitor;
+import static essentials.Main.powerblock;
 import static essentials.core.PlayerDB.getData;
 import static essentials.core.PlayerDB.writeData;
 import static essentials.special.PingServer.pingServer;
@@ -1122,6 +1125,43 @@ public class Threads extends TimerTask implements Runnable{
             }catch (Exception e){
                 e.printStackTrace();
                 return "127.0.0.1";
+            }
+        }
+    }
+    static class messagemonitoring extends Thread{
+        Tile tile;
+        Tile target;
+
+        @Override
+        public void run(){
+            for(int a=0;a<messagemonitor.size();a++){
+                MessageBlock.MessageBlockEntity entity = tile.entity();
+                //entity.message
+            }
+            try {
+                int x = tile.x;
+                int y = tile.y;
+                int target_x;
+                int target_y;
+
+                if (tile.getNearby(0).entity != null) {
+                    target_x = tile.getNearby(0).x;
+                    target_y = tile.getNearby(0).y;
+                } else if (tile.getNearby(1).entity != null) {
+                    target_x = tile.getNearby(1).x;
+                    target_y = tile.getNearby(1).y;
+                } else if (tile.getNearby(2).entity != null) {
+                    target_x = tile.getNearby(2).x;
+                    target_y = tile.getNearby(2).y;
+                } else if (tile.getNearby(3).entity != null) {
+                    target_x = tile.getNearby(3).x;
+                    target_y = tile.getNearby(3).y;
+                } else {
+                    return;
+                }
+                powerblock.add(x + "/" + y + "/" + target_x + "/" + target_y);
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
     }

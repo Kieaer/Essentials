@@ -20,7 +20,6 @@ import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.content.UnitTypes;
-import io.anuke.mindustry.core.NetClient;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.Difficulty;
@@ -39,6 +38,7 @@ import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.mindrot.jbcrypt.BCrypt;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedReader;
@@ -64,17 +64,17 @@ import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
-import static io.anuke.mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     public Config config = new Config();
-    private JSONArray powerblock = new JSONArray();
+    static ArrayList<String> powerblock = new ArrayList<>();
     private JSONArray nukeblock = new JSONArray();
+    static ArrayList<Tile> messagemonitor = new ArrayList<>();
     private ArrayList<Tile> nukedata = new ArrayList<>();
     private boolean making = false;
 
     public Main() {
-        NetClient.visual = false;
+        //NetClient.visual = false;
 
         // 설정 시작
         config.main();
@@ -219,7 +219,7 @@ public class Main extends Plugin {
             Threads.playtime = "00:00.00";
 
             // 전력 노드 정보 초기화
-            powerblock = new JSONArray();
+            powerblock.clear();
 
             peacetime = true;
         });
@@ -232,7 +232,7 @@ public class Main extends Plugin {
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(DepositEvent.class, e -> {
-            // If deposit block name is thorium reactor
+            // 만약 그 특정블록이 토륨 원자로일경우
             if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor()) {
                 nukeblock.put(e.tile.entity.tileX() + "/" + e.tile.entity.tileY() + "/" + e.player.name);
                 Thread t = new Thread(() -> {
@@ -377,6 +377,20 @@ public class Main extends Plugin {
                 state.rules.playerDamageMultiplier = 0f;
                 state.rules.playerHealthMultiplier = 0.001f;
             }
+
+            // 플레이어 인원별 난이도 설정
+            if(config.isAutodifficulty()){
+                int total = playerGroup.size();
+                if(config.getEasy() >= total){
+                    Difficulty.valueOf("easy");
+                } else if(config.getNormal() == total){
+                    Difficulty.valueOf("normal");
+                } else if(config.getHard() == total){
+                    Difficulty.valueOf("hard");
+                } else if(config.getInsane() <= total){
+                    Difficulty.valueOf("insane");
+                }
+            }
         });
 
         // 플레이어가 서버에서 탈주했을 때
@@ -387,7 +401,7 @@ public class Main extends Plugin {
         });
 
         // 플레이어가 수다떨었을 때
-        /*Events.on(PlayerChatEvent.class, e -> {
+        Events.on(PlayerChatEvent.class, e -> {
             if (isLogin(e.player)) {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
@@ -455,8 +469,8 @@ public class Main extends Plugin {
                 Translate tr = new Translate();
                 tr.main(e.player, e.message);
             }
-        });*/
-        Events.on(PlayerChatEvent.class, e -> {
+        });
+        /*Events.on(PlayerChatEvent.class, e -> {
             if(isLogin(e.player)) {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
@@ -549,7 +563,7 @@ public class Main extends Plugin {
                     e.player.sendMessage("You're not logged!/로그인 하지 않은 상태에서는 채팅을 칠 수 없습니다.");
                 }
             }
-        });
+        });*/
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
@@ -584,33 +598,9 @@ public class Main extends Plugin {
                     }
 
 
-                    // 메세지 블럭을 설치했을 경우, 해당 블럭에다 전력 상태를 표시할 수 있도록 위치를 저장함
+                    // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                     if (e.tile.entity.block == Blocks.message) {
-                        try {
-                            int x = e.tile.x;
-                            int y = e.tile.y;
-                            int target_x;
-                            int target_y;
-
-                            if (e.tile.getNearby(0).entity != null) {
-                                target_x = e.tile.getNearby(0).x;
-                                target_y = e.tile.getNearby(0).y;
-                            } else if (e.tile.getNearby(1).entity != null) {
-                                target_x = e.tile.getNearby(1).x;
-                                target_y = e.tile.getNearby(1).y;
-                            } else if (e.tile.getNearby(2).entity != null) {
-                                target_x = e.tile.getNearby(2).x;
-                                target_y = e.tile.getNearby(2).y;
-                            } else if (e.tile.getNearby(3).entity != null) {
-                                target_x = e.tile.getNearby(3).x;
-                                target_y = e.tile.getNearby(3).y;
-                            } else {
-                                return;
-                            }
-                            powerblock.put(x + "/" + y + "/" + target_x + "/" + target_y);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
+                        messagemonitor.add(e.tile);
                     }
 
                     // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
@@ -660,8 +650,8 @@ public class Main extends Plugin {
                         // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
                         if (e.builder.buildRequest().block == Blocks.message) {
                             try {
-                                for (int i = 0; i < powerblock.length(); i++) {
-                                    String raw = powerblock.getString(i);
+                                for (int i = 0; i < powerblock.size(); i++) {
+                                    String raw = powerblock.get(i);
                                     String[] data = raw.split("/");
 
                                     int x = Integer.parseInt(data[0]);
@@ -716,6 +706,51 @@ public class Main extends Plugin {
             }
         });
 
+        // 플레이어가 밴당했을 때 공유기능 작동
+        Events.on(PlayerBanEvent.class, e -> {
+            Thread bansharing = new Thread(() -> {
+                if (config.isBanshare() && config.isClientenable()) {
+                    Client client = new Client();
+                    client.main("bansync", null, null);
+                }
+
+                for (Player player : playerGroup.all()) {
+                    player.sendMessage(bundle(player, "player-banned", e.player.name));
+                    if (netServer.admins.isIDBanned(player.uuid)) {
+                        player.con.kick(KickReason.banned);
+                    }
+                }
+            });
+            ex.submit(bansharing);
+        });
+
+        // 이건 IP 밴당했을때 작동
+        Events.on(PlayerIpBanEvent.class, e -> {
+            Thread bansharing = new Thread(() -> {
+                if (config.isBanshare() && config.isClientenable()) {
+                    Client client = new Client();
+                    client.main("bansync", null, null);
+                }
+            });
+           ex.submit(bansharing);
+        });
+
+        // 이건 밴 해제되었을 때 작동
+        Events.on(PlayerUnbanEvent.class, e -> {
+            if(serverconn) {
+                Client client = new Client();
+                client.main("unban", null, e.player.uuid + "|<unknown>");
+            }
+        });
+
+        // 이건 IP 밴이 해제되었을 때 작동
+        Events.on(PlayerIpUnbanEvent.class, e -> {
+            if(serverconn) {
+                Client client = new Client();
+                client.main("unban", null, "<unknown>|"+e.ip);
+            }
+        });
+
         // 로그인 기능이 켜져있을때, 비 로그인 사용자들에게 알림을 해줌
         if (config.isLoginenable()) {
             Timer alerttimer = new Timer(true);
@@ -740,8 +775,8 @@ public class Main extends Plugin {
                 if (delaycount == 30) {
                     try {
                         // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
-                        for (int i = 0; i < powerblock.length(); i++) {
-                            String raw = powerblock.getString(i);
+                        for (int i = 0; i < powerblock.size(); i++) {
+                            String raw = powerblock.get(i);
 
                             String[] data = raw.split("/");
 
@@ -948,45 +983,6 @@ public class Main extends Plugin {
             });
             executorService.execute(t);
         });
-        handler.register("ban", "<type-id/name/ip> <username/IP/ID>", "Ban a person.", arg -> {
-            if(arg.length < 2) {
-                Global.log(nbundle("no-parameter"));
-                return;
-            }
-            switch (arg[0]) {
-                case "id":
-                    netServer.admins.banPlayerID(arg[1]);
-                    Global.log(nbundle("banned"));
-                    break;
-                case "name":
-                    Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-                    if (target != null) {
-                        netServer.admins.banPlayer(target.uuid);
-                        Global.log(nbundle("banned"));
-                    } else {
-                        Global.loge(nbundle("player-not-found"));
-                    }
-                    break;
-                case "ip":
-                    netServer.admins.banPlayerIP(arg[1]);
-                    Global.log(nbundle("banned"));
-                    break;
-                default:
-                    err("Invalid type.");
-                    return;
-            }
-            if(config.isBanshare() && config.isClientenable()) {
-                Client client = new Client();
-                client.main("bansync", null, null);
-            }
-
-            for(Player player : playerGroup.all()){
-                player.sendMessage(bundle(player, "player-banned", arg[0]));
-                if(netServer.admins.isIDBanned(player.uuid)){
-                    player.con.kick(KickReason.banned);
-                }
-            }
-        });
         handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
             if(!config.isServerenable()){
                 if(config.isBanshare()){
@@ -1157,29 +1153,6 @@ public class Main extends Plugin {
             */
             Global.log("Currently not supported!");
         });
-        handler.register("unban", "<ip/ID>", "Completely unban a person by IP or ID.", arg -> {
-            if(arg[0].contains(".")){
-                if(netServer.admins.unbanPlayerIP(arg[0])){
-                    Global.log("Unbanned player by IP: "+arg[0]+".");
-                    if(serverconn) {
-                        Client client = new Client();
-                        client.main("unban", null, "<unknown>|" + arg[0]);
-                    }
-                }else{
-                    err("That IP is not banned!");
-                }
-            }else{
-                if(netServer.admins.unbanPlayerID(arg[0])){
-                    Global.log("Unbanned player by ID: "+arg[0]+".");
-                    if(serverconn) {
-                        Client client = new Client();
-                        client.main("unban", null, arg[0] + "|<unknown>");
-                    }
-                }else{
-                    err("That ID is not banned!");
-                }
-            }
-        });
         handler.register("sync", "<player>", "Force sync request from the target player.", arg -> {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
@@ -1265,6 +1238,19 @@ public class Main extends Plugin {
             }
 
             writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
+        });
+        handler.<Player>register("changepw", "<new_password>", (arg, player) -> {
+            if(checklogin(player)) return;
+            if(!checkpw(player, arg[0])) return;
+            try{
+                Class.forName("org.mindrot.jbcrypt.BCrypt");
+                String hashed = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
+                writeData("UPDATE players SET accountpw = '"+hashed+"' WHERE accountid = '"+player.uuid+"'");
+                player.sendMessage(bundle(player,"success"));
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            writeData("UPDATE");
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
             if(checklogin(player)) return;
