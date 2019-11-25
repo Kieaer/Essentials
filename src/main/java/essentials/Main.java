@@ -218,6 +218,7 @@ public class Main extends Plugin {
                             }
                         }
                     }
+                    pvpteam.clear();
                 }
             }
         });
@@ -714,6 +715,7 @@ public class Main extends Plugin {
             }
         });
 
+        /*
         // 플레이어가 밴당했을 때 공유기능 작동
         Events.on(PlayerBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
@@ -758,6 +760,8 @@ public class Main extends Plugin {
                 client.main("unban", null, "<unknown>|"+e.ip);
             }
         });
+
+         */
 
         // 로그인 기능이 켜져있을때, 비 로그인 사용자들에게 알림을 해줌
         if (config.isLoginenable()) {

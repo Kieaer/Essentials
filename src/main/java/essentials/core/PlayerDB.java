@@ -6,6 +6,7 @@ import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,6 +38,7 @@ public class PlayerDB{
     private static ArrayList<Thread> griefthread = new ArrayList<>();
     public Config config = new Config();
     public static ExecutorService ex = Executors.newFixedThreadPool(4, new Global.threadname("EssentialPlayer"));
+    public static ArrayList<Player> pvpteam = new ArrayList<>();
 
     public void createNewDataFile(){
         try {
@@ -591,7 +593,23 @@ public class PlayerDB{
 
             // 플레이어 팀 설정
             if (Vars.state.rules.pvp){
-                player.setTeam(netServer.assignTeam(player, playerGroup.all()));
+                boolean match = false;
+                for(int a=0;a<pvpteam.size();a++){
+                    Player target = pvpteam.get(a);
+                    Team team = pvpteam.get(a).getTeam();
+                    if(player.uuid.equals(target.uuid)){
+                        if(Vars.state.teams.get(team).cores.isEmpty()){
+                            break;
+                        } else {
+                            player.setTeam(team);
+                            match = true;
+                        }
+                    }
+                }
+                if(!match){
+                    player.setTeam(netServer.assignTeam(player, playerGroup.all()));
+                    pvpteam.add(player);
+                }
                 Call.onPlayerDeath(player);
             } else {
                 player.setTeam(Vars.defaultTeam);
