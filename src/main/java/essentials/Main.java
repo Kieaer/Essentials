@@ -195,19 +195,27 @@ public class Main extends Plugin {
         // 게임오버가 되었을 때
         Events.on(GameOverEvent.class, e -> {
             if (Vars.state.rules.pvp) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player player = playerGroup.all().get(i);
-                    if (isLogin(player)) {
-                        if (player.getTeam().name().equals(e.winner.name())) {
-                            JSONObject db = getData(player.uuid);
-                            int pvpwin = db.getInt("pvpwincount");
-                            pvpwin++;
-                            writeData("UPDATE players SET pvpwincount = '" + pvpwin + "' WHERE uuid = '" + player.uuid + "'");
-                        } else if (!player.getTeam().name().equals(e.winner.name())) {
-                            JSONObject db = getData(player.uuid);
-                            int pvplose = db.getInt("pvplosecount");
-                            pvplose++;
-                            writeData("UPDATE players SET pvplosecount = '" + pvplose + "' WHERE uuid = '" + player.uuid + "'");
+                int index = 5;
+                for(int a=0;a<5;a++) {
+                    if (Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
+                        index--;
+                    }
+                }
+                if(index == 1) {
+                    for (int i = 0; i < playerGroup.size(); i++) {
+                        Player player = playerGroup.all().get(i);
+                        if (isLogin(player)) {
+                            if (player.getTeam().name().equals(e.winner.name())) {
+                                JSONObject db = getData(player.uuid);
+                                int pvpwin = db.getInt("pvpwincount");
+                                pvpwin++;
+                                writeData("UPDATE players SET pvpwincount = '" + pvpwin + "' WHERE uuid = '" + player.uuid + "'");
+                            } else if (!player.getTeam().name().equals(e.winner.name())) {
+                                JSONObject db = getData(player.uuid);
+                                int pvplose = db.getInt("pvplosecount");
+                                pvplose++;
+                                writeData("UPDATE players SET pvplosecount = '" + pvplose + "' WHERE uuid = '" + player.uuid + "'");
+                            }
                         }
                     }
                 }

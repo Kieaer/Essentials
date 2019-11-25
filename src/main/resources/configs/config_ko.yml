@@ -7,11 +7,11 @@ language: ko
 # 서버/클라이언트 포트 설정
 # 이것은 플러그인의 네트워크 기능에 사용됩니다.
 server-enable: false
-  server-port: 25000
+server-port: 25000
 
 client-enable: false
-  client-port: 20000
-  client-host: mindustry.kr
+client-port: 20000
+client-host: mindustry.kr
 
 # realname를 켜면 플레이어가 닉네임을 변경하더라도 이전 닉네임으로 설정됩니다.
 # 컬러닉 기능을 원하는 경우 이것을 활성화해야 합니다.
@@ -39,10 +39,10 @@ alertdeposit: false
 # exponent는 다음 레벨로 올리기 위한 요구 경험치 배수입니다.
 # levelupalarm 를 활성화 하면 일정레벨 이상에서 레벨이 오를때, 메세지로 띄워줍니다.
 explimit: false
-  basexp: 500
-  exponent: 1.12f
-  levelupalarm: false
-  alarm-minimal-level: 20
+basexp: 500
+exponent: 1.12f
+levelupalarm: false
+alarm-minimal-level: 20
 
 # 밴 공유서버 설정
 # 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.
@@ -102,7 +102,7 @@ slotnumber: 1000
 
 # 플레이어 인원별 난이도 조절
 auto-difficulty: false
-  easy: 2
-  normal: 4
-  hard: 6
-  insane: 10
+easy: 2
+normal: 4
+hard: 6
+insane: 10

@@ -36,7 +36,7 @@ public class PlayerDB{
     public static Connection conn;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
     public Config config = new Config();
-    public static ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()/2, new Global.threadname("EssentialPlayer"));
+    public static ExecutorService ex = Executors.newFixedThreadPool(4, new Global.threadname("EssentialPlayer"));
 
     public void createNewDataFile(){
         try {
@@ -571,8 +571,13 @@ public class PlayerDB{
             }
 
             if(db.getBoolean("connected") && config.isValidconnect()){
-                player.con.kick(nbundle(player, "tried-connected-account"));
-                return;
+                for(int a=0;a<playerGroup.size();a++){
+                    String target = playerGroup.all().get(a).uuid;
+                    if(target.equals(player.uuid)){
+                        player.con.kick(nbundle(player, "tried-connected-account"));
+                        return;
+                    }
+                }
             }
 
             String currentip = new Threads.getip().main();

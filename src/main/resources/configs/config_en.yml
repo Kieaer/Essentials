@@ -7,11 +7,11 @@ language: en
 # Server/client port settings
 # This's used for the network function of the plugin.
 server-enable: false
-  server-port: 25000
+server-port: 25000
 
 client-enable: false
-  client-port: 20000
-  client-host: mindustry.kr
+client-port: 20000
+client-host: mindustry.kr
 
 # If turn on realname, even if the player changes the nickname, it will be set to the previous nickname.
 # If you want colornick features, must enable this.
@@ -39,10 +39,10 @@ alertdeposit: false
 # exponent is EXP multiplier required for the next level.
 # When turn on levelupalarm, a message is displayed when the level rises above a certain level.
 explimit: false
-  basexp: 500
-  exponent: 1.12f
-  levelupalarm: false
-  alarm-minimal-level: 20
+basexp: 500
+exponent: 1.12f
+levelupalarm: false
+alarm-minimal-level: 20
 
 # Ban sharing server config
 # If you enable this, your ban list will send to another public servers.
@@ -74,9 +74,9 @@ update: true
 # Example - mariadb://localhost:3306/dbname
 # If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.
 sqlite: true
-  dburl:
-  dbid:
-  dbpw:
+dburl:
+dbid:
+dbpw:
 
 # Login features setting
 # loginmethod is account register method. (password, email method avaliable.)
@@ -102,7 +102,7 @@ slotnumber: 1000
 
 # Set the difficulty per player
 auto-difficulty: false
-  easy: 2
-  normal: 4
-  hard: 6
-  insane: 10
+easy: 2
+normal: 4
+hard: 6
+insane: 10
