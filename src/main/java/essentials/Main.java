@@ -57,6 +57,7 @@ import java.util.Timer;
 
 import static essentials.Global.*;
 import static essentials.Threads.*;
+import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
 import static essentials.utils.Config.jumpall;
@@ -237,12 +238,24 @@ public class Main extends Plugin {
             if(e.player.name.contains("Owner") || e.player.name.contains("Admin")){
                 Call.onKick(e.player.con, "You're tried bad nickname!");
             }
+
+            // 닉네임이 블랙리스트에 등록되어 있는지 확인
+            String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
+            JSONTokener parser = new JSONTokener(blacklist);
+            JSONArray array = new JSONArray(parser);
+
+            for (int i = 0; i < array.length(); i++) {
+                if (array.getString(i).matches(e.player.name)) {
+                    e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.\nBlack listed nickname: " + e.player.name);
+                    Global.log(nbundle("nickname-blacklisted", e.player.name));
+                }
+            }
         });
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(DepositEvent.class, e -> {
-            // 만약 그 특정블록이 토륨 원자로일경우
-            if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor()) {
+            // 만약 그 특정블록이 토륨 원자로이며, 맵 설정에서 원자로 폭발이 비활성화 되었을 경우
+            if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor() && !state.rules.reactorExplosions) {
                 nukeblock.put(e.tile.entity.tileX() + "/" + e.tile.entity.tileY() + "/" + e.player.name);
                 Thread t = new Thread(() -> {
                     try {
@@ -260,11 +273,10 @@ public class Main extends Plugin {
                                     other.sendMessage(bundle(other, "detect-thorium"));
                                 }
 
-                                Log log = new Log();
                                 if (Global.config.getLanguage().equals("ko")) {
-                                    Log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                    writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                 } else {
-                                    Log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                    writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                 }
                                 Call.onTileDestroyed(world.tile(x, y));
                             } else {
@@ -275,11 +287,10 @@ public class Main extends Plugin {
                                         other.sendMessage(bundle(other, "detect-thorium"));
                                     }
 
-                                    Log log = new Log();
                                     if (Global.config.getLanguage().equals("ko")) {
-                                        Log.writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                        writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                     } else {
-                                        Log.writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                        writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                     }
                                     Call.onTileDestroyed(world.tile(x, y));
                                 }
@@ -346,20 +357,6 @@ public class Main extends Plugin {
                         Core.app.exit();
                     }
                 }
-
-                // DB 작업
-                // 닉네임이 블랙리스트에 등록되어 있는지 확인
-                String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
-                JSONTokener parser = new JSONTokener(blacklist);
-                JSONArray array = new JSONArray(parser);
-
-                for (int i = 0; i < array.length(); i++) {
-                    if (array.getString(i).matches(e.player.name)) {
-                        e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.\nBlack listed nickname: " + e.player.name);
-                        Global.log(nbundle("nickname-blacklisted", e.player.name));
-                    }
-                }
-
                 // VPN을 사용중인지 확인
                 if (config.isAntivpn()) {
                     try {
@@ -668,6 +665,7 @@ public class Main extends Plugin {
 
                                     if (x == e.tile.x && y == e.tile.y) {
                                         powerblock.remove(i);
+                                        break;
                                     }
                                 }
                             } catch (Exception ex) {

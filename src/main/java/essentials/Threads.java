@@ -55,8 +55,8 @@ public class Threads extends TimerTask implements Runnable{
     public static String playtime;
     public static String uptime;
     static boolean peacetime;
-    public static JSONArray nukeposition = new JSONArray();
-    public static ArrayList<Process> process = new ArrayList<>();
+    static JSONArray nukeposition = new JSONArray();
+    static ArrayList<Process> process = new ArrayList<>();
 
     @Override
     public void run() {
@@ -417,7 +417,7 @@ public class Threads extends TimerTask implements Runnable{
         }
     }
     static class checkthorium extends Thread {
-        public Tile getNear(Tile tile, int count){
+        Tile getNear(Tile tile, int count){
             int x = tile.x;
             int y = tile.y;
             Tile result;
@@ -674,7 +674,7 @@ public class Threads extends TimerTask implements Runnable{
             }
         }
 
-        public void load() {
+        void load() {
             Array<Player> all = Vars.playerGroup.all();
             Array<Player> players = new Array<>();
             players.addAll(all);

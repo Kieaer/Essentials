@@ -419,11 +419,13 @@ public class PlayerDB{
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
+            Global.log(nbundle("password-match-regex", player.name));
             result = false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
+            Global.log(nbundle("password-match-name", player.name));
             result = false;
         } else /*if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -434,6 +436,7 @@ public class PlayerDB{
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
+            Global.log(nbundle("password-match-blank", player.name));
             result = false;
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
@@ -441,6 +444,7 @@ public class PlayerDB{
                     "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
+            Global.log(nbundle("password-match-invalid", player.name));
             result = false;
         }
         return result;
@@ -464,6 +468,7 @@ public class PlayerDB{
                     if (rs1.getString("name").equals(player.name)) {
                         player.sendMessage("[green][Essentials] [orange]This username is already in use!\n" +
                                 "[green][Essentials] [orange]이 사용자 이름은 이미 사용중입니다!");
+                        Global.log(nbundle("password-already-username", player.name));
                         result = false;
                     }
                 } else {
@@ -488,12 +493,14 @@ public class PlayerDB{
                         } else if(rs.next()){
                             player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                     "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
+                            Global.log(nbundle("password-already-account", player.name));
                             result = false;
                         }
                         player.sendMessage(bundle(player, "player-name-changed", player.name));
                     } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)) {
                         player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
                                 "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
+                        Global.log(nbundle("password-already-using", player.name));
                         result = false;
                     } else {
                         result = false;

@@ -413,7 +413,7 @@ public class Config {
                     "update: " + isUpdate() + "\n" +
                     "\n" +
                     "# 데이터베이스 종류 설정 (Default is SQLite)\n" +
-                    "# 예시 - mariadb://localhost:3306/DB이름\n" +
+                    "# 예시 - jdbc:mariadb://localhost:3306/DB이름\n" +
                     "# 만약 MySQL/MariaDB 를 사용하고 싶다면, SQLite를 비활성화 하고 새 데이터베이스를 직접 만드셔야 합니다!\n" +
                     "sqlite: " + isSqlite() + "\n" +
                     "dburl: " + getDBurl() + "\n" +
@@ -522,7 +522,7 @@ public class Config {
                     "update: " + isUpdate() + "\n" +
                     "\n" +
                     "# Database type setting (Default is SQLite)\n" +
-                    "# Example - mariadb://localhost:3306/dbname\n" +
+                    "# Example - jdbc:mariadb://localhost:3306/dbname\n" +
                     "# If you want to use MySQL/MariaDB, You must disable sqlite and create a new database yourself.\n" +
                     "sqlite: " + isSqlite() + "\n" +
                     "dburl: " + getDBurl() + "\n" +

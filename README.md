@@ -21,46 +21,24 @@ Disk: SSD capable of more than 30MB/s random read/write.
 
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
-## 6.0 version plans
-- [ ] Plugin performance optmizing
-- [x] Make RPG using player DB
-  - [x] Lock blocks
+## 7.0 version plans
+- [ ] Plugin performance optimizing <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
 - [ ] Monitoring resource consumption
-  - [x] Alarm when resource consumption is fast
   - [ ] Alarm when resource bank is full
 - [ ] AI
   - [ ] Pathfinding
   - [ ] OreFlow
   - [ ] Player
-- [x] Improved detection of griefing
-  - [x] Thorium reactor
-    - [ ] ~~Monitoring cryofluid destroy~~
-    - [ ] ~~Monitoring no thorium input~~
-    - [ ] ~~Make the reactor near the core~~
-    - [x] Destroy thorium reactor when reactor overheated
+- [ ] Improved detection of griefing
   - [ ] Detect non-block destroy/place griefing
-    - [x] change mass driver 
-    - [x] change phase conveyor
-    - [x] change Tunnel
-    - [x] put bad items in any blocks
-      - [x] Conveyor
-      - [x] Phase/tunnel/mass driver
-      - [x] Core
-      - [x] container/Vault
-    - [x] cryofluid
-    - [x] ALL Deposit events
     - [ ] ALL WithDraw events
 - [ ] Make lobby features
   - [ ] Show all server players
-    - [ ] massage block <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
-    - [x] Server information
-    - [x] Block drawing
+    - [ ] massage block 
   - [ ] Show client server players
-    - [ ] massage block <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
-    - [x] Block drawing
-- [x] monitoring massage block
+    - [ ] massage block
+- [ ] monitoring massage block
   - [ ] Core block
-  - [x] Power node
 - [ ] PvP mode rule
   - [ ] Anti coal in mech
 - [ ] Chat feature upgrade
@@ -68,16 +46,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Nickname prefix
   - [ ] Remove translate before massage
   - [ ] PvP Team chat without command
-- [x] Difficulty adjustments based on the number of players
-- [x] Open player's server (submit by Kyan)
-  - [x] Add /event host [roomname] [map] [gamemode]
-  - [x] Add /event stop (Automatic)
-  - [x] Add /event join [roomname]
 - [ ] Improved rank system
   - [ ] Show personal ranking record
-- [x] Improved login system
-  - [x] Reset password
-
+  
 ## Client commands
 
 | Command | Parameter | Description |

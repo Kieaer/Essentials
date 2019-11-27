@@ -6,6 +6,8 @@ import essentials.special.gifimage;
 import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
+import io.anuke.arc.collection.ObjectMap;
+import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.core.GameState;
 import io.anuke.mindustry.core.Version;
 import io.anuke.mindustry.entities.type.Player;
@@ -222,6 +224,34 @@ public class Server implements Runnable {
                             printStackTrace(e);
                             Global.logw("server " + data);
                         }
+                    } else if(data.contains("checkban")) {
+                        Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
+                        Array<String> ipbans = netServer.admins.getBannedIPs();
+                        String[] cda = data.replaceAll("checkban", "").split("/");
+
+                        boolean found = false;
+                        for(Administration.PlayerInfo info : bans){
+                            if (info.id.contains(cda[0])) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if(!found){
+                            for(String string : ipbans){
+                                Administration.PlayerInfo info = netServer.admins.findByIP(string);
+                                if(string.contains(cda[1])){
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if(found){
+                            bw.write("true\n");
+                        } else {
+                            bw.write("false\n");
+                        }
+                        bw.flush();
                     } else {
                         Global.logs("Invalid data - " + data);
                     }
