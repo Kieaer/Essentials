@@ -644,7 +644,7 @@ public class PlayerDB{
             boolean colornick = db.getBoolean("colornick");
             if(config.isRealname() && colornick){
                 // 컬러닉 스레드 시작
-                new Thread(new ColorNick(player));
+                new Thread(new ColorNick(player)).start();
             } else if(!config.isRealname() && colornick){
                 Global.logpw(nbundle("colornick-require"));
                 writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");

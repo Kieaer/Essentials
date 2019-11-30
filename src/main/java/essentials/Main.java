@@ -417,16 +417,17 @@ public class Main extends Plugin {
                     if (e.message.equals("y") && Vote.isvoting) {
                         // 투표가 진행중일때
                         if (Vote.list.contains(e.player.uuid)) {
-                            e.player.sendMessage(bundle(player, "vote-already"));
+                            e.player.sendMessage(bundle(e.player, "vote-already"));
                         } else {
                             Vote.list.add(e.player.uuid);
                             int current = Vote.list.size();
+                            if (Vote.require - current <= 0) {
+                                Vote.cancel();
+                                return;
+                            }
                             for (Player others : playerGroup.all()) {
                                 if (getData(others.uuid).toString().equals("{}")) return;
                                 others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
-                            }
-                            if (Vote.require - current == 0) {
-                                Vote.counting.interrupt();
                             }
                         }
                     }
@@ -1532,8 +1533,12 @@ public class Main extends Plugin {
         });
         handler.<Player>register("logout","Log-out of your account.", (arg, player) -> {
             if(checklogin(player)) return;
-            writeData("UPDATE players SET connected = '0', uuid = 'LogoutAAAAA=' WHERE uuid = '"+player.uuid+"'");
-            Call.onKick(player.con, nbundle("logout"));
+            if(config.isLoginenable()) {
+                writeData("UPDATE players SET connected = '0', uuid = 'LogoutAAAAA=' WHERE uuid = '" + player.uuid + "'");
+                Call.onKick(player.con, nbundle("logout"));
+            } else {
+                player.sendMessage(bundle(player, "login-not-use"));
+            }
         });
         handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
             if(checklogin(player)) return;
@@ -1565,13 +1570,11 @@ public class Main extends Plugin {
                             }
                             index++;
                         }
-                        Call.onPlayerDeath(player);
-                        player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                     } else {
                         player.setTeam(Vars.defaultTeam);
-                        Call.onPlayerDeath(player);
-                        player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                     }
+                    Call.onPlayerDeath(player);
+                    player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                 } else {
                     player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
                 }
@@ -1583,7 +1586,7 @@ public class Main extends Plugin {
             if(checklogin(player)) return;
             if (player.isAdmin) {
                 Core.app.post(() -> {
-                    FileHandle file = saveDirectory.child("1." + saveExtension);
+                    FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                     SaveIO.save(file);
                     player.sendMessage(bundle(player, "mapsaved"));
                 });
@@ -1868,9 +1871,11 @@ public class Main extends Plugin {
         handler.<Player>register("vote", "<gameover/skipwave/kick/rollback> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
             if(checklogin(player)) return;
             if(arg.length == 2){
-                new Vote(player, arg[0], arg[1]);
+                Vote vote = new Vote(player, arg[0], arg[1]);
+                vote.command();
             } else {
-                new Vote(player, arg[0], null);
+                Vote vote = new Vote(player, arg[0]);
+                vote.command();
             }
         });
 
