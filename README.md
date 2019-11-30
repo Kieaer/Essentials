@@ -66,6 +66,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | kill | &lt;name&gt; | Kill other players |
 | login | &lt;account id&gt; &lt;password&gt; | Login to account. |
 | logout |  | Log out of my account |
+| maps |  |  Show server maps |
 | me | &lt;msg&gt; | Show special chat format |
 | motd |  | Show server motd <br> Can modify from ``config/plugins/Essentials/motd.txt`` |
 | register | &lt;account id&gt; &lt;new password&gt; &lt;new password repeat&gt; | Register accoun<br>Example - ``/register test test123 test123`` |
@@ -78,7 +79,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tpp | &lt;name&gt; &lt;another player name&gt; | Teleport player to other players |
 | tp | &lt;name&gt; | Teleport to players |
 | tr |  | Enable/disable auto translate <br> Currently only support Korean to English. |
-| vote | &lt;gameover/skipwave/kick/rollback&gt; [name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
+| vote | &lt;gameover/skipwave/kick/rollback/map&gt; [name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 
 ## Console commands
 

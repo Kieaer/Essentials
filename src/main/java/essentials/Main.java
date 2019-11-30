@@ -15,7 +15,9 @@ import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
 import io.anuke.arc.files.FileHandle;
+import io.anuke.arc.math.Mathf;
 import io.anuke.arc.util.CommandHandler;
+import io.anuke.arc.util.Strings;
 import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
@@ -72,6 +74,7 @@ public class Main extends Plugin {
     private JSONArray nukeblock = new JSONArray();
     static ArrayList<Tile> messagemonitor = new ArrayList<>();
     private ArrayList<Tile> nukedata = new ArrayList<>();
+    public Array<io.anuke.mindustry.maps.Map> maplist = Vars.maps.all();
     private boolean making = false;
 
     public Main() {
@@ -1540,6 +1543,23 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player, "login-not-use"));
             }
         });
+        handler.<Player>register("maps", "[page]", "Show server maps", (arg, player) -> {
+            StringBuilder build = new StringBuilder();
+            int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
+            int pages = Mathf.ceil((float)maplist.size / 6);
+
+            page --;
+            if(page > pages || page < 0){
+                player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
+                return;
+            }
+
+            build.append("[green]==[white] Server maps page ").append(page).append("/").append(pages).append(" [green]==[white]\n");
+            for(int a=6*page;a<Math.min(6 * (page + 1), maplist.size);a++){
+                build.append("[gray]").append(a).append("[] ").append(maplist.get(a).name()).append("\n");
+            }
+            player.sendMessage(build.toString());
+        });
         handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
             if(checklogin(player)) return;
             Call.sendMessage("[orange]*[] " + player.name + "[white] : " + arg[0]);
@@ -1868,12 +1888,37 @@ public class Main extends Plugin {
 
             writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
         });
-        handler.<Player>register("vote", "<gameover/skipwave/kick/rollback> [playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
+        handler.<Player>register("vote", "<gameover/skipwave/kick/rollback/map> [mapid/mapname/playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
             if(checklogin(player)) return;
-            if(arg.length == 2){
-                Vote vote = new Vote(player, arg[0], arg[1]);
-                vote.command();
+            if(arg.length == 2) {
+                if(arg[0].equals("kick")) {
+                    Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+                    if (other == null) {
+                        player.sendMessage(bundle("player-not-found"));
+                        return;
+                    }
+                    // 강퇴 투표
+                    Vote vote = new Vote(player, arg[0], other);
+                    vote.command();
+                } else if(arg[0].equals("map")){
+                    // 맵 투표
+                    io.anuke.mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
+                    if (world == null){
+                        world = maplist.get(Integer.parseInt(arg[1]));
+                    }
+                    if (world == null) {
+                        player.sendMessage(bundle("vote-map-not-found"));
+                    } else {
+                        Vote vote = new Vote(player, arg[0], world);
+                        vote.command();
+                    }
+                }
             } else {
+                if(arg[0].equals("map") || arg[0].equals("kick")){
+                    player.sendMessage(bundle("vote-map-not-found"));
+                    return;
+                }
+                // 게임 오버, wave 넘어가기, 롤백
                 Vote vote = new Vote(player, arg[0]);
                 vote.command();
             }

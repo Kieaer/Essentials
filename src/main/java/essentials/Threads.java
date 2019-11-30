@@ -14,9 +14,11 @@ import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.EventType;
 import io.anuke.mindustry.game.EventType.BlockBuildEndEvent;
 import io.anuke.mindustry.game.EventType.BuildSelectEvent;
+import io.anuke.mindustry.game.Gamemode;
 import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
+import io.anuke.mindustry.maps.Map;
 import io.anuke.mindustry.type.Item;
 import io.anuke.mindustry.type.ItemType;
 import io.anuke.mindustry.world.Block;
@@ -931,6 +933,7 @@ public class Threads extends TimerTask implements Runnable{
     public static class Vote{
         private static Player player;
         private static Player target;
+        private static Map map;
         private static String type;
         private static Timer votetimer = new Timer();
         private static Timer bundletimer = new Timer();
@@ -942,15 +945,16 @@ public class Threads extends TimerTask implements Runnable{
         static ArrayList<String> list = new ArrayList<>();
         static int require;
 
-        Vote(Player player, String type, String target){
+        Vote(Player player, String type, Player target){
             Vote.player = player;
-            if(target != null){
-                Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(target));
-                if(other != null){
-                    Vote.target = other;
-                }
-            }
             Vote.type = type;
+            Vote.target = target;
+        }
+
+        Vote(Player player, String type, Map map){
+            Vote.player = player;
+            Vote.type = type;
+            Vote.map = map;
         }
 
         Vote(Player player, String type){
@@ -975,11 +979,12 @@ public class Threads extends TimerTask implements Runnable{
             public void run() {
                 String[] bundlename = {"vote-50sec", "vote-40sec", "vote-30sec", "vote-20sec", "vote-10sec"};
 
-                if (playerGroup != null && playerGroup.size() > 0) {
-                    allsendMessage(bundlename[bundletime]);
+                if(bundletime <= 4){
+                    if (playerGroup != null && playerGroup.size() > 0) {
+                        allsendMessage(bundlename[bundletime]);
+                    }
+                    bundletime++;
                 }
-
-                bundletime++;
             }
         };
 
@@ -1039,11 +1044,44 @@ public class Threads extends TimerTask implements Runnable{
                     break;
                 case "rollback":
                     if (list.size() >= require) {
-                        Call.sendMessage("[green][Essentials] Map rollback passed!!");
+                        allsendMessage("vote-rollback-done");
                         Threads.AutoRollback rl = new Threads.AutoRollback();
                         rl.load();
                     } else {
-                        Call.sendMessage("[green][Essentials] [red]Map rollback failed.");
+                        allsendMessage("vote-rollback-fail");
+                    }
+                    break;
+                case "map":
+                    if (list.size() >= require) {
+                        Array<Player> all = Vars.playerGroup.all();
+                        Array<Player> players = new Array<>();
+                        players.addAll(all);
+
+                        Gamemode current = Gamemode.survival;
+                        if(state.rules.attackMode){
+                            current = Gamemode.attack;
+                        } else if(state.rules.pvp){
+                            current = Gamemode.pvp;
+                        } else if(state.rules.editor){
+                            current = Gamemode.editor;
+                        }
+
+                        world.loadMap(map, map.applyRules(current));
+
+                        Call.onWorldDataBegin();
+
+                        for (Player p : players) {
+                            Vars.netServer.sendWorldData(p);
+                            p.reset();
+
+                            if (Vars.state.rules.pvp) {
+                                p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+                            }
+                        }
+                        Global.log("Map rollbacked.");
+                        allsendMessage("vote-map-done");
+                    } else {
+                        allsendMessage("vote-map-fail");
                     }
                     break;
             }
@@ -1063,33 +1101,28 @@ public class Threads extends TimerTask implements Runnable{
             if(!isvoting){
                 switch (type){
                     case "gameover":
-                        for(Player others : playerGroup.all()){
-                            if(getData(others.uuid).toString().equals("{}")) return;
-                            others.sendMessage(bundle(others, "vote-gameover"));
-                        }
+                        allsendMessage("vote-gameover");
                         break;
                     case "skipwave":
-                        for(Player others : playerGroup.all()){
-                            others.sendMessage(bundle(others, "vote-skipwave"));
-                        }
+                        allsendMessage("vote-skipwave");
                         break;
                     case "kick":
-                        for(Player others : playerGroup.all()){
-                            others.sendMessage(bundle(others, "vote-kick"));
-                        }
+                        allsendMessage("vote-kick");
                         break;
                     case "rollback":
-                        for(Player others : playerGroup.all()){
-                            others.sendMessage(bundle(others, "vote-rollback"));
-                        }
+                        allsendMessage("vote-rollback");
+                        break;
+                    case "map":
+                        allsendMessage("vote-map");
                         break;
                     default:
                         // 모드가 잘못되었을 때
+                        player.sendMessage("wrong mode");
                         return;
                 }
                 isvoting = true;
                 votetimer.schedule(counting, 0, 1000);
-                bundletimer.schedule(alert, 0, 10000);
+                bundletimer.schedule(alert, 10000, 10000);
             } else {
                 player.sendMessage(bundle("vote-in-processing"));
             }
