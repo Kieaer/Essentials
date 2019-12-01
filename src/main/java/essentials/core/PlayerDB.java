@@ -82,6 +82,7 @@ public class PlayerDB{
                         "colornick TEXT,\n" +
                         "connected TEXT,\n" +
                         "connserver TEXT,\n" +
+                        "permission TEXT,\n" +
                         "accountid TEXT,\n" +
                         "accountpw TEXT\n" +
                         ");";
@@ -126,6 +127,7 @@ public class PlayerDB{
                             "`colornick` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`connected` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`connserver` TINYTEXT NULL DEFAULT 'none',\n" +
+                            "`permission` TINYTEXT NULL DEFAULT 'default',\n" +
                             "`accountid` TEXT NULL DEFAULT NULL,\n" +
                             "`accountpw` TEXT NULL DEFAULT NULL,\n" +
                             "PRIMARY KEY (`id`)\n" +
@@ -158,9 +160,9 @@ public class PlayerDB{
             if(!rs.next()){
                 String sql;
                 if(config.isSqlite()){
-                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
-                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, connserver, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, connserver, permission, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 }
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
@@ -197,8 +199,9 @@ public class PlayerDB{
                 pstmt.setBoolean(32, false); // colornick
                 pstmt.setBoolean(33, true); // connected
                 pstmt.setString(34, currentip); // connected server ip
-                pstmt.setString(35, accountid);
-                pstmt.setString(36, accountpw);
+                pstmt.setString(35, "default"); // set permission
+                pstmt.setString(36, accountid);
+                pstmt.setString(37, accountpw);
                 pstmt.executeUpdate();
                 pstmt.close();
                 player.sendMessage(nbundle("player-id", player.name));
@@ -259,6 +262,7 @@ public class PlayerDB{
                 json.put("colornick", rs.getBoolean("colornick"));
                 json.put("connected", rs.getBoolean("connected"));
                 json.put("connserver", rs.getString("connserver"));
+                json.put("permission", rs.getString("permission"));
                 json.put("accountid", rs.getString("accountid"));
                 json.put("accountpw", rs.getString("accountpw"));
             }
@@ -319,26 +323,34 @@ public class PlayerDB{
         writeData("UPDATE players SET bantime = '"+myTime+"', bantimeset = '"+bantimeset+"' WHERE uuid = '"+uuid+"'");
     }
 
-    private static String v1sql;
-    //private static final String v2sql = "ALTER TABLE players ADD COLUMN string;";
-
     public static void Upgrade() {
         Config config = new Config();
+        String[] sql = new String[2];
+        String v1sql;
+        String v2sql;
+
         if(config.isSqlite()){
             v1sql = "ALTER TABLE players ADD COLUMN connserver TEXT AFTER connected;";
+            v2sql = "ALTER TABLE players ADD COLUMN permission TEXT AFTER connserver;";
         } else {
-            v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER 'connected';";
+            v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER connected;";
+            v2sql = "ALTER TABLE `players` ADD COLUMN `permission` TINYTEXT `default` NULL AFTER connserver;";
         }
         try {
             DatabaseMetaData metadata = conn.getMetaData();
+            Statement stmt = conn.createStatement();
             ResultSet resultSet;
             resultSet = metadata.getColumns(null, null, "players", "connserver");
             if (!resultSet.next()) {
-                Statement stmt = conn.createStatement();
                 stmt.execute(v1sql);
-                stmt.close();
                 Global.logp(nbundle("db-upgrade"));
             }
+            resultSet = metadata.getColumns(null, null, "players", "permission");
+            if(!resultSet.next()){
+                stmt.execute(v2sql);
+                Global.logp(nbundle("db-upgrade"));
+            }
+            stmt.close();
         } catch (SQLException e) {
             if (e.getErrorCode() == 1060) return;
             printStackTrace(e);

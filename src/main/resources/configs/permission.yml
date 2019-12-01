@@ -13,7 +13,7 @@ new_admin:
     - essentials.kill
     - essentials.me
     - essentials.tpp
-global:
+default:
   inheritance: guest
   permission:
     - essentials.ch
