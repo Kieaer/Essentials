@@ -570,6 +570,15 @@ public class Global {
         }
     }
 
+    // 권한 확인
+    public static boolean checkperm(Player player){
+        if(isLogin(player)){
+            JSONObject db = getData(player.uuid);
+            String perm = db.getString("permission");
+
+        }
+    }
+
     // 로그인 시간 확인
     public static boolean isLoginold(String date){
         try {

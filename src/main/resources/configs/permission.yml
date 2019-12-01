@@ -3,31 +3,31 @@ owner:
 admin:
   inheritance: new_admin
   permission:
-    - essentials.color
-    - essentials.difficulty
-    - essentials.save
-    - essentials.tempban
+    - color
+    - difficulty
+    - save
+    - tempban
 new_admin:
   interitance: global
   permission:
-    - essentials.kill
-    - essentials.me
-    - essentials.tpp
+    - kill
+    - me
+    - tpp
 default:
   inheritance: guest
   permission:
-    - essentials.ch
-    - essentials.event
-    - essentials.getpos
-    - essentials.info
-    - essentials.logout
-    - essentials.maps
-    - essentials.motd
-    - essentials.status
-    - essentials.suicide
-    - essentials.time
-    - essentials.vote
+    - ch
+    - event
+    - getpos
+    - info
+    - logout
+    - maps
+    - motd
+    - status
+    - suicide
+    - time
+    - vote
 guest:
   permission:
-    - essentials.login
-    - essentials.register
+    - login
+    - register
