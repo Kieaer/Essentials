@@ -30,7 +30,6 @@ import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
-import io.anuke.mindustry.net.Packets.KickReason;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
@@ -1253,9 +1252,13 @@ public class Main extends Plugin {
 
             writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
         });
-        handler.<Player>register("changepw", "<new_password>", (arg, player) -> {
+        handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(checklogin(player)) return;
-            if(!checkpw(player, arg[0])) return;
+            if(!checkpw(player, arg[0])){
+                player.sendMessage(bundle("need-new-password"));
+                return;
+            }
+
             try{
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
                 String hashed = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
@@ -1293,9 +1296,9 @@ public class Main extends Plugin {
             } else {
                 try {
                     Difficulty.valueOf(arg[0]);
-                    player.sendMessage(bundle(player, "difficulty-set"));
+                    player.sendMessage(bundle(player, "difficulty-set", arg[0]));
                 } catch (IllegalArgumentException e) {
-                    player.sendMessage(bundle(player, "difficulty-not-found"));
+                    player.sendMessage(bundle(player, "difficulty-not-found", arg[0]));
                 }
             }
         });
@@ -1493,12 +1496,13 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
-            if(checklogin(player)) return;
+            /*if(checklogin(player)) return;
             if (!player.isAdmin) {
                 player.sendMessage(bundle(player, "notadmin"));
             } else {
                 Vars.netServer.kickAll(KickReason.gameover);
-            }
+            }*/
+            player.sendMessage(bundle(player, "command-not-avaliable"));
         });
         handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
             if(checklogin(player)) return;
@@ -1560,7 +1564,7 @@ public class Main extends Plugin {
             }
             player.sendMessage(build.toString());
         });
-        handler.<Player>register("me", "[text...]", "broadcast * message", (arg, player) -> {
+        handler.<Player>register("me", "<text...>", "broadcast * message", (arg, player) -> {
             if(checklogin(player)) return;
             Call.sendMessage("[orange]*[] " + player.name + "[white] : " + arg[0]);
         });
@@ -1895,6 +1899,10 @@ public class Main extends Plugin {
                     Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
                     if (other == null) {
                         player.sendMessage(bundle("player-not-found"));
+                        return;
+                    }
+                    if (other.isAdmin){
+                        player.sendMessage(bundle("vote-target-admin"));
                         return;
                     }
                     // 강퇴 투표

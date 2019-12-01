@@ -1107,7 +1107,7 @@ public class Threads extends TimerTask implements Runnable{
                         allsendMessage("vote-skipwave");
                         break;
                     case "kick":
-                        allsendMessage("vote-kick");
+                        allsendMessage("vote-kick", target.name);
                         break;
                     case "rollback":
                         allsendMessage("vote-rollback");

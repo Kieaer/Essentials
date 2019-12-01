@@ -6,8 +6,6 @@ import essentials.special.gifimage;
 import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
-import io.anuke.arc.collection.ObjectMap;
-import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.core.GameState;
 import io.anuke.mindustry.core.Version;
 import io.anuke.mindustry.entities.type.Player;
@@ -146,9 +144,9 @@ public class Server implements Runnable {
                         return;
                     } else if (config.isBanshare()) {
                         try {
+                            JSONTokener convert = new JSONTokener(data);
+                            JSONArray bandata = new JSONArray(convert);
                             if(data.substring(data.length()-5).equals("unban")){
-                                JSONTokener convert = new JSONTokener(data);
-                                JSONArray bandata = new JSONArray(convert);
                                 Global.logc(nbundle("client-request-unban", remoteip));
                                 for (int i = 0; i < bandata.length(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
@@ -177,8 +175,6 @@ public class Server implements Runnable {
                                     }
                                 }
                             } else {
-                                JSONTokener convert = new JSONTokener(data);
-                                JSONArray bandata = new JSONArray(convert);
                                 Global.logc(nbundle("client-request-banlist", remoteip));
                                 for (int i = 0; i < bandata.length(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
