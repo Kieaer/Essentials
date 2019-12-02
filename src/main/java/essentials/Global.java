@@ -575,8 +575,10 @@ public class Global {
         if(isLogin(player)){
             JSONObject db = getData(player.uuid);
             String perm = db.getString("permission");
+            //String permlevel = Permission.json.getString(perm);
 
         }
+        return true;
     }
 
     // 로그인 시간 확인

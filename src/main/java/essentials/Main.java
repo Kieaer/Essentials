@@ -10,6 +10,7 @@ import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
 import essentials.utils.Config;
+import essentials.utils.Permission;
 import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
@@ -147,6 +148,8 @@ public class Main extends Plugin {
         // Essentials EPG 기능 시작
         EPG epg = new EPG();
         epg.main();
+
+        new Permission().main();
 
         Events.on(TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null && config.isBlockdetect()) {

@@ -1,5 +1,7 @@
 owner:
-  - *
+  inheritance: none
+  permission:
+    - ALL_PERMISSION
 admin:
   inheritance: new_admin
   permission:
@@ -28,6 +30,7 @@ default:
     - time
     - vote
 guest:
+  inheritance: none
   permission:
     - login
     - register
