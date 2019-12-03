@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
+import static essentials.core.PlayerDB.writeData;
 import static essentials.utils.Config.executorService;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -107,6 +108,9 @@ public class Client extends Thread{
                 Global.loge("Invalid host!");
             } catch (IOException e) {
                 Global.logc(nbundle("remote-server-dead"));
+                if(player != null) {
+                    writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + player.uuid + "'");
+                }
             }
         } else {
             switch (option) {

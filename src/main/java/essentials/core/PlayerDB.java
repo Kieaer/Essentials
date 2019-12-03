@@ -3,6 +3,7 @@ package essentials.core;
 import essentials.Global;
 import essentials.Threads;
 import essentials.utils.Config;
+import essentials.utils.Permission;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -667,10 +668,8 @@ public class PlayerDB{
                 new Threads.checkgrief(player);
             }
 
-            // 플레이어가 관리자일 경우 관리자모드 설정
-            if (db.getBoolean("isadmin")) {
-                player.isAdmin = true;
-            }
+            // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
+            Permission.setAdmin(player);
 
             // 플레이어 지역이 invalid 일경우 다시 정보 가져오기
             if(db.getString("country").equals("invalid")) {

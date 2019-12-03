@@ -148,7 +148,7 @@ public class Threads extends TimerTask implements Runnable{
     static class bantime extends Thread {
         @Override
         public void run(){
-            Thread.currentThread().setName("Resource monitoring thread");
+            Thread.currentThread().setName("Ban time monitoring thread");
             while(!currentThread().isInterrupted()) {
                 try {
                     String db = Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").readString();

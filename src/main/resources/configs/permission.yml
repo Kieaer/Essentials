@@ -1,36 +1,47 @@
 owner:
-  inheritance: none
+  inheritance: admin
   permission:
-    - ALL_PERMISSION
+    - jump
+    - jumpcount
+    - jumptotal
+    - kickall
+    - test
+    - setperm
 admin:
-  inheritance: new_admin
+  inheritance: newadmin
   permission:
     - color
     - difficulty
     - save
     - tempban
-new_admin:
-  interitance: global
+    - save
+    - spawn
+newadmin:
+  inheritance: default
   permission:
     - kill
     - me
     - tpp
+    - team
+    - tempban
+    - tpp
 default:
-  inheritance: guest
   permission:
     - ch
+    - changepw
     - event
     - getpos
     - info
+    - login
     - logout
     - maps
+    - me
     - motd
+    - register
     - status
     - suicide
     - time
+    - tp
+    - tppos
+    - tr
     - vote
-guest:
-  inheritance: none
-  permission:
-    - login
-    - register

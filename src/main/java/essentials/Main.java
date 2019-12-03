@@ -31,6 +31,7 @@ import io.anuke.mindustry.game.Team;
 import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.io.SaveIO;
 import io.anuke.mindustry.net.Administration.PlayerInfo;
+import io.anuke.mindustry.net.Packets;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
 import io.anuke.mindustry.type.UnitType;
@@ -54,6 +55,7 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 
@@ -125,6 +127,7 @@ public class Main extends Plugin {
 
         // 임시로 밴한 플레이어들 밴 해제시간 카운트
         Thread bantime = new Thread(new bantime());
+        bantime.start();
 
         // 기록 시작
         if (config.isLogging()) {
@@ -152,7 +155,7 @@ public class Main extends Plugin {
         new Permission().main();
 
         Events.on(TapConfigEvent.class, e -> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null && config.isBlockdetect()) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null && config.isBlockdetect() && config.isAlertdeposit()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
             }
         });
@@ -768,8 +771,8 @@ public class Main extends Plugin {
          */
 
         // 로그인 기능이 켜져있을때, 비 로그인 사용자들에게 알림을 해줌
+        Timer alerttimer = new Timer(true);
         if (config.isLoginenable()) {
-            Timer alerttimer = new Timer(true);
             alerttimer.scheduleAtFixedRate(new login(), 60000, 60000);
         }
 
@@ -880,6 +883,11 @@ public class Main extends Plugin {
                 // 타이머 스레드 종료
                 try {
                     timer.cancel();
+                    alerttimer.cancel();
+                    rt.cancel();
+                    if(Vote.isvoting){
+                        Vote.cancel();
+                    }
                     Global.log(Global.nbundle("count-thread-disabled"));
                 } catch (Exception e) {
                     Global.loge(Global.nbundle("count-thread-disable-error"));
@@ -905,7 +913,7 @@ public class Main extends Plugin {
                 }
 
                 // 클라이언트 종료
-                if (config.isClientenable()) {
+                if (config.isClientenable() && serverconn) {
                     Client client = new Client();
                     client.main("exit", null, null);
                     //client.interrupt();
@@ -917,16 +925,17 @@ public class Main extends Plugin {
                     value.destroy();
                 }
 
+                // 클라이언트 플레이어 카운트 스레드 종료
+                jumpcheck.interrupt();
+
                 // 모든 스레드 종료
                 executorService.shutdown();
                 Log.ex.shutdown();
                 PlayerDB.ex.shutdown();
+                Global.log(nbundle("thread-disabled"));
 
                 // DB 종료
                 closeconnect();
-
-                // 클라이언트 플레이어 카운트 스레드 종료
-                jumpcheck.interrupt();
             }
         });
 
@@ -944,17 +953,7 @@ public class Main extends Plugin {
                 Global.log(nbundle("no-parameter"));
                 return;
             }
-            Thread t = new Thread(() -> {
-                Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-                if(other == null){
-                    Global.log(nbundle("player-not-found"));
-                } else {
-                    writeData("UPDATE players SET isadmin = 1 WHERE uuid = '"+other.uuid+"'");
-                    other.isAdmin = true;
-                    Global.log("Done!");
-                }
-            });
-            executorService.execute(t);
+            Global.log(nbundle("use-setperm"));
         });
         handler.register("allinfo", "<name>", "Show player information.", (arg) -> {
             if(arg.length == 0) {
@@ -1169,6 +1168,21 @@ public class Main extends Plugin {
             */
             Global.log("Currently not supported!");
         });
+        handler.register("setperm", "<player_name> <group>", "Set player permission group", arg -> {
+            if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
+                Global.loge(nbundle("player-not-found"));
+            }
+            Iterator i = Permission.result.keys();
+            while(i.hasNext()) {
+                String b = i.next().toString();
+                if(b.equals(arg[1])){
+                    writeData("UPDATE players SET permission = '"+arg[1]+"' WHERE name = '"+arg[0]+"'");
+                    Global.logp("success");
+                    return;
+                }
+            }
+            Global.loge(nbundle("perm-group-not-found"));
+        });
         handler.register("sync", "<player>", "Force sync request from the target player.", arg -> {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
@@ -1240,7 +1254,7 @@ public class Main extends Plugin {
         handler.removeCommand("votekick");
 
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"ch")) return;
 
             JSONObject db = getData(player.uuid);
             boolean value = db.getBoolean("crosschat");
@@ -1256,12 +1270,11 @@ public class Main extends Plugin {
             writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
         });
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"changepw")) return;
             if(!checkpw(player, arg[0])){
                 player.sendMessage(bundle("need-new-password"));
                 return;
             }
-
             try{
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
                 String hashed = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
@@ -1270,47 +1283,34 @@ public class Main extends Plugin {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-            writeData("UPDATE");
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
-            if(checklogin(player)) return;
-
-            if (!player.isAdmin) {
-                player.sendMessage(bundle(player, "notadmin"));
+            if (!checkperm(player, "color")) return;
+            JSONObject db = getData(player.uuid);
+            boolean value = db.getBoolean("colornick");
+            int set;
+            if (!value) {
+                set = 1;
+                player.sendMessage(bundle(player, "colornick"));
             } else {
-                JSONObject db = getData(player.uuid);
-                boolean value = db.getBoolean("colornick");
-                int set;
-                if (!value) {
-                    set = 1;
-                    player.sendMessage(bundle(player, "colornick"));
-                } else {
-                    set = 0;
-                    player.sendMessage(bundle(player, "colornick-disable"));
-                }
-                writeData("UPDATE players SET colornick = '" + set + "' WHERE uuid = '" + player.uuid + "'");
+                set = 0;
+                player.sendMessage(bundle(player, "colornick-disable"));
             }
+            writeData("UPDATE players SET colornick = '" + set + "' WHERE uuid = '" + player.uuid + "'");
         });
         handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
-            if(checklogin(player)) return;
-
-            if (!player.isAdmin) {
-                player.sendMessage(bundle(player, "notadmin"));
-            } else {
-                try {
-                    Difficulty.valueOf(arg[0]);
-                    player.sendMessage(bundle(player, "difficulty-set", arg[0]));
-                } catch (IllegalArgumentException e) {
-                    player.sendMessage(bundle(player, "difficulty-not-found", arg[0]));
-                }
+            if (!checkperm(player, "difficulty")) return;
+            try {
+                Difficulty.valueOf(arg[0]);
+                player.sendMessage(bundle(player, "difficulty-set", arg[0]));
+            } catch (IllegalArgumentException e) {
+                player.sendMessage(bundle(player, "difficulty-not-found", arg[0]));
             }
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
-            if(checklogin(player)) return;
-
+            if(!checkperm(player,"event")) return;
             Thread t = new Thread(() -> {
                 String currentip = new getip().main();
-
                 switch (arg[0]) {
                     case "host":
                         Thread work = new Thread(() -> {
@@ -1392,12 +1392,12 @@ public class Main extends Plugin {
             t.start();
         });
         handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"getpos")) return;
             player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
         });
         handler.<Player>register("info", "Show your information", (arg, player) -> {
+            if(!checkperm(player,"info")) return;
             Thread t = new Thread(() -> {
-                if (checklogin(player)) return;
                 String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
                 JSONObject db = getData(player.uuid);
                 String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
@@ -1426,99 +1426,82 @@ public class Main extends Plugin {
             });
             PlayerDB.ex.submit(t);
         });
+        // TODO jump 명령어 합치기
         handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
-            if(checklogin(player)) return;
-            if(player.isAdmin){
-                int size;
-                try{
-                    size = Integer.parseInt(arg[2]);
-                } catch (Exception ignored){
-                    player.sendMessage(bundle(player, "jump-not-int"));
-                    return;
-                }
-                int block;
-                try{
-                    block = Integer.parseInt(arg[3]);
-                } catch (Exception ignored){
-                    player.sendMessage(bundle(player, "jump-not-block"));
-                    return;
-                }
-                Block target;
-                switch(block){
-                    case 1:
-                    default:
-                        target = Blocks.metalFloor;
-                        break;
-                    case 2:
-                        target = Blocks.metalFloor2;
-                        break;
-                    case 3:
-                        target = Blocks.metalFloor3;
-                        break;
-                    case 4:
-                        target = Blocks.metalFloor5;
-                        break;
-                    case 5:
-                        target = Blocks.metalFloorDamaged;
-                        break;
-                }
-                int xt = player.tileX();
-                int yt = player.tileY();
-                int tilexfinal = xt+size;
-                int tileyfinal = yt+size;
-
-                for(int x=0;x<size;x++){
-                    for(int y=0;y<size;y++){
-                        Tile tile = world.tile(xt+x, yt+y);
-                        Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
-                    }
-                }
-
-                jumpzone.put(xt+"/"+yt+"/"+tilexfinal+"/"+tileyfinal+"/"+arg[0]+"/"+arg[1]+"/"+block);
-                player.sendMessage(bundle(player, "jump-added"));
-            } else {
-                player.sendMessage(bundle(player, "notadmin"));
+            if (!checkperm(player, "jump")) return;
+            int size;
+            try {
+                size = Integer.parseInt(arg[2]);
+            } catch (Exception ignored) {
+                player.sendMessage(bundle(player, "jump-not-int"));
+                return;
             }
+            int block;
+            try {
+                block = Integer.parseInt(arg[3]);
+            } catch (Exception ignored) {
+                player.sendMessage(bundle(player, "jump-not-block"));
+                return;
+            }
+            Block target;
+            switch (block) {
+                case 1:
+                default:
+                    target = Blocks.metalFloor;
+                    break;
+                case 2:
+                    target = Blocks.metalFloor2;
+                    break;
+                case 3:
+                    target = Blocks.metalFloor3;
+                    break;
+                case 4:
+                    target = Blocks.metalFloor5;
+                    break;
+                case 5:
+                    target = Blocks.metalFloorDamaged;
+                    break;
+                case 6:
+                    target = Blocks.air;
+                    break;
+            }
+            int xt = player.tileX();
+            int yt = player.tileY();
+            int tilexfinal = xt + size;
+            int tileyfinal = yt + size;
+
+            for (int x = 0; x < size; x++) {
+                for (int y = 0; y < size; y++) {
+                    Tile tile = world.tile(xt + x, yt + y);
+                    Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
+                }
+            }
+
+            jumpzone.put(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[0] + "/" + arg[1] + "/" + block);
+            player.sendMessage(bundle(player, "jump-added"));
         });
         handler.<Player>register("jumpcount", "<serverip> <port>", "Add server player counting", (arg, player) -> {
-            if(checklogin(player)) return;
-            if (!player.isAdmin) {
-                player.sendMessage(bundle(player, "notadmin"));
-            } else {
-                jumpcount.put(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
-                player.sendMessage(bundle(player, "jump-added"));
-            }
+            if (!checkperm(player, "jumpcount")) return;
+            jumpcount.put(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+            player.sendMessage(bundle(player, "jump-added"));
         });
         handler.<Player>register("jumptotal", "Counting all server players", (arg, player) -> {
-            if(checklogin(player)) return;
-            if (!player.isAdmin) {
-                player.sendMessage(bundle(player, "notadmin"));
-            } else {
-                jumpall.put(player.tileX() + "/" + player.tileY() + "/0/0");
-                player.sendMessage(bundle(player, "jump-added"));
-            }
+            if (!checkperm(player, "jumptotal")) return;
+            jumpall.put(player.tileX() + "/" + player.tileY() + "/0/0");
+            player.sendMessage(bundle(player, "jump-added"));
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
-            /*if(checklogin(player)) return;
-            if (!player.isAdmin) {
-                player.sendMessage(bundle(player, "notadmin"));
-            } else {
-                Vars.netServer.kickAll(KickReason.gameover);
-            }*/
-            player.sendMessage(bundle(player, "command-not-avaliable"));
+            if (!checkperm(player, "kickall")) return;
+            Vars.netServer.kickAll(Packets.KickReason.kick);
         });
         handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
-            if(checklogin(player)) return;
-            if (player.isAdmin) {
-                Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-                if (other == null) {
-                    player.sendMessage(bundle(player, "player-not-found"));
-                    return;
-                }
-                Player.onPlayerDeath(other);
-            } else {
-                player.sendMessage(bundle(player, "notadmin"));
+            if (!checkperm(player, "kill")) return;
+            Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+            if (other == null) {
+                player.sendMessage(bundle(player, "player-not-found"));
+                return;
             }
+            Player.onPlayerDeath(other);
         });
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             if (config.isLoginenable()) {
@@ -1542,7 +1525,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("logout","Log-out of your account.", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"logout")) return;
             if(config.isLoginenable()) {
                 writeData("UPDATE players SET connected = '0', uuid = 'LogoutAAAAA=' WHERE uuid = '" + player.uuid + "'");
                 Call.onKick(player.con, nbundle("logout"));
@@ -1551,6 +1534,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("maps", "[page]", "Show server maps", (arg, player) -> {
+            if(!checkperm(player,"maps")) return;
             StringBuilder build = new StringBuilder();
             int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
             int pages = Mathf.ceil((float)maplist.size / 6);
@@ -1568,11 +1552,11 @@ public class Main extends Plugin {
             player.sendMessage(build.toString());
         });
         handler.<Player>register("me", "<text...>", "broadcast * message", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"me")) return;
             Call.sendMessage("[orange]*[] " + player.name + "[white] : " + arg[0]);
         });
         handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"motd")) return;
             String motd = getmotd(player);
             int count = motd.split("\r\n|\r|\n").length;
             if (count > 10) {
@@ -1609,142 +1593,151 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player,"login-not-use"));
             }
         });
-        handler.<Player>register("save", "Map save", (arg, player) -> {
-            if(checklogin(player)) return;
-            if (player.isAdmin) {
-                Core.app.post(() -> {
-                    FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
-                    SaveIO.save(file);
-                    player.sendMessage(bundle(player, "mapsaved"));
-                });
-            } else {
-                player.sendMessage(bundle(player, "notadmin"));
-            }
+        handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
+            if (!checkperm(player, "save")) return;
+            Core.app.post(() -> {
+                FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
+                SaveIO.save(file);
+                player.sendMessage(bundle(player, "mapsaved"));
+            });
         });
         handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
-            if(checklogin(player)) return;
-            if(player.isAdmin) {
-                UnitType targetunit;
-                switch (arg[0]) {
-                    case "draug":
-                        targetunit = UnitTypes.draug;
+            if (!checkperm(player, "spawn")) return;
+
+            UnitType targetunit;
+            switch (arg[0]) {
+                case "draug":
+                    targetunit = UnitTypes.draug;
+                    break;
+                case "spirit":
+                    targetunit = UnitTypes.spirit;
+                    break;
+                case "phantom":
+                    targetunit = UnitTypes.phantom;
+                    break;
+                case "wraith":
+                    targetunit = UnitTypes.wraith;
+                    break;
+                case "ghoul":
+                    targetunit = UnitTypes.ghoul;
+                    break;
+                case "revenant":
+                    targetunit = UnitTypes.revenant;
+                    break;
+                case "lich":
+                    targetunit = UnitTypes.lich;
+                    break;
+                case "reaper":
+                    targetunit = UnitTypes.reaper;
+                    break;
+                case "dagger":
+                    targetunit = UnitTypes.dagger;
+                    break;
+                case "crawler":
+                    targetunit = UnitTypes.crawler;
+                    break;
+                case "titan":
+                    targetunit = UnitTypes.titan;
+                    break;
+                case "fortress":
+                    targetunit = UnitTypes.fortress;
+                    break;
+                case "eruptor":
+                    targetunit = UnitTypes.eruptor;
+                    break;
+                case "chaosArray":
+                    targetunit = UnitTypes.chaosArray;
+                    break;
+                case "eradicator":
+                    targetunit = UnitTypes.eradicator;
+                    break;
+                default:
+                    player.sendMessage(bundle(player, "mob-not-found"));
+                    return;
+            }
+            int count;
+            try {
+                count = Integer.parseInt(arg[1]);
+            } catch (NumberFormatException e) {
+                player.sendMessage(bundle(player, "mob-spawn-not-number"));
+                return;
+            }
+            Team targetteam = null;
+            if (arg.length >= 3) {
+                switch (arg[2]) {
+                    case "sharded":
+                        targetteam = Team.sharded;
                         break;
-                    case "spirit":
-                        targetunit = UnitTypes.spirit;
+                    case "blue":
+                        targetteam = Team.blue;
                         break;
-                    case "phantom":
-                        targetunit = UnitTypes.phantom;
+                    case "crux":
+                        targetteam = Team.crux;
                         break;
-                    case "wraith":
-                        targetunit = UnitTypes.wraith;
+                    case "derelict":
+                        targetteam = Team.derelict;
                         break;
-                    case "ghoul":
-                        targetunit = UnitTypes.ghoul;
+                    case "green":
+                        targetteam = Team.green;
                         break;
-                    case "revenant":
-                        targetunit = UnitTypes.revenant;
-                        break;
-                    case "lich":
-                        targetunit = UnitTypes.lich;
-                        break;
-                    case "reaper":
-                        targetunit = UnitTypes.reaper;
-                        break;
-                    case "dagger":
-                        targetunit = UnitTypes.dagger;
-                        break;
-                    case "crawler":
-                        targetunit = UnitTypes.crawler;
-                        break;
-                    case "titan":
-                        targetunit = UnitTypes.titan;
-                        break;
-                    case "fortress":
-                        targetunit = UnitTypes.fortress;
-                        break;
-                    case "eruptor":
-                        targetunit = UnitTypes.eruptor;
-                        break;
-                    case "chaosArray":
-                        targetunit = UnitTypes.chaosArray;
-                        break;
-                    case "eradicator":
-                        targetunit = UnitTypes.eradicator;
+                    case "purple":
+                        targetteam = Team.purple;
                         break;
                     default:
-                        player.sendMessage(bundle(player, "mob-not-found"));
+                        player.sendMessage(bundle(player, "team-not-found"));
                         return;
                 }
-                int count;
-                try {
-                    count = Integer.parseInt(arg[1]);
-                } catch (NumberFormatException e) {
-                    player.sendMessage(bundle(player, "mob-spawn-not-number"));
+            }
+            Player targetplayer = null;
+            if (arg.length >= 4) {
+                Player target = playerGroup.find(p -> p.name.equals(arg[3]));
+                if (target == null) {
+                    player.sendMessage(bundle(player, "player-not-found"));
                     return;
+                } else {
+                    targetplayer = target;
                 }
-                Team targetteam = null;
-                if (arg.length >= 3) {
-                    switch (arg[2]) {
-                        case "sharded":
-                            targetteam = Team.sharded;
-                            break;
-                        case "blue":
-                            targetteam = Team.blue;
-                            break;
-                        case "crux":
-                            targetteam = Team.crux;
-                            break;
-                        case "derelict":
-                            targetteam = Team.derelict;
-                            break;
-                        case "green":
-                            targetteam = Team.green;
-                            break;
-                        case "purple":
-                            targetteam = Team.purple;
-                            break;
-                        default:
-                            player.sendMessage(bundle(player, "team-not-found"));
-                            return;
-                    }
-                }
-                Player targetplayer = null;
-                if (arg.length >= 4) {
-                    Player target = playerGroup.find(p -> p.name.equals(arg[3]));
-                    if (target == null) {
-                        player.sendMessage(bundle(player, "player-not-found"));
-                        return;
-                    } else {
-                        targetplayer = target;
-                    }
-                }
-                if (targetteam != null) {
-                    if (targetplayer != null) {
-                        for(int i=0;count>i;i++){
-                            BaseUnit baseUnit = targetunit.create(targetplayer.getTeam());
-                            baseUnit.set(targetplayer.getX(), targetplayer.getY());
-                            baseUnit.add();
-                        }
-                    } else {
-                        for(int i=0;count>i;i++){
-                            BaseUnit baseUnit = targetunit.create(targetteam);
-                            baseUnit.set(player.getX(), player.getY());
-                            baseUnit.add();
-                        }
+            }
+            if (targetteam != null) {
+                if (targetplayer != null) {
+                    for (int i = 0; count > i; i++) {
+                        BaseUnit baseUnit = targetunit.create(targetplayer.getTeam());
+                        baseUnit.set(targetplayer.getX(), targetplayer.getY());
+                        baseUnit.add();
                     }
                 } else {
-                    for(int i=0;count>i;i++){
-                        BaseUnit baseUnit = targetunit.create(player.getTeam());
+                    for (int i = 0; count > i; i++) {
+                        BaseUnit baseUnit = targetunit.create(targetteam);
                         baseUnit.set(player.getX(), player.getY());
                         baseUnit.add();
                     }
                 }
             } else {
-                player.sendMessage(bundle(player, "notadmin"));
+                for (int i = 0; count > i; i++) {
+                    BaseUnit baseUnit = targetunit.create(player.getTeam());
+                    baseUnit.set(player.getX(), player.getY());
+                    baseUnit.add();
+                }
             }
         });
+        handler.<Player>register("setperm", "<player_name> <group>", "Set player permission", (arg, player) -> {
+            if(!checkperm(player,"setperm")) return;
+            if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
+                player.sendMessage(bundle("player-not-found"));
+            }
+            Iterator i = Permission.result.keys();
+            while(i.hasNext()) {
+                String b = i.next().toString();
+                if(b.equals(arg[1])){
+                    writeData("UPDATE players SET permission = '"+arg[1]+"' WHERE name = '"+arg[0]+"'");
+                    player.sendMessage(bundle("success"));
+                    return;
+                }
+            }
+            player.sendMessage(bundle("perm-group-not-found"));
+        });
         handler.<Player>register("status", "Show server status", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"status")) return;
             player.sendMessage(nbundle(player, "server-status"));
             player.sendMessage("[#2B60DE]========================================[]");
             float fps = Math.round((int) 60f / Time.delta());
@@ -1765,67 +1758,63 @@ public class Main extends Plugin {
             player.sendMessage(nbundle(player, "server-status-banstat", bancount, idb, ipb, Threads.playtime, Threads.uptime));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"suicide")) return;
             Player.onPlayerDeath(player);
             if (playerGroup != null && playerGroup.size() > 0) {
                 allsendMessage("suicide", player.name);
             }
         });
-        handler.<Player>register("team", "Change team (PvP only)", (arg, player) -> {
-            if(checklogin(player)) return;
+        handler.<Player>register("team", "[Team...]", "Change team (PvP only)", (arg, player) -> {
+            if(!checkperm(player,"team")) return;
             if (Vars.state.rules.pvp) {
-                if (player.isAdmin) {
-                    int i = player.getTeam().ordinal() + 1;
-                    while (i != player.getTeam().ordinal()) {
-                        if (i >= Team.all.length) i = 0;
-                        if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()) {
-                            player.setTeam(Team.all[i]);
-                            break;
-                        }
-                        i++;
+                int i = player.getTeam().ordinal() + 1;
+                while (i != player.getTeam().ordinal()) {
+                    if (i >= Team.all.length) i = 0;
+                    if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()) {
+                        player.setTeam(Team.all[i]);
+                        break;
                     }
-                    Call.onPlayerDeath(player);
-                } else {
-                    player.sendMessage(bundle(player, "notadmin"));
+                    i++;
                 }
+                Call.onPlayerDeath(player);
             } else {
                 player.sendMessage(bundle(player, "command-only-pvp"));
             }
         });
         handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
-            if(checklogin(player)) return;
-            if (!player.isAdmin) {
-                player.sendMessage(bundle(player, "notadmin"));
+            if (!checkperm(player, "tempban")) return;
+            Player other = null;
+            for (Player p : playerGroup.all()) {
+                boolean result = p.name.contains(arg[0]);
+                if (result) {
+                    other = p;
+                }
+            }
+            if (other != null) {
+                int bantimeset = Integer.parseInt(arg[1]);
+                PlayerDB.addtimeban(other.name, other.uuid, bantimeset);
+                Call.onKick(other.con, "Temp kicked");
+                for (int a = 0; a < playerGroup.size(); a++) {
+                    Player current = playerGroup.all().get(a);
+                    current.sendMessage(bundle(current, "ban-temp", other.name, player.name));
+                }
             } else {
-                Player other = null;
-                for (Player p : playerGroup.all()) {
-                    boolean result = p.name.contains(arg[0]);
-                    if (result) {
-                        other = p;
-                    }
-                }
-                if (other != null) {
-                    int bantimeset = Integer.parseInt(arg[1]);
-                    PlayerDB.addtimeban(other.name, other.uuid, bantimeset);
-                    Call.onKick(other.con, "Temp kicked");
-                    for(int a=0;a<playerGroup.size();a++){
-                        Player current = playerGroup.all().get(a);
-                        current.sendMessage(bundle(current, "ban-temp", other.name, player.name));
-                    }
-                } else {
-                    player.sendMessage(bundle(player, "player-not-found"));
-                }
+                player.sendMessage(bundle(player, "player-not-found"));
             }
         });
         handler.<Player>register("time", "Show server time", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"time")) return;
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss");
             String nowString = now.format(dateTimeFormatter);
             player.sendMessage(bundle(player, "servertime", nowString));
         });
         handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"tp")) return;
+            if(player.isMobile){
+                player.sendMessage(bundle("tp-not-support"));
+                return;
+            }
             Player other = null;
             for (Player p : playerGroup.all()) {
                 boolean result = p.name.contains(arg[0]);
@@ -1840,7 +1829,7 @@ public class Main extends Plugin {
             player.setNet(other.x, other.y);
         });
         handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
-            if(checklogin(player)) return;
+            if (!checkperm(player, "tpp")) return;
             Player other1 = null;
             Player other2 = null;
             for (Player p : playerGroup.all()) {
@@ -1853,22 +1842,19 @@ public class Main extends Plugin {
                     other2 = p;
                 }
             }
-            if (!player.isAdmin) {
-                player.sendMessage(bundle(player, "notadmin"));
+
+            if (other1 == null || other2 == null) {
+                player.sendMessage(bundle(player, "player-not-found"));
+                return;
+            }
+            if (!other1.isMobile || !other2.isMobile) {
+                other1.setNet(other2.x, other2.y);
             } else {
-                if (other1 == null || other2 == null) {
-                    player.sendMessage(bundle(player, "player-not-found"));
-                    return;
-                }
-                if (!other1.isMobile || !other2.isMobile) {
-                    other1.setNet(other2.x, other2.y);
-                } else {
-                    player.sendMessage(bundle(player, "tp-ismobile"));
-                }
+                player.sendMessage(bundle(player, "tp-ismobile"));
             }
         });
         handler.<Player>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"tppos")) return;
             int x;
             int y;
             try{
@@ -1881,7 +1867,7 @@ public class Main extends Plugin {
             player.setNet(x, y);
         });
         handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"tr")) return;
             JSONObject db = getData(player.uuid);
             boolean value = db.getBoolean("translate");
             int set;
@@ -1896,7 +1882,7 @@ public class Main extends Plugin {
             writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
         });
         handler.<Player>register("vote", "<gameover/skipwave/kick/rollback/map> [mapid/mapname/playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
-            if(checklogin(player)) return;
+            if(!checkperm(player,"vote")) return;
             if(arg.length == 2) {
                 if(arg[0].equals("kick")) {
                     Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
@@ -1934,8 +1920,8 @@ public class Main extends Plugin {
                 vote.command();
             }
         });
-
         handler.<Player>register("test", "pathfinding test", (arg, player) -> {
+            if(!checkperm(player,"test")) return;
             //getcount(world.tile(player.tileX(), player.tileY()), Integer.parseInt(arg[0]));
             /*
             if (player.isAdmin) {

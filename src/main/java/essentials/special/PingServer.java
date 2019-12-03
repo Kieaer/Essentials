@@ -3,6 +3,7 @@ package essentials.special;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
@@ -21,7 +22,7 @@ public class PingServer {
 
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
             listener.accept(readServerData(buffer, ip, System.currentTimeMillis() - start));
-            buffer.clear();
+            ((Buffer)buffer).clear();
             socket.disconnect();
             socket.close();
         } catch (Exception ignored) {}

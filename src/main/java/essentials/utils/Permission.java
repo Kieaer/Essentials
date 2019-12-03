@@ -1,37 +1,46 @@
 package essentials.utils;
 
-import essentials.Global;
 import io.anuke.arc.Core;
-import org.json.JSONArray;
+import io.anuke.mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
+import static essentials.core.PlayerDB.getData;
+import static essentials.core.PlayerDB.writeData;
+
 public class Permission {
-    public static JSONObject json;
+    public static JSONObject result;
 
     public void main(){
         if(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").exists()) {
             Yaml yaml = new Yaml();
             Map<Object, Object> map = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").readString()));
-            json = new JSONObject(map);
-            Global.log(json.toString());
-            Iterator i = json.keys();
-            ArrayList<Object> keys = new ArrayList<>();
+            result = new JSONObject(map);
+            Iterator i = result.keys();
             while(i.hasNext()){
                 String b = i.next().toString();
-                JSONArray array = json.getJSONObject(b).getJSONArray("permission");
-                String inheritance = json.getJSONObject(b).getString("inheritance");
-                if(!inheritance.equals("none")){
-                    JSONArray inheritjson = json.getJSONObject(inheritance).getJSONArray("permission");
-                }
-                for(int a=0;a<array.length();a++){
-                    Global.log(b+"/"+array.get(a));
+                if(result.getJSONObject(b).has("inheritance")) {
+                    String inheritance = result.getJSONObject(b).getString("inheritance");
+                    while(result.getJSONObject(inheritance).has("inheritance")){
+                        for(int a=0;a<result.getJSONObject(inheritance).getJSONArray("permission").length();a++){
+                            result.getJSONObject(b).getJSONArray("permission").put(result.getJSONObject(inheritance).getJSONArray("permission").get(a));
+                        }
+                        inheritance = result.getJSONObject(inheritance).getString("inheritance");
+                    }
                 }
             }
+        }
+    }
+
+    public static void setAdmin(Player player){
+        JSONObject db = getData(player.uuid);
+        String perm = db.getString("permission");
+        if(result.getJSONObject(perm).getBoolean("admin")){
+            player.isAdmin = true;
+            writeData("UPDATE players SET isAdmin = '1' WHERE uuid = '"+player.uuid+"'");
         }
     }
 }

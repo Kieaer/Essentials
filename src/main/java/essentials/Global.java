@@ -2,6 +2,7 @@ package essentials;
 
 import essentials.utils.Bundle;
 import essentials.utils.Config;
+import essentials.utils.Permission;
 import io.anuke.arc.Core;
 import io.anuke.arc.util.Log;
 import io.anuke.mindustry.Vars;
@@ -553,32 +554,38 @@ public class Global {
         return list;
     }
 
-    // 로그인 유무 확인
+    // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
         JSONObject db = getData(player.uuid);
         if(db.toString().equals("{}") || player.uuid == null) return false;
         return db.getBoolean("connected");
     }
 
-    // 비 로그인 유저 확인
+    // 비 로그인 유저 확인 (코어)
     public static boolean checklogin(Player player){
         if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
             player.sendMessage(bundle("not-login"));
-            return true;
-        } else {
             return false;
+        } else {
+            return true;
         }
     }
 
     // 권한 확인
-    public static boolean checkperm(Player player){
-        if(isLogin(player)){
+    public static boolean checkperm(Player player, String command){
+        if(isLogin(player) && checklogin(player)){
             JSONObject db = getData(player.uuid);
             String perm = db.getString("permission");
-            //String permlevel = Permission.json.getString(perm);
-
+            int size = Permission.result.getJSONObject(perm).getJSONArray("permission").length();
+            for(int a=0;a<size;a++){
+                String permlevel = Permission.result.getJSONObject(perm).getJSONArray("permission").getString(a);
+                if(permlevel.equals(command)){
+                    return true;
+                }
+            }
+            player.sendMessage(bundle("no-permission"));
         }
-        return true;
+        return false;
     }
 
     // 로그인 시간 확인
