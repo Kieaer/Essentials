@@ -106,3 +106,6 @@ easy: 2
 normal: 4
 hard: 6
 insane: 10
+
+# Set spawn command unit limit
+spawnlimit: 10

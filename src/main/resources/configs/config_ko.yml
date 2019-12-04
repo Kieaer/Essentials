@@ -106,3 +106,6 @@ easy: 2
 normal: 4
 hard: 6
 insane: 10
+
+# spawn 명령어 유닛 개수 제한
+spawnlimit: 10

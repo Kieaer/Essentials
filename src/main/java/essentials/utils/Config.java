@@ -243,6 +243,10 @@ public class Config {
         return obj.get("insane") != null ? (int) obj.get("insane") : 10;
     }
 
+    public int getSpawnlimit(){
+        return obj.get("spawnlimit") != null ? (int) obj.get("spawnlimit") : 10;
+    }
+
     public String getServername(){
         JSONObject data = new JSONObject(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString()));
         return data.getString("servername");
@@ -443,10 +447,13 @@ public class Config {
                     "\n" +
                     "# 플레이어 인원별 난이도 조절\n" +
                     "auto-difficulty: false\n" +
-                    "easy: 2\n" +
-                    "normal: 4\n" +
-                    "hard: 6\n" +
-                    "insane: 10";
+                    "easy: "+getEasy()+"\n" +
+                    "normal: "+getNormal()+"\n" +
+                    "hard: "+getHard()+"\n" +
+                    "insane: "+getInsane()+"\n" +
+                    "\n" +
+                    "# spawn 명령어 유닛 개수 제한\n" +
+                    "spawnlimit: "+getSpawnlimit();
         } else {
             text = "# Config version (Don't touch this!)\n" +
                     "version: 6\n" +
@@ -552,10 +559,13 @@ public class Config {
                     "\n" +
                     "# Set the difficulty per player\n" +
                     "auto-difficulty: false\n" +
-                    "easy: 2\n" +
-                    "normal: 4\n" +
-                    "hard: 6\n" +
-                    "insane: 10";
+                    "easy: "+getEasy()+"\n" +
+                    "normal: "+getNormal()+"\n" +
+                    "hard: "+getHard()+"\n" +
+                    "insane: "+getInsane()+"\n" +
+                    "\n" +
+                    "# Set spawn command unit limit\n" +
+                    "spawnlimit: "+getSpawnlimit();
         }
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 

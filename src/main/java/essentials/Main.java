@@ -1674,6 +1674,10 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player, "mob-spawn-not-number"));
                 return;
             }
+            if(config.getSpawnlimit() == count){
+                player.sendMessage(bundle("spawn-limit"));
+                return;
+            }
             Team targetteam = null;
             if (arg.length >= 3) {
                 switch (arg[2]) {
