@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
 import static essentials.core.PlayerDB.writeData;
 import static essentials.utils.Config.executorService;
@@ -33,7 +32,7 @@ public class Client extends Thread{
     public static boolean serverconn;
 
     public void update(){
-        Global.logc(nbundle("client-checking-version"));
+        Global.client("client-checking-version");
 
         Thread t = new Thread(() -> {
             HttpURLConnection con;
@@ -70,12 +69,12 @@ public class Client extends Thread{
                 DefaultArtifactVersion current = new DefaultArtifactVersion("6.0");
 
                 if (latest.compareTo(current) > 0) {
-                    Global.logc(nbundle("version-new"));
+                    Global.client("version-new");
 
                 } else if (latest.compareTo(current) == 0) {
-                    Global.logc(nbundle("version-current"));
+                    Global.client("version-current");
                 } else if (latest.compareTo(current) < 0) {
-                    Global.logc(nbundle("version-devel"));
+                    Global.client("version-devel");
                 }
 
             } catch (Exception e) {
@@ -99,15 +98,15 @@ public class Client extends Thread{
                 br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                 String line = br.readLine();
                 if(line != null){
-                    Global.logc(line);
+                    Global.client(line);
                     serverconn = true;
                     executorService.execute(new Thread(this));
-                    Global.logc(nbundle("client-enabled"));
+                    Global.client("client-enabled");
                 }
             } catch (UnknownHostException e) {
-                Global.loge("Invalid host!");
+                Global.client("Invalid host!");
             } catch (IOException e) {
-                Global.logc(nbundle("remote-server-dead"));
+                Global.client("remote-server-dead");
                 if(player != null) {
                     writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + player.uuid + "'");
                 }
@@ -131,7 +130,7 @@ public class Client extends Thread{
                         }
                         bw.write(bandata + "\n");
                         bw.flush();
-                        Global.logc(nbundle("client-banlist-sented"));
+                        Global.client("client-banlist-sented");
                     } catch (IOException e) {
                         printStackTrace(e);
                     }
@@ -142,7 +141,7 @@ public class Client extends Thread{
                         bw.write(msg + "\n");
                         bw.flush();
                         Call.sendMessage("[#357EC7][SC] " + msg);
-                        Global.logc(nbundle("client-sent-message", config.getClienthost(), message));
+                        Global.client("client-sent-message", config.getClienthost(), message);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -196,7 +195,7 @@ public class Client extends Thread{
                         if(data.substring(data.length()-5).equals("unban")){
                             JSONTokener convert = new JSONTokener(data);
                             JSONArray bandata = new JSONArray(convert);
-                            Global.logc(nbundle("server-request-unban"));
+                            Global.client("server-request-unban");
                             for (int i = 0; i < bandata.length(); i++) {
                                 String[] array = bandata.getString(i).split("\\|", -1);
                                 if (array[0].length() == 12) {
@@ -208,7 +207,7 @@ public class Client extends Thread{
                                 if (array[0].equals("<unknown>")) {
                                     netServer.admins.unbanPlayerIP(array[1]);
                                 }
-                                Global.logc(nbundle("unban-done", bandata.getString(i)));
+                                Global.client("unban-done", bandata.getString(i));
                             }
                         } else {
                             JSONTokener test = new JSONTokener(data);
@@ -225,16 +224,16 @@ public class Client extends Thread{
                                     netServer.admins.banPlayerIP(array[1]);
                                 }
                             }
-                            Global.logc(nbundle("client-banlist-received"));
+                            Global.client("client-banlist-received");
                         }
                     }catch (Exception e){
                         printStackTrace(e);
                     }
                 } else {
-                    Global.logw("Unknown data! - "+data);
+                    Global.normal("Unknown data! - "+data);
                 }
             } catch (IOException e) {
-                Global.logc(nbundle("server-disconnected", config.getClienthost()));
+                Global.client("server-disconnected", config.getClienthost());
 
                 serverconn = false;
                 try {

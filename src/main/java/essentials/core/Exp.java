@@ -31,7 +31,7 @@ public class Exp {
         if(curlevel < level && curlevel > config.getAlarmlevel() && config.isLevelupalarm()){
             for(int a=0;a<playerGroup.size();a++){
                 Player player = playerGroup.all().get(a);
-                player.sendMessage(bundle(player, "player-levelup"));
+                player.sendMessage(bundle(player, "player-levelup", name, level));
             }
         }
     }

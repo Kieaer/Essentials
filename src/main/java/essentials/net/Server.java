@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 
-import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
 import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
@@ -46,7 +45,7 @@ public class Server implements Runnable {
         try {
             serverSocket = new ServerSocket(config.getServerport());
             new Thread(this).start();
-            Global.logc(nbundle("server-enabled"));
+            Global.server("server-enabled");
         } catch (Exception e) {
             printStackTrace(e);
         }
@@ -103,7 +102,7 @@ public class Server implements Runnable {
                         in.close();
                         socket.close();
                         list.remove(this);
-                        Global.logc(nbundle("client-disconnected", remoteip));
+                        Global.server("client-disconnected", remoteip);
                         return;
                     }
 
@@ -111,7 +110,7 @@ public class Server implements Runnable {
                         httpserver(data);
                     } else if (data.matches("\\[(.*)]:.*")) {
                         String msg = data.replaceAll("\n", "");
-                        Global.logc(nbundle("server-message-received", remoteip, msg));
+                        Global.server("server-message-received", remoteip, msg);
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player p = playerGroup.all().get(i);
                             if (p.isAdmin) {
@@ -131,7 +130,7 @@ public class Server implements Runnable {
                         int rnd = new Random().nextInt(msg.length);
                         bw.write(msg[rnd] + "\n");
                         bw.flush();
-                        Global.logc(nbundle("client-connected", remoteip));
+                        Global.server("client-connected", remoteip);
                     } else if (data.matches("exit")){
                         bw.close();
                         os.close();
@@ -139,7 +138,7 @@ public class Server implements Runnable {
                         in.close();
                         socket.close();
                         list.remove(this);
-                        Global.logc(nbundle("client-disconnected", remoteip));
+                        Global.server("client-disconnected", remoteip);
                         this.interrupt();
                         return;
                     } else if (config.isBanshare()) {
@@ -147,7 +146,7 @@ public class Server implements Runnable {
                             JSONTokener convert = new JSONTokener(data);
                             JSONArray bandata = new JSONArray(convert);
                             if(data.substring(data.length()-5).equals("unban")){
-                                Global.logc(nbundle("client-request-unban", remoteip));
+                                Global.server("client-request-unban", remoteip);
                                 for (int i = 0; i < bandata.length(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
                                     if (array[0].length() == 12) {
@@ -159,7 +158,7 @@ public class Server implements Runnable {
                                     if (array[0].equals("<unknown>")) {
                                         netServer.admins.unbanPlayerIP(array[1]);
                                     }
-                                    Global.logc(nbundle("unban-done", bandata.getString(i)));
+                                    Global.server("unban-done", bandata.getString(i));
                                 }
 
                                 // send message to all clients
@@ -170,12 +169,12 @@ public class Server implements Runnable {
                                         if (ip.equals(remoteip)) {
                                             ser.bw.write(data + "\n");
                                             ser.bw.flush();
-                                            Global.logc(nbundle("server-data-sented", remoteip));
+                                            Global.server("server-data-sented", remoteip);
                                         }
                                     }
                                 }
                             } else {
-                                Global.logc(nbundle("client-request-banlist", remoteip));
+                                Global.server("client-request-banlist", remoteip);
                                 for (int i = 0; i < bandata.length(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
                                     if (array[0].length() == 12) {
@@ -211,14 +210,13 @@ public class Server implements Runnable {
                                         if (ip.equals(remoteip)) {
                                             ser.bw.write(data1 + "\n");
                                             ser.bw.flush();
-                                            Global.logc(nbundle("server-data-sented", remoteip));
+                                            Global.server("server-data-sented", remoteip);
                                         }
                                     }
                                 }
                             }
                         } catch (Exception e) {
                             printStackTrace(e);
-                            Global.logw("server " + data);
                         }
                     } else if(data.contains("checkban")) {
                         Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
@@ -249,23 +247,10 @@ public class Server implements Runnable {
                         }
                         bw.flush();
                     } else {
-                        Global.logs("Invalid data - " + data);
+                        Global.normal("Invalid data - " + data);
                     }
                 } catch (IOException e) {
-                    Global.logc(nbundle("client-disconnected", remoteip));
-
-                    /*String msg = e.getMessage();
-                    if (msg.equals("Connection reset") || msg.equals("Socket closed") || msg.equals("Stream closed")) {
-                        if(config.getLanguage().equals("ko")){
-                            Global.logs(remoteip+" 와 연결이 해제되었습니다.");
-                        } else {
-                            Global.logs(remoteip+" client disconnected.");
-                        }
-                        return;
-                    } else {
-                        printStackTrace(e);
-                        Global.log(msg);
-                    }*/
+                    Global.server("client-disconnected", remoteip);
                     try {
                         bw.close();
                         os.close();

@@ -20,7 +20,6 @@ import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
 import static io.anuke.mindustry.Vars.net;
 
@@ -122,8 +121,8 @@ public class Config {
                 cal.setTime(d);
             } catch (Exception e) {
                 printStackTrace(e);
-                Global.loge("Invalid settings! - antirushtime");
-                Global.loge("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
+                Global.normal("Invalid settings! - antirushtime");
+                Global.normal("Correct value format is mm.ss (Example - 10.00 -> 10minute, 00.30 -> 30seconds)");
             }
         } else {
             try{
@@ -287,7 +286,7 @@ public class Config {
             }
         } else {
             // If folder name has space
-            Global.loge("The plugin file or folder path is invalid. Please check your server path!");
+            Global.normal("The plugin file or folder path is invalid. Please check your server path!");
             net.dispose();
             Core.app.exit();
         }
@@ -560,9 +559,9 @@ public class Config {
         }
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
-        Global.logco(nbundle("config-loaded"));
+        Global.config("config-loaded");
         if(getVersion() < 6){
-            Global.logco(nbundle("config-updated"));
+            Global.config("config-updated");
         }
 
         // 서버간 이동 타일 불러오기

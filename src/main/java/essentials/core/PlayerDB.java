@@ -3,7 +3,6 @@ package essentials.core;
 import essentials.Global;
 import essentials.Threads;
 import essentials.utils.Config;
-import essentials.utils.Permission;
 import io.anuke.arc.Core;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
@@ -30,6 +29,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
+import static essentials.utils.Permission.permission;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
 
@@ -138,7 +138,7 @@ public class PlayerDB{
                             "AUTO_INCREMENT=1\n" +
                             ";";
                 } else {
-                    Global.loge(nbundle("db-address-notset"));
+                    Global.playererror("db-address-notset");
                 }
             }
             Statement stmt = conn.createStatement();
@@ -206,7 +206,7 @@ public class PlayerDB{
                 pstmt.executeUpdate();
                 pstmt.close();
                 player.sendMessage(nbundle("player-id", player.name));
-                Global.logp(nbundle("player-db-created", name));
+                Global.playernormal("player-db-created", name);
                 result = true;
             } else if(rs.next()){
                 player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
@@ -272,7 +272,7 @@ public class PlayerDB{
             if(json.toString().equals("{}")){
                 Config config = new Config();
                 if(config.isDebug()) {
-                    Global.logpe(uuid+" Player data is empty.");
+                    Global.playererror(uuid+" Player data is empty.");
                     throw new Exception("플레이어 데이터가 없습니다!");
                 }
                 // todo make invalid player information
@@ -344,12 +344,12 @@ public class PlayerDB{
             resultSet = metadata.getColumns(null, null, "players", "connserver");
             if (!resultSet.next()) {
                 stmt.execute(v1sql);
-                Global.logp(nbundle("db-upgrade"));
+                Global.playernormal("db-upgrade");
             }
             resultSet = metadata.getColumns(null, null, "players", "permission");
             if(!resultSet.next()){
                 stmt.execute(v2sql);
-                Global.logp(nbundle("db-upgrade"));
+                Global.playernormal("db-upgrade");
             }
             stmt.close();
         } catch (SQLException e) {
@@ -367,22 +367,22 @@ public class PlayerDB{
 
             if (config.isSqlite()) {
                 conn = DriverManager.getConnection(config.getDBurl());
-                Global.logp(type+"SQLite");
+                Global.playerlog(type+"SQLite");
             } else {
                 if (!config.getDBid().isEmpty()) {
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                    Global.logp(type+"MariaDB/MySQL");
+                    Global.playerlog(type+"MariaDB/MySQL");
                 } else {
                     conn = DriverManager.getConnection(config.getDBurl());
-                    Global.logp(type+"Invalid");
+                    Global.playerlog(type+"Invalid");
                 }
             }
         } catch (ClassNotFoundException e) {
             printStackTrace(e);
-            Global.loge("Class not found!");
+            Global.normal("Class not found!");
         } catch (SQLException e){
             printStackTrace(e);
-            Global.loge("SQL ERROR!");
+            Global.normal("SQL ERROR!");
         }
     }
 
@@ -405,7 +405,7 @@ public class PlayerDB{
                     PlayerDB db = new PlayerDB();
                     db.openconnect();
                 }
-                Global.loge(sql);
+                Global.playererror(sql);
                 printStackTrace(e);
             }
         });
@@ -432,13 +432,13 @@ public class PlayerDB{
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
-            Global.log(nbundle("password-match-regex", player.name));
+            Global.playernormal("password-match-regex", player.name);
             result = false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
-            Global.log(nbundle("password-match-name", player.name));
+            Global.playernormal("password-match-name", player.name);
             result = false;
         } else /*if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -449,7 +449,7 @@ public class PlayerDB{
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
-            Global.log(nbundle("password-match-blank", player.name));
+            Global.playernormal("password-match-blank", player.name);
             result = false;
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
@@ -457,7 +457,7 @@ public class PlayerDB{
                     "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
-            Global.log(nbundle("password-match-invalid", player.name));
+            Global.playernormal("password-match-invalid", player.name);
             result = false;
         }
         return result;
@@ -481,7 +481,7 @@ public class PlayerDB{
                     if (rs1.getString("name").equals(player.name)) {
                         player.sendMessage("[green][Essentials] [orange]This username is already in use!\n" +
                                 "[green][Essentials] [orange]이 사용자 이름은 이미 사용중입니다!");
-                        Global.log(nbundle("password-already-username", player.name));
+                        Global.playernormal("password-already-username", player.name);
                         result = false;
                     }
                 } else {
@@ -506,14 +506,14 @@ public class PlayerDB{
                         } else if(rs.next()){
                             player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                     "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
-                            Global.log(nbundle("password-already-account", player.name));
+                            Global.playernormal("password-already-account", player.name);
                             result = false;
                         }
                         player.sendMessage(bundle(player, "player-name-changed", player.name));
                     } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)) {
                         player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
                                 "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                        Global.log(nbundle("password-already-using", player.name));
+                        Global.playernormal("password-already-using", player.name);
                         result = false;
                     } else {
                         result = false;
@@ -630,11 +630,10 @@ public class PlayerDB{
                     player.setTeam(netServer.assignTeam(player, playerGroup.all()));
                     pvpteam.add(player);
                 }
-                Call.onPlayerDeath(player);
             } else {
                 player.setTeam(Vars.defaultTeam);
-                Call.onPlayerDeath(player);
             }
+            Call.onPlayerDeath(player);
 
             // 입장 메세지 표시
             String motd = getmotd(player);
@@ -659,7 +658,7 @@ public class PlayerDB{
                 // 컬러닉 스레드 시작
                 new Thread(new ColorNick(player)).start();
             } else if(!config.isRealname() && colornick){
-                Global.logpw(nbundle("colornick-require"));
+                Global.playernormal(nbundle("colornick-require"));
                 writeData("UPDATE players SET colornick = '0' WHERE uuid = '"+player.uuid+"'");
             }
 
@@ -669,7 +668,13 @@ public class PlayerDB{
             }
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
-            Permission.setAdmin(player);
+            String perm = db.getString("permission");
+            if(permission.getJSONObject(perm).has("admin")) {
+                if (permission.getJSONObject(perm).getBoolean("admin")) {
+                    player.isAdmin = true;
+                    writeData("UPDATE players SET isAdmin = '1' WHERE uuid = '" + player.uuid + "'");
+                }
+            }
 
             // 플레이어 지역이 invalid 일경우 다시 정보 가져오기
             if(db.getString("country").equals("invalid")) {

@@ -67,7 +67,6 @@ import static essentials.net.Client.serverconn;
 import static essentials.utils.Config.jumpall;
 import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
-import static io.anuke.arc.util.Log.err;
 import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin {
@@ -87,7 +86,7 @@ public class Main extends Plugin {
 
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
-            Global.logc(nbundle("server-connecting"));
+            Global.client("server-connecting");
             Client client = new Client();
             client.main(null, null, null);
         }
@@ -175,7 +174,7 @@ public class Main extends Plugin {
                         int serverport = Integer.parseInt(data[5]);
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
-                                Global.log(nbundle("player-jumped", e.player.name, serverip + ":" + serverport));
+                                Global.log("player-jumped", e.player.name, serverip + ":" + serverport);
                                 writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + e.player.uuid + "'");
                                 Call.onConnect(e.player.con, serverip, serverport);
                             }
@@ -255,7 +254,7 @@ public class Main extends Plugin {
             for (int i = 0; i < array.length(); i++) {
                 if (array.getString(i).matches(e.player.name)) {
                     e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.\nBlack listed nickname: " + e.player.name);
-                    Global.log(nbundle("nickname-blacklisted", e.player.name));
+                    Global.log("nickname-blacklisted", e.player.name);
                 }
             }
         });
@@ -351,16 +350,16 @@ public class Main extends Plugin {
                     }
                 } else {
                     Call.onKick(e.player.con, nbundle("plugin-error-kick"));
-                    Global.loge("!! Account system fatal error occurred !!");
+                    Global.debug("!! Account system fatal error occurred !!");
                     try {
                         throw new Exception("Account system failed");
                     } catch (Exception ex) {
-                        Global.loge("Be sure to send this issue to the plugin developer!");
+                        Global.debug("Be sure to send this issue to the plugin developer!");
                         JSONObject db = getData(player.uuid);
-                        Global.loge("Target player data: " + db.toString());
-                        Global.loge("====== Stacktrace info start ======");
+                        Global.debug("Target player data: " + db.toString());
+                        Global.debug("====== Stacktrace info start ======");
                         ex.printStackTrace();
-                        Global.loge("====== Stacktrace info end ======");
+                        Global.debug("====== Stacktrace info end ======");
                         net.dispose();
                         Core.app.exit();
                     }
@@ -474,7 +473,7 @@ public class Main extends Plugin {
                         pstmt.executeUpdate();
                         pstmt.close();
                     } catch (Exception ex) {
-                        Global.loge(sql);
+                        Global.debug(sql);
                         printStackTrace(ex);
                     }
                 });
@@ -888,9 +887,9 @@ public class Main extends Plugin {
                     if(Vote.isvoting){
                         Vote.cancel();
                     }
-                    Global.log(Global.nbundle("count-thread-disabled"));
+                    Global.log("count-thread-disabled");
                 } catch (Exception e) {
-                    Global.loge(Global.nbundle("count-thread-disable-error"));
+                    Global.err("count-thread-disable-error");
                     printStackTrace(e);
                 }
 
@@ -905,10 +904,10 @@ public class Main extends Plugin {
                         Server.active = false;
                         Server.serverSocket.close();
 
-                        Global.log(nbundle("server-thread-disabled"));
+                        Global.log("server-thread-disabled");
                     } catch (Exception e) {
                         printStackTrace(e);
-                        Global.loge(nbundle("server-thread-disable-error"));
+                        Global.err("server-thread-disable-error");
                     }
                 }
 
@@ -917,7 +916,7 @@ public class Main extends Plugin {
                     Client client = new Client();
                     client.main("exit", null, null);
                     //client.interrupt();
-                    Global.log(nbundle("client-thread-disabled"));
+                    Global.log("client-thread-disabled");
                 }
 
                 // 모든 이벤트 서버 종료
@@ -932,7 +931,7 @@ public class Main extends Plugin {
                 executorService.shutdown();
                 Log.ex.shutdown();
                 PlayerDB.ex.shutdown();
-                Global.log(nbundle("thread-disabled"));
+                Global.log("thread-disabled");
 
                 // DB 종료
                 closeconnect();
@@ -943,21 +942,21 @@ public class Main extends Plugin {
         Threads.uptime = "00:00.00";
 
         // 활성화된 기능 목록들을 표시함
-        Global.logco(config.checkfeatures());
+        Global.normal(config.checkfeatures());
     }
 
     @Override
     public void registerServerCommands(CommandHandler handler){
         handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
             if(arg.length == 0) {
-                Global.log(nbundle("no-parameter"));
+                Global.log("no-parameter");
                 return;
             }
             Global.log(nbundle("use-setperm"));
         });
         handler.register("allinfo", "<name>", "Show player information.", (arg) -> {
             if(arg.length == 0) {
-                Global.log(nbundle("no-parameter"));
+                Global.log("no-parameter");
                 return;
             }
             Thread t = new Thread(() -> {
@@ -965,7 +964,7 @@ public class Main extends Plugin {
                     String sql = "SELECT * FROM players WHERE name='"+arg[0]+"'";
                     Statement stmt = conn.createStatement();
                     ResultSet rs = stmt.executeQuery(sql);
-                    Global.logn("Data line start.");
+                    Global.normal("Data line start.");
                     while(rs.next()){
                         String datatext = "\nPlayer Information\n" +
                                 "========================================\n" +
@@ -987,11 +986,11 @@ public class Main extends Plugin {
                                 "PvP Win: "+rs.getInt("pvpwincount")+"\n" +
                                 "PvP Lose: "+rs.getInt("pvplosecount")+"\n" +
                                 "PvP Surrender: "+rs.getInt("pvpbreakout");
-                        Global.logn(datatext);
+                        Global.normal(datatext);
                     }
                     rs.close();
                     stmt.close();
-                    Global.logn("Data line end.");
+                    Global.normal("Data line end.");
                 }catch (Exception e){
                     printStackTrace(e);
                 }
@@ -1004,15 +1003,15 @@ public class Main extends Plugin {
                     Client client = new Client();
                     client.main("bansync", null, null);
                 } else {
-                    Global.logw(nbundle("banshare-disabled"));
+                    Global.warn("banshare-disabled");
                 }
             } else {
-                Global.logw(nbundle("banshare-server"));
+                Global.warn("banshare-server");
             }
         });
         handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
             if(arg.length < 1) {
-                Global.log(nbundle("no-parameter"));
+                Global.log("no-parameter");
                 return;
             }
             if(arg[0].equals("add")){
@@ -1021,7 +1020,7 @@ public class Main extends Plugin {
                 JSONArray object = new JSONArray(parser);
                 object.put(arg[1]);
                 Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(String.valueOf(object));
-                Global.log(nbundle("blacklist-add", arg[1]));
+                Global.log("blacklist-add", arg[1]);
             } else if (arg[0].equals("remove")) {
                 String db = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
                 JSONTokener parser = new JSONTokener(db);
@@ -1032,14 +1031,14 @@ public class Main extends Plugin {
                     }
                 }
                 Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(String.valueOf(object));
-                Global.log(nbundle("blacklist-remove", arg[1]));
+                Global.log("blacklist-remove", arg[1]);
             } else {
-                Global.logw(nbundle("blacklist-invalid"));
+                Global.warn("blacklist-invalid");
             }
         });
         handler.register("reset", "<zone/count/total>", "Clear a server-to-server jumping zone data.", arg -> {
             if(arg.length == 0) {
-                Global.log(nbundle("no-parameter"));
+                Global.log("no-parameter");
                 return;
             }
             switch(arg[0]){
@@ -1081,15 +1080,15 @@ public class Main extends Plugin {
                         }
                     }
                     jumpzone = new JSONArray();
-                    Global.log(nbundle("jump-reset", "zone"));
+                    Global.log("jump-reset", "zone");
                     break;
                 case "count":
                     jumpcount = new JSONArray();
-                    Global.log(nbundle("jump-reset", "count"));
+                    Global.log("jump-reset", "count");
                     break;
                 case "total":
                     jumpall = new JSONArray();
-                    Global.log(nbundle("jump-reset", "total"));
+                    Global.log("jump-reset", "total");
                     break;
                 default:
                     Global.log("Invalid option!");
@@ -1099,11 +1098,11 @@ public class Main extends Plugin {
         handler.register("reload", "Reload Essentials config", arg -> {
             Config config = new Config();
             config.main();
-            Global.log(nbundle("config-reloaded"));
+            Global.config("config-reloaded");
         });
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
-                Global.logc(nbundle("server-connecting"));
+                Global.client("server-connecting");
 
                 if(serverconn){
                     Client client = new Client();
@@ -1113,10 +1112,10 @@ public class Main extends Plugin {
                 client.main(null, null, null);
 
             } else {
-                Global.log(nbundle("client-disabled"));
+                Global.client("client-disabled");
             }
 
-            Global.logc(nbundle("db-connecting"));
+            Global.client("db-connecting");
             closeconnect();
             PlayerDB db = new PlayerDB();
             db.openconnect();
@@ -1126,23 +1125,23 @@ public class Main extends Plugin {
                 Player others = playerGroup.all().get(a);
                 Call.onKick(others.con, "All kick players by administrator.");
             }
-            Global.log("It's done.");
+            Global.normal("It's done.");
         });
         handler.register("kill", "<username>", "Kill target player.", arg -> {
             if(arg.length == 0) {
-                Global.log(nbundle("no-parameter"));
+                Global.log("no-parameter");
                 return;
             }
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
                 other.kill();
             } else {
-                Global.log(nbundle("player-not-found"));
+                Global.log("player-not-found");
             }
         });
         handler.register("nick", "<name> <newname...>", "Show player information.", (arg) -> {
             if(arg.length < 1) {
-                Global.log(nbundle("no-parameter"));
+                Global.log("no-parameter");
                 return;
             }
             try{
@@ -1150,7 +1149,7 @@ public class Main extends Plugin {
                 Global.log(nbundle("player-nickname-change-to", arg[0], arg[1]));
             }catch (Exception e){
                 printStackTrace(e);
-                Global.log(nbundle("player-not-found"));
+                Global.log("player-not-found");
             }
         });
         handler.register("pvp", "<anticoal/timer> [time...]", "Set gamerule with PvP mode.", arg -> {
@@ -1170,18 +1169,18 @@ public class Main extends Plugin {
         });
         handler.register("setperm", "<player_name> <group>", "Set player permission group", arg -> {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
-                Global.loge(nbundle("player-not-found"));
+                Global.err("player-not-found");
             }
-            Iterator i = Permission.result.keys();
+            Iterator i = Permission.permission.keys();
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[1])){
                     writeData("UPDATE players SET permission = '"+arg[1]+"' WHERE name = '"+arg[0]+"'");
-                    Global.logp("success");
+                    Global.playernormal("success");
                     return;
                 }
             }
-            Global.loge(nbundle("perm-group-not-found"));
+            Global.playererror("perm-group-not-found");
         });
         handler.register("sync", "<player>", "Force sync request from the target player.", arg -> {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
@@ -1189,7 +1188,7 @@ public class Main extends Plugin {
                 Call.onWorldDataBegin(other.con);
                 netServer.sendWorldData(other);
             } else {
-                Global.logw(nbundle("player-not-found"));
+                Global.err("player-not-found");
             }
         });
         handler.register("team","[name]", "Change target player team.", (arg) -> {
@@ -1206,14 +1205,14 @@ public class Main extends Plugin {
                 }
                 other.kill();
             } else {
-                Global.logw(nbundle("player-not-found"));
+                Global.err("player-not-found");
             }
         });
         handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
             int bantimeset = Integer.parseInt(arg[1]);
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other == null){
-                Global.logw(nbundle("player-not-found"));
+                Global.err("player-not-found");
                 return;
             }
             addtimeban(other.name, other.uuid, bantimeset);
@@ -1225,9 +1224,9 @@ public class Main extends Plugin {
                     Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
                     if (target != null) {
                         netServer.admins.banPlayer(target.uuid);
-                        Global.log(nbundle("tempban", other.name, arg[1]));
+                        Global.log("tempban", other.name, arg[1]);
                     } else {
-                        Global.logw(nbundle("player-not-found"));
+                        Global.err("player-not-found");
                     }
                     break;
                 case "ip":
@@ -1235,7 +1234,7 @@ public class Main extends Plugin {
                     Global.log(nbundle("tempban", other.name, arg[1]));
                     break;
                 default:
-                    err("Invalid type.");
+                    Global.normal("Invalid type.");
                     break;
             }
             Call.onKick(other.con, "Temp kicked");
@@ -1357,7 +1356,7 @@ public class Main extends Plugin {
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
-                                Global.log(nbundle("event-host-opened", player.name, customport));
+                                Global.log("event-host-opened", player.name, customport);
 
                                 writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + player.uuid + "'");
                                 Call.onConnect(player.con, currentip, customport);
@@ -1725,7 +1724,7 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 player.sendMessage(bundle("player-not-found"));
             }
-            Iterator i = Permission.result.keys();
+            Iterator i = Permission.permission.keys();
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[1])){

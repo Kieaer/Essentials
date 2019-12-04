@@ -1,14 +1,10 @@
 owner:
-  inheritance: admin
+  admin: true
   permission:
-    - jump
-    - jumpcount
-    - jumptotal
-    - kickall
-    - test
-    - setperm
+    - ALL
 admin:
   inheritance: newadmin
+  admin: true
   permission:
     - color
     - difficulty
@@ -18,6 +14,7 @@ admin:
     - spawn
 newadmin:
   inheritance: default
+  admin: true
   permission:
     - kill
     - me

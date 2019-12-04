@@ -135,7 +135,9 @@ public class Threads extends TimerTask implements Runnable{
                             int newexp = exp + (int) (Math.random() * 5);
 
                             writeData("UPDATE players SET exp = '" + newexp + "', playtime = '" + newTime + "' WHERE uuid = '" + player.uuid + "'");
-                            Exp.exp(player.name, player.uuid);
+                            if(!state.rules.editor){
+                                Exp.exp(player.name, player.uuid);
+                            }
                         }
                     }
                 }
@@ -171,7 +173,7 @@ public class Threads extends TimerTask implements Runnable{
                             object.remove(i);
                             Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
                             netServer.admins.unbanPlayerID(uuid);
-                            Global.log("[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
+                            Global.normal("[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
                         }
                     }
                 } catch (Exception ex) {
@@ -266,6 +268,8 @@ public class Threads extends TimerTask implements Runnable{
                         case 5:
                             target = Blocks.metalFloorDamaged;
                             break;
+                        case 6:
+                            target = Blocks.air;
                     }
 
                     if (!world.tile(startx, starty).block().name.matches(".*metal.*")) {
@@ -282,7 +286,7 @@ public class Threads extends TimerTask implements Runnable{
                         Player player = playerGroup.all().get(ix);
                         if (player.tileX() > startx && player.tileX() < tilex) {
                             if (player.tileY() > starty && player.tileY() < tiley) {
-                                Global.log(nbundle("player-jumped", player.name, serverip+":"+serverport));
+                                Global.log("player-jumped", player.name, serverip+":"+serverport);
                                 Call.onConnect(player.con, serverip, serverport);
                             }
                         }
@@ -485,7 +489,7 @@ public class Threads extends TimerTask implements Runnable{
                     return;
                 }
                 // 12면을 검색함
-                Global.log("SEARCH START");
+                Global.normal("SEARCH START");
                 int count = 0;
                 for (int b = 0; b < 12; b++) {
                     open.add(getNear(tile, b));
@@ -506,17 +510,17 @@ public class Threads extends TimerTask implements Runnable{
                     // 파이프의 4면을 검색함
                     while (count < 10) {
                         for (int c = 0; c < 4; c++) {
-                            Global.log(target.x+"/"+target.y);
+                            Global.normal(target.x+"/"+target.y);
                             // 파이프를 발견했다면
                             if (target.getNearby(c).block() == Blocks.conduit || target.getNearby(c).block() == Blocks.pulseConduit) {
                                 target = target.getNearby(c);
                             } else if (target.getNearby(c).block() == Blocks.cryofluidMixer) {
-                                Global.log("냉각수 공장 발견");
+                                Global.normal("냉각수 공장 발견");
                                 count = 100;
                             }
                         }
                         count++;
-                        //Global.log(count + " 번째 " + target.x + "/" + target.y);
+                        //Global.normal(count + " 번째 " + target.x + "/" + target.y);
                     }
                 }
             }
@@ -698,7 +702,7 @@ public class Threads extends TimerTask implements Runnable{
                     p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                 }
             }
-            Global.log("Map rollbacked.");
+            Global.normal("Map rollbacked.");
             Call.sendMessage("[green]Map rollbacked.");
         }
 
@@ -707,7 +711,7 @@ public class Threads extends TimerTask implements Runnable{
             if (save()) {
                 Call.sendMessage("[scarlet]AutoSave complete");
             } else {
-                Global.loge("Map save failed! Check your disk or config!");
+                Global.err("Map save failed! Check your disk or config!");
             }
         }
     }
@@ -897,18 +901,20 @@ public class Threads extends TimerTask implements Runnable{
                             int temp = resource - pre.get(a);
                             if (temp <= -75) {
                                 StringBuilder using = new StringBuilder();
-                                for (int b = 0; b < playerGroup.size(); b++) {
-                                    Player p = playerGroup.all().get(b);
-                                    if (p.buildRequest().block == null) return;
-                                    for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
-                                        Item ad = p.buildRequest().block.requirements[c].item;
-                                        if (ad == name.get(a)) {
-                                            using.append(p.name).append(", ");
+                                if(Vars.state.is(GameState.State.playing)) {
+                                    for (int b = 0; b < playerGroup.size(); b++) {
+                                        Player p = playerGroup.all().get(b);
+                                        if (p.buildRequest().block == null) return;
+                                        for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
+                                            Item ad = p.buildRequest().block.requirements[c].item;
+                                            if (ad == name.get(a)) {
+                                                using.append(p.name).append(", ");
+                                            }
                                         }
                                     }
+                                    allsendMessage("resource-fast", name.get(a).name);
+                                    allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
                                 }
-                                allsendMessage("resource-fast", name.get(a).name);
-                                allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
                             }
                             cur.add(a, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
                             a++;
@@ -1022,7 +1028,7 @@ public class Threads extends TimerTask implements Runnable{
                     if (list.size() >= require) {
                         allsendMessage("vote-kick-done", target.name);
                         PlayerDB.addtimeban(target.name, target.uuid, 4);
-                        Global.log(target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
+                        Global.playernormal(target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
 
                         Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
                         Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
@@ -1078,7 +1084,7 @@ public class Threads extends TimerTask implements Runnable{
                                 p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                             }
                         }
-                        Global.log("Map rollbacked.");
+                        Global.normal("Map rollbacked.");
                         allsendMessage("vote-map-done");
                     } else {
                         allsendMessage("vote-map-fail");

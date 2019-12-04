@@ -23,11 +23,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ThreadFactory;
 
+import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.getData;
 import static io.anuke.mindustry.Vars.playerGroup;
 import static io.anuke.mindustry.Vars.world;
@@ -36,63 +38,81 @@ public class Global {
     public static Config config = new Config();
 
     // 일반 기록
-    public static void log(String msg){
-        Log.info("[Essential] "+msg);
+    public static void log(String value){
+        Log.info("[Essential] "+nbundle(value));
+    }
+    
+    public static void log(String value, Object... parameter){
+        Log.info("[Essential] "+nbundle(value, parameter));
     }
 
-    public static void log(float msg){
-        Log.info("[Essential] "+msg);
-    }
-
-    public static void log(int msg){
-        Log.info("[Essential] "+msg);
-    }
-
-    public static void log(boolean msg){
-        Log.info("[Essential] "+msg);
+    public static void normal(Object... value){
+        Log.info("[Essential] "+ Arrays.toString(value).replace("[", "").replace("]", ""));
     }
 
     // 경고
-    public static void logw(String msg){
-        Log.warn("[Essential] "+msg);
+    public static void warn(String value){
+        Log.warn("[Essential] "+nbundle(value));
     }
 
     // 오류
-    public static void loge(String msg){
-        Log.err("[Essential] "+msg);
+    public static void err(String value){
+        Log.err("[Essential] "+nbundle(value));
+    }
+
+    public static void err(String value, Object... parameter){
+        Log.err("[Essential] "+nbundle(value, parameter));
+    }
+
+    // 디버그
+    public static void debug(String value){
+        Log.debug(value);
     }
 
     // 서버
-    public static void logs(String msg){
-        Log.info("[EssentialServer] "+msg);
+    public static void server(String value){
+        Log.info("[EssentialServer] "+nbundle(value));
+    }
+
+    public static void server(String value, Object... parameter){
+        Log.info("[EssentialServer] "+nbundle(value, parameter));
     }
 
     // 클라이언트
-    public static void logc(String msg){
-        Log.info("[EssentialClient] "+msg);
+    public static void client(String value){
+        Log.info("[EssentialClient] "+nbundle(value));
     }
 
-    // 그냥 출력
-    public static void logn(String msg) { Log.info(msg); }
+    public static void client(String value, Object... parameter){
+        Log.info("[EssentialClient] "+nbundle(value, parameter));
+    }
 
     // 설정
-    public static void logco(String msg){
-        Log.info("[EssentialConfig] "+msg);
+    public static void config(String value){
+        Log.info("[EssentialConfig] "+nbundle(value));
     }
 
     // PlayerDB
-    public static void logp(String msg){
-        Log.info("[EssentialPlayer] "+msg);
+    public static void playernormal(String value){
+        Log.info("[EssentialPlayer] "+nbundle(value));
+    }
+
+    public static void playernormal(String value, Object... parameter){
+        Log.info("[EssentialPlayer] "+nbundle(value, parameter));
+    }
+
+    public static void playerlog(String plain){
+        Log.info("[EssentialPlayer] "+plain);
     }
 
     // PlayerDB 경고
-    public static void logpw(String msg){
-        Log.warn("[EssentialPlayer] "+msg);
+    public static void playerwarn(String value){
+        Log.warn("[EssentialPlayer] "+nbundle(value));
     }
 
     // PlayerDB 오류
-    public static void logpe(String msg){
-        Log.err("[EssentialPlayer] "+msg);
+    public static void playererror(String value){
+        Log.err("[EssentialPlayer] "+nbundle(value));
     }
 
     // 코어가 없는 팀 찾기
@@ -126,9 +146,8 @@ public class Global {
                 sb.append("=================================================\n");
                 String text = sb.toString();
 
-                essentials.core.Log log = new essentials.core.Log();
-                log.writelog("error", text);
-                Global.loge("Internal error! - "+e.getMessage());
+                writelog("error", text);
+                Global.normal("Internal error! - "+e.getMessage());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -576,10 +595,10 @@ public class Global {
         if(isLogin(player) && checklogin(player)){
             JSONObject db = getData(player.uuid);
             String perm = db.getString("permission");
-            int size = Permission.result.getJSONObject(perm).getJSONArray("permission").length();
+            int size = Permission.permission.getJSONObject(perm).getJSONArray("permission").length();
             for(int a=0;a<size;a++){
-                String permlevel = Permission.result.getJSONObject(perm).getJSONArray("permission").getString(a);
-                if(permlevel.equals(command)){
+                String permlevel = Permission.permission.getJSONObject(perm).getJSONArray("permission").getString(a);
+                if(permlevel.equals(command) || permlevel.equals("ALL")){
                     return true;
                 }
             }

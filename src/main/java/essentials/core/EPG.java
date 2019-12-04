@@ -31,7 +31,7 @@ public class EPG {
                     if(String.valueOf(obj.get(name)) != null) {
                         blockreqlevel = Integer.parseInt(String.valueOf(obj.get(name)));
                     } else if(e.tile.block().name.equals("air")){
-                        Global.loge(nbundle("epg-block-not-valid", name));
+                        Global.err("epg-block-not-valid", name);
                     } else {
                         return;
                     }
