@@ -67,6 +67,7 @@ import static essentials.net.Client.serverconn;
 import static essentials.utils.Config.jumpall;
 import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
+import static essentials.utils.Permission.permission;
 import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin {
@@ -1120,6 +1121,18 @@ public class Main extends Plugin {
             PlayerDB db = new PlayerDB();
             db.openconnect();
         });
+        handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
+            Iterator i = permission.keys();
+            while(i.hasNext()) {
+                String b = i.next().toString();
+                if(b.equals(arg[0])){
+                    writeData("UPDATE players SET permission = '"+arg[0]+"'");
+                    Global.log("success");
+                    return;
+                }
+            }
+            Global.log("perm-group-not-found");
+        });
         handler.register("kickall", "Kick all players.",  arg -> {
             for(int a=0;a<playerGroup.size();a++){
                 Player others = playerGroup.all().get(a);
@@ -1171,7 +1184,7 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 Global.err("player-not-found");
             }
-            Iterator i = Permission.permission.keys();
+            Iterator i = permission.keys();
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[1])){
@@ -1724,7 +1737,7 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 player.sendMessage(bundle("player-not-found"));
             }
-            Iterator i = Permission.permission.keys();
+            Iterator i = permission.keys();
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[1])){
