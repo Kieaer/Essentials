@@ -98,7 +98,7 @@ public class Client extends Thread{
                 br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                 String line = br.readLine();
                 if(line != null){
-                    Global.client(line);
+                    Global.nclient(line);
                     serverconn = true;
                     executorService.execute(new Thread(this));
                     Global.client("client-enabled");

@@ -156,8 +156,6 @@ public class PlayerDB{
             String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
             Statement stmt  = conn.createStatement();
             ResultSet rs = stmt.executeQuery(find);
-            Global.log(String.valueOf(rs.next()));
-
             if(!rs.next()){
                 String sql;
                 if(config.isSqlite()){
@@ -664,7 +662,9 @@ public class PlayerDB{
 
             // 플레이어별 테러 감지 시작
             if(config.isAntigrief()) {
-                new Threads.checkgrief(player);
+                Thread checkgrief = new Threads.checkgrief(player);
+                checkgrief.setDaemon(true);
+                checkgrief.start();
             }
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정

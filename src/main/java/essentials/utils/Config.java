@@ -312,6 +312,9 @@ public class Config {
             if(isEnableantirush()) features.append("PvP 초반 러시 금지, ");
             if(isLogging()) features.append("로그 기능, ");
             if(isLoginenable()) features.append("로그인 기능, ");
+            if(isAutodifficulty()) features.append("자동 난이도 설정, ");
+            if(isAntigrief()) features.append("테러방지, ");
+            if(isBlockdetect() || isAlertdeposit()) features.append("블록 활동 알림, ");
             if(isDebug()) features.append("디버그");
         } else {
             features.append("Enabled features: ");
@@ -327,6 +330,9 @@ public class Config {
             if(isEnableantirush()) features.append("PvP Anti-rush, ");
             if(isLogging()) features.append("Logging, ");
             if(isLoginenable()) features.append("Login, ");
+            if(isAutodifficulty()) features.append("Auto difficulty, ");
+            if(isAntigrief()) features.append("Anti grief, ");
+            if(isBlockdetect() || isAlertdeposit()) features.append("Block activity alerm, ");
             if(isDebug()) features.append("Debug");
         }
         return features.toString().substring(0,features.length()-2);

@@ -243,17 +243,13 @@ public class Main extends Plugin {
         });
 
         Events.on(PlayerConnect.class, e -> {
-            if(e.player.name.contains("Owner") || e.player.name.contains("Admin")){
-                Call.onKick(e.player.con, "You're tried bad nickname!");
-            }
-
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
             JSONTokener parser = new JSONTokener(blacklist);
             JSONArray array = new JSONArray(parser);
 
             for (int i = 0; i < array.length(); i++) {
-                if (array.getString(i).matches(e.player.name)) {
+                if (array.getString(i).contains(e.player.name)) {
                     e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.\nBlack listed nickname: " + e.player.name);
                     Global.log("nickname-blacklisted", e.player.name);
                 }
@@ -1965,21 +1961,21 @@ public class Main extends Plugin {
              */
             player.sendMessage(bundle(player, "command-not-avaliable"));
         });
-        /*
-        handler.<Player>register("votekick", "Player kick starts voting.", (arg, player) -> {
-            if(Vars.state.teams.get(player.getTeam()).cores.isEmpty()){
-                player.sendMessage("[green][Essentials][scarlet] You aren't allowed to use the command until you log in.");
+
+        handler.<Player>register("votekick", "<player_name>", "Player kick starts voting.", (arg, player) -> {
+            if(!checkperm(player,"test")) return;
+            Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+            if (other == null) {
+                player.sendMessage(bundle("player-not-found"));
+                return;
+            }
+            if (other.isAdmin){
+                player.sendMessage(bundle("vote-target-admin"));
                 return;
             }
 
-            Vote vote = new Vote();
-            Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-            if (other == null) {
-                player.sendMessage(bundle(player, "player-not-found");
-                return;
-            }
-            vote.main(player, "kick", other.name);
+            Vote vote = new Vote(player, arg[0], other);
+            vote.command();
         });
-         */
     }
 }

@@ -87,6 +87,10 @@ public class Global {
         Log.info("[EssentialClient] "+nbundle(value, parameter));
     }
 
+    public static void nclient(Object... parameter){
+        Log.info("[EssentialClient] "+Arrays.toString(parameter).replace("[", "").replace("]", ""));
+    }
+
     // 설정
     public static void config(String value){
         Log.info("[EssentialConfig] "+nbundle(value));

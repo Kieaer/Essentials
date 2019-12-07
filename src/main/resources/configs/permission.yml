@@ -18,7 +18,7 @@ newadmin:
   permission:
     - kill
     - me
-    - tpp
+    - tp
     - team
     - tempban
     - tpp
@@ -42,3 +42,4 @@ default:
     - tppos
     - tr
     - vote
+    - votekick
