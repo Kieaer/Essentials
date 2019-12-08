@@ -324,17 +324,23 @@ public class PlayerDB{
 
     public static void Upgrade() {
         Config config = new Config();
-        String[] sql = new String[2];
         String v1sql;
+        String v1update;
+        String v2update;
         String v2sql;
 
         if(config.isSqlite()){
             v1sql = "ALTER TABLE players ADD COLUMN connserver TEXT AFTER connected;";
+            v1update = "UPDATE players SET connected = 0";
             v2sql = "ALTER TABLE players ADD COLUMN permission TEXT AFTER connserver;";
+            v2update = "UPDATE players SET permission = default";
         } else {
             v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER connected;";
+            v1update = "UPDATE players SET connected = 0";
             v2sql = "ALTER TABLE `players` ADD COLUMN `permission` TINYTEXT `default` NULL AFTER connserver;";
+            v2update = "UPDATE players SET permission = 'default'";
         }
+
         try {
             DatabaseMetaData metadata = conn.getMetaData();
             Statement stmt = conn.createStatement();
@@ -342,11 +348,13 @@ public class PlayerDB{
             resultSet = metadata.getColumns(null, null, "players", "connserver");
             if (!resultSet.next()) {
                 stmt.execute(v1sql);
+                stmt.execute(v1update);
                 Global.playernormal("db-upgrade");
             }
             resultSet = metadata.getColumns(null, null, "players", "permission");
             if(!resultSet.next()){
                 stmt.execute(v2sql);
+                stmt.execute(v2update);
                 Global.playernormal("db-upgrade");
             }
             stmt.close();

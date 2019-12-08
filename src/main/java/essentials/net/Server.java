@@ -22,6 +22,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -288,6 +289,22 @@ public class Server implements Runnable {
                 }
             }
 
+            JSONObject rank = new JSONObject();
+            try{
+                JSONObject tmp = new JSONObject();
+                String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
+                Statement stmt = PlayerDB.conn.createStatement();
+                for (String s : list) {
+                    ResultSet rs = stmt.executeQuery("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
+                    while (rs.next()) {
+                        tmp.put(rs.getString("name"), rs.getInt(s));
+                    }
+                    rank.put(s, tmp);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
             json.put("players", playerGroup.size());
             json.put("playerlist", array);
             json.put("version", Version.build);
@@ -297,6 +314,7 @@ public class Server implements Runnable {
             json.put("mapname", world.getMap().name());
             json.put("wave", state.wave);
             json.put("admin_online", online);
+            json.put("rank", rank);
             return json.toString();
         }
 
