@@ -80,8 +80,6 @@ public class Main extends Plugin {
     private boolean making = false;
 
     public Main() {
-        //NetClient.visual = false;
-
         // 설정 시작
         config.main();
 
@@ -1434,69 +1432,76 @@ public class Main extends Plugin {
             });
             PlayerDB.ex.submit(t);
         });
-        // TODO jump 명령어 합치기
-        handler.<Player>register("jump", "<serverip> <port> <range> <block-type>", "Create a server-to-server jumping zone.", (arg, player) -> {
+        handler.<Player>register("jump", "<zone/count/total> [serverip] [port] [range] [block-type(1~6)]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!checkperm(player, "jump")) return;
-            int size;
-            try {
-                size = Integer.parseInt(arg[2]);
-            } catch (Exception ignored) {
-                player.sendMessage(bundle(player, "jump-not-int"));
-                return;
-            }
-            int block;
-            try {
-                block = Integer.parseInt(arg[3]);
-            } catch (Exception ignored) {
-                player.sendMessage(bundle(player, "jump-not-block"));
-                return;
-            }
-            Block target;
-            switch (block) {
-                case 1:
+            switch (arg[0]){
+                case "zone":
+                    if(arg.length != 5){
+                        player.sendMessage(bundle("jump-incorrect"));
+                        return;
+                    }
+                    int size;
+                    try {
+                        size = Integer.parseInt(arg[2]);
+                    } catch (Exception ignored) {
+                        player.sendMessage(bundle(player, "jump-not-int"));
+                        return;
+                    }
+                    int block;
+                    try {
+                        block = Integer.parseInt(arg[3]);
+                    } catch (Exception ignored) {
+                        player.sendMessage(bundle(player, "jump-not-block"));
+                        return;
+                    }
+                    Block target;
+                    switch (block) {
+                        case 1:
+                        default:
+                            target = Blocks.metalFloor;
+                            break;
+                        case 2:
+                            target = Blocks.metalFloor2;
+                            break;
+                        case 3:
+                            target = Blocks.metalFloor3;
+                            break;
+                        case 4:
+                            target = Blocks.metalFloor5;
+                            break;
+                        case 5:
+                            target = Blocks.metalFloorDamaged;
+                            break;
+                        case 6:
+                            target = Blocks.air;
+                            break;
+                    }
+                    int xt = player.tileX();
+                    int yt = player.tileY();
+                    int tilexfinal = xt + size;
+                    int tileyfinal = yt + size;
+
+                    for (int x = 0; x < size; x++) {
+                        for (int y = 0; y < size; y++) {
+                            Tile tile = world.tile(xt + x, yt + y);
+                            Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
+                        }
+                    }
+
+                    jumpzone.put(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[0] + "/" + arg[1] + "/" + block);
+                    player.sendMessage(bundle(player, "jump-added"));
+                    break;
+                case "count":
+                    jumpcount.put(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+                    player.sendMessage(bundle(player, "jump-added"));
+                    break;
+                case "total":
+                    jumpall.put(player.tileX() + "/" + player.tileY() + "/0/0");
+                    player.sendMessage(bundle(player, "jump-added"));
+                    break;
                 default:
-                    target = Blocks.metalFloor;
-                    break;
-                case 2:
-                    target = Blocks.metalFloor2;
-                    break;
-                case 3:
-                    target = Blocks.metalFloor3;
-                    break;
-                case 4:
-                    target = Blocks.metalFloor5;
-                    break;
-                case 5:
-                    target = Blocks.metalFloorDamaged;
-                    break;
-                case 6:
-                    target = Blocks.air;
-                    break;
+                    player.sendMessage(bundle("command-invalid"));
             }
-            int xt = player.tileX();
-            int yt = player.tileY();
-            int tilexfinal = xt + size;
-            int tileyfinal = yt + size;
-
-            for (int x = 0; x < size; x++) {
-                for (int y = 0; y < size; y++) {
-                    Tile tile = world.tile(xt + x, yt + y);
-                    Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
-                }
-            }
-
-            jumpzone.put(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[0] + "/" + arg[1] + "/" + block);
-            player.sendMessage(bundle(player, "jump-added"));
-        });
-        handler.<Player>register("jumpcount", "<serverip> <port>", "Add server player counting", (arg, player) -> {
-            if (!checkperm(player, "jumpcount")) return;
-            jumpcount.put(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
-            player.sendMessage(bundle(player, "jump-added"));
-        });
-        handler.<Player>register("jumptotal", "Counting all server players", (arg, player) -> {
-            if (!checkperm(player, "jumptotal")) return;
-            jumpall.put(player.tileX() + "/" + player.tileY() + "/0/0");
-            player.sendMessage(bundle(player, "jump-added"));
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
             if (!checkperm(player, "kickall")) return;
@@ -1932,36 +1937,6 @@ public class Main extends Plugin {
                 vote.command();
             }
         });
-        handler.<Player>register("test", "pathfinding test", (arg, player) -> {
-            if(!checkperm(player,"test")) return;
-            //getcount(world.tile(player.tileX(), player.tileY()), Integer.parseInt(arg[0]));
-            /*
-            if (player.isAdmin) {
-                Thread work = new Thread(() -> {
-                    EssentialAI ai = new EssentialAI();
-
-                    Tile tile = world.tile(player.tileX(), player.tileY());
-                    ai.start = tile;
-                    ai.player = player;
-
-                    Call.onConstructFinish(tile, Blocks.copperWall, 0, (byte) 0, Team.sharded, false);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    ai.target = world.tile(player.tileX(), player.tileY());
-                    ai.main();
-                });
-                work.start();
-            } else {
-                player.sendMessage(bundle(player, "notadmin");
-            }
-
-             */
-            player.sendMessage(bundle(player, "command-not-avaliable"));
-        });
-
         handler.<Player>register("votekick", "<player_name>", "Player kick starts voting.", (arg, player) -> {
             if(!checkperm(player,"test")) return;
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
