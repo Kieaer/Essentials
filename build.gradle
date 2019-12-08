@@ -49,7 +49,7 @@ dependencies{
     //compile "com.github.ariejan:slick2d:master-6a9d179731-1"
     //compile "com.github.xaguzman:pathfinding:0.2.6"
 
-    compileOnly files('C:/Users/cloud/Desktop/Mindustry-100/core/build/libs/core-release.jar')
+    //compileOnly files('C:/Users/cloud/Desktop/Mindustry-100/core/build/libs/core-release.jar')
     //compileOnly files('C:/Users/cloud/Desktop/Arc-99/arc-core/build/libs/arc-core-1.0.jar')
 
     //compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.0.pr2'

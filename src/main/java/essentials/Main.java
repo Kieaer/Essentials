@@ -1449,7 +1449,7 @@ public class Main extends Plugin {
                     }
                     int block;
                     try {
-                        block = Integer.parseInt(arg[3]);
+                        block = Integer.parseInt(arg[4]);
                     } catch (Exception ignored) {
                         player.sendMessage(bundle(player, "jump-not-block"));
                         return;
@@ -1488,11 +1488,11 @@ public class Main extends Plugin {
                         }
                     }
 
-                    jumpzone.put(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[0] + "/" + arg[1] + "/" + block);
+                    jumpzone.put(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1] + "/" + arg[2] + "/" + block);
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
-                    jumpcount.put(arg[0] + "/" + arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+                    jumpcount.put(arg[1] + "/" + arg[2] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "total":
