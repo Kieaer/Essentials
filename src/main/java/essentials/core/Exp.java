@@ -25,7 +25,7 @@ public class Exp {
         int reqexp = (int)Math.floor(max);
         String reqtotalexp = xp+"("+(int) Math.floor(levelXp)+") / "+(int) Math.floor(max);
 
-        writeData("UPDATE players SET reqexp = '"+reqexp+"', level = '"+level+"', reqtotalexp = '"+reqtotalexp+"' WHERE uuid = '"+uuid+"'");
+        writeData("UPDATE players SET reqexp = ?, level = ?, reqtotalexp = ? WHERE uuid = ?",reqexp,level,reqtotalexp,uuid);
 
         int curlevel = (int) db.get("level");
         if(curlevel < level && curlevel > config.getAlarmlevel() && config.isLevelupalarm()){
@@ -65,7 +65,7 @@ public class Exp {
 
         int result = exp+joincount;
 
-        writeData("UPDATE players SET exp = '"+result+"' WHERE uuid = '"+uuid+"'");
+        writeData("UPDATE players SET exp = ? WHERE uuid = ?",result,uuid);
     }
 }
 

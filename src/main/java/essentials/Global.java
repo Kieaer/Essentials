@@ -115,8 +115,12 @@ public class Global {
     }
 
     // PlayerDB 오류
-    public static void playererror(String value){
-        Log.err("[EssentialPlayer] "+nbundle(value));
+    public static void playererror(String value, boolean... bool){
+        if(bool[0]){
+            Log.err("[EssentialPlayer] " + value);
+        } else {
+            Log.err("[EssentialPlayer] " + nbundle(value));
+        }
     }
 
     // 코어가 없는 팀 찾기

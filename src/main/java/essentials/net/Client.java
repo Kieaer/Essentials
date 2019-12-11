@@ -108,7 +108,7 @@ public class Client extends Thread{
             } catch (IOException e) {
                 Global.client("remote-server-dead");
                 if(player != null) {
-                    writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + player.uuid + "'");
+                    writeData("UPDATE players SET crosschat = ? WHERE uuid = ?",0, player.uuid);
                 }
             }
         } else {

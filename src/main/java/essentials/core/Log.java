@@ -31,19 +31,19 @@ public class Log{
         });
 
         Events.on(TapEvent.class, e-> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null) {
                 writelog("tap", nbundle("log-tap", e.player.name, e.tile.entity.block.name));
             }
         });
 
         Events.on(TapConfigEvent.class, e-> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null) {
                 writelog("tap", nbundle("log-tap-config", e.player.name, e.tile.entity.block.name));
             }
         });
 
         Events.on(BlockBuildEndEvent.class, e -> {
-            if(!e.breaking && e.tile.entity() != null && e.player != null && e.tile.entity.block != null && e.player.name != null) {
+            if(!e.breaking && e.player != null && e.tile.entity.block != null && e.player.name != null) {
                 writelog("block", nbundle("log-block-place", e.player.name, e.tile.entity.block.name));
             }
         });

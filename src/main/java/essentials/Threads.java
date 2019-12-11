@@ -23,7 +23,6 @@ import io.anuke.mindustry.type.Item;
 import io.anuke.mindustry.type.ItemType;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
-import io.anuke.mindustry.world.blocks.logic.MessageBlock;
 import org.codehaus.plexus.util.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -134,7 +133,7 @@ public class Threads extends TimerTask implements Runnable{
                             int exp = db.getInt("exp");
                             int newexp = exp + (int) (Math.random() * 5);
 
-                            writeData("UPDATE players SET exp = '" + newexp + "', playtime = '" + newTime + "' WHERE uuid = '" + player.uuid + "'");
+                            writeData("UPDATE players SET exp = ?, playtime = ? WHERE uuid = ?", newexp, newTime, player.uuid);
                             if(!state.rules.editor){
                                 Exp.exp(player.name, player.uuid);
                             }
@@ -1152,7 +1151,7 @@ public class Threads extends TimerTask implements Runnable{
         @Override
         public void run(){
             for(int a=0;a<messagemonitor.size();a++){
-                MessageBlock.MessageBlockEntity entity = tile.entity();
+                //MessageBlock.MessageBlockEntity entity = tile.entity();
                 //entity.message
             }
             try {

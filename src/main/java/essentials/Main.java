@@ -48,7 +48,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -103,7 +102,7 @@ public class Main extends Plugin {
             ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
             while(rs.next()){
                 if(isLoginold(rs.getString("lastdate"))){
-                    writeData("UPDATE players SET connected = 0, connserver = 'none' WHERE id='"+rs.getInt("id")+"'");
+                    writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", 0, "none", rs.getInt("id"));
                 }
             }
         } catch (SQLException e) {
@@ -153,7 +152,7 @@ public class Main extends Plugin {
         new Permission().main();
 
         Events.on(TapConfigEvent.class, e -> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.tile.entity() != null && e.player != null && e.player.name != null && config.isBlockdetect() && config.isAlertdeposit()) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isBlockdetect() && config.isAlertdeposit()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
             }
         });
@@ -174,7 +173,7 @@ public class Main extends Plugin {
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
                                 Global.log("player-jumped", e.player.name, serverip + ":" + serverport);
-                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + e.player.uuid + "'");
+                                writeData("UPDATE players SET connected = ?, connserver = ?, WHERE uuid = ?", e.player.uuid);
                                 Call.onConnect(e.player.con, serverip, serverport);
                             }
                         }
@@ -203,12 +202,12 @@ public class Main extends Plugin {
         Events.on(GameOverEvent.class, e -> {
             if (Vars.state.rules.pvp) {
                 int index = 5;
-                for(int a=0;a<5;a++) {
+                for (int a = 0; a < 5; a++) {
                     if (Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
                         index--;
                     }
                 }
-                if(index == 1) {
+                if (index == 1) {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
                         if (isLogin(player)) {
@@ -216,12 +215,12 @@ public class Main extends Plugin {
                                 JSONObject db = getData(player.uuid);
                                 int pvpwin = db.getInt("pvpwincount");
                                 pvpwin++;
-                                writeData("UPDATE players SET pvpwincount = '" + pvpwin + "' WHERE uuid = '" + player.uuid + "'");
+                                writeData("UPDATE players SET pvpwincount = ? WHERE uuid = ?", pvpwin, player.uuid);
                             } else if (!player.getTeam().name().equals(e.winner.name())) {
                                 JSONObject db = getData(player.uuid);
                                 int pvplose = db.getInt("pvplosecount");
                                 pvplose++;
-                                writeData("UPDATE players SET pvplosecount = '" + pvplose + "' WHERE uuid = '" + player.uuid + "'");
+                                writeData("UPDATE players SET pvplosecount = ? WHERE uuid = ?", pvplose, player.uuid);
                             }
                         }
                     }
@@ -404,7 +403,7 @@ public class Main extends Plugin {
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
             if (isLogin(e.player)) {
-                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + e.player.uuid + "'");
+                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", 0, "none", e.player.uuid);
             }
         });
 
@@ -452,27 +451,13 @@ public class Main extends Plugin {
                             }
                         } else if (!config.isClientenable() && !config.isServerenable()) {
                             e.player.sendMessage(bundle(e.player, "no-any-network"));
-                            writeData("UPDATE players SET crosschat = '0' WHERE uuid = '" + e.player.uuid + "'");
+                            writeData("UPDATE players SET crosschat = ? WHERE uuid = ?", 0, e.player.uuid);
                         }
                     }
                 }
 
                 // 마지막 대화 데이터를 DB에 저장함
-                Thread t = new Thread(() -> {
-                    Thread.currentThread().setName("DB Thread");
-                    String sql = "UPDATE players SET lastchat = ? WHERE uuid = ?";
-                    try {
-                        PreparedStatement pstmt = conn.prepareStatement(sql);
-                        pstmt.setString(1, e.message);
-                        pstmt.setString(2, e.player.uuid);
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                    } catch (Exception ex) {
-                        Global.debug(sql);
-                        printStackTrace(ex);
-                    }
-                });
-                t.start();
+                writeData("UPDATE players SET lastchat = ? WHERE uuid = ?", e.message, e.player.uuid);
 
                 // 번역기능 작동
                 Translate tr = new Translate();
@@ -595,12 +580,12 @@ public class Main extends Plugin {
                         int newexp = exp + blockexp;
                         data++;
 
-                        writeData("UPDATE players SET lastplacename = '" + e.tile.block().name + "', placecount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + e.player.uuid + "'");
+                        writeData("UPDATE players SET lastplacename = ?, placecount = ?, exp = ? WHERE uuid = ?", e.tile.block().name, data, newexp, e.player.uuid);
 
                         if (e.player.buildRequest().block == Blocks.thoriumReactor) {
                             int reactorcount = db.getInt("reactorcount");
                             reactorcount++;
-                            writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + e.player.uuid + "'");
+                            writeData("UPDATE players SET reactorcount = ? WHERE uuid = ?", reactorcount, e.player.uuid);
                         }
                     } catch (Exception ex) {
                         printStackTrace(ex);
@@ -644,12 +629,11 @@ public class Main extends Plugin {
                             int newexp = exp + blockexp;
                             data++;
 
-                            writeData("UPDATE players SET lastplacename = '" + e.tile.block().name + "', breakcount = '" + data + "', exp = '" + newexp + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
-
+                            writeData("UPDATE players SET lastplacename = ?, breakcount = ?, exp = ? WHERE uuid = ?", e.tile.block().name, data, newexp, ((Player)e.builder).uuid);
                             if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
                                 int reactorcount = db.getInt("reactorcount");
                                 reactorcount++;
-                                writeData("UPDATE players SET reactorcount = '" + reactorcount + "' WHERE uuid = '" + ((Player) e.builder).uuid + "'");
+                                writeData("UPDATE players SET reactorcount = ? WHERE uuid = ?",reactorcount, ((Player)e.builder).uuid);
                             }
                         } catch (Exception ex) {
                             printStackTrace(ex);
@@ -690,7 +674,7 @@ public class Main extends Plugin {
                 if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty() && !db.isNull("deathcount")) {
                     int deathcount = db.getInt("deathcount");
                     deathcount++;
-                    writeData("UPDATE players SET killcount = '" + deathcount + "' WHERE uuid = '" + player.uuid + "'");
+                    writeData("UPDATE players SET deathcount = ? WHERE uuid = ?", deathcount, player.uuid);
                 }
             }
 
@@ -708,7 +692,7 @@ public class Main extends Plugin {
                                 return;
                             }
                             killcount++;
-                            writeData("UPDATE players SET killcount = '" + killcount + "' WHERE uuid = '" + player.uuid + "'");
+                            writeData("UPDATE players SET killcount = ? WHERE uuid = ?", killcount, player.uuid);
                         }
                     }
                 });
@@ -1120,7 +1104,7 @@ public class Main extends Plugin {
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[0])){
-                    writeData("UPDATE players SET permission = '"+arg[0]+"'");
+                    writeData("UPDATE players SET permission = ?",arg[0]);
                     Global.log("success");
                     return;
                 }
@@ -1152,7 +1136,7 @@ public class Main extends Plugin {
                 return;
             }
             try{
-                writeData("UPDATE players SET name='"+arg[1]+"' WHERE name = '"+arg[0]+"'");
+                writeData("UPDATE players SET name = ? WHERE name = ?",arg[1],arg[0]);
                 Global.log(nbundle("player-nickname-change-to", arg[0], arg[1]));
             }catch (Exception e){
                 printStackTrace(e);
@@ -1182,7 +1166,7 @@ public class Main extends Plugin {
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[1])){
-                    writeData("UPDATE players SET permission = '"+arg[1]+"' WHERE name = '"+arg[0]+"'");
+                    writeData("UPDATE players SET permission = ? WHERE name = ?",arg[1],arg[0]);
                     Global.playernormal("success");
                     return;
                 }
@@ -1257,8 +1241,6 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
-        handler.removeCommand("votekick");
-
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if(!checkperm(player,"ch")) return;
 
@@ -1273,7 +1255,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player, "crosschat-disable"));
             }
 
-            writeData("UPDATE players SET crosschat = '" + set + "' WHERE uuid = '" + player.uuid + "'");
+            writeData("UPDATE players SET crosschat = ? WHERE uuid = ?",set,player.uuid);
         });
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(!checkperm(player,"changepw")) return;
@@ -1284,7 +1266,7 @@ public class Main extends Plugin {
             try{
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
                 String hashed = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
-                writeData("UPDATE players SET accountpw = '"+hashed+"' WHERE accountid = '"+player.uuid+"'");
+                writeData("UPDATE players SET accountpw = ? WHERE uuid = ?",hashed,player.uuid);
                 player.sendMessage(bundle(player,"success"));
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -1302,7 +1284,7 @@ public class Main extends Plugin {
                 set = 0;
                 player.sendMessage(bundle(player, "colornick-disable"));
             }
-            writeData("UPDATE players SET colornick = '" + set + "' WHERE uuid = '" + player.uuid + "'");
+            writeData("UPDATE players SET colornick = ? WHERE uuid = ?",set,player.uuid);
         });
         handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
             if (!checkperm(player, "difficulty")) return;
@@ -1365,7 +1347,7 @@ public class Main extends Plugin {
                                 }
                                 Global.log("event-host-opened", player.name, customport);
 
-                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + player.uuid + "'");
+                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?",0, "none", player.uuid);
                                 Call.onConnect(player.con, currentip, customport);
                             } else {
                                 player.sendMessage(bundle(player, "event-level"));
@@ -1384,7 +1366,7 @@ public class Main extends Plugin {
                             JSONObject ob = arr.getJSONObject(a);
                             String name = ob.getString("name");
                             if (name.equals(arg[1])) {
-                                writeData("UPDATE players SET connected = '0', connserver = 'none' WHERE uuid = '" + player.uuid + "'");
+                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", 0, "none", player.uuid);
                                 Call.onConnect(player.con, currentip, ob.getInt("port"));
                                 break;
                             }
@@ -1400,6 +1382,25 @@ public class Main extends Plugin {
         handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
             if(!checkperm(player,"getpos")) return;
             player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
+        });
+        handler.<Player>register("help", "[page]", "Show command lists", (arg, player) -> {
+            StringBuilder result = new StringBuilder();
+            int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
+            int pages = Mathf.ceil((float)maplist.size / 6);
+            page --;
+            if(page > pages || page < 0){
+                player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
+                return;
+            }
+
+            result.append(Strings.format("[orange]-- Commands Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
+            for(int a=6*page;a<Math.min(6 * (page + 1), netServer.clientCommands.getCommandList().size);a++){
+                CommandHandler.Command command = netServer.clientCommands.getCommandList().get(a);
+                if(checkperm(player,command.text)){
+                    result.append("[orange] /").append(command.text).append("[white] ").append(command.paramText).append("[lightgray] - ").append(command.description).append("\n");
+                }
+            }
+            player.sendMessage(result.toString());
         });
         handler.<Player>register("info", "Show your information", (arg, player) -> {
             if(!checkperm(player,"info")) return;
@@ -1540,7 +1541,7 @@ public class Main extends Plugin {
         handler.<Player>register("logout","Log-out of your account.", (arg, player) -> {
             if(!checkperm(player,"logout")) return;
             if(config.isLoginenable()) {
-                writeData("UPDATE players SET connected = '0', uuid = 'LogoutAAAAA=' WHERE uuid = '" + player.uuid + "'");
+                writeData("UPDATE players SET connected = ?, uuid = ? WHERE uuid = ?", 0, "LogoutAAAAA=", player.uuid);
                 Call.onKick(player.con, nbundle("logout"));
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));
@@ -1746,7 +1747,7 @@ public class Main extends Plugin {
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[1])){
-                    writeData("UPDATE players SET permission = '"+arg[1]+"' WHERE name = '"+arg[0]+"'");
+                    writeData("UPDATE players SET permission = ? WHERE name = ?",arg[0]);
                     player.sendMessage(bundle("success"));
                     return;
                 }
@@ -1896,7 +1897,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player, "translate-disable"));
             }
 
-            writeData("UPDATE players SET translate = '" + set + "' WHERE uuid = '" + player.uuid + "'");
+            writeData("UPDATE players SET translate = ? WHERE uuid = ?", set, player.uuid);
         });
         handler.<Player>register("vote", "<gameover/skipwave/kick/rollback/map> [mapid/mapname/playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
             if(!checkperm(player,"vote")) return;
