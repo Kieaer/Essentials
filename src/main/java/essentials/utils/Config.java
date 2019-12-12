@@ -10,6 +10,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -254,7 +255,15 @@ public class Config {
 
     private void validfile(){
         final String path = "configs";
-        final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+        File jarFile;
+        try {
+            jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+        } catch (URISyntaxException e) {
+            Global.normal("The plugin file or folder path is invalid. Please check your server path!");
+            net.dispose();
+            Core.app.exit();
+            return;
+        }
 
         if (jarFile.isFile()) {
             try {
@@ -288,11 +297,6 @@ public class Config {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else {
-            // If folder name has space
-            Global.normal("The plugin file or folder path is invalid. Please check your server path!");
-            net.dispose();
-            Core.app.exit();
         }
     }
 
