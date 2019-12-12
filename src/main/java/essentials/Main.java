@@ -53,10 +53,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static essentials.Global.*;
 import static essentials.Threads.*;
@@ -1241,6 +1239,9 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
+        handler.removeCommand("vote");
+        handler.removeCommand("votekick");
+
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if(!checkperm(player,"ch")) return;
 
@@ -1384,23 +1385,38 @@ public class Main extends Plugin {
             player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
         });
         handler.<Player>register("help", "[page]", "Show command lists", (arg, player) -> {
+            if(arg.length > 0 && !Strings.canParseInt(arg[0])){
+                player.sendMessage(bundle("page-number"));
+                return;
+            }
+
+            ArrayList<String> temp = new ArrayList<>();
+            for(int a=0;a<netServer.clientCommands.getCommandList().size;a++){
+                CommandHandler.Command command = netServer.clientCommands.getCommandList().get(a);
+                if(checkperm(player,command.text) || command.text.equals("t") || command.text.equals("sync")){
+                    temp.add("[orange] /"+command.text+" [white]"+command.paramText+" [lightgray]- "+command.description+"\n");
+                }
+            }
+
+            List<String> deduped = temp.stream().distinct().collect(Collectors.toList());
+
             StringBuilder result = new StringBuilder();
+            int perpage = 8;
             int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
-            int pages = Mathf.ceil((float)maplist.size / 6);
+            int pages = Mathf.ceil((float)deduped.size() / perpage);
+
             page --;
+
             if(page > pages || page < 0){
                 player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
                 return;
             }
 
-            result.append(Strings.format("[orange]-- Commands Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n\n", (page+1), pages));
-            for(int a=6*page;a<Math.min(6 * (page + 1), netServer.clientCommands.getCommandList().size);a++){
-                CommandHandler.Command command = netServer.clientCommands.getCommandList().get(a);
-                if(checkperm(player,command.text)){
-                    result.append("[orange] /").append(command.text).append("[white] ").append(command.paramText).append("[lightgray] - ").append(command.description).append("\n");
-                }
+            result.append(Strings.format("[orange]-- Commands Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n", (page+1), pages));
+            for(int a=perpage*page;a<Math.min(perpage*(page+1), deduped.size());a++){
+                result.append(deduped.get(a));
             }
-            player.sendMessage(result.toString());
+            player.sendMessage(result.toString().substring(0, result.length()-1));
         });
         handler.<Player>register("info", "Show your information", (arg, player) -> {
             if(!checkperm(player,"info")) return;

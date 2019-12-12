@@ -610,7 +610,6 @@ public class Global {
                     return true;
                 }
             }
-            player.sendMessage(bundle("no-permission"));
         }
         return false;
     }
