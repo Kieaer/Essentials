@@ -7,6 +7,9 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import static essentials.Global.config;
+import static essentials.Global.printStackTrace;
+
 public class Bundle {
     private ResourceBundle RESOURCE_BUNDLE;
     public Bundle(Locale locale){
@@ -19,17 +22,17 @@ public class Bundle {
 
     public String getBundle(String key){
         try {
-            return "[green][Essentials][] "+RESOURCE_BUNDLE.getString(key);
+            return config.getPrefix()+RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
-            return '!' + key + '!';
+            return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
 
     public String getBundle(String key, Object... params){
         try {
-            return "[green][Essentials][] "+MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
+            return config.getPrefix()+MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            return '!' + key + '!';
+            return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
 
@@ -37,7 +40,7 @@ public class Bundle {
         try {
             return RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
-            return '!' + key + '!';
+            return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
 
@@ -45,7 +48,8 @@ public class Bundle {
         try {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            return '!' + key + '!';
+            printStackTrace(e);
+            return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
 }

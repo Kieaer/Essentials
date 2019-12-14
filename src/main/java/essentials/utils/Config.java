@@ -250,6 +250,10 @@ public class Config {
         return obj != null && obj.get("spawnlimit") != null ? (int) obj.get("spawnlimit") : 10;
     }
 
+    public String getPrefix(){
+        return obj != null && obj.get("prefix") != null ? String.valueOf(obj.get("prefix")) : "[green][Essentials] []";
+    }
+
     public String getServername(){
         JSONObject data = new JSONObject(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString()));
         return data.getString("servername");
@@ -314,7 +318,7 @@ public class Config {
     }
 
     void update(){
-        String bantrust,antirushtime;
+        String bantrust,antirushtime,prefix;
         if(obj != null && obj.get("bantrust") != null){
             bantrust = (String) obj.get("bantrust");
         } else {
@@ -324,6 +328,11 @@ public class Config {
             antirushtime = String.valueOf(obj.get("antirushtime"));
         } else {
             antirushtime = "10:00";
+        }
+        if(obj != null && obj.get("prefix") != null) {
+            prefix = "\"" + obj.get("prefix") + "\"";
+        } else {
+            prefix = "\"[green][Essentials] []\"";
         }
 
         String text = "# "+nbundle("config-version-description")+"\n" +
@@ -436,7 +445,10 @@ public class Config {
                 "insane: "+getInsane()+"\n" +
                 "\n" +
                 "# "+nbundle("config-spawnlimit-description")+"\n" +
-                "spawnlimit: "+getSpawnlimit();
+                "spawnlimit: "+getSpawnlimit() +"\n" +
+                "\n" +
+                "# "+nbundle("config-prefix-description")+"\n"+
+                "prefix: "+prefix;
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
         Global.config("config-loaded");
