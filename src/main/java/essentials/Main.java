@@ -152,6 +152,9 @@ public class Main extends Plugin {
         Events.on(TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isBlockdetect() && config.isAlertdeposit()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
+                if(config.isDebug() && config.isAntigrief()){
+                    Global.log("antigrief-build-config");
+                }
             }
         });
 
@@ -602,6 +605,9 @@ public class Main extends Plugin {
                     }
                 });
                 PlayerDB.ex.submit(t);
+                if(config.isDebug() && config.isAntigrief()){
+                    Global.log("antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                }
             }
         });
 
@@ -659,6 +665,9 @@ public class Main extends Plugin {
                         }
                     });
                     PlayerDB.ex.submit(t);
+                }
+                if(config.isDebug() && config.isAntigrief()){
+                    Global.normal("antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
         });
@@ -917,9 +926,6 @@ public class Main extends Plugin {
 
         // 서버가 켜진 시간을 0으로 설정
         Threads.uptime = "00:00.00";
-
-        // 활성화된 기능 목록들을 표시함
-        Global.normal(config.checkfeatures());
     }
 
     @Override
@@ -1294,6 +1300,12 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player, "difficulty-set", arg[0]));
             } catch (IllegalArgumentException e) {
                 player.sendMessage(bundle(player, "difficulty-not-found", arg[0]));
+            }
+        });
+        handler.<Player>register("despawn","Kill all enemy units", (arg, player) -> {
+            if (!checkperm(player, "despawn")) return;
+            for(int a=0;a<Vars.state.teams.enemiesOf(Team.sharded).size();a++){
+                Vars.state.teams.enemiesOf(Team.sharded);
             }
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
@@ -1955,7 +1967,7 @@ public class Main extends Plugin {
             }
         });
         handler.<Player>register("votekick", "<player_name>", "Player kick starts voting.", (arg, player) -> {
-            if(!checkperm(player,"test")) return;
+            if(!checkperm(player,"votekick")) return;
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
             if (other == null) {
                 player.sendMessage(bundle("player-not-found"));

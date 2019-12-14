@@ -1043,7 +1043,7 @@ public class Threads extends TimerTask implements Runnable{
                         netServer.admins.banPlayer(target.uuid);
                         Call.onKick(target.con, "You're kicked.");
                     } else {
-                        allsendMessage("vote-failed");
+                        allsendMessage("vote-kick-fail");
                     }
                     break;
                 case "rollback":
@@ -1151,8 +1151,8 @@ public class Threads extends TimerTask implements Runnable{
         @Override
         public void run(){
             for(int a=0;a<messagemonitor.size();a++){
-                //MessageBlock.MessageBlockEntity entity = tile.entity();
-                //entity.message
+                //MessageBlock.MessageBlockEntity entity = (MessageBlock.MessageBlockEntity) messagemonitor.get(a).entity;
+                //entity.message = "";
             }
             try {
                 int x = tile.x;

@@ -5,7 +5,99 @@ import io.anuke.mindustry.world.Tile;
 
 import static io.anuke.mindustry.Vars.world;
 
-public class AI {
+public class AI {/*
+    // Source from io.anuke.mindustry.input.Placement
+    static Array<Point2> points = new Array<>();
+
+    static IntFloatMap costs = new IntFloatMap();
+    static IntIntMap parents = new IntIntMap();
+    static IntSet closed = new IntSet();
+
+    public static boolean astar(int startx, int starty, int targetx, int targety){
+        Tile start = world.tile(startx, starty);
+        Tile target = world.tile(targetx, targety);
+
+        costs.clear();
+        closed.clear();
+        parents.clear();
+
+        int limit = 100;
+        int totalnodes = 0;
+
+        PriorityQueue<Tile> queue = new PriorityQueue<>(10, (a, b) -> Float.compare(costs.get(a.pos(), 0f) + distanceHeuristic(a.x, a.y, target.x, target.y), costs.get(b.pos(), 0f) + distanceHeuristic(b.x, b.y, target.x, target.y)));
+        queue.add(start);
+        boolean found = false;
+        while(!queue.isEmpty() && totalnodes++ < limit){
+            Tile next = queue.poll();
+            float baseCost = costs.get(next.pos(), 0f);
+            if(next == target){
+                found = true;
+                break;
+            }
+            closed.add(Pos.get(next.x, next.y));
+            for(Point2 point : Geometry.d4){
+                int newx = next.x + point.x, newy = next.y + point.y;
+                Tile child = world.tile(newx, newy);
+                if(child != null && validNode(next, child)){
+                    if(closed.add(child.pos())){
+                        parents.put(child.pos(), next.pos());
+                        costs.put(child.pos(), tileHeuristic(next, child) + baseCost);
+                        queue.add(child);
+                    }
+                }
+            }
+        }
+
+        if(!found) return false;
+        int total = 0;
+
+        points.add(Pools.obtain(Point2.class, Point2::new).set(targetx, targety));
+
+        Tile current = target;
+        while(current != start && total++ < limit){
+            if(current == null) return false;
+            int newPos = parents.get(current.pos(), Pos.invalid);
+
+            if(newPos == Pos.invalid) return false;
+
+            points.add(Pools.obtain(Point2.class, Point2::new).set(Pos.x(newPos),  Pos.y(newPos)));
+            current = world.tile(newPos);
+        }
+
+        points.reverse();
+
+        return true;
+    }
+
+    static float distanceHeuristic(int x1, int y1, int x2, int y2){
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
+
+    static boolean validNode(Tile tile, Tile other){
+        Block block = control.input.block;
+        if(block != null && block.canReplace(other.block())){
+            return true;
+        }else{
+            return other.block().alwaysReplace;
+        }
+    }
+
+    static float tileHeuristic(Tile tile, Tile other){
+        Block block = control.input.block;
+
+        if((!other.block().alwaysReplace && !(block != null && block.canReplace(other.block()))) || other.floor().isDeep()){
+            return 20;
+        }else{
+            if(parents.containsKey(tile.pos())){
+                Tile prev = world.tile(parents.get(tile.pos(), 0));
+                if(tile.relativeTo(prev) != other.relativeTo(tile)){
+                    return 8;
+                }
+            }
+        }
+        return 1;
+    }
+*/
     /*public Tile start;
     public Tile target;
     public Player player;
