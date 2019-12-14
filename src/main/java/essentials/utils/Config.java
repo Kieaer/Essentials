@@ -40,7 +40,7 @@ public class Config {
     public static JSONArray jumpcount;
     public static JSONArray jumpall;
 
-    public static ExecutorService executorService = Executors.newFixedThreadPool(6);
+    public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
 
     public String getClienthost(){
         return obj != null && obj.get("client-enable") != null ? (String) obj.get("client-host") : "mindustry.kr";

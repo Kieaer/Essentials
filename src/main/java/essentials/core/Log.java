@@ -19,11 +19,10 @@ import java.util.concurrent.Executors;
 
 import static essentials.Global.getTime;
 import static essentials.Global.nbundle;
+import static essentials.utils.Config.executorService;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Log{
-    public static ExecutorService ex = Executors.newSingleThreadExecutor(new Global.threadname("EssentialLog"));
-
     public void main() {
         // No error, griefer, non-block, withdraw event
         Events.on(PlayerChatEvent.class, e -> {
@@ -85,6 +84,6 @@ public class Log{
 
             mainlog.writeString(getTime() + text + "\n", true);
         });
-        ex.submit(t);
+        executorService.submit(t);
     }
 }

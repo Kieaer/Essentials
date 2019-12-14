@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
+import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static io.anuke.mindustry.Vars.netServer;
 import static io.anuke.mindustry.Vars.playerGroup;
@@ -38,15 +39,12 @@ public class PlayerDB{
     public static Connection conn;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
     public Config config = new Config();
-    public static ExecutorService ex = Executors.newFixedThreadPool(4, new Global.threadname("EssentialPlayer"));
     public static ArrayList<Player> pvpteam = new ArrayList<>();
 
     public void createNewDataFile(){
         try {
             String sql = null;
             if(config.isSqlite()){
-                Class.forName("org.sqlite.JDBC");
-                conn = DriverManager.getConnection(config.getDBurl());
                 sql = "CREATE TABLE IF NOT EXISTS players (\n" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
                         "name TEXT,\n" +
@@ -89,9 +87,6 @@ public class PlayerDB{
                         ");";
             } else {
                 if(!config.getDBid().isEmpty()){
-                    Class.forName("org.mariadb.jdbc.Driver");
-                    Class.forName("com.mysql.jdbc.Driver");
-                    conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
                     sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
                             "`id` INT(11) NOT NULL AUTO_INCREMENT,\n" +
                             "`name` TEXT NULL DEFAULT NULL,\n" +
@@ -201,7 +196,7 @@ public class PlayerDB{
                 pstmt.setString(35, "default"); // set permission
                 pstmt.setString(36, accountid);
                 pstmt.setString(37, accountpw);
-                pstmt.executeUpdate();
+                pstmt.execute();
                 pstmt.close();
                 player.sendMessage(nbundle("player-id", player.name));
                 Global.playernormal("player-db-created", name);
@@ -357,6 +352,7 @@ public class PlayerDB{
                 stmt.execute(v2update);
                 Global.playernormal("db-upgrade");
             }
+            resultSet.close();
             stmt.close();
         } catch (SQLException e) {
             if (e.getErrorCode() == 1060) return;
@@ -365,17 +361,15 @@ public class PlayerDB{
     }
     public void openconnect() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            Class.forName("org.mariadb.jdbc.Driver");
-            Class.forName("com.mysql.jdbc.Driver");
-
             String type = nbundle("db-type");
-
             if (config.isSqlite()) {
+                Class.forName("org.sqlite.JDBC");
                 conn = DriverManager.getConnection(config.getDBurl());
                 Global.playerlog(type+"SQLite");
             } else {
                 if (!config.getDBid().isEmpty()) {
+                    Class.forName("org.mariadb.jdbc.Driver");
+                    Class.forName("com.mysql.jdbc.Driver");
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
                     Global.playerlog(type+"MariaDB/MySQL");
                 } else {
@@ -392,12 +386,16 @@ public class PlayerDB{
         }
     }
 
-    public static void closeconnect(){
+    public static boolean closeconnect(){
         try{
             conn.close();
+            if(conn.isClosed()){
+                return true;
+            }
         } catch (Exception e) {
             printStackTrace(e);
         }
+        return false;
     }
 
 	public static void writeData(String sql, Object... data){
@@ -411,11 +409,11 @@ public class PlayerDB{
                     } else if (data[b] instanceof Integer) {
                         pstmt.setInt(a, Integer.parseInt(String.valueOf(data[b])));
                     } else if (data[b] instanceof Long) {
-                        pstmt.setLong(a, (Long) data[b]);
+                        pstmt.setLong(a, Long.parseLong(String.valueOf(data[b])));
                     } else if (data[b] instanceof Double) {
-                        pstmt.setDouble(a, (Double) data[b]);
+                        pstmt.setDouble(a, Double.parseDouble(String.valueOf(data[b])));
                     } else if (data[b] instanceof Float) {
-                        pstmt.setFloat(a, (Float) data[b]);
+                        pstmt.setFloat(a, Float.parseFloat(String.valueOf(data[b])));
                     } else {
                         pstmt.setString(a, String.valueOf(data[b]));
                     }
@@ -431,7 +429,7 @@ public class PlayerDB{
                 printStackTrace(e);
             }
         });
-        ex.submit(t);
+        executorService.submit(t);
 	}
 
 	public static boolean checkpw(Player player, String pw){
@@ -486,66 +484,70 @@ public class PlayerDB{
     }
 	// 로그인 기능 사용시 계정 등록
 	public boolean register(Player player, String pw) {
-        boolean result = true;
-
         // 비밀번호 보안 확인
-        if(!checkpw(player,pw)) result = false;
+        if(!checkpw(player,pw)) return false;
         // 보안검사 끝
 
-        if(result){
-            try {
-                Class.forName("org.mindrot.jbcrypt.BCrypt");
-                String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
+        try {
+            Class.forName("org.mindrot.jbcrypt.BCrypt");
+            String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
 
-                PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE name = '" + player.name + "'");
-                ResultSet rs1 = pstm1.executeQuery();
-                if (rs1.next()) {
-                    if (rs1.getString("name").equals(player.name)) {
-                        player.sendMessage("[green][Essentials] [orange]This username is already in use!\n" +
-                                "[green][Essentials] [orange]이 사용자 이름은 이미 사용중입니다!");
-                        Global.playernormal("password-already-username", player.name);
-                        result = false;
-                    }
-                } else {
-                    // email source here
-                    PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
-                    ResultSet rs2 = pstm2.executeQuery();
-                    String isuuid = null;
-                    while (rs2.next()) {
-                        isuuid = rs2.getString("uuid");
-                    }
-                    if (isuuid == null || isuuid.length() == 0) {
-                        LocalDateTime now = LocalDateTime.now();
-                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                        String nowString = now.format(dateTimeFormatter);
-                        JSONObject list = geolocation(player);
-
-                        String find = "SELECT * FROM players WHERE uuid = '"+player.uuid+"'";
-                        Statement stmt  = conn.createStatement();
-                        ResultSet rs = stmt.executeQuery(find);
-                        if(!rs.next()){
-                            result = createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, player.name, hashed, player);
-                        } else if(rs.next()){
-                            player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
-                                    "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
-                            Global.playernormal("password-already-account", player.name);
-                            result = false;
-                        }
-                        player.sendMessage(bundle(player, "player-name-changed", player.name));
-                    } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)) {
-                        player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
-                                "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                        Global.playernormal("password-already-using", player.name);
-                        result = false;
-                    } else {
-                        result = false;
-                    }
+            PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE name = '" + player.name + "'");
+            ResultSet rs1 = pstm1.executeQuery();
+            if (rs1.next()) {
+                if (rs1.getString("name").equals(player.name)) {
+                    player.sendMessage("[green][Essentials] [orange]This username is already in use!\n" +
+                            "[green][Essentials] [orange]이 사용자 이름은 이미 사용중입니다!");
+                    Global.playernormal("password-already-username", player.name);
+                    return false;
                 }
-            } catch (Exception e) {
-                printStackTrace(e);
+            } else {
+                // email source here
+                PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
+                ResultSet rs2 = pstm2.executeQuery();
+                String isuuid = null;
+                String nickname = null;
+                while (rs2.next()) {
+                    isuuid = rs2.getString("uuid");
+                    nickname = rs2.getString("name");
+                }
+                if (isuuid == null || isuuid.length() == 0) {
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                    String nowString = now.format(dateTimeFormatter);
+                    JSONObject list = geolocation(player);
+
+                    String find = "SELECT * FROM players WHERE uuid = '"+player.uuid+"'";
+                    Statement stmt  = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery(find);
+                    if(!rs.next()){
+                        createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, player.name, hashed, player);
+                    } else if(rs.next()){
+                        player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
+                                "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
+                        Global.playernormal("password-already-account", player.name);
+                        return false;
+                    }
+                    rs.close();
+                    stmt.close();
+                    player.sendMessage(bundle(player, "player-name-changed", player.name));
+                } else if (isuuid.length() > 1 || isuuid.equals(player.uuid) || nickname.contains(player.uuid)) {
+                    player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
+                            "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
+                    Global.playernormal("password-already-using", player.name);
+                    return false;
+                } else {
+                    return false;
+                }
+                rs2.close();
+                pstm2.close();
             }
+            rs1.close();
+            pstm1.close();
+        } catch (Exception e) {
+            printStackTrace(e);
         }
-        return result;
+        return true;
     }
 
     // 비 로그인 기능 사용시 계정등록
@@ -582,6 +584,8 @@ public class PlayerDB{
             } else {
                 player.sendMessage("[green][EssentialPlayer] [scarlet]Account not found!/계정을 찾을 수 없습니다!");
             }
+            rs.close();
+            pstm.close();
         } catch (Exception e) {
             printStackTrace(e);
         }
@@ -625,7 +629,7 @@ public class PlayerDB{
             if (id == null) {
                 writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ? WHERE uuid = ?",1, getnTime(), currentip, player.uuid);
             } else {
-                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ?, uuid = ? WHERE accountid = ?", 1, getnTime(), currentip, player.uuid, id);
+                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ?, uuid = ? WHERE accountid = ?", true, getnTime(), currentip, player.uuid, id);
             }
 
             // 플레이어 팀 설정
@@ -667,7 +671,7 @@ public class PlayerDB{
             }
 
             // 서버 입장시 경험치 획득
-            new Thread(() -> Exp.joinexp(player.uuid));
+            Exp.joinexp(player.uuid);
 
             // 컬러닉 기능 설정
             boolean colornick = db.getBoolean("colornick");
@@ -676,7 +680,7 @@ public class PlayerDB{
                 new Thread(new ColorNick(player)).start();
             } else if(!config.isRealname() && colornick){
                 playernormal(nbundle("colornick-require"));
-                writeData("UPDATE players SET colornick = ? WHERE uuid = ?", 0, player.uuid);
+                writeData("UPDATE players SET colornick = ? WHERE uuid = ?", false, player.uuid);
             }
 
             // 플레이어별 테러 감지 시작
@@ -691,7 +695,7 @@ public class PlayerDB{
             if(permission.getJSONObject(perm).has("admin")) {
                 if (permission.getJSONObject(perm).getBoolean("admin")) {
                     player.isAdmin = true;
-                    writeData("UPDATE players SET isAdmin = ? WHERE uuid = ?", 1, player.uuid);
+                    writeData("UPDATE players SET isAdmin = ? WHERE uuid = ?", true, player.uuid);
                 }
             }
 

@@ -1,5 +1,6 @@
 package essentials.net;
 
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
 import essentials.utils.Config;
 import io.anuke.arc.collection.Array;
@@ -12,13 +13,17 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static essentials.Global.printStackTrace;
+import static essentials.Global.*;
 import static essentials.core.PlayerDB.writeData;
 import static essentials.utils.Config.executorService;
 import static io.anuke.mindustry.Vars.netServer;
@@ -27,9 +32,12 @@ import static io.anuke.mindustry.Vars.playerGroup;
 public class Client extends Thread{
     public Config config = new Config();
     public static Socket socket;
-    public static BufferedReader br;
-    public static BufferedWriter bw;
+    public static BufferedReader is;
+    public static DataOutputStream os;
     public static boolean serverconn;
+
+    public static Cipher cipher;
+    public static SecretKeySpec spec;
 
     public void update(){
         Global.client("client-checking-version");
@@ -89,16 +97,23 @@ public class Client extends Thread{
             try {
                 InetAddress address = InetAddress.getByName(config.getClienthost());
                 socket = new Socket(address, config.getClientport());
-                OutputStream os = socket.getOutputStream();
-                OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-                bw = new BufferedWriter(osw);
-                bw.write("ping\n");
-                bw.flush();
+                KeyGenerator gen = KeyGenerator.getInstance("AES");
+                SecretKey key = gen.generateKey();
+                gen.init(256);
+                byte[] raw = key.getEncoded();
+                spec = new SecretKeySpec(raw,"AES");
+                cipher = Cipher.getInstance("AES");
+                is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                os = new DataOutputStream(socket.getOutputStream());
+                byte[] encrypted = encrypt("ping",spec,cipher);
 
-                br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-                String line = br.readLine();
-                if(line != null){
-                    Global.nclient(line);
+                os.writeBytes(Base64.encode(encrypted)+"\n");
+                os.writeBytes(Base64.encode(raw)+"\n");
+                os.flush();
+
+                String data = is.readLine();
+                if(data != null){
+                    Global.nclient(data);
                     serverconn = true;
                     executorService.execute(new Thread(this));
                     Global.client("client-enabled");
@@ -110,6 +125,8 @@ public class Client extends Thread{
                 if(player != null) {
                     writeData("UPDATE players SET crosschat = ? WHERE uuid = ?",0, player.uuid);
                 }
+            } catch (Exception e){
+                e.printStackTrace();
             }
         } else {
             switch (option) {
@@ -128,44 +145,48 @@ public class Client extends Thread{
                                 bandata.put("<unknown>|" + string);
                             }
                         }
-                        bw.write(bandata + "\n");
-                        bw.flush();
+                        byte[] encrypted = encrypt(bandata.toString(),spec,cipher);
+                        os.writeBytes(Base64.encode(encrypted));
+                        os.flush();
                         Global.client("client-banlist-sented");
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         printStackTrace(e);
                     }
                     break;
                 case "chat":
                     try {
                         String msg = "[" + player.name + "]: " + message;
-                        bw.write(msg + "\n");
-                        bw.flush();
+                        byte[] encrypted = encrypt(msg,spec,cipher);
+                        os.writeBytes(Base64.encode(encrypted)+"\n");
+                        os.flush();
                         Call.sendMessage("[#357EC7][SC] " + msg);
                         Global.client("client-sent-message", config.getClienthost(), message);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
                 case "exit":
                     try {
-                        bw.write("exit");
-                        bw.flush();
+                        byte[] encrypted = encrypt("exit",spec,cipher);
+                        os.writeBytes(Base64.encode(encrypted)+"\n");
+                        os.flush();
 
-                        bw.close();
-                        br.close();
+                        os.close();
+                        is.close();
                         socket.close();
                         serverconn = false;
                         this.interrupt();
                         return;
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         printStackTrace(e);
                     }
                     break;
                 case "unban":
                     try {
-                        bw.write("[\""+message + "\"]unban\n");
-                        bw.flush();
-                    }catch (IOException e){
+                        byte[] encrypted = encrypt("[\""+message + "\"]unban",spec,cipher);
+                        os.writeBytes(Base64.encode(encrypted)+"\n");
+                        os.flush();
+                    }catch (Exception e){
                         printStackTrace(e);
                     }
                     break;
@@ -177,8 +198,12 @@ public class Client extends Thread{
     public void run(){
         while(!Thread.currentThread().isInterrupted()){
             try{
-                String data = br.readLine();
-                if (data == null || data.equals("")) return;
+                String received = is.readLine();
+                if (received == null || received.equals("")) return;
+
+                byte[] encrypted = Base64.decode(received);
+                byte[] decrypted = decrypt(encrypted,spec,cipher);
+                String data = new String(decrypted);
 
                 if(data.matches("\\[(.*)]:.*")){
                     for (int i = 0; i < playerGroup.size(); i++) {
@@ -232,13 +257,13 @@ public class Client extends Thread{
                 } else {
                     Global.normal("Unknown data! - "+data);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 Global.client("server-disconnected", config.getClienthost());
 
                 serverconn = false;
                 try {
-                    bw.close();
-                    br.close();
+                    is.close();
+                    os.close();
                     socket.close();
                 } catch (IOException ex) {
                     printStackTrace(ex);

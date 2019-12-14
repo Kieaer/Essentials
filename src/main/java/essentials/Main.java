@@ -1,5 +1,6 @@
 package essentials;
 
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
 import essentials.core.EPG;
@@ -23,8 +24,10 @@ import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.content.UnitTypes;
+import io.anuke.mindustry.entities.EntityGroup;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
+import io.anuke.mindustry.entities.type.Unit;
 import io.anuke.mindustry.game.Difficulty;
 import io.anuke.mindustry.game.EventType.*;
 import io.anuke.mindustry.game.Team;
@@ -58,6 +61,7 @@ import java.util.stream.Collectors;
 
 import static essentials.Global.*;
 import static essentials.Threads.*;
+import static essentials.Threads.Vote.isvoting;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
@@ -75,6 +79,7 @@ public class Main extends Plugin {
     private ArrayList<Tile> nukedata = new ArrayList<>();
     public Array<io.anuke.mindustry.maps.Map> maplist = Vars.maps.all();
     private boolean making = false;
+    public static boolean threadactive = true;
 
     public Main() {
         // 설정 시작
@@ -100,7 +105,7 @@ public class Main extends Plugin {
             ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
             while(rs.next()){
                 if(isLoginold(rs.getString("lastdate"))){
-                    writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", 0, "none", rs.getInt("id"));
+                    writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", false, "none", rs.getInt("id"));
                 }
             }
         } catch (SQLException e) {
@@ -111,18 +116,13 @@ public class Main extends Plugin {
         PlayerDB.Upgrade();
 
         // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
-        Thread jumpcheck = new Thread(new jumpcheck());
-        jumpcheck.start();
+        executorService.submit(new jumpcheck());
 
         // 코어 자원소모 감시 시작
-        Thread monitorresource = new Thread(new monitorresource());
-        if(config.isScanresource()) {
-            monitorresource.start();
-        }
+        executorService.submit(new monitorresource());
 
         // 임시로 밴한 플레이어들 밴 해제시간 카운트
-        Thread bantime = new Thread(new bantime());
-        bantime.start();
+        executorService.submit(new bantime());
 
         // 기록 시작
         if (config.isLogging()) {
@@ -153,7 +153,7 @@ public class Main extends Plugin {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isBlockdetect() && config.isAlertdeposit()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
                 if(config.isDebug() && config.isAntigrief()){
-                    Global.log("antigrief-build-config");
+                    Global.log("antigrief-build-config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
         });
@@ -174,7 +174,7 @@ public class Main extends Plugin {
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
                                 Global.log("player-jumped", e.player.name, serverip + ":" + serverport);
-                                writeData("UPDATE players SET connected = ?, connserver = ?, WHERE uuid = ?", e.player.uuid);
+                                writeData("UPDATE players SET connected = ?, connserver = ?, WHERE uuid = ?", false, "none", e.player.uuid);
                                 Call.onConnect(e.player.con, serverip, serverport);
                             }
                         }
@@ -404,7 +404,7 @@ public class Main extends Plugin {
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
             if (isLogin(e.player)) {
-                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", 0, "none", e.player.uuid);
+                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
             }
         });
 
@@ -416,7 +416,7 @@ public class Main extends Plugin {
                 if (!check.equals("/")) {
                     JSONObject db = getData(e.player.uuid);
 
-                    if (e.message.equals("y") && Vote.isvoting) {
+                    if (e.message.equals("y") && isvoting) {
                         // 투표가 진행중일때
                         if (Vote.list.contains(e.player.uuid)) {
                             e.player.sendMessage(bundle(e.player, "vote-already"));
@@ -444,15 +444,15 @@ public class Main extends Plugin {
                             String msg = "[" + e.player.name + "]: " + e.message;
                             try {
                                 for (Server.Service ser : Server.list) {
-                                    ser.bw.write(msg + "\n");
-                                    ser.bw.flush();
+                                    ser.os.writeBytes(Base64.encode(encrypt(msg,ser.spec,ser.cipher)));
+                                    ser.os.flush();
                                 }
-                            } catch (IOException ex) {
+                            } catch (Exception ex) {
                                 ex.printStackTrace();
                             }
                         } else if (!config.isClientenable() && !config.isServerenable()) {
                             e.player.sendMessage(bundle(e.player, "no-any-network"));
-                            writeData("UPDATE players SET crosschat = ? WHERE uuid = ?", 0, e.player.uuid);
+                            writeData("UPDATE players SET crosschat = ? WHERE uuid = ?", false, e.player.uuid);
                         }
                     }
                 }
@@ -604,7 +604,7 @@ public class Main extends Plugin {
                         nukedata.add(e.tile);
                     }
                 });
-                PlayerDB.ex.submit(t);
+                executorService.submit(t);
                 if(config.isDebug() && config.isAntigrief()){
                     Global.log("antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
@@ -664,7 +664,7 @@ public class Main extends Plugin {
                             }
                         }
                     });
-                    PlayerDB.ex.submit(t);
+                    executorService.submit(t);
                 }
                 if(config.isDebug() && config.isAntigrief()){
                     Global.normal("antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
@@ -703,7 +703,7 @@ public class Main extends Plugin {
                         }
                     }
                 });
-                PlayerDB.ex.submit(t);
+                executorService.submit(t);
             }
         });
 
@@ -756,18 +756,16 @@ public class Main extends Plugin {
          */
 
         // 로그인 기능이 켜져있을때, 비 로그인 사용자들에게 알림을 해줌
-        Timer alerttimer = new Timer(true);
+        Timer timer = new Timer(true);
         if (config.isLoginenable()) {
-            alerttimer.scheduleAtFixedRate(new login(), 60000, 60000);
+            timer.scheduleAtFixedRate(new login(), 60000, 60000);
         }
 
         // 1초마다 실행되는 작업 시작
-        Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
 
         // 롤백 명령어에서 사용될 자동 저장작업 시작
-        Timer rt = new Timer(true);
-        rt.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
+        timer.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
 
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
         Core.app.addListener(new ApplicationListener() {
@@ -859,18 +857,12 @@ public class Main extends Plugin {
             }
 
             public void dispose() {
-                // 자원감시 종료
-                monitorresource.interrupt();
-
-                // 임시로 밴한 유저들 시간 카운트 종료
-                bantime.interrupt();
+                threadactive = false;
 
                 // 타이머 스레드 종료
                 try {
                     timer.cancel();
-                    alerttimer.cancel();
-                    rt.cancel();
-                    if(Vote.isvoting){
+                    if (isvoting) {
                         Vote.cancel();
                     }
                     Global.log("count-thread-disabled");
@@ -884,7 +876,14 @@ public class Main extends Plugin {
                     try {
                         for (Server.Service ser : Server.list) {
                             ser.interrupt();
-                            Server.list.remove(ser);
+                            ser.os.close();
+                            ser.in.close();
+                            ser.socket.close();
+                            if (ser.isInterrupted()) {
+                                Server.list.remove(ser);
+                            } else {
+                                Global.err("server-thread-disable-error");
+                            }
                         }
 
                         Server.active = false;
@@ -901,26 +900,38 @@ public class Main extends Plugin {
                 if (config.isClientenable() && serverconn) {
                     Client client = new Client();
                     client.main("exit", null, null);
-                    //client.interrupt();
                     Global.log("client-thread-disabled");
                 }
 
                 // 모든 이벤트 서버 종료
                 for (Process value : process) {
                     value.destroy();
+                    if (value.isAlive()) {
+                        try {
+                            throw new Exception("Process stop failed");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
-
-                // 클라이언트 플레이어 카운트 스레드 종료
-                jumpcheck.interrupt();
 
                 // 모든 스레드 종료
                 executorService.shutdown();
-                Log.ex.shutdown();
-                PlayerDB.ex.shutdown();
-                Global.log("thread-disabled");
+                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug()) Global.normal("executorservice dead");
 
                 // DB 종료
-                closeconnect();
+                if (!closeconnect() && config.isDebug()) {
+                    try {
+                        throw new Exception("DB stop failed");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else if(config.isDebug()){
+                    Global.normal("db dead");
+                }
+
+                Global.log("thread-disabled");
+                System.exit(1);
             }
         });
 
@@ -1304,8 +1315,22 @@ public class Main extends Plugin {
         });
         handler.<Player>register("despawn","Kill all enemy units", (arg, player) -> {
             if (!checkperm(player, "despawn")) return;
-            for(int a=0;a<Vars.state.teams.enemiesOf(Team.sharded).size();a++){
-                Vars.state.teams.enemiesOf(Team.sharded);
+            ArrayList<Integer> playerid = new ArrayList<>();
+            for(int a=0;a<Team.all.length;a++){
+                for(int b=0;a<playerGroup.size();b++){
+                    playerid.add(playerGroup.all().get(b).id);
+                }
+            }
+            for(int a=0;a<Team.all.length;a++){
+                for(int b=0;a<unitGroups[Team.values()[a].ordinal()].all().size;a++){
+                    BaseUnit d = unitGroups[Team.crux.ordinal()].all().get(b);
+                    for(int c=0;c<playerid.size();c++){
+                        if(!playerid.get(c).equals(d.id)){
+                            Call.onUnitDeath(d);
+                            break;
+                        }
+                    }
+                }
             }
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
@@ -1360,7 +1385,7 @@ public class Main extends Plugin {
                                 }
                                 Global.log("event-host-opened", player.name, customport);
 
-                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?",0, "none", player.uuid);
+                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?",false, "none", player.uuid);
                                 Call.onConnect(player.con, currentip, customport);
                             } else {
                                 player.sendMessage(bundle(player, "event-level"));
@@ -1379,7 +1404,7 @@ public class Main extends Plugin {
                             JSONObject ob = arr.getJSONObject(a);
                             String name = ob.getString("name");
                             if (name.equals(arg[1])) {
-                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", 0, "none", player.uuid);
+                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
                                 Call.onConnect(player.con, currentip, ob.getInt("port"));
                                 break;
                             }
@@ -1459,7 +1484,7 @@ public class Main extends Plugin {
                         "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.get("pvpbreakout");
                 Call.onInfoMessage(player.con, datatext);
             });
-            PlayerDB.ex.submit(t);
+            executorService.submit(t);
         });
         handler.<Player>register("jump", "<zone/count/total> [serverip] [port] [range] [block-type(1~6)]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!checkperm(player, "jump")) return;
@@ -1569,7 +1594,7 @@ public class Main extends Plugin {
         handler.<Player>register("logout","Log-out of your account.", (arg, player) -> {
             if(!checkperm(player,"logout")) return;
             if(config.isLoginenable()) {
-                writeData("UPDATE players SET connected = ?, uuid = ? WHERE uuid = ?", 0, "LogoutAAAAA=", player.uuid);
+                writeData("UPDATE players SET connected = ?, uuid = ? WHERE uuid = ?", false, "LogoutAAAAA=", player.uuid);
                 Call.onKick(player.con, nbundle("logout"));
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));

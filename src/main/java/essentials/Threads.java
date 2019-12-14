@@ -44,15 +44,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static essentials.Global.*;
-import static essentials.Main.messagemonitor;
-import static essentials.Main.powerblock;
+import static essentials.Main.*;
 import static essentials.core.PlayerDB.getData;
 import static essentials.core.PlayerDB.writeData;
 import static essentials.special.PingServer.pingServer;
 import static essentials.utils.Config.*;
 import static io.anuke.mindustry.Vars.*;
 
-public class Threads extends TimerTask implements Runnable{
+public class Threads extends TimerTask{
     public static String playtime;
     public static String uptime;
     static boolean peacetime;
@@ -62,7 +61,7 @@ public class Threads extends TimerTask implements Runnable{
     @Override
     public void run() {
         // 플레이어 플탐 카운트
-        PlayerDB.ex.submit(new playtime());
+        new playtime().start();
 
         // 맵 플탐 카운트
         new maptime().start();
@@ -150,7 +149,7 @@ public class Threads extends TimerTask implements Runnable{
         @Override
         public void run(){
             Thread.currentThread().setName("Ban time monitoring thread");
-            while(!currentThread().isInterrupted()) {
+            while(threadactive) {
                 try {
                     String db = Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").readString();
                     JSONTokener parser = new JSONTokener(db);
@@ -181,7 +180,7 @@ public class Threads extends TimerTask implements Runnable{
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
         }
@@ -548,7 +547,7 @@ public class Threads extends TimerTask implements Runnable{
         @Override
         public void run() {
             Thread.currentThread().setName("Server to server thread");
-            while(!currentThread().isInterrupted()) {
+            while(threadactive) {
                 if(state.is(GameState.State.playing)) {
                     for (int i = 0; i < jumpcount.length(); i++) {
                         String jumpdata = jumpcount.getString(i);
@@ -597,7 +596,7 @@ public class Threads extends TimerTask implements Runnable{
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
         }
@@ -867,7 +866,7 @@ public class Threads extends TimerTask implements Runnable{
         @Override
         public void run(){
             Thread.currentThread().setName("Resource monitoring thread");
-            while(!currentThread().isInterrupted()) {
+            while(threadactive) {
                 if(state.is(GameState.State.playing)) {
                     for (Item item : content.items()) {
                         if (item.type == ItemType.material) {
@@ -928,7 +927,7 @@ public class Threads extends TimerTask implements Runnable{
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                        return;
                     }
                 }
             }
@@ -945,7 +944,7 @@ public class Threads extends TimerTask implements Runnable{
         private static int time = 0;
         private static int bundletime = 0;
 
-        static boolean isvoting;
+        public static boolean isvoting;
         static ArrayList<String> list = new ArrayList<>();
         static int require;
 
@@ -970,9 +969,10 @@ public class Threads extends TimerTask implements Runnable{
         TimerTask counting = new TimerTask() {
             @Override
             public void run() {
+                Thread.currentThread().setName("Vote counting timertask");
                 time++;
                 if(time == 60){
-                    Vote.cancel();
+                    cancel();
                 }
             }
         };
@@ -981,6 +981,7 @@ public class Threads extends TimerTask implements Runnable{
         TimerTask alert = new TimerTask() {
             @Override
             public void run() {
+                Thread.currentThread().setName("Vote alert timertask");
                 String[] bundlename = {"vote-50sec", "vote-40sec", "vote-30sec", "vote-20sec", "vote-10sec"};
 
                 if(bundletime <= 4){

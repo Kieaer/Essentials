@@ -1,5 +1,6 @@
 package essentials.net;
 
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
 import essentials.core.PlayerDB;
 import essentials.special.gifimage;
@@ -17,6 +18,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -27,10 +32,11 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Random;
 
-import static essentials.Global.printStackTrace;
+import static essentials.Global.*;
 import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
 import static io.anuke.mindustry.Vars.*;
@@ -69,18 +75,16 @@ public class Server implements Runnable {
 
     public class Service extends Thread {
         public BufferedReader in;
-        public BufferedWriter bw;
-        public OutputStreamWriter osw;
-        public OutputStream os;
+        public DataOutputStream os;
         public Socket socket;
+        public SecretKeySpec spec;
+        public Cipher cipher;
 
         public Service(Socket socket) {
             try {
                 this.socket = socket;
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-                os = socket.getOutputStream();
-                osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-                bw = new BufferedWriter(osw);
+                os = new DataOutputStream(socket.getOutputStream());
             } catch (Exception e) {
                 if(e.getMessage().equals("socket closed")){
                     return;
@@ -95,11 +99,18 @@ public class Server implements Runnable {
                 Thread.currentThread().setName(remoteip+" Client Thread");
                 try {
                     remoteip = socket.getInetAddress().toString().replace("/", "");
-                    String data = in.readLine();
-                    if (data == null || data.equals("")){
-                        bw.close();
+
+                    String value = in.readLine();
+                    String authkey = in.readLine();
+                    byte[] encrypted = Base64.decode(value);
+                    byte[] key = Base64.decode(authkey);
+                    spec = new SecretKeySpec(key, "AES");
+                    cipher = Cipher.getInstance("AES");
+                    byte[] decrypted = decrypt(encrypted, spec, cipher);
+                    String data = new String(decrypted);
+
+                    if (data.equals("")){
                         os.close();
-                        osw.close();
                         in.close();
                         socket.close();
                         list.remove(this);
@@ -123,19 +134,17 @@ public class Server implements Runnable {
 
                         // send message to all clients
                         for (Service ser : list) {
-                            ser.bw.write(data + "\n");
-                            ser.bw.flush();
+                            ser.os.writeBytes(Base64.encode(encrypt(data,spec,cipher))+"\n");
+                            ser.os.flush();
                         }
                     } else if (data.matches("ping")) {
                         String[] msg = {"Hi " + remoteip + "! Your connection is successful!", "Hello " + remoteip + "! I'm server!", "Welcome to the server " + remoteip + "!"};
                         int rnd = new Random().nextInt(msg.length);
-                        bw.write(msg[rnd] + "\n");
-                        bw.flush();
+                        os.writeBytes(Base64.encode(encrypt(msg[rnd],spec,cipher))+"\n");
+                        os.flush();
                         Global.server("client-connected", remoteip);
                     } else if (data.matches("exit")){
-                        bw.close();
                         os.close();
-                        osw.close();
                         in.close();
                         socket.close();
                         list.remove(this);
@@ -168,8 +177,8 @@ public class Server implements Runnable {
                                     for (int a = 0; a < config.getBantrust().length; a++) {
                                         String ip = config.getBantrust()[a];
                                         if (ip.equals(remoteip)) {
-                                            ser.bw.write(data + "\n");
-                                            ser.bw.flush();
+                                            ser.os.writeBytes(Base64.encode(encrypt(data,spec,cipher))+"\n");
+                                            ser.os.flush();
                                             Global.server("server-data-sented", remoteip);
                                         }
                                     }
@@ -209,8 +218,8 @@ public class Server implements Runnable {
                                     for (int a = 0; a < config.getBantrust().length; a++) {
                                         String ip = config.getBantrust()[a];
                                         if (ip.equals(remoteip)) {
-                                            ser.bw.write(data1 + "\n");
-                                            ser.bw.flush();
+                                            ser.os.writeBytes(Base64.encode(encrypt(data1.toString(),spec,cipher))+"\n");
+                                            ser.os.flush();
                                             Global.server("server-data-sented", remoteip);
                                         }
                                     }
@@ -242,20 +251,18 @@ public class Server implements Runnable {
                         }
 
                         if(found){
-                            bw.write("true\n");
+                            os.writeBytes(Base64.encode(encrypt("true",spec,cipher))+"\n");
                         } else {
-                            bw.write("false\n");
+                            os.writeBytes(Base64.encode(encrypt("false",spec,cipher))+"\n");
                         }
-                        bw.flush();
+                        os.flush();
                     } else {
                         Global.normal("Invalid data - " + data);
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     Global.server("client-disconnected", remoteip);
                     try {
-                        bw.close();
                         os.close();
-                        osw.close();
                         in.close();
                         socket.close();
                         list.remove(this);

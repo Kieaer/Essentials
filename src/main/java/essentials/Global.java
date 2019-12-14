@@ -1,5 +1,6 @@
 package essentials;
 
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.utils.Bundle;
 import essentials.utils.Config;
 import essentials.utils.Permission;
@@ -14,11 +15,16 @@ import io.anuke.mindustry.world.Tile;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.InvalidKeyException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -651,5 +657,15 @@ public class Global {
         public Thread newThread(Runnable r) {
             return new Thread(r, name+"-" + ++count);
         }
+    }
+
+    public static byte[] encrypt(String data, SecretKeySpec spec, Cipher cipher) throws Exception {
+        cipher.init(Cipher.ENCRYPT_MODE, spec);
+        return cipher.doFinal(data.getBytes());
+    }
+
+    public static byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
+        cipher.init(Cipher.DECRYPT_MODE, spec);
+        return cipher.doFinal(data);
     }
 }
