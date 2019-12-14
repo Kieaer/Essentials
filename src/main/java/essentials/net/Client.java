@@ -17,7 +17,10 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
@@ -74,7 +77,7 @@ public class Client extends Thread{
                 JSONObject object = new JSONObject(parser);
 
                 DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
-                DefaultArtifactVersion current = new DefaultArtifactVersion("6.0");
+                DefaultArtifactVersion current = new DefaultArtifactVersion("6.1");
 
                 if (latest.compareTo(current) > 0) {
                     Global.client("version-new");
