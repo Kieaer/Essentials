@@ -24,7 +24,6 @@ import io.anuke.arc.util.Time;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.content.UnitTypes;
-import io.anuke.mindustry.entities.EntityGroup;
 import io.anuke.mindustry.entities.type.BaseUnit;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.entities.type.Unit;
@@ -60,8 +59,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static essentials.Global.*;
-import static essentials.Threads.*;
 import static essentials.Threads.Vote.isvoting;
+import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
@@ -1315,22 +1314,8 @@ public class Main extends Plugin {
         });
         handler.<Player>register("despawn","Kill all enemy units", (arg, player) -> {
             if (!checkperm(player, "despawn")) return;
-            ArrayList<Integer> playerid = new ArrayList<>();
             for(int a=0;a<Team.all.length;a++){
-                for(int b=0;a<playerGroup.size();b++){
-                    playerid.add(playerGroup.all().get(b).id);
-                }
-            }
-            for(int a=0;a<Team.all.length;a++){
-                for(int b=0;a<unitGroups[Team.values()[a].ordinal()].all().size;a++){
-                    BaseUnit d = unitGroups[Team.crux.ordinal()].all().get(b);
-                    for(int c=0;c<playerid.size();c++){
-                        if(!playerid.get(c).equals(d.id)){
-                            Call.onUnitDeath(d);
-                            break;
-                        }
-                    }
-                }
+                unitGroups[Team.all[a].ordinal()].all().each(Unit::kill);
             }
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
