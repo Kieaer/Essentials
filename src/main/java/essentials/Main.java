@@ -173,7 +173,7 @@ public class Main extends Plugin {
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
                                 Global.log("player-jumped", e.player.name, serverip + ":" + serverport);
-                                writeData("UPDATE players SET connected = ?, connserver = ?, WHERE uuid = ?", false, "none", e.player.uuid);
+                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
                                 Call.onConnect(e.player.con, serverip, serverport);
                             }
                         }
@@ -402,8 +402,9 @@ public class Main extends Plugin {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
+            String uuid = e.player.uuid;
             if (isLogin(e.player)) {
-                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
+                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", uuid);
             }
         });
 

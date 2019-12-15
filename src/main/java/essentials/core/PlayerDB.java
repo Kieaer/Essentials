@@ -412,7 +412,9 @@ public class PlayerDB{
                         pstmt.setDouble(a, Double.parseDouble(String.valueOf(data[b])));
                     } else if (data[b] instanceof Float) {
                         pstmt.setFloat(a, Float.parseFloat(String.valueOf(data[b])));
-                    } else {
+                    } else if (data[b] instanceof Boolean) {
+                        pstmt.setBoolean(a, Boolean.parseBoolean(String.valueOf(data[b])));
+                    }else {
                         pstmt.setString(a, String.valueOf(data[b]));
                     }
                 }
