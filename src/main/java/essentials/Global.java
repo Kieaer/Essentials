@@ -1,6 +1,5 @@
 package essentials;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.utils.Bundle;
 import essentials.utils.Config;
 import essentials.utils.Permission;
@@ -16,15 +15,12 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.InvalidKeyException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -52,13 +48,17 @@ public class Global {
         Log.info("[Essential] "+nbundle(value, parameter));
     }
 
-    public static void normal(Object... value){
+    public static void nlog(Object... value){
         Log.info("[Essential] "+ Arrays.toString(value).replace("[", "").replace("]", ""));
     }
 
     // 경고
     public static void warn(String value){
         Log.warn("[Essential] "+nbundle(value));
+    }
+
+    public static void nwarn(String value){
+        Log.warn("[Essential] "+value);
     }
 
     // 오류
@@ -68,6 +68,10 @@ public class Global {
 
     public static void err(String value, Object... parameter){
         Log.err("[Essential] "+nbundle(value, parameter));
+    }
+
+    public static void nerr(String value){
+        Log.err("[Essential] "+value);
     }
 
     // 디버그
@@ -94,7 +98,7 @@ public class Global {
     }
 
     public static void nclient(Object... parameter){
-        Log.info("[EssentialClient] "+Arrays.toString(parameter).replace("[", "").replace("]", ""));
+        Log.info("[EssentialClient] "+Arrays.toString(parameter));
     }
 
     // 설정
@@ -161,7 +165,7 @@ public class Global {
                 String text = sb.toString();
 
                 writelog("error", text);
-                Global.normal("Internal error! - "+e.getMessage());
+                Global.nlog("Internal error! - "+e.getMessage());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }

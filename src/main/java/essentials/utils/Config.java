@@ -124,8 +124,8 @@ public class Config {
                 cal.setTime(d);
             } catch (Exception e) {
                 printStackTrace(e);
-                Global.normal("Invalid settings! - antirushtime");
-                Global.normal("Correct value format is mm:ss (Example - 10:00 -> 10minute, 00:30 -> 30seconds)");
+                Global.nlog("Invalid settings! - antirushtime");
+                Global.nlog("Correct value format is mm:ss (Example - 10:00 -> 10minute, 00:30 -> 30seconds)");
             }
         } else {
             try{
@@ -265,7 +265,7 @@ public class Config {
         try {
             jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
         } catch (URISyntaxException e) {
-            Global.normal("The plugin file or folder path is invalid. Please check your server path!");
+            Global.nlog("The plugin file or folder path is invalid. Please check your server path!");
             net.dispose();
             Core.app.exit();
             return;

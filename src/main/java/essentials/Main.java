@@ -666,7 +666,7 @@ public class Main extends Plugin {
                     executorService.submit(t);
                 }
                 if(config.isDebug() && config.isAntigrief()){
-                    Global.normal("antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
+                    Global.log("antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
         });
@@ -916,7 +916,7 @@ public class Main extends Plugin {
 
                 // 모든 스레드 종료
                 executorService.shutdown();
-                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug()) Global.normal("executorservice dead");
+                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug()) Global.nlog("executorservice dead");
 
                 // DB 종료
                 if (!closeconnect() && config.isDebug()) {
@@ -926,7 +926,7 @@ public class Main extends Plugin {
                         e.printStackTrace();
                     }
                 } else if(config.isDebug()){
-                    Global.normal("db dead");
+                    Global.nlog("db dead");
                 }
 
                 Global.log("thread-disabled");
@@ -942,14 +942,14 @@ public class Main extends Plugin {
     public void registerServerCommands(CommandHandler handler){
         handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
             if(arg.length == 0) {
-                Global.log("no-parameter");
+                Global.warn("no-parameter");
                 return;
             }
             Global.log(nbundle("use-setperm"));
         });
         handler.register("allinfo", "<name>", "Show player information.", (arg) -> {
             if(arg.length == 0) {
-                Global.log("no-parameter");
+                Global.warn("no-parameter");
                 return;
             }
             Thread t = new Thread(() -> {
@@ -957,7 +957,7 @@ public class Main extends Plugin {
                     String sql = "SELECT * FROM players WHERE name='"+arg[0]+"'";
                     Statement stmt = conn.createStatement();
                     ResultSet rs = stmt.executeQuery(sql);
-                    Global.normal("Data line start.");
+                    Global.nlog("Data line start.");
                     while(rs.next()){
                         String datatext = "\nPlayer Information\n" +
                                 "========================================\n" +
@@ -979,11 +979,11 @@ public class Main extends Plugin {
                                 "PvP Win: "+rs.getInt("pvpwincount")+"\n" +
                                 "PvP Lose: "+rs.getInt("pvplosecount")+"\n" +
                                 "PvP Surrender: "+rs.getInt("pvpbreakout");
-                        Global.normal(datatext);
+                        Global.nlog(datatext);
                     }
                     rs.close();
                     stmt.close();
-                    Global.normal("Data line end.");
+                    Global.nlog("Data line end.");
                 }catch (Exception e){
                     printStackTrace(e);
                 }
@@ -1004,7 +1004,7 @@ public class Main extends Plugin {
         });
         handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
             if(arg.length < 1) {
-                Global.log("no-parameter");
+                Global.warn("no-parameter");
                 return;
             }
             if(arg[0].equals("add")){
@@ -1031,7 +1031,7 @@ public class Main extends Plugin {
         });
         handler.register("reset", "<zone/count/total>", "Clear a server-to-server jumping zone data.", arg -> {
             if(arg.length == 0) {
-                Global.log("no-parameter");
+                Global.warn("no-parameter");
                 return;
             }
             switch(arg[0]){
@@ -1084,7 +1084,7 @@ public class Main extends Plugin {
                     Global.log("jump-reset", "total");
                     break;
                 default:
-                    Global.log("Invalid option!");
+                    Global.warn("Invalid option!");
                     break;
             }
         });
@@ -1123,30 +1123,30 @@ public class Main extends Plugin {
                     return;
                 }
             }
-            Global.log("perm-group-not-found");
+            Global.warn("perm-group-not-found");
         });
         handler.register("kickall", "Kick all players.",  arg -> {
             for(int a=0;a<playerGroup.size();a++){
                 Player others = playerGroup.all().get(a);
                 Call.onKick(others.con, "All kick players by administrator.");
             }
-            Global.normal("It's done.");
+            Global.nlog("It's done.");
         });
         handler.register("kill", "<username>", "Kill target player.", arg -> {
             if(arg.length == 0) {
-                Global.log("no-parameter");
+                Global.warn("no-parameter");
                 return;
             }
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
                 other.kill();
             } else {
-                Global.log("player-not-found");
+                Global.warn("player-not-found");
             }
         });
         handler.register("nick", "<name> <newname...>", "Show player information.", (arg) -> {
             if(arg.length < 1) {
-                Global.log("no-parameter");
+                Global.warn("no-parameter");
                 return;
             }
             try{
@@ -1154,7 +1154,7 @@ public class Main extends Plugin {
                 Global.log(nbundle("player-nickname-change-to", arg[0], arg[1]));
             }catch (Exception e){
                 printStackTrace(e);
-                Global.log("player-not-found");
+                Global.warn("player-not-found");
             }
         });
         handler.register("pvp", "<anticoal/timer> [time...]", "Set gamerule with PvP mode.", arg -> {
@@ -1174,7 +1174,7 @@ public class Main extends Plugin {
         });
         handler.register("setperm", "<player_name> <group>", "Set player permission group", arg -> {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
-                Global.err("player-not-found");
+                Global.warn("player-not-found");
             }
             Iterator i = permission.keys();
             while(i.hasNext()) {
@@ -1193,7 +1193,7 @@ public class Main extends Plugin {
                 Call.onWorldDataBegin(other.con);
                 netServer.sendWorldData(other);
             } else {
-                Global.err("player-not-found");
+                Global.warn("player-not-found");
             }
         });
         handler.register("team","[name]", "Change target player team.", (arg) -> {
@@ -1210,14 +1210,14 @@ public class Main extends Plugin {
                 }
                 other.kill();
             } else {
-                Global.err("player-not-found");
+                Global.warn("player-not-found");
             }
         });
         handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
             int bantimeset = Integer.parseInt(arg[1]);
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other == null){
-                Global.err("player-not-found");
+                Global.warn("player-not-found");
                 return;
             }
             addtimeban(other.name, other.uuid, bantimeset);
@@ -1231,7 +1231,7 @@ public class Main extends Plugin {
                         netServer.admins.banPlayer(target.uuid);
                         Global.log("tempban", other.name, arg[1]);
                     } else {
-                        Global.err("player-not-found");
+                        Global.warn("player-not-found");
                     }
                     break;
                 case "ip":
@@ -1239,7 +1239,7 @@ public class Main extends Plugin {
                     Global.log(nbundle("tempban", other.name, arg[1]));
                     break;
                 default:
-                    Global.normal("Invalid type.");
+                    Global.nlog("Invalid type.");
                     break;
             }
             Call.onKick(other.con, "Temp kicked");

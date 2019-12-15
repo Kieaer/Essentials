@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -379,10 +377,10 @@ public class PlayerDB{
             }
         } catch (ClassNotFoundException e) {
             printStackTrace(e);
-            Global.normal("Class not found!");
+            Global.nlog("Class not found!");
         } catch (SQLException e){
             printStackTrace(e);
-            Global.normal("SQL ERROR!");
+            Global.nlog("SQL ERROR!");
         }
     }
 

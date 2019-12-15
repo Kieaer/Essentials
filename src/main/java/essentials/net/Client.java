@@ -258,7 +258,7 @@ public class Client extends Thread{
                         printStackTrace(e);
                     }
                 } else {
-                    Global.normal("Unknown data! - "+data);
+                    Global.nlog("Unknown data! - "+data);
                 }
             } catch (Exception e) {
                 Global.client("server-disconnected", config.getClienthost());

@@ -19,8 +19,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.ServerSocket;
@@ -32,7 +30,6 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Random;
 
@@ -257,7 +254,7 @@ public class Server implements Runnable {
                         }
                         os.flush();
                     } else {
-                        Global.normal("Invalid data - " + data);
+                        Global.nlog("Invalid data - " + data);
                     }
                 } catch (Exception e) {
                     Global.server("client-disconnected", remoteip);
@@ -845,7 +842,7 @@ public class Server implements Runnable {
                             bw.write("Server: Mindustry/Essentials 5.0\r\n");
                             bw.write("\r\n");
                             bw.write(webdata);
-                            Global.log(receive);
+                            Global.nlog(receive);
                         }
                     } else {
                         bw.write("HTTP/1.1 403 Forbidden\r\n");
