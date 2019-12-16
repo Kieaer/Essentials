@@ -29,9 +29,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Pathfinding
   - [ ] OreFlow
   - [ ] Player
-- [ ] Improved detection of griefing
-  - [ ] Detect non-block destroy/place griefing
-    - [ ] ALL WithDraw events
+- [x] Improved detection of griefing
+  - [x] Detect non-block destroy/place griefing
+    - [x] ALL WithDraw events
 - [ ] Make lobby features
   - [ ] Show all server players
     - [ ] massage block 

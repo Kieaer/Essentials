@@ -190,6 +190,12 @@ public class Main extends Plugin {
                     Global.log("antigrief-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
                 }
             }
+            if(e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief() && state.rules.pvp){
+                if(e.item.flammability > 0.001f) {
+                    e.player.sendMessage(bundle(e.player, "flammable-disabled"));
+                    e.player.clearItem();
+                }
+            }
         });
 
         // 만약 동기화에 실패했을 경우 (아마도 될꺼임)
@@ -1279,7 +1285,7 @@ public class Main extends Plugin {
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(!checkperm(player,"changepw")) return;
             if(!checkpw(player, arg[0])){
-                player.sendMessage(bundle("need-new-password"));
+                player.sendMessage(bundle(player, "need-new-password"));
                 return;
             }
             try{
@@ -1410,7 +1416,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("help", "[page]", "Show command lists", (arg, player) -> {
             if(arg.length > 0 && !Strings.canParseInt(arg[0])){
-                player.sendMessage(bundle("page-number"));
+                player.sendMessage(bundle(player, "page-number"));
                 return;
             }
 
@@ -1478,7 +1484,7 @@ public class Main extends Plugin {
             switch (arg[0]){
                 case "zone":
                     if(arg.length != 5){
-                        player.sendMessage(bundle("jump-incorrect"));
+                        player.sendMessage(bundle(player, "jump-incorrect"));
                         return;
                     }
                     int size;
@@ -1541,7 +1547,7 @@ public class Main extends Plugin {
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 default:
-                    player.sendMessage(bundle("command-invalid"));
+                    player.sendMessage(bundle(player, "command-invalid"));
             }
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
@@ -1717,7 +1723,7 @@ public class Main extends Plugin {
                 return;
             }
             if(config.getSpawnlimit() == count){
-                player.sendMessage(bundle("spawn-limit"));
+                player.sendMessage(bundle(player, "spawn-limit"));
                 return;
             }
             Team targetteam = null;
@@ -1781,18 +1787,18 @@ public class Main extends Plugin {
         handler.<Player>register("setperm", "<player_name> <group>", "Set player permission", (arg, player) -> {
             if(!checkperm(player,"setperm")) return;
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
-                player.sendMessage(bundle("player-not-found"));
+                player.sendMessage(bundle(player, "player-not-found"));
             }
             Iterator i = permission.keys();
             while(i.hasNext()) {
                 String b = i.next().toString();
                 if(b.equals(arg[1])){
                     writeData("UPDATE players SET permission = ? WHERE name = ?",arg[0]);
-                    player.sendMessage(bundle("success"));
+                    player.sendMessage(bundle(player, "success"));
                     return;
                 }
             }
-            player.sendMessage(bundle("perm-group-not-found"));
+            player.sendMessage(bundle(player, "perm-group-not-found"));
         });
         handler.<Player>register("status", "Show server status", (arg, player) -> {
             if(!checkperm(player,"status")) return;
@@ -1870,7 +1876,7 @@ public class Main extends Plugin {
         handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
             if(!checkperm(player,"tp")) return;
             if(player.isMobile){
-                player.sendMessage(bundle("tp-not-support"));
+                player.sendMessage(bundle(player, "tp-not-support"));
                 return;
             }
             Player other = null;
@@ -1945,11 +1951,11 @@ public class Main extends Plugin {
                 if(arg[0].equals("kick")) {
                     Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
                     if (other == null) {
-                        player.sendMessage(bundle("player-not-found"));
+                        player.sendMessage(bundle(player, "player-not-found"));
                         return;
                     }
                     if (other.isAdmin){
-                        player.sendMessage(bundle("vote-target-admin"));
+                        player.sendMessage(bundle(player, "vote-target-admin"));
                         return;
                     }
                     // 강퇴 투표
@@ -1962,7 +1968,7 @@ public class Main extends Plugin {
                         world = maplist.get(Integer.parseInt(arg[1]));
                     }
                     if (world == null) {
-                        player.sendMessage(bundle("vote-map-not-found"));
+                        player.sendMessage(bundle(player, "vote-map-not-found"));
                     } else {
                         Vote vote = new Vote(player, arg[0], world);
                         vote.command();
@@ -1970,7 +1976,7 @@ public class Main extends Plugin {
                 }
             } else {
                 if(arg[0].equals("map") || arg[0].equals("kick")){
-                    player.sendMessage(bundle("vote-map-not-found"));
+                    player.sendMessage(bundle(player, "vote-map-not-found"));
                     return;
                 }
                 // 게임 오버, wave 넘어가기, 롤백
@@ -1982,11 +1988,11 @@ public class Main extends Plugin {
             if(!checkperm(player,"votekick")) return;
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
             if (other == null) {
-                player.sendMessage(bundle("player-not-found"));
+                player.sendMessage(bundle(player, "player-not-found"));
                 return;
             }
             if (other.isAdmin){
-                player.sendMessage(bundle("vote-target-admin"));
+                player.sendMessage(bundle(player, "vote-target-admin"));
                 return;
             }
 
