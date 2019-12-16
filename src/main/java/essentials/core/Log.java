@@ -1,9 +1,8 @@
 package essentials.core;
 
-import essentials.Global;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
-import io.anuke.arc.files.FileHandle;
+import io.anuke.arc.files.Fi;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.entities.type.Player;
 import io.anuke.mindustry.game.EventType.*;
@@ -14,17 +13,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static essentials.Global.getTime;
 import static essentials.Global.nbundle;
-import static essentials.utils.Config.executorService;
+import static essentials.utils.Config.singleService;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Log{
     public void main() {
-        // No error, griefer, non-block, withdraw event
         Events.on(PlayerChatEvent.class, e -> {
             writelog("chat", e.player.name + ": " + e.message);
         });
@@ -38,6 +34,12 @@ public class Log{
         Events.on(TapConfigEvent.class, e-> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null) {
                 writelog("tap", nbundle("log-tap-config", e.player.name, e.tile.entity.block.name));
+            }
+        });
+
+        Events.on(WithdrawEvent.class, e-> {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null) {
+                writelog("withdraw", nbundle("log-withdraw", e.player.name, e.tile.entity.block.name));
             }
         });
 
@@ -65,8 +67,8 @@ public class Log{
             String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now());
             Path newlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/log/" + type + ".log").path());
             Path oldlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/log/old/" + type + "/" + date + ".log").path());
-            FileHandle mainlog = Core.settings.getDataDirectory().child("mods/Essentials/log/" + type + ".log");
-            FileHandle logfolder = Core.settings.getDataDirectory().child("mods/Essentials/log");
+            Fi mainlog = Core.settings.getDataDirectory().child("mods/Essentials/log/" + type + ".log");
+            Fi logfolder = Core.settings.getDataDirectory().child("mods/Essentials/log");
 
             if (mainlog != null && mainlog.length() > 1024 * 512) {
                 mainlog.writeString(nbundle("log-file-end", date), true);
@@ -84,6 +86,6 @@ public class Log{
 
             mainlog.writeString(getTime() + text + "\n", true);
         });
-        executorService.submit(t);
+        singleService.submit(t);
     }
 }

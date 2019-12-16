@@ -16,7 +16,7 @@ import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
-import io.anuke.arc.files.FileHandle;
+import io.anuke.arc.files.Fi;
 import io.anuke.arc.math.Mathf;
 import io.anuke.arc.util.CommandHandler;
 import io.anuke.arc.util.Strings;
@@ -183,13 +183,14 @@ public class Main extends Plugin {
             }
         });
 
-        /*
         Events.on(WithdrawEvent.class, e->{
-            Global.log("WithdrawEvent");
-            Global.log("player: " + e.player.name + ", tile: " + e.tile.entity.block.name);
-            Global.log("item: "+e.item.name+", amount: "+e.amount);
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief()) {
+                allsendMessage("withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
+                if (config.isDebug() && config.isAntigrief()) {
+                    Global.log("antigrief-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
+                }
+            }
         });
-         */
 
         // 만약 동기화에 실패했을 경우 (아마도 될꺼임)
         Events.on(ValidateException.class, e -> {
@@ -1649,7 +1650,7 @@ public class Main extends Plugin {
         handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
             if (!checkperm(player, "save")) return;
             Core.app.post(() -> {
-                FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
+                Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.save(file);
                 player.sendMessage(bundle(player, "mapsaved"));
             });

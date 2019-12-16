@@ -6,7 +6,7 @@ import io.anuke.arc.ApplicationListener;
 import io.anuke.arc.Core;
 import io.anuke.arc.Events;
 import io.anuke.arc.collection.Array;
-import io.anuke.arc.files.FileHandle;
+import io.anuke.arc.files.Fi;
 import io.anuke.mindustry.Vars;
 import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.core.GameState;
@@ -668,7 +668,7 @@ public class Threads extends TimerTask{
     public static class AutoRollback extends TimerTask {
         private boolean save() {
             try {
-                FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
+                Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.save(file);
                 return true;
             } catch (Exception e) {
@@ -683,7 +683,7 @@ public class Threads extends TimerTask{
             players.addAll(all);
 
             try {
-                FileHandle file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
+                Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.load(file);
             } catch (SaveIO.SaveException e) {
                 printStackTrace(e);

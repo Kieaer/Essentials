@@ -41,6 +41,7 @@ public class Config {
     public static JSONArray jumpall;
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
+    public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
 
     public String getClienthost(){
         return obj != null && obj.get("client-enable") != null ? (String) obj.get("client-host") : "mindustry.kr";
