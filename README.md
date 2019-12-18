@@ -8,14 +8,14 @@ Please submit your idea to this repository issues or Mindustry official discord!
 This plugin does a lot of disk read/write operations depending on the features usage.
 
 ### Minimum
-CPU: Ryzen 3 2200G or Intel i3 8100<br>
+CPU: Athlon 200GE or Intel i5 2300<br>
 RAM: 256MB<br>
-Disk: A disk capable of reading and writing normally at speeds above 10MB/s.
+Disk: HDD capable of more than 3MB/s random read/write.
 
 ### Recommand
-CPU: Ryzen 5 2600x or Intel i5 8500<br>
+CPU: Ryzen 3 2200G or Intel i3 8100<br>
 RAM: 500MB<br>
-Disk: SSD capable of more than 30MB/s random read/write.
+Disk: SSD capable of more than 10MB/s random read/write.
 
 ## Installation
 
