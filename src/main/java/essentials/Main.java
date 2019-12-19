@@ -1108,10 +1108,10 @@ public class Main extends Plugin {
                 if(serverconn){
                     Client client = new Client();
                     client.main("exit", null, null);
+                } else {
+                    Client client = new Client();
+                    client.main(null, null, null);
                 }
-                Client client = new Client();
-                client.main(null, null, null);
-
             } else {
                 Global.client("client-disabled");
             }

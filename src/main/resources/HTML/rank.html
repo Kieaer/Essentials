@@ -36,27 +36,6 @@
 				$("#infopopup").hide();
             })
         });
-        document.addEventListener("DOMContentLoaded",function(){
-        	var tags=document.getElementsByClassName('colortag');
-        	var tagl=tags.length;
-        	for(var i=0;i<tagl;i++){
-        		var atag="";
-        		var tag=tags.item(0);
-        		var tagp=tag.parentNode;
-        		var tagstr=tag.innerHTML;
-        		var tagstrs=tagstr.split('[');
-        		tagstrs.forEach(function(tagi){
-        			if(tagi!=""){
-        				var tagis=tagi.split(']');
-        				var tagc=tagis[0];
-        				var tags=tagis[1];
-        				if(tagis.length==1)atag="<a>"+tagi+"</a>";
-        				else atag=atag+"<a style="color:"+tagc+"">"+tags+"</a>";
-        			}
-        		});
-        		tag.insertAdjacentHTML('afterend',atag);
-        		tagp.removeChild(tag);}
-        	});
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)) {
 
         }
