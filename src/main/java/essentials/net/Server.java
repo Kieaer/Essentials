@@ -3,7 +3,6 @@ package essentials.net;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
 import essentials.core.PlayerDB;
-import essentials.special.gifimage;
 import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
@@ -431,6 +430,17 @@ public class Server implements Runnable {
                 }
             }
 
+            doc.getElementById("info_body").appendText(serverinfo());
+            doc.getElementById("rank-placecount").appendText(nbundle("server-http-rank-placecount"));
+            doc.getElementById("rank-breakcount").appendText(nbundle("server-http-rank-breakcount"));
+            doc.getElementById("rank-killcount").appendText(nbundle("server-http-rank-killcount"));
+            doc.getElementById("rank-joincount").appendText(nbundle("server-http-rank-joincount"));
+            doc.getElementById("rank-kickcount").appendText(nbundle("server-http-rank-kickcount"));
+            doc.getElementById("rank-exp").appendText(nbundle("server-http-rank-exp"));
+            doc.getElementById("rank-playtime").appendText(nbundle("server-http-rank-playtime"));
+            doc.getElementById("rank-reactorcount").appendText(nbundle("server-http-rank-reactorcount"));
+            doc.getElementById("rank-attackclear").appendText(nbundle("server-http-rank-attackclear"));
+
             return doc.toString();
         }
 
@@ -443,64 +453,79 @@ public class Server implements Runnable {
                 BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
                 try {
                     if (config.isQuery()) {
-                        if (receive.matches("GET / HTTP/.*")) {
+                        if (receive.matches("GET / HTTP/.*") && state.is(GameState.State.playing)) {
                             String data = query();
                             bw.write("HTTP/1.1 200 OK\r\n");
                             bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
                             bw.write("Content-Type: application/json; charset=utf-8\r\n");
                             bw.write("Content-Length: " + data.getBytes().length + 1 + "\r\n");
                             bw.write("\r\n");
                             bw.write(query());
-                        } else if (receive.matches("GET /rank HTTP/.*") || receive.matches("GET /rank# HTTP/.*")) {
+                        } else if (receive.matches("GET /rank HTTP/.*") || receive.matches("GET /rank# HTTP/.*") && state.is(GameState.State.playing)) {
                             String rank = rankingdata();
                             bw.write("HTTP/1.1 200 OK\r\n");
                             bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
                             bw.write("Content-Type: text/html; charset=utf-8\r\n");
                             bw.write("Content-Length: " + rank.getBytes().length + 1 + "\r\n");
                             bw.write("\r\n");
                             bw.write(rank);
-                        } else if (receive.matches("GET /rank/kr HTTP/.*") || receive.matches("GET /rank/kr# HTTP/.*")) {
+                        } else if (receive.matches("GET /rank/kr HTTP/.*") || receive.matches("GET /rank/kr# HTTP/.*") && state.is(GameState.State.playing)) {
                             String rankkr = rankingdata();
                             bw.write("HTTP/1.1 200 OK\r\n");
                             bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
                             bw.write("Content-Type: text/html; charset=utf-8\r\n");
                             bw.write("Content-Length: " + rankkr.getBytes().length + 1 + "\r\n");
                             bw.write("\r\n");
                             bw.write(rankkr);
                         } else {
-                            gifimage gif = new gifimage();
-                            String webdata = "<!DOCTYPE html>\n" +
-                                    "<html lang=\"ko\">\n" +
-                                    "<head>\n" +
-                                    "<meta charset=\"UTF-8\">\n" +
-                                    "<title>404 NOT FOUND</title>\n" +
-                                    "<style>\n" +
-                                    "*{margin: 0 auto;padding: 0;}\n" +
-                                    "#box{display: flex;align-items:center;justify-content: center;}\n" +
-                                    "</style>\n" +
-                                    "<link rel=\"shortcut icon\" href=\"about:blank\">" +
-                                    "<TITLE>404 NOT FOUND</TITLE>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div id=\"box\">\n" +
-                                    "<img src=\"" + gif.notfound() + "\" style=\"width:100%\" alt=\"\">\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
+                            InputStream reader = getClass().getResourceAsStream("/HTML/404.html");
+                            BufferedReader br = new BufferedReader(new InputStreamReader(reader, StandardCharsets.UTF_8));
+
+                            String line;
+                            StringBuilder result = new StringBuilder();
+                            while ((line = br.readLine()) != null) {
+                                result.append(line).append("\n");
+                            }
+
+                            int rand = (int) (Math.random() * 2);
+                            InputStream image;
+                            if(rand == 0){
+                                image = getClass().getResourceAsStream("/HTML/404_Error.gif");
+                            } else {
+                                image = getClass().getResourceAsStream("/HTML/404.webp");
+                            }
+                            ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
+
+                            int len;
+                            byte[] buf = new byte[1024];
+                            while( (len = image.read( buf )) != -1 ) {
+                                byteOutStream.write(buf, 0, len);
+                            }
+
+                            byte[] fileArray = byteOutStream.toByteArray();
+                            String changeString;
+                            if(rand == 0){
+                                changeString = "data:image/gif;base64,"+Base64.encode( fileArray );
+                            } else {
+                                changeString = "data:image/webp;base64,"+Base64.encode( fileArray );
+                            }
+                            Document doc = Jsoup.parse(result.toString());
+                            doc.getElementById("box").append("<img src="+changeString+" alt=\"\">");
+
                             bw.write("HTTP/1.1 404 Internal error\r\n");
                             bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
                             bw.write("\r\n");
-                            bw.write(webdata);
-                            Global.nlog(receive);
+                            bw.write(doc.toString());
+                            nlog(receive);
                         }
                     } else {
                         bw.write("HTTP/1.1 403 Forbidden\r\n");
                         bw.write("Date: " + time + "\r\n");
-                        bw.write("Server: Mindustry/Essentials 5.0\r\n");
+                        bw.write("Server: Mindustry/Essentials 7.0\r\n");
                         bw.write("Content-Encoding: gzip");
                         bw.write("\r\n");
                         bw.write("<TITLE>403 Forbidden</TITLE>");
@@ -512,7 +537,7 @@ public class Server implements Runnable {
                     in.close();
                     socket.close();
                     list.remove(this);
-                    Global.server("client-disconnected-http", remoteip);
+                    server("client-disconnected-http", remoteip);
                 } catch (Exception e) {
                     printStackTrace(e);
                 }
