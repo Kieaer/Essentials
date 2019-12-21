@@ -2,7 +2,6 @@ package essentials.net;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
-import essentials.core.PlayerDB;
 import essentials.utils.Config;
 import io.anuke.arc.Core;
 import io.anuke.arc.collection.Array;
@@ -18,6 +17,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -25,6 +25,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -38,6 +39,9 @@ import java.util.Random;
 import static essentials.Global.*;
 import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
+import static essentials.core.Log.writelog;
+import static essentials.core.PlayerDB.conn;
+import static essentials.core.PlayerDB.getData;
 import static io.anuke.mindustry.Vars.*;
 
 public class Server implements Runnable {
@@ -100,9 +104,20 @@ public class Server implements Runnable {
                     remoteip = socket.getInetAddress().toString().replace("/", "");
 
                     String value = in.readLine();
-                    // 이 데이터가 HTTP 요청일경우, http 요청만 하고 연결해제함.
-                    if (value.matches("GET /.*")) {
-                        httpserver(value);
+
+                    if(value.length() != 25) {
+                        writelog("web", "Remote IP: "+remoteip);
+                        String headerLine;
+                        while ((headerLine = in.readLine()).length() != 0) {
+                            writelog("web", headerLine);
+                        }
+                        writelog("web", "========================");
+
+                        StringBuilder payload = new StringBuilder();
+                        while(in.ready()){
+                            payload.append((char) in.read());
+                        }
+                        httpserver(value, payload.toString());
                         return;
                     }
 
@@ -263,6 +278,7 @@ public class Server implements Runnable {
                         Global.nlog("Invalid data - " + data);
                     }
                 } catch (Exception e) {
+                    if(e.getMessage().equals("html")) return;
                     Global.server("client-disconnected", remoteip);
                     try {
                         os.close();
@@ -303,7 +319,7 @@ public class Server implements Runnable {
             try{
                 JSONObject tmp = new JSONObject();
                 String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
-                Statement stmt = PlayerDB.conn.createStatement();
+                Statement stmt = conn.createStatement();
                 for (String s : list) {
                     ResultSet rs = stmt.executeQuery("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
                     while (rs.next()) {
@@ -380,13 +396,18 @@ public class Server implements Runnable {
             sql[9] = "SELECT * FROM players ORDER BY `attackclear` DESC LIMIT 10";
 
             try {
-                Statement stmt = PlayerDB.conn.createStatement();
+                Statement stmt = conn.createStatement();
+                String name = nbundle("server-http-rank-name");
+                String country = nbundle("server-http-rank-country");
+                String win = nbundle("server-http-rank-pvp-win");
+                String lose = nbundle("server-http-rank-pvp-lose");
+                String rate = nbundle("server-http-rank-pvp-rate");
 
                 for(int a=0;a<sql.length;a++){
                     ResultSet rs = stmt.executeQuery(sql[a]);
                     JSONArray array = new JSONArray();
                     if(lists.get(a).equals("pvpwincount")){
-                        String header = "<tr><th>name</th><th>country</th><th>Win</th><th>Lose</th><th>Rate</th></tr>";
+                        String header = "<tr><th>"+name+"</th><th>"+country+"</th><th>"+win+"</th><th>"+lose+"</th><th>"+rate+"</th></tr>";
                         array.put(header);
                         while(rs.next()){
                             int percent;
@@ -399,7 +420,7 @@ public class Server implements Runnable {
                             array.put(data);
                         }
                     } else {
-                        String header = "<tr><th>name</th><th>country</th><th>"+lists.get(a)+"</th></tr>";
+                        String header = "<tr><th>"+name+"</th><th>"+country+"</th><th>"+lists.get(a)+"</th></tr>";
                         array.put(header);
                         while (rs.next()) {
                             String data = "<tr><td>" + rs.getString("name") + "</td><td>" + rs.getString("country") + "</td><td>" + rs.getString(lists.get(a)) + "</td></tr>\n";
@@ -438,111 +459,204 @@ public class Server implements Runnable {
             doc.getElementById("rank-kickcount").appendText(nbundle("server-http-rank-kickcount"));
             doc.getElementById("rank-exp").appendText(nbundle("server-http-rank-exp"));
             doc.getElementById("rank-playtime").appendText(nbundle("server-http-rank-playtime"));
+            doc.getElementById("rank-pvpwincount").appendText(nbundle("server-http-rank-pvpcount"));
             doc.getElementById("rank-reactorcount").appendText(nbundle("server-http-rank-reactorcount"));
             doc.getElementById("rank-attackclear").appendText(nbundle("server-http-rank-attackclear"));
 
             return doc.toString();
         }
 
-        private void httpserver(String receive) {
+        private void httpserver(String receive, String payload){
+            String[] ranking = new String[12];
+            ranking[0] = "SELECT placecount, RANK() over (ORDER BY placecount desc) valrank FROM players";
+            ranking[1] = "SELECT breakcount, RANK() over (ORDER BY breakcount desc) valrank FROM players";
+            ranking[2] = "SELECT killcount, RANK() over (ORDER BY killcount desc) valrank FROM players";
+            ranking[3] = "SELECT deathcount, RANK() over (ORDER BY deathcount desc) valrank FROM players";
+            ranking[4] = "SELECT joincount, RANK() over (ORDER BY joincount desc) valrank FROM players";
+            ranking[5] = "SELECT kickcount, RANK() over (ORDER BY kickcount desc) valrank FROM players";
+            ranking[6] = "SELECT level, RANK() over (ORDER BY level desc) valrank FROM players";
+            ranking[7] = "SELECT playtime, RANK() over (ORDER BY playtime desc) valrank FROM players";
+            ranking[8] = "SELECT attackclear, RANK() over (ORDER BY attackclear desc) valrank FROM players";
+            ranking[9] = "SELECT pvpwincount, RANK() over (ORDER BY pvpwincount desc) valrank FROM players";
+            ranking[10] = "SELECT pvplosecount, RANK() over (ORDER BY pvplosecount desc) valrank FROM players";
+            ranking[11] = "SELECT pvpbreakout, RANK() over (ORDER BY pvpbreakout desc) valrank FROM players";
+
             try {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
                 String time = now.format(dateTimeFormatter);
 
                 BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-                try {
-                    if (config.isQuery()) {
-                        if (receive.matches("GET / HTTP/.*") && state.is(GameState.State.playing)) {
-                            String data = query();
-                            bw.write("HTTP/1.1 200 OK\r\n");
-                            bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
-                            bw.write("Content-Type: application/json; charset=utf-8\r\n");
-                            bw.write("Content-Length: " + data.getBytes().length + 1 + "\r\n");
-                            bw.write("\r\n");
-                            bw.write(query());
-                        } else if (receive.matches("GET /rank HTTP/.*") || receive.matches("GET /rank# HTTP/.*") && state.is(GameState.State.playing)) {
-                            String rank = rankingdata();
-                            bw.write("HTTP/1.1 200 OK\r\n");
-                            bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
-                            bw.write("Content-Type: text/html; charset=utf-8\r\n");
-                            bw.write("Content-Length: " + rank.getBytes().length + 1 + "\r\n");
-                            bw.write("\r\n");
-                            bw.write(rank);
-                        } else if (receive.matches("GET /rank/kr HTTP/.*") || receive.matches("GET /rank/kr# HTTP/.*") && state.is(GameState.State.playing)) {
-                            String rankkr = rankingdata();
-                            bw.write("HTTP/1.1 200 OK\r\n");
-                            bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
-                            bw.write("Content-Type: text/html; charset=utf-8\r\n");
-                            bw.write("Content-Length: " + rankkr.getBytes().length + 1 + "\r\n");
-                            bw.write("\r\n");
-                            bw.write(rankkr);
+                if (config.isQuery() && state.is(GameState.State.playing)) {
+                    if (receive.matches("GET / HTTP/.*")) {
+                        String data = query();
+                        bw.write("HTTP/1.1 200 OK\r\n");
+                        bw.write("Date: " + time + "\r\n");
+                        bw.write("Server: Mindustry/Essentials 6.1.2\r\n");
+                        bw.write("Content-Type: application/json; charset=utf-8\r\n");
+                        bw.write("Content-Length: " + data.getBytes().length + 1 + "\r\n");
+                        bw.write("\r\n");
+                        bw.write(query());
+                    } else if (receive.matches("GET /rank HTTP/.*") || receive.matches("GET /rank# HTTP/.*")) {
+                        String rank = rankingdata();
+                        bw.write("HTTP/1.1 200 OK\r\n");
+                        bw.write("Date: " + time + "\r\n");
+                        bw.write("Server: Mindustry/Essentials 6.1.2\r\n");
+                        bw.write("Content-Type: text/html; charset=utf-8\r\n");
+                        bw.write("Content-Length: " + rank.getBytes().length + 1 + "\r\n");
+                        bw.write("\r\n");
+                        bw.write(rank);
+                    } else if (receive.matches("POST /rank HTTP/.*")) {
+                        String[] value = payload.split("\\|\\|\\|");
+                        String id = value[0].replace("id=", "");
+                        String pw = value[1].replace("pw=", "");
+
+                        PreparedStatement pstm = conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
+                        pstm.setString(1, id);
+                        ResultSet rs = pstm.executeQuery();
+                        if (rs.next()) {
+                            if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
+                                JSONObject db = getData(rs.getString("uuid"));
+                                String language = db.getString("language");
+                                String datatext;
+                                if (!config.isSqlite()) {
+                                    Statement stmt = conn.createStatement();
+                                    ArrayList<String> array = new ArrayList<>();
+                                    for (int a = 0; a < ranking.length; a++) {
+                                        ResultSet rs1 = stmt.executeQuery(ranking[a]);
+                                        while (rs1.next()) {
+                                            Global.log("true!" + rs1.getString("valrnak"));
+                                            array.add(rs1.getString("valrank"));
+                                        }
+                                        rs1.close();
+                                    }
+                                    stmt.close();
+
+                                    datatext = nbundle(language, "player-info") + "<br>" +
+                                            "========================================<br>" +
+                                            nbundle(language, "player-name") + ": " + rs.getString("name") + "<br>" +
+                                            nbundle(language, "player-uuid") + ": " + rs.getString("uuid") + "<br>" +
+                                            nbundle(language, "player-country") + ": " + db.get("country") + "<br>" +
+                                            nbundle(language, "player-placecount") + ": " + db.get("placecount") + " - #" + array.get(0) + "<br>" +
+                                            nbundle(language, "player-breakcount") + ": " + db.get("breakcount") + " - #" + array.get(1) + "<br>" +
+                                            nbundle(language, "player-killcount") + ": " + db.get("killcount") + " - #" + array.get(2) + "<br>" +
+                                            nbundle(language, "player-deathcount") + ": " + db.get("deathcount") + " - #" + array.get(3) + "<br>" +
+                                            nbundle(language, "player-joincount") + ": " + db.get("joincount") + " - #" + array.get(4) + "<br>" +
+                                            nbundle(language, "player-kickcount") + ": " + db.get("kickcount") + " - #" + array.get(5) + "<br>" +
+                                            nbundle(language, "player-level") + ": " + db.get("level") + " - #" + array.get(6) + "<br>" +
+                                            nbundle(language, "player-reqtotalexp") + ": " + db.get("reqtotalexp") + "<br>" +
+                                            nbundle(language, "player-firstdate") + ": " + db.get("firstdate") + "<br>" +
+                                            nbundle(language, "player-lastdate") + ": " + db.get("lastdate") + "<br>" +
+                                            nbundle(language, "player-playtime") + ": " + db.get("playtime") + " - #" + array.get(7) + "<br>" +
+                                            nbundle(language, "player-attackclear") + ": " + db.get("attackclear") + " - #" + array.get(8) + "<br>" +
+                                            nbundle(language, "player-pvpwincount") + ": " + db.get("pvpwincount") + " - #" + array.get(9) + "<br>" +
+                                            nbundle(language, "player-pvplosecount") + ": " + db.get("pvplosecount") + " - #" + array.get(10) + "<br>" +
+                                            nbundle(language, "player-pvpbreakout") + ": " + db.get("pvpbreakout") + " - #" + array.get(11) + "<br>";
+                                } else {
+                                    datatext = nbundle(language, "player-info") + "<br>" +
+                                            "========================================<br>" +
+                                            nbundle(language, "player-name") + ": " + rs.getString("name") + "<br>" +
+                                            nbundle(language, "player-uuid") + ": " + rs.getString("uuid") + "<br>" +
+                                            nbundle(language, "player-country") + ": " + db.get("country") + "<br>" +
+                                            nbundle(language, "player-placecount") + ": " + db.get("placecount") + "<br>" +
+                                            nbundle(language, "player-breakcount") + ": " + db.get("breakcount") + "<br>" +
+                                            nbundle(language, "player-killcount") + ": " + db.get("killcount") + "<br>" +
+                                            nbundle(language, "player-deathcount") + ": " + db.get("deathcount") + "<br>" +
+                                            nbundle(language, "player-joincount") + ": " + db.get("joincount") + "<br>" +
+                                            nbundle(language, "player-kickcount") + ": " + db.get("kickcount") + "<br>" +
+                                            nbundle(language, "player-level") + ": " + db.get("level") + "<br>" +
+                                            nbundle(language, "player-reqtotalexp") + ": " + db.get("reqtotalexp") + "<br>" +
+                                            nbundle(language, "player-firstdate") + ": " + db.get("firstdate") + "<br>" +
+                                            nbundle(language, "player-lastdate") + ": " + db.get("lastdate") + "<br>" +
+                                            nbundle(language, "player-playtime") + ": " + db.get("playtime") + "<br>" +
+                                            nbundle(language, "player-attackclear") + ": " + db.get("attackclear") + "<br>" +
+                                            nbundle(language, "player-pvpwincount") + ": " + db.get("pvpwincount") + "<br>" +
+                                            nbundle(language, "player-pvplosecount") + ": " + db.get("pvplosecount") + "<br>" +
+                                            nbundle(language, "player-pvpbreakout") + ": " + db.get("pvpbreakout");
+                                }
+                                bw.write(datatext);
+                            } else {
+                                String result = "Login failed!\n";
+                                bw.write(result);
+                            }
                         } else {
-                            InputStream reader = getClass().getResourceAsStream("/HTML/404.html");
-                            BufferedReader br = new BufferedReader(new InputStreamReader(reader, StandardCharsets.UTF_8));
-
-                            String line;
-                            StringBuilder result = new StringBuilder();
-                            while ((line = br.readLine()) != null) {
-                                result.append(line).append("\n");
-                            }
-
-                            int rand = (int) (Math.random() * 2);
-                            InputStream image;
-                            if(rand == 0){
-                                image = getClass().getResourceAsStream("/HTML/404_Error.gif");
-                            } else {
-                                image = getClass().getResourceAsStream("/HTML/404.webp");
-                            }
-                            ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
-
-                            int len;
-                            byte[] buf = new byte[1024];
-                            while( (len = image.read( buf )) != -1 ) {
-                                byteOutStream.write(buf, 0, len);
-                            }
-
-                            byte[] fileArray = byteOutStream.toByteArray();
-                            String changeString;
-                            if(rand == 0){
-                                changeString = "data:image/gif;base64,"+Base64.encode( fileArray );
-                            } else {
-                                changeString = "data:image/webp;base64,"+Base64.encode( fileArray );
-                            }
-                            Document doc = Jsoup.parse(result.toString());
-                            doc.getElementById("box").append("<img src="+changeString+" alt=\"\">");
-
-                            bw.write("HTTP/1.1 404 Internal error\r\n");
+                            String result = "Login failed!\n";
+                            bw.write("HTTP/1.1 200 OK\r\n");
                             bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 7.0\r\n");
+                            bw.write("Server: Mindustry/Essentials 6.1.2\r\n");
+                            bw.write("Content-Type: text/html; charset=utf-8\r\n");
+                            bw.write("Content-Length: " + result.getBytes().length + 1 + "\r\n");
                             bw.write("\r\n");
-                            bw.write(doc.toString());
-                            nlog(receive);
+                            bw.write(result);
                         }
+                        rs.close();
+                        pstm.close();
                     } else {
-                        bw.write("HTTP/1.1 403 Forbidden\r\n");
+                        InputStream reader = getClass().getResourceAsStream("/HTML/404.html");
+                        BufferedReader br = new BufferedReader(new InputStreamReader(reader, StandardCharsets.UTF_8));
+
+                        String line;
+                        StringBuilder result = new StringBuilder();
+                        while ((line = br.readLine()) != null) {
+                            result.append(line).append("\n");
+                        }
+
+                        int rand = (int) (Math.random() * 2);
+                        InputStream image;
+                        if (rand == 0) {
+                            image = getClass().getResourceAsStream("/HTML/404_Error.gif");
+                        } else {
+                            image = getClass().getResourceAsStream("/HTML/404.webp");
+                        }
+                        ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
+
+                        int len;
+                        byte[] buf = new byte[1024];
+                        while ((len = image.read(buf)) != -1) {
+                            byteOutStream.write(buf, 0, len);
+                        }
+
+                        byte[] fileArray = byteOutStream.toByteArray();
+                        String changeString;
+                        if (rand == 0) {
+                            changeString = "data:image/gif;base64," + Base64.encode(fileArray);
+                        } else {
+                            changeString = "data:image/webp;base64," + Base64.encode(fileArray);
+                        }
+                        Document doc = Jsoup.parse(result.toString());
+                        doc.getElementById("box").append("<img src=" + changeString + " alt=\"\">");
+
+                        bw.write("HTTP/1.1 404 Internal error\r\n");
                         bw.write("Date: " + time + "\r\n");
                         bw.write("Server: Mindustry/Essentials 7.0\r\n");
-                        bw.write("Content-Encoding: gzip");
                         bw.write("\r\n");
-                        bw.write("<TITLE>403 Forbidden</TITLE>");
-                        bw.write("<p>This server isn't allowed query!</p>");
+                        bw.write(doc.toString());
+                        nlog(receive);
                     }
-                    bw.flush();
-                    bw.close();
+                } else {
+                    bw.write("HTTP/1.1 403 Forbidden\r\n");
+                    bw.write("Date: " + time + "\r\n");
+                    bw.write("Server: Mindustry/Essentials 7.0\r\n");
+                    bw.write("Content-Encoding: gzip");
+                    bw.write("\r\n");
+                    bw.write("<TITLE>403 Forbidden</TITLE>");
+                    bw.write("<p>This server isn't allowed query!</p>");
+                }
+                bw.flush();
+                bw.close();
+                os.close();
+                in.close();
+                socket.close();
+                list.remove(this);
+                server("client-disconnected-http", remoteip);
+            }catch (Exception e){
+                printStackTrace(e);
+                try{
                     os.close();
                     in.close();
                     socket.close();
                     list.remove(this);
-                    server("client-disconnected-http", remoteip);
-                } catch (Exception e) {
-                    printStackTrace(e);
-                }
-            } catch (Exception e) {
-                printStackTrace(e);
+                }catch (Exception ignored){}
             }
         }
     }

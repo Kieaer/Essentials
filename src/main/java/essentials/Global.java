@@ -246,6 +246,12 @@ public class Global {
         }
     }
 
+    public static String nbundle(String language, String value) {
+        Locale locale = new Locale(language);
+        Bundle bundle = new Bundle(locale);
+        return bundle.getNormal(value);
+    }
+
     public static String nbundle(String value, Object... paramter){
         Locale locale = new Locale(config.getLanguage());
         Bundle bundle = new Bundle(locale);
