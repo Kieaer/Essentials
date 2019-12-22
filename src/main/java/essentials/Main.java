@@ -253,8 +253,8 @@ public class Main extends Plugin {
             JSONArray array = new JSONArray(parser);
 
             for (int i = 0; i < array.length(); i++) {
-                if (array.getString(i).contains(e.player.name)) {
-                    e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.\nBlack listed nickname: " + e.player.name);
+                if (array.getString(i).matches(".*"+e.player.name+".*")) {
+                    e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.");
                     Global.log("nickname-blacklisted", e.player.name);
                 }
             }

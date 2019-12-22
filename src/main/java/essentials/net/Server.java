@@ -105,6 +105,7 @@ public class Server implements Runnable {
 
                     String value = in.readLine();
 
+                    // 수신된 데이터가 Base64 가 아닐경우
                     if(value.length() != 25) {
                         writelog("web", "Remote IP: "+remoteip);
                         String headerLine;
@@ -278,7 +279,6 @@ public class Server implements Runnable {
                         Global.nlog("Invalid data - " + data);
                     }
                 } catch (Exception e) {
-                    if(e.getMessage().equals("html")) return;
                     Global.server("client-disconnected", remoteip);
                     try {
                         os.close();
@@ -323,7 +323,7 @@ public class Server implements Runnable {
                 for (String s : list) {
                     ResultSet rs = stmt.executeQuery("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
                     while (rs.next()) {
-                        tmp.put(rs.getString("name"), rs.getInt(s));
+                        tmp.put(rs.getString("name"), rs.getString(s));
                     }
                     rank.put(s, tmp);
                 }
@@ -467,20 +467,6 @@ public class Server implements Runnable {
         }
 
         private void httpserver(String receive, String payload){
-            String[] ranking = new String[12];
-            ranking[0] = "SELECT placecount, RANK() over (ORDER BY placecount desc) valrank FROM players";
-            ranking[1] = "SELECT breakcount, RANK() over (ORDER BY breakcount desc) valrank FROM players";
-            ranking[2] = "SELECT killcount, RANK() over (ORDER BY killcount desc) valrank FROM players";
-            ranking[3] = "SELECT deathcount, RANK() over (ORDER BY deathcount desc) valrank FROM players";
-            ranking[4] = "SELECT joincount, RANK() over (ORDER BY joincount desc) valrank FROM players";
-            ranking[5] = "SELECT kickcount, RANK() over (ORDER BY kickcount desc) valrank FROM players";
-            ranking[6] = "SELECT level, RANK() over (ORDER BY level desc) valrank FROM players";
-            ranking[7] = "SELECT playtime, RANK() over (ORDER BY playtime desc) valrank FROM players";
-            ranking[8] = "SELECT attackclear, RANK() over (ORDER BY attackclear desc) valrank FROM players";
-            ranking[9] = "SELECT pvpwincount, RANK() over (ORDER BY pvpwincount desc) valrank FROM players";
-            ranking[10] = "SELECT pvplosecount, RANK() over (ORDER BY pvplosecount desc) valrank FROM players";
-            ranking[11] = "SELECT pvpbreakout, RANK() over (ORDER BY pvpbreakout desc) valrank FROM players";
-
             try {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
@@ -518,6 +504,21 @@ public class Server implements Runnable {
                             if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
                                 JSONObject db = getData(rs.getString("uuid"));
                                 String language = db.getString("language");
+
+                                String[] ranking = new String[12];
+                                ranking[0] = "SELECT uuid, placecount, RANK() over (ORDER BY placecount desc) valrank FROM players";
+                                ranking[1] = "SELECT uuid, breakcount, RANK() over (ORDER BY breakcount desc) valrank FROM players";
+                                ranking[2] = "SELECT uuid, killcount, RANK() over (ORDER BY killcount desc) valrank FROM players";
+                                ranking[3] = "SELECT uuid, deathcount, RANK() over (ORDER BY deathcount desc) valrank FROM players";
+                                ranking[4] = "SELECT uuid, joincount, RANK() over (ORDER BY joincount desc) valrank FROM players";
+                                ranking[5] = "SELECT uuid, kickcount, RANK() over (ORDER BY kickcount desc) valrank FROM players";
+                                ranking[6] = "SELECT uuid, level, RANK() over (ORDER BY level desc) valrank FROM players";
+                                ranking[7] = "SELECT uuid, playtime, RANK() over (ORDER BY playtime desc) valrank FROM players";
+                                ranking[8] = "SELECT uuid, attackclear, RANK() over (ORDER BY attackclear desc) valrank FROM players";
+                                ranking[9] = "SELECT uuid, pvpwincount, RANK() over (ORDER BY pvpwincount desc) valrank FROM players";
+                                ranking[10] = "SELECT uuid, pvplosecount, RANK() over (ORDER BY pvplosecount desc) valrank FROM players";
+                                ranking[11] = "SELECT uuid, pvpbreakout, RANK() over (ORDER BY pvpbreakout desc) valrank FROM players";
+
                                 String datatext;
                                 if (!config.isSqlite()) {
                                     Statement stmt = conn.createStatement();
@@ -525,8 +526,10 @@ public class Server implements Runnable {
                                     for (int a = 0; a < ranking.length; a++) {
                                         ResultSet rs1 = stmt.executeQuery(ranking[a]);
                                         while (rs1.next()) {
-                                            Global.log("true!" + rs1.getString("valrnak"));
-                                            array.add(rs1.getString("valrank"));
+                                            if(rs1.getString("uuid").equals(db.getString("uuid"))){
+                                                array.add(rs1.getString("valrank"));
+                                                break;
+                                            }
                                         }
                                         rs1.close();
                                     }
@@ -537,21 +540,21 @@ public class Server implements Runnable {
                                             nbundle(language, "player-name") + ": " + rs.getString("name") + "<br>" +
                                             nbundle(language, "player-uuid") + ": " + rs.getString("uuid") + "<br>" +
                                             nbundle(language, "player-country") + ": " + db.get("country") + "<br>" +
-                                            nbundle(language, "player-placecount") + ": " + db.get("placecount") + " - #" + array.get(0) + "<br>" +
-                                            nbundle(language, "player-breakcount") + ": " + db.get("breakcount") + " - #" + array.get(1) + "<br>" +
-                                            nbundle(language, "player-killcount") + ": " + db.get("killcount") + " - #" + array.get(2) + "<br>" +
-                                            nbundle(language, "player-deathcount") + ": " + db.get("deathcount") + " - #" + array.get(3) + "<br>" +
-                                            nbundle(language, "player-joincount") + ": " + db.get("joincount") + " - #" + array.get(4) + "<br>" +
-                                            nbundle(language, "player-kickcount") + ": " + db.get("kickcount") + " - #" + array.get(5) + "<br>" +
-                                            nbundle(language, "player-level") + ": " + db.get("level") + " - #" + array.get(6) + "<br>" +
+                                            nbundle(language, "player-placecount") + ": " + db.get("placecount") + " - <b>#" + array.get(0) + "</b><br>" +
+                                            nbundle(language, "player-breakcount") + ": " + db.get("breakcount") + " - <b>#" + array.get(1) + "</b><br>" +
+                                            nbundle(language, "player-killcount") + ": " + db.get("killcount") + " - <b>#" + array.get(2) + "</b><br>" +
+                                            nbundle(language, "player-deathcount") + ": " + db.get("deathcount") + " - <b>#" + array.get(3) + "</b><br>" +
+                                            nbundle(language, "player-joincount") + ": " + db.get("joincount") + " - <b>#" + array.get(4) + "</b><br>" +
+                                            nbundle(language, "player-kickcount") + ": " + db.get("kickcount") + " - <b>#" + array.get(5) + "</b><br>" +
+                                            nbundle(language, "player-level") + ": " + db.get("level") + " - <b>#" + array.get(6) + "</b><br>" +
                                             nbundle(language, "player-reqtotalexp") + ": " + db.get("reqtotalexp") + "<br>" +
                                             nbundle(language, "player-firstdate") + ": " + db.get("firstdate") + "<br>" +
                                             nbundle(language, "player-lastdate") + ": " + db.get("lastdate") + "<br>" +
-                                            nbundle(language, "player-playtime") + ": " + db.get("playtime") + " - #" + array.get(7) + "<br>" +
-                                            nbundle(language, "player-attackclear") + ": " + db.get("attackclear") + " - #" + array.get(8) + "<br>" +
-                                            nbundle(language, "player-pvpwincount") + ": " + db.get("pvpwincount") + " - #" + array.get(9) + "<br>" +
-                                            nbundle(language, "player-pvplosecount") + ": " + db.get("pvplosecount") + " - #" + array.get(10) + "<br>" +
-                                            nbundle(language, "player-pvpbreakout") + ": " + db.get("pvpbreakout") + " - #" + array.get(11) + "<br>";
+                                            nbundle(language, "player-playtime") + ": " + db.get("playtime") + " - <b>#" + array.get(7) + "</b><br>" +
+                                            nbundle(language, "player-attackclear") + ": " + db.get("attackclear") + " - <b>#" + array.get(8) + "</b><br>" +
+                                            nbundle(language, "player-pvpwincount") + ": " + db.get("pvpwincount") + " - <b>#" + array.get(9) + "</b><br>" +
+                                            nbundle(language, "player-pvplosecount") + ": " + db.get("pvplosecount") + " - <b>#" + array.get(10) + "</b><br>" +
+                                            nbundle(language, "player-pvpbreakout") + ": " + db.get("pvpbreakout") + " - <b>#" + array.get(11) + "</b><br>";
                                 } else {
                                     datatext = nbundle(language, "player-info") + "<br>" +
                                             "========================================<br>" +

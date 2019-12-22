@@ -1016,7 +1016,7 @@ public class Threads extends TimerTask{
                 case "skipwave":
                     if (list.size() >= require) {
                         allsendMessage("vote-skipwave-done");
-                        for (int i = 0; i < 10; i++) {
+                        for (int i = 0; i < 5; i++) {
                             logic.runWave();
                         }
                     } else {
