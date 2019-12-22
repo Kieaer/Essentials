@@ -38,7 +38,7 @@ import static io.anuke.mindustry.Vars.world;
 
 public class Global {
     public static Config config = new Config();
-    public static String version = "6.1.1";
+    public static String version = "6.1.2";
 
     // 일반 기록
     public static void log(String value){
