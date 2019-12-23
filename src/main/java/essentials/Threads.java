@@ -23,6 +23,7 @@ import io.anuke.mindustry.type.Item;
 import io.anuke.mindustry.type.ItemType;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
+import io.anuke.mindustry.world.blocks.logic.MessageBlock;
 import org.codehaus.plexus.util.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -85,8 +86,10 @@ public class Threads extends TimerTask{
 
             // 냉각수 감시
             // executorService.execute(new checkthorium());
-        }
 
+            // 메세지 블럭 감시
+            new messagemonitoring().start();
+        }
         // 서버간 이동 데이터 저장
         Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
         Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
@@ -531,12 +534,11 @@ public class Threads extends TimerTask{
                 for(int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     if (!isLogin(player)) {
-                        String message1 = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-                                "If you don't have an account, use the command [accent]/register <password>[].";
-                        String message2 = "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                "만약 계정이 없다면 [accent]/register <비밀번호>[]를 입력해야 합니다.";
-                        player.sendMessage(message1);
-                        player.sendMessage(message2);
+                        String message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
+                                "If you don't have an account, use the command [accent]/register <new account id> <password>[].\n\n" +
+                                "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
+                                "만약 계정이 없다면 [accent]/register <새 계정명> <비밀번호>[]를 입력해야 합니다.";
+                        player.sendMessage(message);
                     }
                 }
             }
@@ -1151,10 +1153,31 @@ public class Threads extends TimerTask{
 
         @Override
         public void run(){
-            for(int a=0;a<messagemonitor.size();a++){
-                //MessageBlock.MessageBlockEntity entity = (MessageBlock.MessageBlockEntity) messagemonitor.get(a).entity;
-                //entity.message = "";
+            for(int a=0;a<messagemonitor.size();a++) {
+                String[] xy = messagemonitor.get(a).split("\\|");
+                int x = Integer.parseInt(xy[0]);
+                int y = Integer.parseInt(xy[1]);
+
+                MessageBlock.MessageBlockEntity entity = (MessageBlock.MessageBlockEntity) world.tile(x, y).entity;
+                String msg = entity.message;
+
+                if (msg.equals("powerblock")) {
+                    powerblock(world.tile(x, y));
+                    messagemonitor.remove(a);
+                    break;
+                } else if (msg.contains("jump")) {
+                    messagejump.add(x + "|" + y + "|" + msg);
+                    messagemonitor.remove(a);
+                    break;
+                } else if (msg.equals("scancore")) {
+                    scancore.add(world.tile(x, y));
+                    messagemonitor.remove(a);
+                    break;
+                }
             }
+        }
+
+        void powerblock(Tile tile){
             try {
                 int x = tile.x;
                 int y = tile.y;
@@ -1179,6 +1202,50 @@ public class Threads extends TimerTask{
                 powerblock.add(x + "/" + y + "/" + target_x + "/" + target_y);
             } catch (Exception ex) {
                 ex.printStackTrace();
+            }
+        }
+    }
+    public static class jumpdata extends Thread{
+        @Override
+        public void run() {
+            while(threadactive) {
+                for (int a = 0; a < messagejump.size(); a++) {
+                    String[] xy = messagejump.get(a).split("\\|");
+                    int x = Integer.parseInt(xy[0]);
+                    int y = Integer.parseInt(xy[1]);
+                    String message = xy[2];
+
+                    if(world.tile(x,y).entity.block != Blocks.message){
+                        messagejump.remove(a);
+                        break;
+                    }
+                    Call.setMessageBlockText(null, world.tile(x, y), "[green]Working...");
+
+                    String[] arr = message.split(" ");
+                    String ip;
+                    int port;
+                    if (arr[1].contains(":")) {
+                        String[] data = arr[1].split(":");
+                        ip = data[0];
+                        port = Integer.parseInt(data[1]);
+                    } else {
+                        ip = arr[1];
+                        port = 6567;
+                    }
+
+                    pingServer(ip, port, result -> {
+                        if (result.valid) {
+                            Call.setMessageBlockText(null, world.tile(x, y), result.players + " Players in this server.");
+                        } else {
+                            Call.setMessageBlockText(null, world.tile(x, y), "offline");
+                        }
+                    });
+                }
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    printStackTrace(e);
+                }
             }
         }
     }

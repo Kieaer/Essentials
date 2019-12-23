@@ -13,6 +13,7 @@ import io.anuke.mindustry.gen.Call;
 import io.anuke.mindustry.world.Tile;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -547,52 +548,24 @@ public class Global {
         JSONObject list = new JSONObject();
 
         try {
-            String apiURL = "http://ipapi.co/" + ip + "/json";
-            URL url = new URL(apiURL);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setReadTimeout(5000);
-            con.setRequestMethod("POST");
-
-            boolean redirect = false;
-
-            int status = con.getResponseCode();
-            if (status != HttpURLConnection.HTTP_OK) {
-                if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
-                    redirect = true;
-            }
-
-            if (redirect) {
-                String newUrl = con.getHeaderField("Location");
-                String cookies = con.getHeaderField("Set-Cookie");
-
-                con = (HttpURLConnection) new URL(newUrl).openConnection();
-                con.setRequestProperty("Cookie", cookies);
-            }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = br.readLine()) != null) {
-                response.append(inputLine);
-            }
-            br.close();
-            JSONTokener parser = new JSONTokener(response.toString());
-            JSONObject result = new JSONObject(parser);
+            String json = Jsoup.connect("http://ipapi.co/1.1.1.1/json").ignoreContentType(true).execute().body();
+            JSONObject result = new JSONObject(new JSONTokener(json));
+            String[] das = result.getString("languages").split(",");
 
             if (result.has("reserved")) {
-                list.put("geo", "Local IP");
-                list.put("geocode", "LC");
-                list.put("lang", "en");
+                list.put("country", "Local IP");
+                list.put("country_code", "LC");
+                list.put("languages", "en");
             } else {
-                list.put("geo", result.getString("country_name"));
-                list.put("geocode", result.getString("country"));
-                list.put("lang", result.getString("languages").substring(0, 1));
+                list.put("country", result.getString("country_name"));
+                list.put("country_code", result.getString("country"));
+                list.put("languages", result.getString("languages"));
             }
         } catch (IOException e) {
             printStackTrace(e);
-            list.put("geo", "invalid");
-            list.put("geocode", "invalid");
-            list.put("lang", "en");
+            list.put("country", "invalid");
+            list.put("country_code", "invalid");
+            list.put("languages", "en");
         }
 
         return list;

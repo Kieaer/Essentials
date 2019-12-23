@@ -432,7 +432,7 @@ public class PlayerDB{
         executorService.submit(t);
 	}
 
-	public static boolean checkpw(Player player, String pw){
+	public static boolean checkpw(Player player, String id, String pw){
         boolean result = true;
         // 영문(소문자), 숫자, 7~20자리
         String pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$";
@@ -460,12 +460,12 @@ public class PlayerDB{
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
             Global.playernormal("password-match-name", player.name);
             result = false;
-        } else /*if (pw.contains(id)) {
+        } else if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
             player.sendMessage("[green][Essentials] [sky]Password shouldn't be the same as your nickname.\n" +
                     "[green][Essentials] [sky]비밀번호는 ID는 똑같이 설정할 수 없습니다!");
             result = false;
-        } else*/ if (pw.contains(" ")) {
+        } else if (pw.contains(" ")) {
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
@@ -483,22 +483,22 @@ public class PlayerDB{
         return result;
     }
 	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String pw) {
+	public boolean register(Player player, String id, String pw) {
         // 비밀번호 보안 확인
-        if(!checkpw(player,pw)) return false;
+        if(!checkpw(player,id,pw)) return false;
         // 보안검사 끝
 
         try {
             Class.forName("org.mindrot.jbcrypt.BCrypt");
             String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
 
-            PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE name = '" + player.name + "'");
+            PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE accountid = '" + id + "'");
             ResultSet rs1 = pstm1.executeQuery();
             if (rs1.next()) {
-                if (rs1.getString("name").equals(player.name)) {
-                    player.sendMessage("[green][Essentials] [orange]This username is already in use!\n" +
-                            "[green][Essentials] [orange]이 사용자 이름은 이미 사용중입니다!");
-                    Global.playernormal("password-already-username", player.name);
+                if (rs1.getString("accountid").equals(id) || rs1.getString("name").equals(player.name) || rs1.getString("uuid").equals(player.uuid)) {
+                    player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
+                            "[green][Essentials] [orange]이 계정명은 이미 사용중입니다!");
+                    Global.playernormal("password-already-accountid", id);
                     return false;
                 }
             } else {
@@ -521,7 +521,7 @@ public class PlayerDB{
                     Statement stmt  = conn.createStatement();
                     ResultSet rs = stmt.executeQuery(find);
                     if(!rs.next()){
-                        createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, player.name, hashed, player);
+                        createNewDatabase(player.name, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, player.name, hashed, player);
                     } else if(rs.next()){
                         player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                 "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
@@ -556,7 +556,7 @@ public class PlayerDB{
             JSONObject list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
 
-            return createNewDatabase(player.name, player.uuid, list.getString("geo"), list.getString("geocode"), list.getString("lang"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), player.name, "blank", player);
+            return createNewDatabase(player.name, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), player.name, "blank", player);
         } else {
             return true;
         }
@@ -627,7 +627,7 @@ public class PlayerDB{
 
             // 플레이어가 연결한 서버 데이터 기록
             if (id == null) {
-                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ? WHERE uuid = ?",1, getnTime(), currentip, player.uuid);
+                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ? WHERE uuid = ?",true, getnTime(), currentip, player.uuid);
             } else {
                 writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ?, uuid = ? WHERE accountid = ?", true, getnTime(), currentip, player.uuid, id);
             }
@@ -702,7 +702,7 @@ public class PlayerDB{
             // 플레이어 지역이 invalid 일경우 다시 정보 가져오기
             if(db.getString("country").equals("invalid")) {
                 JSONObject list = geolocation(player);
-                writeData("UPDATE players SET country_code = ?, country = ?, language = ? WHERE uuid = ?", list.getString("geocode"), list.getString("geo"), list.getString("lang"), player.uuid);
+                writeData("UPDATE players SET country = ?, country_code = ?, language = ? WHERE uuid = ?", list.getString("country"), list.getString("country_code"), list.getString("languages"), player.uuid);
             }
         });
         t.start();

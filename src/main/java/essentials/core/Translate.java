@@ -87,7 +87,7 @@ public class Translate {
                                             p.sendMessage("[green]"+player.name + "[orange]: [white]" + result);
                                         }
                                     } else if (response != 400){
-                                        Global.warn(rb.toString());
+                                        Global.nwarn(rb.toString());
                                     }
                                 }
                             }

@@ -32,22 +32,22 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 - [x] Improved detection of griefing
   - [x] Detect non-block destroy/place griefing
     - [x] ALL WithDraw events
-- [ ] Make lobby features
-  - [ ] Show all server players
-    - [ ] massage block 
-  - [ ] Show client server players
-    - [ ] massage block
-- [ ] monitoring massage block
-  - [ ] Core block
-- [ ] PvP mode rule
-  - [ ] Anti coal in mech
+- [x] Make lobby features
+  - [ ] ~~Show all server players~~ unused
+    - [ ] ~~massage block~~ unused
+  - [x] Show client server players
+    - [x] massage block
+- [x] monitoring massage block
+  - [x] Core block
+- [x] PvP mode rule
+  - [x] Anti coal in mech
 - [ ] Chat feature upgrade
   - [ ] Blocking bad words
   - [ ] Nickname prefix
   - [ ] Remove translate before massage
   - [ ] PvP Team chat without command
-- [ ] Improved rank system
-  - [ ] Show personal ranking record
+- [x] Improved rank system
+  - [x] Show personal ranking record
   
 ## Client commands
 

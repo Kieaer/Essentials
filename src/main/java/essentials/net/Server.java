@@ -51,18 +51,16 @@ public class Server implements Runnable {
     public static ArrayList<Service> list = new ArrayList<>();
     private String remoteip;
 
-    public Server() {
-        try {
-            serverSocket = new ServerSocket(config.getServerport());
-            new Thread(this).start();
-            Global.server("server-enabled");
-        } catch (Exception e) {
-            printStackTrace(e);
-        }
-    }
-
     @Override
     public void run() {
+        try {
+            serverSocket = new ServerSocket(config.getServerport());
+        } catch (IOException e) {
+            printStackTrace(e);
+            return;
+        }
+        Global.server("server-enabled");
+
         while (active) {
             try {
                 Socket socket = serverSocket.accept();
@@ -106,7 +104,7 @@ public class Server implements Runnable {
                     String value = in.readLine();
 
                     // 수신된 데이터가 Base64 가 아닐경우
-                    if(value.length() != 25) {
+                    if(value.length() != 24) {
                         writelog("web", "Remote IP: "+remoteip);
                         String headerLine;
                         while ((headerLine = in.readLine()).length() != 0) {

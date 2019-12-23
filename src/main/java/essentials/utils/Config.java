@@ -27,7 +27,7 @@ import static io.anuke.mindustry.Vars.net;
 
 public class Config {
     private Map<String, Object> obj;
-    static int version = 7;
+    static int version = 8;
 
     public Config(){
         if(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
@@ -57,6 +57,10 @@ public class Config {
 
     public boolean isRealname(){
         return obj != null && obj.get("realname") == null && (boolean) obj.get("realname");
+    }
+
+    public boolean isStrictname() {
+        return (obj != null && obj.get("strict-name") != null) && (boolean) obj.get("strict-name");
     }
 
     public boolean isDetectreactor(){
@@ -353,7 +357,9 @@ public class Config {
                 "\n" +
                 "# "+nbundle("config-realname-description")+"\n" +
                 "# "+nbundle("config-realname-child-description")+"\n" +
+                "# "+nbundle("config-realname-strict-description")+"\n" +
                 "realname: " + isRealname() + "\n" +
+                "strict-name: " + isStrictname() + "\n" +
                 "\n" +
                 "# "+nbundle("config-colornick-description")+"\n" +
                 "colornick update interval: " + getCupdatei() + "\n" +

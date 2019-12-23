@@ -4,11 +4,13 @@ import essentials.Global;
 import essentials.special.UTF8Control;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import static essentials.Global.config;
+import static essentials.core.Log.writelog;
 
 public class Bundle {
     private ResourceBundle RESOURCE_BUNDLE;
@@ -16,7 +18,7 @@ public class Bundle {
         try{
             RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
         }catch (Exception e){
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.getDefault(), new UTF8Control());
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, new UTF8Control());
         }
     }
 
@@ -25,6 +27,7 @@ public class Bundle {
             return config.getPrefix()+RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
             Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
@@ -34,6 +37,7 @@ public class Bundle {
             return config.getPrefix()+MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
             Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
@@ -43,6 +47,7 @@ public class Bundle {
             return RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
             Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
@@ -52,6 +57,7 @@ public class Bundle {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
             Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }

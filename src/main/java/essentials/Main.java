@@ -36,6 +36,8 @@ import io.anuke.mindustry.net.Administration.PlayerInfo;
 import io.anuke.mindustry.net.Packets;
 import io.anuke.mindustry.net.ValidateException;
 import io.anuke.mindustry.plugin.Plugin;
+import io.anuke.mindustry.type.Item;
+import io.anuke.mindustry.type.ItemType;
 import io.anuke.mindustry.type.UnitType;
 import io.anuke.mindustry.world.Block;
 import io.anuke.mindustry.world.Tile;
@@ -43,6 +45,7 @@ import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
 import org.yaml.snakeyaml.Yaml;
 
@@ -56,6 +59,8 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static essentials.Global.*;
@@ -72,11 +77,16 @@ import static io.anuke.mindustry.Vars.*;
 
 public class Main extends Plugin {
     public Config config = new Config();
-    static ArrayList<String> powerblock = new ArrayList<>();
     private JSONArray nukeblock = new JSONArray();
-    static ArrayList<Tile> messagemonitor = new ArrayList<>();
-    private ArrayList<Tile> nukedata = new ArrayList<>();
+
+    static ArrayList<String> powerblock = new ArrayList<>();
+    static ArrayList<String> messagemonitor = new ArrayList<>();
+    static ArrayList<String> messagejump = new ArrayList<>();
+
+    static ArrayList<Tile> scancore = new ArrayList<>();
+    ArrayList<Tile> nukedata = new ArrayList<>();
     public Array<io.anuke.mindustry.maps.Map> maplist = Vars.maps.all();
+
     private boolean making = false;
     public static boolean threadactive = true;
 
@@ -117,6 +127,9 @@ public class Main extends Plugin {
         // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
         executorService.submit(new jumpcheck());
 
+        // 메세지 블럭에 의한 클라이언트 플레이어 카운트
+        executorService.submit(new jumpdata());
+
         // 코어 자원소모 감시 시작
         executorService.submit(new monitorresource());
 
@@ -138,8 +151,9 @@ public class Main extends Plugin {
         }
 
         // 서버기능 시작
+        Thread server = new Thread(new Server());
         if (config.isServerenable()) {
-            new essentials.net.Server();
+            server.start();
         }
 
         // Essentials EPG 기능 시작
@@ -253,11 +267,22 @@ public class Main extends Plugin {
             JSONArray array = new JSONArray(parser);
 
             for (int i = 0; i < array.length(); i++) {
-                if (array.getString(i).matches(".*"+e.player.name+".*")) {
+                if (e.player.name.matches(array.getString(i))) {
                     e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.");
                     Global.log("nickname-blacklisted", e.player.name);
                 }
             }
+
+            /*if(config.isStrictname()){
+                if(e.player.name.length() < 3){
+                    player.con.kick("The nickname is too short!\n닉네임이 너무 짧습니다!");
+                    Global.log("nickname-short");
+                }
+                if(e.player.name.matches("^(?=.*\\\\d)(?=.*[~`!@#$%\\\\^&*()-])(?=.*[a-z])(?=.*[A-Z])$")){
+                    e.player.con.kick("Server doesn't allow special characters.\n서버가 특수문자를 허용하지 않습니다.");
+                    Global.log("nickname-special", player.name);
+                }
+            }*/
         });
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
@@ -335,10 +360,10 @@ public class Main extends Plugin {
                             }
                         } else {
                             // 로그인 요구
-                            String message = "You will need to login with [accent]/login <username> <password>[] to get access to the server.\n" +
-                                    "If you don't have an account, use the command [accent]/register <password>[].\n\n" +
-                                    "서버를 플레이 할려면 [accent]/login <사용자 이름> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                    "만약 계정이 없다면 [accent]/register <비밀번호>[]를 입력해야 합니다.";
+                            String message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
+                                    "If you don't have an account, use the command [accent]/register <new account id> <password>[].\n\n" +
+                                    "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
+                                    "만약 계정이 없다면 [accent]/register <새 계정명> <비밀번호>[]를 입력해야 합니다.";
                             Call.onInfoMessage(e.player.con, message);
                         }
                     }
@@ -569,7 +594,7 @@ public class Main extends Plugin {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
-            if (!e.breaking && e.player != null && e.player.buildRequest() != null && isNocore(e.player)) {
+            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player)) {
                 Thread t = new Thread(() -> {
                     JSONObject db = getData(e.player.uuid);
                     String name = e.tile.block().name;
@@ -602,7 +627,7 @@ public class Main extends Plugin {
 
                     // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                     if (e.tile.entity.block == Blocks.message) {
-                        messagemonitor.add(e.tile);
+                        messagemonitor.add(e.tile.x+"|"+e.tile.y);
                     }
 
                     // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
@@ -776,7 +801,7 @@ public class Main extends Plugin {
 
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
         Core.app.addListener(new ApplicationListener() {
-            int delaycount = 0;
+            int scandelay,delaycount,copper,lead,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
             boolean a1, a2, a3 = false;
 
             @Override
@@ -816,7 +841,6 @@ public class Main extends Plugin {
                                     "Production: [green]" + Math.round(product) + "[]";
                             Call.setMessageBlockText(null, world.tile(x, y), text);
                         }
-
                         // 타이머 초기화
                         delaycount = 0;
                         a1 = false;
@@ -825,6 +849,151 @@ public class Main extends Plugin {
                     } catch (Exception ignored) {}
                 } else {
                     delaycount++;
+                }
+
+                if(scandelay == 60){
+                    // 코어 자원 소모량 감시
+                    try {
+                        StringBuilder items = new StringBuilder();
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                int amount = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                                String data;
+                                String color;
+                                int val;
+                                switch (item.name) {
+                                    case "copper":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - copper;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            copper = amount;
+                                        }
+                                        break;
+                                    case "lead":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - lead;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            lead = amount;
+                                        }
+                                        break;
+                                    case "titanium":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - titanium;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            titanium = amount;
+                                        }
+                                        break;
+                                    case "thorium":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - thorium;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            thorium = amount;
+                                        }
+                                        break;
+                                    case "silicon":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - silicon;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            silicon = amount;
+                                        }
+                                        break;
+                                    case "phase-fabric":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - phase_fabric;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            phase_fabric = amount;
+                                        }
+                                        break;
+                                    case "surge-alloy":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - surge_alloy;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            surge_alloy = amount;
+                                        }
+                                        break;
+                                    case "plastanium":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - plastanium;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            plastanium = amount;
+                                        }
+                                        break;
+                                    case "metaglass":
+                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                            val = amount - metaglass;
+                                            if (val > 0) {
+                                                color = "[green]+";
+                                            } else {
+                                                color = "[red]-";
+                                            }
+                                            data = "[]" + item.name + ": " + color + val + "/s\n";
+                                            items.append(data);
+                                            metaglass = amount;
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+
+                        for (int a = 0; a < scancore.size(); a++) {
+                            if (scancore.get(a).entity.block != Blocks.message) {
+                                scancore.remove(a);
+                                break;
+                            }
+                            Call.setMessageBlockText(null, scancore.get(a), items.toString());
+                        }
+                    }catch (Exception ignored){}
+                    scandelay = 0;
+                } else {
+                    scandelay++;
                 }
 
                 // 핵 폭발감지
@@ -895,6 +1064,7 @@ public class Main extends Plugin {
 
                         Server.active = false;
                         Server.serverSocket.close();
+                        server.interrupt();
 
                         Global.log("server-thread-disabled");
                     } catch (Exception e) {
@@ -953,7 +1123,7 @@ public class Main extends Plugin {
                 Global.warn("no-parameter");
                 return;
             }
-            Global.log(nbundle("use-setperm"));
+            Global.log("use-setperm");
         });
         handler.register("allinfo", "<name>", "Show player information.", (arg) -> {
             if(arg.length == 0) {
@@ -1159,7 +1329,7 @@ public class Main extends Plugin {
             }
             try{
                 writeData("UPDATE players SET name = ? WHERE name = ?",arg[1],arg[0]);
-                Global.log(nbundle("player-nickname-change-to", arg[0], arg[1]));
+                Global.log("player-nickname-change-to", arg[0], arg[1]);
             }catch (Exception e){
                 printStackTrace(e);
                 Global.warn("player-not-found");
@@ -1178,7 +1348,7 @@ public class Main extends Plugin {
                 }
             }
             */
-            Global.log("Currently not supported!");
+            Global.nlog("Currently not supported!");
         });
         handler.register("setperm", "<player_name> <group>", "Set player permission group", arg -> {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
@@ -1244,7 +1414,7 @@ public class Main extends Plugin {
                     break;
                 case "ip":
                     netServer.admins.banPlayerIP(arg[1]);
-                    Global.log(nbundle("tempban", other.name, arg[1]));
+                    Global.log("tempban", other.name, arg[1]);
                     break;
                 default:
                     Global.nlog("Invalid type.");
@@ -1284,7 +1454,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(!checkperm(player,"changepw")) return;
-            if(!checkpw(player, arg[0])){
+            if(!checkpw(player, arg[0], arg[1])){
                 player.sendMessage(bundle(player, "need-new-password"));
                 return;
             }
@@ -1625,10 +1795,10 @@ public class Main extends Plugin {
                 player.sendMessage(motd);
             }
         });
-        handler.<Player>register("register", "<password>", "Register account", (arg, player) -> {
+        handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
             if (config.isLoginenable()) {
                 PlayerDB playerdb = new PlayerDB();
-                if (playerdb.register(player, arg[0])) {
+                if (playerdb.register(player, arg[0], arg[1])) {
                     if (Vars.state.rules.pvp) {
                         int index = player.getTeam().ordinal() + 1;
                         while (index != player.getTeam().ordinal()) {
