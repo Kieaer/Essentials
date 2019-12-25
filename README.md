@@ -53,7 +53,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| ch | &lt;massage&gt; | Send chat to another server () <br> You must modify the settings in ``config/plugins/Essentials/config.txt`` |
+| ch | &lt;massage&gt; | Send chat to another server <br> You must modify the settings in ``config/plugins/Essentials/config.yml`` |
 | changepw | &lt;new password&gt; | Change account password |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
