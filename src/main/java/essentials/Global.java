@@ -17,11 +17,7 @@ import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -148,6 +144,24 @@ public class Global {
             index++;
         }
         return player.getTeam();
+    }
+
+    public static void setTeam(Player player){
+        if (Vars.state.rules.pvp) {
+            int index = player.getTeam().ordinal() + 1;
+            while (index != player.getTeam().ordinal()) {
+                if (index >= Team.all.length) {
+                    index = 0;
+                }
+                if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
+                    player.setTeam(Team.all[index]);
+                    break;
+                }
+                index++;
+            }
+        } else {
+            player.setTeam(Vars.defaultTeam);
+        }
     }
 
     // 오류 메세지를 파일로 복사하거나 즉시 출력

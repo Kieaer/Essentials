@@ -3,7 +3,10 @@ package essentials;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
-import essentials.core.*;
+import essentials.core.EPG;
+import essentials.core.Log;
+import essentials.core.PlayerDB;
+import essentials.core.Translate;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
@@ -68,7 +71,6 @@ import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static io.anuke.mindustry.Vars.*;
-import static java.lang.Thread.sleep;
 
 public class Main extends Plugin {
     public Config config = new Config();
@@ -1787,29 +1789,27 @@ public class Main extends Plugin {
                 player.sendMessage(motd);
             }
         });
-        handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
+        handler.<Player>register("register", "<accountid> <password> [phone_number]", "Register account", (arg, player) -> {
             if (config.isLoginenable()) {
                 PlayerDB playerdb = new PlayerDB();
-                if (playerdb.register(player, arg[0], arg[1])) {
-                    if (Vars.state.rules.pvp) {
-                        int index = player.getTeam().ordinal() + 1;
-                        while (index != player.getTeam().ordinal()) {
-                            if (index >= Team.all.length) {
-                                index = 0;
-                            }
-                            if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
-                                player.setTeam(Team.all[index]);
-                                break;
-                            }
-                            index++;
-                        }
+                if(config.getPasswordmethod().equals("password, phone")){
+                    if (playerdb.register(player, arg[0], arg[1], arg[2])) {
+                        setTeam(player);
+                        Call.onPlayerDeath(player);
+                        player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                     } else {
-                        player.setTeam(Vars.defaultTeam);
+                        player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
                     }
-                    Call.onPlayerDeath(player);
-                    player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
-                } else {
-                    player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
+                } else if(config.getPasswordmethod().equals("password")){
+                    if(config.getPasswordmethod().equals("password, phone")){
+                        if (playerdb.register(player, arg[0], arg[1])) {
+                            setTeam(player);
+                            Call.onPlayerDeath(player);
+                            player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
+                        } else {
+                            player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
+                        }
+                    }
                 }
             } else {
                 player.sendMessage(bundle(player,"login-not-use"));
@@ -2161,7 +2161,7 @@ public class Main extends Plugin {
             Vote vote = new Vote(player, arg[0], other);
             vote.command();
         });
-        handler.<Player>register("test", "Check that the plug-in is working properly.", (arg, player) -> {
+        /*handler.<Player>register("test", "Check that the plug-in is working properly.", (arg, player) -> {
             Thread t = new Thread(() -> {
                 Tile start = world.tile(player.tileX(), player.tileY());
                 try {
@@ -2174,6 +2174,6 @@ public class Main extends Plugin {
                 Global.nlog(ai.as().toArray());
             });
             t.start();
-        });
+        });*/
     }
 }
