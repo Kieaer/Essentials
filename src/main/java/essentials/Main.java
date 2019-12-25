@@ -3,10 +3,7 @@ package essentials;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
-import essentials.core.EPG;
-import essentials.core.Log;
-import essentials.core.PlayerDB;
-import essentials.core.Translate;
+import essentials.core.*;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
@@ -45,7 +42,6 @@ import io.anuke.mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
 import org.yaml.snakeyaml.Yaml;
 
@@ -59,8 +55,6 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static essentials.Global.*;
@@ -74,6 +68,7 @@ import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static io.anuke.mindustry.Vars.*;
+import static java.lang.Thread.sleep;
 
 public class Main extends Plugin {
     public Config config = new Config();
@@ -1426,9 +1421,6 @@ public class Main extends Plugin {
                 client.main("bansync", null, null);
             }
         });
-        handler.register("test", "Check that the plug-in is working properly.", arg -> {
-
-        });
     }
 
     @Override
@@ -2168,6 +2160,20 @@ public class Main extends Plugin {
 
             Vote vote = new Vote(player, arg[0], other);
             vote.command();
+        });
+        handler.<Player>register("test", "Check that the plug-in is working properly.", (arg, player) -> {
+            Thread t = new Thread(() -> {
+                Tile start = world.tile(player.tileX(), player.tileY());
+                try {
+                    sleep(1500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Tile target = world.tile(player.tileX(), player.tileY());
+                AI ai = new AI(start, target, player);
+                Global.nlog(ai.as().toArray());
+            });
+            t.start();
         });
     }
 }
