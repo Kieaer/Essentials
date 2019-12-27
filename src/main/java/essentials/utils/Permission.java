@@ -1,7 +1,7 @@
 package essentials.utils;
 
-import io.anuke.arc.Core;
-import io.anuke.arc.util.Log;
+import arc.Core;
+import arc.util.Log;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 

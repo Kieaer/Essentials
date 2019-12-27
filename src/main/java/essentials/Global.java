@@ -1,16 +1,16 @@
 package essentials;
 
+import arc.Core;
+import arc.util.Log;
 import essentials.utils.Bundle;
 import essentials.utils.Config;
 import essentials.utils.Permission;
-import io.anuke.arc.Core;
-import io.anuke.arc.util.Log;
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Blocks;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
-import io.anuke.mindustry.world.Tile;
+import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.entities.type.Player;
+import mindustry.game.Team;
+import mindustry.gen.Call;
+import mindustry.world.Tile;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.jsoup.Jsoup;
@@ -30,8 +30,8 @@ import java.util.concurrent.ThreadFactory;
 
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.getData;
-import static io.anuke.mindustry.Vars.playerGroup;
-import static io.anuke.mindustry.Vars.world;
+import static mindustry.Vars.playerGroup;
+import static mindustry.Vars.world;
 
 public class Global {
     public static Config config = new Config();

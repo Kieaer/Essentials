@@ -1,13 +1,13 @@
 package essentials.net;
 
+import arc.struct.Array;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
 import essentials.utils.Config;
-import io.anuke.arc.collection.Array;
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.gen.Call;
-import io.anuke.mindustry.net.Administration;
+import mindustry.Vars;
+import mindustry.entities.type.Player;
+import mindustry.gen.Call;
+import mindustry.net.Administration;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
 import static essentials.Global.*;
 import static essentials.core.PlayerDB.writeData;
 import static essentials.utils.Config.executorService;
-import static io.anuke.mindustry.Vars.netServer;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static mindustry.Vars.netServer;
+import static mindustry.Vars.playerGroup;
 
 public class Client extends Thread{
     public Config config = new Config();

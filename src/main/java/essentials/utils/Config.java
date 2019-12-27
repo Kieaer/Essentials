@@ -1,7 +1,7 @@
 package essentials.utils;
 
+import arc.Core;
 import essentials.Global;
-import io.anuke.arc.Core;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -23,7 +23,7 @@ import java.util.jar.JarFile;
 
 import static essentials.Global.nbundle;
 import static essentials.Global.printStackTrace;
-import static io.anuke.mindustry.Vars.net;
+import static mindustry.Vars.net;
 
 public class Config {
     private Map<String, Object> obj;
@@ -264,6 +264,10 @@ public class Config {
         return data.getString("servername");
     }
 
+    public String getEventport(){
+        return obj != null && obj.get("event-port") != null ? (String) obj.get("event-port") : "8000-8050";
+    }
+
     private void validfile(){
         final String path = "configs";
         File jarFile;
@@ -455,7 +459,10 @@ public class Config {
                 "spawnlimit: "+getSpawnlimit() +"\n" +
                 "\n" +
                 "# "+nbundle("config-prefix-description")+"\n"+
-                "prefix: "+prefix;
+                "prefix: "+prefix+"\n" +
+                "\n" +
+                "# "+nbundle("config-event-port-description")+"\n"+
+                "event-port: "+getEventport();
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
         Global.config("config-loaded");

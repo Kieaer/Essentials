@@ -2,7 +2,7 @@ package essentials.core;
 
 import essentials.Global;
 import essentials.utils.Config;
-import io.anuke.mindustry.entities.type.Player;
+import mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import static essentials.Global.isNocore;
 import static essentials.Global.printStackTrace;
 import static essentials.core.PlayerDB.getData;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static mindustry.Vars.playerGroup;
 
 public class Translate {
     public Config config = new Config();

@@ -1,11 +1,11 @@
 package essentials.core;
 
-import io.anuke.arc.Core;
-import io.anuke.arc.Events;
-import io.anuke.arc.files.Fi;
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.EventType.*;
+import arc.Core;
+import arc.Events;
+import arc.files.Fi;
+import mindustry.Vars;
+import mindustry.entities.type.Player;
+import mindustry.game.EventType.*;
 
 import java.io.IOException;
 import java.nio.file.Files;

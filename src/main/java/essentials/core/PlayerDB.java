@@ -1,13 +1,13 @@
 package essentials.core;
 
+import arc.Core;
 import essentials.Global;
 import essentials.Threads;
 import essentials.utils.Config;
-import io.anuke.arc.Core;
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
+import mindustry.Vars;
+import mindustry.entities.type.Player;
+import mindustry.game.Team;
+import mindustry.gen.Call;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -29,8 +29,8 @@ import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
 import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
-import static io.anuke.mindustry.Vars.netServer;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static mindustry.Vars.netServer;
+import static mindustry.Vars.playerGroup;
 
 public class PlayerDB{
     private static int dbversion = 2;
@@ -711,7 +711,7 @@ public class PlayerDB{
                     pvpteam.add(player);
                 }
             } else {
-                player.setTeam(Vars.defaultTeam);
+                player.setTeam(Team.sharded);
             }
             Call.onPlayerDeath(player);
 
