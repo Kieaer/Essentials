@@ -12,10 +12,7 @@ import arc.util.Time;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
-import essentials.core.EPG;
-import essentials.core.Log;
-import essentials.core.PlayerDB;
-import essentials.core.Translate;
+import essentials.core.*;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
@@ -70,6 +67,7 @@ import static essentials.utils.Config.jumpall;
 import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class Main extends Plugin {
@@ -298,7 +296,7 @@ public class Main extends Plugin {
                             String builder = data[2];
                             NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
                             if (entity.heat >= 0.01) {
-                                Thread.sleep(50);
+                                sleep(50);
                                 for (int a = 0; a < playerGroup.size(); a++) {
                                     Player other = playerGroup.all().get(a);
                                     other.sendMessage(bundle(other, "detect-thorium"));
@@ -311,7 +309,7 @@ public class Main extends Plugin {
                                 }
                                 Call.onTileDestroyed(world.tile(x, y));
                             } else {
-                                Thread.sleep(1950);
+                                sleep(1950);
                                 if (entity.heat >= 0.01) {
                                     for (int a = 0; a < playerGroup.size(); a++) {
                                         Player other = playerGroup.all().get(a);
@@ -2176,7 +2174,7 @@ public class Main extends Plugin {
             Vote vote = new Vote(player, arg[0], other);
             vote.command();
         });
-        /*handler.<Player>register("test", "Check that the plug-in is working properly.", (arg, player) -> {
+        handler.<Player>register("test", "Check that the plug-in is working properly.", (arg, player) -> {
             Thread t = new Thread(() -> {
                 Tile start = world.tile(player.tileX(), player.tileY());
                 try {
@@ -2186,9 +2184,9 @@ public class Main extends Plugin {
                 }
                 Tile target = world.tile(player.tileX(), player.tileY());
                 AI ai = new AI(start, target, player);
-                Global.nlog(ai.as().toArray());
+                Global.nlog(ai.auto().toArray());
             });
             t.start();
-        });*/
+        });
     }
 }
