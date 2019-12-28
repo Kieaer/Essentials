@@ -1,17 +1,17 @@
 package essentials.net;
 
+import arc.Core;
+import arc.struct.Array;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
 import essentials.utils.Config;
-import io.anuke.arc.Core;
-import io.anuke.arc.collection.Array;
-import io.anuke.mindustry.core.GameState;
-import io.anuke.mindustry.core.Version;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.net.Administration;
-import io.anuke.mindustry.type.Item;
-import io.anuke.mindustry.type.ItemType;
+import mindustry.core.GameState;
+import mindustry.core.Version;
+import mindustry.entities.type.Player;
+import mindustry.game.Team;
+import mindustry.net.Administration;
+import mindustry.type.Item;
+import mindustry.type.ItemType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -42,7 +42,7 @@ import static essentials.Threads.uptime;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.conn;
 import static essentials.core.PlayerDB.getData;
-import static io.anuke.mindustry.Vars.*;
+import static mindustry.Vars.*;
 
 public class Server implements Runnable {
     public Config config = new Config();
@@ -301,7 +301,7 @@ public class Server implements Runnable {
 
             for (Item item : content.items()) {
                 if (item.type == ItemType.material) {
-                    items.put(item.name, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                    items.put(item.name, state.teams.get(Team.sharded).cores.first().items.get(item));
                 }
             }
 
@@ -359,7 +359,7 @@ public class Server implements Runnable {
                 StringBuilder items = new StringBuilder();
                 for (Item item : content.items()) {
                     if (item.type == ItemType.material) {
-                        items.append(item.name).append(": ").append(state.teams.get(Team.sharded).cores.first().entity.items.get(item)).append("<br>");
+                        items.append(item.name).append(": ").append(state.teams.get(Team.sharded).cores.first().items.get(item)).append("<br>");
                     }
                 }
                 String coreitem = items.toString();

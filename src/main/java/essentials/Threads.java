@@ -1,29 +1,29 @@
 package essentials;
 
+import arc.ApplicationListener;
+import arc.Core;
+import arc.Events;
+import arc.files.Fi;
+import arc.struct.Array;
 import essentials.core.Exp;
 import essentials.core.PlayerDB;
-import io.anuke.arc.ApplicationListener;
-import io.anuke.arc.Core;
-import io.anuke.arc.Events;
-import io.anuke.arc.collection.Array;
-import io.anuke.arc.files.Fi;
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Blocks;
-import io.anuke.mindustry.core.GameState;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.EventType;
-import io.anuke.mindustry.game.EventType.BlockBuildEndEvent;
-import io.anuke.mindustry.game.EventType.BuildSelectEvent;
-import io.anuke.mindustry.game.Gamemode;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
-import io.anuke.mindustry.io.SaveIO;
-import io.anuke.mindustry.maps.Map;
-import io.anuke.mindustry.type.Item;
-import io.anuke.mindustry.type.ItemType;
-import io.anuke.mindustry.world.Block;
-import io.anuke.mindustry.world.Tile;
-import io.anuke.mindustry.world.blocks.logic.MessageBlock;
+import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.core.GameState;
+import mindustry.entities.type.Player;
+import mindustry.game.EventType;
+import mindustry.game.EventType.BlockBuildEndEvent;
+import mindustry.game.EventType.BuildSelectEvent;
+import mindustry.game.Gamemode;
+import mindustry.game.Team;
+import mindustry.gen.Call;
+import mindustry.io.SaveIO;
+import mindustry.maps.Map;
+import mindustry.type.Item;
+import mindustry.type.ItemType;
+import mindustry.world.Block;
+import mindustry.world.Tile;
+import mindustry.world.blocks.logic.MessageBlock;
 import org.codehaus.plexus.util.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -50,7 +50,7 @@ import static essentials.core.PlayerDB.getData;
 import static essentials.core.PlayerDB.writeData;
 import static essentials.special.PingServer.pingServer;
 import static essentials.utils.Config.*;
-import static io.anuke.mindustry.Vars.*;
+import static mindustry.Vars.*;
 
 public class Threads extends TimerTask{
     public static String playtime;
@@ -658,11 +658,6 @@ public class Threads extends TimerTask{
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }
-                String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-                JSONTokener temp2 = new JSONTokener(temp1);
-                JSONObject data = new JSONObject(temp2);
-
-                //Core.settings.put("servername", data.getString("servername")+", "+result+" players");
                 Core.settings.put("servername", config.getServername()+", "+result+" players");
             }
         }
@@ -872,7 +867,7 @@ public class Threads extends TimerTask{
                 if(state.is(GameState.State.playing)) {
                     for (Item item : content.items()) {
                         if (item.type == ItemType.material) {
-                            pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                            pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
                         }
                     }
 
@@ -892,8 +887,8 @@ public class Threads extends TimerTask{
                         if (item.type == ItemType.material) {
                             int resource;
                             if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                            if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
-                                resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                            if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                                resource = state.teams.get(Team.sharded).cores.first().items.get(item);
                             } else {
                                 return;
                             }
@@ -915,14 +910,14 @@ public class Threads extends TimerTask{
                                     allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
                                 }
                             }
-                            cur.add(a, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                            cur.add(a, state.teams.get(Team.sharded).cores.first().items.get(item));
                             a++;
                         }
                     }
 
                     for (Item item : content.items()) {
                         if (item.type == ItemType.material) {
-                            pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                            pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
                         }
                     }
                 } else {
@@ -1148,9 +1143,6 @@ public class Threads extends TimerTask{
         }
     }
     static class messagemonitoring extends Thread{
-        Tile tile;
-        Tile target;
-
         @Override
         public void run(){
             for(int a=0;a<messagemonitor.size();a++) {

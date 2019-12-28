@@ -1,5 +1,14 @@
 package essentials;
 
+import arc.ApplicationListener;
+import arc.Core;
+import arc.Events;
+import arc.files.Fi;
+import arc.math.Mathf;
+import arc.struct.Array;
+import arc.util.CommandHandler;
+import arc.util.Strings;
+import arc.util.Time;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
@@ -12,36 +21,27 @@ import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
 import essentials.utils.Config;
 import essentials.utils.Permission;
-import io.anuke.arc.ApplicationListener;
-import io.anuke.arc.Core;
-import io.anuke.arc.Events;
-import io.anuke.arc.collection.Array;
-import io.anuke.arc.files.Fi;
-import io.anuke.arc.math.Mathf;
-import io.anuke.arc.util.CommandHandler;
-import io.anuke.arc.util.Strings;
-import io.anuke.arc.util.Time;
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Blocks;
-import io.anuke.mindustry.content.UnitTypes;
-import io.anuke.mindustry.entities.type.BaseUnit;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.entities.type.Unit;
-import io.anuke.mindustry.game.Difficulty;
-import io.anuke.mindustry.game.EventType.*;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
-import io.anuke.mindustry.io.SaveIO;
-import io.anuke.mindustry.net.Administration.PlayerInfo;
-import io.anuke.mindustry.net.Packets;
-import io.anuke.mindustry.net.ValidateException;
-import io.anuke.mindustry.plugin.Plugin;
-import io.anuke.mindustry.type.Item;
-import io.anuke.mindustry.type.ItemType;
-import io.anuke.mindustry.type.UnitType;
-import io.anuke.mindustry.world.Block;
-import io.anuke.mindustry.world.Tile;
-import io.anuke.mindustry.world.blocks.power.NuclearReactor;
+import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.content.UnitTypes;
+import mindustry.entities.type.BaseUnit;
+import mindustry.entities.type.Player;
+import mindustry.entities.type.Unit;
+import mindustry.game.Difficulty;
+import mindustry.game.EventType.*;
+import mindustry.game.Team;
+import mindustry.gen.Call;
+import mindustry.io.SaveIO;
+import mindustry.net.Administration.PlayerInfo;
+import mindustry.net.Packets;
+import mindustry.net.ValidateException;
+import mindustry.plugin.Plugin;
+import mindustry.type.Item;
+import mindustry.type.ItemType;
+import mindustry.type.UnitType;
+import mindustry.world.Block;
+import mindustry.world.Tile;
+import mindustry.world.blocks.power.NuclearReactor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -70,19 +70,20 @@ import static essentials.utils.Config.jumpall;
 import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
-import static io.anuke.mindustry.Vars.*;
+import static mindustry.Vars.*;
 
 public class Main extends Plugin {
     public Config config = new Config();
     private JSONArray nukeblock = new JSONArray();
 
+    static ArrayList<String> eventservers = new ArrayList<>();
     static ArrayList<String> powerblock = new ArrayList<>();
     static ArrayList<String> messagemonitor = new ArrayList<>();
     static ArrayList<String> messagejump = new ArrayList<>();
 
     static ArrayList<Tile> scancore = new ArrayList<>();
     ArrayList<Tile> nukedata = new ArrayList<>();
-    public Array<io.anuke.mindustry.maps.Map> maplist = Vars.maps.all();
+    public Array<mindustry.maps.Map> maplist = Vars.maps.all();
 
     private boolean making = false;
     public static boolean threadactive = true;
@@ -221,7 +222,7 @@ public class Main extends Plugin {
             if (Vars.state.rules.pvp) {
                 int index = 5;
                 for (int a = 0; a < 5; a++) {
-                    if (Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
+                    if (Vars.state.teams.get(Team.all()[index]).cores.isEmpty()) {
                         index--;
                     }
                 }
@@ -229,12 +230,12 @@ public class Main extends Plugin {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
                         if (isLogin(player)) {
-                            if (player.getTeam().name().equals(e.winner.name())) {
+                            if (player.getTeam().name.equals(e.winner.name)) {
                                 JSONObject db = getData(player.uuid);
                                 int pvpwin = db.getInt("pvpwincount");
                                 pvpwin++;
                                 writeData("UPDATE players SET pvpwincount = ? WHERE uuid = ?", pvpwin, player.uuid);
-                            } else if (!player.getTeam().name().equals(e.winner.name())) {
+                            } else if (!player.getTeam().name.equals(e.winner.name)) {
                                 JSONObject db = getData(player.uuid);
                                 int pvplose = db.getInt("pvplosecount");
                                 pvplose++;
@@ -854,13 +855,13 @@ public class Main extends Plugin {
                         StringBuilder items = new StringBuilder();
                         for (Item item : content.items()) {
                             if (item.type == ItemType.material) {
-                                int amount = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                                int amount = state.teams.get(Team.sharded).cores.first().items.get(item);
                                 String data;
                                 String color;
                                 int val;
                                 switch (item.name) {
                                     case "copper":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - copper;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -873,7 +874,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "lead":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - lead;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -886,7 +887,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "titanium":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - titanium;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -899,7 +900,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "thorium":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - thorium;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -912,7 +913,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "silicon":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - silicon;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -925,7 +926,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "phase-fabric":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - phase_fabric;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -938,7 +939,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "surge-alloy":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - surge_alloy;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -951,7 +952,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "plastanium":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - plastanium;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -964,7 +965,7 @@ public class Main extends Plugin {
                                         }
                                         break;
                                     case "metaglass":
-                                        if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
+                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                                             val = amount - metaglass;
                                             if (val > 0) {
                                                 color = "[green]+";
@@ -1271,12 +1272,10 @@ public class Main extends Plugin {
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
                 Global.client("server-connecting");
-
+                Client client = new Client();
                 if(serverconn){
-                    Client client = new Client();
                     client.main("exit", null, null);
                 } else {
-                    Client client = new Client();
                     client.main(null, null, null);
                 }
             } else {
@@ -1289,9 +1288,9 @@ public class Main extends Plugin {
             db.openconnect();
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
-            Iterator i = permission.keys();
+            Iterator<String> i = permission.keys();
             while(i.hasNext()) {
-                String b = i.next().toString();
+                String b = i.next();
                 if(b.equals(arg[0])){
                     writeData("UPDATE players SET permission = ?",arg[0]);
                     Global.log("success");
@@ -1351,9 +1350,9 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 Global.warn("player-not-found");
             }
-            Iterator i = permission.keys();
+            Iterator<String> i = permission.keys();
             while(i.hasNext()) {
-                String b = i.next().toString();
+                String b = i.next();
                 if(b.equals(arg[1])){
                     writeData("UPDATE players SET permission = ? WHERE name = ?",arg[1],arg[0]);
                     Global.playernormal("success");
@@ -1374,11 +1373,11 @@ public class Main extends Plugin {
         handler.register("team","[name]", "Change target player team.", (arg) -> {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
-                int i = other.getTeam().ordinal()+1;
-                while(i != other.getTeam().ordinal()){
-                    if (i >= Team.all.length) i = 0;
-                    if(!state.teams.get(Team.all[i]).cores.isEmpty()){
-                        other.setTeam(Team.all[i]);
+                int i = other.getTeam().id+1;
+                while(i != other.getTeam().id){
+                    if (i >= Team.all().length) i = 0;
+                    if(!state.teams.get(Team.all()[i]).cores.isEmpty()){
+                        other.setTeam(Team.all()[i]);
                         break;
                     }
                     i++;
@@ -1486,8 +1485,8 @@ public class Main extends Plugin {
         });
         handler.<Player>register("despawn","Kill all enemy units", (arg, player) -> {
             if (!checkperm(player, "despawn")) return;
-            for(int a=0;a<Team.all.length;a++){
-                unitGroups[Team.all[a].ordinal()].all().each(Unit::kill);
+            for(int a=0;a<Team.all().length;a++){
+                unitGroup.all().each(Unit::kill);
             }
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
@@ -1511,19 +1510,12 @@ public class Main extends Plugin {
                                 player.sendMessage(bundle(player, "event-making"));
                                 making = true;
 
-                                int customport = (int) (Math.random() * (8000 - 7950 + 1)) + 8000;
-                                String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-                                JSONTokener parser = new JSONTokener(settings);
-                                JSONObject object = new JSONObject(parser);
+                                String[] range = config.getEventport().split("-");
+                                int firstport = Integer.parseInt(range[0]);
+                                int lastport = Integer.parseInt(range[1]);
+                                int customport = (int) (Math.random() * ((lastport - firstport) - 1));
 
-                                JSONArray array = new JSONArray();
-                                JSONObject item = new JSONObject();
-                                item.put("name", arg[1]);
-                                item.put("port", customport);
-                                array.put(item);
-
-                                object.put("servers", array);
-                                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(String.valueOf(object));
+                                eventservers.add(arg[1]+"/"+customport);
 
                                 Threads.eventserver es = new Threads.eventserver();
                                 es.roomname = arg[1];
@@ -1553,16 +1545,12 @@ public class Main extends Plugin {
                         }
                         break;
                     case "join":
-                        String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-                        JSONTokener parser = new JSONTokener(settings);
-                        JSONObject object = new JSONObject(parser);
-                        JSONArray arr = object.getJSONArray("servers");
-                        for (int a = 0; a < arr.length(); a++) {
-                            JSONObject ob = arr.getJSONObject(a);
-                            String name = ob.getString("name");
+                        for (String eventserver : eventservers) {
+                            String[] data = eventserver.split("/");
+                            String name = data[0];
                             if (name.equals(arg[1])) {
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
-                                Call.onConnect(player.con, currentip, ob.getInt("port"));
+                                Call.onConnect(player.con, currentip, Integer.parseInt(data[2]));
                                 break;
                             }
                         }
@@ -1951,9 +1939,9 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 player.sendMessage(bundle(player, "player-not-found"));
             }
-            Iterator i = permission.keys();
+            Iterator<String> i = permission.keys();
             while(i.hasNext()) {
-                String b = i.next().toString();
+                String b = i.next();
                 if(b.equals(arg[1])){
                     writeData("UPDATE players SET permission = ? WHERE name = ?",arg[0]);
                     player.sendMessage(bundle(player, "success"));
@@ -1993,11 +1981,11 @@ public class Main extends Plugin {
         handler.<Player>register("team", "[Team...]", "Change team (PvP only)", (arg, player) -> {
             if(!checkperm(player,"team")) return;
             if (Vars.state.rules.pvp) {
-                int i = player.getTeam().ordinal() + 1;
-                while (i != player.getTeam().ordinal()) {
-                    if (i >= Team.all.length) i = 0;
-                    if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()) {
-                        player.setTeam(Team.all[i]);
+                int i = player.getTeam().id + 1;
+                while (i != player.getTeam().id) {
+                    if (i >= Team.all().length) i = 0;
+                    if (!Vars.state.teams.get(Team.all()[i]).cores.isEmpty()) {
+                        player.setTeam(Team.all()[i]);
                         break;
                     }
                     i++;
@@ -2125,7 +2113,7 @@ public class Main extends Plugin {
                     vote.command();
                 } else if(arg[0].equals("map")){
                     // 맵 투표
-                    io.anuke.mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
+                    mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
                     if (world == null){
                         world = maplist.get(Integer.parseInt(arg[1]));
                     }

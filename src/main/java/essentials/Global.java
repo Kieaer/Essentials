@@ -1,16 +1,16 @@
 package essentials;
 
+import arc.Core;
+import arc.util.Log;
 import essentials.utils.Bundle;
 import essentials.utils.Config;
 import essentials.utils.Permission;
-import io.anuke.arc.Core;
-import io.anuke.arc.util.Log;
-import io.anuke.mindustry.Vars;
-import io.anuke.mindustry.content.Blocks;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.Team;
-import io.anuke.mindustry.gen.Call;
-import io.anuke.mindustry.world.Tile;
+import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.entities.type.Player;
+import mindustry.game.Team;
+import mindustry.gen.Call;
+import mindustry.world.Tile;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.jsoup.Jsoup;
@@ -30,12 +30,12 @@ import java.util.concurrent.ThreadFactory;
 
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.getData;
-import static io.anuke.mindustry.Vars.playerGroup;
-import static io.anuke.mindustry.Vars.world;
+import static mindustry.Vars.playerGroup;
+import static mindustry.Vars.world;
 
 public class Global {
     public static Config config = new Config();
-    public static String version = "6.1.2";
+    public static String version = "7.0";
 
     // 일반 기록
     public static void log(String value){
@@ -133,13 +133,13 @@ public class Global {
 
     // 코어가 없는 팀 찾기
     public static Team getTeamNoCore(Player player){
-        int index = player.getTeam().ordinal()+1;
-        while (index != player.getTeam().ordinal()){
-            if (index >= Team.all.length){
+        int index = player.getTeam().id+1;
+        while (index != player.getTeam().id){
+            if (index >= Team.all().length){
                 index = 0;
             }
-            if (Vars.state.teams.get(Team.all[index]).cores.isEmpty()){
-                return Team.all[index]; //return a team without a core
+            if (Vars.state.teams.get(Team.all()[index]).cores.isEmpty()){
+                return Team.all()[index]; //return a team without a core
             }
             index++;
         }
@@ -148,19 +148,19 @@ public class Global {
 
     public static void setTeam(Player player){
         if (Vars.state.rules.pvp) {
-            int index = player.getTeam().ordinal() + 1;
-            while (index != player.getTeam().ordinal()) {
-                if (index >= Team.all.length) {
+            int index = player.getTeam().id + 1;
+            while (index != player.getTeam().id) {
+                if (index >= Team.all().length) {
                     index = 0;
                 }
-                if (!Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
-                    player.setTeam(Team.all[index]);
+                if (!Vars.state.teams.get(Team.all()[index]).cores.isEmpty()) {
+                    player.setTeam(Team.all()[index]);
                     break;
                 }
                 index++;
             }
         } else {
-            player.setTeam(Vars.defaultTeam);
+            player.setTeam(Team.sharded);
         }
     }
 
@@ -480,7 +480,6 @@ public class Global {
     // 각 언어별 motd
     public static String getmotd(Player player){
         JSONObject db = getData(player.uuid);
-        Locale locale = new Locale(db.getString("language"));
         if(Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").exists()){
             return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").readString();
         } else {
@@ -562,7 +561,7 @@ public class Global {
         JSONObject list = new JSONObject();
 
         try {
-            String json = Jsoup.connect("http://ipapi.co/1.1.1.1/json").ignoreContentType(true).execute().body();
+            String json = Jsoup.connect("http://ipapi.co/"+ip+"/json").ignoreContentType(true).execute().body();
             JSONObject result = new JSONObject(new JSONTokener(json));
             String[] das = result.getString("languages").split(",");
 
@@ -573,7 +572,7 @@ public class Global {
             } else {
                 list.put("country", result.getString("country_name"));
                 list.put("country_code", result.getString("country"));
-                list.put("languages", result.getString("languages"));
+                list.put("languages", das[0]);
             }
         } catch (IOException e) {
             printStackTrace(e);

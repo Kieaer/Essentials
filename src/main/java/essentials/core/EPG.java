@@ -1,12 +1,12 @@
 package essentials.core;
 
+import arc.Core;
+import arc.Events;
 import essentials.Global;
 import essentials.utils.Config;
-import io.anuke.arc.Core;
-import io.anuke.arc.Events;
-import io.anuke.mindustry.entities.type.Player;
-import io.anuke.mindustry.game.EventType;
-import io.anuke.mindustry.gen.Call;
+import mindustry.entities.type.Player;
+import mindustry.game.EventType;
+import mindustry.gen.Call;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 

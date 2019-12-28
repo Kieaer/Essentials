@@ -1,12 +1,12 @@
 package essentials.core;
 
 import essentials.utils.Config;
-import io.anuke.mindustry.entities.type.Player;
+import mindustry.entities.type.Player;
 import org.json.JSONObject;
 
 import static essentials.Global.bundle;
 import static essentials.core.PlayerDB.writeData;
-import static io.anuke.mindustry.Vars.playerGroup;
+import static mindustry.Vars.playerGroup;
 
 public class Exp {
     public static Config config = new Config();
