@@ -426,7 +426,6 @@ public class PlayerDB{
         executorService.submit(t);
 	}
 	public static boolean checkpw(Player player, String id, String pw){
-        boolean result = true;
         // 영문(소문자), 숫자, 7~20자리
         String pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$";
         Matcher matcher = Pattern.compile(pwPattern).matcher(pw);
@@ -439,31 +438,31 @@ public class PlayerDB{
             // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password isn't the same.\n" +
                     "[green][Essentials] [sky]비밀번호가 똑같지 않습니다.");
-            result = false;
+            return false;
         } else */
         if (!matcher.matches()) {
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
             Global.playernormal("password-match-regex", player.name);
-            result = false;
+            return false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
             Global.playernormal("password-match-name", player.name);
-            result = false;
+            return false;
         } else if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
             player.sendMessage("[green][Essentials] [sky]Password shouldn't be the same as your nickname.\n" +
                     "[green][Essentials] [sky]비밀번호는 ID는 똑같이 설정할 수 없습니다!");
-            result = false;
+            return false;
         } else if (pw.contains(" ")) {
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
             Global.playernormal("password-match-blank", player.name);
-            result = false;
+            return false;
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
             player.sendMessage("[green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!\n" +
@@ -471,82 +470,14 @@ public class PlayerDB{
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
             Global.playernormal("password-match-invalid", player.name);
-            result = false;
-        }
-        return result;
-    }
-    // 폰 인증
-    public boolean register(Player player, String id, String pw, String phone) {
-        // 비밀번호 보안 확인
-        if(!checkpw(player,id,pw)) return false;
-        // 보안검사 끝
-
-        try {
-            Class.forName("org.mindrot.jbcrypt.BCrypt");
-            String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
-
-            PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE accountid = '" + id + "'");
-            ResultSet rs1 = pstm1.executeQuery();
-            if (rs1.next()) {
-                if (rs1.getString("accountid").equals(id) || rs1.getString("name").equals(player.name) || rs1.getString("uuid").equals(player.uuid)) {
-                    player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
-                            "[green][Essentials] [orange]이 계정명은 이미 사용중입니다!");
-                    Global.playernormal("password-already-accountid", id);
-                    return false;
-                }
-            } else {
-                // email source here
-                PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
-                ResultSet rs2 = pstm2.executeQuery();
-                String isuuid = null;
-                String nickname = null;
-                while (rs2.next()) {
-                    isuuid = rs2.getString("uuid");
-                    nickname = rs2.getString("name");
-                }
-                if (isuuid == null || isuuid.length() == 0) {
-                    LocalDateTime now = LocalDateTime.now();
-                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                    String nowString = now.format(dateTimeFormatter);
-                    JSONObject list = geolocation(player);
-
-                    String find = "SELECT * FROM players WHERE uuid = '"+player.uuid+"'";
-                    Statement stmt  = conn.createStatement();
-                    ResultSet rs = stmt.executeQuery(find);
-                    if(!rs.next()){
-
-                        createNewDatabase(player.name, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, player.name, hashed, player);
-                    } else if(rs.next()){
-                        player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
-                                "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
-                        Global.playernormal("password-already-account", player.name);
-                        return false;
-                    }
-                    rs.close();
-                    stmt.close();
-                    player.sendMessage(bundle(player, "player-name-changed", player.name));
-                } else if (isuuid.length() > 1 || isuuid.equals(player.uuid) || nickname.contains(player.uuid)) {
-                    player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
-                            "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                    Global.playernormal("password-already-using", player.name);
-                    return false;
-                } else {
-                    return false;
-                }
-                rs2.close();
-                pstm2.close();
-            }
-            rs1.close();
-            pstm1.close();
-        } catch (Exception e) {
-            printStackTrace(e);
+            return false;
         }
         return true;
     }
 	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String id, String pw) {
+	public boolean register(Player player, String id, String pw, String method, Object... parameter) {
         // 비밀번호 보안 확인
-        if(!checkpw(player,id,pw)) return false;
+        if(checkpw(player, id, pw)) return false;
         // 보안검사 끝
 
         try {
@@ -613,10 +544,9 @@ public class PlayerDB{
     }
     // 비 로그인 기능 사용시 계정등록
     public boolean register(Player player) {
-        if (getData(player.uuid).toString().equals("{}")) {
+        if (isLogin(player)) {
             JSONObject list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
-
             return createNewDatabase(player.name, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), player.name, "blank", player);
         } else {
             return true;

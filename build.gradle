@@ -22,7 +22,6 @@ ext{
 compileJava {options.encoding = "UTF-8"}
 
 dependencies{
-    //compileOnly "com.github.Anuken.Arc:arc-core:-ef6d1485c3-1"
     compileOnly "com.github.Anuken.Arc:arc-core:-$targetversion"
     compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
 
@@ -39,26 +38,7 @@ dependencies{
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
     compile group: 'postgresql', name: 'postgresql', version: '9.1-901-1.jdbc4'
 
-    //compile group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
-    //compile 'org.springframework:spring-context-support:${org.springframework-version}'
-    //compile "org.javacord:javacord:3.0.4"
-
-    //compile group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.2.0.RELEASE'
-
-    //testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
-    //testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
-
-    //compile "com.github.ariejan:slick2d:master-6a9d179731-1"
-    //compile "com.github.xaguzman:pathfinding:0.2.6"
-
-    //compileOnly files('C:/Users/cloud/Desktop/Mindustry-100/core/build/libs/core-release.jar')
-    //compileOnly files('C:/Users/cloud/Desktop/Arc-99/arc-core/build/libs/arc-core-1.0.jar')
-
-    //compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.0.pr2'
-    //compile 'com.google.code.gson:gson:2.8.5'
-    //compile group: 'net.java.dev.jna', name: 'jna', version: '5.4.0'
-    //compile 'com.google.cloud:google-cloud-translate:1.75.0'
-    //compile group: 'org.tensorflow', name:'tensorflow', version: '1.13.1'
+    compile group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.0-rc2'
 }
 
 jar{

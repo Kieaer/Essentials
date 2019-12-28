@@ -1447,7 +1447,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(!checkperm(player,"changepw")) return;
-            if(!checkpw(player, arg[0], arg[1])){
+            if(checkpw(player, arg[0], arg[1])){
                 player.sendMessage(bundle(player, "need-new-password"));
                 return;
             }
@@ -1777,32 +1777,6 @@ public class Main extends Plugin {
                 player.sendMessage(motd);
             }
         });
-        handler.<Player>register("register", "<accountid> <password> [phone_number]", "Register account", (arg, player) -> {
-            if (config.isLoginenable()) {
-                PlayerDB playerdb = new PlayerDB();
-                if(config.getPasswordmethod().equals("password, phone")){
-                    if (playerdb.register(player, arg[0], arg[1], arg[2])) {
-                        setTeam(player);
-                        Call.onPlayerDeath(player);
-                        player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
-                    } else {
-                        player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
-                    }
-                } else if(config.getPasswordmethod().equals("password")){
-                    if(config.getPasswordmethod().equals("password, phone")){
-                        if (playerdb.register(player, arg[0], arg[1])) {
-                            setTeam(player);
-                            Call.onPlayerDeath(player);
-                            player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
-                        } else {
-                            player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
-                        }
-                    }
-                }
-            } else {
-                player.sendMessage(bundle(player,"login-not-use"));
-            }
-        });
         handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
             if (!checkperm(player, "save")) return;
             Core.app.post(() -> {
@@ -1811,6 +1785,59 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player, "mapsaved"));
             });
         });
+        switch (config.getPasswordmethod()) {
+            /*case "email":
+                handler.<Player>register("register", "<accountid> <password> <email>", "Register account", (arg, player) -> {
+                    if (config.isLoginenable()) {
+                        PlayerDB playerdb = new PlayerDB();
+                        if (playerdb.register(player, arg[0], arg[1], "email", arg[2])) {
+                            setTeam(player);
+                            Call.onPlayerDeath(player);
+                            player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
+                        } else {
+                            player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
+                        }
+                    } else {
+                        player.sendMessage(bundle(player, "login-not-use"));
+                    }
+                });
+                break;
+            case "sms":
+                handler.<Player>register("register", "<accountid> <password> <phone-number>", "Register account", (arg, player) -> {
+                    if (config.isLoginenable()) {
+                        PlayerDB playerdb = new PlayerDB();
+                        if (playerdb.register(player, arg[0], arg[1], "sms", arg[2])) {
+                            setTeam(player);
+                            Call.onPlayerDeath(player);
+                            player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
+                        } else {
+                            player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
+                        }
+                    } else {
+                        player.sendMessage(bundle(player, "login-not-use"));
+                    }
+                });
+                break;*/
+            case "password":
+            case "email":
+            case "sms":
+            default:
+                handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
+                    if (config.isLoginenable()) {
+                        PlayerDB playerdb = new PlayerDB();
+                        if (playerdb.register(player, arg[0], arg[1], "password")) {
+                            setTeam(player);
+                            Call.onPlayerDeath(player);
+                            player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
+                        } else {
+                            player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
+                        }
+                    } else {
+                        player.sendMessage(bundle(player, "login-not-use"));
+                    }
+                });
+                break;
+        }
         handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
             if (!checkperm(player, "spawn")) return;
 
