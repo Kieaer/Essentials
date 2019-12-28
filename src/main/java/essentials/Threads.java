@@ -658,11 +658,6 @@ public class Threads extends TimerTask{
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }
-                String temp1 = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-                JSONTokener temp2 = new JSONTokener(temp1);
-                JSONObject data = new JSONObject(temp2);
-
-                //Core.settings.put("servername", data.getString("servername")+", "+result+" players");
                 Core.settings.put("servername", config.getServername()+", "+result+" players");
             }
         }
@@ -892,8 +887,8 @@ public class Threads extends TimerTask{
                         if (item.type == ItemType.material) {
                             int resource;
                             if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                            if (state.teams.get(Team.sharded).cores.first().entity.items.has(item)) {
-                                resource = state.teams.get(Team.sharded).cores.first().entity.items.get(item);
+                            if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                                resource = state.teams.get(Team.sharded).cores.first().items.get(item);
                             } else {
                                 return;
                             }
@@ -915,14 +910,14 @@ public class Threads extends TimerTask{
                                     allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
                                 }
                             }
-                            cur.add(a, state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                            cur.add(a, state.teams.get(Team.sharded).cores.first().items.get(item));
                             a++;
                         }
                     }
 
                     for (Item item : content.items()) {
                         if (item.type == ItemType.material) {
-                            pre.add(state.teams.get(Team.sharded).cores.first().entity.items.get(item));
+                            pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
                         }
                     }
                 } else {
@@ -1148,9 +1143,6 @@ public class Threads extends TimerTask{
         }
     }
     static class messagemonitoring extends Thread{
-        Tile tile;
-        Tile target;
-
         @Override
         public void run(){
             for(int a=0;a<messagemonitor.size();a++) {

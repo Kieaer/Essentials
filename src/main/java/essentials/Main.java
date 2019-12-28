@@ -3,9 +3,9 @@ package essentials;
 import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
-import arc.collection.Array;
 import arc.files.Fi;
 import arc.math.Mathf;
+import arc.struct.Array;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
@@ -222,7 +222,7 @@ public class Main extends Plugin {
             if (Vars.state.rules.pvp) {
                 int index = 5;
                 for (int a = 0; a < 5; a++) {
-                    if (Vars.state.teams.get(Team.all[index]).cores.isEmpty()) {
+                    if (Vars.state.teams.get(Team.all()[index]).cores.isEmpty()) {
                         index--;
                     }
                 }
@@ -230,12 +230,12 @@ public class Main extends Plugin {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
                         if (isLogin(player)) {
-                            if (player.getTeam().name().equals(e.winner.name())) {
+                            if (player.getTeam().name.equals(e.winner.name)) {
                                 JSONObject db = getData(player.uuid);
                                 int pvpwin = db.getInt("pvpwincount");
                                 pvpwin++;
                                 writeData("UPDATE players SET pvpwincount = ? WHERE uuid = ?", pvpwin, player.uuid);
-                            } else if (!player.getTeam().name().equals(e.winner.name())) {
+                            } else if (!player.getTeam().name.equals(e.winner.name)) {
                                 JSONObject db = getData(player.uuid);
                                 int pvplose = db.getInt("pvplosecount");
                                 pvplose++;
@@ -1272,12 +1272,10 @@ public class Main extends Plugin {
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
                 Global.client("server-connecting");
-
+                Client client = new Client();
                 if(serverconn){
-                    Client client = new Client();
                     client.main("exit", null, null);
                 } else {
-                    Client client = new Client();
                     client.main(null, null, null);
                 }
             } else {
@@ -1290,9 +1288,9 @@ public class Main extends Plugin {
             db.openconnect();
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
-            Iterator i = permission.keys();
+            Iterator<String> i = permission.keys();
             while(i.hasNext()) {
-                String b = i.next().toString();
+                String b = i.next();
                 if(b.equals(arg[0])){
                     writeData("UPDATE players SET permission = ?",arg[0]);
                     Global.log("success");
@@ -1352,9 +1350,9 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 Global.warn("player-not-found");
             }
-            Iterator i = permission.keys();
+            Iterator<String> i = permission.keys();
             while(i.hasNext()) {
-                String b = i.next().toString();
+                String b = i.next();
                 if(b.equals(arg[1])){
                     writeData("UPDATE players SET permission = ? WHERE name = ?",arg[1],arg[0]);
                     Global.playernormal("success");
@@ -1375,11 +1373,11 @@ public class Main extends Plugin {
         handler.register("team","[name]", "Change target player team.", (arg) -> {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
-                int i = other.getTeam().ordinal()+1;
-                while(i != other.getTeam().ordinal()){
-                    if (i >= Team.all.length) i = 0;
-                    if(!state.teams.get(Team.all[i]).cores.isEmpty()){
-                        other.setTeam(Team.all[i]);
+                int i = other.getTeam().id+1;
+                while(i != other.getTeam().id){
+                    if (i >= Team.all().length) i = 0;
+                    if(!state.teams.get(Team.all()[i]).cores.isEmpty()){
+                        other.setTeam(Team.all()[i]);
                         break;
                     }
                     i++;
@@ -1487,8 +1485,8 @@ public class Main extends Plugin {
         });
         handler.<Player>register("despawn","Kill all enemy units", (arg, player) -> {
             if (!checkperm(player, "despawn")) return;
-            for(int a=0;a<Team.all.length;a++){
-                unitGroups[Team.all[a].ordinal()].all().each(Unit::kill);
+            for(int a=0;a<Team.all().length;a++){
+                unitGroup.all().each(Unit::kill);
             }
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
@@ -1547,8 +1545,8 @@ public class Main extends Plugin {
                         }
                         break;
                     case "join":
-                        for (int a = 0; a < eventservers.size(); a++) {
-                            String[] data = eventservers.get(a).split("/");
+                        for (String eventserver : eventservers) {
+                            String[] data = eventserver.split("/");
                             String name = data[0];
                             if (name.equals(arg[1])) {
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
@@ -1941,9 +1939,9 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 player.sendMessage(bundle(player, "player-not-found"));
             }
-            Iterator i = permission.keys();
+            Iterator<String> i = permission.keys();
             while(i.hasNext()) {
-                String b = i.next().toString();
+                String b = i.next();
                 if(b.equals(arg[1])){
                     writeData("UPDATE players SET permission = ? WHERE name = ?",arg[0]);
                     player.sendMessage(bundle(player, "success"));
@@ -1983,11 +1981,11 @@ public class Main extends Plugin {
         handler.<Player>register("team", "[Team...]", "Change team (PvP only)", (arg, player) -> {
             if(!checkperm(player,"team")) return;
             if (Vars.state.rules.pvp) {
-                int i = player.getTeam().ordinal() + 1;
-                while (i != player.getTeam().ordinal()) {
-                    if (i >= Team.all.length) i = 0;
-                    if (!Vars.state.teams.get(Team.all[i]).cores.isEmpty()) {
-                        player.setTeam(Team.all[i]);
+                int i = player.getTeam().id + 1;
+                while (i != player.getTeam().id) {
+                    if (i >= Team.all().length) i = 0;
+                    if (!Vars.state.teams.get(Team.all()[i]).cores.isEmpty()) {
+                        player.setTeam(Team.all()[i]);
                         break;
                     }
                     i++;

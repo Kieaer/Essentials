@@ -21,9 +21,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Log{
     public void main() {
-        Events.on(PlayerChatEvent.class, e -> {
-            writelog("chat", e.player.name + ": " + e.message);
-        });
+        Events.on(PlayerChatEvent.class, e -> writelog("chat", e.player.name + ": " + e.message));
 
         Events.on(TapEvent.class, e-> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null) {

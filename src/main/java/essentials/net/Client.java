@@ -220,9 +220,9 @@ public class Client extends Thread{
                     }
                 } else if(config.isBanshare()){
                     try{
+                        JSONTokener convert = new JSONTokener(data);
+                        JSONArray bandata = new JSONArray(convert);
                         if(data.substring(data.length()-5).equals("unban")){
-                            JSONTokener convert = new JSONTokener(data);
-                            JSONArray bandata = new JSONArray(convert);
                             Global.client("server-request-unban");
                             for (int i = 0; i < bandata.length(); i++) {
                                 String[] array = bandata.getString(i).split("\\|", -1);
@@ -238,10 +238,8 @@ public class Client extends Thread{
                                 Global.client("unban-done", bandata.getString(i));
                             }
                         } else {
-                            JSONTokener test = new JSONTokener(data);
-                            JSONArray result = new JSONArray(test);
-                            for (int i = 0; i < result.length(); i++) {
-                                String[] array = result.getString(i).split("\\|", -1);
+                            for (int i = 0; i < bandata.length(); i++) {
+                                String[] array = bandata.getString(i).split("\\|", -1);
                                 if (array[0].length() == 12) {
                                     netServer.admins.banPlayerID(array[0]);
                                     if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
