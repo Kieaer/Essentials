@@ -32,6 +32,10 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 - [x] Improved detection of griefing
   - [x] Detect non-block destroy/place griefing
     - [x] ALL WithDraw events
+  - [ ] Authorize
+    - [ ] E-mail
+    - [ ] SMS
+    - [ ] Steam platform
 - [x] Make lobby features
   - [ ] ~~Show all server players~~ unused
     - [ ] ~~massage block~~ unused
