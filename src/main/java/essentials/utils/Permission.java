@@ -17,9 +17,9 @@ public class Permission {
             Yaml yaml = new Yaml();
             Map<Object, Object> map = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").readString()));
             permission = new JSONObject(map);
-            Iterator i = permission.keys();
+            Iterator<String> i = permission.keys();
             while(i.hasNext()){
-                String b = i.next().toString();
+                String b = i.next();
                 if(config.isDebug()) Log.info("target: "+b);
                 if(permission.getJSONObject(b).has("inheritance")) {
                     String inheritance = permission.getJSONObject(b).getString("inheritance");

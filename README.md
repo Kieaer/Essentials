@@ -25,10 +25,10 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 - [ ] Plugin performance optimizing <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
 - [ ] Monitoring resource consumption
   - [ ] Alarm when resource bank is full
-- [ ] AI
-  - [ ] Pathfinding
-  - [ ] OreFlow
-  - [ ] Player
+- [ ] ~~AI~~
+  - [ ] ~~Pathfinding~~
+  - [ ] ~~OreFlow~~
+  - [ ] ~~Player~~
 - [x] Improved detection of griefing
   - [x] Detect non-block destroy/place griefing
     - [x] ALL WithDraw events
@@ -69,7 +69,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | maps | [page] |  Show server maps |
 | me | &lt;msg&gt; | Show special chat format |
 | motd |  | Show server motd <br> Can modify from ``config/plugins/Essentials/motd.txt`` |
-| register | &lt;account id&gt; &lt;new password&gt; &lt;new password repeat&gt; | Register accoun<br>Example - ``/register test test123 test123`` |
+| register | &lt;account id&gt; &lt;new password&gt; | Register accoun<br>Example - ``/register test test123`` |
 | save |  | Save current map |
 | spawn | &lt;mob name&gt; &lt;count&gt; &lt;team name&gt; [name] | Spawn mob in player location |
 | setperm | &lt;player name&gt; &lt;group name&gt; | Set player permission |

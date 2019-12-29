@@ -1,10 +1,12 @@
 owner:
   admin: true
+  prefix: "[sky][Owner] %1[white] : %2"
   permission:
     - ALL
 admin:
   inheritance: newadmin
   admin: true
+  prefix: "[yellow][Admin] %1[white] : %2"
   permission:
     - color
     - difficulty
@@ -15,6 +17,7 @@ admin:
 newadmin:
   inheritance: default
   admin: true
+  prefix: "[yellow][New admin] %1[white] : %2"
   permission:
     - kill
     - me
