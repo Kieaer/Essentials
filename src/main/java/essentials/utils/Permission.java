@@ -8,12 +8,13 @@ import org.yaml.snakeyaml.Yaml;
 import java.util.Iterator;
 import java.util.Map;
 
+import static essentials.Global.config;
+
 public class Permission {
     public static JSONObject permission;
 
     public void main(){
         if(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").exists()) {
-            Config config = new Config();
             Yaml yaml = new Yaml();
             Map<Object, Object> map = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").readString()));
             permission = new JSONObject(map);

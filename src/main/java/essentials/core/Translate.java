@@ -1,7 +1,6 @@
 package essentials.core;
 
 import essentials.Global;
-import essentials.utils.Config;
 import mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -13,13 +12,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.Global.isNocore;
-import static essentials.Global.printStackTrace;
+import static essentials.Global.*;
 import static essentials.core.PlayerDB.getData;
 import static mindustry.Vars.playerGroup;
 
 public class Translate {
-    public Config config = new Config();
     private static URL url;
     private static HttpURLConnection c;
     private static BufferedReader in;

@@ -3,7 +3,6 @@ package essentials.core;
 import arc.Core;
 import essentials.Global;
 import essentials.Threads;
-import essentials.utils.Config;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
@@ -36,7 +35,6 @@ public class PlayerDB{
     private static int dbversion = 2;
     public static Connection conn;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
-    public Config config = new Config();
     public static ArrayList<Player> pvpteam = new ArrayList<>();
 
     public void createNewDataFile(){
@@ -141,7 +139,7 @@ public class PlayerDB{
             printStackTrace(ex);
         }
     }
-	private boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, String accountid, String accountpw, Player player) {
+	public static boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, boolean connected, String accountid, String accountpw, Player player) {
         boolean result = false;
         try {
             String currentip = new Threads.getip().main();
@@ -188,20 +186,22 @@ public class PlayerDB{
                 pstmt.setBoolean(30, false); // translate
                 pstmt.setBoolean(31, false); // crosschat
                 pstmt.setBoolean(32, false); // colornick
-                pstmt.setBoolean(33, true); // connected
+                pstmt.setBoolean(33, connected); // connected
                 pstmt.setString(34, currentip); // connected server ip
                 pstmt.setString(35, "default"); // set permission
                 pstmt.setString(36, accountid);
                 pstmt.setString(37, accountpw);
                 pstmt.execute();
                 pstmt.close();
-                player.sendMessage(nbundle("player-id", player.name));
+                if(player != null) player.sendMessage(nbundle("player-id", player.name));
                 Global.playernormal("player-db-created", name);
                 result = true;
             } else if(rs.next()){
-                player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
-                        "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                player.sendMessage("[green][Essentials] ID: "+rs.getString(player.name));
+                if(player != null){
+                    player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
+                            "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
+                    player.sendMessage("[green][Essentials] ID: "+rs.getString(player.name));
+                }
             }
             rs.close();
             stmt.close();
@@ -259,7 +259,6 @@ public class PlayerDB{
             rs.close();
             stmt.close();
             if(json.toString().equals("{}")){
-                Config config = new Config();
                 if(config.isDebug()) {
                     Global.playererror(uuid+" Player data is empty.");
                     throw new Exception("플레이어 데이터가 없습니다!");
@@ -312,7 +311,6 @@ public class PlayerDB{
         writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", myTime, bantimeset, uuid);
     }
     public static void Upgrade() {
-        Config config = new Config();
         String v1sql;
         String v1update;
         String v2update;
@@ -514,7 +512,7 @@ public class PlayerDB{
                     Statement stmt  = conn.createStatement();
                     ResultSet rs = stmt.executeQuery(find);
                     if(!rs.next()){
-                        createNewDatabase(nickname, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, player.name, hashed, player);
+                        createNewDatabase(nickname, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, player.name, hashed, player);
                     } else if(rs.next()){
                         player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                 "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
@@ -547,7 +545,7 @@ public class PlayerDB{
         if (isLogin(player)) {
             JSONObject list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
-            return createNewDatabase(player.name, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), player.name, "blank", player);
+            return createNewDatabase(player.name, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), true, player.name, "blank", player);
         } else {
             return true;
         }
@@ -560,6 +558,7 @@ public class PlayerDB{
             ResultSet rs = pstm.executeQuery();
             if (rs.next()) {
                 if (rs.getBoolean("connected")) {
+                    System.out.println("kick trigger");
                     player.con.kick(nbundle(player, "tried-connected-account"));
                     result = false;
                 } else if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
@@ -601,7 +600,6 @@ public class PlayerDB{
                 }
                 db = getData(uuid);
             }
-
             if(db.getBoolean("connected") && config.isValidconnect()){
                 for(int a=0;a<playerGroup.size();a++){
                     String target = playerGroup.all().get(a).uuid;
@@ -655,7 +653,7 @@ public class PlayerDB{
             }
 
             // 고정닉 기능이 켜져있을 경우, 플레이어 닉네임 설정
-            if(config.isRealname()){
+            if(config.isRealname() || config.getPasswordmethod().equals("discord")){
                 player.name = db.getString("name");
             }
 

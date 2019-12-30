@@ -12,10 +12,7 @@ import arc.util.Time;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
-import essentials.core.EPG;
-import essentials.core.Log;
-import essentials.core.PlayerDB;
-import essentials.core.Translate;
+import essentials.core.*;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
@@ -42,6 +39,7 @@ import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -52,6 +50,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -72,10 +72,8 @@ import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
-import static mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
-    public Config config = new Config();
     private JSONArray nukeblock = new JSONArray();
 
     static ArrayList<String> eventservers = new ArrayList<>();
@@ -144,12 +142,6 @@ public class Main extends Plugin {
 
         //EssentialAI.main();
 
-        // 업데이트 확인
-        if (config.isUpdate()) {
-            Client client = new Client();
-            client.update();
-        }
-
         // 서버기능 시작
         Thread server = new Thread(new Server());
         if (config.isServerenable()) {
@@ -160,6 +152,7 @@ public class Main extends Plugin {
         EPG epg = new EPG();
         epg.main();
 
+        // 권한 기능 시작
         new Permission().main();
 
         Events.on(TapConfigEvent.class, e -> {
@@ -360,10 +353,18 @@ public class Main extends Plugin {
                             }
                         } else {
                             // 로그인 요구
-                            String message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
-                                    "If you don't have an account, use the command [accent]/register <new account id> <password>[].\n\n" +
-                                    "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                    "만약 계정이 없다면 [accent]/register <새 계정명> <비밀번호>[]를 입력해야 합니다.";
+                            String message;
+                            if(config.getPasswordmethod().equals("discord")){
+                                message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
+                                        "If you don't have an account, Join KR discord and use !signup command in #command channel.\n\n" +
+                                        "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
+                                        "만약 계정이 없다면 KR서버 Discord 으로 가셔서 !signup 명령어를 #command 채널에 입력해야 합니다.";
+                            } else {
+                                message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
+                                        "If you don't have an account, use the command [accent]/register <new account id> <password>[].\n\n" +
+                                        "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
+                                        "만약 계정이 없다면 [accent]/register <새 계정명> <비밀번호>[]를 입력해야 합니다.";
+                            }
                             Call.onInfoMessage(e.player.con, message);
                         }
                     }
@@ -466,14 +467,14 @@ public class Main extends Plugin {
                                 others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                             }
                         }
-                    } else {
+                    } /*else {
                         String perm = db.getString("permission");
                         if(permission.getJSONObject(perm).has("prefix")) {
                             Call.sendMessage(permission.getJSONObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
                             Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
                         }
-                    }
+                    }*/
 
                     // 서버간 대화기능 작동
                     if (db.getBoolean("crosschat")) {
@@ -1030,7 +1031,62 @@ public class Main extends Plugin {
         // 서버가 켜진 시간을 0으로 설정
         Threads.uptime = "00:00.00";
 
-        Events.on(ServerLoadEvent.class, e->{
+        Events.on(ServerLoadEvent.class, e-> {
+            // 업데이트 확인
+            if(config.isUpdate()) {
+                Global.client("client-checking-version");
+                HttpURLConnection con;
+                try {
+                    String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
+                    URL url = new URL(apiURL);
+                    con = (HttpURLConnection) url.openConnection();
+                    con.setRequestMethod("GET");
+                    con.setRequestProperty("Content-length", "0");
+                    con.setUseCaches(false);
+                    con.setAllowUserInteraction(false);
+                    con.setConnectTimeout(3000);
+                    con.setReadTimeout(3000);
+                    con.connect();
+                    int status = con.getResponseCode();
+                    StringBuilder response = new StringBuilder();
+
+                    switch (status) {
+                        case 200:
+                        case 201:
+                            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                            String line;
+                            while ((line = br.readLine()) != null) {
+                                response.append(line).append("\n");
+                            }
+                            br.close();
+                            con.disconnect();
+                    }
+
+                    JSONTokener parser = new JSONTokener(response.toString());
+                    JSONObject object = new JSONObject(parser);
+
+                    DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
+                    DefaultArtifactVersion current = new DefaultArtifactVersion(mods.getMod(Main.class).meta.version);
+
+                    if (latest.compareTo(current) > 0) {
+                        Global.client("version-new");
+
+                    } else if (latest.compareTo(current) == 0) {
+                        Global.client("version-current");
+                    } else if (latest.compareTo(current) < 0) {
+                        Global.client("version-devel");
+                    }
+                } catch (Exception ex) {
+                    printStackTrace(ex);
+                }
+            }
+
+            // Discord 봇 시작
+            if(config.getPasswordmethod().equals("discord")){
+                Discord ds = new Discord();
+                ds.main();
+            }
+
             netServer.admins.addChatFilter((player, text) -> null);
         });
     }
@@ -1186,7 +1242,7 @@ public class Main extends Plugin {
             }
         });
         handler.register("reload", "Reload Essentials config", arg -> {
-            Config config = new Config();
+            config = new Config();
             config.main();
             Global.config("config-reloaded");
         });
@@ -1740,9 +1796,6 @@ public class Main extends Plugin {
                 });
                 break;*/
             case "password":
-            case "email":
-            case "sms":
-            default:
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
                         PlayerDB playerdb = new PlayerDB();

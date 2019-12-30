@@ -4,7 +4,6 @@ import arc.Core;
 import arc.struct.Array;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
-import essentials.utils.Config;
 import mindustry.core.GameState;
 import mindustry.core.Version;
 import mindustry.entities.type.Player;
@@ -45,7 +44,6 @@ import static essentials.core.PlayerDB.getData;
 import static mindustry.Vars.*;
 
 public class Server implements Runnable {
-    public Config config = new Config();
     public static boolean active = true;
     public static ServerSocket serverSocket;
     public static ArrayList<Service> list = new ArrayList<>();

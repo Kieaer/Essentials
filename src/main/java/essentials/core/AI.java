@@ -69,7 +69,7 @@ public class AI{
             }
         }
         Alg.AStar();
-        Call.onConstructFinish(target,Blocks.blastDrill,0,(byte) 0,Team.sharded,false);
+        Call.onConstructFinish(target, Blocks.blastDrill,0,(byte) 0,Team.sharded,false);
     }
 
     class Algorithm {

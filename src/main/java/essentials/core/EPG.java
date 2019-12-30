@@ -3,7 +3,6 @@ package essentials.core;
 import arc.Core;
 import arc.Events;
 import essentials.Global;
-import essentials.utils.Config;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
@@ -12,12 +11,11 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
+import static essentials.Global.config;
 import static essentials.Global.nbundle;
 import static essentials.core.PlayerDB.getData;
 
 public class EPG {
-    public Config config = new Config();
-    
     public void main(){
         if(config.isExplimit()){
             Events.on(EventType.BuildSelectEvent.class, e -> {

@@ -1,15 +1,14 @@
 package essentials.core;
 
-import essentials.utils.Config;
 import mindustry.entities.type.Player;
 import org.json.JSONObject;
 
 import static essentials.Global.bundle;
+import static essentials.Global.config;
 import static essentials.core.PlayerDB.writeData;
 import static mindustry.Vars.playerGroup;
 
 public class Exp {
-    public static Config config = new Config();
     private static double BASE_XP = config.getBasexp();
     private static double EXPONENT = config.getExponent();
 

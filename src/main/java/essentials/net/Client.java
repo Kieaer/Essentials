@@ -3,14 +3,11 @@ package essentials.net;
 import arc.struct.Array;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Global;
-import essentials.utils.Config;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.net.Administration;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import javax.crypto.Cipher;
@@ -21,7 +18,9 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,7 +32,6 @@ import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
 public class Client extends Thread{
-    public Config config = new Config();
     public static Socket socket;
     public static BufferedReader is;
     public static DataOutputStream os;
@@ -41,59 +39,6 @@ public class Client extends Thread{
 
     public static Cipher cipher;
     public static SecretKeySpec spec;
-
-    public void update(){
-        Global.client("client-checking-version");
-
-        Thread t = new Thread(() -> {
-            HttpURLConnection con;
-            try {
-                String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
-                URL url = new URL(apiURL);
-                con = (HttpURLConnection) url.openConnection();
-                con.setRequestMethod("GET");
-                con.setRequestProperty("Content-length", "0");
-                con.setUseCaches(false);
-                con.setAllowUserInteraction(false);
-                con.setConnectTimeout(3000);
-                con.setReadTimeout(3000);
-                con.connect();
-                int status = con.getResponseCode();
-                StringBuilder response = new StringBuilder();
-
-                switch (status) {
-                    case 200:
-                    case 201:
-                        BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            response.append(line).append("\n");
-                        }
-                        br.close();
-                        con.disconnect();
-                }
-
-                JSONTokener parser = new JSONTokener(response.toString());
-                JSONObject object = new JSONObject(parser);
-
-                DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
-                DefaultArtifactVersion current = new DefaultArtifactVersion(version);
-
-                if (latest.compareTo(current) > 0) {
-                    Global.client("version-new");
-
-                } else if (latest.compareTo(current) == 0) {
-                    Global.client("version-current");
-                } else if (latest.compareTo(current) < 0) {
-                    Global.client("version-devel");
-                }
-
-            } catch (Exception e) {
-                printStackTrace(e);
-            }
-        });
-        t.start();
-    }
 
     public void main(String option, Player player, String message){
         if(!serverconn){

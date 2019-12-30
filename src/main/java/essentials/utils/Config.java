@@ -191,6 +191,18 @@ public class Config {
         return obj == null || obj.get("validconnect") == null || (boolean) obj.get("validconnect");
     }
 
+    public String getDiscordToken(){
+        return obj != null && obj.get("discord-token") != null ? (String) obj.get("discord-token") : "";
+    }
+
+    public Long getDiscordGuild(){
+        return obj != null && obj.get("discord-guild") != null ? (Long) obj.get("discord-guild") : 0;
+    }
+
+    public Long getDiscordRoom(){
+        return obj != null && obj.get("discord-room") != null ? (Long) obj.get("discord-room") : 0;
+    }
+
     public String getDBurl(){
         if(isSqlite()){
             return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
@@ -433,6 +445,11 @@ public class Config {
                 "loginenable: " + isLoginenable() + "\n" +
                 "loginmethod: " + getPasswordmethod() + "\n" +
                 "validconnect: " + isValidconnect() + "\n" +
+                "\n" +
+                "# "+nbundle("config-discord-description")+"\n" +
+                "discord-token: " + getDiscordToken() + "\n" +
+                "discord-guild: " + getDiscordGuild() + "\n" +
+                "discord-room: " + getDiscordRoom() + "\n" +
                 "\n" +
                 "# "+nbundle("config-papago-description")+"\n" +
                 "# "+nbundle("config-papago-child-description")+"\n" +

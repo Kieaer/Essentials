@@ -35,7 +35,6 @@ import static mindustry.Vars.world;
 
 public class Global {
     public static Config config = new Config();
-    public static String version = "7.0";
 
     // 일반 기록
     public static void log(String value){
@@ -563,13 +562,13 @@ public class Global {
         try {
             String json = Jsoup.connect("http://ipapi.co/"+ip+"/json").ignoreContentType(true).execute().body();
             JSONObject result = new JSONObject(new JSONTokener(json));
-            String[] das = result.getString("languages").split(",");
 
             if (result.has("reserved")) {
                 list.put("country", "Local IP");
                 list.put("country_code", "LC");
                 list.put("languages", "en");
             } else {
+                String[] das = result.getString("languages").split(",");
                 list.put("country", result.getString("country_name"));
                 list.put("country_code", result.getString("country"));
                 list.put("languages", das[0]);
