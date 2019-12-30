@@ -537,9 +537,9 @@ public class Threads extends TimerTask{
                         String message;
                         if(config.getPasswordmethod().equals("discord")){
                             message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
-                                    "If you don't have an account, Join KR discord and use !signup command in #command channel.\n\n" +
+                                    "If you don't have an account, Join this server discord and use !signup command.\n\n" +
                                     "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                    "만약 계정이 없다면 KR서버 Discord 으로 가셔서 !signup 명령어를 #command 채널에 입력해야 합니다.";
+                                    "만약 계정이 없다면 이 서버의 Discord 으로 가셔서 !signup 명령어를 입력해야 합니다.\n" + config.getDiscordLink();
                         } else {
                             message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
                                     "If you don't have an account, use the command [accent]/register <new account id> <password>[].\n\n" +

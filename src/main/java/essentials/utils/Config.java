@@ -203,6 +203,10 @@ public class Config {
         return obj != null && obj.get("discord-room") != null ? (Long) obj.get("discord-room") : 0;
     }
 
+    public String getDiscordLink(){
+        return obj != null && obj.get("discord-link") != null ? (String) obj.get("discord-link") : "";
+    }
+
     public String getDBurl(){
         if(isSqlite()){
             return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
@@ -450,6 +454,7 @@ public class Config {
                 "discord-token: " + getDiscordToken() + "\n" +
                 "discord-guild: " + getDiscordGuild() + "\n" +
                 "discord-room: " + getDiscordRoom() + "\n" +
+                "discord-link: " + getDiscordLink() + "\n" +
                 "\n" +
                 "# "+nbundle("config-papago-description")+"\n" +
                 "# "+nbundle("config-papago-child-description")+"\n" +
