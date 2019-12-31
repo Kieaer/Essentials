@@ -21,38 +21,19 @@ Disk: SSD capable of more than 10MB/s random read/write.
 
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
-## 7.0 version plans
-- [ ] Plugin performance optimizing <img src="https://preloaders.evidweb.com/d_file.php?file=images/preloaders/squares.gif">
+## 8.0 version plans
 - [ ] Monitoring resource consumption
   - [ ] Alarm when resource bank is full
-- [ ] ~~AI~~
-  - [ ] ~~Pathfinding~~
-  - [ ] ~~OreFlow~~
-  - [ ] ~~Player~~
 - [ ] Improved detection of griefing
-  - [x] Detect non-block destroy/place griefing
-    - [x] ALL WithDraw events
   - [ ] Authorize
     - [ ] E-mail
     - [ ] SMS
     - [ ] Steam platform
-    - [x] Discord
-- [x] Make lobby features
-  - [ ] ~~Show all server players~~ unused
-    - [ ] ~~massage block~~ unused
-  - [x] Show client server players
-    - [x] massage block
-- [x] monitoring massage block
-  - [x] Core block
-- [x] PvP mode rule
-  - [x] Anti coal in mech
 - [ ] Chat feature upgrade
   - [ ] Blocking bad words
   - [ ] Nickname prefix
   - [ ] Remove translate before massage
   - [ ] PvP Team chat without command
-- [x] Improved rank system
-  - [x] Show personal ranking record
   
 ## Client commands
 

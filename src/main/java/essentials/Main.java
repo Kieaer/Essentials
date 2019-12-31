@@ -66,6 +66,8 @@ import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
+import static essentials.utils.Config.jumpall;
+import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
@@ -1828,7 +1830,7 @@ public class Main extends Plugin {
                 });
                 break;
             case "discord":
-                handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
+                handler.<Player>register("register", "Register account", (arg, player) -> {
                     player.sendMessage("Join discord and use !signup command!\n" + config.getDiscordLink());
                 });
         }
