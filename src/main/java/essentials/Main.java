@@ -1061,7 +1061,6 @@ public class Main extends Plugin {
                     JSONTokener parser = new JSONTokener(response.toString());
                     JSONObject object = new JSONObject(parser);
 
-                    String version = "1.0";
                     for(int a=0;a<mods.list().size;a++){
                         if(mods.list().get(a).meta.name.equals("Essentials")){
                             version = mods.list().get(a).meta.version;

@@ -39,6 +39,7 @@ import static mindustry.Vars.world;
 
 public class Global {
     public static Config config = new Config();
+    public static String version;
 
     static String tag = "[Essential] ";
     static String servertag = "[EssentialServer] ";

@@ -473,7 +473,7 @@ public class Server implements Runnable {
                         String data = query();
                         bw.write("HTTP/1.1 200 OK\r\n");
                         bw.write("Date: " + time + "\r\n");
-                        bw.write("Server: Mindustry/Essentials 6.1.2\r\n");
+                        bw.write("Server: Mindustry/Essentials "+version+"\r\n");
                         bw.write("Content-Type: application/json; charset=utf-8\r\n");
                         bw.write("Content-Length: " + data.getBytes().length + 1 + "\r\n");
                         bw.write("\r\n");
@@ -482,7 +482,7 @@ public class Server implements Runnable {
                         String rank = rankingdata();
                         bw.write("HTTP/1.1 200 OK\r\n");
                         bw.write("Date: " + time + "\r\n");
-                        bw.write("Server: Mindustry/Essentials 6.1.2\r\n");
+                        bw.write("Server: Mindustry/Essentials "+version+"\r\n");
                         bw.write("Content-Type: text/html; charset=utf-8\r\n");
                         bw.write("Content-Length: " + rank.getBytes().length + 1 + "\r\n");
                         bw.write("\r\n");
@@ -581,7 +581,7 @@ public class Server implements Runnable {
                             String result = "Login failed!\n";
                             bw.write("HTTP/1.1 200 OK\r\n");
                             bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials 6.1.2\r\n");
+                            bw.write("Server: Mindustry/Essentials if(parameter.length == 0){\r\n");
                             bw.write("Content-Type: text/html; charset=utf-8\r\n");
                             bw.write("Content-Length: " + result.getBytes().length + 1 + "\r\n");
                             bw.write("\r\n");
