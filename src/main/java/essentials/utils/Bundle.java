@@ -1,6 +1,5 @@
 package essentials.utils;
 
-import essentials.Global;
 import essentials.special.UTF8Control;
 
 import java.text.MessageFormat;
@@ -10,6 +9,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import static essentials.Global.config;
+import static essentials.Global.nlog;
 import static essentials.core.Log.writelog;
 
 public class Bundle {
@@ -26,7 +26,7 @@ public class Bundle {
         try {
             return config.getPrefix()+RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
-            Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            nlog("warn","BUNDLE KEY NOT FOUND - " + key);
             writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }
@@ -36,7 +36,7 @@ public class Bundle {
         try {
             return config.getPrefix()+MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            nlog("warn","BUNDLE KEY NOT FOUND - " + key);
             writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }
@@ -46,7 +46,7 @@ public class Bundle {
         try {
             return RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
-            Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            nlog("warn","BUNDLE KEY NOT FOUND - " + key);
             writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }
@@ -56,7 +56,7 @@ public class Bundle {
         try {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            Global.nerr("BUNDLE KEY NOT FOUND - " + key);
+            nlog("warn","BUNDLE KEY NOT FOUND - " + key);
             writelog("error", Arrays.toString(e.getStackTrace()));
             return "BUNDLE KEY NOT FOUND - " + key;
         }

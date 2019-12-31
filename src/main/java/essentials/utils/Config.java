@@ -21,8 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import static essentials.Global.nbundle;
-import static essentials.Global.printStackTrace;
+import static essentials.Global.*;
 import static mindustry.Vars.net;
 
 public class Config {
@@ -129,8 +128,8 @@ public class Config {
                 cal.setTime(d);
             } catch (Exception e) {
                 printStackTrace(e);
-                Global.nlog("Invalid settings! - antirushtime");
-                Global.nlog("Correct value format is mm:ss (Example - 10:00 -> 10minute, 00:30 -> 30seconds)");
+                nlog("warn","Invalid settings! - antirushtime");
+                nlog("warn","Correct value format is mm:ss (Example - 10:00 -> 10minute, 00:30 -> 30seconds)");
             }
         } else {
             try{
@@ -196,11 +195,11 @@ public class Config {
     }
 
     public Long getDiscordGuild(){
-        return obj != null && obj.get("discord-guild") != null ? (Long) obj.get("discord-guild") : 0;
+        return obj != null && obj.get("discord-guild") != null ? Long.parseLong(String.valueOf(obj.get("discord-guild"))) : 0L;
     }
 
     public Long getDiscordRoom(){
-        return obj != null && obj.get("discord-room") != null ? (Long) obj.get("discord-room") : 0;
+        return obj != null && obj.get("discord-room") != null ? Long.parseLong(String.valueOf(obj.get("discord-room"))) : 0L;
     }
 
     public String getDiscordLink(){
@@ -290,7 +289,7 @@ public class Config {
         try {
             jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
         } catch (URISyntaxException e) {
-            Global.nlog("The plugin file or folder path is invalid. Please check your server path!");
+            nlog("warn","The plugin file or folder path is invalid. Please check your server path!");
             net.dispose();
             Core.app.exit();
             return;
@@ -487,9 +486,9 @@ public class Config {
                 "event-port: "+getEventport();
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
-        Global.config("config-loaded");
+        log("config","config-loaded");
         if(getVersion() < version){
-            Global.config("config-updated");
+            log("config","config-updated");
         }
     }
 }

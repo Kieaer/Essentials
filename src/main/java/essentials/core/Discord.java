@@ -1,6 +1,5 @@
 package essentials.core;
 
-import essentials.Global;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -13,8 +12,8 @@ import javax.annotation.Nonnull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static essentials.Global.config;
-import static essentials.Global.getnTime;
+import static essentials.Global.*;
+import static essentials.core.PlayerDB.writeData;
 
 public class Discord extends ListenerAdapter {
     static Guild guild;
@@ -32,7 +31,7 @@ public class Discord extends ListenerAdapter {
             if(guild != null){
                 channel = guild.getTextChannelById(config.getDiscordRoom());
             } else {
-                Global.log("discord-error");
+                log("err","discord-error");
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -60,7 +59,7 @@ public class Discord extends ListenerAdapter {
                 String message = event.getMessage().getContentRaw().replace("!signup ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
-                    message = "Use !signup signup <new account id> <new password> <password repeat>\n" +
+                    message = "Use !signup <new account id> <new password> <password repeat>\n" +
                             "!signup <새 계정명> <새 비밀번호> <비밀번호 재입력> 형식으로 입력하세요.";
                     send(message);
                     return;
@@ -70,6 +69,12 @@ public class Discord extends ListenerAdapter {
                 String pw2 = data[2];
                 if (checkpw(event, id, pw, pw2)) {
                     pw = BCrypt.hashpw(pw, BCrypt.gensalt(11));
+                    if(isduplicateid(id) || isduplicatename(event.getAuthor().getName())) {
+                        message = "This account already exists!\n" +
+                                "이 계정은 이미 사용중입니다!";
+                        send(message);
+                        return;
+                    }
                     if (PlayerDB.createNewDatabase(event.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getnTime(), getnTime(), false, id, pw, null)) {
                         message = "Register successful! Now, join server and use /login command.\n" +
                                 "계정 등록에 성공했습니다! 이제 서버에 가서 /login 명령어를 사용하세요.";
@@ -78,6 +83,31 @@ public class Discord extends ListenerAdapter {
                                 "계정 등록 실패.";
                     }
                     send(message);
+                }
+            }
+
+            if (event.getMessage().getContentRaw().matches("!changepw .*")) {
+                String message = event.getMessage().getContentRaw().replace("!changepw ", "");
+                String[] data = message.split(" ");
+                if(data.length != 3){
+                    message = "Use !changepw <account id> <new password> <password repeat>\n" +
+                            "!changepw <계정 ID> <새 비밀번호> <비밀번호 재입력> 형식으로 입력하세요.";
+                    send(message);
+                    return;
+                }
+                String id = data[0];
+                String pw = data[1];
+                String pw2 = data[2];
+
+                if(checkpw(event,id,pw,pw2)){
+                    try{
+                        Class.forName("org.mindrot.jbcrypt.BCrypt");
+                        String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
+                        writeData("UPDATE players SET accountpw = ? WHERE accountid = ?",hashed,id);
+                        send("Successful!\n성공!");
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -126,9 +156,9 @@ public class Discord extends ListenerAdapter {
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
             String message = "<password> format isn't allowed!\n" +
-                    "Use !signup id password password_repeat\n" +
+                    "Use '!command id password password_repeat' format.\n" +
                     "<비밀번호> 형식은 허용되지 않습니다!\n" +
-                    "!signup 아이디 비밀번호 비밀번호_재입력 형식으로 사용하세요.";
+                    "'!명령어 아이디 비밀번호 비밀번호_재입력' 형식으로 사용하세요.";
             send(message);
             return false;
         }

@@ -2,7 +2,6 @@ package essentials.core;
 
 import arc.Core;
 import arc.Events;
-import essentials.Global;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.gen.Call;
@@ -11,8 +10,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
-import static essentials.Global.config;
-import static essentials.Global.nbundle;
+import static essentials.Global.*;
 import static essentials.core.PlayerDB.getData;
 
 public class EPG {
@@ -33,7 +31,7 @@ public class EPG {
                             return;
                         }
                     } else if(e.tile.block().name.equals("air")){
-                        Global.err("epg-block-not-valid", name);
+                        log("err","epg-block-not-valid", name);
                     } else {
                         return;
                     }

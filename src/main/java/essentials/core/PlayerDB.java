@@ -1,7 +1,6 @@
 package essentials.core;
 
 import arc.Core;
-import essentials.Global;
 import essentials.Threads;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
@@ -129,7 +128,7 @@ public class PlayerDB{
                             "AUTO_INCREMENT=1\n" +
                             ";";
                 } else {
-                    Global.playererror("db-address-notset");
+                    log("playererror","db-address-notset");
                 }
             }
             Statement stmt = conn.createStatement();
@@ -142,11 +141,8 @@ public class PlayerDB{
 	public static boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, boolean connected, String accountid, String accountpw, Player player) {
         boolean result = false;
         try {
-            String currentip = new Threads.getip().main();
-            String find = "SELECT * FROM players WHERE uuid = '"+uuid+"'";
-            Statement stmt  = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(find);
-            if(!rs.next()){
+            if(uuid.equals("InactiveAAA=") || !isduplicate(uuid)){
+                String currentip = new Threads.getip().main();
                 String sql;
                 if(config.isSqlite()){
                     sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -194,17 +190,14 @@ public class PlayerDB{
                 pstmt.execute();
                 pstmt.close();
                 if(player != null) player.sendMessage(nbundle("player-id", player.name));
-                Global.playernormal("player-db-created", name);
+                log("player","player-db-created", name);
                 result = true;
-            } else if(rs.next()){
+            } else {
                 if(player != null){
                     player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
                             "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                    player.sendMessage("[green][Essentials] ID: "+rs.getString(player.name));
                 }
             }
-            rs.close();
-            stmt.close();
         } catch (Exception e){
             printStackTrace(e);
         }
@@ -258,13 +251,6 @@ public class PlayerDB{
             }
             rs.close();
             stmt.close();
-            if(json.toString().equals("{}")){
-                if(config.isDebug()) {
-                    Global.playererror(uuid+" Player data is empty.");
-                    throw new Exception("플레이어 데이터가 없습니다!");
-                }
-                // todo make invalid player information
-            }
         } catch (Exception e){
             if(e.getMessage().contains("Connection is closed")){
                 PlayerDB db = new PlayerDB();
@@ -336,13 +322,13 @@ public class PlayerDB{
             if (!resultSet.next()) {
                 stmt.execute(v1sql);
                 stmt.execute(v1update);
-                Global.playernormal("db-upgrade");
+                log("player","db-upgrade");
             }
             resultSet = metadata.getColumns(null, null, "players", "permission");
             if(!resultSet.next()){
                 stmt.execute(v2sql);
                 stmt.execute(v2update);
-                Global.playernormal("db-upgrade");
+                log("player","db-upgrade");
             }
             resultSet.close();
             stmt.close();
@@ -353,28 +339,28 @@ public class PlayerDB{
     }
     public void openconnect() {
         try {
-            String type = nbundle("db-type");
             if (config.isSqlite()) {
                 Class.forName("org.sqlite.JDBC");
                 conn = DriverManager.getConnection(config.getDBurl());
-                Global.playerlog(type+"SQLite");
+                log("player","db-type","SQLite");
             } else {
                 if (!config.getDBid().isEmpty()) {
                     Class.forName("org.mariadb.jdbc.Driver");
                     Class.forName("com.mysql.jdbc.Driver");
+                    Class.forName("org.postgresql.Driver");
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                    Global.playerlog(type+"MariaDB/MySQL");
+                    log("player","db-type","MariaDB/MySQL/PostgreSQL");
                 } else {
                     conn = DriverManager.getConnection(config.getDBurl());
-                    Global.playerlog(type+"Invalid");
+                    log("player","db-type","Invalid");
                 }
             }
         } catch (ClassNotFoundException e) {
             printStackTrace(e);
-            Global.nlog("Class not found!");
+            nlog("warn","Class not found!");
         } catch (SQLException e){
             printStackTrace(e);
-            Global.nlog("SQL ERROR!");
+            nlog("warn","SQL ERROR!");
         }
     }
     public static boolean closeconnect(){
@@ -416,9 +402,9 @@ public class PlayerDB{
                 if(e.getMessage().contains("Connection is closed")){
                     PlayerDB db = new PlayerDB();
                     db.openconnect();
+                } else {
+                    printStackTrace(e);
                 }
-                playererror(sql, true);
-                printStackTrace(e);
             }
         });
         executorService.submit(t);
@@ -442,13 +428,13 @@ public class PlayerDB{
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
-            Global.playernormal("password-match-regex", player.name);
+            log("player","password-match-regex", player.name);
             return false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
-            Global.playernormal("password-match-name", player.name);
+            log("player","password-match-name", player.name);
             return false;
         } else if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -459,7 +445,7 @@ public class PlayerDB{
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
-            Global.playernormal("password-match-blank", player.name);
+            log("player","password-match-blank", player.name);
             return false;
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
@@ -467,7 +453,7 @@ public class PlayerDB{
                     "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
-            Global.playernormal("password-match-invalid", player.name);
+            log("player","password-match-invalid", player.name);
             return false;
         }
         return true;
@@ -482,15 +468,11 @@ public class PlayerDB{
             Class.forName("org.mindrot.jbcrypt.BCrypt");
             String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
 
-            PreparedStatement pstm1 = conn.prepareStatement("SELECT * FROM players WHERE accountid = '" + id + "'");
-            ResultSet rs1 = pstm1.executeQuery();
-            if (rs1.next()) {
-                if (rs1.getString("accountid").equals(id) || rs1.getString("name").equals(player.name) || rs1.getString("uuid").equals(player.uuid)) {
-                    player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
-                            "[green][Essentials] [orange]이 계정명은 이미 사용중입니다!");
-                    Global.playernormal("password-already-accountid", id);
-                    return false;
-                }
+            if (isduplicateid(id)) {
+                player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
+                        "[green][Essentials] [orange]이 계정명은 이미 사용중입니다!");
+                log("player", "password-already-accountid", id);
+                return false;
             } else {
                 // email source here
                 PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
@@ -508,24 +490,19 @@ public class PlayerDB{
                     String nowString = now.format(dateTimeFormatter);
                     JSONObject list = geolocation(player);
 
-                    String find = "SELECT * FROM players WHERE uuid = '"+player.uuid+"'";
-                    Statement stmt  = conn.createStatement();
-                    ResultSet rs = stmt.executeQuery(find);
-                    if(!rs.next()){
+                    if(isduplicate(player)){
                         createNewDatabase(nickname, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, player.name, hashed, player);
-                    } else if(rs.next()){
+                    } else {
                         player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                 "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
-                        Global.playernormal("password-already-account", player.name);
+                        log("player","password-already-account", player.name);
                         return false;
                     }
-                    rs.close();
-                    stmt.close();
                     player.sendMessage(bundle(player, "player-name-changed", player.name));
                 } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)) {
                     player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
                             "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                    Global.playernormal("password-already-using", player.name);
+                    log("player","password-already-using", player.name);
                     return false;
                 } else {
                     return false;
@@ -533,8 +510,6 @@ public class PlayerDB{
                 rs2.close();
                 pstm2.close();
             }
-            rs1.close();
-            pstm1.close();
         } catch (Exception e) {
             printStackTrace(e);
         }
@@ -584,7 +559,7 @@ public class PlayerDB{
         Thread t = new Thread(() -> {
             JSONObject db = getData(player.uuid);
             // 만약에 새 기기로 기존 계정에 로그인 했을때, 계정에 있던 DB를 가져와서 검사함
-            if(db.toString().equals("{}")){
+            if(isLogin(player)){
                 String uuid = "";
                 try{
                     String sql = "SELECT uuid FROM players WHERE accountid='"+id+"'";
@@ -599,6 +574,17 @@ public class PlayerDB{
                     e.printStackTrace();
                 }
                 db = getData(uuid);
+            }
+            if(db.isEmpty()){
+                try {
+                    PreparedStatement stmt = conn.prepareStatement("UPDATE players SET uuid = ? WHERE accountid = ?");
+                    stmt.setString(1, player.uuid);
+                    stmt.setString(2,id);
+                    stmt.execute();
+                    db = getData(player.uuid);
+                }catch (SQLException e){
+                    printStackTrace(e);
+                }
             }
             if(db.getBoolean("connected") && config.isValidconnect()){
                 for(int a=0;a<playerGroup.size();a++){
@@ -666,7 +652,7 @@ public class PlayerDB{
                 // 컬러닉 스레드 시작
                 new Thread(new ColorNick(player)).start();
             } else if(!config.isRealname() && colornick){
-                playernormal(nbundle("colornick-require"));
+                log("player","colornick-require");
                 writeData("UPDATE players SET colornick = ? WHERE uuid = ?", false, player.uuid);
             }
 

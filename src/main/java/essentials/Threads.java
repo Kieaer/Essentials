@@ -174,7 +174,7 @@ public class Threads extends TimerTask{
                             object.remove(i);
                             Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
                             netServer.admins.unbanPlayerID(uuid);
-                            Global.nlog("[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
+                            nlog("log","[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
                         }
                     }
                 } catch (Exception ex) {
@@ -489,7 +489,7 @@ public class Threads extends TimerTask{
                     return;
                 }
                 // 12면을 검색함
-                Global.nlog("SEARCH START");
+                nlog("log","SEARCH START");
                 int count = 0;
                 for (int b = 0; b < 12; b++) {
                     open.add(getNear(tile, b));
@@ -510,12 +510,12 @@ public class Threads extends TimerTask{
                     // 파이프의 4면을 검색함
                     while (count < 10) {
                         for (int c = 0; c < 4; c++) {
-                            Global.nlog(target.x+"/"+target.y);
+                            nlog("log",target.x+"/"+target.y);
                             // 파이프를 발견했다면
                             if (target.getNearby(c).block() == Blocks.conduit || target.getNearby(c).block() == Blocks.pulseConduit) {
                                 target = target.getNearby(c);
                             } else if (target.getNearby(c).block() == Blocks.cryofluidMixer) {
-                                Global.nlog("냉각수 공장 발견");
+                                nlog("log","냉각수 공장 발견");
                                 count = 100;
                             }
                         }
@@ -704,7 +704,7 @@ public class Threads extends TimerTask{
                     p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                 }
             }
-            Global.nlog("Map rollbacked.");
+            nlog("log","Map rollbacked.");
             Call.sendMessage("[green]Map rollbacked.");
         }
 
@@ -713,7 +713,7 @@ public class Threads extends TimerTask{
             if (save()) {
                 Call.sendMessage("[scarlet]AutoSave complete");
             } else {
-                Global.nerr("Map save failed! Check your disk or config!");
+                nlog("err","Map save failed! Check your disk or config!");
             }
         }
     }
@@ -1032,7 +1032,7 @@ public class Threads extends TimerTask{
                     if (list.size() >= require) {
                         allsendMessage("vote-kick-done", target.name);
                         PlayerDB.addtimeban(target.name, target.uuid, 4);
-                        Global.playerlog(target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
+                        log("player",target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
 
                         Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
                         Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
@@ -1088,7 +1088,7 @@ public class Threads extends TimerTask{
                                 p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                             }
                         }
-                        Global.nlog("Map rollbacked.");
+                        nlog("log","Map rollbacked.");
                         allsendMessage("vote-map-done");
                     } else {
                         allsendMessage("vote-map-fail");

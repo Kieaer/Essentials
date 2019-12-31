@@ -1,6 +1,5 @@
 package essentials.core;
 
-import essentials.Global;
 import mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -84,7 +83,7 @@ public class Translate {
                                             p.sendMessage("[green]"+player.name + "[orange]: [white]" + result);
                                         }
                                     } else if (response != 400){
-                                        Global.nwarn(rb.toString());
+                                        nlog("warn",rb.toString());
                                     }
                                 }
                             }

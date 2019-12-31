@@ -11,6 +11,7 @@ import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.jsoup.Jsoup;
@@ -18,17 +19,20 @@ import org.jsoup.Jsoup;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ThreadFactory;
 
 import static essentials.core.Log.writelog;
+import static essentials.core.PlayerDB.conn;
 import static essentials.core.PlayerDB.getData;
 import static mindustry.Vars.playerGroup;
 import static mindustry.Vars.world;
@@ -36,130 +40,128 @@ import static mindustry.Vars.world;
 public class Global {
     public static Config config = new Config();
 
-    // 일반 기록
-    public static void log(String value){
-        Log.info("[Essential] "+nbundle(value));
-    }
-    
-    public static void log(String value, Object... parameter){
-        Log.info("[Essential] "+nbundle(value, parameter));
-    }
+    static String tag = "[Essential] ";
+    static String servertag = "[EssentialServer] ";
+    static String clienttag = "[EssentialClient] ";
+    static String playertag = "[EssentialPlayer] ";
+    static String configtag = "[EssentialPlayer] ";
 
-    public static void nlog(Object... value){
-        Log.info("[Essential] "+ Arrays.toString(value).replace("[", "").replace("]", ""));
-    }
-
-    // 경고
-    public static void warn(String value){
-        Log.warn("[Essential] "+nbundle(value));
-    }
-
-    public static void nwarn(String value){
-        Log.warn("[Essential] "+value);
-    }
-
-    // 오류
-    public static void err(String value){
-        Log.err("[Essential] "+nbundle(value));
-    }
-
-    public static void err(String value, Object... parameter){
-        Log.err("[Essential] "+nbundle(value, parameter));
-    }
-
-    public static void nerr(String value){
-        Log.err("[Essential] "+value);
-    }
-
-    // 디버그
-    public static void debug(String value){
-        Log.debug(value);
-    }
-
-    // 서버
-    public static void server(String value){
-        Log.info("[EssentialServer] "+nbundle(value));
-    }
-
-    public static void server(String value, Object... parameter){
-        Log.info("[EssentialServer] "+nbundle(value, parameter));
-    }
-
-    // 클라이언트
-    public static void client(String value){
-        Log.info("[EssentialClient] "+nbundle(value));
-    }
-
-    public static void client(String value, Object... parameter){
-        Log.info("[EssentialClient] "+nbundle(value, parameter));
-    }
-
-    public static void nclient(Object... parameter){
-        Log.info("[EssentialClient] "+Arrays.toString(parameter));
-    }
-
-    // 설정
-    public static void config(String value){
-        Log.info("[EssentialConfig] "+nbundle(value));
-    }
-
-    // PlayerDB
-    public static void playernormal(String value){
-        Log.info("[EssentialPlayer] "+nbundle(value));
-    }
-
-    public static void playernormal(String value, Object... parameter){
-        Log.info("[EssentialPlayer] "+nbundle(value, parameter));
-    }
-
-    public static void playerlog(String plain){
-        Log.info("[EssentialPlayer] "+plain);
-    }
-
-    // PlayerDB 경고
-    public static void playerwarn(String value){
-        Log.warn("[EssentialPlayer] "+nbundle(value));
-    }
-
-    // PlayerDB 오류
-    public static void playererror(String value, boolean... bool){
-        if(bool[0]){
-            Log.err("[EssentialPlayer] " + value);
-        } else {
-            Log.err("[EssentialPlayer] " + nbundle(value));
+    // 로그
+    public static void log(String type, String value, Object... parameter){
+        switch(type){
+            case "log":
+                if(parameter.length == 0){
+                    Log.info(tag+nbundle(value));
+                } else {
+                    Log.info(tag+nbundle(value,parameter));
+                }
+                break;
+            case "warn":
+                if(parameter.length == 0){
+                    Log.warn(tag+nbundle(value));
+                } else {
+                    Log.warn(tag+nbundle(value,parameter));
+                }
+                break;
+            case "err":
+                if(parameter.length == 0){
+                    Log.err(tag+nbundle(value));
+                } else {
+                    Log.err(tag+nbundle(value,parameter));
+                }
+                break;
+            case "debug":
+                if(parameter.length == 0){
+                    Log.debug(tag+nbundle(value));
+                } else {
+                    Log.debug(tag+nbundle(value,parameter));
+                }
+                break;
+            case "server":
+                if(parameter.length == 0){
+                    Log.info(servertag+nbundle(value));
+                } else {
+                    Log.info(servertag+nbundle(value,parameter));
+                }
+                break;
+            case "serverwarn":
+                if(parameter.length == 0){
+                    Log.warn(servertag+nbundle(value));
+                } else {
+                    Log.warn(servertag+nbundle(value,parameter));
+                }
+                break;
+            case "servererr":
+                if(parameter.length == 0){
+                    Log.err(servertag+nbundle(value));
+                } else {
+                    Log.err(servertag+nbundle(value,parameter));
+                }
+                break;
+            case "client":
+                if(parameter.length == 0){
+                    Log.info(clienttag+nbundle(value));
+                } else {
+                    Log.info(clienttag+nbundle(value,parameter));
+                }
+                break;
+            case "clientwarn":
+                if(parameter.length == 0){
+                    Log.warn(clienttag+nbundle(value));
+                } else {
+                    Log.warn(clienttag+nbundle(value,parameter));
+                }
+                break;
+            case "clienterr":
+                if(parameter.length == 0){
+                    Log.err(clienttag+nbundle(value));
+                } else {
+                    Log.err(clienttag+nbundle(value,parameter));
+                }
+                break;
+            case "config":
+                if(parameter.length == 0){
+                    Log.info(configtag+nbundle(value));
+                } else {
+                    Log.info(configtag+nbundle(value,parameter));
+                }
+                break;
+            case "player":
+                if(parameter.length == 0){
+                    Log.info(playertag+nbundle(value));
+                } else {
+                    Log.info(playertag+nbundle(value,parameter));
+                }
+                break;
+            case "playererror":
+                if(parameter.length == 0){
+                    Log.err(playertag+nbundle(value));
+                } else {
+                    Log.err(playertag+nbundle(value,parameter));
+                }
+                break;
+            case "playerwarn":
+                if(parameter.length == 0){
+                    Log.warn(playertag+nbundle(value));
+                } else {
+                    Log.warn(playertag+nbundle(value,parameter));
+                }
+                break;
         }
     }
 
-    // 코어가 없는 팀 찾기
-    public static Team getTeamNoCore(Player player){
-        int index = player.getTeam().id+1;
-        while (index != player.getTeam().id){
-            if (index >= Team.all().length){
-                index = 0;
-            }
-            if (Vars.state.teams.get(Team.all()[index]).cores.isEmpty()){
-                return Team.all()[index]; //return a team without a core
-            }
-            index++;
-        }
-        return player.getTeam();
-    }
-
-    public static void setTeam(Player player){
-        if (Vars.state.rules.pvp) {
-            int index = player.getTeam().id + 1;
-            while (index != player.getTeam().id) {
-                if (index >= Team.all().length) {
-                    index = 0;
-                }
-                if (!Vars.state.teams.get(Team.all()[index]).cores.isEmpty()) {
-                    player.setTeam(Team.all()[index]);
-                    break;
-                }
-                index++;
-            }
-        } else {
-            player.setTeam(Team.sharded);
+    public static void nlog(String type, String value){
+        switch(type){
+            case "log":
+                Log.info(value);
+            case "warn":
+                Log.warn(value);
+            case "err":
+                Log.err(value);
+            case "player":
+                Log.info(playertag+value);
+            case "client":
+                Log.info(clienttag+value);
         }
     }
 
@@ -180,7 +182,7 @@ public class Global {
                 String text = sb.toString();
 
                 writelog("error", text);
-                Global.nlog("Internal error! - "+e.getMessage());
+                nlog("err","Internal error! - "+e.getMessage());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -586,7 +588,7 @@ public class Global {
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
         JSONObject db = getData(player.uuid);
-        if(db.toString().equals("{}") || player.uuid == null) return false;
+        if(db.isEmpty() || player.uuid == null) return false;
         return db.getBoolean("connected");
     }
 
@@ -641,7 +643,7 @@ public class Global {
         }
     }
 
-    // Thread name
+    // 스레드 이름 설정
     public static class threadname implements ThreadFactory {
         String name;
         int count = 0;
@@ -650,18 +652,68 @@ public class Global {
         }
 
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NotNull Runnable r) {
             return new Thread(r, name+"-" + ++count);
         }
     }
 
+    // 패킷 암호화
     public static byte[] encrypt(String data, SecretKeySpec spec, Cipher cipher) throws Exception {
         cipher.init(Cipher.ENCRYPT_MODE, spec);
         return cipher.doFinal(data.getBytes());
     }
 
+    // 패킷 복호화
     public static byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
         cipher.init(Cipher.DECRYPT_MODE, spec);
         return cipher.doFinal(data);
+    }
+
+    public static boolean isduplicate(Player player){
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
+            stmt.setString(1, player.uuid);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }catch (SQLException e){
+            printStackTrace(e);
+            return true;
+        }
+    }
+
+    public static boolean isduplicate(String uuid){
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
+            stmt.setString(1, uuid);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }catch (SQLException e){
+            printStackTrace(e);
+            return true;
+        }
+    }
+
+    public static boolean isduplicateid(String id){
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
+            stmt.setString(1, id);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }catch (SQLException e){
+            printStackTrace(e);
+            return true;
+        }
+    }
+
+    public static boolean isduplicatename(String name){
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE name = ?");
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }catch (SQLException e){
+            printStackTrace(e);
+            return true;
+        }
     }
 }
