@@ -29,10 +29,11 @@ public class Config {
     static int version = 8;
 
     public Config(){
-        if(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
-            Yaml yaml = new Yaml();
-            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
+        Yaml yaml = new Yaml();
+        if (!Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
+            Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString("language: en");
         }
+        obj = yaml.load(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString());
     }
 
     public static JSONArray jumpzone;
@@ -43,59 +44,60 @@ public class Config {
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
 
     public String getClienthost(){
-        return obj != null && obj.get("client-enable") != null ? (String) obj.get("client-host") : "mindustry.kr";
+        return obj.containsKey("client-enable") ? (String) obj.get("client-host") : "mindustry.kr";
     }
 
     public int getClientport(){
-        return obj != null && obj.get("client-port") != null ? (int) obj.get("client-port") : 20000;
+        return obj.containsKey("client-port") && (int) obj.get("client-port") != 20000 ? (int) obj.get("client-port") : 25000;
     }
 
     public int getServerport(){
-        return obj != null && obj.get("server-port") != null ? (int) obj.get("server-port") : 25000;
+        return obj.containsKey("server-port") ? (int) obj.get("server-port") : 25000;
     }
 
     public boolean isRealname(){
-        return obj != null && obj.get("realname") == null && (boolean) obj.get("realname");
+        //return obj.containsKey("realname")) && (boolean) obj.get("realname");
+        return obj.containsKey("realname") && (boolean) obj.get("realname");
     }
 
     public boolean isStrictname() {
-        return (obj != null && obj.get("strict-name") != null) && (boolean) obj.get("strict-name");
+        return obj.containsKey("strict-name") && (boolean) obj.get("strict-name");
     }
 
     public boolean isDetectreactor(){
-        return obj != null && obj.get("detectreactor") != null && (boolean) obj.get("detectreactor");
+        return obj.containsKey("detectreactor") && (boolean) obj.get("detectreactor");
     }
 
     public boolean isScanresource(){
-        return obj != null && obj.get("scanresource") != null && (boolean) obj.get("scanresource");
+        return obj.containsKey("scanresource") && (boolean) obj.get("scanresource");
     }
 
     public boolean isServerenable(){
-        return obj != null && obj.get("server-enable") != null && (boolean) obj.get("server-enable");
+        return obj.containsKey("server-enable") && (boolean) obj.get("server-enable");
     }
 
     public boolean isClientenable(){
-        return obj != null && obj.get("client-enable") != null && (boolean) obj.get("client-enable");
+        return obj.containsKey("client-enable") && (boolean) obj.get("client-enable");
     }
 
     public double getBasexp(){
-        return obj != null && obj.get("basexp") != null ? Double.parseDouble(String.valueOf(obj.get("basexp"))) : 500;
+        return obj.containsKey("basexp") ? Double.parseDouble(String.valueOf(obj.get("basexp"))) : 500;
     }
 
     public double getExponent(){
-        return obj != null && obj.get("exponent") != null ? Double.parseDouble(String.valueOf(obj.get("exponent"))) : 1.12f;
+        return obj.containsKey("exponent") ? Double.parseDouble(String.valueOf(obj.get("exponent"))) : 1.12f;
     }
 
     public int getCupdatei(){
-        return obj != null && obj.get("cupdatei") != null ? (int) obj.get("cupdatei") : 1000;
+        return obj.containsKey("cupdatei") ? (int) obj.get("cupdatei") : 1000;
     }
 
     public boolean isBanshare(){
-        return obj != null && obj.get("banshare") == null && (boolean) obj.get("banshare");
+        return obj.containsKey("banshare") && (boolean) obj.get("banshare");
     }
 
     public String[] getBantrust(){
-        if(obj != null && obj.get("bantrust") != null) {
+        if(obj.containsKey("bantrust")) {
             String ban = (String) obj.get("bantrust");
             return ban.split(",");
         } else {
@@ -104,25 +106,25 @@ public class Config {
     }
 
     public boolean isAntivpn(){
-        return obj != null && obj.get("antivpn") == null && (boolean) obj.get("antivpn");
+        return obj.containsKey("antivpn") && (boolean) obj.get("antivpn");
     }
 
     public boolean isQuery(){
-        return obj != null && obj.get("query") != null && (boolean) obj.get("query");
+        return obj.containsKey("query") && (boolean) obj.get("query");
     }
 
     public String getLanguage(){
-        return obj != null && obj.get("language") != null ? (String) obj.get("language") : "en";
+        return obj.containsKey("language") ? (String) obj.get("language") : "en";
     }
 
     public boolean isEnableantirush(){
-        return obj != null &&obj.get("enableantirush") == null && (boolean) obj.get("enableantirush");
+        return obj.containsKey("enableantirush") && (boolean) obj.get("enableantirush");
     }
 
     public Calendar getAntirushtime() {
         SimpleDateFormat format = new SimpleDateFormat("mm:ss");
         Calendar cal = Calendar.getInstance();
-        if(obj != null && obj.get("antirushtime") != null) {
+        if(obj.containsKey("antirushtime")) {
             try {
                 Date d = format.parse(String.valueOf(obj.get("antirushtime")));
                 cal.setTime(d);
@@ -143,135 +145,131 @@ public class Config {
     }
 
     public boolean isAntigrief(){
-        return obj != null && obj.get("antigrief") == null && (boolean) obj.get("antigrief");
+        return obj.containsKey("antigrief") && (boolean) obj.get("antigrief");
     }
 
     public boolean isBlockdetect(){
-        return obj != null && obj.get("blockdetect") != null && (boolean) obj.get("blockdetect");
+        return obj.containsKey("blockdetect") && (boolean) obj.get("blockdetect");
     }
 
     public boolean isAlertdeposit(){
-        return obj != null && obj.get("alertdeposit") != null && (boolean) obj.get("alertdeposit");
+        return obj.containsKey("alertdeposit") && (boolean) obj.get("alertdeposit");
     }
 
     public boolean isExplimit(){
-        return obj != null && obj.get("explimit") != null && (boolean) obj.get("explimit");
+        return obj.containsKey("explimit") && (boolean) obj.get("explimit");
     }
 
     public boolean isLogging(){
-        return obj != null && obj.get("logging") != null && (boolean) obj.get("logging");
+        return obj.containsKey("logging") && (boolean) obj.get("logging");
     }
 
     public boolean isUpdate(){
-        return obj == null || obj.get("update") == null || (boolean) obj.get("update");
+        return !obj.containsKey("update") || (boolean) obj.get("update");
     }
 
     public boolean isLevelupalarm(){
-        return obj != null && obj.get("levelupalarm") != null && (boolean) obj.get("levelupalarm");
+        return obj.containsKey("levelupalarm") && (boolean) obj.get("levelupalarm");
     }
 
     public int getAlarmlevel(){
-        return obj != null && obj.get("alarm-minimal-level") != null ? (int) obj.get("alarm-minimal-level") : 20;
+        return obj.containsKey("alarm-minimal-level") ? (int) obj.get("alarm-minimal-level") : 20;
     }
 
     public boolean isSqlite(){
-        return obj == null || obj.get("sqlite") == null || (boolean) obj.get("sqlite");
+        return !obj.containsKey("sqlite") || (boolean) obj.get("sqlite");
     }
 
     public boolean isLoginenable(){
-        return obj == null || obj.get("loginenable") == null || (boolean) obj.get("loginenable");
+        return obj.containsKey("loginenable") && (boolean) obj.get("loginenable");
     }
 
     public String getPasswordmethod(){
-        return obj != null && obj.get("loginmethod") != null ? (String) obj.get("loginmethod") : "password";
+        return obj.containsKey("loginmethod") ? (String) obj.get("loginmethod") : "password";
     }
 
     public boolean isValidconnect(){
-        return obj == null || obj.get("validconnect") == null || (boolean) obj.get("validconnect");
+        return obj.containsKey("validconnect") && (boolean) obj.get("validconnect");
     }
 
     public String getDiscordToken(){
-        return obj != null && obj.get("discord-token") != null ? (String) obj.get("discord-token") : "";
+        return obj.containsKey("discord-token") ? (String) obj.get("discord-token") : "Put your discord bot token here";
     }
 
     public Long getDiscordGuild(){
-        return obj != null && obj.get("discord-guild") != null ? Long.parseLong(String.valueOf(obj.get("discord-guild"))) : 0L;
+        return obj.containsKey("discord-guild") ? Long.parseLong(String.valueOf(obj.get("discord-guild"))) : 0L;
     }
 
     public Long getDiscordRoom(){
-        return obj != null && obj.get("discord-room") != null ? Long.parseLong(String.valueOf(obj.get("discord-room"))) : 0L;
+        return obj.containsKey("discord-room") ? Long.parseLong(String.valueOf(obj.get("discord-room"))) : 0L;
     }
 
     public String getDiscordLink(){
-        return obj != null && obj.get("discord-link") != null ? (String) obj.get("discord-link") : "";
+        return obj.containsKey("discord-link") ? (String) obj.get("discord-link") : "Put your discord invite link here";
     }
 
     public String getDBurl(){
         if(isSqlite()){
             return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
         } else {
-            return obj != null && obj.get("dburl") != null ? (String) obj.get("dburl") : "";
+            return obj.containsKey("dburl") ? (String) obj.get("dburl") : "";
         }
     }
 
     public String getDBid(){
-        return obj != null && obj.get("dbid") != null ? (String) obj.get("dbid") : "";
+        return obj.containsKey("dbid") ? (String) obj.get("dbid") : "";
     }
 
     public String getDBpw(){
-        return obj != null && obj.get("dbpw") != null ? (String) obj.get("dbpw") : "";
+        return obj.containsKey("dbpw") ? (String) obj.get("dbpw") : "";
     }
 
     public String getClientId(){
-        return obj != null && obj.get("clientId") != null ? (String) obj.get("clientId") : "";
+        return obj.containsKey("clientId") ? (String) obj.get("clientId") : "Put your papago translate id here";
     }
 
     public String getClientSecret(){
-        return obj != null && obj.get("clientSecret") != null ? (String) obj.get("clientSecret") : "";
+        return obj.containsKey("clientSecret") ? (String) obj.get("clientSecret") : "Put your papago translate api key here";
     }
 
     public boolean isDebug(){
-        return obj != null && obj.get("debug") != null && (boolean) obj.get("debug");
+        return obj.containsKey("debug") && (boolean) obj.get("debug");
     }
 
     public int getSavetime(){
-        return obj != null && obj.get("savetime") != null ? (int) obj.get("savetime") : 10;
+        return obj.containsKey("savetime") ? (int) obj.get("savetime") : 10;
     }
 
     public int getSlotnumber(){
-        return obj != null && obj.get("slotnumber") != null ? (int) obj.get("slotnumber") : 1000;
-    }
-
-    private int getVersion(){
-        return obj != null && obj.get("version") != null ? (int) obj.get("version") : version;
+        return obj.containsKey("slotnumber") ? (int) obj.get("slotnumber") : 1000;
     }
 
     public boolean isAutodifficulty(){
-        return obj != null && obj.get("auto-difficulty") != null && (boolean) obj.get("auto-difficulty");
+        return obj.containsKey("auto-difficulty") && (boolean) obj.get("auto-difficulty");
     }
 
     public int getEasy(){
-        return obj != null && obj.get("easy") != null ? (int) obj.get("easy") : 2;
+        return obj.containsKey("easy") ? (int) obj.get("easy") : 2;
     }
 
     public int getNormal(){
-        return obj != null && obj.get("normal") != null ? (int) obj.get("normal") : 4;
+        return obj.containsKey("normal") ? (int) obj.get("normal") : 4;
     }
 
     public int getHard(){
-        return obj != null && obj.get("hard") != null ? (int) obj.get("hard") : 6;
+        return obj.containsKey("hard") ? (int) obj.get("hard") : 6;
     }
 
     public int getInsane(){
-        return obj != null && obj.get("insane") != null ? (int) obj.get("insane") : 10;
+        return obj.containsKey("insane") ? (int) obj.get("insane") : 10;
     }
 
     public int getSpawnlimit(){
-        return obj != null && obj.get("spawnlimit") != null ? (int) obj.get("spawnlimit") : 10;
+        return obj.containsKey("spawnlimit") ? (int) obj.get("spawnlimit") : 10;
     }
 
     public String getPrefix(){
-        return obj != null && obj.get("prefix") != null ? String.valueOf(obj.get("prefix")) : "[green][Essentials] []";
+        return obj.containsKey("prefix") ? String.valueOf(obj.get("prefix")) : "[green][Essentials] []";
     }
 
     public String getServername(){
@@ -280,7 +278,7 @@ public class Config {
     }
 
     public String getEventport(){
-        return obj != null && obj.get("event-port") != null ? (String) obj.get("event-port") : "8000-8050";
+        return obj.containsKey("event-port") ? (String) obj.get("event-port") : "8000-8050";
     }
 
     private void validfile(){
@@ -342,25 +340,18 @@ public class Config {
     }
 
     void update(){
-        String bantrust,antirushtime,prefix;
-        if(obj != null && obj.get("bantrust") != null){
-            bantrust = (String) obj.get("bantrust");
-        } else {
-            bantrust = "";
-        }
-        if(obj != null && obj.get("antirushtime") != null) {
-            antirushtime = String.valueOf(obj.get("antirushtime"));
-        } else {
-            antirushtime = "10:00";
-        }
-        if(obj != null && obj.get("prefix") != null) {
-            prefix = "\"" + obj.get("prefix") + "\"";
-        } else {
-            prefix = "\"[green][Essentials] []\"";
+        if(obj == null) System.out.println("obj null");
+        String bantrust = obj.containsKey("bantrust") ? (String) obj.get("bantrust") : "127.0.0.1";
+        String antirushtime = obj.containsKey("antirusttime") ? String.valueOf(obj.get("antirushtime")) : "10:00";
+        String prefix = obj.containsKey("prefix") ? "\"" + obj.get("prefix") + "\"" : "\"[green][Essentials] []\"";
+        if(obj.containsKey("version")){
+            if((int) obj.get("version") < version){
+                log("config","config-updated");
+            }
         }
 
         String text = "# "+nbundle("config-version-description")+"\n" +
-                "version: "+getVersion()+"\n" +
+                "version: "+version+"\n" +
                 "\n" +
                 "# "+nbundle("config-language-description")+"\n" +
                 "language: "+getLanguage()+"\n" +
@@ -487,8 +478,5 @@ public class Config {
         Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
 
         log("config","config-loaded");
-        if(getVersion() < version){
-            log("config","config-updated");
-        }
     }
 }

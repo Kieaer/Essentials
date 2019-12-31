@@ -340,10 +340,10 @@ public class Threads extends TimerTask{
 
             // 최대값 설정 (레벨비례)
             int level = getData(player.uuid).getInt("level");
-            routerlimit = 20 + (level * 3);
-            implimit = 10 + (level * 3);
-            breaklimit = 40 + (level * 4);
-            conveyorlimit = 40 + (level * 4);
+            routerlimit = 10 + (level * 3);
+            implimit = 6 + (level * 3);
+            breaklimit = 25 + (level * 4);
+            conveyorlimit = 30 + (level * 4);
 
             // 블럭 파괴 카운트
             Events.on(BuildSelectEvent.class, e -> {
@@ -399,8 +399,8 @@ public class Threads extends TimerTask{
                         }
                         if(routercount > routerlimit + 5){
                             Call.onDeconstructFinish(e.tile, Blocks.air, e.player.id);
-                            //Call.onKick(e.player.con, nbundle("grief-detect-kick"));
-                            //allsendMessage("grief-detect", e.player.name);
+                            Call.onKick(e.player.con, nbundle("grief-detect-kick"));
+                            allsendMessage("grief-detect", e.player.name);
                         }
                     }
                 }
@@ -1162,7 +1162,7 @@ public class Threads extends TimerTask{
                 String msg;
                 if(entity.message == null){
                     messagemonitor.remove(a);
-                    break;
+                    return;
                 } else {
                     msg = entity.message;
                 }

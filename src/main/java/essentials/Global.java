@@ -45,7 +45,7 @@ public class Global {
     static String servertag = "[EssentialServer] ";
     static String clienttag = "[EssentialClient] ";
     static String playertag = "[EssentialPlayer] ";
-    static String configtag = "[EssentialPlayer] ";
+    static String configtag = "[EssentialConfig] ";
 
     // 로그
     public static void log(String type, String value, Object... parameter){
@@ -155,14 +155,22 @@ public class Global {
         switch(type){
             case "log":
                 Log.info(value);
+                break;
             case "warn":
                 Log.warn(value);
+                break;
             case "err":
                 Log.err(value);
+                break;
+            case "debug":
+                Log.info("[DEBUG] "+value);
+                break;
             case "player":
                 Log.info(playertag+value);
+                break;
             case "client":
                 Log.info(clienttag+value);
+                break;
         }
     }
 

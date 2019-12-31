@@ -22,6 +22,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -64,8 +65,9 @@ public class Server implements Runnable {
                 Service service = new Service(socket);
                 service.start();
                 list.add(service);
+            } catch (SocketException s){
+                return;
             } catch (Exception e) {
-                if(e.getMessage().equals("Socket closed")) return;
                 printStackTrace(e);
             }
         }

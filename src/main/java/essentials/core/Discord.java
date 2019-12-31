@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,11 +39,13 @@ public class Discord extends ListenerAdapter {
         }
     }
 
+
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         if(event.getTextChannel().getIdLong() == config.getDiscordRoom()) {
             e = event;
             if (event.getMessage().getContentRaw().equals("!help")) {
+                event.getMessage().delete().submit();
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +
                         "**!signup <new account id> <new password> <password repeat>** Account register to kr server. Nickname and password can't use blank.\n" +
@@ -56,6 +59,7 @@ public class Discord extends ListenerAdapter {
             }
 
             if (event.getMessage().getContentRaw().matches("!signup .*")) {
+                event.getMessage().delete().submit();
                 String message = event.getMessage().getContentRaw().replace("!signup ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
@@ -87,6 +91,7 @@ public class Discord extends ListenerAdapter {
             }
 
             if (event.getMessage().getContentRaw().matches("!changepw .*")) {
+                event.getMessage().delete().submit();
                 String message = event.getMessage().getContentRaw().replace("!changepw ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
@@ -166,6 +171,6 @@ public class Discord extends ListenerAdapter {
     }
     
     public void send(String message){
-        e.getChannel().sendMessage(message).queue();
+        e.getChannel().sendMessage(message).queue(msg -> msg.delete().queueAfter(20, TimeUnit.SECONDS));
     }
 }

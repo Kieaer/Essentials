@@ -1005,7 +1005,7 @@ public class Main extends Plugin {
 
                 // 모든 스레드 종료
                 executorService.shutdown();
-                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug()) nlog("log","executorservice dead");
+                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug()) log("debug","executorservice dead");
 
                 // DB 종료
                 if (!closeconnect() && config.isDebug()) {
@@ -1019,7 +1019,11 @@ public class Main extends Plugin {
                 }
 
                 log("log","thread-disabled");
-                System.exit(1);
+
+                try {
+                    sleep(500);
+                    System.exit(1);
+                } catch (InterruptedException ignored) {}
             }
         });
 
@@ -1244,7 +1248,6 @@ public class Main extends Plugin {
         });
         handler.register("reload", "Reload Essentials config", arg -> {
             config = new Config();
-            config.main();
             log("config","config-reloaded");
         });
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
