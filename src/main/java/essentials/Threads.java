@@ -533,7 +533,7 @@ public class Threads extends TimerTask{
             if (playerGroup.size() > 0) {
                 for(int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    if (!isLogin(player)) {
+                    if (isNocore(player)) {
                         String message;
                         if(config.getPasswordmethod().equals("discord")){
                             message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +

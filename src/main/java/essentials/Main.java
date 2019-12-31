@@ -72,7 +72,6 @@ import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
-import static mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     private JSONArray nukeblock = new JSONArray();
@@ -463,14 +462,14 @@ public class Main extends Plugin {
                                 others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                             }
                         }
-                    } else {
+                    } /*else {
                         String perm = db.getString("permission");
                         if(permission.getJSONObject(perm).has("prefix")) {
                             Call.sendMessage(permission.getJSONObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
                             Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
                         }
-                    }
+                    }*/
 
                     // 서버간 대화기능 작동
                     if (db.getBoolean("crosschat")) {
