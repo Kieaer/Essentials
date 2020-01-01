@@ -663,7 +663,6 @@ public class Main extends Plugin {
             }
         });
 
-        /*
         // 플레이어가 밴당했을 때 공유기능 작동
         Events.on(PlayerBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
@@ -675,11 +674,11 @@ public class Main extends Plugin {
                 for (Player player : playerGroup.all()) {
                     player.sendMessage(bundle(player, "player-banned", e.player.name));
                     if (netServer.admins.isIDBanned(player.uuid)) {
-                        player.con.kick(KickReason.banned);
+                        player.con.kick(Packets.KickReason.banned);
                     }
                 }
             });
-            ex.submit(bansharing);
+            executorService.submit(bansharing);
         });
 
         // 이건 IP 밴당했을때 작동
@@ -690,7 +689,7 @@ public class Main extends Plugin {
                     client.main("bansync", null, null);
                 }
             });
-           ex.submit(bansharing);
+           executorService.submit(bansharing);
         });
 
         // 이건 밴 해제되었을 때 작동
@@ -708,8 +707,6 @@ public class Main extends Plugin {
                 client.main("unban", null, "<unknown>|"+e.ip);
             }
         });
-
-         */
 
         // 로그인 기능이 켜져있을때, 비 로그인 사용자들에게 알림을 해줌
         Timer timer = new Timer(true);
