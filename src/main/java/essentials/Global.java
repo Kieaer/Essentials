@@ -30,6 +30,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.conn;
@@ -723,6 +724,35 @@ public class Global {
         }catch (SQLException e){
             printStackTrace(e);
             return true;
+        }
+    }
+
+    public static void printProgress(long startTime, int total, int remain) {
+        long eta = remain == 0 ? 0 :
+                (total - remain) * (System.currentTimeMillis() - startTime) / remain;
+
+        String etaHms = total == 0 ? "N/A" :
+                String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
+                        TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
+                        TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1));
+
+        if (remain > total) {
+            throw new IllegalArgumentException();
+        }
+        int maxBareSize = 20;
+        int remainProcent = ((100 * remain) / total) / 5;
+        char defaultChar = '-';
+        String icon = "*";
+        String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
+        StringBuilder bareDone = new StringBuilder();
+        bareDone.append("[");
+        for (int i = 0; i < remainProcent; i++) {
+            bareDone.append(icon);
+        }
+        String bareRemain = bare.substring(remainProcent, bare.length());
+        System.out.print("\r" + bareDone + bareRemain + " " + remainProcent * 5 + "%, ETA: "+etaHms);
+        if (remain == total) {
+            System.out.print("\n");
         }
     }
 }

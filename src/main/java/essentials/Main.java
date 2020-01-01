@@ -43,15 +43,13 @@ import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -87,6 +85,8 @@ public class Main extends Plugin {
 
     private boolean making = false;
     public static boolean threadactive = true;
+
+    boolean isUpdating = false;
 
     public Main() {
         // 설정 시작
@@ -1022,7 +1022,7 @@ public class Main extends Plugin {
 
                 try {
                     sleep(500);
-                    System.exit(1);
+                    if(!isUpdating) System.exit(1);
                 } catch (InterruptedException ignored) {}
             }
         });
@@ -1034,34 +1034,9 @@ public class Main extends Plugin {
             // 업데이트 확인
             if(config.isUpdate()) {
                 log("client","client-checking-version");
-                HttpURLConnection con;
                 try {
-                    String apiURL = "https://api.github.com/repos/kieaer/Essentials/releases/latest";
-                    URL url = new URL(apiURL);
-                    con = (HttpURLConnection) url.openConnection();
-                    con.setRequestMethod("GET");
-                    con.setRequestProperty("Content-length", "0");
-                    con.setUseCaches(false);
-                    con.setAllowUserInteraction(false);
-                    con.setConnectTimeout(3000);
-                    con.setReadTimeout(3000);
-                    con.connect();
-                    int status = con.getResponseCode();
-                    StringBuilder response = new StringBuilder();
-
-                    switch (status) {
-                        case 200:
-                        case 201:
-                            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                            String line;
-                            while ((line = br.readLine()) != null) {
-                                response.append(line).append("\n");
-                            }
-                            br.close();
-                            con.disconnect();
-                    }
-
-                    JSONTokener parser = new JSONTokener(response.toString());
+                    String json = Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body();
+                    JSONTokener parser = new JSONTokener(json);
                     JSONObject object = new JSONObject(parser);
 
                     for(int a=0;a<mods.list().size;a++){
@@ -1075,7 +1050,50 @@ public class Main extends Plugin {
 
                     if (latest.compareTo(current) > 0) {
                         log("client","version-new");
+                        Thread t = new Thread(() -> {
+                            try {
+                                Object s = version;
+                                nlog("log",nbundle("update-description",s));
+                                System.out.println(object.getString("body"));
+                                URL url = new URL(object.getJSONArray("assets").getJSONObject(0).getString("browser_download_url"));
 
+                                threadactive = false;
+                                timer.cancel();
+                                if(config.isServerenable()) {
+                                    Server.active = false;
+                                    Server.serverSocket.close();
+                                    server.interrupt();
+                                }
+                                if (config.isClientenable() && serverconn) {
+                                    Client client = new Client();
+                                    client.main("exit", null, null);
+                                }
+                                executorService.shutdown();
+
+                                BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials.jar").file()));
+                                URLConnection urlConnection = url.openConnection();
+                                InputStream is = urlConnection.getInputStream();
+                                int size = urlConnection.getContentLength();
+                                byte[] buf = new byte[1024];
+                                int byteRead;
+                                int byteWritten = 0;
+                                long startTime = System.currentTimeMillis();
+                                System.out.println("Downloading...");
+                                while ((byteRead = is.read(buf)) != -1) {
+                                    outputStream.write(buf, 0, byteRead);
+                                    byteWritten += byteRead;
+
+                                    printProgress(startTime,size,byteWritten);
+                                }
+                                is.close();
+                                outputStream.close();
+                                System.out.println("Done! Please restart server!");
+                                System.exit(1);
+                            }catch (Exception ex){
+                                printStackTrace(ex);
+                            }
+                        });
+                        t.start();
                     } else if (latest.compareTo(current) == 0) {
                         log("client","version-current");
                     } else if (latest.compareTo(current) < 0) {
