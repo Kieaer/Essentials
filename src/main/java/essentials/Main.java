@@ -20,6 +20,7 @@ import essentials.utils.Config;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Bullets;
 import mindustry.content.UnitTypes;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
@@ -29,6 +30,7 @@ import mindustry.game.EventType.*;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
+import mindustry.mod.Mods;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.net.ValidateException;
@@ -36,6 +38,7 @@ import mindustry.plugin.Plugin;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
 import mindustry.type.UnitType;
+import mindustry.type.Weapon;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
@@ -214,7 +217,7 @@ public class Main extends Plugin {
 
         // 게임오버가 되었을 때
         Events.on(GameOverEvent.class, e -> {
-            if (Vars.state.rules.pvp) {
+            if (state.rules.pvp) {
                 int index = 5;
                 for (int a = 0; a < 5; a++) {
                     if (Vars.state.teams.get(Team.all()[index]).cores.isEmpty()) {
@@ -239,6 +242,16 @@ public class Main extends Plugin {
                         }
                     }
                     pvpteam.clear();
+                }
+            } else if(state.rules.attackMode){
+                for (int i = 0; i < playerGroup.size(); i++) {
+                    Player player = playerGroup.all().get(i);
+                    if (isLogin(player)) {
+                        JSONObject db = getData(player.uuid);
+                        int attackclear = db.getInt("attackclear");
+                        attackclear++;
+                        writeData("UPDATE players SET attackclear = ? WHERE uuid = ?", attackclear, player.uuid);
+                    }
                 }
             }
         });
@@ -1022,7 +1035,7 @@ public class Main extends Plugin {
 
                 try {
                     sleep(500);
-                    if(!isUpdating) System.exit(1);
+                    if(!isUpdating) System.exit(0);
                 } catch (InterruptedException ignored) {}
             }
         });
@@ -1088,7 +1101,7 @@ public class Main extends Plugin {
                                 is.close();
                                 outputStream.close();
                                 System.out.println("Done! Please restart server!");
-                                System.exit(1);
+                                System.exit(0);
                             }catch (Exception ex){
                                 printStackTrace(ex);
                             }
@@ -1549,7 +1562,7 @@ public class Main extends Plugin {
                             String name = data[0];
                             if (name.equals(arg[1])) {
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
-                                Call.onConnect(player.con, currentip, Integer.parseInt(data[2]));
+                                Call.onConnect(player.con, currentip, Integer.parseInt(data[1]));
                                 break;
                             }
                         }
@@ -2191,7 +2204,9 @@ public class Main extends Plugin {
             Vote vote = new Vote(player, arg[0], other);
             vote.command();
         });
-        handler.<Player>register("test", "Check that the plug-in is working properly.", (arg, player) -> {
+
+
+        handler.<Player>register("special", "Check that the plug-in is working properly.", (arg, player) -> {
             /*Thread t = new Thread(() -> {
                 Tile start = world.tile(player.tileX(), player.tileY());
                 try {
@@ -2204,6 +2219,52 @@ public class Main extends Plugin {
                 new AI(start, target).findore();
             });
             t.start();*/
+
+            Thread t = new Thread(() -> {
+                int count = 0;
+                /*while(true){
+                    Call.createBullet(Bullets.flakExplosive,player.getTeam(),player.x,player.y,Mathf.random(360),(float) (Math.random() * (1.0 - 0.5) + 0.5),(float) (Math.random() * (1.0 - 0.2) + 0.2));
+                    count++;
+                    if(count == 500){
+                        break;
+                    } else {
+                        try {
+                            sleep(17);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                count = 0;
+                while(true) {
+                    Call.createBullet(Bullets.artilleryHoming, player.getTeam(), player.x, player.y, Mathf.random(360), (float) (Math.random() * (1.0 - 0.5) + 0.5), (float) (Math.random() * (1.0 - 0.2) + 0.2));
+                    count++;
+                    if (count == 500) {
+                        break;
+                    } else {
+                        try {
+                            sleep(17);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                count = 0;*/
+                /*while(true) {
+                    Call.createBullet(Bullets.missileSwarm, player.getTeam(), player.x, player.y,new Random().nextInt((int) (((player.rotation+20) - (player.rotation-20)) + 1)) + player.rotation-20,1, 1);
+                    count++;
+                    if (count == 500) {
+                        break;
+                    } else {
+                        try {
+                            sleep(17);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }*/
+            });
+            t.start();
         });
     }
 }

@@ -42,10 +42,17 @@ public class Discord extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+        String msg = event.getMessage().getContentRaw();
+        if(event.getTextChannel().getIdLong() != config.getDiscordRoom() && (msg.matches("!help") || msg.matches("!signup") || msg.matches("!changepw"))){
+            event.getMessage().delete().queue();
+            String message = ">>> Please use correct channel!\n" +
+                    "올바른 채널에 명령어를 입력하세요!\n";
+            send(message);
+        }
+
         if(event.getTextChannel().getIdLong() == config.getDiscordRoom()) {
             e = event;
             if (event.getMessage().getContentRaw().equals("!help")) {
-                event.getMessage().delete().submit();
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +
                         "**!signup <new account id> <new password> <password repeat>** Account register to kr server. Nickname and password can't use blank.\n" +
@@ -58,8 +65,7 @@ public class Discord extends ListenerAdapter {
                 send(message);
             }
 
-            if (event.getMessage().getContentRaw().matches("!signup .*")) {
-                event.getMessage().delete().submit();
+            if (event.getMessage().getContentRaw().matches("!signup.*")) {
                 String message = event.getMessage().getContentRaw().replace("!signup ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
@@ -90,8 +96,7 @@ public class Discord extends ListenerAdapter {
                 }
             }
 
-            if (event.getMessage().getContentRaw().matches("!changepw .*")) {
-                event.getMessage().delete().submit();
+            if (event.getMessage().getContentRaw().matches("!changepw.*")) {
                 String message = event.getMessage().getContentRaw().replace("!changepw ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
@@ -149,7 +154,7 @@ public class Discord extends ListenerAdapter {
         } else if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
             String message = "Password shouldn't be the same as your nickname.\n" +
-                    "비밀번호는 ID는 똑같이 설정할 수 없습니다!";
+                    "비밀번호는 ID와 비슷하게 설정할 수 없습니다!";
             send(message);
             return false;
         } else if (pw.contains(" ")) {

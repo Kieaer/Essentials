@@ -439,7 +439,7 @@ public class PlayerDB{
         } else if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
             player.sendMessage("[green][Essentials] [sky]Password shouldn't be the same as your nickname.\n" +
-                    "[green][Essentials] [sky]비밀번호는 ID는 똑같이 설정할 수 없습니다!");
+                    "[green][Essentials] [sky]비밀번호는 ID와 비슷하게 설정할 수 없습니다!");
             return false;
         } else if (pw.contains(" ")) {
             // 비밀번호에 공백이 있을경우
