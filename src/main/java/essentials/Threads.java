@@ -1160,7 +1160,7 @@ public class Threads extends TimerTask{
 
                 MessageBlock.MessageBlockEntity entity = (MessageBlock.MessageBlockEntity) world.tile(x, y).entity;
                 String msg;
-                if(entity.message == null){
+                if(entity == null || entity.message == null){
                     messagemonitor.remove(a);
                     return;
                 } else {

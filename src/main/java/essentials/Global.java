@@ -74,9 +74,9 @@ public class Global {
                 break;
             case "debug":
                 if(parameter.length == 0){
-                    Log.debug(tag+nbundle(value));
+                    Log.info("[DEBUG]"+tag+nbundle(value));
                 } else {
-                    Log.debug(tag+nbundle(value,parameter));
+                    Log.info("[DEBUG]"+tag+nbundle(value,parameter));
                 }
                 break;
             case "server":

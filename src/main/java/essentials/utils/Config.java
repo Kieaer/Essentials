@@ -461,7 +461,7 @@ public class Config {
                 "slotnumber: " + getSlotnumber() + "\n" +
                 "\n" +
                 "# "+nbundle("config-auto-difficulty-description")+"\n" +
-                "auto-difficulty: false\n" +
+                "auto-difficulty: "+isAutodifficulty()+"\n" +
                 "easy: "+getEasy()+"\n" +
                 "normal: "+getNormal()+"\n" +
                 "hard: "+getHard()+"\n" +

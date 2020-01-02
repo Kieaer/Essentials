@@ -38,7 +38,7 @@ public class EPG {
 
                     if(level < blockreqlevel){
                         Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player)e.builder).id);
-                        ((Player)e.builder).sendMessage(nbundle(((Player)e.builder), "epg-block-require", ((Player)e.builder).name, blockreqlevel));
+                        ((Player)e.builder).sendMessage(nbundle(((Player)e.builder), "epg-block-require", name, blockreqlevel));
                     }
                 }
             });

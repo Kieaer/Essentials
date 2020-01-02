@@ -279,6 +279,8 @@ public class Main extends Plugin {
                 }
             }
 
+            if(e.player.name.length() > 32) e.player.con.kick("Nickname too long!");
+
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
                     player.con.kick("The nickname is too short!\n닉네임이 너무 짧습니다!");

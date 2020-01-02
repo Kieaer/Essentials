@@ -43,7 +43,7 @@ public class Discord extends ListenerAdapter {
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         String msg = event.getMessage().getContentRaw();
-        if(event.getTextChannel().getIdLong() != config.getDiscordRoom() && (msg.matches("!help") || msg.matches("!signup") || msg.matches("!changepw"))){
+        if(event.getTextChannel().getIdLong() != config.getDiscordRoom() && (msg.equals("!help") || msg.matches("!signup") || msg.matches("!changepw"))){
             event.getMessage().delete().queue();
             String message = ">>> Please use correct channel!\n" +
                     "올바른 채널에 명령어를 입력하세요!\n";
@@ -52,6 +52,7 @@ public class Discord extends ListenerAdapter {
 
         if(event.getTextChannel().getIdLong() == config.getDiscordRoom()) {
             e = event;
+            event.getMessage().delete().queue();
             if (event.getMessage().getContentRaw().equals("!help")) {
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +
@@ -77,7 +78,7 @@ public class Discord extends ListenerAdapter {
                 String id = data[0];
                 String pw = data[1];
                 String pw2 = data[2];
-                if (checkpw(event, id, pw, pw2)) {
+                if (checkpw(id, pw, pw2)) {
                     pw = BCrypt.hashpw(pw, BCrypt.gensalt(11));
                     if(isduplicateid(id) || isduplicatename(event.getAuthor().getName())) {
                         message = "This account already exists!\n" +
@@ -109,7 +110,7 @@ public class Discord extends ListenerAdapter {
                 String pw = data[1];
                 String pw2 = data[2];
 
-                if(checkpw(event,id,pw,pw2)){
+                if(checkpw(id,pw,pw2)){
                     try{
                         Class.forName("org.mindrot.jbcrypt.BCrypt");
                         String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
@@ -123,7 +124,7 @@ public class Discord extends ListenerAdapter {
         }
     }
     
-    public boolean checkpw(MessageReceivedEvent event, String id, String pw, String pw2){
+    public boolean checkpw(String id, String pw, String pw2){
         // 영문(소문자), 숫자, 7~20자리
         String pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$";
         Matcher matcher = Pattern.compile(pwPattern).matcher(pw);
