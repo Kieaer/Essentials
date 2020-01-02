@@ -723,13 +723,20 @@ public class Threads extends TimerTask{
         String gamemode;
         int customport;
 
+        eventserver(String roomname, String map, String gamemode, int customport){
+            this.gamemode = gamemode;
+            this.map = map;
+            this.roomname = roomname;
+            this.customport = customport;
+        }
+
         @Override
         public void run() {
             try {
-                FileUtils.copyURLToFile(new URL("https://github.com/Anuken/Mindustry/releases/download/v99/server-release.jar"), new File(Paths.get("").toAbsolutePath().toString()+"/config/mods/Essentials/temp/"+roomname+"/server.jar"));
+                FileUtils.copyURLToFile(new URL("https://github.com/Anuken/Mindustry/releases/download/v102/server-release.jar"), new File(Paths.get("").toAbsolutePath().toString()+"/config/mods/Essentials/temp/"+roomname+"/server.jar"));
                 Service service = new Service(roomname, map, gamemode, customport);
                 service.start();
-                Thread.sleep(2000);
+                Thread.sleep(10000);
             } catch (Exception e) {
                 printStackTrace(e);
             }
@@ -755,14 +762,15 @@ public class Threads extends TimerTask{
                     Process p;
                     ProcessBuilder pb;
                     if(gamemode.equals("wave")){
-                        pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "port", String.valueOf(customport), ",host", map);
+                        pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "config port "+customport+",host "+map);
                     } else {
-                        pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "port", String.valueOf(customport), ",host", map, gamemode);
+                        pb = new ProcessBuilder("java", "-jar", Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar", "config port "+customport+",host "+map+" "+gamemode);
                     }
                     pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
+                    pb.inheritIO().redirectOutput(Core.settings.getDataDirectory().child("test.txt").file());
                     p = pb.start();
                     process.add(p);
-
+                    if(p.isAlive()) nlog("log","online");
                     Process finalP = p;
                     TimerTask t = new TimerTask() {
                         @Override

@@ -20,7 +20,6 @@ import essentials.utils.Config;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.content.Bullets;
 import mindustry.content.UnitTypes;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
@@ -30,7 +29,6 @@ import mindustry.game.EventType.*;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
-import mindustry.mod.Mods;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.net.ValidateException;
@@ -38,7 +36,6 @@ import mindustry.plugin.Plugin;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
 import mindustry.type.UnitType;
-import mindustry.type.Weapon;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
@@ -59,6 +56,7 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static essentials.Global.*;
@@ -1524,11 +1522,11 @@ public class Main extends Plugin {
                                 String[] range = config.getEventport().split("-");
                                 int firstport = Integer.parseInt(range[0]);
                                 int lastport = Integer.parseInt(range[1]);
-                                int customport = (int) (Math.random() * ((lastport - firstport) - 1));
+                                int customport = ThreadLocalRandom.current().nextInt(firstport,lastport+1);
 
                                 eventservers.add(arg[1]+"/"+customport);
 
-                                Threads.eventserver es = new Threads.eventserver();
+                                Threads.eventserver es = new Threads.eventserver(arg[1],arg[2],arg[3],customport);
                                 es.roomname = arg[1];
                                 es.map = arg[2];
                                 if (arg[3].equals("wave")) {
@@ -1547,6 +1545,7 @@ public class Main extends Plugin {
 
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?",false, "none", player.uuid);
                                 Call.onConnect(player.con, currentip, customport);
+                                nlog("log",currentip+":"+customport);
                             } else {
                                 player.sendMessage(bundle(player, "event-level"));
                             }
@@ -1562,6 +1561,7 @@ public class Main extends Plugin {
                             if (name.equals(arg[1])) {
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
                                 Call.onConnect(player.con, currentip, Integer.parseInt(data[1]));
+                                nlog("log",currentip+":"+Integer.parseInt(data[1]));
                                 break;
                             }
                         }
