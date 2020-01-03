@@ -44,8 +44,8 @@ public class Discord extends ListenerAdapter {
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         if(event.getTextChannel().getIdLong() == config.getDiscordRoom()) {
             e = event;
-            event.getMessage().delete().queue();
             if (event.getMessage().getContentRaw().equals("!help")) {
+                event.getMessage().delete().queue();
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +
                         "**!signup <new account id> <new password> <password repeat>** Account register to kr server. Nickname and password can't use blank.\n" +
@@ -59,6 +59,7 @@ public class Discord extends ListenerAdapter {
             }
 
             if (event.getMessage().getContentRaw().matches("!signup.*")) {
+                event.getMessage().delete().queue();
                 String message = event.getMessage().getContentRaw().replace("!signup ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
@@ -90,6 +91,7 @@ public class Discord extends ListenerAdapter {
             }
 
             if (event.getMessage().getContentRaw().matches("!changepw.*")) {
+                event.getMessage().delete().queue();
                 String message = event.getMessage().getContentRaw().replace("!changepw ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
