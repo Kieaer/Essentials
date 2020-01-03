@@ -225,11 +225,11 @@ public class Config {
     }
 
     public String getClientId(){
-        return obj.containsKey("clientId") ? (String) obj.get("clientId") : "Put your papago translate id here";
+        return obj.containsKey("clientId") ? (String) obj.get("clientId") : "";
     }
 
     public String getClientSecret(){
-        return obj.containsKey("clientSecret") ? (String) obj.get("clientSecret") : "Put your papago translate api key here";
+        return obj.containsKey("clientSecret") ? (String) obj.get("clientSecret") : "";
     }
 
     public boolean isDebug(){
