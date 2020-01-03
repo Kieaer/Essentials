@@ -42,14 +42,6 @@ public class Discord extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        String msg = event.getMessage().getContentRaw();
-        if(event.getTextChannel().getIdLong() != config.getDiscordRoom() && (msg.equals("!help") || msg.matches("!signup") || msg.matches("!changepw"))){
-            event.getMessage().delete().queue();
-            String message = ">>> Please use correct channel!\n" +
-                    "올바른 채널에 명령어를 입력하세요!\n";
-            send(message);
-        }
-
         if(event.getTextChannel().getIdLong() == config.getDiscordRoom()) {
             e = event;
             event.getMessage().delete().queue();
