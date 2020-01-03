@@ -1060,10 +1060,10 @@ public class Main extends Plugin {
 
                     if (latest.compareTo(current) > 0) {
                         log("client","version-new");
+                        net.dispose();
                         Thread t = new Thread(() -> {
                             try {
-                                Object s = version;
-                                nlog("log",nbundle("update-description",s));
+                                nlog("log",nbundle("update-description",object.get("tag_name")));
                                 System.out.println(object.getString("body"));
                                 URL url = new URL(object.getJSONArray("assets").getJSONObject(0).getString("browser_download_url"));
 
@@ -1098,6 +1098,7 @@ public class Main extends Plugin {
                                 is.close();
                                 outputStream.close();
                                 System.out.println("Done! Please restart server!");
+                                Core.app.exit();
                                 System.exit(0);
                             }catch (Exception ex){
                                 printStackTrace(ex);

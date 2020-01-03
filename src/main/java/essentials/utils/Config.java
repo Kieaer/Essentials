@@ -340,7 +340,6 @@ public class Config {
     }
 
     void update(){
-        if(obj == null) System.out.println("obj null");
         String bantrust = obj.containsKey("bantrust") ? (String) obj.get("bantrust") : "127.0.0.1";
         String antirushtime = obj.containsKey("antirusttime") ? String.valueOf(obj.get("antirushtime")) : "10:00";
         String prefix = obj.containsKey("prefix") ? "\"" + obj.get("prefix") + "\"" : "\"[green][Essentials] []\"";

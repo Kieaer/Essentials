@@ -60,7 +60,6 @@ public class Client extends Thread{
 
                 String data = is.readLine();
                 if(data != null){
-                    nlog("player",data);
                     serverconn = true;
                     executorService.execute(new Thread(this));
                     log("client","client-enabled");
