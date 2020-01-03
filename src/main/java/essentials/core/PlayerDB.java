@@ -590,13 +590,15 @@ public class PlayerDB{
                     printStackTrace(e);
                 }
             }
-            if(db.getBoolean("connected") && config.isValidconnect()){
+            if(db.has("connected") && config.isValidconnect()){
                 if(config.isDebug()) nlog("debug",player.name+" Player validate start");
-                for(int a=0;a<playerGroup.size();a++){
-                    String target = playerGroup.all().get(a).uuid;
-                    if(target.equals(player.uuid)){
-                        player.con.kick(nbundle(player, "tried-connected-account"));
-                        return;
+                if(db.getBoolean("connected")) {
+                    for (int a = 0; a < playerGroup.size(); a++) {
+                        String target = playerGroup.all().get(a).uuid;
+                        if (target.equals(player.uuid)) {
+                            player.con.kick(nbundle(player, "tried-connected-account"));
+                            return;
+                        }
                     }
                 }
             }
