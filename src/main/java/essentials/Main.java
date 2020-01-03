@@ -518,7 +518,7 @@ public class Main extends Plugin {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
-            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player)) {
+            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player) && e.tile != null) {
                 Thread t = new Thread(() -> {
                     JSONObject db = getData(e.player.uuid);
                     String name = e.tile.block().name;

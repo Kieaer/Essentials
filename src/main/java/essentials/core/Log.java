@@ -37,7 +37,7 @@ public class Log{
 
         Events.on(WithdrawEvent.class, e-> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null) {
-                writelog("withdraw", nbundle("log-withdraw", e.player.name, e.tile.entity.block.name));
+                writelog("withdraw", nbundle("log-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name));
             }
         });
 
