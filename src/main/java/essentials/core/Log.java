@@ -69,7 +69,7 @@ public class Log{
             Fi logfolder = Core.settings.getDataDirectory().child("mods/Essentials/log");
 
             if (mainlog != null && mainlog.length() > 1024 * 512) {
-                mainlog.writeString(nbundle("log-file-end", date), true);
+                mainlog.writeString(nbundle("log-file-end", (Object) date), true);
                 try {
                     Files.move(newlog, oldlog, REPLACE_EXISTING);
                 } catch (IOException e) {
