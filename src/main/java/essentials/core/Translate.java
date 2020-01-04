@@ -3,13 +3,12 @@ package essentials.core;
 import mindustry.entities.type.Player;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 
 import static essentials.Global.*;
 import static essentials.core.PlayerDB.getData;
@@ -43,48 +42,24 @@ public class Translate {
                                         }
                                     }
                                     if (found) {
-                                        url = new URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation");
-                                        c = (HttpURLConnection) url.openConnection();
-                                        c.setRequestMethod("POST");
-                                        c.setRequestProperty("X-NCP-APIGW-API-KEY-ID", config.getClientId());
-                                        c.setRequestProperty("X-NCP-APIGW-API-KEY", config.getClientSecret());
-                                        String postParams;
-                                        if (orignal.equals("zh")) {
-                                            if (data.getString("language").equals("zh")) {
-                                                postParams = "source=" + orignaldata.getString("language") + "&target=zh-" + data.getString("language") + "&text=" + message;
-                                            } else {
-                                                postParams = "source=zh-" + orignaldata.getString("language") + "&target=" + data.getString("language") + "&text=" + message;
-                                            }
-                                        } else {
-                                            postParams = "source=" + orignaldata.getString("language") + "&target=" + data.getString("language") + "&text=" + message;
-                                        }
-                                        c.setDoOutput(true);
-                                        DataOutputStream wr = new DataOutputStream(c.getOutputStream());
-                                        wr.writeBytes(postParams);
-                                        wr.flush();
-                                        wr.close();
-                                        int response = c.getResponseCode();
-                                        if (response == 200) {
-                                            in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
-                                        } else {
-                                            in = new BufferedReader(new InputStreamReader(c.getErrorStream(), StandardCharsets.UTF_8));
-                                        }
-                                        StringBuilder rb = new StringBuilder();
-                                        String inputLine;
-                                        while ((inputLine = in.readLine()) != null) {
-                                            rb.append(inputLine);
-                                        }
-                                        in.close();
-
-                                        if (response == 200) {
-                                            JSONTokener token = new JSONTokener(rb.toString());
-                                            JSONObject object = new JSONObject(token);
+                                        String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
+                                                .method(Connection.Method.POST)
+                                                .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
+                                                .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
+                                                .data("source", orignaldata.getString("language"))
+                                                .data("target", data.getString("language"))
+                                                .data("text", message)
+                                                .ignoreContentType(true)
+                                                .followRedirects(true)
+                                                .execute()
+                                                .body();
+                                        JSONTokener token = new JSONTokener(response);
+                                        JSONObject object = new JSONObject(token);
+                                        if(!object.has("error")) {
                                             String result = object.getJSONObject("message").getJSONObject("result").getString("translatedText");
                                             if (data.getBoolean("translate")) {
                                                 p.sendMessage("[green]" + player.name + "[orange]: [white]" + result);
                                             }
-                                        } else if (response != 400) {
-                                            nlog("warn", rb.toString());
                                         }
                                     }
                                 }

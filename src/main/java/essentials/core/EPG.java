@@ -22,14 +22,10 @@ public class EPG {
                     String name = e.tile.block().name;
                     int level = (int) db.get("level");
                     Yaml yaml = new Yaml();
-                    Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").readString()));
+                    Map<String, Integer> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").readString()));
                     int blockreqlevel = 100;
-                    if(String.valueOf(obj.get(name)) != null) {
-                        try{
-                            blockreqlevel = Integer.parseInt(String.valueOf(obj.get(name)));
-                        }catch (Exception ex){
-                            return;
-                        }
+                    if(obj.get(name) != null) {
+                        blockreqlevel = obj.get(name);
                     } else if(e.tile.block().name.equals("air")){
                         log("err","epg-block-not-valid", name);
                     } else {

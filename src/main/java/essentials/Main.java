@@ -1545,7 +1545,11 @@ public class Main extends Plugin {
                                 log("log","event-host-opened", player.name, customport);
 
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?",false, "none", player.uuid);
-                                Call.onConnect(player.con, currentip, customport);
+                                if(db.getString("country").equals("Local IP")){
+                                    Call.onConnect(player.con,"127.0.0.1",customport);
+                                } else {
+                                    Call.onConnect(player.con, currentip, customport);
+                                }
                                 nlog("log",currentip+":"+customport);
                             } else {
                                 player.sendMessage(bundle(player, "event-level"));
