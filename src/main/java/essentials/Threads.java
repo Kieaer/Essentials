@@ -1166,13 +1166,13 @@ public class Threads extends TimerTask{
                 int x = Integer.parseInt(xy[0]);
                 int y = Integer.parseInt(xy[1]);
 
-                MessageBlock.MessageBlockEntity entity = (MessageBlock.MessageBlockEntity) world.tile(x, y).entity;
                 String msg;
-                if(entity == null || entity.message == null){
+                try {
+                    MessageBlock.MessageBlockEntity entity = (MessageBlock.MessageBlockEntity) world.tile(x, y).entity;
+                    msg = entity.message;
+                }catch (NullPointerException e){
                     messagemonitor.remove(a);
                     return;
-                } else {
-                    msg = entity.message;
                 }
 
                 if (msg.equals("powerblock")) {
