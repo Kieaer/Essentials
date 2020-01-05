@@ -5,6 +5,10 @@ import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import arc.struct.Array;
+import com.grack.nanojson.JsonArray;
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
+import com.grack.nanojson.JsonParserException;
 import essentials.core.PlayerDB;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -24,9 +28,6 @@ import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 import org.codehaus.plexus.util.FileUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,7 +57,7 @@ public class Threads extends TimerTask{
     public static String playtime;
     public static String uptime;
     static boolean peacetime;
-    static JSONArray nukeposition = new JSONArray();
+    static ArrayList<String> nukeposition = new ArrayList<>();
     static ArrayList<Process> process = new ArrayList<>();
 
     @Override
@@ -90,10 +91,6 @@ public class Threads extends TimerTask{
             // 메세지 블럭 감시
             new messagemonitoring().start();
         }
-        // 서버간 이동 데이터 저장
-        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").writeString(jumpzone.toString());
-        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").writeString(jumpcount.toString());
-        Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").writeString(jumpall.toString());
     }
 
     static class playtime extends Thread {
@@ -105,7 +102,7 @@ public class Threads extends TimerTask{
                         Player player = playerGroup.all().get(i);
 
                         if (isLogin(player)) {
-                            JSONObject db = new JSONObject();
+                            JsonObject db = new JsonObject();
                             try {
                                 db = getData(player.uuid);
                             } catch (Exception e) {
@@ -154,27 +151,24 @@ public class Threads extends TimerTask{
             Thread.currentThread().setName("Ban time monitoring thread");
             while(threadactive) {
                 try {
-                    String db = Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").readString();
-                    JSONTokener parser = new JSONTokener(db);
-                    JSONArray object = new JSONArray(parser);
-
                     LocalDateTime now = LocalDateTime.now();
                     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
                     SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
                     Date myTime = format.parse(dateTimeFormatter.format(now));
 
-                    for (int i = 0; i < object.length(); i++) {
-                        JSONObject value1 = object.getJSONObject(i);
+                    for (int i = 0; i < banned.size(); i++) {
+                        JsonObject value1 = banned.getObject(i);
                         Date d = format.parse(value1.getString("date"));
 
                         String uuid = value1.getString("uuid");
                         String name = value1.getString("name");
 
                         if (d.after(myTime)) {
-                            object.remove(i);
-                            Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
+                            banned.remove(i);
+                            Data.getArray("banned").remove(i);
                             netServer.admins.unbanPlayerID(uuid);
                             nlog("log","[" + myTime + "] [Bantime]" + name + "/" + uuid + " player unbanned!");
+                            break;
                         }
                     }
                 } catch (Exception ex) {
@@ -239,8 +233,8 @@ public class Threads extends TimerTask{
         @Override
         public void run(){
             if (playerGroup.size() > 0) {
-                for (int i=0;i<jumpzone.length();i++) {
-                    String jumpdata = jumpzone.getString(i);
+                for (int i=0;i<jumpzone.size();i++) {
+                    String jumpdata = jumpzone.get(i);
                     if (jumpdata.equals("")) return;
                     String[] data = jumpdata.split("/");
                     int startx = Integer.parseInt(data[0]);
@@ -472,8 +466,8 @@ public class Threads extends TimerTask{
 
         @Override
         public void run() {
-            for (int a = 0; a < nukeposition.length(); a++) {
-                String nukedata = nukeposition.getString(a);
+            for (int a = 0; a < nukeposition.size(); a++) {
+                String nukedata = nukeposition.get(a);
                 String[] data = nukedata.split("/");
                 int x = Integer.parseInt(data[0]);
                 int y = Integer.parseInt(data[1]);
@@ -559,8 +553,8 @@ public class Threads extends TimerTask{
             Thread.currentThread().setName("Server to server thread");
             while(threadactive) {
                 if(state.is(GameState.State.playing)) {
-                    for (int i = 0; i < jumpcount.length(); i++) {
-                        String jumpdata = jumpcount.getString(i);
+                    for (int i = 0; i < jumpcount.size(); i++) {
+                        String jumpdata = jumpcount.get(i);
                         String[] data = jumpdata.split("/");
                         String serverip = data[0];
                         int port = Integer.parseInt(data[1]);
@@ -596,7 +590,7 @@ public class Threads extends TimerTask{
                                     }
                                 }
                                 // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                jumpcount.put(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
+                                jumpcount.add(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
                             } else {
                                 setno(world.tile(x, y));
                             }
@@ -614,8 +608,8 @@ public class Threads extends TimerTask{
     static class jumpall extends Thread {
         @Override
         public void run() {
-            for (int i=0;i<jumpall.length();i++) {
-                String jumpdata = jumpall.getString(i);
+            for (int i=0;i<jumpall.size();i++) {
+                String jumpdata = jumpall.get(i);
                 String[] data = jumpdata.split("/");
                 int x = Integer.parseInt(data[0]);
                 int y = Integer.parseInt(data[1]);
@@ -623,8 +617,8 @@ public class Threads extends TimerTask{
                 int length = Integer.parseInt(data[3]);
 
                 int result = 0;
-                for (int l=0;l<jumpcount.length();l++) {
-                    String dat = jumpcount.getString(l);
+                for (int l=0;l<jumpcount.size();l++) {
+                    String dat = jumpcount.get(l);
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }
@@ -652,17 +646,16 @@ public class Threads extends TimerTask{
                         tile = world.tile(x+4, y);
                     }
                 }
-                jumpall.put(i, x+"/"+y+"/"+result+"/"+digits.length);
+                jumpall.add(i, x+"/"+y+"/"+result+"/"+digits.length);
             }
         }
     }
     static class changename extends Thread {
         @Override
         public void run(){
-            if(jumpcount.length() > 1){
+            if(jumpcount.size() > 1){
                 int result = 0;
-                for (int l=0;l<jumpcount.length();l++) {
-                    String dat = jumpcount.getString(l);
+                for (String dat : jumpcount) {
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }
@@ -777,19 +770,22 @@ public class Threads extends TimerTask{
                         public void run() {
                             pingServer("localhost", customport, result -> {
                                 if (disablecount > 300) {
-                                    String settings = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString();
-                                    JSONTokener parser = new JSONTokener(settings);
-                                    JSONObject object = new JSONObject(parser);
-                                    for(int a=0;a<object.getJSONArray("servers").length();a++){
-                                        if(object.getJSONArray("servers").getJSONObject(a).getInt("port") == customport){
-                                            object.getJSONArray("servers").remove(a);
-                                            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(object.toString());
+                                    try {
+                                        JsonObject settings = JsonParser.object().from(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString());
+                                        for (int a = 0; a < settings.getArray("servers").size(); a++) {
+                                            if (settings.getArray("servers").getObject(a).getInt("port") == customport) {
+                                                settings.getArray("servers").remove(a);
+                                                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(settings.toString());
+                                                break;
+                                            }
                                         }
-                                    }
 
-                                    finalP.destroy();
-                                    process.remove(finalP);
-                                    this.cancel();
+                                        finalP.destroy();
+                                        process.remove(finalP);
+                                        this.cancel();
+                                    } catch (JsonParserException e) {
+                                        printStackTrace(e);
+                                    }
                                 } else if (result.players.contains("0")) {
                                     disablecount++;
                                 }
@@ -823,7 +819,7 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             Thread.currentThread().setName(player.name+" color nickname thread");
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             boolean connected = db.getBoolean("connected");
             while (connected) {
                 connected = db.getBoolean("connected");
@@ -1045,7 +1041,7 @@ public class Threads extends TimerTask{
                         Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
                         Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
                         try {
-                            JSONObject other = getData(target.uuid);
+                            JsonObject other = getData(target.uuid);
                             String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require + "\n";
                             byte[] result = text.getBytes();
                             Files.write(path, result, StandardOpenOption.APPEND);

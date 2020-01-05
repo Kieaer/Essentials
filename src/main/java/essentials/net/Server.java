@@ -2,6 +2,9 @@ package essentials.net;
 
 import arc.Core;
 import arc.struct.Array;
+import com.grack.nanojson.JsonArray;
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.core.GameState;
 import mindustry.core.Version;
@@ -10,9 +13,6 @@ import mindustry.game.Team;
 import mindustry.net.Administration;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.mindrot.jbcrypt.BCrypt;
@@ -169,11 +169,10 @@ public class Server implements Runnable {
                         return;
                     } else if (config.isBanshare()) {
                         try {
-                            JSONTokener convert = new JSONTokener(data);
-                            JSONArray bandata = new JSONArray(convert);
+                            JsonArray bandata = JsonParser.array().from(data);
                             if(data.substring(data.length()-5).equals("unban")){
                                 log("server","client-request-unban", remoteip);
-                                for (int i = 0; i < bandata.length(); i++) {
+                                for (int i = 0; i < bandata.size(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
                                     if (array[0].length() == 12) {
                                         netServer.admins.unbanPlayerID(array[0]);
@@ -201,7 +200,7 @@ public class Server implements Runnable {
                                 }
                             } else {
                                 log("server","client-request-banlist", remoteip);
-                                for (int i = 0; i < bandata.length(); i++) {
+                                for (int i = 0; i < bandata.size(); i++) {
                                     String[] array = bandata.getString(i).split("\\|", -1);
                                     if (array[0].length() == 12) {
                                         netServer.admins.banPlayerID(array[0]);
@@ -216,15 +215,15 @@ public class Server implements Runnable {
 
                                 Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
                                 Array<String> ipbans = netServer.admins.getBannedIPs();
-                                JSONArray data1 = new JSONArray();
+                                JsonArray data1 = new JsonArray();
                                 if (bans.size != 0) {
                                     for (Administration.PlayerInfo info : bans) {
-                                        data1.put(info.id + "|" + info.lastIP);
+                                        data1.add(info.id + "|" + info.lastIP);
                                     }
                                 }
                                 if (ipbans.size != 0) {
                                     for (String string : ipbans) {
-                                        data1.put("<unknown>|" + string);
+                                        data1.add("<unknown>|" + string);
                                     }
                                 }
 
@@ -258,7 +257,6 @@ public class Server implements Runnable {
                         }
                         if(!found){
                             for(String string : ipbans){
-                                Administration.PlayerInfo info = netServer.admins.findByIP(string);
                                 if(string.contains(cda[1])){
                                     found = true;
                                     break;
@@ -291,11 +289,13 @@ public class Server implements Runnable {
         }
 
         private String query() {
-            JSONObject json = new JSONObject();
-            JSONObject items = new JSONObject();
-            JSONArray array = new JSONArray();
+            JsonObject json = new JsonObject();
+            JsonObject items = new JsonObject();
+            JsonArray array = new JsonArray();
+            JsonObject rank = new JsonObject();
+
             for (Player p : playerGroup.all()) {
-                array.put(p.name);
+                array.add(p.name);
             }
 
             for (Item item : content.items()) {
@@ -312,9 +312,8 @@ public class Server implements Runnable {
                 }
             }
 
-            JSONObject rank = new JSONObject();
             try{
-                JSONObject tmp = new JSONObject();
+                JsonObject tmp = new JsonObject();
                 String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
                 Statement stmt = conn.createStatement();
                 for (String s : list) {
@@ -377,7 +376,7 @@ public class Server implements Runnable {
 
         private String rankingdata() throws IOException {
             ArrayList<String> lists = new ArrayList<>(Arrays.asList("placecount","breakcount","killcount","joincount","kickcount","exp","playtime","pvpwincount","reactorcount","attackclear"));
-            JSONObject results = new JSONObject();
+            JsonObject results = new JsonObject();
             //ArrayList<String> results = new ArrayList<>();
 
             String[] sql = new String[10];
@@ -402,10 +401,10 @@ public class Server implements Runnable {
 
                 for(int a=0;a<sql.length;a++){
                     ResultSet rs = stmt.executeQuery(sql[a]);
-                    JSONArray array = new JSONArray();
+                    JsonArray array = new JsonArray();
                     if(lists.get(a).equals("pvpwincount")){
                         String header = "<tr><th>"+name+"</th><th>"+country+"</th><th>"+win+"</th><th>"+lose+"</th><th>"+rate+"</th></tr>";
-                        array.put(header);
+                        array.add(header);
                         while(rs.next()){
                             int percent;
                             try {
@@ -414,14 +413,14 @@ public class Server implements Runnable {
                                 percent = 0;
                             }
                             String data = "<tr><td>"+rs.getString("name")+"</td><td>"+rs.getString("country")+"</td><td>"+rs.getInt("pvpwincount")+"</td><td>"+rs.getInt("pvplosecount")+"</td><td>"+percent+"%</td></tr>\n";
-                            array.put(data);
+                            array.add(data);
                         }
                     } else {
                         String header = "<tr><th>"+name+"</th><th>"+country+"</th><th>"+lists.get(a)+"</th></tr>";
-                        array.put(header);
+                        array.add(header);
                         while (rs.next()) {
                             String data = "<tr><td>" + rs.getString("name") + "</td><td>" + rs.getString("country") + "</td><td>" + rs.getString(lists.get(a)) + "</td></tr>\n";
-                            array.put(data);
+                            array.add(data);
                         }
                     }
                     results.put(lists.get(a),array);
@@ -442,9 +441,9 @@ public class Server implements Runnable {
                 result.append(line).append("\n");
             }
             Document doc = Jsoup.parse(result.toString());
-            for(int a=0;a<lists.size();a++) {
-                for(int b=0;b<results.getJSONArray(lists.get(a)).length();b++){
-                    doc.getElementById(lists.get(a)).append(results.getJSONArray(lists.get(a)).getString(b));
+            for (String s : lists) {
+                for (int b = 0; b < results.getArray(s).size(); b++) {
+                    doc.getElementById(s).append(results.getArray(s).getString(b));
                 }
             }
 
@@ -499,7 +498,7 @@ public class Server implements Runnable {
                         ResultSet rs = pstm.executeQuery();
                         if (rs.next()) {
                             if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
-                                JSONObject db = getData(rs.getString("uuid"));
+                                JsonObject db = getData(rs.getString("uuid"));
                                 String language = db.getString("language");
 
                                 String[] ranking = new String[12];
@@ -520,10 +519,10 @@ public class Server implements Runnable {
                                 if (!config.isSqlite()) {
                                     Statement stmt = conn.createStatement();
                                     ArrayList<String> array = new ArrayList<>();
-                                    for (int a = 0; a < ranking.length; a++) {
-                                        ResultSet rs1 = stmt.executeQuery(ranking[a]);
+                                    for (String s : ranking) {
+                                        ResultSet rs1 = stmt.executeQuery(s);
                                         while (rs1.next()) {
-                                            if(rs1.getString("uuid").equals(db.getString("uuid"))){
+                                            if (rs1.getString("uuid").equals(db.getString("uuid"))) {
                                                 array.add(rs1.getString("valrank"));
                                                 break;
                                             }

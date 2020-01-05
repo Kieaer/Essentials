@@ -1,13 +1,13 @@
 package essentials.net;
 
 import arc.struct.Array;
+import com.grack.nanojson.JsonArray;
+import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.net.Administration;
-import org.json.JSONArray;
-import org.json.JSONTokener;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -80,15 +80,15 @@ public class Client extends Thread{
                     try {
                         Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
                         Array<String> ipbans = netServer.admins.getBannedIPs();
-                        JSONArray bandata = new JSONArray();
+                        JsonArray bandata = new JsonArray();
                         if (bans.size != 0) {
                             for (Administration.PlayerInfo info : bans) {
-                                bandata.put(info.id + "|" + info.lastIP);
+                                bandata.add(info.id + "|" + info.lastIP);
                             }
                         }
                         if (ipbans.size != 0) {
                             for (String string : ipbans) {
-                                bandata.put("<unknown>|" + string);
+                                bandata.add("<unknown>|" + string);
                             }
                         }
                         byte[] encrypted = encrypt(bandata.toString(),spec,cipher);
@@ -163,11 +163,10 @@ public class Client extends Thread{
                     }
                 } else if(config.isBanshare()){
                     try{
-                        JSONTokener convert = new JSONTokener(data);
-                        JSONArray bandata = new JSONArray(convert);
+                        JsonArray bandata = JsonParser.array().from(data);
                         if(data.substring(data.length()-5).equals("unban")){
                             log("client","server-request-unban");
-                            for (int i = 0; i < bandata.length(); i++) {
+                            for (int i = 0; i < bandata.size(); i++) {
                                 String[] array = bandata.getString(i).split("\\|", -1);
                                 if (array[0].length() == 12) {
                                     netServer.admins.unbanPlayerID(array[0]);
@@ -181,7 +180,7 @@ public class Client extends Thread{
                                 log("client","unban-done", bandata.getString(i));
                             }
                         } else {
-                            for (int i = 0; i < bandata.length(); i++) {
+                            for (int i = 0; i < bandata.size(); i++) {
                                 String[] array = bandata.getString(i).split("\\|", -1);
                                 if (array[0].length() == 12) {
                                     netServer.admins.banPlayerID(array[0]);

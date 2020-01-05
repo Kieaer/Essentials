@@ -1,30 +1,25 @@
 package essentials.core;
 
-import arc.Core;
+import com.grack.nanojson.JsonObject;
 import essentials.Threads;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
+import static essentials.utils.Config.Data;
 import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static mindustry.Vars.netServer;
@@ -203,51 +198,51 @@ public class PlayerDB{
         }
         return result;
 	}
-	public static JSONObject getData(String uuid){
-        JSONObject json = new JSONObject();
+	public static JsonObject getData(String uuid){
+        JsonObject data = new JsonObject();
         try {
             String sql = "SELECT * FROM players WHERE uuid='"+uuid+"'";
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
             while(rs.next()){
-                json.put("id", rs.getInt("id"));
-                json.put("name", rs.getString("name"));
-                json.put("uuid", rs.getString("uuid"));
-                json.put("country", rs.getString("country"));
-                json.put("country_code", rs.getString("country_code"));
-                json.put("language", rs.getString("language"));
-                json.put("isadmin", rs.getBoolean("isadmin"));
-                json.put("placecount", rs.getInt("placecount"));
-                json.put("breakcount", rs.getInt("breakcount"));
-                json.put("killcount", rs.getInt("killcount"));
-                json.put("deathcount", rs.getInt("deathcount"));
-                json.put("joincount", rs.getInt("joincount"));
-                json.put("kickcount", rs.getInt("kickcount"));
-                json.put("level", rs.getInt("level"));
-                json.put("exp", rs.getInt("exp"));
-                json.put("reqexp", rs.getInt("reqexp"));
-                json.put("reqtotalexp", rs.getString("reqtotalexp"));
-                json.put("firstdate", rs.getString("firstdate"));
-                json.put("lastdate", rs.getString("lastdate"));
-                json.put("lastplacename", rs.getString("lastplacename"));
-                json.put("lastbreakname", rs.getString("lastbreakname"));
-                json.put("lastchat", rs.getString("lastchat"));
-                json.put("playtime", rs.getString("playtime"));
-                json.put("attackclear", rs.getInt("attackclear"));
-                json.put("pvpwincount", rs.getInt("pvpwincount"));
-                json.put("pvplosecount", rs.getInt("pvplosecount"));
-                json.put("pvpbreakout", rs.getInt("pvpbreakout"));
-                json.put("reactorcount", rs.getInt("reactorcount"));
-                json.put("bantimeset", rs.getString("bantimeset"));
-                json.put("bantime", rs.getString("bantime"));
-                json.put("translate", rs.getBoolean("translate"));
-                json.put("crosschat", rs.getBoolean("crosschat"));
-                json.put("colornick", rs.getBoolean("colornick"));
-                json.put("connected", rs.getBoolean("connected"));
-                json.put("connserver", rs.getString("connserver"));
-                json.put("permission", rs.getString("permission"));
-                json.put("accountid", rs.getString("accountid"));
-                json.put("accountpw", rs.getString("accountpw"));
+                data.put("id", rs.getInt("id"));
+                data.put("name", rs.getString("name"));
+                data.put("uuid", rs.getString("uuid"));
+                data.put("country", rs.getString("country"));
+                data.put("country_code", rs.getString("country_code"));
+                data.put("language", rs.getString("language"));
+                data.put("isadmin", rs.getBoolean("isadmin"));
+                data.put("placecount", rs.getInt("placecount"));
+                data.put("breakcount", rs.getInt("breakcount"));
+                data.put("killcount", rs.getInt("killcount"));
+                data.put("deathcount", rs.getInt("deathcount"));
+                data.put("joincount", rs.getInt("joincount"));
+                data.put("kickcount", rs.getInt("kickcount"));
+                data.put("level", rs.getInt("level"));
+                data.put("exp", rs.getInt("exp"));
+                data.put("reqexp", rs.getInt("reqexp"));
+                data.put("reqtotalexp", rs.getString("reqtotalexp"));
+                data.put("firstdate", rs.getString("firstdate"));
+                data.put("lastdate", rs.getString("lastdate"));
+                data.put("lastplacename", rs.getString("lastplacename"));
+                data.put("lastbreakname", rs.getString("lastbreakname"));
+                data.put("lastchat", rs.getString("lastchat"));
+                data.put("playtime", rs.getString("playtime"));
+                data.put("attackclear", rs.getInt("attackclear"));
+                data.put("pvpwincount", rs.getInt("pvpwincount"));
+                data.put("pvplosecount", rs.getInt("pvplosecount"));
+                data.put("pvpbreakout", rs.getInt("pvpbreakout"));
+                data.put("reactorcount", rs.getInt("reactorcount"));
+                data.put("bantimeset", rs.getString("bantimeset"));
+                data.put("bantime", rs.getString("bantime"));
+                data.put("translate", rs.getBoolean("translate"));
+                data.put("crosschat", rs.getBoolean("crosschat"));
+                data.put("colornick", rs.getBoolean("colornick"));
+                data.put("connected", rs.getBoolean("connected"));
+                data.put("connserver", rs.getString("connserver"));
+                data.put("permission", rs.getString("permission"));
+                data.put("accountid", rs.getString("accountid"));
+                data.put("accountpw", rs.getString("accountpw"));
             }
             rs.close();
             stmt.close();
@@ -258,43 +253,30 @@ public class PlayerDB{
             }
             printStackTrace(e);
         }
-        return json;
+        return data;
     }
-	public static void addtimeban(String name, String uuid, int bantimeset){
-	    // Write ban data
-        String db = Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").readString();
-        JSONTokener parser = new JSONTokener(db);
-        JSONArray object = new JSONArray(parser);
-
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-        String myTime = now.format(dateTimeFormatter);
-
-        SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-        Date d1;
-        Calendar cal;
-        String newTime = null;
+	public static void addtimeban(String name, String uuid, int bantimeset) {
+        // Write ban data
         try {
-            d1 = format.parse(myTime);
-            cal = Calendar.getInstance();
+            SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+            Date d1 = format.parse(getnTime());
+            Calendar cal = Calendar.getInstance();
             cal.setTime(d1);
             cal.add(Calendar.HOUR, bantimeset);
-            newTime = format.format(cal.getTime());
-        } catch (ParseException e1) {
-            printStackTrace(e1);
+            String newTime = format.format(cal.getTime());
+
+            JsonObject data1 = new JsonObject();
+            data1.put("uuid", uuid);
+            data1.put("date", newTime);
+            data1.put("name", name);
+
+            Data.getArray("banned").add(data1);
+
+            // Write player data
+            writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", getnTime(), bantimeset, uuid);
+        } catch (Exception e) {
+            printStackTrace(e);
         }
-
-        JSONObject data1 = new JSONObject();
-        data1.put("uuid", uuid);
-        data1.put("date", newTime);
-        data1.put("name", name);
-
-        object.put(data1);
-
-        Core.settings.getDataDirectory().child("mods/Essentials/data/banned.json").writeString(String.valueOf(object));
-
-        // Write player data
-        writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", myTime, bantimeset, uuid);
     }
     public static void Upgrade() {
         String v1sql;
@@ -346,7 +328,7 @@ public class PlayerDB{
             } else {
                 if (!config.getDBid().isEmpty()) {
                     Class.forName("org.mariadb.jdbc.Driver");
-                    Class.forName("com.mysql.jdbc.Driver");
+                    Class.forName("com.mysql.cj.jdbc.Driver");
                     Class.forName("org.postgresql.Driver");
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
                     log("player","db-type","MariaDB/MySQL/PostgreSQL");
@@ -364,15 +346,13 @@ public class PlayerDB{
         }
     }
     public static boolean closeconnect(){
-        try{
+        try {
             conn.close();
-            if(conn.isClosed()){
-                return true;
-            }
+            return true;
         } catch (Exception e) {
             printStackTrace(e);
+            return false;
         }
-        return false;
     }
 	public static void writeData(String sql, Object... data){
         Thread t = new Thread(() -> {
@@ -459,7 +439,7 @@ public class PlayerDB{
         return true;
     }
 	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String id, String pw, String method, Object... parameter) {
+	public boolean register(Player player, String id, String pw) {
         // 비밀번호 보안 확인
         if(checkpw(player, id, pw)) {
             try {
@@ -488,10 +468,10 @@ public class PlayerDB{
                         LocalDateTime now = LocalDateTime.now();
                         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
                         String nowString = now.format(dateTimeFormatter);
-                        JSONObject list = geolocation(player);
+                        HashMap<String, String> list = geolocation(player);
 
                         if (!isduplicate(player)) {
-                            createNewDatabase(nickname, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, player.name, hashed, player);
+                            createNewDatabase(nickname, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, player.name, hashed, player);
                         } else {
                             player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                     "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
@@ -519,9 +499,9 @@ public class PlayerDB{
     // 비 로그인 기능 사용시 계정등록
     public boolean register(Player player) {
         if (isLogin(player)) {
-            JSONObject list = geolocation(player);
+            HashMap<String, String> list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
-            return createNewDatabase(player.name, player.uuid, list.getString("country"), list.getString("country_code"), list.getString("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), true, player.name, "blank", player);
+            return createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), true, player.name, "blank", player);
         } else {
             return true;
         }
@@ -557,7 +537,7 @@ public class PlayerDB{
     }
     public void load(Player player, String id) {
         Thread t = new Thread(() -> {
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             nlog("debug",player.name+" Player load start");
             // 만약에 새 기기로 기존 계정에 로그인 했을때, 계정에 있던 DB를 가져와서 검사함
             if(isLogin(player)){
@@ -590,9 +570,9 @@ public class PlayerDB{
                     printStackTrace(e);
                 }
             }
-            if(db.has("connected") && config.isValidconnect()){
+            if(db.containsKey("connected") && config.isValidconnect()){
                 if(config.isDebug()) nlog("debug",player.name+" Player validate start");
-                if(db.getBoolean("connected")) {
+                if((boolean) db.get("connected")) {
                     for (int a = 0; a < playerGroup.size(); a++) {
                         String target = playerGroup.all().get(a).uuid;
                         if (target.equals(player.uuid)) {
@@ -617,11 +597,10 @@ public class PlayerDB{
             // 플레이어 팀 설정
             if (Vars.state.rules.pvp){
                 boolean match = false;
-                for(int a=0;a<pvpteam.size();a++){
-                    Player target = pvpteam.get(a);
-                    Team team = pvpteam.get(a).getTeam();
-                    if(player.uuid.equals(target.uuid)){
-                        if(Vars.state.teams.get(team).cores.isEmpty()){
+                for (Player target : pvpteam) {
+                    Team team = target.getTeam();
+                    if (player.uuid.equals(target.uuid)) {
+                        if (Vars.state.teams.get(team).cores.isEmpty()) {
                             break;
                         } else {
                             player.setTeam(team);
@@ -652,7 +631,7 @@ public class PlayerDB{
 
             // 고정닉 기능이 켜져있을 경우, 플레이어 닉네임 설정
             if(config.isRealname() || config.getPasswordmethod().equals("discord")){
-                player.name = db.getString("name");
+                player.name = (String) db.get("name");
                 if(config.isDebug()) nlog("debug",player.name+" Player Set nickname");
             }
 
@@ -661,7 +640,7 @@ public class PlayerDB{
             if(config.isDebug()) nlog("debug",player.name+" Player increase exp");
 
             // 컬러닉 기능 설정
-            boolean colornick = db.getBoolean("colornick");
+            boolean colornick = (boolean) db.get("colornick");
             if(config.isRealname() && colornick){
                 // 컬러닉 스레드 시작
                 new Thread(new ColorNick(player)).start();
@@ -679,8 +658,8 @@ public class PlayerDB{
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
             String perm = db.getString("permission");
-            if(permission.getJSONObject(perm).has("admin")) {
-                if (permission.getJSONObject(perm).getBoolean("admin")) {
+            if(permission.getObject(perm).has("admin")) {
+                if (permission.getObject(perm).getBoolean("admin")) {
                     player.isAdmin = true;
                     writeData("UPDATE players SET isAdmin = ? WHERE uuid = ?", true, player.uuid);
                 }
@@ -689,8 +668,8 @@ public class PlayerDB{
 
             // 플레이어 지역이 invalid 일경우 다시 정보 가져오기
             if(db.getString("country").equals("invalid")) {
-                JSONObject list = geolocation(player);
-                writeData("UPDATE players SET country = ?, country_code = ?, language = ? WHERE uuid = ?", list.getString("country"), list.getString("country_code"), list.getString("languages"), player.uuid);
+                HashMap<String, String> list = geolocation(player);
+                writeData("UPDATE players SET country = ?, country_code = ?, language = ? WHERE uuid = ?", list.get("country"), list.get("country_code"), list.get("languages"), player.uuid);
             }
             if(config.isDebug()) nlog("debug",player.name+" Player country data collected");
             if(config.isDebug()) nlog("debug",player.name+" Player data full loaded!");

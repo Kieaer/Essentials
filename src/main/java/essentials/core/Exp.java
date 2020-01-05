@@ -1,7 +1,7 @@
 package essentials.core;
 
+import com.grack.nanojson.JsonObject;
 import mindustry.entities.type.Player;
-import org.json.JSONObject;
 
 import static essentials.Global.bundle;
 import static essentials.Global.config;
@@ -13,7 +13,7 @@ public class Exp {
     private static double EXPONENT = config.getExponent();
 
     public static void exp(String name, String uuid) {
-        JSONObject db = PlayerDB.getData(uuid);
+        JsonObject db = PlayerDB.getData(uuid);
 
         int currentlevel = db.getInt("level");
         int max = (int) calculateFullTargetXp(currentlevel);
@@ -57,7 +57,7 @@ public class Exp {
     }
 
     public static void joinexp(String uuid){
-        JSONObject db = PlayerDB.getData(uuid);
+        JsonObject db = PlayerDB.getData(uuid);
 
         int exp = db.getInt("exp");
         int joincount = db.getInt("joincount");

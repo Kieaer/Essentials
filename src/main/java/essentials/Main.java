@@ -9,10 +9,15 @@ import arc.struct.Array;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
-import essentials.core.*;
+import essentials.core.Discord;
+import essentials.core.Log;
+import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.IpAddressMatcher;
@@ -40,9 +45,7 @@ import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
 import org.yaml.snakeyaml.Yaml;
@@ -55,7 +58,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -73,18 +79,15 @@ import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class Main extends Plugin {
-    private JSONArray nukeblock = new JSONArray();
-
-    static ArrayList<String> eventservers = new ArrayList<>();
+    private ArrayList<String> nukeblock = new ArrayList<>();
+    private static ArrayList<String> eventservers = new ArrayList<>();
     static ArrayList<String> powerblock = new ArrayList<>();
     static ArrayList<String> messagemonitor = new ArrayList<>();
     static ArrayList<String> messagejump = new ArrayList<>();
-
     static ArrayList<Tile> scancore = new ArrayList<>();
-    ArrayList<Tile> nukedata = new ArrayList<>();
-    public Array<mindustry.maps.Map> maplist = Vars.maps.all();
+    private ArrayList<Tile> nukedata = new ArrayList<>();
+    private Array<mindustry.maps.Map> maplist = Vars.maps.all();
 
-    private boolean making = false;
     public static boolean threadactive = true;
 
     boolean isUpdating = false;
@@ -121,7 +124,7 @@ public class Main extends Plugin {
         }
 
         // 플레이어 DB 업그레이드
-        PlayerDB.Upgrade();
+        Upgrade();
 
         // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
         executorService.submit(new jumpcheck());
@@ -149,10 +152,6 @@ public class Main extends Plugin {
             server.start();
         }
 
-        // Essentials EPG 기능 시작
-        EPG epg = new EPG();
-        epg.main();
-
         // 권한 기능 시작
         new Permission().main();
 
@@ -168,8 +167,7 @@ public class Main extends Plugin {
         Events.on(TapEvent.class, e -> {
             if(isLogin(e.player)) {
                 Thread t = new Thread(() -> {
-                    for (int i = 0; i < jumpzone.length(); i++) {
-                        String jumpdata = jumpzone.getString(i);
+                    for (String jumpdata : jumpzone) {
                         if (jumpdata.equals("")) return;
                         String[] data = jumpdata.split("/");
                         int startx = Integer.parseInt(data[0]);
@@ -180,7 +178,7 @@ public class Main extends Plugin {
                         int serverport = Integer.parseInt(data[5]);
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
-                                log("log","player-jumped", e.player.name, serverip + ":" + serverport);
+                                log("log", "player-jumped", e.player.name, serverip + ":" + serverport);
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
                                 Call.onConnect(e.player.con, serverip, serverport);
                             }
@@ -218,7 +216,7 @@ public class Main extends Plugin {
             if (state.rules.pvp) {
                 int index = 5;
                 for (int a = 0; a < 5; a++) {
-                    if (Vars.state.teams.get(Team.all()[index]).cores.isEmpty()) {
+                    if (state.teams.get(Team.all()[index]).cores.isEmpty()) {
                         index--;
                     }
                 }
@@ -227,12 +225,12 @@ public class Main extends Plugin {
                         Player player = playerGroup.all().get(i);
                         if (isLogin(player)) {
                             if (player.getTeam().name.equals(e.winner.name)) {
-                                JSONObject db = getData(player.uuid);
+                                JsonObject db = getData(player.uuid);
                                 int pvpwin = db.getInt("pvpwincount");
                                 pvpwin++;
                                 writeData("UPDATE players SET pvpwincount = ? WHERE uuid = ?", pvpwin, player.uuid);
                             } else if (!player.getTeam().name.equals(e.winner.name)) {
-                                JSONObject db = getData(player.uuid);
+                                JsonObject db = getData(player.uuid);
                                 int pvplose = db.getInt("pvplosecount");
                                 pvplose++;
                                 writeData("UPDATE players SET pvplosecount = ? WHERE uuid = ?", pvplose, player.uuid);
@@ -245,7 +243,7 @@ public class Main extends Plugin {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     if (isLogin(player)) {
-                        JSONObject db = getData(player.uuid);
+                        JsonObject db = getData(player.uuid);
                         int attackclear = db.getInt("attackclear");
                         attackclear++;
                         writeData("UPDATE players SET attackclear = ? WHERE uuid = ?", attackclear, player.uuid);
@@ -256,7 +254,7 @@ public class Main extends Plugin {
 
         // 맵이 불러와졌을 때
         Events.on(WorldLoadEvent.class, e -> {
-            Threads.playtime = "00:00.00";
+            playtime = "00:00.00";
 
             // 전력 노드 정보 초기화
             powerblock.clear();
@@ -266,18 +264,14 @@ public class Main extends Plugin {
 
         Events.on(PlayerConnect.class, e -> {
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
-            String blacklist = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
-            JSONTokener parser = new JSONTokener(blacklist);
-            JSONArray array = new JSONArray(parser);
-
-            for (int i = 0; i < array.length(); i++) {
-                if (e.player.name.matches(array.getString(i))) {
+            for (String s : blacklist) {
+                if (e.player.name.matches(s)) {
                     e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.");
-                    log("log","nickname-blacklisted", e.player.name);
+                    log("log", "nickname-blacklisted", e.player.name);
                 }
             }
 
-            if(e.player.name.length() > 32) e.player.con.kick("Nickname too long!");
+            if (e.player.name.length() > 32) e.player.con.kick("Nickname too long!");
 
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
@@ -295,11 +289,10 @@ public class Main extends Plugin {
         Events.on(DepositEvent.class, e -> {
             // 만약 그 특정블록이 토륨 원자로이며, 맵 설정에서 원자로 폭발이 비활성화 되었을 경우
             if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor() && !state.rules.reactorExplosions) {
-                nukeblock.put(e.tile.entity.tileX() + "/" + e.tile.entity.tileY() + "/" + e.player.name);
+                nukeblock.add(e.tile.entity.tileX() + "/" + e.tile.entity.tileY() + "/" + e.player.name);
                 Thread t = new Thread(() -> {
                     try {
-                        for (int i = 0; i < nukeblock.length(); i++) {
-                            String nukedata = nukeblock.getString(i);
+                        for (String nukedata : nukeblock) {
                             String[] data = nukedata.split("/");
                             int x = Integer.parseInt(data[0]);
                             int y = Integer.parseInt(data[1]);
@@ -312,7 +305,7 @@ public class Main extends Plugin {
                                     other.sendMessage(bundle(other, "detect-thorium"));
                                 }
 
-                                if (Global.config.getLanguage().equals("ko")) {
+                                if (config.getLanguage().equals("ko")) {
                                     writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                 } else {
                                     writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
@@ -326,7 +319,7 @@ public class Main extends Plugin {
                                         other.sendMessage(bundle(other, "detect-thorium"));
                                     }
 
-                                    if (Global.config.getLanguage().equals("ko")) {
+                                    if (config.getLanguage().equals("ko")) {
                                         writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                     } else {
                                         writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
@@ -356,7 +349,7 @@ public class Main extends Plugin {
                 if (index >= Team.all().length){
                     index = 0;
                 }
-                if (Vars.state.teams.get(Team.all()[index]).cores.isEmpty()){
+                if (state.teams.get(Team.all()[index]).cores.isEmpty()){
                     team = Team.all()[index];
                 }
                 index++;
@@ -368,7 +361,7 @@ public class Main extends Plugin {
                 Thread.currentThread().setName(e.player.name+" Player Join");
                 if (config.isLoginenable()) {
                     if (isNocore(e.player)) {
-                        JSONObject db = getData(e.player.uuid);
+                        JsonObject db = getData(e.player.uuid);
                         if (db.has("uuid")) {
                             if (db.getString("uuid").equals(e.player.uuid)) {
                                 e.player.sendMessage(bundle(e.player, "autologin"));
@@ -421,7 +414,7 @@ public class Main extends Plugin {
             t.start();
 
             // PvP 평화시간 설정
-            if (config.isEnableantirush() && Vars.state.rules.pvp && peacetime) {
+            if (config.isEnableantirush() && state.rules.pvp && peacetime) {
                 state.rules.playerDamageMultiplier = 0f;
                 state.rules.playerHealthMultiplier = 0.001f;
             }
@@ -455,7 +448,7 @@ public class Main extends Plugin {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
                 if (!check.equals("/")) {
-                    JSONObject db = getData(e.player.uuid);
+                    JsonObject db = getData(e.player.uuid);
 
                     if (e.message.matches("(.*쌍[\\S\\s]{0,2}(년|놈).*)|(.*(씨|시)[\\S\\s]{0,2}(벌|빨|발|바).*)|(.*장[\\S\\s]{0,2}애.*)|(.*(병|븅)[\\S\\s]{0,2}(신|쉰|싄).*)|(.*(좆|존|좃)[\\S\\s]{0,2}(같|되|는|나).*)|(.*(개|게)[\\S\\s]{0,2}(같|갓|새|세|쉐).*)|(.*(걸|느)[\\S\\s]{0,2}(레|금).*)|(.*(꼬|꽂|고)[\\S\\s]{0,2}(추|츄).*)|(.*(니|너)[\\S\\s]{0,2}(어|엄|엠|애|m|M).*)|(.*(노)[\\S\\s]{0,1}(애|앰).*)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(ㅅㅂ|ㅄ|ㄷㅊ)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(.*s[\\S\\s]{0,1}e[\\S\\s]{0,1}x.*)")) {
                         Call.onKick(e.player.con, "You're kicked because using bad words.\n욕설 사용에 의해 강퇴되었습니다.");
@@ -477,8 +470,8 @@ public class Main extends Plugin {
                         }
                     } /*else {
                         String perm = db.getString("permission");
-                        if(permission.getJSONObject(perm).has("prefix")) {
-                            Call.sendMessage(permission.getJSONObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
+                        if(permission.getJsonObject(perm).has("prefix")) {
+                            Call.sendMessage(permission.getJsonObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
                             Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
                         }
@@ -510,9 +503,57 @@ public class Main extends Plugin {
                 // 마지막 대화 데이터를 DB에 저장함
                 writeData("UPDATE players SET lastchat = ? WHERE uuid = ?", e.message, e.player.uuid);
 
-                // 번역기능 작동
-                Translate tr = new Translate();
-                tr.main(e.player, e.message);
+                // 번역
+                if(config.getClientId() != null && config.getClientSecret() != null) {
+                    if (!config.getClientId().equals("") && !config.getClientSecret().equals("")) {
+                        Thread t = new Thread(() -> {
+                            try {
+                                JsonObject orignaldata = getData(player.uuid);
+                                for (int i = 0; i < playerGroup.size(); i++) {
+                                    Player p = playerGroup.all().get(i);
+                                    if (isNocore(player)) {
+                                        JsonObject data = getData(p.uuid);
+                                        String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
+                                        String language = data.getString("language");
+                                        String orignal = orignaldata.getString("language");
+                                        if (!language.equals(orignal)) {
+                                            boolean found = false;
+                                            for (String s : support) {
+                                                if (orignal.equals(s)) {
+                                                    found = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (found) {
+                                                String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
+                                                        .method(Connection.Method.POST)
+                                                        .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
+                                                        .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
+                                                        .data("source", orignaldata.getString("language"))
+                                                        .data("target", data.getString("language"))
+                                                        .data("text", e.originalMessage)
+                                                        .ignoreContentType(true)
+                                                        .followRedirects(true)
+                                                        .execute()
+                                                        .body();
+                                                JsonObject object = JsonParser.object().from(response);
+                                                if(!object.has("error")) {
+                                                    String result = object.getObject("message").getObject("result").getString("translatedText");
+                                                    if (data.getBoolean("translate")) {
+                                                        p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                printStackTrace(ex);
+                            }
+                        });
+                        t.start();
+                    }
+                }
             }
         });
 
@@ -520,7 +561,7 @@ public class Main extends Plugin {
         Events.on(BlockBuildEndEvent.class, e -> {
             if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player) && e.tile != null) {
                 Thread t = new Thread(() -> {
-                    JSONObject db = getData(e.player.uuid);
+                    JsonObject db = getData(e.player.uuid);
                     String name = e.tile.block().name;
                     try {
                         int data = db.getInt("placecount");
@@ -556,7 +597,7 @@ public class Main extends Plugin {
 
                     // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
                     if (e.tile.entity.block == Blocks.thoriumReactor) {
-                        nukeposition.put(e.tile.entity.tileX() + "/" + e.tile.entity.tileY());
+                        nukeposition.add(e.tile.entity.tileX() + "/" + e.tile.entity.tileY());
                         nukedata.add(e.tile);
                     }
                 });
@@ -572,7 +613,7 @@ public class Main extends Plugin {
             if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
                 if (e.breaking) {
                     Thread t = new Thread(() -> {
-                        JSONObject db = getData(((Player) e.builder).uuid);
+                        JsonObject db = getData(((Player) e.builder).uuid);
                         String name = e.tile.block().name;
                         try {
                             int data = db.getInt("breakcount");
@@ -589,11 +630,11 @@ public class Main extends Plugin {
                             int newexp = exp + blockexp;
                             data++;
 
-                            writeData("UPDATE players SET lastplacename = ?, breakcount = ?, exp = ? WHERE uuid = ?", e.tile.block().name, data, newexp, ((Player)e.builder).uuid);
+                            writeData("UPDATE players SET lastplacename = ?, breakcount = ?, exp = ? WHERE uuid = ?", e.tile.block().name, data, newexp, ((Player) e.builder).uuid);
                             if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
                                 int reactorcount = db.getInt("reactorcount");
                                 reactorcount++;
-                                writeData("UPDATE players SET reactorcount = ? WHERE uuid = ?",reactorcount, ((Player)e.builder).uuid);
+                                writeData("UPDATE players SET reactorcount = ? WHERE uuid = ?", reactorcount, ((Player) e.builder).uuid);
                             }
                         } catch (Exception ex) {
                             printStackTrace(ex);
@@ -619,6 +660,26 @@ public class Main extends Plugin {
                                 printStackTrace(ex);
                             }
                         }
+
+                        // Exp Playing Game (EPG)
+                        if (config.isExplimit()) {
+                            int level = (int) db.get("level");
+                            Yaml yaml = new Yaml();
+                            Map<String, Integer> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").readString()));
+                            int blockreqlevel = 100;
+                            if (obj.get(name) != null) {
+                                blockreqlevel = obj.get(name);
+                            } else if (e.tile.block().name.equals("air")) {
+                                log("err", "epg-block-not-valid", name);
+                            } else {
+                                return;
+                            }
+
+                            if (level < blockreqlevel) {
+                                Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
+                                ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
+                            }
+                        }
                     });
                     executorService.submit(t);
                 }
@@ -633,8 +694,8 @@ public class Main extends Plugin {
             // 뒤진(?) 유닛이 플레이어일때
             if (e.unit instanceof Player) {
                 Player player = (Player) e.unit;
-                JSONObject db = getData(player.uuid);
-                if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty() && !db.isNull("deathcount")) {
+                JsonObject db = getData(player.uuid);
+                if (!state.teams.get(player.getTeam()).cores.isEmpty() && !db.isNull("deathcount")) {
                     int deathcount = db.getInt("deathcount");
                     deathcount++;
                     writeData("UPDATE players SET deathcount = ? WHERE uuid = ?", deathcount, player.uuid);
@@ -646,8 +707,8 @@ public class Main extends Plugin {
                 Thread t = new Thread(() -> {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
-                        if (!Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-                            JSONObject db = getData(player.uuid);
+                        if (!state.teams.get(player.getTeam()).cores.isEmpty()) {
+                            JsonObject db = getData(player.uuid);
                             int killcount;
                             if (db.has("killcount")) {
                                 killcount = db.getInt("killcount");
@@ -1024,30 +1085,34 @@ public class Main extends Plugin {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                } else if(config.isDebug()){
-                    nlog("log","db dead");
                 }
 
                 log("log","thread-disabled");
-
                 try {
+                    JsonObject data = new JsonObject();
+                    data.put("banned",banned);
+                    data.put("blacklist",blacklist);
+                    data.put("jumpzone",jumpzone);
+                    data.put("jumpall",jumpall);
+                    data.put("jumpcount",jumpcount);
+                    data.put("servername", Core.settings.getString("servername"));
+                    new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
+
                     sleep(500);
                     if(!isUpdating) System.exit(0);
-                } catch (InterruptedException ignored) {}
+                } catch (Exception ignored) {}
             }
         });
 
         // 서버가 켜진 시간을 0으로 설정
-        Threads.uptime = "00:00.00";
+        uptime = "00:00.00";
 
         Events.on(ServerLoadEvent.class, e-> {
             // 업데이트 확인
             if(config.isUpdate()) {
                 log("client","client-checking-version");
                 try {
-                    String json = Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body();
-                    JSONTokener parser = new JSONTokener(json);
-                    JSONObject object = new JSONObject(parser);
+                    JsonObject json = JsonParser.object().from(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body());
 
                     for(int a=0;a<mods.list().size;a++){
                         if(mods.list().get(a).meta.name.equals("Essentials")){
@@ -1055,7 +1120,7 @@ public class Main extends Plugin {
                         }
                     }
 
-                    DefaultArtifactVersion latest = new DefaultArtifactVersion(object.getString("tag_name"));
+                    DefaultArtifactVersion latest = new DefaultArtifactVersion(json.getString("tag_name"));
                     DefaultArtifactVersion current = new DefaultArtifactVersion(version);
 
                     if (latest.compareTo(current) > 0) {
@@ -1063,22 +1128,11 @@ public class Main extends Plugin {
                         net.dispose();
                         Thread t = new Thread(() -> {
                             try {
-                                nlog("log",nbundle("update-description",object.get("tag_name")));
-                                System.out.println(object.getString("body"));
-                                URL url = new URL(object.getJSONArray("assets").getJSONObject(0).getString("browser_download_url"));
+                                nlog("log",nbundle("update-description",json.get("tag_name")));
+                                System.out.println(json.getString("body"));
+                                URL url = new URL(json.getArray("assets").getObject(0).getString("browser_download_url"));
 
-                                threadactive = false;
-                                timer.cancel();
-                                if(config.isServerenable()) {
-                                    Server.active = false;
-                                    Server.serverSocket.close();
-                                    server.interrupt();
-                                }
-                                if (config.isClientenable() && serverconn) {
-                                    Client client = new Client();
-                                    client.main("exit", null, null);
-                                }
-                                executorService.shutdown();
+                                Core.app.dispose();
 
                                 BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials.jar").file()));
                                 URLConnection urlConnection = url.openConnection();
@@ -1194,26 +1248,19 @@ public class Main extends Plugin {
                 log("warn","no-parameter");
                 return;
             }
-            if(arg[0].equals("add")){
-                String db = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
-                JSONTokener parser = new JSONTokener(db);
-                JSONArray object = new JSONArray(parser);
-                object.put(arg[1]);
-                Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(String.valueOf(object));
-                log("log","blacklist-add", arg[1]);
+            if (arg[0].equals("add")) {
+                blacklist.add(arg[1]);
+                log("log", "blacklist-add", arg[1]);
             } else if (arg[0].equals("remove")) {
-                String db = Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").readString();
-                JSONTokener parser = new JSONTokener(db);
-                JSONArray object = new JSONArray(parser);
-                for (int i = 0; i < object.length(); i++) {
-                    if (object.get(i).equals(arg[1])) {
-                        object.remove(i);
+                for (int i = 0; i < blacklist.size(); i++) {
+                    if (blacklist.get(i).equals(arg[1])) {
+                        blacklist.remove(i);
+                        log("log", "blacklist-remove", arg[1]);
+                        return;
                     }
                 }
-                Core.settings.getDataDirectory().child("mods/Essentials/data/blacklist.json").writeString(String.valueOf(object));
-                log("log","blacklist-remove", arg[1]);
             } else {
-                log("warn","blacklist-invalid");
+                log("warn", "blacklist-invalid");
             }
         });
         handler.register("reset", "<zone/count/total>", "Clear a server-to-server jumping zone data.", arg -> {
@@ -1223,8 +1270,7 @@ public class Main extends Plugin {
             }
             switch(arg[0]){
                 case "zone":
-                    for (int i = 0; i < jumpzone.length(); i++) {
-                        String jumpdata = jumpzone.get(i).toString();
+                    for (String jumpdata : jumpzone) {
                         String[] data = jumpdata.split("/");
                         int startx = Integer.parseInt(data[0]);
                         int starty = Integer.parseInt(data[1]);
@@ -1259,15 +1305,15 @@ public class Main extends Plugin {
                             }
                         }
                     }
-                    jumpzone = new JSONArray();
+                    jumpzone.clear();
                     log("log","jump-reset", "zone");
                     break;
                 case "count":
-                    jumpcount = new JSONArray();
+                    jumpcount.clear();
                     log("log","jump-reset", "count");
                     break;
                 case "total":
-                    jumpall = new JSONArray();
+                    jumpall.clear();
                     log("log","jump-reset", "total");
                     break;
                 default:
@@ -1298,12 +1344,10 @@ public class Main extends Plugin {
             db.openconnect();
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
-            Iterator<String> i = permission.keys();
-            while(i.hasNext()) {
-                String b = i.next();
-                if(b.equals(arg[0])){
-                    writeData("UPDATE players SET permission = ?",arg[0]);
-                    log("log","success");
+            for (String b : permission.keySet()) {
+                if (b.equals(arg[0])) {
+                    writeData("UPDATE players SET permission = ?", arg[0]);
+                    log("log", "success");
                     return;
                 }
             }
@@ -1360,12 +1404,10 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 log("warn","player-not-found");
             }
-            Iterator<String> i = permission.keys();
-            while(i.hasNext()) {
-                String b = i.next();
-                if(b.equals(arg[1])){
-                    writeData("UPDATE players SET permission = ? WHERE name = ?",arg[1],arg[0]);
-                    log("player","success");
+            for (String b : permission.keySet()) {
+                if (b.equals(arg[1])) {
+                    writeData("UPDATE players SET permission = ? WHERE name = ?", arg[1], arg[0]);
+                    log("player", "success");
                     return;
                 }
             }
@@ -1442,7 +1484,7 @@ public class Main extends Plugin {
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if(!checkperm(player,"ch")) return;
 
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             boolean value = db.getBoolean("crosschat");
             int set;
             if (!value) {
@@ -1472,7 +1514,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
             if (!checkperm(player, "color")) return;
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             boolean value = db.getBoolean("colornick");
             int set;
             if (!value) {
@@ -1506,7 +1548,7 @@ public class Main extends Plugin {
                 switch (arg[0]) {
                     case "host":
                         Thread work = new Thread(() -> {
-                            JSONObject db = getData(player.uuid);
+                            JsonObject db = getData(player.uuid);
                             if (db.toString().equals("{}")) return;
                             if (db.getInt("level") > 20 || player.isAdmin) {
                                 if (arg.length == 2) {
@@ -1518,7 +1560,6 @@ public class Main extends Plugin {
                                     return;
                                 }
                                 player.sendMessage(bundle(player, "event-making"));
-                                making = true;
 
                                 String[] range = config.getEventport().split("-");
                                 int firstport = Integer.parseInt(range[0]);
@@ -1555,9 +1596,7 @@ public class Main extends Plugin {
                                 player.sendMessage(bundle(player, "event-level"));
                             }
                         });
-                        if (!making) {
-                            work.start();
-                        }
+                        work.start();
                         break;
                     case "join":
                         for (String eventserver : eventservers) {
@@ -1620,7 +1659,7 @@ public class Main extends Plugin {
             if(!checkperm(player,"info")) return;
             Thread t = new Thread(() -> {
                 String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-                JSONObject db = getData(player.uuid);
+                JsonObject db = getData(player.uuid);
                 String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
                         "[#2B60DE]========================================[]\n" +
                         "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
@@ -1703,15 +1742,15 @@ public class Main extends Plugin {
                         }
                     }
 
-                    jumpzone.put(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1] + "/" + arg[2] + "/" + block);
+                    jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1] + "/" + arg[2] + "/" + block);
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
-                    jumpcount.put(arg[1] + "/" + arg[2] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+                    jumpcount.add(arg[1] + "/" + arg[2] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "total":
-                    jumpall.put(player.tileX() + "/" + player.tileY() + "/0/0");
+                    jumpall.add(player.tileX() + "/" + player.tileY() + "/0/0");
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 default:
@@ -1838,7 +1877,7 @@ public class Main extends Plugin {
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
                         PlayerDB playerdb = new PlayerDB();
-                        if (playerdb.register(player, arg[0], arg[1], "password")) {
+                        if (playerdb.register(player, arg[0], arg[1])) {
                             if (Vars.state.rules.pvp) {
                                 int index = player.getTeam().id + 1;
                                 while (index != player.getTeam().id) {
@@ -1866,9 +1905,7 @@ public class Main extends Plugin {
                 });
                 break;
             case "discord":
-                handler.<Player>register("register", "Register account", (arg, player) -> {
-                    player.sendMessage("Join discord and use !signup command!\n" + config.getDiscordLink());
-                });
+                handler.<Player>register("register", "Register account", (arg, player) -> player.sendMessage("Join discord and use !signup command!\n" + config.getDiscordLink()));
         }
         handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
             if (!checkperm(player, "spawn")) return;
@@ -1998,11 +2035,9 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 player.sendMessage(bundle(player, "player-not-found"));
             }
-            Iterator<String> i = permission.keys();
-            while(i.hasNext()) {
-                String b = i.next();
-                if(b.equals(arg[1])){
-                    writeData("UPDATE players SET permission = ? WHERE name = ?",arg[0]);
+            for (String b : permission.keySet()) {
+                if (b.equals(arg[1])) {
+                    writeData("UPDATE players SET permission = ? WHERE name = ?", arg[0]);
                     player.sendMessage(bundle(player, "success"));
                     return;
                 }
@@ -2141,7 +2176,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
             if(!checkperm(player,"tr")) return;
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             boolean value = db.getBoolean("translate");
             int set;
             if (!value) {
@@ -2209,9 +2244,9 @@ public class Main extends Plugin {
             vote.command();
         });
 
-
+        /*
         handler.<Player>register("special", "Check that the plug-in is working properly.", (arg, player) -> {
-            /*Thread t = new Thread(() -> {
+            Thread t = new Thread(() -> {
                 Tile start = world.tile(player.tileX(), player.tileY());
                 try {
                     sleep(1500);
@@ -2222,11 +2257,11 @@ public class Main extends Plugin {
                 //new AI(start, target).target();
                 new AI(start, target).findore();
             });
-            t.start();*/
+            t.start();
 
             Thread t = new Thread(() -> {
                 int count = 0;
-                /*while(true){
+                while(true){
                     Call.createBullet(Bullets.flakExplosive,player.getTeam(),player.x,player.y,Mathf.random(360),(float) (Math.random() * (1.0 - 0.5) + 0.5),(float) (Math.random() * (1.0 - 0.2) + 0.2));
                     count++;
                     if(count == 500){
@@ -2253,8 +2288,8 @@ public class Main extends Plugin {
                         }
                     }
                 }
-                count = 0;*/
-                /*while(true) {
+                count = 0;
+                while(true) {
                     Call.createBullet(Bullets.missileSwarm, player.getTeam(), player.x, player.y,new Random().nextInt((int) (((player.rotation+20) - (player.rotation-20)) + 1)) + player.rotation-20,1, 1);
                     count++;
                     if (count == 500) {
@@ -2266,9 +2301,10 @@ public class Main extends Plugin {
                             e.printStackTrace();
                         }
                     }
-                }*/
+                }
             });
             t.start();
         });
+        */
     }
 }

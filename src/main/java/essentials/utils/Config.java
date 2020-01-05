@@ -1,10 +1,13 @@
 package essentials.utils;
 
 import arc.Core;
+import arc.files.Fi;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grack.nanojson.JsonArray;
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
+import com.grack.nanojson.JsonParserException;
 import essentials.Global;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -12,10 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
@@ -26,6 +26,16 @@ import static mindustry.Vars.net;
 
 public class Config {
     private Map<String, Object> obj;
+    private Fi path = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json");
+    public static JsonObject Data = new JsonObject();
+    public static ArrayList<String> jumpzone = new ArrayList<>();
+    public static ArrayList<String> jumpcount = new ArrayList<>();
+    public static ArrayList<String> jumpall = new ArrayList<>();
+    public static ArrayList<String> blacklist = new ArrayList<>();
+    public static JsonArray banned = new JsonArray();
+
+    public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
+    public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
     static int version = 8;
 
     public Config(){
@@ -36,12 +46,188 @@ public class Config {
         obj = yaml.load(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString());
     }
 
-    public static JSONArray jumpzone;
-    public static JSONArray jumpcount;
-    public static JSONArray jumpall;
+    public void main() {
+        validfile();
+        try{
+            if(!path.exists()){
+                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString("{}");
+            }
 
-    public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
-    public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
+            JsonObject data = JsonParser.object().from(path.read());
+
+            if(data.isEmpty()){
+                JsonArray empty = new JsonArray();
+                data.put("banned",empty);
+                data.put("blacklist",empty);
+                data.put("jumpzone",empty);
+                data.put("jumpall",empty);
+                data.put("jumpcount",empty);
+                data.put("servername", Core.settings.getString("servername"));
+                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
+            }
+            Data = data;
+
+            update();
+
+            Yaml yaml = new Yaml();
+            obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
+
+            JsonArray array = JsonParser.object().from(path.read()).getArray("jumpzone");
+            for (int i=0; i<array.size(); i++) jumpzone.add(array.getString(i));
+            array = JsonParser.object().from(path.read()).getArray("jumpcount");
+            for (int i=0; i<array.size(); i++) jumpcount.add(array.getString(i));
+            array = JsonParser.object().from(path.read()).getArray("jumpall");
+            for (int i=0; i<array.size(); i++) jumpall.add(array.getString(i));
+            array = JsonParser.object().from(path.read()).getArray("blacklist");
+            for (int i=0; i<array.size(); i++) blacklist.add(array.getString(i));
+            array = JsonParser.object().from(path.read()).getArray("banned");
+            for (int i=0; i<array.size(); i++) banned.add(array.getString(i));
+            array.clear();
+
+        } catch (JsonParserException | IOException e){
+            printStackTrace(e);
+        }
+    }
+
+    void update(){
+        String bantrust = obj.containsKey("bantrust") ? (String) obj.get("bantrust") : "127.0.0.1";
+        String antirushtime = obj.containsKey("antirusttime") ? String.valueOf(obj.get("antirushtime")) : "10:00";
+        String prefix = obj.containsKey("prefix") ? "\"" + obj.get("prefix") + "\"" : "\"[green][Essentials] []\"";
+        if(obj.containsKey("version")){
+            if((int) obj.get("version") < version){
+                log("config","config-updated");
+            }
+        }
+
+        String text = "# "+nbundle("config-version-description")+"\n" +
+                "version: "+version+"\n" +
+                "\n" +
+                "# "+nbundle("config-language-description")+"\n" +
+                "language: "+getLanguage()+"\n" +
+                "\n" +
+                "# "+nbundle("config-server/client-description")+"\n" +
+                "# "+nbundle("config-server/client-child-description")+"\n" +
+                "server-enable: " + isServerenable() + "\n" +
+                "server-port: " + getServerport() + "\n" +
+                "\n" +
+                "client-enable: " + isClientenable() + "\n" +
+                "client-port: " + getClientport() + "\n" +
+                "client-host: " + getClienthost() + "\n" +
+                "\n" +
+                "# "+nbundle("config-realname-description")+"\n" +
+                "# "+nbundle("config-realname-child-description")+"\n" +
+                "# "+nbundle("config-realname-strict-description")+"\n" +
+                "realname: " + isRealname() + "\n" +
+                "strict-name: " + isStrictname() + "\n" +
+                "\n" +
+                "# "+nbundle("config-colornick-description")+"\n" +
+                "colornick update interval: " + getCupdatei() + "\n" +
+                "\n" +
+                "# "+nbundle("config-detectreactor-description")+"\n" +
+                "detectreactor: " + isDetectreactor() + "\n" +
+                "\n" +
+                "# "+nbundle("config-scanresource-description")+"\n" +
+                "scanresource: " + isScanresource() + "\n" +
+                "\n" +
+                "# "+nbundle("config-antigrief-description")+"\n" +
+                "# "+nbundle("config-blockdetect-description")+"\n" +
+                "# "+nbundle("config-alertdeposit-description")+"\n" +
+                "antigrief: "+ isAntigrief() + "\n" +
+                "blockdetect: "+ isBlockdetect() + "\n" +
+                "alertdeposit: " + isAlertdeposit() + "\n" +
+                "\n" +
+                "# "+nbundle("config-exp-description")+"\n" +
+                "# "+nbundle("config-exp-explimit-description")+"\n" +
+                "# "+nbundle("config-exp-basexp-description")+"\n" +
+                "# "+nbundle("config-exp-exponent-description")+"\n" +
+                "# "+nbundle("config-exp-levelupalarm-description")+"\n" +
+                "# "+nbundle("config-exp-minimal-level-description")+"\n" +
+                "explimit: " + isExplimit() + "\n" +
+                "basexp: " + getBasexp() + "\n" +
+                "exponent: " + getExponent() + "\n" +
+                "levelupalarm: " + isLevelupalarm() + "\n" +
+                "alarm-minimal-level: " + getAlarmlevel() + "\n" +
+                "\n" +
+                "# "+nbundle("config-banshare-description")+"\n" +
+                "# "+nbundle("config-banshare-child-description")+"\n" +
+                "banshare: " + isBanshare() + "\n" +
+                "\n" +
+                "# "+nbundle("config-bantrust-description")+"\n" +
+                "# "+nbundle("config-bantrust-child-description")+"\n" +
+                "bantrust: " + bantrust + "\n" +
+                "\n" +
+                "# "+nbundle("config-query-description")+"\n" +
+                "# "+nbundle("config-query-child-description")+"\n" +
+                "query: " + isQuery() + "\n" +
+                "\n" +
+                "# "+nbundle("config-antivpn-description")+"\n" +
+                "antivpn: " + isAntivpn() + "\n" +
+                "\n" +
+                "# "+nbundle("config-enableantirush-description")+"\n" +
+                "# "+nbundle("config-antirushtime-description")+"\n" +
+                "enableantirush: " + isEnableantirush() + "\n" +
+                "antirushtime: " + antirushtime + "\n" +
+                "\n" +
+                "# "+nbundle("config-logging-description")+"\n" +
+                "logging: " + isLogging() + "\n" +
+                "\n" +
+                "# "+nbundle("config-update-description")+"\n" +
+                "update: " + isUpdate() + "\n" +
+                "\n" +
+                "# "+nbundle("config-database-description")+"\n" +
+                "# "+nbundle("config-database-child1-description")+"\n" +
+                "# "+nbundle("config-database-child2-description")+"\n" +
+                "sqlite: " + isSqlite() + "\n" +
+                "dburl: " + getDBurl() + "\n" +
+                "dbid: " + getDBid() + "\n" +
+                "dbpw: " + getDBpw() + "\n" +
+                "\n" +
+                "# "+nbundle("config-login-description")+"\n" +
+                "# "+nbundle("config-loginmethod-description")+"\n" +
+                "# "+nbundle("config-validconnect-description")+"\n" +
+                "loginenable: " + isLoginenable() + "\n" +
+                "loginmethod: " + getPasswordmethod() + "\n" +
+                "validconnect: " + isValidconnect() + "\n" +
+                "\n" +
+                "# "+nbundle("config-discord-description")+"\n" +
+                "discord-token: " + getDiscordToken() + "\n" +
+                "discord-guild: " + getDiscordGuild() + "\n" +
+                "discord-room: " + getDiscordRoom() + "\n" +
+                "discord-link: " + getDiscordLink() + "\n" +
+                "\n" +
+                "# "+nbundle("config-papago-description")+"\n" +
+                "# "+nbundle("config-papago-child-description")+"\n" +
+                "clientId: " + getClientId() + "\n" +
+                "clientSecret: " + getClientSecret() + "\n" +
+                "\n" +
+                "# "+nbundle("config-debug-description")+"\n" +
+                "debug: " + isDebug() + "\n" +
+                "\n" +
+                "# "+nbundle("config-savetime-description")+"\n" +
+                "savetime: " + getSavetime() + "\n" +
+                "\n" +
+                "# "+nbundle("config-slotnumber-description")+"\n" +
+                "slotnumber: " + getSlotnumber() + "\n" +
+                "\n" +
+                "# "+nbundle("config-auto-difficulty-description")+"\n" +
+                "auto-difficulty: "+isAutodifficulty()+"\n" +
+                "easy: "+getEasy()+"\n" +
+                "normal: "+getNormal()+"\n" +
+                "hard: "+getHard()+"\n" +
+                "insane: "+getInsane()+"\n" +
+                "\n" +
+                "# "+nbundle("config-spawnlimit-description")+"\n" +
+                "spawnlimit: "+getSpawnlimit() +"\n" +
+                "\n" +
+                "# "+nbundle("config-prefix-description")+"\n"+
+                "prefix: "+prefix+"\n" +
+                "\n" +
+                "# "+nbundle("config-event-port-description")+"\n"+
+                "event-port: "+getEventport();
+        Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
+
+        log("config","config-loaded");
+    }
 
     public String getClienthost(){
         return obj.containsKey("client-enable") ? (String) obj.get("client-host") : "mindustry.kr";
@@ -56,7 +242,6 @@ public class Config {
     }
 
     public boolean isRealname(){
-        //return obj.containsKey("realname")) && (boolean) obj.get("realname");
         return obj.containsKey("realname") && (boolean) obj.get("realname");
     }
 
@@ -273,8 +458,12 @@ public class Config {
     }
 
     public String getServername(){
-        JSONObject data = new JSONObject(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString()));
-        return data.getString("servername");
+        try {
+            return JsonParser.object().from(path.read()).getString("servername");
+        } catch (JsonParserException e) {
+            printStackTrace(e);
+        }
+        return "";
     }
 
     public String getEventport(){
@@ -317,165 +506,5 @@ public class Config {
                 e.printStackTrace();
             }
         }
-    }
-
-    public void main() {
-        validfile();
-
-        JSONObject data = new JSONObject(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString()));
-        if(!data.has("servername")){
-            data.put("servername", Core.settings.getString("servername"));
-            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(data.toString());
-        }
-
-        update();
-
-        Yaml yaml = new Yaml();
-        obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
-
-        // 서버간 이동 타일 불러오기
-        jumpzone = new JSONArray(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/jumpdata.json").readString()));
-        jumpcount = new JSONArray(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/jumpcount.json").readString()));
-        jumpall = new JSONArray(new JSONTokener(Core.settings.getDataDirectory().child("mods/Essentials/data/jumpall.json").readString()));
-    }
-
-    void update(){
-        String bantrust = obj.containsKey("bantrust") ? (String) obj.get("bantrust") : "127.0.0.1";
-        String antirushtime = obj.containsKey("antirusttime") ? String.valueOf(obj.get("antirushtime")) : "10:00";
-        String prefix = obj.containsKey("prefix") ? "\"" + obj.get("prefix") + "\"" : "\"[green][Essentials] []\"";
-        if(obj.containsKey("version")){
-            if((int) obj.get("version") < version){
-                log("config","config-updated");
-            }
-        }
-
-        String text = "# "+nbundle("config-version-description")+"\n" +
-                "version: "+version+"\n" +
-                "\n" +
-                "# "+nbundle("config-language-description")+"\n" +
-                "language: "+getLanguage()+"\n" +
-                "\n" +
-                "# "+nbundle("config-server/client-description")+"\n" +
-                "# "+nbundle("config-server/client-child-description")+"\n" +
-                "server-enable: " + isServerenable() + "\n" +
-                "server-port: " + getServerport() + "\n" +
-                "\n" +
-                "client-enable: " + isClientenable() + "\n" +
-                "client-port: " + getClientport() + "\n" +
-                "client-host: " + getClienthost() + "\n" +
-                "\n" +
-                "# "+nbundle("config-realname-description")+"\n" +
-                "# "+nbundle("config-realname-child-description")+"\n" +
-                "# "+nbundle("config-realname-strict-description")+"\n" +
-                "realname: " + isRealname() + "\n" +
-                "strict-name: " + isStrictname() + "\n" +
-                "\n" +
-                "# "+nbundle("config-colornick-description")+"\n" +
-                "colornick update interval: " + getCupdatei() + "\n" +
-                "\n" +
-                "# "+nbundle("config-detectreactor-description")+"\n" +
-                "detectreactor: " + isDetectreactor() + "\n" +
-                "\n" +
-                "# "+nbundle("config-scanresource-description")+"\n" +
-                "scanresource: " + isScanresource() + "\n" +
-                "\n" +
-                "# "+nbundle("config-antigrief-description")+"\n" +
-                "# "+nbundle("config-blockdetect-description")+"\n" +
-                "# "+nbundle("config-alertdeposit-description")+"\n" +
-                "antigrief: "+ isAntigrief() + "\n" +
-                "blockdetect: "+ isBlockdetect() + "\n" +
-                "alertdeposit: " + isAlertdeposit() + "\n" +
-                "\n" +
-                "# "+nbundle("config-exp-description")+"\n" +
-                "# "+nbundle("config-exp-explimit-description")+"\n" +
-                "# "+nbundle("config-exp-basexp-description")+"\n" +
-                "# "+nbundle("config-exp-exponent-description")+"\n" +
-                "# "+nbundle("config-exp-levelupalarm-description")+"\n" +
-                "# "+nbundle("config-exp-minimal-level-description")+"\n" +
-                "explimit: " + isExplimit() + "\n" +
-                "basexp: " + getBasexp() + "\n" +
-                "exponent: " + getExponent() + "\n" +
-                "levelupalarm: " + isLevelupalarm() + "\n" +
-                "alarm-minimal-level: " + getAlarmlevel() + "\n" +
-                "\n" +
-                "# "+nbundle("config-banshare-description")+"\n" +
-                "# "+nbundle("config-banshare-child-description")+"\n" +
-                "banshare: " + isBanshare() + "\n" +
-                "\n" +
-                "# "+nbundle("config-bantrust-description")+"\n" +
-                "# "+nbundle("config-bantrust-child-description")+"\n" +
-                "bantrust: " + bantrust + "\n" +
-                "\n" +
-                "# "+nbundle("config-query-description")+"\n" +
-                "# "+nbundle("config-query-child-description")+"\n" +
-                "query: " + isQuery() + "\n" +
-                "\n" +
-                "# "+nbundle("config-antivpn-description")+"\n" +
-                "antivpn: " + isAntivpn() + "\n" +
-                "\n" +
-                "# "+nbundle("config-enableantirush-description")+"\n" +
-                "# "+nbundle("config-antirushtime-description")+"\n" +
-                "enableantirush: " + isEnableantirush() + "\n" +
-                "antirushtime: " + antirushtime + "\n" +
-                "\n" +
-                "# "+nbundle("config-logging-description")+"\n" +
-                "logging: " + isLogging() + "\n" +
-                "\n" +
-                "# "+nbundle("config-update-description")+"\n" +
-                "update: " + isUpdate() + "\n" +
-                "\n" +
-                "# "+nbundle("config-database-description")+"\n" +
-                "# "+nbundle("config-database-child1-description")+"\n" +
-                "# "+nbundle("config-database-child2-description")+"\n" +
-                "sqlite: " + isSqlite() + "\n" +
-                "dburl: " + getDBurl() + "\n" +
-                "dbid: " + getDBid() + "\n" +
-                "dbpw: " + getDBpw() + "\n" +
-                "\n" +
-                "# "+nbundle("config-login-description")+"\n" +
-                "# "+nbundle("config-loginmethod-description")+"\n" +
-                "# "+nbundle("config-validconnect-description")+"\n" +
-                "loginenable: " + isLoginenable() + "\n" +
-                "loginmethod: " + getPasswordmethod() + "\n" +
-                "validconnect: " + isValidconnect() + "\n" +
-                "\n" +
-                "# "+nbundle("config-discord-description")+"\n" +
-                "discord-token: " + getDiscordToken() + "\n" +
-                "discord-guild: " + getDiscordGuild() + "\n" +
-                "discord-room: " + getDiscordRoom() + "\n" +
-                "discord-link: " + getDiscordLink() + "\n" +
-                "\n" +
-                "# "+nbundle("config-papago-description")+"\n" +
-                "# "+nbundle("config-papago-child-description")+"\n" +
-                "clientId: " + getClientId() + "\n" +
-                "clientSecret: " + getClientSecret() + "\n" +
-                "\n" +
-                "# "+nbundle("config-debug-description")+"\n" +
-                "debug: " + isDebug() + "\n" +
-                "\n" +
-                "# "+nbundle("config-savetime-description")+"\n" +
-                "savetime: " + getSavetime() + "\n" +
-                "\n" +
-                "# "+nbundle("config-slotnumber-description")+"\n" +
-                "slotnumber: " + getSlotnumber() + "\n" +
-                "\n" +
-                "# "+nbundle("config-auto-difficulty-description")+"\n" +
-                "auto-difficulty: "+isAutodifficulty()+"\n" +
-                "easy: "+getEasy()+"\n" +
-                "normal: "+getNormal()+"\n" +
-                "hard: "+getHard()+"\n" +
-                "insane: "+getInsane()+"\n" +
-                "\n" +
-                "# "+nbundle("config-spawnlimit-description")+"\n" +
-                "spawnlimit: "+getSpawnlimit() +"\n" +
-                "\n" +
-                "# "+nbundle("config-prefix-description")+"\n"+
-                "prefix: "+prefix+"\n" +
-                "\n" +
-                "# "+nbundle("config-event-port-description")+"\n"+
-                "event-port: "+getEventport();
-        Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString(text);
-
-        log("config","config-loaded");
     }
 }

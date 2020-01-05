@@ -2,6 +2,8 @@ package essentials;
 
 import arc.Core;
 import arc.util.Log;
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
 import essentials.utils.Bundle;
 import essentials.utils.Config;
 import essentials.utils.Permission;
@@ -12,13 +14,10 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -42,11 +42,11 @@ public class Global {
     public static Config config = new Config();
     public static String version;
 
-    static String tag = "[Essential] ";
-    static String servertag = "[EssentialServer] ";
-    static String clienttag = "[EssentialClient] ";
-    static String playertag = "[EssentialPlayer] ";
-    static String configtag = "[EssentialConfig] ";
+    final static String tag = "[Essential] ";
+    final static String servertag = "[EssentialServer] ";
+    final static String clienttag = "[EssentialClient] ";
+    final static String playertag = "[EssentialPlayer] ";
+    final static String configtag = "[EssentialConfig] ";
 
     // 로그
     public static void log(String type, String value, Object... parameter){
@@ -217,7 +217,7 @@ public class Global {
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
     public static String bundle(Player player, String value, Object... parameter) {
         if(isLogin(player)){
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
             return bundle.getBundle(value, parameter);
@@ -228,7 +228,7 @@ public class Global {
 
     public static String bundle(Player player, String value) {
         if(isLogin(player)){
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
             return bundle.getBundle(value);
@@ -251,7 +251,7 @@ public class Global {
 
     // Bundle 파일에서 Essentials 문구 없이 출력
     public static String nbundle(Player player, String value, Object... paramter) {
-        JSONObject db = getData(player.uuid);
+        JsonObject db = getData(player.uuid);
         if(isLogin(player)){
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
@@ -263,7 +263,7 @@ public class Global {
 
     public static String nbundle(Player player, String value) {
         if(isLogin(player)){
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             Locale locale = new Locale(db.getString("language"));
             Bundle bundle = new Bundle(locale);
             return bundle.getNormal(value);
@@ -490,7 +490,7 @@ public class Global {
 
     // 각 언어별 motd
     public static String getmotd(Player player){
-        JSONObject db = getData(player.uuid);
+        JsonObject db = getData(player.uuid);
         if(Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").exists()){
             return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").readString();
         } else {
@@ -567,37 +567,36 @@ public class Global {
     }
 
     // 플레이어 지역 위치 확인
-    public static JSONObject geolocation(Player player) {
+    public static HashMap<String, String> geolocation(Player player) {
         String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-        JSONObject list = new JSONObject();
-
+        HashMap <String, String> data = new HashMap<>();
         try {
             String json = Jsoup.connect("http://ipapi.co/"+ip+"/json").ignoreContentType(true).execute().body();
-            JSONObject result = new JSONObject(new JSONTokener(json));
+            JsonObject result = JsonParser.object().from(json);
 
             if (result.has("reserved")) {
-                list.put("country", "Local IP");
-                list.put("country_code", "LC");
-                list.put("languages", "en");
+                data.put("country", "Local IP");
+                data.put("country_code", "LC");
+                data.put("languages", "en");
             } else {
                 String[] das = result.getString("languages").split(",");
-                list.put("country", result.getString("country_name"));
-                list.put("country_code", result.getString("country"));
-                list.put("languages", das[0]);
+                data.put("country", result.getString("country_name"));
+                data.put("country_code", result.getString("country"));
+                data.put("languages", das[0]);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             printStackTrace(e);
-            list.put("country", "invalid");
-            list.put("country_code", "invalid");
-            list.put("languages", "en");
+            data.put("country", "invalid");
+            data.put("country_code", "invalid");
+            data.put("languages", "en");
         }
 
-        return list;
+        return data;
     }
 
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
-        JSONObject db = getData(player.uuid);
+        JsonObject db = getData(player.uuid);
         if(db.isEmpty() || player.uuid == null) return false;
         return db.getBoolean("connected");
     }
@@ -615,11 +614,11 @@ public class Global {
     // 권한 확인
     public static boolean checkperm(Player player, String command){
         if(isLogin(player) && checklogin(player)){
-            JSONObject db = getData(player.uuid);
+            JsonObject db = getData(player.uuid);
             String perm = db.getString("permission");
-            int size = Permission.permission.getJSONObject(perm).getJSONArray("permission").length();
+            int size = Permission.permission.getObject(perm).getArray("permission").size();
             for(int a=0;a<size;a++){
-                String permlevel = Permission.permission.getJSONObject(perm).getJSONArray("permission").getString(a);
+                String permlevel = Permission.permission.getObject(perm).getArray("permission").getString(a);
                 if(permlevel.equals(command) || permlevel.equals("ALL")){
                     return true;
                 }
