@@ -508,10 +508,10 @@ public class Main extends Plugin {
                     if (!config.getClientId().equals("") && !config.getClientSecret().equals("")) {
                         Thread t = new Thread(() -> {
                             try {
+                                JsonObject orignaldata = getData(e.player.uuid);
                                 for (int i = 0; i < playerGroup.size(); i++) {
                                     Player p = playerGroup.all().get(i);
                                     if (isNocore(p)) {
-                                        JsonObject orignaldata = getData(p.uuid);
                                         JsonObject data = getData(p.uuid);
                                         String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
                                         String language = data.getString("language");
