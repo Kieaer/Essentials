@@ -321,15 +321,15 @@ public class PlayerDB{
     }
     public void openconnect() {
         try {
+            Class.forName("org.sqlite.JDBC");
+            Class.forName("org.mariadb.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("org.postgresql.Driver");
             if (config.isSqlite()) {
-                Class.forName("org.sqlite.JDBC");
                 conn = DriverManager.getConnection(config.getDBurl());
                 log("player","db-type","SQLite");
             } else {
                 if (!config.getDBid().isEmpty()) {
-                    Class.forName("org.mariadb.jdbc.Driver");
-                    Class.forName("com.mysql.cj.jdbc.Driver");
-                    Class.forName("org.postgresql.Driver");
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
                     log("player","db-type","MariaDB/MySQL/PostgreSQL");
                 } else {

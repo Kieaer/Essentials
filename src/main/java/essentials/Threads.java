@@ -703,11 +703,7 @@ public class Threads extends TimerTask{
 
         @Override
         public void run() {
-            if (save()) {
-                Call.sendMessage("[scarlet]AutoSave complete");
-            } else {
-                nlog("err","Map save failed! Check your disk or config!");
-            }
+            save();
         }
     }
     static class eventserver extends Thread {

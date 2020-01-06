@@ -20,21 +20,6 @@ Disk: SSD capable of more than 10MB/s random read/write.
 ## Installation
 
 Put this plugin in the ``<server folder location>/config/mods`` folder.
-
-## 8.0 version plans
-- [ ] Monitoring resource consumption
-  - [ ] Alarm when resource bank is full
-- [ ] Improved detection of griefing
-  - [ ] Authorize
-    - [ ] E-mail
-    - [ ] SMS
-    - [ ] Steam platform
-- [ ] Chat feature upgrade
-  - [ ] Blocking bad words
-  - [ ] Nickname prefix
-  - [ ] Remove translate before massage
-  - [ ] PvP Team chat without command
-- [ ] Daliy mission (Draft)
   
 ## Client commands
 
