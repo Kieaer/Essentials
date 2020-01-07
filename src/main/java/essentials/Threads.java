@@ -341,7 +341,7 @@ public class Threads extends TimerTask{
             // 블럭 파괴 카운트
             Events.on(BuildSelectEvent.class, e -> {
                 // Nulldustry
-                if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
+                if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.builder == player) {
                     if (e.breaking) {
                         // 그냥 빠른파괴
                         breakcount++;
@@ -384,7 +384,7 @@ public class Threads extends TimerTask{
 
             // Place count
             Events.on(BlockBuildEndEvent.class, e -> {
-                if (!e.breaking && e.player != null && e.player.buildRequest() != null && !state.teams.get(e.player.getTeam()).cores.isEmpty()) {
+                if (!e.breaking && e.player != null && e.player.buildRequest() != null && !state.teams.get(e.player.getTeam()).cores.isEmpty() && e.player == player) {
                     if (e.player.buildRequest().block == Blocks.router) {
                         routercount++;
                         if (routercount > routerlimit) {
