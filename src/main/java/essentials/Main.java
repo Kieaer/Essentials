@@ -191,7 +191,7 @@ public class Main extends Plugin {
 
         Events.on(WithdrawEvent.class, e->{
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief()) {
-                allsendMessage("withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
+                allsendMessage("antigrief-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
                 if (config.isDebug() && config.isAntigrief()) {
                     log("log","antigrief-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
                 }
@@ -1219,7 +1219,8 @@ public class Main extends Plugin {
                                 "Attack clear: "+rs.getInt("attackclear")+"\n" +
                                 "PvP Win: "+rs.getInt("pvpwincount")+"\n" +
                                 "PvP Lose: "+rs.getInt("pvplosecount")+"\n" +
-                                "PvP Surrender: "+rs.getInt("pvpbreakout");
+                                "PvP Surrender: "+rs.getInt("pvpbreakout")+"\n" +
+                                "Permission: "+rs.getString("permission");
                         nlog("log",datatext);
                     }
                     rs.close();
@@ -1696,7 +1697,7 @@ public class Main extends Plugin {
                     }
                     int size;
                     try {
-                        size = Integer.parseInt(arg[2]);
+                        size = Integer.parseInt(arg[3]);
                     } catch (Exception ignored) {
                         player.sendMessage(bundle(player, "jump-not-int"));
                         return;

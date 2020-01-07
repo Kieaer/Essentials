@@ -5,7 +5,6 @@ import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import arc.struct.Array;
-import com.grack.nanojson.JsonArray;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 import com.grack.nanojson.JsonParserException;
@@ -75,7 +74,7 @@ public class Threads extends TimerTask{
         //executorService.execute(new checkvote());
 
         // 현재 서버 이름에다가 클라이언트 서버에 대한 인원 새기기
-        new changename().start();
+        // new changename().start();
 
         // 맵이 돌아가고 있을 때
         if(state.is(GameState.State.playing)) {
