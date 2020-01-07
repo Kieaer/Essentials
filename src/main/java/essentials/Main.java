@@ -423,13 +423,13 @@ public class Main extends Plugin {
             if(config.isAutodifficulty()){
                 int total = playerGroup.size();
                 if(config.getEasy() >= total){
-                    Difficulty.valueOf("easy");
+                    state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
                 } else if(config.getNormal() == total){
-                    Difficulty.valueOf("normal");
+                    state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
                 } else if(config.getHard() == total){
-                    Difficulty.valueOf("hard");
+                    state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
                 } else if(config.getInsane() <= total){
-                    Difficulty.valueOf("insane");
+                    state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
                 }
             }
         });
