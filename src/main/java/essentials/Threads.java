@@ -975,8 +975,8 @@ public class Threads extends TimerTask{
             public void run() {
                 Thread.currentThread().setName("Vote counting timertask");
                 time++;
-                if(time == 60){
-                    cancel();
+                if(time >= 60){
+                    Vote.cancel();
                 }
             }
         };
