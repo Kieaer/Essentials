@@ -192,9 +192,9 @@ public class Main extends Plugin {
 
         Events.on(WithdrawEvent.class, e->{
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief()) {
-                allsendMessage("antigrief-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
+                allsendMessage("log-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
                 if (config.isDebug() && config.isAntigrief()) {
-                    log("log","antigrief-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
+                    log("log","log-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
                 }
             }
             if(e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief() && state.rules.pvp){
@@ -795,7 +795,7 @@ public class Main extends Plugin {
                 if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
                     val = amount - orignal;
                     if (val > 0) {
-                        color = "[green]+";
+                        color = "[#00f]+";
                     } else {
                         color = "[red]-";
                     }
@@ -854,13 +854,9 @@ public class Main extends Plugin {
                 if(scandelay == 60){
                     // 코어 자원 소모량 감시
                     try {
-                        StringBuilder items = new StringBuilder();
                         for (Item item : content.items()) {
                             if (item.type == ItemType.material) {
                                 int amount = state.teams.get(Team.sharded).cores.first().items.get(item);
-                                String data;
-                                String color;
-                                int val;
                                 switch (item.name) {
                                     case "copper":
                                         setText(copper, amount, Items.copper);
@@ -907,7 +903,7 @@ public class Main extends Plugin {
                         }
 
                         for (int a = 0; a < scancore.size(); a++) {
-                            if (scancore.get(a).entity.block != Blocks.message) {
+                            if (scancore.get(a).entity == null || scancore.get(a).entity.block != Blocks.message) {
                                 scancore.remove(a);
                                 break;
                             }
