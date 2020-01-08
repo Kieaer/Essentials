@@ -82,7 +82,7 @@ public class Log{
                 mainlog = logfolder.child(type + ".log");
             }
 
-            mainlog.writeString(getTime() + text + "\n", true);
+            mainlog.writeString("["+getTime()+"]" + text + "\n", true);
         });
         singleService.submit(t);
     }

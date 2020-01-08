@@ -203,15 +203,7 @@ public class Global {
 
     // 현재 시간출력
     public static String getTime(){
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-        return "[" + now.format(dateTimeFormatter) + "] ";
-    }
-
-    public static String getnTime(){
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-        return now.format(dateTimeFormatter);
+        return DateTimeFormatter.ofPattern("MM-dd-yyyy | HH:mm:ss").format(LocalDateTime.now());
     }
 
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력

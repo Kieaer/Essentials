@@ -259,7 +259,7 @@ public class PlayerDB{
         // Write ban data
         try {
             SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-            Date d1 = format.parse(getnTime());
+            Date d1 = format.parse(getTime());
             Calendar cal = Calendar.getInstance();
             cal.setTime(d1);
             cal.add(Calendar.HOUR, bantimeset);
@@ -273,7 +273,7 @@ public class PlayerDB{
             Data.getArray("banned").add(data1);
 
             // Write player data
-            writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", getnTime(), bantimeset, uuid);
+            writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", getTime(), bantimeset, uuid);
         } catch (Exception e) {
             printStackTrace(e);
         }
@@ -501,7 +501,7 @@ public class PlayerDB{
         if (isLogin(player)) {
             HashMap<String, String> list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
-            return createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getnTime(), getnTime(), true, player.name, "blank", player);
+            return createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getTime(), getTime(), true, player.name, "blank", player);
         } else {
             return true;
         }
@@ -588,9 +588,9 @@ public class PlayerDB{
 
             // 플레이어가 연결한 서버 데이터 기록
             if (id == null) {
-                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ? WHERE uuid = ?",true, getnTime(), currentip, player.uuid);
+                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ? WHERE uuid = ?",true, getTime(), currentip, player.uuid);
             } else {
-                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ?, uuid = ? WHERE accountid = ?", true, getnTime(), currentip, player.uuid, id);
+                writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ?, uuid = ? WHERE accountid = ?", true, getTime(), currentip, player.uuid, id);
             }
             nlog("debug",player.name+" Player data write");
 

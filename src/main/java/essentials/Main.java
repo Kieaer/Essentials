@@ -25,6 +25,7 @@ import essentials.utils.Config;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Items;
 import mindustry.content.UnitTypes;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
@@ -306,9 +307,9 @@ public class Main extends Plugin {
                                 }
 
                                 if (config.getLanguage().equals("ko")) {
-                                    writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                    writelog("griefer", "["+getTime()+"]" + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                 } else {
-                                    writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                    writelog("griefer", "["+getTime()+"]" + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                 }
                                 Call.onTileDestroyed(world.tile(x, y));
                             } else {
@@ -320,9 +321,9 @@ public class Main extends Plugin {
                                     }
 
                                     if (config.getLanguage().equals("ko")) {
-                                        writelog("griefer", getTime() + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
+                                        writelog("griefer", "["+getTime()+"]" + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
                                     } else {
-                                        writelog("griefer", getTime() + builder + "put thorium in Thorium Reactor without Cryofluid.");
+                                        writelog("griefer", "["+getTime()+"]" + builder + "put thorium in Thorium Reactor without Cryofluid.");
                                     }
                                     Call.onTileDestroyed(world.tile(x, y));
                                 }
@@ -783,8 +784,25 @@ public class Main extends Plugin {
 
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
         Core.app.addListener(new ApplicationListener() {
-            int scandelay,delaycount,copper,lead,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
+            int scandelay,delaycount,copper,lead,graphite,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
             boolean a1, a2, a3 = false;
+
+            StringBuilder scancore_text = new StringBuilder();
+            void setText(int orignal, int amount, Item item){
+                String color;
+                String data;
+                int val;
+                if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                    val = amount - orignal;
+                    if (val > 0) {
+                        color = "[green]+";
+                    } else {
+                        color = "[red]-";
+                    }
+                    data = "[]" + item.name + ": " + color + val + "/s\n";
+                    scancore_text.append(data);
+                }
+            }
 
             @Override
             public void update() {
@@ -845,121 +863,44 @@ public class Main extends Plugin {
                                 int val;
                                 switch (item.name) {
                                     case "copper":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - copper;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            copper = amount;
-                                        }
+                                        setText(copper, amount, Items.copper);
+                                        copper = amount;
                                         break;
                                     case "lead":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - lead;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            lead = amount;
-                                        }
+                                        setText(lead, amount, Items.lead);
+                                        lead = amount;
+                                        break;
+                                    case "graphite":
+                                        setText(graphite, amount, Items.graphite);
+                                        graphite = amount;
                                         break;
                                     case "titanium":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - titanium;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            titanium = amount;
-                                        }
+                                        setText(titanium, amount, Items.titanium);
+                                        titanium = amount;
                                         break;
                                     case "thorium":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - thorium;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            thorium = amount;
-                                        }
+                                        setText(thorium, amount, Items.thorium);
+                                        thorium = amount;
                                         break;
                                     case "silicon":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - silicon;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            silicon = amount;
-                                        }
+                                        setText(silicon, amount, Items.silicon);
+                                        silicon = amount;
                                         break;
                                     case "phase-fabric":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - phase_fabric;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            phase_fabric = amount;
-                                        }
+                                        setText(phase_fabric, amount, Items.phasefabric);
+                                        phase_fabric = amount;
                                         break;
                                     case "surge-alloy":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - surge_alloy;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            surge_alloy = amount;
-                                        }
+                                        setText(surge_alloy, amount, Items.surgealloy);
+                                        surge_alloy = amount;
                                         break;
                                     case "plastanium":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - plastanium;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            plastanium = amount;
-                                        }
+                                        setText(plastanium, amount, Items.plastanium);
+                                        plastanium = amount;
                                         break;
                                     case "metaglass":
-                                        if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                            val = amount - metaglass;
-                                            if (val > 0) {
-                                                color = "[green]+";
-                                            } else {
-                                                color = "[red]-";
-                                            }
-                                            data = "[]" + item.name + ": " + color + val + "/s\n";
-                                            items.append(data);
-                                            metaglass = amount;
-                                        }
+                                        setText(metaglass, amount, Items.metaglass);
+                                        metaglass = amount;
                                         break;
                                 }
                             }
@@ -970,7 +911,8 @@ public class Main extends Plugin {
                                 scancore.remove(a);
                                 break;
                             }
-                            Call.setMessageBlockText(null, scancore.get(a), items.toString());
+                            Call.setMessageBlockText(null, scancore.get(a), scancore_text.toString());
+                            scancore_text.setLength(0);
                         }
                     }catch (Exception ignored){}
                     scandelay = 0;

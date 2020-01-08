@@ -311,6 +311,7 @@ public class Threads extends TimerTask{
 
         @Override
         public void run() {
+            Thread.currentThread().setName(player.name+" Player anti-grief thread");
             // 중요 건물 추가
             impblock.add(Blocks.thoriumReactor);
             impblock.add(Blocks.impactReactor);
@@ -340,7 +341,6 @@ public class Threads extends TimerTask{
 
             // 블럭 파괴 카운트
             Events.on(BuildSelectEvent.class, e -> {
-                // Nulldustry
                 if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.builder == player) {
                     if (e.breaking) {
                         // 그냥 빠른파괴

@@ -79,7 +79,7 @@ public class Discord extends ListenerAdapter {
                         send(message);
                         return;
                     }
-                    if (PlayerDB.createNewDatabase(event.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getnTime(), getnTime(), false, id, pw, null)) {
+                    if (PlayerDB.createNewDatabase(event.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, id, pw, null)) {
                         message = "Register successful! Now, join server and use /login command.\n" +
                                 "계정 등록에 성공했습니다! 이제 서버에 가서 /login 명령어를 사용하세요.";
                     } else {
