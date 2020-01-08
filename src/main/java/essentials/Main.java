@@ -1009,6 +1009,7 @@ public class Main extends Plugin {
                             }
                         } catch (Exception e) {
                             nukeblock.remove(i);
+                            break;
                         }
                     }
                 }
