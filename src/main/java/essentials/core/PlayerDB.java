@@ -541,7 +541,7 @@ public class PlayerDB{
             nlog("debug",player.name+" Player load start");
             // 만약에 새 기기로 기존 계정에 로그인 했을때, 계정에 있던 DB를 가져와서 검사함
             if(isLogin(player)){
-                if(config.isDebug()) nlog("debug",player.name+" Player logged!");
+                nlog("debug",player.name+" Player logged!");
                 String uuid = "";
                 try{
                     String sql = "SELECT uuid FROM players WHERE accountid = ?";
@@ -559,7 +559,7 @@ public class PlayerDB{
                 db = getData(uuid);
             }
             if(db.isEmpty()){
-                if(config.isDebug()) nlog("debug",player.name+" Player data is empty");
+                nlog("debug",player.name+" Player data is empty");
                 try {
                     PreparedStatement stmt = conn.prepareStatement("UPDATE players SET uuid = ? WHERE accountid = ?");
                     stmt.setString(1, player.uuid);
@@ -571,7 +571,7 @@ public class PlayerDB{
                 }
             }
             if(db.containsKey("connected") && config.isValidconnect()){
-                if(config.isDebug()) nlog("debug",player.name+" Player validate start");
+                nlog("debug",player.name+" Player validate start");
                 if((boolean) db.get("connected")) {
                     for (int a = 0; a < playerGroup.size(); a++) {
                         String target = playerGroup.all().get(a).uuid;
@@ -584,7 +584,7 @@ public class PlayerDB{
             }
 
             String currentip = new Threads.getip().main();
-            if(config.isDebug()) nlog("debug",player.name+" Player ip collected");
+            nlog("debug",player.name+" Player ip collected");
 
             // 플레이어가 연결한 서버 데이터 기록
             if (id == null) {
@@ -592,7 +592,7 @@ public class PlayerDB{
             } else {
                 writeData("UPDATE players SET connected = ?, lastdate = ?, connserver = ?, uuid = ? WHERE accountid = ?", true, getnTime(), currentip, player.uuid, id);
             }
-            if(config.isDebug()) nlog("debug",player.name+" Player data write");
+            nlog("debug",player.name+" Player data write");
 
             // 플레이어 팀 설정
             if (Vars.state.rules.pvp){
@@ -615,9 +615,9 @@ public class PlayerDB{
             } else {
                 player.setTeam(Team.sharded);
             }
-            if(config.isDebug()) nlog("debug",player.name+" Player Team set");
+            nlog("debug",player.name+" Player Team set");
             Call.onPlayerDeath(player);
-            if(config.isDebug()) nlog("debug",player.name+" Player Respawned");
+            nlog("debug",player.name+" Player Respawned");
 
             // 입장 메세지 표시
             String motd = getmotd(player);
@@ -627,17 +627,17 @@ public class PlayerDB{
             } else {
                 player.sendMessage(motd);
             }
-            if(config.isDebug()) nlog("debug",player.name+" Player show motd");
+            nlog("debug",player.name+" Player show motd");
 
             // 고정닉 기능이 켜져있을 경우, 플레이어 닉네임 설정
             if(config.isRealname() || config.getPasswordmethod().equals("discord")){
                 player.name = (String) db.get("name");
-                if(config.isDebug()) nlog("debug",player.name+" Player Set nickname");
+                nlog("debug",player.name+" Player Set nickname");
             }
 
             // 서버 입장시 경험치 획득
             Exp.joinexp(player.uuid);
-            if(config.isDebug()) nlog("debug",player.name+" Player increase exp");
+            nlog("debug",player.name+" Player increase exp");
 
             // 컬러닉 기능 설정
             boolean colornick = (boolean) db.get("colornick");
@@ -648,12 +648,12 @@ public class PlayerDB{
                 log("player","colornick-require");
                 writeData("UPDATE players SET colornick = ? WHERE uuid = ?", false, player.uuid);
             }
-            if(config.isDebug()) nlog("debug",player.name+" Player pass colornick");
+            nlog("debug",player.name+" Player pass colornick");
 
             // 플레이어별 테러 감지 시작
             if(config.isAntigrief()) {
                 new Threads.checkgrief(player).start();
-                if(config.isDebug()) nlog("debug",player.name+" Player anti-grief start");
+                nlog("debug",player.name+" Player anti-grief start");
             }
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
@@ -664,15 +664,15 @@ public class PlayerDB{
                     writeData("UPDATE players SET isAdmin = ? WHERE uuid = ?", true, player.uuid);
                 }
             }
-            if(config.isDebug()) nlog("debug",player.name+" Player permission set");
+            nlog("debug",player.name+" Player permission set");
 
             // 플레이어 지역이 invalid 일경우 다시 정보 가져오기
             if(db.getString("country").equals("invalid")) {
                 HashMap<String, String> list = geolocation(player);
                 writeData("UPDATE players SET country = ?, country_code = ?, language = ? WHERE uuid = ?", list.get("country"), list.get("country_code"), list.get("languages"), player.uuid);
             }
-            if(config.isDebug()) nlog("debug",player.name+" Player country data collected");
-            if(config.isDebug()) nlog("debug",player.name+" Player data full loaded!");
+            nlog("debug",player.name+" Player country data collected");
+            nlog("debug",player.name+" Player data full loaded!");
         });
         t.start();
     }

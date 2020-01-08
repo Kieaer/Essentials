@@ -164,7 +164,7 @@ public class Global {
                 Log.err(value);
                 break;
             case "debug":
-                Log.info("[DEBUG] "+value);
+                if(config.isDebug()) Log.info("[DEBUG] "+value);
                 break;
             case "player":
                 Log.info(playertag+value);
