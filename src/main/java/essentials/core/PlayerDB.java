@@ -673,6 +673,10 @@ public class PlayerDB{
             }
             nlog("debug",player.name+" Player country data collected");
             nlog("debug",player.name+" Player data full loaded!");
+
+            // 플레이어 접속 횟수 카운트
+            int joincount = db.getInt("joincount")+1;
+            writeData("UPDATE players SET joincount = ? WHERE uuid = ?",joincount, player.uuid);
         });
         t.start();
     }
