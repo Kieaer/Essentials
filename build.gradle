@@ -5,7 +5,6 @@ version '7.0'
 sourceCompatibility = JavaVersion.VERSION_1_8
 
 configurations.all {
-    // Check for updates every build
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 

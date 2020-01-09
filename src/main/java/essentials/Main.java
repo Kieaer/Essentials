@@ -27,6 +27,7 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.UnitTypes;
+import mindustry.core.GameState;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.Unit;
@@ -512,7 +513,7 @@ public class Main extends Plugin {
                                 JsonObject orignaldata = getData(e.player.uuid);
                                 for (int i = 0; i < playerGroup.size(); i++) {
                                     Player p = playerGroup.all().get(i);
-                                    if (isNocore(p)) {
+                                    if (!isNocore(p)) {
                                         JsonObject data = getData(p.uuid);
                                         String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
                                         String language = data.getString("language");
@@ -532,7 +533,7 @@ public class Main extends Plugin {
                                                         .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
                                                         .data("source", orignaldata.getString("language"))
                                                         .data("target", data.getString("language"))
-                                                        .data("text", e.originalMessage)
+                                                        .data("text", e.message)
                                                         .ignoreContentType(true)
                                                         .followRedirects(true)
                                                         .execute()
@@ -560,7 +561,7 @@ public class Main extends Plugin {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
-            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player) && e.tile != null) {
+            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player) && e.tile != null && e.player.buildRequest().block != null) {
                 Thread t = new Thread(() -> {
                     JsonObject db = getData(e.player.uuid);
                     String name = e.tile.block().name;
@@ -786,8 +787,11 @@ public class Main extends Plugin {
         Core.app.addListener(new ApplicationListener() {
             int scandelay,delaycount,copper,lead,graphite,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
             boolean a1, a2, a3 = false;
-
             StringBuilder scancore_text = new StringBuilder();
+            public Array<Integer> pre = new Array<>();
+            public Array<Integer> cur = new Array<>();
+            public Array<Item> name = new Array<>();
+
             void setText(int orignal, int amount, Item item){
                 String color;
                 String data;
@@ -852,6 +856,57 @@ public class Main extends Plugin {
                 }
 
                 if(scandelay == 60){
+                    if(state.is(GameState.State.playing)) {
+                        int a = 0;
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
+                            }
+                        }
+
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                name.add(item);
+                            }
+                        }
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                int resource;
+                                if (state.teams.get(Team.sharded).cores.isEmpty()) return;
+                                if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                                    resource = state.teams.get(Team.sharded).cores.first().items.get(item);
+                                } else {
+                                    return;
+                                }
+                                int temp = resource - pre.get(a);
+                                if (temp <= -55) {
+                                    StringBuilder using = new StringBuilder();
+                                    if(Vars.state.is(GameState.State.playing)) {
+                                        for (int b = 0; b < playerGroup.size(); b++) {
+                                            Player p = playerGroup.all().get(b);
+                                            if (p.buildRequest().block == null) return;
+                                            for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
+                                                Item ad = p.buildRequest().block.requirements[c].item;
+                                                if (ad == name.get(a)) {
+                                                    using.append(p.name).append(", ");
+                                                }
+                                            }
+                                        }
+                                        allsendMessage("resource-fast", name.get(a).name);
+                                        allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
+                                    }
+                                }
+                                cur.add(a, state.teams.get(Team.sharded).cores.first().items.get(item));
+                                a++;
+                            }
+                        }
+
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
+                            }
+                        }
+                    }
                     // 코어 자원 소모량 감시
                     try {
                         for (Item item : content.items()) {

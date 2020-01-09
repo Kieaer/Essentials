@@ -466,7 +466,7 @@ public class PlayerDB{
                     if (isuuid == null) {
                         nlog("debug", player.name + " Account not found");
                         LocalDateTime now = LocalDateTime.now();
-                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
                         String nowString = now.format(dateTimeFormatter);
                         HashMap<String, String> list = geolocation(player);
 

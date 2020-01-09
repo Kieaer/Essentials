@@ -900,7 +900,7 @@ public class Threads extends TimerTask{
                                 return;
                             }
                             int temp = resource - pre.get(a);
-                            if (temp <= -75) {
+                            if (temp <= -55) {
                                 StringBuilder using = new StringBuilder();
                                 if(Vars.state.is(GameState.State.playing)) {
                                     for (int b = 0; b < playerGroup.size(); b++) {

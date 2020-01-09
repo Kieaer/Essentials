@@ -203,7 +203,7 @@ public class Global {
 
     // 현재 시간출력
     public static String getTime(){
-        return DateTimeFormatter.ofPattern("MM-dd-yyyy | HH:mm:ss").format(LocalDateTime.now());
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
     }
 
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
@@ -623,7 +623,7 @@ public class Global {
     public static boolean isLoginold(String date){
         try {
             // 플레이어 시간
-            SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
             Calendar cal1 = Calendar.getInstance();
             Date d = format.parse(String.valueOf(date));
             cal1.setTime(d);
@@ -633,7 +633,7 @@ public class Global {
             // 서버 시간
             LocalDateTime now = LocalDateTime.now();
             Calendar cal2 = Calendar.getInstance();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
             Date d1 = format.parse(now.format(dateTimeFormatter));
             cal2.setTime(d1);
 

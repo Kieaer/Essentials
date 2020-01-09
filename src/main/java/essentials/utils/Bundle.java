@@ -15,10 +15,11 @@ import static essentials.core.Log.writelog;
 public class Bundle {
     private ResourceBundle RESOURCE_BUNDLE;
     public Bundle(Locale locale){
+        nlog("debug",locale.getLanguage());
         try{
             RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
         }catch (Exception e){
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, new UTF8Control());
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.getDefault(), new UTF8Control());
         }
     }
 
