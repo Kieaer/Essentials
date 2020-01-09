@@ -739,6 +739,8 @@ public class Main extends Plugin {
                         player.con.kick(Packets.KickReason.banned);
                     }
                 }
+
+                addtimeban(e.player.name, e.player.uuid, 9999999);
             });
             executorService.submit(bansharing);
         });
