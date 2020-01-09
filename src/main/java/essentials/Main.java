@@ -78,6 +78,7 @@ import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
+import static mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     private ArrayList<String> nukeblock = new ArrayList<>();
@@ -468,14 +469,14 @@ public class Main extends Plugin {
                                 if (isLogin(others)) others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                             }
                         }
-                    } /*else {
+                    } else {
                         String perm = db.getString("permission");
-                        if(permission.getJsonObject(perm).has("prefix")) {
-                            Call.sendMessage(permission.getJsonObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
+                        if(permission.getObject(perm).has("prefix")) {
+                            Call.sendMessage(permission.getObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
                             Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
                         }
-                    }*/
+                    }
 
                     // 서버간 대화기능 작동
                     if (db.getBoolean("crosschat")) {
@@ -1166,7 +1167,8 @@ public class Main extends Plugin {
                 ds.main();
             }
 
-            //netServer.admins.addChatFilter((player, text) -> null);
+            // 채팅 포맷 변경
+            netServer.admins.addChatFilter((player, text) -> null);
         });
     }
 
