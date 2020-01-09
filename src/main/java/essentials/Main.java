@@ -670,13 +670,13 @@ public class Main extends Plugin {
                             int blockreqlevel = 100;
                             if (obj.get(name) != null) {
                                 blockreqlevel = obj.get(name);
-                            } else if (e.tile.block().name.equals("air")) {
+                            } else if (!e.tile.block().name.equals("air")) {
                                 log("err", "epg-block-not-valid", name);
                             } else {
                                 return;
                             }
 
-                            if (level < blockreqlevel) {
+                            if (level < blockreqlevel && !e.tile.block().name.equals("air")) {
                                 Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
                                 ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
                             }
@@ -785,10 +785,10 @@ public class Main extends Plugin {
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
         Core.app.addListener(new ApplicationListener() {
             int scandelay,delaycount,resetdelay,copper,lead,graphite,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
-            boolean a1, a2, a3, cool = false;
+            boolean a1, a2, a3 = false;
             StringBuilder scancore_text = new StringBuilder();
-            public Array<Integer> pre = new Array<>();
-            public Array<Item> name = new Array<>();
+            // public Array<Integer> pre = new Array<>();
+            // public Array<Item> name = new Array<>();
 
             void setText(int orignal, int amount, Item item){
                 String color;
@@ -808,13 +808,12 @@ public class Main extends Plugin {
 
             @Override
             public void update() {
-                System.out.println(resetdelay);
-                if(resetdelay >= 300){
+/*                if(resetdelay >= 300){
                     resetdelay = 0;
                     cool = false;
                 } else {
                     resetdelay++;
-                }
+                }*/
 
                 if (delaycount == 30) {
                     try {
