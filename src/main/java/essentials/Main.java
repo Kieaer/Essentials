@@ -27,7 +27,6 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.UnitTypes;
-import mindustry.core.GameState;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.Unit;
@@ -466,8 +465,7 @@ public class Main extends Plugin {
                                 return;
                             }
                             for (Player others : playerGroup.all()) {
-                                if (getData(others.uuid).toString().equals("{}")) return;
-                                others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
+                                if (isLogin(others)) others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                             }
                         }
                     } /*else {
@@ -561,7 +559,7 @@ public class Main extends Plugin {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
-            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player) && e.tile != null && e.player.buildRequest().block != null) {
+            if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player) && e.tile != null && e.player.buildRequest() != null) {
                 Thread t = new Thread(() -> {
                     JsonObject db = getData(e.player.uuid);
                     String name = e.tile.block().name;
@@ -785,11 +783,10 @@ public class Main extends Plugin {
 
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
         Core.app.addListener(new ApplicationListener() {
-            int scandelay,delaycount,copper,lead,graphite,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
-            boolean a1, a2, a3 = false;
+            int scandelay,delaycount,resetdelay,copper,lead,graphite,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
+            boolean a1, a2, a3, cool = false;
             StringBuilder scancore_text = new StringBuilder();
             public Array<Integer> pre = new Array<>();
-            public Array<Integer> cur = new Array<>();
             public Array<Item> name = new Array<>();
 
             void setText(int orignal, int amount, Item item){
@@ -810,6 +807,14 @@ public class Main extends Plugin {
 
             @Override
             public void update() {
+                System.out.println(resetdelay);
+                if(resetdelay >= 300){
+                    resetdelay = 0;
+                    cool = false;
+                } else {
+                    resetdelay++;
+                }
+
                 if (delaycount == 30) {
                     try {
                         // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
@@ -856,20 +861,16 @@ public class Main extends Plugin {
                 }
 
                 if(scandelay == 60){
-                    if(state.is(GameState.State.playing)) {
-                        int a = 0;
+                    /*if(state.is(GameState.State.playing)) {
                         for (Item item : content.items()) {
                             if (item.type == ItemType.material) {
                                 pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
-                            }
-                        }
-
-                        for (Item item : content.items()) {
-                            if (item.type == ItemType.material) {
                                 name.add(item);
                             }
                         }
-                        for (Item item : content.items()) {
+
+                        for (int a=0;a<content.items().size;a++){
+                            Item item = content.item(a);
                             if (item.type == ItemType.material) {
                                 int resource;
                                 if (state.teams.get(Team.sharded).cores.isEmpty()) return;
@@ -879,12 +880,15 @@ public class Main extends Plugin {
                                     return;
                                 }
                                 int temp = resource - pre.get(a);
-                                if (temp <= -55) {
+                                nlog("debug",resource+"/"+pre.get(a));
+                                if(resetdelay >= 600){
+                                    pre.set(a,resource);
+                                }
+                                if (temp < -55 && !cool) {
                                     StringBuilder using = new StringBuilder();
-                                    if(Vars.state.is(GameState.State.playing)) {
-                                        for (int b = 0; b < playerGroup.size(); b++) {
-                                            Player p = playerGroup.all().get(b);
-                                            if (p.buildRequest().block == null) return;
+                                    for (int b = 0; b < playerGroup.size(); b++) {
+                                        Player p = playerGroup.all().get(b);
+                                        if (p.buildRequest() != null) {
                                             for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
                                                 Item ad = p.buildRequest().block.requirements[c].item;
                                                 if (ad == name.get(a)) {
@@ -892,21 +896,14 @@ public class Main extends Plugin {
                                                 }
                                             }
                                         }
-                                        allsendMessage("resource-fast", name.get(a).name);
-                                        allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
                                     }
+                                    allsendMessage("resource-fast", name.get(a).name);
+                                    allsendMessage("resource-fast-use", name.get(a).name, using);
+                                    cool = true;
                                 }
-                                cur.add(a, state.teams.get(Team.sharded).cores.first().items.get(item));
-                                a++;
                             }
                         }
-
-                        for (Item item : content.items()) {
-                            if (item.type == ItemType.material) {
-                                pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
-                            }
-                        }
-                    }
+                    }*/
                     // 코어 자원 소모량 감시
                     try {
                         for (Item item : content.items()) {
@@ -1544,7 +1541,6 @@ public class Main extends Plugin {
                     case "host":
                         Thread work = new Thread(() -> {
                             JsonObject db = getData(player.uuid);
-                            if (db.toString().equals("{}")) return;
                             if (db.getInt("level") > 20 || player.isAdmin) {
                                 if (arg.length == 2) {
                                     player.sendMessage(bundle(player, "event-host-no-mapname"));
@@ -1771,7 +1767,7 @@ public class Main extends Plugin {
                     if (PlayerDB.login(player, arg[0], arg[1])) {
                         PlayerDB playerdb = new PlayerDB();
                         playerdb.load(player, arg[0]);
-                        if (getData(player.uuid).toString().equals("{}")) {
+                        if (!isLogin(player)) {
                             player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
                         } else {
                             player.sendMessage(bundle(player, "login-success"));
