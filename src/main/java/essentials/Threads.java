@@ -68,7 +68,19 @@ public class Threads extends TimerTask{
         new maptime().start();
 
         // 서버 켜진시간 카운트
-        new uptime().start();
+        if(uptime != null){
+            try{
+                Calendar cal1;
+                SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+                Date d2 = format.parse(uptime);
+                cal1 = Calendar.getInstance();
+                cal1.setTime(d2);
+                cal1.add(Calendar.SECOND, 1);
+                uptime = format.format(cal1.getTime());
+            }catch (Exception e){
+                printStackTrace(e);
+            }
+        }
 
         // 투표 확인
         //executorService.execute(new checkvote());
@@ -184,48 +196,7 @@ public class Threads extends TimerTask{
     static class maptime extends Thread {
         @Override
         public void run(){
-            if(playtime != null){
-                try{
-                    Calendar cal1;
-                    SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-                    Date d2 = format.parse(playtime);
-                    cal1 = Calendar.getInstance();
-                    cal1.setTime(d2);
-                    cal1.add(Calendar.SECOND, 1);
-                    playtime = format.format(cal1.getTime());
-                    // Anti PvP rushing timer
-                    if(config.isEnableantirush() && Vars.state.rules.pvp && cal1.after(config.getAntirushtime()) && peacetime) {
-                        state.rules.playerDamageMultiplier = 0.66f;
-                        state.rules.playerHealthMultiplier = 0.8f;
-                        peacetime = false;
-                        for(int i = 0; i < playerGroup.size(); i++) {
-                            Player player = playerGroup.all().get(i);
-                            player.sendMessage(bundle("pvp-peacetime"));
-                            Call.onPlayerDeath(player);
-                        }
-                    }
-                }catch (Exception e){
-                    printStackTrace(e);
-                }
-            }
-        }
-    }
-    static class uptime extends Thread {
-        @Override
-        public void run(){
-            if(uptime != null){
-                try{
-                    Calendar cal1;
-                    SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
-                    Date d2 = format.parse(uptime);
-                    cal1 = Calendar.getInstance();
-                    cal1.setTime(d2);
-                    cal1.add(Calendar.SECOND, 1);
-                    uptime = format.format(cal1.getTime());
-                }catch (Exception e){
-                    printStackTrace(e);
-                }
-            }
+
         }
     }
     static class jumpzone extends Thread {
@@ -616,8 +587,7 @@ public class Threads extends TimerTask{
                 int length = Integer.parseInt(data[3]);
 
                 int result = 0;
-                for (int l=0;l<jumpcount.size();l++) {
-                    String dat = jumpcount.get(l);
+                for (String dat : jumpcount) {
                     String[] re = dat.split("/");
                     result += Integer.parseInt(re[4]);
                 }

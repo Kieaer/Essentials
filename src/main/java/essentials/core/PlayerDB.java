@@ -285,12 +285,11 @@ public class PlayerDB{
     public static boolean accountban(boolean ban, String uuid){
         if(ban){
             writeData("UPDATE players SET banned = ? WHERE uuid = ?", true, uuid);
-            if(getData(uuid).getBoolean("banned")) return true;
+            return getData(uuid).getBoolean("banned");
         } else {
             writeData("UPDATE players SET banned = ? WHERE uuid = ?", false, uuid);
-            if(!getData(uuid).getBoolean("banned")) return true;
+            return !getData(uuid).getBoolean("banned");
         }
-        return false;
     }
     public static void Upgrade() {
         String v1sql;
