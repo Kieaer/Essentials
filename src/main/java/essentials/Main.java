@@ -375,15 +375,10 @@ public class Main extends Plugin {
                                 String message;
                                 String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
                                 String url = "http://ipapi.co/" + ip + "/json";
-                                nlog("debug",url);
+                                //nlog("debug",url);
                                 String json = Jsoup.connect(url).ignoreContentType(true).execute().body();
                                 JsonObject result = JsonParser.object().from(json);
-                                String language;
-                                if(result.getString("languages") == null){
-                                    language = "en";
-                                } else {
-                                    language = result.getString("languages");
-                                }
+                                String language = result.getString("languages") == null ? "en" : result.getString("languages");
 
                                 /*JsonObject translate = JsonParser.object().from(Jsoup.connect("https://api.mymemory.translated.net/get?q=" + text + "&langpair=" + source + "|+" + target).ignoreContentType(true).execute().body());
                                 String translate_result = translate.getObject("responseData").getString("translatedText");
@@ -418,7 +413,7 @@ public class Main extends Plugin {
                         while ((line = br.readLine()) != null) {
                             IpAddressMatcher match = new IpAddressMatcher(line);
                             if (match.matches(ip)) {
-                                Call.onKick(e.player.con, "Server isn't allow VPN connection.");
+                                e.player.con.kick("Server isn't allow VPN connection.");
                             }
                         }
                     } catch (IOException ex) {
@@ -1501,7 +1496,7 @@ public class Main extends Plugin {
                     nlog("log","Invalid type.");
                     break;
             }
-            Call.onKick(other.con, "Temp kicked");
+            other.con.kick("Temp kicked");
             if(config.isClientenable()){
                 Client client = new Client();
                 client.main("bansync", null, null);
@@ -2133,7 +2128,7 @@ public class Main extends Plugin {
             if (other != null) {
                 int bantimeset = Integer.parseInt(arg[1]);
                 PlayerDB.addtimeban(other.name, other.uuid, bantimeset);
-                Call.onKick(other.con, "Temp kicked");
+                other.con.kick("Temp kicked");
                 for (int a = 0; a < playerGroup.size(); a++) {
                     Player current = playerGroup.all().get(a);
                     current.sendMessage(bundle(current, "ban-temp", other.name, player.name));

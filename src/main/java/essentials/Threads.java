@@ -1046,7 +1046,7 @@ public class Threads extends TimerTask{
                         }
 
                         netServer.admins.banPlayer(target.uuid);
-                        Call.onKick(target.con, "You're kicked.");
+                        target.con.kick("You're kicked.");
                     } else {
                         allsendMessage("vote-kick-fail");
                     }
