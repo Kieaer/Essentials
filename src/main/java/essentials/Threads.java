@@ -27,6 +27,7 @@ import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 import org.codehaus.plexus.util.FileUtils;
+import org.jsoup.Jsoup;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -453,7 +454,7 @@ public class Threads extends TimerTask{
                     return;
                 }
                 // 12면을 검색함
-                nlog("log","SEARCH START");
+                nlog("debug","SEARCH START");
                 int count = 0;
                 for (int b = 0; b < 12; b++) {
                     open.add(getNear(tile, b));
@@ -474,12 +475,12 @@ public class Threads extends TimerTask{
                     // 파이프의 4면을 검색함
                     while (count < 10) {
                         for (int c = 0; c < 4; c++) {
-                            nlog("log",target.x+"/"+target.y);
+                            nlog("debug",target.x+"/"+target.y);
                             // 파이프를 발견했다면
                             if (target.getNearby(c).block() == Blocks.conduit || target.getNearby(c).block() == Blocks.pulseConduit) {
                                 target = target.getNearby(c);
                             } else if (target.getNearby(c).block() == Blocks.cryofluidMixer) {
-                                nlog("log","냉각수 공장 발견");
+                                nlog("debug","냉각수 공장 발견");
                                 count = 100;
                             }
                         }
@@ -498,19 +499,20 @@ public class Threads extends TimerTask{
                 for(int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     if (isNocore(player)) {
-                        String message;
-                        if(config.getPasswordmethod().equals("discord")){
-                            message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
-                                    "If you don't have an account, Join this server discord and use !signup command.\n\n" +
-                                    "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                    "만약 계정이 없다면 이 서버의 Discord 으로 가셔서 !signup 명령어를 입력해야 합니다.\n" + config.getDiscordLink();
-                        } else {
-                            message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
-                                    "If you don't have an account, use the command [accent]/register <new account id> <password>[].\n\n" +
-                                    "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                    "만약 계정이 없다면 [accent]/register <새 계정명> <비밀번호>[]를 입력해야 합니다.";
+                        try {
+                            String message;
+                            String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
+                            JsonObject result = JsonParser.object().from(json);
+                            String language = result.getString("languages") == null ? "en" : result.getString("languages");
+                            if (config.getPasswordmethod().equals("discord")) {
+                                message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
+                            } else {
+                                message = nbundle(language, "login-require-password");
+                            }
+                            player.sendMessage(message);
+                        }catch (Exception e){
+                            printStackTrace(e);
                         }
-                        player.sendMessage(message);
                     }
                 }
             }

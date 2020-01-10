@@ -37,7 +37,6 @@ import mindustry.gen.Call;
 import mindustry.io.SaveIO;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
-import mindustry.net.ValidateException;
 import mindustry.plugin.Plugin;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
@@ -206,13 +205,6 @@ public class Main extends Plugin {
             }
         });
 
-        // 만약 동기화에 실패했을 경우 (아마도 될꺼임)
-        Events.on(ValidateException.class, e -> {
-            Call.onInfoMessage(e.player.con, "You're desynced! The server will send data again.");
-            Call.onWorldDataBegin(e.player.con);
-            netServer.sendWorldData(e.player);
-        });
-
         // 게임오버가 되었을 때
         Events.on(GameOverEvent.class, e -> {
             if (state.rules.pvp) {
@@ -268,8 +260,15 @@ public class Main extends Plugin {
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (String s : blacklist) {
                 if (e.player.name.matches(s)) {
-                    e.player.con.kick("Server doesn't allow blacklisted nickname.\n서버가 이 닉네임을 허용하지 않습니다.");
-                    log("log", "nickname-blacklisted", e.player.name);
+                    try{
+                        String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(e.player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
+                        JsonObject result = JsonParser.object().from(json);
+                        String language = result.getString("languages") == null ? "en" : result.getString("languages");
+                        Call.onKick(e.player.con, nbundle(language, "nickname-blacklisted-kick"));
+                        log("log", "nickname-blacklisted", e.player.name);
+                    } catch (Exception ex) {
+                        printStackTrace(ex);
+                    }
                 }
             }
 
@@ -307,11 +306,7 @@ public class Main extends Plugin {
                                     other.sendMessage(bundle(other, "detect-thorium"));
                                 }
 
-                                if (config.getLanguage().equals("ko")) {
-                                    writelog("griefer", "["+getTime()+"]" + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
-                                } else {
-                                    writelog("griefer", "["+getTime()+"]" + builder + "put thorium in Thorium Reactor without Cryofluid.");
-                                }
+                                writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),builder));
                                 Call.onTileDestroyed(world.tile(x, y));
                             } else {
                                 sleep(1950);
@@ -320,12 +315,7 @@ public class Main extends Plugin {
                                         Player other = playerGroup.all().get(a);
                                         other.sendMessage(bundle(other, "detect-thorium"));
                                     }
-
-                                    if (config.getLanguage().equals("ko")) {
-                                        writelog("griefer", "["+getTime()+"]" + builder + " 플레이어가 냉각수가 공급되지 않는 토륨 원자로에 토륨을 넣었습니다.");
-                                    } else {
-                                        writelog("griefer", "["+getTime()+"]" + builder + "put thorium in Thorium Reactor without Cryofluid.");
-                                    }
+                                    writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),builder));
                                     Call.onTileDestroyed(world.tile(x, y));
                                 }
                             }
@@ -373,10 +363,7 @@ public class Main extends Plugin {
                             // 로그인 요구
                             try {
                                 String message;
-                                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
-                                String url = "http://ipapi.co/" + ip + "/json";
-                                //nlog("debug",url);
-                                String json = Jsoup.connect(url).ignoreContentType(true).execute().body();
+                                String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(e.player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
                                 JsonObject result = JsonParser.object().from(json);
                                 String language = result.getString("languages") == null ? "en" : result.getString("languages");
 
@@ -413,7 +400,7 @@ public class Main extends Plugin {
                         while ((line = br.readLine()) != null) {
                             IpAddressMatcher match = new IpAddressMatcher(line);
                             if (match.matches(ip)) {
-                                e.player.con.kick("Server isn't allow VPN connection.");
+                                e.player.con.kick(nbundle("antivpn-kick"));
                             }
                         }
                     } catch (IOException ex) {
@@ -461,7 +448,7 @@ public class Main extends Plugin {
                     JsonObject db = getData(e.player.uuid);
 
                     if (e.message.matches("(.*쌍[\\S\\s]{0,2}(년|놈).*)|(.*(씨|시)[\\S\\s]{0,2}(벌|빨|발|바).*)|(.*장[\\S\\s]{0,2}애.*)|(.*(병|븅)[\\S\\s]{0,2}(신|쉰|싄).*)|(.*(좆|존|좃)[\\S\\s]{0,2}(같|되|는|나).*)|(.*(개|게)[\\S\\s]{0,2}(같|갓|새|세|쉐).*)|(.*(걸|느)[\\S\\s]{0,2}(레|금).*)|(.*(꼬|꽂|고)[\\S\\s]{0,2}(추|츄).*)|(.*(니|너)[\\S\\s]{0,2}(어|엄|엠|애|m|M).*)|(.*(노)[\\S\\s]{0,1}(애|앰).*)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(ㅅㅂ|ㅄ|ㄷㅊ)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(.*s[\\S\\s]{0,1}e[\\S\\s]{0,1}x.*)")) {
-                        Call.onKick(e.player.con, "You're kicked because using bad words.\n욕설 사용에 의해 강퇴되었습니다.");
+                        Call.onKick(e.player.con, nbundle(db.getString("language"),"kick-swear"));
                     } else if(e.message.equals("y") && isvoting) {
                         // 투표가 진행중일때
                         if (Vote.list.contains(e.player.uuid)) {
@@ -647,7 +634,7 @@ public class Main extends Plugin {
                             }
                         } catch (Exception ex) {
                             printStackTrace(ex);
-                            Call.onKick(((Player) e.builder).con, "You're not logged!");
+                            Call.onKick(((Player) e.builder).con, nbundle(db.getString("language"),"not-logged"));
                         }
 
                         // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
@@ -1143,7 +1130,7 @@ public class Main extends Plugin {
                                 int byteRead;
                                 int byteWritten = 0;
                                 long startTime = System.currentTimeMillis();
-                                System.out.println("Downloading...");
+                                System.out.println(nbundle("plugin-downloading"));
                                 while ((byteRead = is.read(buf)) != -1) {
                                     outputStream.write(buf, 0, byteRead);
                                     byteWritten += byteRead;
@@ -1152,7 +1139,7 @@ public class Main extends Plugin {
                                 }
                                 is.close();
                                 outputStream.close();
-                                System.out.println("Done! Please restart server!");
+                                System.out.println(nbundle("plugin-downloading-done"));
                                 Core.app.exit();
                                 System.exit(0);
                             }catch (Exception ex){
