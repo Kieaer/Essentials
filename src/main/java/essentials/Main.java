@@ -1116,17 +1116,50 @@ public class Main extends Plugin {
                         net.dispose();
                         Thread t = new Thread(() -> {
                             try {
-                                nlog("log",nbundle("update-description",json.get("tag_name")));
+                                nlog("log", nbundle("update-description", json.get("tag_name")));
                                 System.out.println(json.getString("body"));
                                 URL url = new URL(json.getArray("assets").getObject(0).getString("browser_download_url"));
 
-                                Core.app.dispose();
+                                System.out.println(nbundle("plugin-downloading-standby"));
+                                threadactive = false;
+                                timer.cancel();
+                                if (config.isServerenable()) {
+                                    try {
+                                        for (Server.Service ser : Server.list) {
+                                            ser.interrupt();
+                                            ser.os.close();
+                                            ser.in.close();
+                                            ser.socket.close();
+                                            Server.list.remove(ser);
+                                        }
+
+                                        Server.active = false;
+                                        Server.serverSocket.close();
+                                        server.interrupt();
+                                    } catch (Exception ignored) {}
+                                }
+                                if (config.isClientenable() && serverconn) {
+                                    Client client = new Client();
+                                    client.main("exit", null, null);
+                                }
+                                executorService.shutdown();
+                                closeconnect();
+                                try {
+                                    JsonObject data = new JsonObject();
+                                    data.put("banned",banned);
+                                    data.put("blacklist",blacklist);
+                                    data.put("jumpzone",jumpzone);
+                                    data.put("jumpall",jumpall);
+                                    data.put("jumpcount",jumpcount);
+                                    data.put("servername", Core.settings.getString("servername"));
+                                    new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
+                                } catch (Exception ignored) {}
 
                                 BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials.jar").file()));
                                 URLConnection urlConnection = url.openConnection();
                                 InputStream is = urlConnection.getInputStream();
                                 int size = urlConnection.getContentLength();
-                                byte[] buf = new byte[1024];
+                                byte[] buf = new byte[512];
                                 int byteRead;
                                 int byteWritten = 0;
                                 long startTime = System.currentTimeMillis();
@@ -1139,11 +1172,14 @@ public class Main extends Plugin {
                                 }
                                 is.close();
                                 outputStream.close();
-                                System.out.println(nbundle("plugin-downloading-done"));
+                                System.out.println("\n"+nbundle("plugin-downloading-done"));
                                 Core.app.exit();
                                 System.exit(0);
                             }catch (Exception ex){
+                                System.out.println("\n"+nbundle("plugin-downloading-fail"));
                                 printStackTrace(ex);
+                                Core.app.exit();
+                                System.exit(0);
                             }
                         });
                         t.start();

@@ -731,7 +731,7 @@ public class Global {
             throw new IllegalArgumentException();
         }
         int maxBareSize = 20;
-        int remainProcent = ((100 * remain) / total) / 5;
+        int remainProcent = ((20 * remain) / total);
         char defaultChar = '-';
         String icon = "*";
         String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
