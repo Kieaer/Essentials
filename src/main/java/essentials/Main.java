@@ -371,19 +371,32 @@ public class Main extends Plugin {
                             }
                         } else {
                             // 로그인 요구
-                            String message;
-                            if(config.getPasswordmethod().equals("discord")){
-                                message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
-                                        "If you don't have an account, Join this server discord and use !signup command.\n\n" +
-                                        "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                        "만약 계정이 없다면 이 서버의 Discord 으로 가셔서 !signup 명령어를 입력해야 합니다.\n" + config.getDiscordLink();
-                            } else {
-                                message = "You will need to login with [accent]/login <account id> <password>[] to get access to the server.\n" +
-                                        "If you don't have an account, use the command [accent]/register <new account id> <password>[].\n\n" +
-                                        "서버를 플레이 할려면 [accent]/login <계정명> <비밀번호>[] 를 입력해야 합니다.\n" +
-                                        "만약 계정이 없다면 [accent]/register <새 계정명> <비밀번호>[]를 입력해야 합니다.";
+                            try {
+                                String message;
+                                String ip = Vars.netServer.admins.getInfo(e.player.uuid).lastIP;
+                                String url = "http://ipapi.co/" + ip + "/json";
+                                nlog("debug",url);
+                                String json = Jsoup.connect(url).ignoreContentType(true).execute().body();
+                                JsonObject result = JsonParser.object().from(json);
+                                String language;
+                                if(result.getString("languages") == null){
+                                    language = "en";
+                                } else {
+                                    language = result.getString("languages");
+                                }
+
+                                /*JsonObject translate = JsonParser.object().from(Jsoup.connect("https://api.mymemory.translated.net/get?q=" + text + "&langpair=" + source + "|+" + target).ignoreContentType(true).execute().body());
+                                String translate_result = translate.getObject("responseData").getString("translatedText");
+                                Data.put("data",translate_result);*/
+                                if (config.getPasswordmethod().equals("discord")) {
+                                    message = nbundle(language, "login-require-discord")+"\n"+config.getDiscordLink();
+                                } else {
+                                    message = nbundle(language, "login-require-password");
+                                }
+                                Call.onInfoMessage(e.player.con, message);
+                            } catch (Exception ex){
+                                printStackTrace(ex);
                             }
-                            Call.onInfoMessage(e.player.con, message);
                         }
                     }
                 } else if (!config.isLoginenable()) {
@@ -740,7 +753,7 @@ public class Main extends Plugin {
                     }
                 }
 
-                addtimeban(e.player.name, e.player.uuid, 9999999);
+                accountban(true, e.player.uuid);
             });
             executorService.submit(bansharing);
         });
@@ -1175,6 +1188,31 @@ public class Main extends Plugin {
 
     @Override
     public void registerServerCommands(CommandHandler handler){
+        handler.register("accountban","<ban/unban> <account_uuid>", (arg) -> {
+            if(arg[0].equals("ban")) {
+                if (arg[1].length() == 12) {
+                    if(accountban(true, arg[1])){
+                        log("player","success");
+                    } else {
+                        log("playerwarn","failed");
+                    }
+                } else {
+                    log("warn","wrong-command");
+                }
+            } else if(arg[0].equals("unban")){
+                if (arg[1].length() == 12) {
+                    if(accountban(false, arg[1])){
+                        log("player","success");
+                    } else {
+                        log("playerwarn","failed");
+                    }
+                } else {
+                    log("warn","wrong-command");
+                }
+            } else {
+                log("warn","wrong-command");
+            }
+        });
         handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
             if(arg.length == 0) {
                 log("warn","no-parameter");

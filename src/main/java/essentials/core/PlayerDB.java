@@ -26,7 +26,7 @@ import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
 public class PlayerDB{
-    private static int dbversion = 2;
+    private static int dbversion = 3;
     public static Connection conn;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
     public static ArrayList<Player> pvpteam = new ArrayList<>();
@@ -66,6 +66,7 @@ public class PlayerDB{
                         "reactorcount INTEGER,\n" +
                         "bantimeset INTEGER,\n" +
                         "bantime TEXT,\n" +
+                        "banned TEXT,\n" +
                         "translate TEXT,\n" +
                         "crosschat TEXT,\n" +
                         "colornick TEXT,\n" +
@@ -108,6 +109,7 @@ public class PlayerDB{
                             "`reactorcount` INT(11) NULL DEFAULT NULL,\n" +
                             "`bantimeset` INT(11) NULL DEFAULT NULL,\n" +
                             "`bantime` TINYTEXT NULL DEFAULT NULL,\n" +
+                            "`banned` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`translate` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`crosschat` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`colornick` TINYINT(4) NULL DEFAULT NULL,\n" +
@@ -140,9 +142,9 @@ public class PlayerDB{
                 String currentip = new Threads.getip().main();
                 String sql;
                 if(config.isSqlite()){
-                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
-                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, translate, crosschat, colornick, connected, connserver, permission, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 }
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
@@ -174,14 +176,15 @@ public class PlayerDB{
                 pstmt.setInt(27, 0); // reactorcount
                 pstmt.setInt(28, 0); // bantimeset
                 pstmt.setString(29, "none"); // bantime
-                pstmt.setBoolean(30, false); // translate
-                pstmt.setBoolean(31, false); // crosschat
-                pstmt.setBoolean(32, false); // colornick
-                pstmt.setBoolean(33, connected); // connected
-                pstmt.setString(34, currentip); // connected server ip
-                pstmt.setString(35, "default"); // set permission
-                pstmt.setString(36, accountid);
-                pstmt.setString(37, accountpw);
+                pstmt.setBoolean(30, false);
+                pstmt.setBoolean(31, false); // translate
+                pstmt.setBoolean(32, false); // crosschat
+                pstmt.setBoolean(33, false); // colornick
+                pstmt.setBoolean(34, connected); // connected
+                pstmt.setString(35, currentip); // connected server ip
+                pstmt.setString(36, "default"); // set permission
+                pstmt.setString(37, accountid);
+                pstmt.setString(38, accountpw);
                 pstmt.execute();
                 pstmt.close();
                 if(player != null) player.sendMessage(nbundle("player-id", player.name));
@@ -235,6 +238,7 @@ public class PlayerDB{
                 data.put("reactorcount", rs.getInt("reactorcount"));
                 data.put("bantimeset", rs.getString("bantimeset"));
                 data.put("bantime", rs.getString("bantime"));
+                data.put("banned", rs.getBoolean("banned"));
                 data.put("translate", rs.getBoolean("translate"));
                 data.put("crosschat", rs.getBoolean("crosschat"));
                 data.put("colornick", rs.getBoolean("colornick"));
@@ -278,23 +282,39 @@ public class PlayerDB{
             printStackTrace(e);
         }
     }
+    public static boolean accountban(boolean ban, String uuid){
+        if(ban){
+            writeData("UPDATE players SET banned = ? WHERE uuid = ?", true, uuid);
+            if(getData(uuid).getBoolean("banned")) return true;
+        } else {
+            writeData("UPDATE players SET banned = ? WHERE uuid = ?", false, uuid);
+            if(!getData(uuid).getBoolean("banned")) return true;
+        }
+        return false;
+    }
     public static void Upgrade() {
         String v1sql;
         String v1update;
         String v2update;
         String v2sql;
+        String v3sql;
+        String v3update;
 
         if(config.isSqlite()){
             v1sql = "ALTER TABLE players ADD COLUMN connserver TEXT AFTER connected;";
             v1update = "UPDATE players SET connected = 0";
             v2sql = "ALTER TABLE players ADD COLUMN permission TEXT AFTER connserver;";
             v2update = "UPDATE players SET permission = default";
+            v3sql = "ALTER TABLE players ADD COLUMN banned TEXT AFTER bantime;";
+
         } else {
             v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER connected;";
             v1update = "UPDATE players SET connected = 0";
             v2sql = "ALTER TABLE `players` ADD COLUMN `permission` TINYTEXT `default` NULL AFTER connserver;";
             v2update = "UPDATE players SET permission = 'default'";
+            v3sql = "ALTER TABLE `players` ADD COLUMN `banned` TINYTEXT `default` NULL AFTER bantime;";
         }
+        v3update = "UPDATE players SET banned = 0";
 
         try {
             DatabaseMetaData metadata = conn.getMetaData();
@@ -310,6 +330,12 @@ public class PlayerDB{
             if(!resultSet.next()){
                 stmt.execute(v2sql);
                 stmt.execute(v2update);
+                log("player","db-upgrade");
+            }
+            resultSet = metadata.getColumns(null, null, "players", "banned");
+            if(!resultSet.next()){
+                stmt.execute(v3sql);
+                stmt.execute(v3update);
                 log("player","db-upgrade");
             }
             resultSet.close();
@@ -569,6 +595,10 @@ public class PlayerDB{
                 }catch (SQLException e){
                     printStackTrace(e);
                 }
+            }
+            if(db.getBoolean("banned")){
+                netServer.admins.banPlayerID(player.uuid);
+                player.con.kick("This account can't use.");
             }
             if(db.containsKey("connected") && config.isValidconnect()){
                 nlog("debug",player.name+" Player validate start");
