@@ -2,8 +2,9 @@ package essentials.utils;
 
 import essentials.special.UTF8Control;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -27,7 +28,9 @@ public class Bundle {
             return config.getPrefix()+RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
             nlog("warn","BUNDLE KEY NOT FOUND - " + key);
-            writelog("error", Arrays.toString(e.getStackTrace()));
+            StringWriter errors = new StringWriter();
+            e.printStackTrace(new PrintWriter(errors));
+            writelog("error", errors.toString());
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
@@ -37,7 +40,9 @@ public class Bundle {
             return config.getPrefix()+MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
             nlog("warn","BUNDLE KEY NOT FOUND - " + key);
-            writelog("error", Arrays.toString(e.getStackTrace()));
+            StringWriter errors = new StringWriter();
+            e.printStackTrace(new PrintWriter(errors));
+            writelog("error", errors.toString());
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
@@ -47,7 +52,9 @@ public class Bundle {
             return RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
             nlog("warn","BUNDLE KEY NOT FOUND - " + key);
-            writelog("error", Arrays.toString(e.getStackTrace()));
+            StringWriter errors = new StringWriter();
+            e.printStackTrace(new PrintWriter(errors));
+            writelog("error", errors.toString());
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }
@@ -57,7 +64,9 @@ public class Bundle {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
             nlog("warn","BUNDLE KEY NOT FOUND - " + key);
-            writelog("error", Arrays.toString(e.getStackTrace()));
+            StringWriter errors = new StringWriter();
+            e.printStackTrace(new PrintWriter(errors));
+            writelog("error", errors.toString());
             return "BUNDLE KEY NOT FOUND - " + key;
         }
     }

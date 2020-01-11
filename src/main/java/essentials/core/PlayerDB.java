@@ -187,7 +187,7 @@ public class PlayerDB{
                 pstmt.setString(38, accountpw);
                 pstmt.execute();
                 pstmt.close();
-                if(player != null) player.sendMessage(nbundle("player-id", player.name));
+                if(player != null) player.sendMessage(bundle("player-id", player.name));
                 log("player","player-db-created", name);
                 result = true;
             } else {
