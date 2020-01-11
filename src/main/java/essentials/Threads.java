@@ -1219,27 +1219,18 @@ public class Threads extends TimerTask{
                     Call.setMessageBlockText(null, world.tile(x, y), "[green]Working...");
 
                     String[] arr = message.split(" ");
-                    String ip;
-                    int port;
-                    if (arr[1].contains(":")) {
-                        String[] data = arr[1].split(":");
-                        ip = data[0];
-                        port = Integer.parseInt(data[1]);
-                    } else {
-                        ip = arr[1];
-                        port = 6567;
-                    }
+                    String ip = arr[1];
 
                     pingServer(ip, result -> {
                         if (result.name != null){
-                            Call.setMessageBlockText(null, world.tile(x, y), result.players + " Players in this server.");
+                            Call.setMessageBlockText(null, world.tile(x, y), "[green]"+result.players + " Players in this server.");
                         } else {
-                            Call.setMessageBlockText(null, world.tile(x, y), "offline");
+                            Call.setMessageBlockText(null, world.tile(x, y), "[scarlet]Server offline");
                         }
                     });
                 }
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(2500);
                 } catch (InterruptedException e) {
                     printStackTrace(e);
                 }
