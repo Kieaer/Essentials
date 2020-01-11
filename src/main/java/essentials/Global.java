@@ -571,10 +571,10 @@ public class Global {
                 data.put("country_code", "LC");
                 data.put("languages", "en");
             } else {
-                String[] das = result.getString("languages").split(",");
+                Locale locale = new Locale(result.getString("languages"));
                 data.put("country", result.getString("country_name"));
                 data.put("country_code", result.getString("country"));
-                data.put("languages", das[0]);
+                data.put("languages", locale.getLanguage());
             }
         } catch (Exception e) {
             printStackTrace(e);
