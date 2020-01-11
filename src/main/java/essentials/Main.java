@@ -77,7 +77,6 @@ import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
-import static mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     private ArrayList<String> nukeblock = new ArrayList<>();
@@ -91,6 +90,8 @@ public class Main extends Plugin {
 
     public static boolean threadactive = true;
 
+    public Client client;
+
     boolean isUpdating = false;
 
     public Main() {
@@ -98,9 +99,9 @@ public class Main extends Plugin {
         config.main();
 
         // 클라이언트 연결 확인
+        client = new Client();
         if (config.isClientenable()) {
             log("client","server-connecting");
-            Client client = new Client();
             client.main(null, null, null);
         }
 
@@ -464,19 +465,18 @@ public class Main extends Plugin {
                                 if (isLogin(others)) others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                             }
                         }
-                    } else {
+                    }/* else {
                         String perm = db.getString("permission");
                         if(permission.getObject(perm).has("prefix")) {
                             Call.sendMessage(permission.getObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
                             Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
                         }
-                    }
+                    }*/
 
                     // 서버간 대화기능 작동
                     if (db.getBoolean("crosschat")) {
                         if (config.isClientenable()) {
-                            Client client = new Client();
                             client.main("chat", e.player, e.message);
                         } else if (config.isServerenable()) {
                             // 메세지를 모든 클라이언트에게 전송함
@@ -724,7 +724,6 @@ public class Main extends Plugin {
         Events.on(PlayerBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
                 if (config.isBanshare() && config.isClientenable()) {
-                    Client client = new Client();
                     client.main("bansync", null, null);
                 }
 
@@ -744,7 +743,6 @@ public class Main extends Plugin {
         Events.on(PlayerIpBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
                 if (config.isBanshare() && config.isClientenable()) {
-                    Client client = new Client();
                     client.main("bansync", null, null);
                 }
             });
@@ -754,7 +752,6 @@ public class Main extends Plugin {
         // 이건 밴 해제되었을 때 작동
         Events.on(PlayerUnbanEvent.class, e -> {
             if(serverconn) {
-                Client client = new Client();
                 client.main("unban", null, e.player.uuid + "|<unknown>");
             }
         });
@@ -762,7 +759,6 @@ public class Main extends Plugin {
         // 이건 IP 밴이 해제되었을 때 작동
         Events.on(PlayerIpUnbanEvent.class, e -> {
             if(serverconn) {
-                Client client = new Client();
                 client.main("unban", null, "<unknown>|"+e.ip);
             }
         });
@@ -1045,7 +1041,6 @@ public class Main extends Plugin {
 
                 // 클라이언트 종료
                 if (config.isClientenable() && serverconn) {
-                    Client client = new Client();
                     client.main("exit", null, null);
                     log("log","client-thread-disabled");
                 }
@@ -1139,7 +1134,6 @@ public class Main extends Plugin {
                                     } catch (Exception ignored) {}
                                 }
                                 if (config.isClientenable() && serverconn) {
-                                    Client client = new Client();
                                     client.main("exit", null, null);
                                 }
                                 executorService.shutdown();
@@ -1200,7 +1194,7 @@ public class Main extends Plugin {
             }
 
             // 채팅 포맷 변경
-            netServer.admins.addChatFilter((player, text) -> null);
+            // netServer.admins.addChatFilter((player, text) -> null);
         });
     }
 
@@ -1285,7 +1279,6 @@ public class Main extends Plugin {
         handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
             if(!config.isServerenable()){
                 if(config.isBanshare()){
-                    Client client = new Client();
                     client.main("bansync", null, null);
                 } else {
                     log("warn","banshare-disabled");
@@ -1379,7 +1372,6 @@ public class Main extends Plugin {
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
                 log("client","server-connecting");
-                Client client = new Client();
                 if(serverconn){
                     client.main("exit", null, null);
                 } else {
@@ -1521,7 +1513,6 @@ public class Main extends Plugin {
             }
             other.con.kick("Temp kicked");
             if(config.isClientenable()){
-                Client client = new Client();
                 client.main("bansync", null, null);
             }
         });

@@ -79,10 +79,13 @@ public class Server implements Runnable {
         public Socket socket;
         public SecretKeySpec spec;
         public Cipher cipher;
+        public String ip;
+        private String authkey;
 
         public Service(Socket socket) {
             try {
                 this.socket = socket;
+                ip = socket.getInetAddress().toString();
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                 os = new DataOutputStream(socket.getOutputStream());
             } catch (Exception e) {
@@ -102,9 +105,11 @@ public class Server implements Runnable {
 
                     String value = in.readLine();
 
+                    System.out.println("value: "+value);
+
                     // 수신된 데이터가 Base64 가 아닐경우
-                    if(value.length() != 24) {
-                        writelog("web", "Remote IP: "+remoteip);
+                    if (value.length() != 24) {
+                        writelog("web", "Remote IP: " + remoteip);
                         String headerLine;
                         while ((headerLine = in.readLine()).length() != 0) {
                             writelog("web", headerLine);
@@ -112,20 +117,34 @@ public class Server implements Runnable {
                         writelog("web", "========================");
 
                         StringBuilder payload = new StringBuilder();
-                        while(in.ready()){
+                        while (in.ready()) {
                             payload.append((char) in.read());
                         }
                         httpserver(value, payload.toString());
                         return;
                     }
 
-                    String authkey = in.readLine();
-                    byte[] encrypted = Base64.decode(value);
-                    byte[] key = Base64.decode(authkey);
-                    spec = new SecretKeySpec(key, "AES");
-                    cipher = Cipher.getInstance("AES");
-                    byte[] decrypted = decrypt(encrypted, spec, cipher);
-                    String data = new String(decrypted);
+                    if (authkey == null) {
+                        authkey = in.readLine();
+                        byte[] key = Base64.decode(authkey);
+                        spec = new SecretKeySpec(key, "AES");
+                        cipher = Cipher.getInstance("AES");
+                    }
+
+                    String data = "";
+                    try{
+                        byte[] encrypted = Base64.decode(value);
+                        byte[] decrypted = decrypt(encrypted, spec, cipher);
+                        data = new String(decrypted);
+                    }catch (Exception e){
+                        printStackTrace(e);
+                        os.close();
+                        in.close();
+                        socket.close();
+                        list.remove(this);
+                        log("server","client-disconnected", remoteip);
+                        return;
+                    }
 
                     if (data.equals("")){
                         os.close();
@@ -150,8 +169,9 @@ public class Server implements Runnable {
 
                         // send message to all clients
                         for (Service ser : list) {
-                            ser.os.writeBytes(Base64.encode(encrypt(data,spec,cipher))+"\n");
+                            ser.os.writeBytes(Base64.encode(encrypt(data,ser.spec,ser.cipher))+"\n");
                             ser.os.flush();
+                            System.out.println(ser.ip+" sented");
                         }
                     } else if (data.matches("ping")) {
                         String[] msg = {"Hi " + remoteip + "! Your connection is successful!", "Hello " + remoteip + "! I'm server!", "Welcome to the server " + remoteip + "!"};
@@ -192,7 +212,7 @@ public class Server implements Runnable {
                                     for (int a = 0; a < config.getBantrust().length; a++) {
                                         String ip = config.getBantrust()[a];
                                         if (ip.equals(remoteip)) {
-                                            ser.os.writeBytes(Base64.encode(encrypt(data,spec,cipher))+"\n");
+                                            ser.os.writeBytes(Base64.encode(encrypt(data,ser.spec,ser.cipher))+"\n");
                                             ser.os.flush();
                                             log("server","server-data-sented", remoteip);
                                         }
@@ -275,6 +295,7 @@ public class Server implements Runnable {
                     }
                 } catch (Exception e) {
                     log("server","client-disconnected", remoteip);
+                    printStackTrace(e);
                     try {
                         os.close();
                         in.close();

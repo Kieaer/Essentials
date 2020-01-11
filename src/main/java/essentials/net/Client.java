@@ -145,11 +145,30 @@ public class Client extends Thread{
         while(!Thread.currentThread().isInterrupted()){
             try{
                 String received = is.readLine();
+                System.out.println(received);
                 if (received == null || received.equals("")) return;
 
-                byte[] encrypted = Base64.decode(received);
-                byte[] decrypted = decrypt(encrypted,spec,cipher);
-                String data = new String(decrypted);
+                String data = "";
+                try{
+                    byte[] encrypted = Base64.decode(received);
+                    byte[] decrypted = decrypt(encrypted, spec, cipher);
+                    data = new String(decrypted);
+                }catch (Exception e){
+                    printStackTrace(e);
+                    log("client","server-disconnected", config.getClienthost());
+
+                    serverconn = false;
+                    try {
+                        is.close();
+                        os.close();
+                        socket.close();
+                    } catch (IOException ex) {
+                        printStackTrace(ex);
+                    }
+                    return;
+                }
+
+                System.out.println(data);
 
                 if(data.matches("\\[(.*)]:.*")){
                     for (int i = 0; i < playerGroup.size(); i++) {
