@@ -173,18 +173,18 @@ public class Main extends Plugin {
                         int tiley = Integer.parseInt(data[3]);
                         String serverip = data[4];
 
-                        String ip;
+                        String ip = data[4];
                         int port = 6567;
                         if(serverip.contains(":") && Strings.canParsePostiveInt(serverip.split(":")[1])){
                             ip = serverip.split(":")[0];
-                            port = Strings.parseInt(ip.split(":")[1]);
+                            port = Strings.parseInt(serverip.split(":")[1]);
                         }
 
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
-                                log("log", "player-jumped", e.player.name, serverip + ":" + port);
+                                log("log", "player-jumped", e.player.name, serverip);
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
-                                Call.onConnect(e.player.con, serverip, port);
+                                Call.onConnect(e.player.con, ip, port);
                             }
                         }
                     }
@@ -1711,7 +1711,7 @@ public class Main extends Plugin {
             if (!checkperm(player, "jump")) return;
             switch (arg[0]){
                 case "zone":
-                    if(arg.length != 5){
+                    if(arg.length != 4){
                         player.sendMessage(bundle(player, "jump-incorrect"));
                         return;
                     }
@@ -1764,7 +1764,7 @@ public class Main extends Plugin {
                     }
 
                     // tilex, tiley, target tilex, target tiley, serverip, port, block
-                    jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1] + "/" + arg[2] + "/" + block);
+                    jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1] + "/" + block);
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
