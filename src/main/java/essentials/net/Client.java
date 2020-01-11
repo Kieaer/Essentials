@@ -145,10 +145,9 @@ public class Client extends Thread{
         while(!Thread.currentThread().isInterrupted()){
             try{
                 String received = is.readLine();
-                System.out.println(received);
                 if (received == null || received.equals("")) return;
 
-                String data = "";
+                String data;
                 try{
                     byte[] encrypted = Base64.decode(received);
                     byte[] decrypted = decrypt(encrypted, spec, cipher);
@@ -167,8 +166,6 @@ public class Client extends Thread{
                     }
                     return;
                 }
-
-                System.out.println(data);
 
                 if(data.matches("\\[(.*)]:.*")){
                     for (int i = 0; i < playerGroup.size(); i++) {

@@ -105,8 +105,6 @@ public class Server implements Runnable {
 
                     String value = in.readLine();
 
-                    System.out.println("value: "+value);
-
                     // 수신된 데이터가 Base64 가 아닐경우
                     if (value.length() != 24) {
                         writelog("web", "Remote IP: " + remoteip);
@@ -131,7 +129,7 @@ public class Server implements Runnable {
                         cipher = Cipher.getInstance("AES");
                     }
 
-                    String data = "";
+                    String data;
                     try{
                         byte[] encrypted = Base64.decode(value);
                         byte[] decrypted = decrypt(encrypted, spec, cipher);
@@ -171,7 +169,6 @@ public class Server implements Runnable {
                         for (Service ser : list) {
                             ser.os.writeBytes(Base64.encode(encrypt(data,ser.spec,ser.cipher))+"\n");
                             ser.os.flush();
-                            System.out.println(ser.ip+" sented");
                         }
                     } else if (data.matches("ping")) {
                         String[] msg = {"Hi " + remoteip + "! Your connection is successful!", "Hello " + remoteip + "! I'm server!", "Welcome to the server " + remoteip + "!"};
