@@ -562,7 +562,7 @@ public class Threads extends TimerTask{
                                     }
                                 }
                                 // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                jumpcount.add(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
+                                jumpcount.set(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
                             } else {
                                 setno(world.tile(x, y));
                             }
@@ -617,7 +617,7 @@ public class Threads extends TimerTask{
                         tile = world.tile(x+4, y);
                     }
                 }
-                jumpall.add(i, x+"/"+y+"/"+result+"/"+digits.length);
+                jumpall.set(i, x+"/"+y+"/"+result+"/"+digits.length);
             }
         }
     }

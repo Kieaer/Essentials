@@ -311,7 +311,7 @@ public class PlayerDB{
             v1update = "UPDATE players SET connected = 0";
             v2sql = "ALTER TABLE `players` ADD COLUMN `permission` TINYTEXT `default` NULL AFTER connserver;";
             v2update = "UPDATE players SET permission = 'default'";
-            v3sql = "ALTER TABLE `players` ADD COLUMN `banned` TINYTEXT `default` NULL AFTER bantime;";
+            v3sql = "ALTER TABLE `players` ADD COLUMN `banned` TINYINT DEFAULT NULL AFTER bantime;";
         }
         v3update = "UPDATE players SET banned = 0";
 
@@ -491,7 +491,7 @@ public class PlayerDB{
                     if (isuuid == null) {
                         nlog("debug", player.name + " Account not found");
                         LocalDateTime now = LocalDateTime.now();
-                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
                         String nowString = now.format(dateTimeFormatter);
                         HashMap<String, String> list = geolocation(player);
 
