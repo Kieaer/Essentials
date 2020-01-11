@@ -5,6 +5,8 @@ import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import arc.struct.Array;
+import arc.util.Strings;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 import com.grack.nanojson.JsonParserException;
@@ -81,6 +83,19 @@ public class Threads extends TimerTask{
             }catch (Exception e){
                 printStackTrace(e);
             }
+        }
+
+        JsonObject data = new JsonObject();
+        data.put("banned",banned);
+        data.put("blacklist",blacklist);
+        data.put("jumpzone",jumpzone);
+        data.put("jumpall",jumpall);
+        data.put("jumpcount",jumpcount);
+        data.put("servername", Core.settings.getString("servername"));
+        try {
+            new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
+        } catch (IOException e) {
+            printStackTrace(e);
         }
 
         // 투표 확인
@@ -161,7 +176,7 @@ public class Threads extends TimerTask{
         @Override
         public void run(){
             Thread.currentThread().setName("Ban time monitoring thread");
-            while(threadactive) {
+            while(!Thread.currentThread().isInterrupted()) {
                 try {
                     LocalDateTime now = LocalDateTime.now();
                     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
@@ -205,16 +220,14 @@ public class Threads extends TimerTask{
         public void run(){
             if (playerGroup.size() > 0) {
                 for (int i=0;i<jumpzone.size();i++) {
-                    String jumpdata = jumpzone.get(i);
-                    if (jumpdata.equals("")) return;
+                    String jumpdata = jumpzone.getString(i);
                     String[] data = jumpdata.split("/");
                     int startx = Integer.parseInt(data[0]);
                     int starty = Integer.parseInt(data[1]);
                     int tilex = Integer.parseInt(data[2]);
                     int tiley = Integer.parseInt(data[3]);
                     String serverip = data[4];
-                    int serverport = Integer.parseInt(data[5]);
-                    int block = Integer.parseInt(data[6]);
+                    int block = Integer.parseInt(data[5]);
 
                     Block target;
                     switch (block) {
@@ -251,9 +264,15 @@ public class Threads extends TimerTask{
                     for(int ix = 0; ix < playerGroup.size(); ix++) {
                         Player player = playerGroup.all().get(ix);
                         if (player.tileX() > startx && player.tileX() < tilex) {
-                            if (player.tileY() > starty && player.tileY() < tiley) {
-                                Global.log("player-jumped", player.name, serverip+":"+serverport);
-                                Call.onConnect(player.con, serverip, serverport);
+                            if (player.tileY() > starty && player.tileY() < tiley){
+                                String resultIP = data[4];
+                                int port = 6567;
+                                if(data[4].contains(":") && Strings.canParsePostiveInt(data[4].split(":")[1])){
+                                    resultIP = data[4].split(":")[0];
+                                    port = Strings.parseInt(data[4].split(":")[1]);
+                                }
+                                Global.log("player-jumped", player.name, serverip+":"+port);
+                                Call.onConnect(player.con, serverip, port);
                             }
                         }
                     }
@@ -523,27 +542,26 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             Thread.currentThread().setName("Server to server thread");
-            while(threadactive) {
+            while(!Thread.currentThread().isInterrupted()) {
                 if(state.is(GameState.State.playing)) {
                     for (int i = 0; i < jumpcount.size(); i++) {
-                        String jumpdata = jumpcount.get(i);
+                        String jumpdata = jumpcount.getString(i);
                         String[] data = jumpdata.split("/");
                         String serverip = data[0];
-                        int port = Integer.parseInt(data[1]);
-                        int x = Integer.parseInt(data[2]);
-                        int y = Integer.parseInt(data[3]);
-                        String count = data[4];
-                        int length = Integer.parseInt(data[5]);
+                        int x = Integer.parseInt(data[1]);
+                        int y = Integer.parseInt(data[2]);
+                        String count = data[3];
+                        int length = Integer.parseInt(data[4]);
 
                         int i2 = i;
-                        pingServer(serverip, port, result -> {
-                            if (result.valid) {
-                                String str = result.players;
+                        pingServer(serverip, result -> {
+                            if (result.name != null) {
+                                String str = String.valueOf(result.players);
                                 int[] digits = new int[str.length()];
                                 for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
                                 Tile tile = world.tile(x, y);
-                                if (!count.equals(result.players)) {
+                                if (!count.equals(str)) {
                                     if (length != digits.length) {
                                         for (int px = 0; px < 3; px++) {
                                             for (int py = 0; py < 5; py++) {
@@ -562,7 +580,7 @@ public class Threads extends TimerTask{
                                     }
                                 }
                                 // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                jumpcount.set(i2, serverip + "/" + port + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
+                                jumpcount.set(i2, serverip + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
                             } else {
                                 setno(world.tile(x, y));
                             }
@@ -581,7 +599,7 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             for (int i=0;i<jumpall.size();i++) {
-                String jumpdata = jumpall.get(i);
+                String jumpdata = jumpall.getString(i);
                 String[] data = jumpdata.split("/");
                 int x = Integer.parseInt(data[0]);
                 int y = Integer.parseInt(data[1]);
@@ -589,9 +607,10 @@ public class Threads extends TimerTask{
                 int length = Integer.parseInt(data[3]);
 
                 int result = 0;
-                for (String dat : jumpcount) {
+                for (int a=0;i<jumpcount.size();a++) {
+                    String dat = jumpcount.getString(a);
                     String[] re = dat.split("/");
-                    result += Integer.parseInt(re[4]);
+                    result += Integer.parseInt(re[3]);
                 }
 
                 String str = String.valueOf(result);
@@ -626,9 +645,10 @@ public class Threads extends TimerTask{
         public void run(){
             if(jumpcount.size() > 1){
                 int result = 0;
-                for (String dat : jumpcount) {
+                for (int a=0;a<jumpcount.size();a++) {
+                    String dat = jumpcount.getString(a);
                     String[] re = dat.split("/");
-                    result += Integer.parseInt(re[4]);
+                    result += Integer.parseInt(re[3]);
                 }
                 Core.settings.put("servername", config.getServername()+", "+result+" players");
             }
@@ -735,7 +755,7 @@ public class Threads extends TimerTask{
                     TimerTask t = new TimerTask() {
                         @Override
                         public void run() {
-                            pingServer("localhost", customport, result -> {
+                            pingServer("localhost", result -> {
                                 if (disablecount > 300) {
                                     try {
                                         JsonObject settings = JsonParser.object().from(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString());
@@ -753,7 +773,7 @@ public class Threads extends TimerTask{
                                     } catch (JsonParserException e) {
                                         printStackTrace(e);
                                     }
-                                } else if (result.players.contains("0")) {
+                                } else if (result.players == 0) {
                                     disablecount++;
                                 }
                             });
@@ -842,7 +862,7 @@ public class Threads extends TimerTask{
         @Override
         public void run(){
             Thread.currentThread().setName("Resource monitoring thread");
-            while(threadactive) {
+            while(Thread.currentThread().isInterrupted()) {
                 if(state.is(GameState.State.playing)) {
                     for (Item item : content.items()) {
                         if (item.type == ItemType.material) {
@@ -1185,7 +1205,7 @@ public class Threads extends TimerTask{
     public static class jumpdata extends Thread{
         @Override
         public void run() {
-            while(threadactive) {
+            while(!Thread.currentThread().isInterrupted()) {
                 for (int a = 0; a < messagejump.size(); a++) {
                     String[] xy = messagejump.get(a).split("\\|");
                     int x = Integer.parseInt(xy[0]);
@@ -1210,8 +1230,8 @@ public class Threads extends TimerTask{
                         port = 6567;
                     }
 
-                    pingServer(ip, port, result -> {
-                        if (result.valid) {
+                    pingServer(ip, result -> {
+                        if (result.name != null){
                             Call.setMessageBlockText(null, world.tile(x, y), result.players + " Players in this server.");
                         } else {
                             Call.setMessageBlockText(null, world.tile(x, y), "offline");

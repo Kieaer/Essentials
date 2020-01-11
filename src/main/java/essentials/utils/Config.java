@@ -15,7 +15,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
@@ -28,10 +31,10 @@ public class Config {
     private Map<String, Object> obj;
     private Fi path = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json");
     public static JsonObject Data = new JsonObject();
-    public static ArrayList<String> jumpzone = new ArrayList<>();
-    public static ArrayList<String> jumpcount = new ArrayList<>();
-    public static ArrayList<String> jumpall = new ArrayList<>();
-    public static ArrayList<String> blacklist = new ArrayList<>();
+    public static JsonArray jumpzone = new JsonArray();
+    public static JsonArray jumpcount = new JsonArray();
+    public static JsonArray jumpall = new JsonArray();
+    public static JsonArray blacklist = new JsonArray();
     public static JsonArray banned = new JsonArray();
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
@@ -72,18 +75,11 @@ public class Config {
             Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
 
-            JsonArray array = JsonParser.object().from(path.read()).getArray("jumpzone");
-            for (int i=0; i<array.size(); i++) jumpzone.add(array.getString(i));
-            array = JsonParser.object().from(path.read()).getArray("jumpcount");
-            for (int i=0; i<array.size(); i++) jumpcount.add(array.getString(i));
-            array = JsonParser.object().from(path.read()).getArray("jumpall");
-            for (int i=0; i<array.size(); i++) jumpall.add(array.getString(i));
-            array = JsonParser.object().from(path.read()).getArray("blacklist");
-            for (int i=0; i<array.size(); i++) blacklist.add(array.getString(i));
-            array = JsonParser.object().from(path.read()).getArray("banned");
-            for (int i=0; i<array.size(); i++) banned.add(array.getString(i));
-            array.clear();
-
+            jumpzone = JsonParser.object().from(path.read()).getArray("jumpzone");
+            jumpcount = JsonParser.object().from(path.read()).getArray("jumpcount");
+            jumpall = JsonParser.object().from(path.read()).getArray("jumpall");
+            blacklist = JsonParser.object().from(path.read()).getArray("blacklist");
+            banned = JsonParser.object().from(path.read()).getArray("banned");
         } catch (JsonParserException | IOException e){
             printStackTrace(e);
         }

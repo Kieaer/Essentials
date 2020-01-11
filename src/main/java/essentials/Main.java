@@ -9,7 +9,6 @@ import arc.struct.Array;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
@@ -88,11 +87,7 @@ public class Main extends Plugin {
     private ArrayList<Tile> nukedata = new ArrayList<>();
     private Array<mindustry.maps.Map> maplist = Vars.maps.all();
 
-    public static boolean threadactive = true;
-
     public Client client;
-
-    boolean isUpdating = false;
 
     public Main() {
         // 설정 시작
@@ -169,20 +164,27 @@ public class Main extends Plugin {
         Events.on(TapEvent.class, e -> {
             if(isLogin(e.player)) {
                 Thread t = new Thread(() -> {
-                    for (String jumpdata : jumpzone) {
-                        if (jumpdata.equals("")) return;
+                    for(int a=0;a<jumpzone.size();a++){
+                        String jumpdata = jumpzone.getString(a);
                         String[] data = jumpdata.split("/");
                         int startx = Integer.parseInt(data[0]);
                         int starty = Integer.parseInt(data[1]);
                         int tilex = Integer.parseInt(data[2]);
                         int tiley = Integer.parseInt(data[3]);
                         String serverip = data[4];
-                        int serverport = Integer.parseInt(data[5]);
+
+                        String ip;
+                        int port = 6567;
+                        if(serverip.contains(":") && Strings.canParsePostiveInt(serverip.split(":")[1])){
+                            ip = serverip.split(":")[0];
+                            port = Strings.parseInt(ip.split(":")[1]);
+                        }
+
                         if (e.tile.x > startx && e.tile.x < tilex) {
                             if (e.tile.y > starty && e.tile.y < tiley) {
-                                log("log", "player-jumped", e.player.name, serverip + ":" + serverport);
+                                log("log", "player-jumped", e.player.name, serverip + ":" + port);
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
-                                Call.onConnect(e.player.con, serverip, serverport);
+                                Call.onConnect(e.player.con, serverip, port);
                             }
                         }
                     }
@@ -259,7 +261,8 @@ public class Main extends Plugin {
 
         Events.on(PlayerConnect.class, e -> {
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
-            for (String s : blacklist) {
+            for(int a=0;a<blacklist.size();a++){
+                String s = blacklist.getString(a);
                 if (e.player.name.matches(s)) {
                     try{
                         String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(e.player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
@@ -999,17 +1002,15 @@ public class Main extends Plugin {
             }
 
             public void dispose() {
-                threadactive = false;
-
                 // 타이머 스레드 종료
                 try {
                     timer.cancel();
                     if (isvoting) {
                         Vote.cancel();
                     }
-                    log("log","count-thread-disabled");
+                    log("log", "count-thread-disabled");
                 } catch (Exception e) {
-                    log("err","count-thread-disable-error");
+                    log("err", "count-thread-disable-error");
                     printStackTrace(e);
                 }
 
@@ -1024,7 +1025,7 @@ public class Main extends Plugin {
                             if (ser.isInterrupted()) {
                                 Server.list.remove(ser);
                             } else {
-                                log("err","server-thread-disable-error");
+                                log("err", "server-thread-disable-error");
                             }
                         }
 
@@ -1032,17 +1033,17 @@ public class Main extends Plugin {
                         Server.serverSocket.close();
                         server.interrupt();
 
-                        log("log","server-thread-disabled");
+                        log("log", "server-thread-disabled");
                     } catch (Exception e) {
                         printStackTrace(e);
-                        log("err","server-thread-disable-error");
+                        log("err", "server-thread-disable-error");
                     }
                 }
 
                 // 클라이언트 종료
                 if (config.isClientenable() && serverconn) {
                     client.main("exit", null, null);
-                    log("log","client-thread-disabled");
+                    log("log", "client-thread-disabled");
                 }
 
                 // 모든 이벤트 서버 종료
@@ -1059,7 +1060,8 @@ public class Main extends Plugin {
 
                 // 모든 스레드 종료
                 executorService.shutdown();
-                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug()) log("debug","executorservice dead");
+                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug())
+                    log("debug", "executorservice dead");
 
                 // DB 종료
                 if (!closeconnect() && config.isDebug()) {
@@ -1070,20 +1072,8 @@ public class Main extends Plugin {
                     }
                 }
 
-                log("log","thread-disabled");
-                try {
-                    JsonObject data = new JsonObject();
-                    data.put("banned",banned);
-                    data.put("blacklist",blacklist);
-                    data.put("jumpzone",jumpzone);
-                    data.put("jumpall",jumpall);
-                    data.put("jumpcount",jumpcount);
-                    data.put("servername", Core.settings.getString("servername"));
-                    new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
-
-                    sleep(500);
-                    if(!isUpdating) System.exit(0);
-                } catch (Exception ignored) {}
+                log("log", "thread-disabled");
+                System.exit(0);
             }
         });
 
@@ -1116,7 +1106,6 @@ public class Main extends Plugin {
                                 URL url = new URL(json.getArray("assets").getObject(0).getString("browser_download_url"));
 
                                 System.out.println(nbundle("plugin-downloading-standby"));
-                                threadactive = false;
                                 timer.cancel();
                                 if (config.isServerenable()) {
                                     try {
@@ -1138,16 +1127,6 @@ public class Main extends Plugin {
                                 }
                                 executorService.shutdown();
                                 closeconnect();
-                                try {
-                                    JsonObject data = new JsonObject();
-                                    data.put("banned",banned);
-                                    data.put("blacklist",blacklist);
-                                    data.put("jumpzone",jumpzone);
-                                    data.put("jumpall",jumpall);
-                                    data.put("jumpcount",jumpcount);
-                                    data.put("servername", Core.settings.getString("servername"));
-                                    new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
-                                } catch (Exception ignored) {}
 
                                 BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials.jar").file()));
                                 URLConnection urlConnection = url.openConnection();
@@ -1314,7 +1293,8 @@ public class Main extends Plugin {
             }
             switch(arg[0]){
                 case "zone":
-                    for (String jumpdata : jumpzone) {
+                    for(int a=0;a<jumpzone.size();a++){
+                        String jumpdata = jumpzone.getString(a);
                         String[] data = jumpdata.split("/");
                         int startx = Integer.parseInt(data[0]);
                         int starty = Integer.parseInt(data[1]);
@@ -1727,7 +1707,7 @@ public class Main extends Plugin {
             });
             executorService.submit(t);
         });
-        handler.<Player>register("jump", "<zone/count/total> [serverip] [port] [range] [block-type(1~6)]", "Create a server-to-server jumping zone.", (arg, player) -> {
+        handler.<Player>register("jump", "<zone/count/total> [serverip] [range] [block-type(1~6)]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!checkperm(player, "jump")) return;
             switch (arg[0]){
                 case "zone":
@@ -1737,14 +1717,14 @@ public class Main extends Plugin {
                     }
                     int size;
                     try {
-                        size = Integer.parseInt(arg[3]);
+                        size = Integer.parseInt(arg[2]);
                     } catch (Exception ignored) {
                         player.sendMessage(bundle(player, "jump-not-int"));
                         return;
                     }
                     int block;
                     try {
-                        block = Integer.parseInt(arg[4]);
+                        block = Integer.parseInt(arg[3]);
                     } catch (Exception ignored) {
                         player.sendMessage(bundle(player, "jump-not-block"));
                         return;
@@ -1783,14 +1763,17 @@ public class Main extends Plugin {
                         }
                     }
 
+                    // tilex, tiley, target tilex, target tiley, serverip, port, block
                     jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1] + "/" + arg[2] + "/" + block);
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
-                    jumpcount.add(arg[1] + "/" + arg[2] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+                    // serverip, tilex, tiley, players, number length
+                    jumpcount.add(arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "total":
+                    // tilex, tiley, total players, number length
                     jumpall.add(player.tileX() + "/" + player.tileY() + "/0/0");
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
