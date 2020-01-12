@@ -604,7 +604,7 @@ public class Main extends Plugin {
 
         // 플레이어가 블럭을 뽀갰을 때
         Events.on(BuildSelectEvent.class, e -> {
-            if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*")) {
+            if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
                 if (e.breaking) {
                     Thread t = new Thread(() -> {
                         JsonObject db = getData(((Player) e.builder).uuid);
@@ -663,15 +663,12 @@ public class Main extends Plugin {
                             int blockreqlevel = 100;
                             if (obj.get(name) != null) {
                                 blockreqlevel = obj.get(name);
-                            } else if (!e.tile.block().name.equals("air")) {
-                                log("err", "epg-block-not-valid", name);
+                                if (level < blockreqlevel) {
+                                    Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
+                                    ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
+                                }
                             } else {
-                                return;
-                            }
-
-                            if (level < blockreqlevel && !e.tile.block().name.equals("air")) {
-                                Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
-                                ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
+                                log("err", "epg-block-not-valid", name);
                             }
                         }
                     });
