@@ -212,7 +212,30 @@ public class Threads extends TimerTask{
     static class maptime extends Thread {
         @Override
         public void run(){
-
+            if(playtime != null){
+                try{
+                    Calendar cal1;
+                    SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
+                    Date d2 = format.parse(playtime);
+                    cal1 = Calendar.getInstance();
+                    cal1.setTime(d2);
+                    cal1.add(Calendar.SECOND, 1);
+                    playtime = format.format(cal1.getTime());
+                    // Anti PvP rushing timer
+                    if(config.isEnableantirush() && Vars.state.rules.pvp && cal1.after(config.getAntirushtime()) && peacetime) {
+                        state.rules.playerDamageMultiplier = 0.66f;
+                        state.rules.playerHealthMultiplier = 0.8f;
+                        peacetime = false;
+                        for(int i = 0; i < playerGroup.size(); i++) {
+                            Player player = playerGroup.all().get(i);
+                            player.sendMessage(bundle("pvp-peacetime"));
+                            Call.onPlayerDeath(player);
+                        }
+                    }
+                }catch (Exception e){
+                    printStackTrace(e);
+                }
+            }
         }
     }
     static class jumpzone extends Thread {
