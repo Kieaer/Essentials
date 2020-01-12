@@ -482,7 +482,8 @@ public class PlayerDB{
                     ResultSet rs2 = pstm2.executeQuery();
                     String isuuid = null;
                     // 한국어, 중국어, 일어, 러시아어, 영어, 숫자만 허용
-                    String nickname = player.name.replaceAll("[^\uac00-\ud7a3\u2E80-\u2eff\u3400-\u4dbf\u4e00-\u9fbf\uf9000\ufaff\u20000-\u2a6df\u3040-\u309f\u30a0-\u30ff\u31f0-\u31ff\u0400-\u052f0-9a-zA-Z\\s]", "");
+                    String nickname = player.name;
+                    //String nickname = player.name.replaceAll("[^\uac00-\ud7a3\u2E80-\u2eff\u3400-\u4dbf\u4e00-\u9fbf\uf9000\ufaff\u20000-\u2a6df\u3040-\u309f\u30a0-\u30ff\u31f0-\u31ff\u0400-\u052f0-9a-zA-Z\\s]", "");
                     while (rs2.next()) {
                         isuuid = rs2.getString("uuid");
                         nickname = rs2.getString("name");
