@@ -45,6 +45,8 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static essentials.Global.*;
 import static essentials.Main.*;
@@ -250,39 +252,6 @@ public class Threads extends TimerTask{
                     int tilex = Integer.parseInt(data[2]);
                     int tiley = Integer.parseInt(data[3]);
                     String serverip = data[4];
-                    int block = Integer.parseInt(data[5]);
-
-                    Block target;
-                    switch (block) {
-                        case 1:
-                        default:
-                            target = Blocks.metalFloor;
-                            break;
-                        case 2:
-                            target = Blocks.metalFloor2;
-                            break;
-                        case 3:
-                            target = Blocks.metalFloor3;
-                            break;
-                        case 4:
-                            target = Blocks.metalFloor5;
-                            break;
-                        case 5:
-                            target = Blocks.metalFloorDamaged;
-                            break;
-                        case 6:
-                            target = Blocks.air;
-                    }
-
-                    if (!world.tile(startx, starty).block().name.matches(".*metal.*")) {
-                        int size = tilex - startx;
-                        for(int x = 0; x < size; x++) {
-                            for(int y = 0; y < size; y++) {
-                                Tile tile = world.tile(startx+x, starty+y);
-                                Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
-                            }
-                        }
-                    }
 
                     for(int ix = 0; ix < playerGroup.size(); ix++) {
                         Player player = playerGroup.all().get(ix);
@@ -294,7 +263,7 @@ public class Threads extends TimerTask{
                                     resultIP = data[4].split(":")[0];
                                     port = Strings.parseInt(data[4].split(":")[1]);
                                 }
-                                Global.log("player-jumped", player.name, serverip+":"+port);
+                                Global.log("player-jumped", player.name, resultIP+":"+port);
                                 Call.onConnect(player.con, serverip, port);
                             }
                         }
@@ -1257,6 +1226,63 @@ public class Threads extends TimerTask{
                 } catch (InterruptedException e) {
                     printStackTrace(e);
                 }
+            }
+        }
+    }
+    public static class visualjump extends Thread{
+        int length;
+        static ExecutorService service = Executors.newCachedThreadPool(new Global.threadname("Essentials jump zone thread"));
+
+        @Override
+        public void run() {
+            length = jumpzone.size();
+
+            for (int b = 0; b < jumpzone.size(); b++) {
+                String[] data = jumpzone.getString(b).split("/");
+                Thread t = new Thread(() -> {
+                    try {
+                        while (!Thread.currentThread().isInterrupted()) {
+                            int xt = Integer.parseInt(data[0]);
+                            int yt = Integer.parseInt(data[1]);
+                            int tilexfinal = Integer.parseInt(data[2]);
+                            int tileyfinal = Integer.parseInt(data[3]);
+                            int size = tilexfinal - xt;
+
+                            for (int x = 0; x < size; x++) {
+                                Tile tile = world.tile(xt + x, yt);
+                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                sleep(64);
+                            }
+                            for (int y = 0; y < size; y++) {
+                                Tile tile = world.tile(tilexfinal, yt + y);
+                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                sleep(64);
+                            }
+                            for (int x = 0; x < size; x++) {
+                                Tile tile = world.tile(tilexfinal - x, tileyfinal);
+                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                sleep(64);
+                            }
+                            for (int y = 0; y < size; y++) {
+                                Tile tile = world.tile(xt, tileyfinal - y);
+                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                sleep(64);
+                            }
+                        }
+                    } catch (InterruptedException ignored) {}
+                });
+                service.submit(t);
+            }
+
+            while(!Thread.currentThread().isInterrupted()) {
+                try {
+                    if (length != jumpzone.size()) {
+                        service.shutdownNow();
+                        new Thread(this).start();
+                        this.interrupt();
+                    }
+                    sleep(3000);
+                } catch (InterruptedException ignored) {}
             }
         }
     }

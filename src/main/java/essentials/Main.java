@@ -40,7 +40,6 @@ import mindustry.plugin.Plugin;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
 import mindustry.type.UnitType;
-import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -134,6 +133,9 @@ public class Main extends Plugin {
 
         // 임시로 밴한 플레이어들 밴 해제시간 카운트
         executorService.submit(new bantime());
+
+        // 서버간 이동 영역 표시
+        new Thread(new visualjump()).start();
 
         // 기록 시작
         if (config.isLogging()) {
@@ -433,6 +435,7 @@ public class Main extends Plugin {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
+            // TODO pvp 탈주 횟수 추가
             String uuid = e.player.uuid;
             if (isLogin(e.player)) {
                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", uuid);
@@ -1168,7 +1171,7 @@ public class Main extends Plugin {
 
     @Override
     public void registerServerCommands(CommandHandler handler){
-        handler.register("accountban","<ban/unban> <account_uuid>", (arg) -> {
+        handler.register("accountban","<ban/unban> <account_uuid>", "Ban player account", (arg) -> {
             if(arg[0].equals("ban")) {
                 if (arg[1].length() == 12) {
                     if(accountban(true, arg[1])){
@@ -1282,42 +1285,6 @@ public class Main extends Plugin {
             }
             switch(arg[0]){
                 case "zone":
-                    for(int a=0;a<jumpzone.size();a++){
-                        String jumpdata = jumpzone.getString(a);
-                        String[] data = jumpdata.split("/");
-                        int startx = Integer.parseInt(data[0]);
-                        int starty = Integer.parseInt(data[1]);
-                        int tilex = Integer.parseInt(data[2]);
-                        int block = Integer.parseInt(data[6]);
-
-                        Block target;
-                        switch (block) {
-                            case 1:
-                            default:
-                                target = Blocks.metalFloor;
-                                break;
-                            case 2:
-                                target = Blocks.metalFloor2;
-                                break;
-                            case 3:
-                                target = Blocks.metalFloor3;
-                                break;
-                            case 4:
-                                target = Blocks.metalFloor5;
-                                break;
-                            case 5:
-                                target = Blocks.metalFloorDamaged;
-                                break;
-                        }
-
-                        int size = tilex - startx;
-                        for (int x = 0; x < size; x++) {
-                            for (int y = 0; y < size; y++) {
-                                Tile tile = world.tile(startx + x, starty + y);
-                                Call.onDeconstructFinish(tile, target, 0);
-                            }
-                        }
-                    }
                     jumpzone.clear();
                     log("log","jump-reset", "zone");
                     break;
@@ -1696,11 +1663,11 @@ public class Main extends Plugin {
             });
             executorService.submit(t);
         });
-        handler.<Player>register("jump", "<zone/count/total> [serverip] [range] [block-type(1~6)]", "Create a server-to-server jumping zone.", (arg, player) -> {
+        handler.<Player>register("jump", "<zone/count/total> [serverip] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!checkperm(player, "jump")) return;
             switch (arg[0]){
                 case "zone":
-                    if(arg.length != 4){
+                    if(arg.length != 3){
                         player.sendMessage(bundle(player, "jump-incorrect"));
                         return;
                     }
@@ -1711,49 +1678,14 @@ public class Main extends Plugin {
                         player.sendMessage(bundle(player, "jump-not-int"));
                         return;
                     }
-                    int block;
-                    try {
-                        block = Integer.parseInt(arg[3]);
-                    } catch (Exception ignored) {
-                        player.sendMessage(bundle(player, "jump-not-block"));
-                        return;
-                    }
-                    Block target;
-                    switch (block) {
-                        case 1:
-                        default:
-                            target = Blocks.metalFloor;
-                            break;
-                        case 2:
-                            target = Blocks.metalFloor2;
-                            break;
-                        case 3:
-                            target = Blocks.metalFloor3;
-                            break;
-                        case 4:
-                            target = Blocks.metalFloor5;
-                            break;
-                        case 5:
-                            target = Blocks.metalFloorDamaged;
-                            break;
-                        case 6:
-                            target = Blocks.air;
-                            break;
-                    }
+
                     int xt = player.tileX();
                     int yt = player.tileY();
                     int tilexfinal = xt + size;
                     int tileyfinal = yt + size;
 
-                    for (int x = 0; x < size; x++) {
-                        for (int y = 0; y < size; y++) {
-                            Tile tile = world.tile(xt + x, yt + y);
-                            Call.onConstructFinish(tile, target, 0, (byte) 0, Team.sharded, false);
-                        }
-                    }
-
-                    // tilex, tiley, target tilex, target tiley, serverip, port, block
-                    jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1] + "/" + block);
+                    // tilex, tiley, target tilex, target tiley, serverip
+                    jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1]);
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
@@ -1852,6 +1784,39 @@ public class Main extends Plugin {
                 SaveIO.save(file);
                 player.sendMessage(bundle(player, "mapsaved"));
             });
+        });
+        handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server jumping zone data.", (arg, player) -> {
+            if (!checkperm(player, "reset")) return;
+            switch(arg[0]){
+                case "zone":
+                    for(int a=0;a<jumpzone.size();a++){
+                        if(arg.length != 2){
+                            log("warn","no-parameter");
+                            return;
+                        }
+                        // tilex, tiley, target tilex, target tiley, serverip, block
+                        String jumpdata = jumpzone.getString(a);
+                        String[] data = jumpdata.split("/");
+                        String ip = data[4];
+                        if(arg[1].equals(ip)) {
+                            jumpzone.remove(a);
+                            player.sendMessage(bundle(player, "success"));
+                            break;
+                        }
+                    }
+                    break;
+                case "count":
+                    jumpcount.clear();
+                    log("log","jump-reset", "count");
+                    break;
+                case "total":
+                    jumpall.clear();
+                    log("log","jump-reset", "total");
+                    break;
+                default:
+                    log("warn","Invalid option!");
+                    break;
+            }
         });
         switch (config.getPasswordmethod()) {
             /*case "email":
@@ -2256,68 +2221,5 @@ public class Main extends Plugin {
             Vote vote = new Vote(player, arg[0], other);
             vote.command();
         });
-
-        /*
-        handler.<Player>register("special", "Check that the plug-in is working properly.", (arg, player) -> {
-            Thread t = new Thread(() -> {
-                Tile start = world.tile(player.tileX(), player.tileY());
-                try {
-                    sleep(1500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                Tile target = world.tile(player.tileX(), player.tileY());
-                //new AI(start, target).target();
-                new AI(start, target).findore();
-            });
-            t.start();
-
-            Thread t = new Thread(() -> {
-                int count = 0;
-                while(true){
-                    Call.createBullet(Bullets.flakExplosive,player.getTeam(),player.x,player.y,Mathf.random(360),(float) (Math.random() * (1.0 - 0.5) + 0.5),(float) (Math.random() * (1.0 - 0.2) + 0.2));
-                    count++;
-                    if(count == 500){
-                        break;
-                    } else {
-                        try {
-                            sleep(17);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                count = 0;
-                while(true) {
-                    Call.createBullet(Bullets.artilleryHoming, player.getTeam(), player.x, player.y, Mathf.random(360), (float) (Math.random() * (1.0 - 0.5) + 0.5), (float) (Math.random() * (1.0 - 0.2) + 0.2));
-                    count++;
-                    if (count == 500) {
-                        break;
-                    } else {
-                        try {
-                            sleep(17);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                count = 0;
-                while(true) {
-                    Call.createBullet(Bullets.missileSwarm, player.getTeam(), player.x, player.y,new Random().nextInt((int) (((player.rotation+20) - (player.rotation-20)) + 1)) + player.rotation-20,1, 1);
-                    count++;
-                    if (count == 500) {
-                        break;
-                    } else {
-                        try {
-                            sleep(17);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-            t.start();
-        });
-        */
     }
 }

@@ -60,6 +60,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:---|
+| accountban | &lt;ban/unban&gt; &lt;account_uuid&gt; | Ban player account |
 | admin | &lt;player name&gt; | **!! Disabled command !!** |
 | allinfo | &lt;player name&gt; | Show player information |
 | ban | &lt;uuid/name/ip&gt; &lt;username/ip/uuid&gt; | Ban a person. |
