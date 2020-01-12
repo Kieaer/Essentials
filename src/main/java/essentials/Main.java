@@ -965,10 +965,6 @@ public class Main extends Plugin {
                         Tile target = nukedata.get(i);
                         try {
                             NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
-                            if(entity == null){
-                                nukeblock.remove(i);
-                                break;
-                            }
                             if (entity.heat >= 0.2f && entity.heat <= 0.39f && !a1) {
                                 allsendMessage("thorium-overheat-green", Math.round(entity.heat * 100), target.x, target.y);
                                 a1 = true;
@@ -992,8 +988,8 @@ public class Main extends Plugin {
                                 Call.onDeconstructFinish(target, Blocks.air, 0);
                                 allsendMessage("thorium-removed");
                             }
-                        } catch (Exception e) {
-                            printStackTrace(e);
+                        } catch (Exception ignored) {
+                            nukedata.remove(i);
                             break;
                         }
                     }
