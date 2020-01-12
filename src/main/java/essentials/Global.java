@@ -503,7 +503,7 @@ public class Global {
             int y = Integer.parseInt(data[1]);
             Tile target = world.tile(tile.x, tile.y);
             if(n[a] == 1) {
-                if (world.tile(target.x + x, target.y + y).block() != Blocks.titaniumWall) {
+                if (world.tile(target.x + x, target.y + y).block() != Blocks.scrapWall) {
                     Call.onConstructFinish(world.tile(target.x + x, target.y + y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
                 }
             } else if(n[a] == 0){
@@ -520,7 +520,7 @@ public class Global {
             int y = Integer.parseInt(data[1]);
             Tile target = world.tile(tile.x, tile.y);
             if(o[a] == 1) {
-                if (world.tile(target.x + x, target.y + y).block() != Blocks.titaniumWall) {
+                if (world.tile(target.x + x, target.y + y).block() != Blocks.scrapWall) {
                     Call.onConstructFinish(world.tile(target.x+4+x, target.y+y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
                 }
             } else if(o[a] == 0){
