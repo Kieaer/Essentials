@@ -1033,7 +1033,6 @@ public class Main extends Plugin {
                             }
                         }
 
-                        Server.active = false;
                         Server.serverSocket.close();
                         server.interrupt();
 
@@ -1120,8 +1119,6 @@ public class Main extends Plugin {
                                             ser.socket.close();
                                             Server.list.remove(ser);
                                         }
-
-                                        Server.active = false;
                                         Server.serverSocket.close();
                                         server.interrupt();
                                     } catch (Exception ignored) {}

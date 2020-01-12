@@ -2,9 +2,7 @@ package essentials.net;
 
 import arc.Core;
 import arc.struct.Array;
-import com.grack.nanojson.JsonArray;
-import com.grack.nanojson.JsonObject;
-import com.grack.nanojson.JsonParser;
+import com.grack.nanojson.*;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.core.GameState;
 import mindustry.core.Version;
@@ -44,7 +42,6 @@ import static essentials.core.PlayerDB.getData;
 import static mindustry.Vars.*;
 
 public class Server implements Runnable {
-    public static boolean active = true;
     public static ServerSocket serverSocket;
     public static ArrayList<Service> list = new ArrayList<>();
     private String remoteip;
@@ -59,7 +56,7 @@ public class Server implements Runnable {
         }
         log("server","server-enabled");
 
-        while (active) {
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 Socket socket = serverSocket.accept();
                 Service service = new Service(socket);
@@ -307,20 +304,14 @@ public class Server implements Runnable {
         }
 
         private String query() {
-            JsonObject json = new JsonObject();
-            JsonObject items = new JsonObject();
-            JsonArray array = new JsonArray();
-            JsonObject rank = new JsonObject();
-
-            for (Player p : playerGroup.all()) {
-                array.add(p.name);
-            }
-
-            for (Item item : content.items()) {
-                if (item.type == ItemType.material) {
-                    items.put(item.name, state.teams.get(Team.sharded).cores.first().items.get(item));
-                }
-            }
+            JsonStringWriter result = JsonWriter.string()
+                    .object()
+                    .value("players", playerGroup.size())
+                    .value("version", Version.build)
+                    .value("playtime", playtime)
+                    .value("name", Core.settings.getString("servername"))
+                    .value("mapname", world.getMap().name())
+                    .value("wave", state.wave);
 
             boolean online = false;
             for(int a=0;a<playerGroup.size();a++){
@@ -329,33 +320,39 @@ public class Server implements Runnable {
                     online = true;
                 }
             }
+            result.value("admin_online", online);
 
+            result.array("playerlist");
+            for (Player p : playerGroup.all()) {
+                result.value(p.name); // player list
+            }
+            result.end();
+
+            result.object("resource");
+            for (Item item : content.items()) {
+                if (item.type == ItemType.material) {
+                    result.value(item.name, state.teams.get(Team.sharded).cores.first().items.get(item)); // resources
+                }
+            }
+            result.end();
+
+            result.object("rank");
             try{
-                JsonObject tmp = new JsonObject();
                 String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
                 Statement stmt = conn.createStatement();
                 for (String s : list) {
                     ResultSet rs = stmt.executeQuery("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
+                    result.object(s);
                     while (rs.next()) {
-                        tmp.put(rs.getString("name"), rs.getString(s));
+                        result.value(rs.getString("name"), rs.getString(s));
                     }
-                    rank.put(s, tmp);
+                    result.end();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                printStackTrace(e);
             }
 
-            json.put("players", playerGroup.size());
-            json.put("playerlist", array);
-            json.put("version", Version.build);
-            json.put("name", Core.settings.getString("servername"));
-            json.put("playtime", playtime);
-            json.put("resource", items);
-            json.put("mapname", world.getMap().name());
-            json.put("wave", state.wave);
-            json.put("admin_online", online);
-            json.put("rank", rank);
-            return json.toString();
+            return result.end().end().done();
         }
 
         private String serverinfo() {
