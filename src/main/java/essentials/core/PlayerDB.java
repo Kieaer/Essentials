@@ -680,7 +680,7 @@ public class PlayerDB{
             nlog("debug",player.name+" Player pass colornick");
 
             // 플레이어별 테러 감지 시작
-            if(config.isAntigrief()) {
+            if(config.isAntigrief() && !player.isAdmin) {
                 new Threads.checkgrief(player).start();
                 nlog("debug",player.name+" Player anti-grief start");
             }
