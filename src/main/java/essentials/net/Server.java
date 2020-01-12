@@ -306,12 +306,14 @@ public class Server implements Runnable {
         private String query() {
             JsonStringWriter result = JsonWriter.string()
                     .object()
-                    .value("players", playerGroup.size())
-                    .value("version", Version.build)
+                    .value("players", playerGroup.size()) // 플레이어 인원
+                    .value("version", Version.build) // 버전
+                    .value("plugin-version", version)
                     .value("playtime", playtime)
                     .value("name", Core.settings.getString("servername"))
                     .value("mapname", world.getMap().name())
-                    .value("wave", state.wave);
+                    .value("wave", state.wave)
+                    .value("enemy-count", state.enemies);
 
             boolean online = false;
             for(int a=0;a<playerGroup.size();a++){
