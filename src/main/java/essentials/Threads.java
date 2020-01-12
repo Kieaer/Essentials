@@ -1244,8 +1244,8 @@ public class Threads extends TimerTask{
                         while (!Thread.currentThread().isInterrupted()) {
                             int xt = Integer.parseInt(data[0]);
                             int yt = Integer.parseInt(data[1]);
-                            int tilexfinal = Integer.parseInt(data[2]);
-                            int tileyfinal = Integer.parseInt(data[3]);
+                            int tilexfinal = Integer.parseInt(data[2])-1;
+                            int tileyfinal = Integer.parseInt(data[3])-1;
                             int size = tilexfinal - xt;
 
                             for (int x = 0; x < size; x++) {
