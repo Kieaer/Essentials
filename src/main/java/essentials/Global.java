@@ -586,6 +586,17 @@ public class Global {
         return data;
     }
 
+    public static String geolocation(String ip){
+        try {
+            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).execute().body();
+            JsonObject result = JsonParser.object().from(json);
+            return result.getString("languages") == null ? "en" : result.getString("languages");
+        } catch (Exception e){
+            printStackTrace(e);
+            return "en";
+        }
+    }
+
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
         JsonObject db = getData(player.uuid);

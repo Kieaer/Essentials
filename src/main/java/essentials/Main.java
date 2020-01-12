@@ -265,9 +265,7 @@ public class Main extends Plugin {
                 String s = blacklist.getString(a);
                 if (e.player.name.matches(s)) {
                     try{
-                        String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(e.player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
-                        JsonObject result = JsonParser.object().from(json);
-                        String language = result.getString("languages") == null ? "en" : result.getString("languages");
+                        String language = geolocation(Vars.netServer.admins.getInfo(e.player.uuid).lastIP);
                         Call.onKick(e.player.con, nbundle(language, "nickname-blacklisted-kick"));
                         log("log", "nickname-blacklisted", e.player.name);
                     } catch (Exception ex) {
@@ -367,9 +365,7 @@ public class Main extends Plugin {
                             // 로그인 요구
                             try {
                                 String message;
-                                String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(e.player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
-                                JsonObject result = JsonParser.object().from(json);
-                                String language = result.getString("languages") == null ? "en" : result.getString("languages");
+                                String language = geolocation(Vars.netServer.admins.getInfo(e.player.uuid).lastIP);
 
                                 /*JsonObject translate = JsonParser.object().from(Jsoup.connect("https://api.mymemory.translated.net/get?q=" + text + "&langpair=" + source + "|+" + target).ignoreContentType(true).execute().body());
                                 String translate_result = translate.getObject("responseData").getString("translatedText");

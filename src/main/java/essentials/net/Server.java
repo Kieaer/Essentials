@@ -102,6 +102,7 @@ public class Server implements Runnable {
 
                     String value = in.readLine();
 
+                    if(value == null) return;
                     // 수신된 데이터가 Base64 가 아닐경우
                     if (value.length() != 24) {
                         writelog("web", "Remote IP: " + remoteip);
@@ -115,7 +116,7 @@ public class Server implements Runnable {
                         while (in.ready()) {
                             payload.append((char) in.read());
                         }
-                        httpserver(value, payload.toString());
+                        httpserver(value, payload.toString(), remoteip);
                         return;
                     }
 
@@ -396,6 +397,8 @@ public class Server implements Runnable {
             JsonObject results = new JsonObject();
             //ArrayList<String> results = new ArrayList<>();
 
+            String language = new Locale(geolocation(remoteip)).getLanguage();
+
             String[] sql = new String[10];
             sql[0] = "SELECT * FROM players ORDER BY `placecount` DESC LIMIT 10";
             sql[1] = "SELECT * FROM players ORDER BY `breakcount` DESC LIMIT 10";
@@ -410,11 +413,11 @@ public class Server implements Runnable {
 
             try {
                 Statement stmt = conn.createStatement();
-                String name = nbundle("server-http-rank-name");
-                String country = nbundle("server-http-rank-country");
-                String win = nbundle("server-http-rank-pvp-win");
-                String lose = nbundle("server-http-rank-pvp-lose");
-                String rate = nbundle("server-http-rank-pvp-rate");
+                String name = nbundle(language,"server-http-rank-name");
+                String country = nbundle(language,"server-http-rank-country");
+                String win = nbundle(language,"server-http-rank-pvp-win");
+                String lose = nbundle(language,"server-http-rank-pvp-lose");
+                String rate = nbundle(language,"server-http-rank-pvp-rate");
 
                 for(int a=0;a<sql.length;a++){
                     ResultSet rs = stmt.executeQuery(sql[a]);
@@ -465,21 +468,21 @@ public class Server implements Runnable {
             }
 
             doc.getElementById("info_body").appendText(serverinfo());
-            doc.getElementById("rank-placecount").appendText(nbundle("server-http-rank-placecount"));
-            doc.getElementById("rank-breakcount").appendText(nbundle("server-http-rank-breakcount"));
-            doc.getElementById("rank-killcount").appendText(nbundle("server-http-rank-killcount"));
-            doc.getElementById("rank-joincount").appendText(nbundle("server-http-rank-joincount"));
-            doc.getElementById("rank-kickcount").appendText(nbundle("server-http-rank-kickcount"));
-            doc.getElementById("rank-exp").appendText(nbundle("server-http-rank-exp"));
-            doc.getElementById("rank-playtime").appendText(nbundle("server-http-rank-playtime"));
-            doc.getElementById("rank-pvpwincount").appendText(nbundle("server-http-rank-pvpcount"));
-            doc.getElementById("rank-reactorcount").appendText(nbundle("server-http-rank-reactorcount"));
-            doc.getElementById("rank-attackclear").appendText(nbundle("server-http-rank-attackclear"));
+            doc.getElementById("rank-placecount").appendText(nbundle(language,"server-http-rank-placecount"));
+            doc.getElementById("rank-breakcount").appendText(nbundle(language,"server-http-rank-breakcount"));
+            doc.getElementById("rank-killcount").appendText(nbundle(language,"server-http-rank-killcount"));
+            doc.getElementById("rank-joincount").appendText(nbundle(language,"server-http-rank-joincount"));
+            doc.getElementById("rank-kickcount").appendText(nbundle(language,"server-http-rank-kickcount"));
+            doc.getElementById("rank-exp").appendText(nbundle(language,"server-http-rank-exp"));
+            doc.getElementById("rank-playtime").appendText(nbundle(language,"server-http-rank-playtime"));
+            doc.getElementById("rank-pvpwincount").appendText(nbundle(language,"server-http-rank-pvpcount"));
+            doc.getElementById("rank-reactorcount").appendText(nbundle(language,"server-http-rank-reactorcount"));
+            doc.getElementById("rank-attackclear").appendText(nbundle(language,"server-http-rank-attackclear"));
 
             return doc.toString();
         }
 
-        private void httpserver(String receive, String payload){
+        private void httpserver(String receive, String payload, String ip){
             try {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
@@ -592,18 +595,10 @@ public class Server implements Runnable {
                                 }
                                 bw.write(datatext);
                             } else {
-                                String result = "Login failed!\n";
-                                bw.write(result);
+                                bw.write("Login failed!\nLogin failed!");
                             }
                         } else {
-                            String result = "Login failed!\n";
-                            bw.write("HTTP/1.1 200 OK\r\n");
-                            bw.write("Date: " + time + "\r\n");
-                            bw.write("Server: Mindustry/Essentials if(parameter.length == 0){\r\n");
-                            bw.write("Content-Type: text/html; charset=utf-8\r\n");
-                            bw.write("Content-Length: " + result.getBytes().length + 1 + "\r\n");
-                            bw.write("\r\n");
-                            bw.write(result);
+                            bw.write("Login failed!");
                         }
                         rs.close();
                         pstm.close();
