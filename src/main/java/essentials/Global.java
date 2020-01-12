@@ -496,36 +496,37 @@ public class Global {
         int[] n = {1,1,1,1,0,1,1,0,1,1,0,1,1,0,1};
         int[] o = {1,1,1,1,0,1,1,0,1,1,0,1,1,1,1};
 
+        Tile target = world.tile(tile.x, tile.y);
         for(int a=0;a<15;a++) {
             String position = pos[a];
             String[] data = position.split(",");
             int x = Integer.parseInt(data[0]);
             int y = Integer.parseInt(data[1]);
-            Tile target = world.tile(tile.x, tile.y);
-            if(n[a] == 1) {
-                if (world.tile(target.x + x, target.y + y).block() != Blocks.scrapWall) {
-                    Call.onConstructFinish(world.tile(target.x + x, target.y + y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
+            if(n[a]==1) {
+                if (world.tile(target.x+x, target.y+y).block() != Blocks.scrapWall) {
+                    Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
                 }
-            } else if(n[a] == 0){
+            } else {
                 if(world.tile(target.x+x, target.y+y).block().solid){
                     Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
                 }
             }
         }
 
+        target = world.tile(tile.x+4,tile.y);
+
         for(int a=0;a<15;a++) {
             String position = pos[a];
             String[] data = position.split(",");
             int x = Integer.parseInt(data[0]);
             int y = Integer.parseInt(data[1]);
-            Tile target = world.tile(tile.x, tile.y);
-            if(o[a] == 1) {
-                if (world.tile(target.x + x, target.y + y).block() != Blocks.scrapWall) {
-                    Call.onConstructFinish(world.tile(target.x+4+x, target.y+y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
+            if(o[a]==1) {
+                if (world.tile(target.x+x, target.y+y).block() != Blocks.scrapWall) {
+                    Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.scrapWall, 0, (byte) 0, Team.sharded, true);
                 }
-            } else if(o[a] == 0){
+            } else {
                 if(world.tile(target.x+x, target.y+y).block().solid){
-                    Call.onDeconstructFinish(world.tile(target.x+4+x,target.y+y), Blocks.air, 0);
+                    Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
                 }
             }
         }
