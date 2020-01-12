@@ -39,7 +39,7 @@ public class Config {
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-    static int version = 8;
+    static int version = 9;
 
     public Config(){
         Yaml yaml = new Yaml();
@@ -193,6 +193,7 @@ public class Config {
                 "\n" +
                 "# "+nbundle("config-papago-description")+"\n" +
                 "# "+nbundle("config-papago-child-description")+"\n" +
+                "enable-translate: " + isEnableTranslate() + "\n" +
                 "clientId: " + getClientId() + "\n" +
                 "clientSecret: " + getClientSecret() + "\n" +
                 "\n" +
@@ -403,6 +404,10 @@ public class Config {
 
     public String getDBpw(){
         return obj.containsKey("dbpw") ? (String) obj.get("dbpw") : "";
+    }
+
+    public boolean isEnableTranslate(){
+        return obj.containsKey("enable-translate") && (boolean) obj.get("enable-translate");
     }
 
     public String getClientId(){

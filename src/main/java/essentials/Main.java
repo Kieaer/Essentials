@@ -448,8 +448,8 @@ public class Main extends Plugin {
                     JsonObject db = getData(e.player.uuid);
 
                     if (e.message.matches("(.*쌍[\\S\\s]{0,2}(년|놈).*)|(.*(씨|시)[\\S\\s]{0,2}(벌|빨|발|바).*)|(.*장[\\S\\s]{0,2}애.*)|(.*(병|븅)[\\S\\s]{0,2}(신|쉰|싄).*)|(.*(좆|존|좃)[\\S\\s]{0,2}(같|되|는|나).*)|(.*(개|게)[\\S\\s]{0,2}(같|갓|새|세|쉐).*)|(.*(걸|느)[\\S\\s]{0,2}(레|금).*)|(.*(꼬|꽂|고)[\\S\\s]{0,2}(추|츄).*)|(.*(니|너)[\\S\\s]{0,2}(어|엄|엠|애|m|M).*)|(.*(노)[\\S\\s]{0,1}(애|앰).*)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(ㅅㅂ|ㅄ|ㄷㅊ)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(.*s[\\S\\s]{0,1}e[\\S\\s]{0,1}x.*)")) {
-                        Call.onKick(e.player.con, nbundle(db.getString("language"),"kick-swear"));
-                    } else if(e.message.equals("y") && isvoting) {
+                        Call.onKick(e.player.con, nbundle(db.getString("language"), "kick-swear"));
+                    } else if (e.message.equals("y") && isvoting) {
                         // 투표가 진행중일때
                         if (Vote.list.contains(e.player.uuid)) {
                             e.player.sendMessage(bundle(e.player, "vote-already"));
@@ -461,7 +461,8 @@ public class Main extends Plugin {
                                 return;
                             }
                             for (Player others : playerGroup.all()) {
-                                if (isLogin(others)) others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
+                                if (isLogin(others))
+                                    others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                             }
                         }
                     }/* else {
@@ -482,7 +483,7 @@ public class Main extends Plugin {
                             String msg = "[" + e.player.name + "]: " + e.message;
                             try {
                                 for (Server.Service ser : Server.list) {
-                                    ser.os.writeBytes(Base64.encode(encrypt(msg,ser.spec,ser.cipher)));
+                                    ser.os.writeBytes(Base64.encode(encrypt(msg, ser.spec, ser.cipher)));
                                     ser.os.flush();
                                 }
                             } catch (Exception ex) {
@@ -499,55 +500,53 @@ public class Main extends Plugin {
                 writeData("UPDATE players SET lastchat = ? WHERE uuid = ?", e.message, e.player.uuid);
 
                 // 번역
-                if(config.getClientId() != null && config.getClientSecret() != null) {
-                    if (!config.getClientId().equals("") && !config.getClientSecret().equals("")) {
-                        Thread t = new Thread(() -> {
-                            try {
-                                JsonObject orignaldata = getData(e.player.uuid);
-                                for (int i = 0; i < playerGroup.size(); i++) {
-                                    Player p = playerGroup.all().get(i);
-                                    if (!isNocore(p)) {
-                                        JsonObject data = getData(p.uuid);
-                                        String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
-                                        String language = data.getString("language");
-                                        String orignal = orignaldata.getString("language");
-                                        if (!language.equals(orignal)) {
-                                            boolean found = false;
-                                            for (String s : support) {
-                                                if (orignal.equals(s)) {
-                                                    found = true;
-                                                    break;
-                                                }
+                if (config.isEnableTranslate()) {
+                    Thread t = new Thread(() -> {
+                        try {
+                            JsonObject orignaldata = getData(e.player.uuid);
+                            for (int i = 0; i < playerGroup.size(); i++) {
+                                Player p = playerGroup.all().get(i);
+                                if (!isNocore(p)) {
+                                    JsonObject data = getData(p.uuid);
+                                    String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
+                                    String language = data.getString("language");
+                                    String orignal = orignaldata.getString("language");
+                                    if (!language.equals(orignal)) {
+                                        boolean found = false;
+                                        for (String s : support) {
+                                            if (orignal.equals(s)) {
+                                                found = true;
+                                                break;
                                             }
-                                            if (found) {
-                                                String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
-                                                        .method(Connection.Method.POST)
-                                                        .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
-                                                        .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
-                                                        .data("source", orignaldata.getString("language"))
-                                                        .data("target", data.getString("language"))
-                                                        .data("text", e.message)
-                                                        .ignoreContentType(true)
-                                                        .followRedirects(true)
-                                                        .execute()
-                                                        .body();
-                                                JsonObject object = JsonParser.object().from(response);
-                                                if(!object.has("error")) {
-                                                    String result = object.getObject("message").getObject("result").getString("translatedText");
-                                                    if (data.getBoolean("translate")) {
-                                                        p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
-                                                    }
+                                        }
+                                        if (found) {
+                                            String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
+                                                    .method(Connection.Method.POST)
+                                                    .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
+                                                    .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
+                                                    .data("source", orignaldata.getString("language"))
+                                                    .data("target", data.getString("language"))
+                                                    .data("text", e.message)
+                                                    .ignoreContentType(true)
+                                                    .followRedirects(true)
+                                                    .execute()
+                                                    .body();
+                                            JsonObject object = JsonParser.object().from(response);
+                                            if (!object.has("error")) {
+                                                String result = object.getObject("message").getObject("result").getString("translatedText");
+                                                if (data.getBoolean("translate")) {
+                                                    p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            } catch (Exception ex) {
-                                printStackTrace(ex);
                             }
-                        });
-                        t.start();
-                    }
+                        } catch (Exception ex) {
+                            printStackTrace(ex);
+                        }
+                    });
+                    t.start();
                 }
             }
         });
