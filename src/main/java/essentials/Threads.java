@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static essentials.Global.*;
 import static essentials.Main.*;
@@ -1231,6 +1232,7 @@ public class Threads extends TimerTask{
     }
     public static class visualjump extends Thread{
         int length;
+        ArrayList<Thread> thread = new ArrayList<>();
         static ExecutorService service = Executors.newCachedThreadPool(new Global.threadname("Essentials jump zone thread"));
 
         @Override
@@ -1242,46 +1244,59 @@ public class Threads extends TimerTask{
                 Thread t = new Thread(() -> {
                     try {
                         while (!Thread.currentThread().isInterrupted()) {
-                            int xt = Integer.parseInt(data[0]);
-                            int yt = Integer.parseInt(data[1]);
-                            int tilexfinal = Integer.parseInt(data[2])-1;
-                            int tileyfinal = Integer.parseInt(data[3])-1;
-                            int size = tilexfinal - xt;
+                            String ip = data[4];
+                            AtomicBoolean online = new AtomicBoolean(false);
+                            pingServer(ip,result->{if(result.name != null) online.set(true);});
+                            if(online.get()) {
+                                nlog("debug",ip+" online!");
+                                int xt = Integer.parseInt(data[0]);
+                                int yt = Integer.parseInt(data[1]);
+                                int tilexfinal = Integer.parseInt(data[2]) - 1;
+                                int tileyfinal = Integer.parseInt(data[3]) - 1;
+                                int size = tilexfinal - xt;
 
-                            for (int x = 0; x < size; x++) {
-                                Tile tile = world.tile(xt + x, yt);
-                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
-                                sleep(64);
-                            }
-                            for (int y = 0; y < size; y++) {
-                                Tile tile = world.tile(tilexfinal, yt + y);
-                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
-                                sleep(64);
-                            }
-                            for (int x = 0; x < size; x++) {
-                                Tile tile = world.tile(tilexfinal - x, tileyfinal);
-                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
-                                sleep(64);
-                            }
-                            for (int y = 0; y < size; y++) {
-                                Tile tile = world.tile(xt, tileyfinal - y);
-                                Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
-                                sleep(64);
+                                for (int x = 0; x < size; x++) {
+                                    Tile tile = world.tile(xt + x, yt);
+                                    Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                    sleep(96);
+                                }
+                                for (int y = 0; y < size; y++) {
+                                    Tile tile = world.tile(tilexfinal, yt + y);
+                                    Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                    sleep(96);
+                                }
+                                for (int x = 0; x < size; x++) {
+                                    Tile tile = world.tile(tilexfinal - x, tileyfinal);
+                                    Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                    sleep(96);
+                                }
+                                for (int y = 0; y < size; y++) {
+                                    Tile tile = world.tile(xt, tileyfinal - y);
+                                    Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
+                                    sleep(96);
+                                }
+                            } else {
+                                nlog("debug",ip+" offline! After 30 seconds, try to connect again.");
+                                sleep(30000);
                             }
                         }
                     } catch (InterruptedException ignored) {}
                 });
-                service.submit(t);
+                thread.add(t);
+                t.start();
             }
 
             while(!Thread.currentThread().isInterrupted()) {
                 try {
                     if (length != jumpzone.size()) {
-                        service.shutdownNow();
-                        new Thread(this).start();
+                        for (Thread value : thread) {
+                            value.interrupt();
+                        }
                         this.interrupt();
+                        new Thread(this).start();
+                    } else {
+                        sleep(3000);
                     }
-                    sleep(3000);
                 } catch (InterruptedException ignored) {}
             }
         }
