@@ -74,8 +74,8 @@ public class Discord extends ListenerAdapter {
                 if (checkpw(id, pw, pw2)) {
                     pw = BCrypt.hashpw(pw, BCrypt.gensalt(11));
                     if(isduplicateid(id) || isduplicatename(event.getAuthor().getName())) {
-                        message = "This account already exists!\n" +
-                                "이 계정은 이미 사용중입니다!";
+                        message = "This account is already in use or attempted to register an account with an invalid nickname!\n" +
+                                "이 계정은 이미 사용중이거나 잘못된 닉네임으로 계정 등록을 시도했습니다!";
                         send(message);
                         return;
                     }
