@@ -45,8 +45,6 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static essentials.Global.*;
@@ -648,14 +646,12 @@ public class Threads extends TimerTask{
         }
     }
     public static class AutoRollback extends TimerTask {
-        private boolean save() {
+        private void save() {
             try {
                 Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.save(file);
-                return true;
             } catch (Exception e) {
                 printStackTrace(e);
-                return false;
             }
         }
 
@@ -1233,10 +1229,28 @@ public class Threads extends TimerTask{
     public static class visualjump extends Thread{
         int length;
         ArrayList<Thread> thread = new ArrayList<>();
-        static ExecutorService service = Executors.newCachedThreadPool(new Global.threadname("Essentials jump zone thread"));
 
         @Override
         public void run() {
+            main();
+
+            while(!Thread.currentThread().isInterrupted()) {
+                try {
+                    if (length != jumpzone.size()) {
+                        for (Thread value : thread) {
+                            value.interrupt();
+                        }
+                        thread.clear();
+                        sleep(3000);
+                        main();
+                    } else {
+                        sleep(3000);
+                    }
+                } catch (InterruptedException ignored) {}
+            }
+        }
+
+        public void main(){
             length = jumpzone.size();
 
             for (int b = 0; b < jumpzone.size(); b++) {
@@ -1248,7 +1262,6 @@ public class Threads extends TimerTask{
                             AtomicBoolean online = new AtomicBoolean(false);
                             pingServer(ip,result->{if(result.name != null) online.set(true);});
                             if(online.get()) {
-                                nlog("debug",ip+" online!");
                                 int xt = Integer.parseInt(data[0]);
                                 int yt = Integer.parseInt(data[1]);
                                 int tilexfinal = Integer.parseInt(data[2]) - 1;
@@ -1276,7 +1289,7 @@ public class Threads extends TimerTask{
                                     sleep(96);
                                 }
                             } else {
-                                nlog("debug",ip+" offline! After 30 seconds, try to connect again.");
+                                nlog("debug","jump zone"+ip+" offline! After 30 seconds, try to connect again.");
                                 sleep(30000);
                             }
                         }
@@ -1284,20 +1297,6 @@ public class Threads extends TimerTask{
                 });
                 thread.add(t);
                 t.start();
-            }
-
-            while(!Thread.currentThread().isInterrupted()) {
-                try {
-                    if (length != jumpzone.size()) {
-                        for (Thread value : thread) {
-                            value.interrupt();
-                        }
-                        this.interrupt();
-                        new Thread(this).start();
-                    } else {
-                        sleep(3000);
-                    }
-                } catch (InterruptedException ignored) {}
             }
         }
     }

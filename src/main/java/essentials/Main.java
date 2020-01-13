@@ -1791,7 +1791,7 @@ public class Main extends Plugin {
                 case "zone":
                     for(int a=0;a<jumpzone.size();a++){
                         if(arg.length != 2){
-                            log("warn","no-parameter");
+                            player.sendMessage(bundle(player,"no-parameter"));
                             return;
                         }
                         // tilex, tiley, target tilex, target tiley, serverip, block
@@ -1807,14 +1807,14 @@ public class Main extends Plugin {
                     break;
                 case "count":
                     jumpcount.clear();
-                    log("log","jump-reset", "count");
+                    player.sendMessage(bundle(player,"jump-reset","count"));
                     break;
                 case "total":
                     jumpall.clear();
-                    log("log","jump-reset", "total");
+                    player.sendMessage(bundle(player,"jump-reset","total"));
                     break;
                 default:
-                    log("warn","Invalid option!");
+                    player.sendMessage(bundle(player,"command-invalid"));
                     break;
             }
         });
