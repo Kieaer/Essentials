@@ -196,10 +196,10 @@ public class Main extends Plugin {
         });
 
         Events.on(WithdrawEvent.class, e->{
-            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief()) {
-                allsendMessage("log-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
+            if (e.tile.entity != null && e.player.item().item != null && e.player != null && e.player.name != null && config.isAntigrief()) {
+                allsendMessage("log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (config.isDebug() && config.isAntigrief()) {
-                    log("log","log-withdraw", e.player.name, e.tile.entity.block.name, e.amount, e.tile.block().name);
+                    log("log","log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 }
             }
             if(e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief() && state.rules.pvp){

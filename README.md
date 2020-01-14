@@ -29,6 +29,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | changepw | &lt;new password&gt; | Change account password |
 | color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
+| despawn |  | Kill all units ||
 | event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
 | getpos |  | Show your current position position |
 | help | [page] | Show command lists |
