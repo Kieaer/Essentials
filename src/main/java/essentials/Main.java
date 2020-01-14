@@ -292,6 +292,11 @@ public class Main extends Plugin {
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(DepositEvent.class, e -> {
+            if(e.player.item().amount > e.player.mech.itemCapacity){
+                player.con.kick("Invalid request!");
+                return;
+            }
+
             // 만약 그 특정블록이 토륨 원자로이며, 맵 설정에서 원자로 폭발이 비활성화 되었을 경우
             if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor() && !state.rules.reactorExplosions) {
                 nukeblock.add(e.tile.entity.tileX() + "/" + e.tile.entity.tileY() + "/" + e.player.name);
