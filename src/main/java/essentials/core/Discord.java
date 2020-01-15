@@ -21,8 +21,8 @@ public class Discord extends ListenerAdapter {
     static Guild guild;
     static TextChannel channel;
     static JDA jda;
-    
-    static MessageReceivedEvent e;
+
+    static MessageReceivedEvent event;
 
     public void main(){
         try {
@@ -42,11 +42,11 @@ public class Discord extends ListenerAdapter {
 
 
     @Override
-    public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if(event.getTextChannel().getIdLong() == config.getDiscordRoom()) {
-            e = event;
-            if (event.getMessage().getContentRaw().equals("!help")) {
-                event.getMessage().delete().queue();
+    public void onMessageReceived(@Nonnull MessageReceivedEvent e) {
+        event = e;
+        if(e.getTextChannel().getIdLong() == config.getDiscordRoom()) {
+            if (e.getMessage().getContentRaw().equals("!help")) {
+                e.getMessage().delete().queue();
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +
                         "**!signup <new account id> <new password> <password repeat>** Account register to kr server. Nickname and password can't use blank.\n" +
@@ -59,9 +59,9 @@ public class Discord extends ListenerAdapter {
                 send(message);
             }
 
-            if (event.getMessage().getContentRaw().matches("!signup.*")) {
-                event.getMessage().delete().queue();
-                String message = event.getMessage().getContentRaw().replace("!signup ", "");
+            if (e.getMessage().getContentRaw().matches("!signup.*")) {
+                e.getMessage().delete().queue();
+                String message = e.getMessage().getContentRaw().replace("!signup ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
                     message = "Use !signup <new account id> <new password> <password repeat>\n" +
@@ -74,21 +74,21 @@ public class Discord extends ListenerAdapter {
                 String pw2 = data[2];
                 if (checkpw(id, pw, pw2)) {
                     pw = BCrypt.hashpw(pw, BCrypt.gensalt(11));
-                    if(isduplicateid(id) || isduplicatename(event.getAuthor().getName())) {
+                    if(isduplicateid(id) || isduplicatename(e.getAuthor().getName())) {
                         message = "This account is already in use or attempted to register an account with an invalid nickname!\n" +
                                 "이 계정은 이미 사용중이거나 잘못된 닉네임으로 계정 등록을 시도했습니다!";
                         send(message);
                         return;
                     }
-                    if (PlayerDB.createNewDatabase(event.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, id, pw, null)) {
-                        message = "Register successful! Now, join server and use /login command.\n" +
-                                "계정 등록에 성공했습니다! 이제 서버에 가서 /login 명령어를 사용하세요.";
-                        if(e.getMember() != null) {
+                    if(e.getMember() != null) {
+                    if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), null, null, null)) {
                             Role role = guild.getRolesByName(config.getDiscordRole(),false).get(0);
                             guild.addRoleToMember(e.getMember(), role).queue();
                         } else {
                             send("Invalid user! Discord set role failed.");
                         }
+                        message = "Register successful! Now, join server and use /login command.\n" +
+                                "계정 등록에 성공했습니다! 이제 서버에 가서 /login 명령어를 사용하세요.";
                     } else {
                         message = "Register failed.\n" +
                                 "계정 등록 실패.";
@@ -97,9 +97,9 @@ public class Discord extends ListenerAdapter {
                 }
             }
 
-            if (event.getMessage().getContentRaw().matches("!changepw.*")) {
-                event.getMessage().delete().queue();
-                String message = event.getMessage().getContentRaw().replace("!changepw ", "");
+            if (e.getMessage().getContentRaw().matches("!changepw.*")) {
+                e.getMessage().delete().queue();
+                String message = e.getMessage().getContentRaw().replace("!changepw ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
                     message = "Use !changepw <account id> <new password> <password repeat>\n" +
@@ -117,9 +117,7 @@ public class Discord extends ListenerAdapter {
                         String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
                         writeData("UPDATE players SET accountpw = ? WHERE accountid = ?",hashed,id);
                         send("Successful!\n성공!");
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
+                    } catch (ClassNotFoundException ignored) {}
                 }
             }
         }
@@ -178,6 +176,6 @@ public class Discord extends ListenerAdapter {
     }
     
     public void send(String message){
-        e.getChannel().sendMessage(message).queue(msg -> msg.delete().queueAfter(20, TimeUnit.SECONDS));
+        event.getChannel().sendMessage(message).queue(msg -> msg.delete().queueAfter(20, TimeUnit.SECONDS));
     }
 }

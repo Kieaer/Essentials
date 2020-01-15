@@ -587,6 +587,7 @@ public class Global {
                                 break;
                             }catch (Exception ignored){}
                         }
+                        locale = Locale.ENGLISH;
                     }
                 }
                 data.put("country", result.getString("country_name"));

@@ -73,6 +73,7 @@ public class PlayerDB{
                         "connected TEXT,\n" +
                         "connserver TEXT,\n" +
                         "permission TEXT,\n" +
+                        "udid TEXT,\n" +
                         "accountid TEXT,\n" +
                         "accountpw TEXT\n" +
                         ");";
@@ -116,6 +117,7 @@ public class PlayerDB{
                             "`connected` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`connserver` TINYTEXT NULL DEFAULT 'none',\n" +
                             "`permission` TINYTEXT NULL DEFAULT 'default',\n" +
+                            "`udid` TEXT NULL DEFAULT NULL,\n" +
                             "`accountid` TEXT NULL DEFAULT NULL,\n" +
                             "`accountpw` TEXT NULL DEFAULT NULL,\n" +
                             "PRIMARY KEY (`id`)\n" +
@@ -135,16 +137,16 @@ public class PlayerDB{
             printStackTrace(ex);
         }
     }
-	public static boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, boolean connected, String accountid, String accountpw, Player player) {
+	public static boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, boolean connected, Long udid, String accountid, String accountpw, Player player) {
         boolean result = false;
         try {
             if(uuid.equals("InactiveAAA=") || !isduplicate(uuid)){
                 String currentip = new Threads.getip().main();
                 String sql;
                 if(config.isSqlite()){
-                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
-                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 }
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
@@ -183,8 +185,9 @@ public class PlayerDB{
                 pstmt.setBoolean(34, connected); // connected
                 pstmt.setString(35, currentip); // connected server ip
                 pstmt.setString(36, "default"); // set permission
-                pstmt.setString(37, accountid);
-                pstmt.setString(38, accountpw);
+                pstmt.setLong(37, udid); // UDID
+                pstmt.setString(38, accountid);
+                pstmt.setString(39, accountpw);
                 pstmt.execute();
                 pstmt.close();
                 if(player != null) player.sendMessage(bundle("player-id", player.name));
@@ -245,6 +248,7 @@ public class PlayerDB{
                 data.put("connected", rs.getBoolean("connected"));
                 data.put("connserver", rs.getString("connserver"));
                 data.put("permission", rs.getString("permission"));
+                data.put("udid",rs.getString("udid"));
                 data.put("accountid", rs.getString("accountid"));
                 data.put("accountpw", rs.getString("accountpw"));
             }
@@ -298,6 +302,8 @@ public class PlayerDB{
         String v2sql;
         String v3sql;
         String v3update;
+        String v4sql;
+        String v4update;
 
         if(config.isSqlite()){
             v1sql = "ALTER TABLE players ADD COLUMN connserver TEXT AFTER connected;";
@@ -305,13 +311,16 @@ public class PlayerDB{
             v2sql = "ALTER TABLE players ADD COLUMN permission TEXT AFTER connserver;";
             v2update = "UPDATE players SET permission = default";
             v3sql = "ALTER TABLE players ADD COLUMN banned TEXT AFTER bantime;";
-
+            v4sql = "ALTER TABLE players ADD COLUMN udid TEXT AFTER permission;";
+            v4update = "UPDATE players SET udid = none";
         } else {
             v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER connected;";
             v1update = "UPDATE players SET connected = 0";
             v2sql = "ALTER TABLE `players` ADD COLUMN `permission` TINYTEXT `default` NULL AFTER connserver;";
             v2update = "UPDATE players SET permission = 'default'";
             v3sql = "ALTER TABLE `players` ADD COLUMN `banned` TINYINT DEFAULT NULL AFTER bantime;";
+            v4sql = "ALTER TABLE `players` ADD COLUMN `udid` TEXT DEFAULT NULL AFTER permission;";
+            v4update = "UPDATE players SET udid = 'none'";
         }
         v3update = "UPDATE players SET banned = 0";
 
@@ -332,6 +341,12 @@ public class PlayerDB{
                 log("player","db-upgrade");
             }
             resultSet = metadata.getColumns(null, null, "players", "banned");
+            if(!resultSet.next()){
+                stmt.execute(v3sql);
+                stmt.execute(v3update);
+                log("player","db-upgrade");
+            }
+            resultSet = metadata.getColumns(null, null, "players", "udid");
             if(!resultSet.next()){
                 stmt.execute(v3sql);
                 stmt.execute(v3update);
@@ -497,7 +512,7 @@ public class PlayerDB{
                         HashMap<String, String> list = geolocation(player);
 
                         if (!isduplicate(player)) {
-                            createNewDatabase(nickname, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, player.name, hashed, player);
+                            createNewDatabase(nickname, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, 0L, "", hashed, player);
                         } else {
                             player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
                                     "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
@@ -527,7 +542,7 @@ public class PlayerDB{
         if (isLogin(player)) {
             HashMap<String, String> list = geolocation(player);
             player.sendMessage(bundle(player, "player-name-changed", player.name));
-            return createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getTime(), getTime(), true, player.name, "blank", player);
+            return createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getTime(), getTime(), true, 0L, "", "blank", player);
         } else {
             return true;
         }
