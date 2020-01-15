@@ -196,13 +196,13 @@ public class Main extends Plugin {
         });
 
         Events.on(WithdrawEvent.class, e->{
-            if (e.tile.entity != null && e.player.item().item != null && e.player != null && e.player.name != null && config.isAntigrief()) {
+            if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.isAntigrief()) {
                 allsendMessage("log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (config.isDebug() && config.isAntigrief()) {
                     log("log","log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 }
             }
-            if(e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAntigrief() && state.rules.pvp){
+            if(e.tile.entity != null && e.tile.entity.block != null && e.player.name != null && config.isAntigrief() && state.rules.pvp){
                 if(e.item.flammability > 0.001f) {
                     e.player.sendMessage(bundle(e.player, "flammable-disabled"));
                     e.player.clearItem();
@@ -440,10 +440,15 @@ public class Main extends Plugin {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
-            // TODO pvp 탈주 횟수 추가
             String uuid = e.player.uuid;
             if (isLogin(e.player)) {
-                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", uuid);
+                if(state.rules.pvp && !state.gameOver){
+                    int breakout = getData(e.player.uuid).getInt("pvpbreakout");
+                    breakout++;
+                    writeData("UPDATE players SET connected = ?, connserver = ?, breakout = ? WHERE uuid = ?", false, "none", breakout, uuid);
+                } else {
+                    writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", uuid);
+                }
             }
         });
 
