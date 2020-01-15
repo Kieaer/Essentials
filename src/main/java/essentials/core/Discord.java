@@ -3,6 +3,7 @@ package essentials.core;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -82,6 +83,12 @@ public class Discord extends ListenerAdapter {
                     if (PlayerDB.createNewDatabase(event.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, id, pw, null)) {
                         message = "Register successful! Now, join server and use /login command.\n" +
                                 "계정 등록에 성공했습니다! 이제 서버에 가서 /login 명령어를 사용하세요.";
+                        if(e.getMember() != null) {
+                            Role role = guild.getRolesByName(config.getDiscordRole(),false).get(0);
+                            guild.addRoleToMember(e.getMember(), role).queue();
+                        } else {
+                            send("Invalid user! Discord set role failed.");
+                        }
                     } else {
                         message = "Register failed.\n" +
                                 "계정 등록 실패.";

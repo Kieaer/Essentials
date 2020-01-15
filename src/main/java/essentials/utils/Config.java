@@ -186,10 +186,12 @@ public class Config {
                 "validconnect: " + isValidconnect() + "\n" +
                 "\n" +
                 "# "+nbundle("config-discord-description")+"\n" +
+                "# "+nbundle("config-discord-role-description")+"\n" +
                 "discord-token: " + getDiscordToken() + "\n" +
                 "discord-guild: " + getDiscordGuild() + "\n" +
                 "discord-room: " + getDiscordRoom() + "\n" +
                 "discord-link: " + getDiscordLink() + "\n" +
+                "discord-register-role: " + getDiscordRole() +"\n" +
                 "\n" +
                 "# "+nbundle("config-papago-description")+"\n" +
                 "# "+nbundle("config-papago-child-description")+"\n" +
@@ -388,6 +390,10 @@ public class Config {
 
     public String getDiscordLink(){
         return obj.containsKey("discord-link") ? (String) obj.get("discord-link") : "Put your discord invite link here";
+    }
+
+    public String getDiscordRole(){
+        return obj.containsKey("discord-register-role") ? (String) obj.get("discord-register-role") : "";
     }
 
     public String getDBurl(){
