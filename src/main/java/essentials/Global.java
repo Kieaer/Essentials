@@ -4,6 +4,7 @@ import arc.Core;
 import arc.util.Log;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
+import essentials.special.UTF8Control;
 import essentials.utils.Bundle;
 import essentials.utils.Config;
 import essentials.utils.Permission;
@@ -25,10 +26,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
+import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -572,7 +570,25 @@ public class Global {
                 data.put("country_code", "LC");
                 data.put("languages", "en");
             } else {
-                Locale locale = new Locale(result.getString("languages"));
+                Locale locale;
+                while(true){
+                    try {
+                        locale = new Locale(result.getString("languages"));
+                        ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
+                        RESOURCE_BUNDLE.getString("success");
+                        break;
+                    }catch (Exception e){
+                        String[] array = result.getString("languages").split(",");
+                        for(int a=0;a<array.length;a++){
+                            try{
+                                locale = new Locale(result.getString("languages"));
+                                ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
+                                RESOURCE_BUNDLE.getString("success");
+                                break;
+                            }catch (Exception ignored){}
+                        }
+                    }
+                }
                 data.put("country", result.getString("country_name"));
                 data.put("country_code", result.getString("country"));
                 data.put("languages", locale.getLanguage());
