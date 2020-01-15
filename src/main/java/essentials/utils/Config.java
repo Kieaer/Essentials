@@ -192,6 +192,7 @@ public class Config {
                 "discord-room: " + getDiscordRoom() + "\n" +
                 "discord-link: " + getDiscordLink() + "\n" +
                 "discord-register-role: " + getDiscordRole() +"\n" +
+                "discord-command-prefix: " + getDiscordPrefix() + "\n" +
                 "\n" +
                 "# "+nbundle("config-papago-description")+"\n" +
                 "# "+nbundle("config-papago-child-description")+"\n" +
@@ -394,6 +395,10 @@ public class Config {
 
     public String getDiscordRole(){
         return obj.containsKey("discord-register-role") ? (String) obj.get("discord-register-role") : "";
+    }
+
+    public String getDiscordPrefix(){
+        return obj.containsKey("discord-command-prefix") ? (String) obj.get("discord-command-prefix") : "!";
     }
 
     public String getDBurl(){
