@@ -62,6 +62,7 @@ public class Threads extends TimerTask{
     static boolean peacetime;
     static ArrayList<String> nukeposition = new ArrayList<>();
     static ArrayList<Process> process = new ArrayList<>();
+    public static boolean isvoting;
 
     @Override
     public void run() {
@@ -929,7 +930,6 @@ public class Threads extends TimerTask{
         private static int time = 0;
         private static int bundletime = 0;
 
-        public static boolean isvoting;
         static ArrayList<String> list = new ArrayList<>();
         static int require;
 

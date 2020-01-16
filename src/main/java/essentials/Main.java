@@ -64,7 +64,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static essentials.Global.*;
-import static essentials.Threads.Vote.isvoting;
 import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
@@ -586,6 +585,7 @@ public class Main extends Plugin {
                         data++;
 
                         writeData("UPDATE players SET lastplacename = ?, placecount = ?, exp = ? WHERE uuid = ?", e.tile.block().name, data, newexp, e.player.uuid);
+
 
                         if (e.player.buildRequest().block == Blocks.thoriumReactor) {
                             int reactorcount = db.getInt("reactorcount");
@@ -2179,6 +2179,10 @@ public class Main extends Plugin {
         });
         handler.<Player>register("vote", "<gameover/skipwave/kick/rollback/map> [mapid/mapname/playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
             if(!checkperm(player,"vote")) return;
+            if(isvoting){
+                player.sendMessage(bundle(player, "vote-in-processing"));
+                return;
+            }
             if(arg.length == 2) {
                 if(arg[0].equals("kick")) {
                     Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
