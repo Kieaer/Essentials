@@ -92,18 +92,14 @@ public class Main extends Plugin {
         config.main();
 
         // 클라이언트 연결 확인
-        client = new Client();
         if (config.isClientenable()) {
+            client = new Client();
             log("client","server-connecting");
             client.main(null, null, null);
         }
 
         // 플레이어 DB 연결
         PlayerDB playerdb = new PlayerDB();
-        playerdb.openconnect();
-
-        // 플레이어 DB 생성
-        playerdb.createNewDataFile();
 
         // 모든 플레이어 연결 상태를 0으로 설정
         try{
@@ -118,9 +114,6 @@ public class Main extends Plugin {
             printStackTrace(e);
         }
 
-        // 플레이어 DB 업그레이드
-        Upgrade();
-
         // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
         executorService.submit(new jumpcheck());
 
@@ -134,15 +127,12 @@ public class Main extends Plugin {
         executorService.submit(new bantime());
 
         // 서버간 이동 영역 표시
-        new Thread(new visualjump()).start();
+        executorService.submit(new visualjump());
 
         // 기록 시작
         if (config.isLogging()) {
-            Log log = new Log();
-            log.main();
+            new Log();
         }
-
-        //EssentialAI.main();
 
         // 서버기능 시작
         Thread server = new Thread(new Server());
@@ -151,7 +141,7 @@ public class Main extends Plugin {
         }
 
         // 권한 기능 시작
-        new Permission().main();
+        new Permission();
 
         Events.on(TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isBlockdetect() && config.isAlertdeposit()) {
@@ -164,33 +154,30 @@ public class Main extends Plugin {
 
         Events.on(TapEvent.class, e -> {
             if(isLogin(e.player)) {
-                Thread t = new Thread(() -> {
-                    for(int a=0;a<jumpzone.size();a++){
-                        String jumpdata = jumpzone.getString(a);
-                        String[] data = jumpdata.split("/");
-                        int startx = Integer.parseInt(data[0]);
-                        int starty = Integer.parseInt(data[1]);
-                        int tilex = Integer.parseInt(data[2]);
-                        int tiley = Integer.parseInt(data[3]);
-                        String serverip = data[4];
+                for (int a = 0; a < jumpzone.size(); a++) {
+                    String jumpdata = jumpzone.getString(a);
+                    String[] data = jumpdata.split("/");
+                    int startx = Integer.parseInt(data[0]);
+                    int starty = Integer.parseInt(data[1]);
+                    int tilex = Integer.parseInt(data[2]);
+                    int tiley = Integer.parseInt(data[3]);
+                    String serverip = data[4];
 
-                        String ip = data[4];
-                        int port = 6567;
-                        if(serverip.contains(":") && Strings.canParsePostiveInt(serverip.split(":")[1])){
-                            ip = serverip.split(":")[0];
-                            port = Strings.parseInt(serverip.split(":")[1]);
-                        }
+                    String ip = data[4];
+                    int port = 6567;
+                    if (serverip.contains(":") && Strings.canParsePostiveInt(serverip.split(":")[1])) {
+                        ip = serverip.split(":")[0];
+                        port = Strings.parseInt(serverip.split(":")[1]);
+                    }
 
-                        if (e.tile.x > startx && e.tile.x < tilex) {
-                            if (e.tile.y > starty && e.tile.y < tiley) {
-                                log("log", "player-jumped", e.player.name, serverip);
-                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
-                                Call.onConnect(e.player.con, ip, port);
-                            }
+                    if (e.tile.x > startx && e.tile.x < tilex) {
+                        if (e.tile.y > starty && e.tile.y < tiley) {
+                            log("log", "player-jumped", e.player.name, serverip);
+                            writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
+                            Call.onConnect(e.player.con, ip, port);
                         }
                     }
-                });
-                t.start();
+                }
             }
         });
 
@@ -373,9 +360,6 @@ public class Main extends Plugin {
                                 String message;
                                 String language = geolocation(Vars.netServer.admins.getInfo(e.player.uuid).lastIP);
 
-                                /*JsonObject translate = JsonParser.object().from(Jsoup.connect("https://api.mymemory.translated.net/get?q=" + text + "&langpair=" + source + "|+" + target).ignoreContentType(true).execute().body());
-                                String translate_result = translate.getObject("responseData").getString("translatedText");
-                                Data.put("data",translate_result);*/
                                 if (config.getPasswordmethod().equals("discord")) {
                                     message = nbundle(language, "login-require-discord")+"\n"+config.getDiscordLink();
                                 } else {
@@ -406,7 +390,7 @@ public class Main extends Plugin {
                         while ((line = br.readLine()) != null) {
                             IpAddressMatcher match = new IpAddressMatcher(line);
                             if (match.matches(ip)) {
-                                e.player.con.kick(nbundle("antivpn-kick"));
+                                Call.onKick(e.player.con, nbundle("antivpn-kick"));
                             }
                         }
                     } catch (IOException ex) {

@@ -11,7 +11,7 @@ import static essentials.Global.printStackTrace;
 public class Permission {
     public static JsonObject permission;
 
-    public void main(){
+    public Permission(){
         if(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").exists()) {
             try {
                 ObjectMapper yamlread = new ObjectMapper(new YAMLFactory());

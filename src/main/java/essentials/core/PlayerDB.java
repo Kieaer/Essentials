@@ -31,6 +31,11 @@ public class PlayerDB{
     private static ArrayList<Thread> griefthread = new ArrayList<>();
     public static ArrayList<Player> pvpteam = new ArrayList<>();
 
+    public PlayerDB(){
+        openconnect();
+        createNewDataFile();
+        Upgrade();
+    }
     public void createNewDataFile(){
         try {
             String sql = null;
@@ -295,7 +300,7 @@ public class PlayerDB{
             return !getData(uuid).getBoolean("banned");
         }
     }
-    public static void Upgrade() {
+    public void Upgrade() {
         String v1sql;
         String v1update;
         String v2update;
@@ -348,8 +353,8 @@ public class PlayerDB{
             }
             resultSet = metadata.getColumns(null, null, "players", "udid");
             if(!resultSet.next()){
-                stmt.execute(v3sql);
-                stmt.execute(v3update);
+                stmt.execute(v4sql);
+                stmt.execute(v4update);
                 log("player","db-upgrade");
             }
             resultSet.close();

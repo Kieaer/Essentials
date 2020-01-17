@@ -20,7 +20,7 @@ import static essentials.utils.Config.singleService;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Log{
-    public void main() {
+    public Log() {
         Events.on(PlayerChatEvent.class, e -> writelog("chat", e.player.name + ": " + e.message));
 
         Events.on(TapEvent.class, e-> {
