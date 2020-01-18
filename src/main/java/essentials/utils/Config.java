@@ -207,7 +207,7 @@ public class Config {
                 "savetime: " + getSavetime() + "\n" +
                 "\n" +
                 "# "+nbundle("config-slotnumber-description")+"\n" +
-                "enable-rollback:" + isEnableRollback() + "\n" +
+                "enable-rollback: " + isEnableRollback() + "\n" +
                 "slotnumber: " + getSlotnumber() + "\n" +
                 "\n" +
                 "# "+nbundle("config-auto-difficulty-description")+"\n" +
