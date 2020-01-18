@@ -207,6 +207,7 @@ public class Config {
                 "savetime: " + getSavetime() + "\n" +
                 "\n" +
                 "# "+nbundle("config-slotnumber-description")+"\n" +
+                "enable-rollback:" + isEnableRollback() + "\n" +
                 "slotnumber: " + getSlotnumber() + "\n" +
                 "\n" +
                 "# "+nbundle("config-auto-difficulty-description")+"\n" +
@@ -435,6 +436,10 @@ public class Config {
 
     public int getSavetime(){
         return obj.containsKey("savetime") ? (int) obj.get("savetime") : 10;
+    }
+
+    public boolean isEnableRollback(){
+        return obj.containsKey("enable-rollback") && (boolean) obj.get("enable-rollback");
     }
 
     public int getSlotnumber(){

@@ -765,7 +765,7 @@ public class Main extends Plugin {
         timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
 
         // 롤백 명령어에서 사용될 자동 저장작업 시작
-        timer.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
+        if(config.isEnableRollback()) timer.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
 
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
         Core.app.addListener(new ApplicationListener() {
@@ -1412,7 +1412,7 @@ public class Main extends Plugin {
                 log("warn","player-not-found");
             }
         });
-        handler.register("tempban", "<type-id/name/ip> <username/IP/ID> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
+        handler.register("tempban", "<player_name> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
             int bantimeset = Integer.parseInt(arg[1]);
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other == null){
@@ -1420,31 +1420,8 @@ public class Main extends Plugin {
                 return;
             }
             addtimeban(other.name, other.uuid, bantimeset);
-            switch (arg[0]) {
-                case "id":
-                    netServer.admins.banPlayerID(arg[1]);
-                    break;
-                case "name":
-                    Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-                    if (target != null) {
-                        netServer.admins.banPlayer(target.uuid);
-                        log("log","tempban", other.name, arg[1]);
-                    } else {
-                        log("warn","player-not-found");
-                    }
-                    break;
-                case "ip":
-                    netServer.admins.banPlayerIP(arg[1]);
-                    log("log","tempban", other.name, arg[1]);
-                    break;
-                default:
-                    nlog("log","Invalid type.");
-                    break;
-            }
+            log("log","tempban", other.name, arg[1]);
             other.con.kick("Temp kicked");
-            if(config.isClientenable()){
-                client.main("bansync", null, null);
-            }
         });
     }
 

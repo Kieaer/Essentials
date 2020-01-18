@@ -1087,8 +1087,13 @@ public class Threads extends TimerTask{
                         allsendMessage("vote-kick", target.name);
                         break;
                     case "rollback":
-                        allsendMessage("vote-rollback");
-                        break;
+                        if(config.isEnableRollback()) {
+                            allsendMessage("vote-rollback");
+                            break;
+                        } else {
+                            player.sendMessage(bundle(player,"vote-rollback-disabled"));
+                            return;
+                        }
                     case "map":
                         allsendMessage("vote-map");
                         break;
