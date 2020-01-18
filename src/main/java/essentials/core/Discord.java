@@ -32,6 +32,7 @@ public class Discord extends ListenerAdapter {
             guild = jda.getGuildById(config.getDiscordGuild());
             if(guild != null){
                 channel = guild.getTextChannelById(config.getDiscordRoom());
+                log("log","discord-enabled");
             } else {
                 log("err","discord-error");
             }
@@ -45,7 +46,7 @@ public class Discord extends ListenerAdapter {
     public void onMessageReceived(@Nonnull MessageReceivedEvent e) {
         event = e;
         if(e.getTextChannel().getIdLong() == config.getDiscordRoom()) {
-            if (e.getMessage().getContentRaw().equals(config.getDiscordPrefix()+"help")) {
+            if (e.getMessage().getContentRaw().equals("!help")) {
                 e.getMessage().delete().queue();
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +
@@ -59,7 +60,7 @@ public class Discord extends ListenerAdapter {
                 send(message);
             }
 
-            if (e.getMessage().getContentRaw().matches(config.getDiscordPrefix()+"signup.*")) {
+            if (e.getMessage().getContentRaw().matches("!signup.*")) {
                 e.getMessage().delete().queue();
                 String message = e.getMessage().getContentRaw().replace("!signup ", "");
                 String[] data = message.split(" ");
@@ -81,7 +82,7 @@ public class Discord extends ListenerAdapter {
                         return;
                     }
                     if(e.getMember() != null) {
-                    if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), null, null, null)) {
+                    if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), id, pw, null)) {
                             Role role = guild.getRolesByName(config.getDiscordRole(),false).get(0);
                             guild.addRoleToMember(e.getMember(), role).queue();
                         } else {
@@ -97,7 +98,7 @@ public class Discord extends ListenerAdapter {
                 }
             }
 
-            if (e.getMessage().getContentRaw().matches(config.getDiscordPrefix()+"changepw.*")) {
+            if (e.getMessage().getContentRaw().matches("!changepw.*")) {
                 e.getMessage().delete().queue();
                 String message = e.getMessage().getContentRaw().replace("!changepw ", "");
                 String[] data = message.split(" ");
