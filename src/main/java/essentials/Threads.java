@@ -36,10 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -50,6 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static essentials.Global.*;
 import static essentials.Main.*;
 import static essentials.core.Exp.exp;
+import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.getData;
 import static essentials.core.PlayerDB.writeData;
 import static essentials.special.PingServer.pingServer;
@@ -1012,19 +1010,8 @@ public class Threads extends TimerTask{
                     if (list.size() >= require) {
                         allsendMessage("vote-kick-done", target.name);
                         PlayerDB.addtimeban(target.name, target.uuid, 4);
-                        log("player",target.name + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require);
 
-                        Path path = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Player.log")));
-                        Path total = Paths.get(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Logs/Total.log")));
-                        try {
-                            JsonObject other = getData(target.uuid);
-                            String text = other.get("name") + " / " + target.uuid + " Player has banned due to voting. " + list.size() + "/" + require + "\n";
-                            byte[] result = text.getBytes();
-                            Files.write(path, result, StandardOpenOption.APPEND);
-                            Files.write(total, result, StandardOpenOption.APPEND);
-                        } catch (IOException error) {
-                            printStackTrace(error);
-                        }
+                        writelog("player",nbundle("log-player-kick",target.name,require));
 
                         netServer.admins.banPlayer(target.uuid);
                         target.con.kick("You're kicked.");
