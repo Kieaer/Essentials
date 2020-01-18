@@ -48,8 +48,7 @@ import static essentials.Global.*;
 import static essentials.Main.*;
 import static essentials.core.Exp.exp;
 import static essentials.core.Log.writelog;
-import static essentials.core.PlayerDB.getData;
-import static essentials.core.PlayerDB.writeData;
+import static essentials.core.PlayerDB.PlayerData;
 import static essentials.special.PingServer.pingServer;
 import static essentials.utils.Config.*;
 import static mindustry.Vars.*;
@@ -81,7 +80,7 @@ public class Threads extends TimerTask{
                 cal1.add(Calendar.SECOND, 1);
                 uptime = format.format(cal1.getTime());
             }catch (Exception e){
-                printStackTrace(e);
+                printError(e);
             }
         }
 
@@ -95,7 +94,7 @@ public class Threads extends TimerTask{
         try {
             new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
         } catch (IOException e) {
-            printStackTrace(e);
+            printError(e);
         }
 
         // 투표 확인
@@ -127,39 +126,26 @@ public class Threads extends TimerTask{
                 if(playerGroup.size() > 0){
                     for(int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
+                        PlayerData target = PlayerData(player.uuid);
 
-                        if (isLogin(player)) {
-                            JsonObject db = new JsonObject();
-                            try {
-                                db = getData(player.uuid);
-                            } catch (Exception e) {
-                                printStackTrace(e);
-                            }
-                            String data;
-                            if (db.has("playtime")) {
-                                data = db.getString("playtime");
-                            } else {
-                                return;
-                            }
+                        if (target.isLogin) {
                             SimpleDateFormat format = new SimpleDateFormat("HH:mm.ss");
                             Date d1;
                             Calendar cal;
                             String newTime = null;
                             try {
-                                d1 = format.parse(data);
+                                d1 = format.parse(target.playtime);
                                 cal = Calendar.getInstance();
                                 cal.setTime(d1);
                                 cal.add(Calendar.SECOND, 1);
                                 newTime = format.format(cal.getTime());
                             } catch (ParseException e1) {
-                                printStackTrace(e1);
+                                printError(e1);
                             }
 
-                            // Exp caculating
-                            int ex = db.getInt("exp");
-                            int newexp = ex + (int) (Math.random() * 5);
-
-                            writeData("UPDATE players SET exp = ?, playtime = ? WHERE uuid = ?", newexp, newTime, player.uuid);
+                            // Exp 계산
+                            target.exp = target.exp + (int) (Math.random() * 5);
+                            target.playtime = newTime;
                             if(!state.rules.editor){
                                 exp(player.name, player.uuid);
                             }
@@ -167,7 +153,7 @@ public class Threads extends TimerTask{
                     }
                 }
             }catch (Exception ex){
-                printStackTrace(ex);
+                printError(ex);
             }
 
         }
@@ -199,7 +185,7 @@ public class Threads extends TimerTask{
                         }
                     }
                 } catch (Exception ex) {
-                    printStackTrace(ex);
+                    printError(ex);
                 }
                 try {
                     Thread.sleep(1000);
@@ -233,7 +219,7 @@ public class Threads extends TimerTask{
                         }
                     }
                 }catch (Exception e){
-                    printStackTrace(e);
+                    printError(e);
                 }
             }
         }
@@ -314,7 +300,7 @@ public class Threads extends TimerTask{
             impcount = 0;
 
             // 최대값 설정 (레벨비례)
-            int level = getData(player.uuid).getInt("level");
+            int level = PlayerData(player.uuid).level;
             routerlimit = 10 + (level * 3);
             implimit = 6 + (level * 3);
             breaklimit = 25 + (level * 4);
@@ -520,7 +506,7 @@ public class Threads extends TimerTask{
                             }
                             player.sendMessage(message);
                         }catch (Exception e){
-                            printStackTrace(e);
+                            printError(e);
                         }
                     }
                 }
@@ -650,7 +636,7 @@ public class Threads extends TimerTask{
                 Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.save(file);
             } catch (Exception e) {
-                printStackTrace(e);
+                printError(e);
             }
         }
 
@@ -663,7 +649,7 @@ public class Threads extends TimerTask{
                 Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
                 SaveIO.load(file);
             } catch (SaveIO.SaveException e) {
-                printStackTrace(e);
+                printError(e);
             }
 
             Call.onWorldDataBegin();
@@ -706,7 +692,7 @@ public class Threads extends TimerTask{
                 service.start();
                 Thread.sleep(10000);
             } catch (Exception e) {
-                printStackTrace(e);
+                printError(e);
             }
         }
 
@@ -759,7 +745,7 @@ public class Threads extends TimerTask{
                                         process.remove(finalP);
                                         this.cancel();
                                     } catch (JsonParserException e) {
-                                        printStackTrace(e);
+                                        printError(e);
                                     }
                                 } else if (result.players == 0) {
                                     disablecount++;
@@ -794,11 +780,9 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             Thread.currentThread().setName(player.name+" color nickname thread");
-            JsonObject db = getData(player.uuid);
-            boolean connected = db.getBoolean("connected");
-            while (connected) {
-                connected = db.getBoolean("connected");
-                String name = db.getString("name").replaceAll("\\[(.*?)]", "");
+            PlayerData db = PlayerData(player.uuid);
+            while (db.connected) {
+                String name = db.name.replaceAll("\\[(.*?)]", "");
                 try {
                     Thread.sleep(updateIntervalMs);
                     nickcolor(name, player);
@@ -1208,7 +1192,7 @@ public class Threads extends TimerTask{
                 try {
                     Thread.sleep(2500);
                 } catch (InterruptedException e) {
-                    printStackTrace(e);
+                    printError(e);
                 }
             }
         }

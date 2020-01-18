@@ -31,8 +31,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.core.Log.writelog;
+import static essentials.core.PlayerDB.PlayerData;
 import static essentials.core.PlayerDB.conn;
-import static essentials.core.PlayerDB.getData;
 import static mindustry.Vars.playerGroup;
 import static mindustry.Vars.world;
 
@@ -174,7 +174,7 @@ public class Global {
     }
 
     // 오류 메세지를 파일로 복사하거나 즉시 출력
-    public static void printStackTrace(Throwable e) {
+    public static void printError(Throwable e) {
         if(!config.isDebug()){
             StringBuilder sb = new StringBuilder();
             try {
@@ -206,9 +206,9 @@ public class Global {
 
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
     public static String bundle(Player player, String value, Object... parameter) {
-        if(isLogin(player)){
-            JsonObject db = getData(player.uuid);
-            Locale locale = new Locale(db.getString("language"));
+        PlayerData p = PlayerData(player.uuid);
+        if(p.isLogin){
+            Locale locale = new Locale(p.language);
             Bundle bundle = new Bundle(locale);
             return bundle.getBundle(value, parameter);
         } else {
@@ -217,9 +217,9 @@ public class Global {
     }
 
     public static String bundle(Player player, String value) {
-        if(isLogin(player)){
-            JsonObject db = getData(player.uuid);
-            Locale locale = new Locale(db.getString("language"));
+        PlayerData p = PlayerData(player.uuid);
+        if(p.isLogin){
+            Locale locale = new Locale(p.language);
             Bundle bundle = new Bundle(locale);
             return bundle.getBundle(value);
         } else {
@@ -240,21 +240,21 @@ public class Global {
     }
 
     // Bundle 파일에서 Essentials 문구 없이 출력
-    public static String nbundle(Player player, String value, Object... paramter) {
-        JsonObject db = getData(player.uuid);
-        if(isLogin(player)){
-            Locale locale = new Locale(db.getString("language"));
+    public static String nbundle(Player player, String value, Object... parameter) {
+        PlayerData p = PlayerData(player.uuid);
+        if(p.isLogin){
+            Locale locale = new Locale(p.language);
             Bundle bundle = new Bundle(locale);
-            return bundle.getNormal(value, paramter);
+            return bundle.getNormal(value, parameter);
         } else {
             return "";
         }
     }
 
     public static String nbundle(Player player, String value) {
-        if(isLogin(player)){
-            JsonObject db = getData(player.uuid);
-            Locale locale = new Locale(db.getString("language"));
+        PlayerData p = PlayerData(player.uuid);
+        if(p.isLogin){
+            Locale locale = new Locale(p.language);
             Bundle bundle = new Bundle(locale);
             return bundle.getNormal(value);
         } else {
@@ -480,9 +480,9 @@ public class Global {
 
     // 각 언어별 motd
     public static String getmotd(Player player){
-        JsonObject db = getData(player.uuid);
-        if(Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").exists()){
-            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+db.getString("language")+".txt").readString();
+        PlayerData p = PlayerData(player.uuid);
+        if(Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+p.language+".txt").exists()){
+            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+p.language+".txt").readString();
         } else {
             return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_en.txt").readString();
         }
@@ -596,7 +596,7 @@ public class Global {
                 data.put("languages", locale.getLanguage());
             }
         } catch (Exception e) {
-            printStackTrace(e);
+            printError(e);
             data.put("country", "invalid");
             data.put("country_code", "invalid");
             data.put("languages", "en");
@@ -611,16 +611,16 @@ public class Global {
             JsonObject result = JsonParser.object().from(json);
             return result.getString("languages") == null ? "en" : result.getString("languages");
         } catch (Exception e){
-            printStackTrace(e);
+            printError(e);
             return "en";
         }
     }
 
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
-        JsonObject db = getData(player.uuid);
-        if(db.isEmpty() || player.uuid == null) return false;
-        return db.getBoolean("connected");
+        PlayerData target = PlayerData(player.uuid);
+        if(!target.isLogin) return false;
+        return target.connected;
     }
 
     // 비 로그인 유저 확인 (코어)
@@ -635,12 +635,11 @@ public class Global {
 
     // 권한 확인
     public static boolean checkperm(Player player, String command){
-        if(isLogin(player) && checklogin(player)){
-            JsonObject db = getData(player.uuid);
-            String perm = db.getString("permission");
-            int size = Permission.permission.getObject(perm).getArray("permission").size();
+        if(isLogin(player) && !isNocore(player)){
+            PlayerData p = PlayerData(player.uuid);
+            int size = Permission.permission.getObject(p.permission).getArray("permission").size();
             for(int a=0;a<size;a++){
-                String permlevel = Permission.permission.getObject(perm).getArray("permission").getString(a);
+                String permlevel = Permission.permission.getObject(p.permission).getArray("permission").getString(a);
                 if(permlevel.equals(command) || permlevel.equals("ALL")){
                     return true;
                 }
@@ -669,7 +668,7 @@ public class Global {
 
             return cal1.after(cal2);
         } catch (ParseException e) {
-            printStackTrace(e);
+            printError(e);
             return true;
         }
     }
@@ -707,7 +706,7 @@ public class Global {
             ResultSet rs = stmt.executeQuery();
             return rs.next();
         }catch (SQLException e){
-            printStackTrace(e);
+            printError(e);
             return true;
         }
     }
@@ -719,7 +718,7 @@ public class Global {
             ResultSet rs = stmt.executeQuery();
             return rs.next();
         }catch (SQLException e){
-            printStackTrace(e);
+            printError(e);
             return true;
         }
     }
@@ -731,7 +730,7 @@ public class Global {
             ResultSet rs = stmt.executeQuery();
             return rs.next();
         }catch (SQLException e){
-            printStackTrace(e);
+            printError(e);
             return true;
         }
     }
@@ -743,7 +742,7 @@ public class Global {
             ResultSet rs = stmt.executeQuery();
             return rs.next();
         }catch (SQLException e){
-            printStackTrace(e);
+            printError(e);
             return true;
         }
     }

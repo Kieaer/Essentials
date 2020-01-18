@@ -6,7 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 
-import static essentials.Global.printStackTrace;
+import static essentials.Global.printError;
 
 public class Permission {
     public static JsonObject permission;
@@ -39,7 +39,7 @@ public class Permission {
                     }
                 }
             }catch (Exception e){
-                printStackTrace(e);
+                printError(e);
             }
         }
     }

@@ -81,7 +81,7 @@ public class Config {
             blacklist = JsonParser.object().from(path.read()).getArray("blacklist");
             banned = JsonParser.object().from(path.read()).getArray("banned");
         } catch (JsonParserException | IOException e){
-            printStackTrace(e);
+            printError(e);
         }
     }
 
@@ -314,7 +314,7 @@ public class Config {
                 Date d = format.parse(String.valueOf(obj.get("antirushtime")));
                 cal.setTime(d);
             } catch (Exception e) {
-                printStackTrace(e);
+                printError(e);
                 nlog("warn","Invalid settings! - antirushtime");
                 nlog("warn","Correct value format is mm:ss (Example - 10:00 -> 10minute, 00:30 -> 30seconds)");
             }
@@ -323,7 +323,7 @@ public class Config {
                 Date d = format.parse("10:00");
                 cal.setTime(d);
             } catch (Exception e){
-                printStackTrace(e);
+                printError(e);
             }
         }
         return cal;
@@ -473,7 +473,7 @@ public class Config {
         try {
             return JsonParser.object().from(path.read()).getString("servername");
         } catch (JsonParserException e) {
-            printStackTrace(e);
+            printError(e);
         }
         return "";
     }

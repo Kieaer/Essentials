@@ -96,7 +96,7 @@ public class Client extends Thread{
                         os.flush();
                         log("client","client-banlist-sented");
                     } catch (Exception e) {
-                        printStackTrace(e);
+                        printError(e);
                     }
                     break;
                 case "chat":
@@ -124,7 +124,7 @@ public class Client extends Thread{
                         this.interrupt();
                         return;
                     } catch (Exception e) {
-                        printStackTrace(e);
+                        printError(e);
                     }
                     break;
                 case "unban":
@@ -133,7 +133,7 @@ public class Client extends Thread{
                         os.writeBytes(Base64.encode(encrypted)+"\n");
                         os.flush();
                     }catch (Exception e){
-                        printStackTrace(e);
+                        printError(e);
                     }
                     break;
             }
@@ -153,7 +153,7 @@ public class Client extends Thread{
                     byte[] decrypted = decrypt(encrypted, spec, cipher);
                     data = new String(decrypted);
                 }catch (Exception e){
-                    printStackTrace(e);
+                    printError(e);
                     log("client","server-disconnected", config.getClienthost());
 
                     serverconn = false;
@@ -162,7 +162,7 @@ public class Client extends Thread{
                         os.close();
                         socket.close();
                     } catch (IOException ex) {
-                        printStackTrace(ex);
+                        printError(ex);
                     }
                     return;
                 }
@@ -211,7 +211,7 @@ public class Client extends Thread{
                             log("client","client-banlist-received");
                         }
                     }catch (Exception e){
-                        printStackTrace(e);
+                        printError(e);
                     }
                 } else {
                     nlog("warn","Unknown data! - "+data);
@@ -225,7 +225,7 @@ public class Client extends Thread{
                     os.close();
                     socket.close();
                 } catch (IOException ex) {
-                    printStackTrace(ex);
+                    printError(ex);
                 }
                 return;
             }
