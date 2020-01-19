@@ -148,7 +148,6 @@ public class PlayerDB{
         boolean result = false;
         try {
             if(uuid.equals("InactiveAAA=") || !isduplicate(uuid)){
-                String currentip = new Threads.getip().main();
                 String sql;
                 if(config.isSqlite()){
                     sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -190,7 +189,7 @@ public class PlayerDB{
                 pstmt.setBoolean(32, false); // crosschat
                 pstmt.setBoolean(33, false); // colornick
                 pstmt.setBoolean(34, connected); // connected
-                pstmt.setString(35, currentip); // connected server ip
+                pstmt.setString(35, getip()); // connected server ip
                 pstmt.setString(36, "default"); // set permission
                 pstmt.setLong(37, udid); // UDID
                 pstmt.setString(38, accountid);
@@ -711,18 +710,14 @@ public class PlayerDB{
                 }
             }
 
-            String currentip = new Threads.getip().main();
+            String currentip = getip();
             nlog("debug", player.name + " Player ip collected");
 
-            if (id == null) {
-                player.connected = true;
-                player.lastdate = getTime();
-                player.connserver = currentip;
-                PlayerDataSet(player.uuid, player);
-            } else {
-                player.connected = true;
-                player.lastdate = getTime();
-                player.connserver = currentip;
+            player.connected = true;
+            player.lastdate = getTime();
+            player.connserver = currentip;
+
+            if (id != null) {
                 player.uuid = target.uuid;
                 PlayerDataSet(player.uuid, player);
             }

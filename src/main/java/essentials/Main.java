@@ -1462,7 +1462,7 @@ public class Main extends Plugin {
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
             if(!checkperm(player,"event")) return;
             Thread t = new Thread(() -> {
-                String currentip = new getip().main();
+                String currentip = getip();
                 switch (arg[0]) {
                     case "host":
                         Thread work = new Thread(() -> {

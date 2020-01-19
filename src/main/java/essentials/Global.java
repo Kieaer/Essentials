@@ -19,6 +19,9 @@ import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -773,6 +776,17 @@ public class Global {
         System.out.print("\r" + bareDone + bareRemain + " " + remainProcent * 5 + "%, ETA: "+etaHms);
         if (remain == total) {
             System.out.print("\n");
+        }
+    }
+
+    public static String getip(){
+        try{
+            URL whatismyip = new URL("http://checkip.amazonaws.com");
+            BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
+            return in.readLine();
+        }catch (Exception e){
+            e.printStackTrace();
+            return "127.0.0.1";
         }
     }
 }
