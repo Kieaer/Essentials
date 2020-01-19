@@ -14,9 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.LocalTime;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -306,27 +304,18 @@ public class Config {
         return obj.containsKey("enableantirush") && (boolean) obj.get("enableantirush");
     }
 
-    public Calendar getAntirushtime() {
-        SimpleDateFormat format = new SimpleDateFormat("mm:ss");
-        Calendar cal = Calendar.getInstance();
+    public LocalTime getAntirushtime() {
+        LocalTime d = LocalTime.of(0,10,0);
         if(obj.containsKey("antirushtime")) {
             try {
-                Date d = format.parse(String.valueOf(obj.get("antirushtime")));
-                cal.setTime(d);
+                d = LocalTime.parse(String.valueOf(obj.get("antirushtime")));
             } catch (Exception e) {
                 printError(e);
                 nlog("warn","Invalid settings! - antirushtime");
                 nlog("warn","Correct value format is mm:ss (Example - 10:00 -> 10minute, 00:30 -> 30seconds)");
             }
-        } else {
-            try{
-                Date d = format.parse("10:00");
-                cal.setTime(d);
-            } catch (Exception e){
-                printError(e);
-            }
         }
-        return cal;
+        return d;
     }
 
     public boolean isAntigrief(){

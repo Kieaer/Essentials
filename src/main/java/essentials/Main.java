@@ -68,8 +68,6 @@ import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
-import static essentials.utils.Config.jumpall;
-import static essentials.utils.Config.jumpzone;
 import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
@@ -114,17 +112,11 @@ public class Main extends Plugin {
             printError(e);
         }
 
-        // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
-        executorService.submit(new jumpcheck());
-
         // 메세지 블럭에 의한 클라이언트 플레이어 카운트
         executorService.submit(new jumpdata());
 
         // 코어 자원소모 감시 시작
         executorService.submit(new monitorresource());
-
-        // 임시로 밴한 플레이어들 밴 해제시간 카운트
-        executorService.submit(new bantime());
 
         // 서버간 이동 영역 표시
         executorService.submit(new visualjump());
