@@ -52,10 +52,10 @@ dependencies{
     compile 'org.slf4j:slf4j-nop:1.7.25'
 
     // DB Drivers (Really big library size)
-    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.30.1'
-    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.2'
-    compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.18'
-    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.9'
+    //compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.30.1'
+    //compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.5.2'
+    //compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.18'
+    //compile group: 'org.postgresql', name: 'postgresql', version: '42.2.9'
 
     compile group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.0-rc2'
 

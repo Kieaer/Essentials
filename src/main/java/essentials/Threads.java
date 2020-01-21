@@ -63,7 +63,7 @@ public class Threads extends TimerTask{
     @Override
     public void run() {
         // 서버 켜진시간 카운트
-        uptime = time.plusSeconds(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        uptime = time.plusSeconds(1).format(DateTimeFormatter.ofPattern("hh:mm:ss"));
 
         // 데이터 저장
         JsonObject data = new JsonObject();

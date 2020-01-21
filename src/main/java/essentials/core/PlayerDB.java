@@ -1,7 +1,6 @@
 package essentials.core;
 
 import com.grack.nanojson.JsonObject;
-import essentials.Threads;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
@@ -26,13 +25,12 @@ import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
 public class PlayerDB{
-    private static int dbversion = 3;
     public static Connection conn;
     private static ArrayList<Thread> griefthread = new ArrayList<>();
     public static ArrayList<Player> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
 
-    public PlayerDB(){
+    public void run(){
         openconnect();
         createNewDataFile();
         Upgrade();
@@ -266,8 +264,7 @@ public class PlayerDB{
             stmt.close();
         } catch (Exception e){
             if(e.getMessage().contains("Connection is closed")){
-                PlayerDB db = new PlayerDB();
-                db.openconnect();
+                openconnect();
             }
             printError(e);
         }
@@ -325,8 +322,7 @@ public class PlayerDB{
             stmt.close();
         } catch (Exception e){
             if(e.getMessage().contains("Connection is closed")){
-                PlayerDB db = new PlayerDB();
-                db.openconnect();
+                openconnect();
             }
             printError(e);
         }
@@ -428,7 +424,7 @@ public class PlayerDB{
             printError(e);
         }
     }
-    public void openconnect() {
+    public static void openconnect() {
         try {
             Class.forName("org.sqlite.JDBC");
             Class.forName("org.mariadb.jdbc.Driver");
@@ -489,8 +485,7 @@ public class PlayerDB{
                 pstmt.close();
             } catch (Exception e) {
                 if(e.getMessage().contains("Connection is closed")){
-                    PlayerDB db = new PlayerDB();
-                    db.openconnect();
+                    openconnect();
                 } else {
                     printError(e);
                 }
@@ -561,42 +556,25 @@ public class PlayerDB{
                     log("player", "password-already-accountid", id);
                     return false;
                 } else {
-                    // email source here
-                    PreparedStatement pstm2 = conn.prepareStatement("SELECT * FROM players WHERE uuid = '" + player.uuid + "'");
-                    ResultSet rs2 = pstm2.executeQuery();
-                    String isuuid = null;
                     // 한국어, 중국어, 일어, 러시아어, 영어, 숫자만 허용
                     String nickname = player.name;
                     //String nickname = player.name.replaceAll("[^\uac00-\ud7a3\u2E80-\u2eff\u3400-\u4dbf\u4e00-\u9fbf\uf9000\ufaff\u20000-\u2a6df\u3040-\u309f\u30a0-\u30ff\u31f0-\u31ff\u0400-\u052f0-9a-zA-Z\\s]", "");
-                    while (rs2.next()) {
-                        isuuid = rs2.getString("uuid");
-                        nickname = rs2.getString("name");
-                    }
 
-                    if (isuuid == null) {
-                        nlog("debug", player.name + " Account not found");
-                        LocalDateTime now = LocalDateTime.now();
-                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                        String nowString = now.format(dateTimeFormatter);
-                        HashMap<String, String> list = geolocation(player);
+                    nlog("debug", player.name + " Account not found");
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
+                    String nowString = now.format(dateTimeFormatter);
+                    HashMap<String, String> list = geolocation(player);
 
-                        if (!isduplicate(player)) {
-                            createNewDatabase(nickname, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, 0L, "", hashed, player);
-                        } else {
-                            player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
-                                    "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
-                            log("player", "password-already-account", player.name);
-                            return false;
-                        }
-                        player.sendMessage(bundle(player, "player-name-changed", player.name));
-                    } else if (isuuid.length() > 1 || isuuid.equals(player.uuid)) {
-                        player.sendMessage("[green][Essentials] [orange]This account already exists!\n" +
-                                "[green][Essentials] [orange]이 계정은 이미 사용중입니다!");
-                        log("player", "password-already-using", player.name);
+                    if (!isduplicate(player)) {
+                        createNewDatabase(nickname, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, 0L, "", hashed, player);
+                    } else {
+                        player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
+                                "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
+                        log("player", "password-already-account", player.name);
                         return false;
                     }
-                    rs2.close();
-                    pstm2.close();
+                    player.sendMessage(bundle(player, "player-name-changed", player.name));
                 }
             } catch (Exception e) {
                 printError(e);
@@ -782,7 +760,7 @@ public class PlayerDB{
 
             // 플레이어별 테러 감지 시작
             if (config.isAntigrief() && !player.isAdmin) {
-                new Threads.checkgrief(target).start();
+                //new Threads.checkgrief(target).start();
                 nlog("debug", player.name + " Player anti-grief start");
             }
 

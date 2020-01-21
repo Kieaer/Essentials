@@ -719,7 +719,13 @@ public class Global {
             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
-            return rs.next();
+            if(rs.next()){
+                System.out.println(rs.getString("id"));
+                return true;
+            } else {
+                System.out.println("false");
+                return false;
+            }
         }catch (SQLException e){
             printError(e);
             return true;

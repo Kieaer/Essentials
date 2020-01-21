@@ -19,6 +19,7 @@ import essentials.core.Log;
 import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Server;
+import essentials.special.External;
 import essentials.special.IpAddressMatcher;
 import essentials.utils.Config;
 import essentials.utils.Permission;
@@ -84,6 +85,7 @@ public class Main extends Plugin {
     private Array<mindustry.maps.Map> maplist = Vars.maps.all();
 
     public Client client;
+    public PlayerDB playerDB = new PlayerDB();
 
     public Main() {
         // 설정 시작
@@ -96,8 +98,12 @@ public class Main extends Plugin {
             client.main(null, null, null);
         }
 
+        External exs = new External();
+        exs.download();
+        exs.main();
+
         // 플레이어 DB 연결
-        PlayerDB playerdb = new PlayerDB();
+        openconnect();
 
         // 모든 플레이어 연결 상태를 0으로 설정
         try{
@@ -339,7 +345,7 @@ public class Main extends Plugin {
                         if (!player.error) {
                             if (player.uuid.equals(e.player.uuid)) {
                                 e.player.sendMessage(bundle(e.player, "autologin"));
-                                playerdb.load(e.player, null);
+                                playerDB.load(e.player, null);
                             }
                         } else {
                             // 로그인 요구
@@ -360,8 +366,8 @@ public class Main extends Plugin {
                     }
                 } else if (!config.isLoginenable()) {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (playerdb.register(e.player)) {
-                        playerdb.load(e.player, null);
+                    if (playerDB.register(e.player)) {
+                        playerDB.load(e.player, null);
                     } else {
                         Call.onKick(e.player.con, nbundle("plugin-error-kick"));
                     }
@@ -1265,8 +1271,7 @@ public class Main extends Plugin {
 
             log("client","db-connecting");
             closeconnect();
-            PlayerDB db = new PlayerDB();
-            db.openconnect();
+            openconnect();
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
             for (String b : permission.keySet()) {
