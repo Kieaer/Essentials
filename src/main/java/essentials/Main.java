@@ -124,7 +124,7 @@ public class Main extends Plugin {
         executorService.submit(new jumpdata());
 
         // 코어 자원소모 감시 시작
-        executorService.submit(new monitorresource());
+        // executorService.submit(new monitorresource());
 
         // 서버간 이동 영역 표시
         executorService.submit(new visualjump());
@@ -625,7 +625,7 @@ public class Main extends Plugin {
 
                     // Exp Playing Game (EPG)
                     if (config.isExplimit()) {
-                        int level = (int) target.level;
+                        int level = target.level;
                         Yaml yaml = new Yaml();
                         Map<String, Integer> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").readString()));
                         if (obj.get(name) != null) {
