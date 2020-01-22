@@ -19,9 +19,9 @@ import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -793,6 +793,32 @@ public class Global {
         }catch (Exception e){
             e.printStackTrace();
             return "127.0.0.1";
+        }
+    }
+
+    public static void URLDownload(URL URL, File savepath, String start_message, String finish_message, String error_message){
+        try{
+            BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath));
+            URLConnection urlConnection = URL.openConnection();
+            InputStream is = urlConnection.getInputStream();
+            int size = urlConnection.getContentLength();
+            byte[] buf = new byte[512];
+            int byteRead;
+            int byteWritten = 0;
+            long startTime = System.currentTimeMillis();
+            if(start_message != null) System.out.println(start_message);
+            while ((byteRead = is.read(buf)) != -1) {
+                outputStream.write(buf, 0, byteRead);
+                byteWritten += byteRead;
+
+                printProgress(startTime, size, byteWritten);
+            }
+            if(finish_message != null) System.out.println("\n"+finish_message);
+            is.close();
+            outputStream.close();
+        }catch (Exception e){
+            if(error_message != null) System.out.println("\n"+error_message);
+            printError(e);
         }
     }
 }

@@ -3,34 +3,45 @@ package essentials.special;
 import arc.Core;
 import arc.files.Fi;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLConnection;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
+import java.util.logging.Logger;
 
+import static essentials.Global.URLDownload;
 import static essentials.Global.nbundle;
-import static essentials.Global.printProgress;
 
-public class External {
-    private List<URL> jarList = new ArrayList<>();
+public class External implements Driver {
+    private boolean tried = false;
+    private List<String> drivers = new ArrayList<>(Arrays.asList("org.mariadb.jdbc.Driver","org.postgresql.Driver","org.sqlite.JDBC"));
+    private Driver driver;
+
+    public External(Driver driver) {
+        if (driver == null) throw new IllegalArgumentException("Driver must not be null.");
+        this.driver = driver;
+    }
+
+    public External(){}
 
     public void main() {
         try {
             Fi[] f = Core.settings.getDataDirectory().child("mods/Essentials/Driver/").list();
-            for (Fi fi : f) {
-                jarList.add(fi.file().toURI().toURL());
+            for (int a=0;a<drivers.size();a++) {
+                URLClassLoader classLoader = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
+                Driver driver = (Driver) Class.forName(drivers.get(a), true, classLoader).getDeclaredConstructor().newInstance();
+                DriverManager.registerDriver(new External(driver));
             }
-            load();
-            Class.forName("org.sqlite.JDBC");
-            Class.forName("org.mariadb.jdbc.Driver");
-            Class.forName("com.mysql.jdbc.Driver");
         } catch (Exception e) {
-            e.printStackTrace();
+            if(!tried){
+                download();
+            } else {
+                e.printStackTrace();
+                Core.app.exit();
+            }
         }
     }
 
@@ -39,42 +50,50 @@ public class External {
             List<URL> urls = new ArrayList<>();
             urls.add(new URL("https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar")); // SQLite
             urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
-            urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar"));
+            urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
 
             System.out.println(nbundle("driver-downloading"));
 
             for (URL value : urls) {
                 String url = value.toString();
                 String filename = url.substring(url.lastIndexOf('/') + 1);
-                BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials/Driver/" + filename).file()));
-                URLConnection urlConnection = value.openConnection();
-                InputStream is = urlConnection.getInputStream();
-                int size = urlConnection.getContentLength();
-                byte[] buf = new byte[512];
-                int byteRead;
-                int byteWritten = 0;
-                long startTime = System.currentTimeMillis();
-                System.out.println(filename + " Downloading...");
-                while ((byteRead = is.read(buf)) != -1) {
-                    outputStream.write(buf, 0, byteRead);
-                    byteWritten += byteRead;
-
-                    printProgress(startTime, size, byteWritten);
-                }
-                is.close();
-                outputStream.close();
+                URLDownload(value,
+                        Core.settings.getDataDirectory().child("mods/Essentials/Driver/" + filename).file(),
+                        filename + " Downloading...",
+                        null, null);
             }
+            tried = true;
+            main();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    private void load() throws Exception {
-        for (URL url : jarList) {
-            URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-            Method method = URLClassLoader.class.getDeclaredMethod(url.getPath(), URL.class);
-            method.setAccessible(true);
-            method.invoke(classLoader, url);
-        }
+    public Connection connect(String url, Properties info) throws SQLException {
+        return driver.connect(url, info);
+    }
+
+    public boolean acceptsURL(String url) throws SQLException {
+        return driver.acceptsURL(url);
+    }
+
+    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+        return driver.getPropertyInfo(url, info);
+    }
+
+    public int getMajorVersion() {
+        return driver.getMajorVersion();
+    }
+
+    public int getMinorVersion() {
+        return driver.getMinorVersion();
+    }
+
+    public boolean jdbcCompliant() {
+        return driver.jdbcCompliant();
+    }
+
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        return driver.getParentLogger();
     }
 }

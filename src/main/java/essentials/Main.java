@@ -49,9 +49,11 @@ import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.URLConnection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -88,6 +90,10 @@ public class Main extends Plugin {
     public PlayerDB playerDB = new PlayerDB();
 
     public Main() {
+        // DB 드라이버 다운로드
+        External exs = new External();
+        exs.main();
+
         // 설정 시작
         config.main();
 
@@ -97,10 +103,6 @@ public class Main extends Plugin {
             log("client","server-connecting");
             client.main(null, null, null);
         }
-
-        External exs = new External();
-        exs.download();
-        exs.main();
 
         // 플레이어 DB 연결
         openconnect();
@@ -1049,8 +1051,6 @@ public class Main extends Plugin {
                             try {
                                 nlog("log", nbundle("update-description", json.get("tag_name")));
                                 System.out.println(json.getString("body"));
-                                URL url = new URL(json.getArray("assets").getObject(0).getString("browser_download_url"));
-
                                 System.out.println(nbundle("plugin-downloading-standby"));
                                 timer.cancel();
                                 if (config.isServerenable()) {
@@ -1072,24 +1072,10 @@ public class Main extends Plugin {
                                 executorService.shutdown();
                                 closeconnect();
 
-                                BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials.jar").file()));
-                                URLConnection urlConnection = url.openConnection();
-                                InputStream is = urlConnection.getInputStream();
-                                int size = urlConnection.getContentLength();
-                                byte[] buf = new byte[512];
-                                int byteRead;
-                                int byteWritten = 0;
-                                long startTime = System.currentTimeMillis();
-                                System.out.println(nbundle("plugin-downloading"));
-                                while ((byteRead = is.read(buf)) != -1) {
-                                    outputStream.write(buf, 0, byteRead);
-                                    byteWritten += byteRead;
-
-                                    printProgress(startTime,size,byteWritten);
-                                }
-                                is.close();
-                                outputStream.close();
-                                System.out.println("\n"+nbundle("plugin-downloading-done"));
+                                URLDownload(new URL(json.getArray("assets").getObject(0).getString("browser_download_url")),
+                                        Core.settings.getDataDirectory().child("mods/Essentials.jar").file(),
+                                        nbundle("plugin-downloading"),
+                                        nbundle("plugin-downloading-done"), null);
                                 Core.app.exit();
                                 System.exit(0);
                             }catch (Exception ex){

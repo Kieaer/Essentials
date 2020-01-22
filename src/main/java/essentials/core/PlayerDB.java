@@ -426,10 +426,6 @@ public class PlayerDB{
     }
     public static void openconnect() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            Class.forName("org.mariadb.jdbc.Driver");
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Class.forName("org.postgresql.Driver");
             if (config.isSqlite()) {
                 conn = DriverManager.getConnection(config.getDBurl());
                 log("player","db-type","SQLite");
@@ -442,9 +438,6 @@ public class PlayerDB{
                     log("player","db-type","Invalid");
                 }
             }
-        } catch (ClassNotFoundException e) {
-            printError(e);
-            nlog("warn","Class not found!");
         } catch (SQLException e){
             printError(e);
             nlog("warn","SQL ERROR!");
