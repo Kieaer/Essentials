@@ -40,7 +40,7 @@ import static mindustry.Vars.playerGroup;
 import static mindustry.Vars.world;
 
 public class Global {
-    public static Config config = new Config();
+    public static Config config = new Config(); // 설정 파일들
     public static String version;
 
     final static String tag = "[Essential] ";

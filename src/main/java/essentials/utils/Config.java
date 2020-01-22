@@ -45,9 +45,7 @@ public class Config {
             Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString("language: en");
         }
         obj = yaml.load(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString());
-    }
 
-    public void main() {
         validfile();
         try{
             if(!path.exists()){
@@ -64,13 +62,13 @@ public class Config {
                 data.put("jumpall",empty);
                 data.put("jumpcount",empty);
                 data.put("servername", Core.settings.getString("servername"));
+                data.put("unexception",false);
                 new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
             }
             Data = data;
 
             update();
 
-            Yaml yaml = new Yaml();
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
 
             jumpzone = JsonParser.object().from(path.read()).getArray("jumpzone");

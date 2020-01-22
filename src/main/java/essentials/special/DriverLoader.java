@@ -15,25 +15,27 @@ import java.util.logging.Logger;
 import static essentials.Global.URLDownload;
 import static essentials.Global.nbundle;
 
-public class External implements Driver {
+public class DriverLoader implements Driver {
     private boolean tried = false;
     private List<String> drivers = new ArrayList<>(Arrays.asList("org.mariadb.jdbc.Driver","org.postgresql.Driver","org.sqlite.JDBC"));
     private Driver driver;
 
-    public External(Driver driver) {
+    public DriverLoader(Driver driver) {
         if (driver == null) throw new IllegalArgumentException("Driver must not be null.");
         this.driver = driver;
     }
 
-    public External(){}
+    public DriverLoader(){
+        run();
+    }
 
-    public void main() {
+    public void run() {
         try {
             Fi[] f = Core.settings.getDataDirectory().child("mods/Essentials/Driver/").list();
             for (int a=0;a<drivers.size();a++) {
                 URLClassLoader classLoader = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
                 Driver driver = (Driver) Class.forName(drivers.get(a), true, classLoader).getDeclaredConstructor().newInstance();
-                DriverManager.registerDriver(new External(driver));
+                DriverManager.registerDriver(new DriverLoader(driver));
             }
         } catch (Exception e) {
             if(!tried){
@@ -63,7 +65,7 @@ public class External implements Driver {
                         null, null);
             }
             tried = true;
-            main();
+            run();
         } catch (Exception ex) {
             ex.printStackTrace();
         }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 
+import static essentials.Global.nlog;
 import static essentials.Global.printError;
 
 public class Permission {
@@ -19,21 +20,21 @@ public class Permission {
                 ObjectMapper jsonwrite = new ObjectMapper();
                 permission = JsonParser.object().from(jsonwrite.writeValueAsString(obj));
                 for (String b : permission.keySet()) {
-                    //if (config.isDebug()) nlog("debug", "target: " + b);
+                    nlog("debug", "target: " + b);
                     if (permission.getObject(b).has("inheritance")) {
                         String inheritance = permission.getObject(b).getString("inheritance");
-                        //if (config.isDebug()) nlog("debug", "target inheritance: " + b + "/" + inheritance);
+                        nlog("debug", "target inheritance: " + b + "/" + inheritance);
                         while (permission.getObject(inheritance).has("inheritance")) {
                             for (int a = 0; a < permission.getObject(inheritance).getArray("permission").size(); a++) {
                                 permission.getObject(b).getArray("permission").add(permission.getObject(inheritance).getArray("permission").get(a));
-                                //if (config.isDebug()) nlog("debug", "target inheritance add: " + b + "/" + inheritance + "/" + permission.getObject(inheritance).getArray("permission").get(a));
+                                nlog("debug", "target inheritance add: " + b + "/" + inheritance + "/" + permission.getObject(inheritance).getArray("permission").get(a));
                             }
                             inheritance = permission.getObject(inheritance).getString("inheritance");
                         }
                         if (!permission.getObject(inheritance).has("inheritance")) {
                             for (int a = 0; a < permission.getObject(inheritance).getArray("permission").size(); a++) {
                                 permission.getObject(b).getArray("permission").add(permission.getObject(inheritance).getArray("permission").get(a));
-                                //if (config.isDebug()) nlog("debug", "target inheritance add: " + b + "/" + inheritance + "/" + permission.getObject(inheritance).getArray("permission").get(a));
+                                nlog("debug", "target inheritance add: " + b + "/" + inheritance + "/" + permission.getObject(inheritance).getArray("permission").get(a));
                             }
                         }
                     }

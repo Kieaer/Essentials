@@ -9,6 +9,7 @@ import arc.struct.Array;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
@@ -19,9 +20,8 @@ import essentials.core.Log;
 import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Server;
-import essentials.special.External;
+import essentials.special.DriverLoader;
 import essentials.special.IpAddressMatcher;
-import essentials.utils.Config;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -55,7 +55,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -91,11 +90,7 @@ public class Main extends Plugin {
 
     public Main() {
         // DB 드라이버 다운로드
-        External exs = new External();
-        exs.main();
-
-        // 설정 시작
-        config.main();
+        new DriverLoader();
 
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
@@ -108,15 +103,20 @@ public class Main extends Plugin {
         openconnect();
 
         // 모든 플레이어 연결 상태를 0으로 설정
-        try{
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
-            while(rs.next()){
-                if(isLoginold(rs.getString("lastdate"))){
-                    writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", false, "none", rs.getInt("id"));
+        try {
+            if (Data.getBoolean("unexception")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
+                while (rs.next()) {
+                    if (isLoginold(rs.getString("lastdate"))) {
+                        writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", false, "none", rs.getInt("id"));
+                    }
                 }
+            } else {
+                Data.put("unexception", true);
+                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), Data);
             }
-        } catch (SQLException e) {
+        }catch (Exception e){
             printError(e);
         }
 
@@ -1238,10 +1238,6 @@ public class Main extends Plugin {
                     log("warn","Invalid option!");
                     break;
             }
-        });
-        handler.register("reload", "Reload Essentials config", arg -> {
-            config = new Config();
-            log("config","config-reloaded");
         });
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
