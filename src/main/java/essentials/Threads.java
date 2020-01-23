@@ -93,7 +93,7 @@ public class Threads extends TimerTask{
 
             if (time.isAfter(target)) {
                 banned.remove(i);
-                Data.getArray("banned").remove(i);
+                PluginData.getArray("banned").remove(i);
                 netServer.admins.unbanPlayerID(uuid);
                 nlog("log","[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + name + "/" + uuid + " player unbanned!");
                 break;

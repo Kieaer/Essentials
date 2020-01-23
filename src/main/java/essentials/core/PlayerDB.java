@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
-import static essentials.utils.Config.Data;
+import static essentials.utils.Config.PluginData;
 import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static mindustry.Vars.netServer;
@@ -343,7 +343,7 @@ public class PlayerDB{
             data1.put("date", newTime);
             data1.put("name", name);
 
-            Data.getArray("banned").add(data1);
+            PluginData.getArray("banned").add(data1);
 
             // Write player data
             writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", getTime(), bantimeset, uuid);
@@ -836,7 +836,7 @@ public class PlayerDB{
             this.isLogin = isLogin;
         }
 
-        PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw){
+        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw){
             this.id = id;
             this.name = name;
             this.uuid = uuid;

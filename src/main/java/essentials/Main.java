@@ -20,6 +20,7 @@ import essentials.core.Log;
 import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Server;
+import essentials.special.DBConvert;
 import essentials.special.DriverLoader;
 import essentials.special.IpAddressMatcher;
 import essentials.utils.Permission;
@@ -92,6 +93,9 @@ public class Main extends Plugin {
         // DB 드라이버 다운로드
         new DriverLoader();
 
+        // DB 형식 변환
+        new DBConvert();
+
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
             client = new Client();
@@ -104,7 +108,7 @@ public class Main extends Plugin {
 
         // 모든 플레이어 연결 상태를 0으로 설정
         try {
-            if (Data.getBoolean("unexception")) {
+            if (PluginData.getBoolean("unexception")) {
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
                 while (rs.next()) {
@@ -113,8 +117,8 @@ public class Main extends Plugin {
                     }
                 }
             } else {
-                Data.put("unexception", true);
-                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), Data);
+                PluginData.put("unexception", true);
+                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), PluginData);
             }
         }catch (Exception e){
             printError(e);
