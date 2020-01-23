@@ -430,7 +430,7 @@ public class Main extends Plugin {
                 if(state.rules.pvp && !state.gameOver){
                     int breakout = getData(e.player.uuid).getInt("pvpbreakout");
                     breakout++;
-                    writeData("UPDATE players SET connected = ?, connserver = ?, breakout = ? WHERE uuid = ?", false, "none", breakout, uuid);
+                    writeData("UPDATE players SET connected = ?, connserver = ?, pvpbreakout = ? WHERE uuid = ?", false, "none", breakout, uuid);
                 } else {
                     writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", uuid);
                 }
