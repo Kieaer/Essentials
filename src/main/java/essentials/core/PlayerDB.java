@@ -622,14 +622,9 @@ public class PlayerDB{
             }
             if(db.containsKey("connected") && config.isValidconnect()){
                 nlog("debug",player.name+" Player validate start");
-                if((boolean) db.get("connected")) {
-                    for (int a = 0; a < playerGroup.size(); a++) {
-                        String target = playerGroup.all().get(a).uuid;
-                        if (target.equals(player.uuid)) {
-                            player.con.kick(nbundle(player, "tried-connected-account"));
-                            return;
-                        }
-                    }
+                if(db.getBoolean("connected")) {
+                    player.con.kick(nbundle(player, "tried-connected-account"));
+                    return;
                 }
             }
 
