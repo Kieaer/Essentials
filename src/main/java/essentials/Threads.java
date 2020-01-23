@@ -6,6 +6,7 @@ import arc.Events;
 import arc.files.Fi;
 import arc.struct.Array;
 import arc.util.Strings;
+import arc.util.Time;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
@@ -23,6 +24,7 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
+import mindustry.net.Packets;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
 import mindustry.world.Block;
@@ -1013,8 +1015,8 @@ public class Threads extends TimerTask{
 
                         writelog("player",nbundle("log-player-kick",target.name,require));
 
-                        netServer.admins.banPlayer(target.uuid);
-                        target.con.kick("You're kicked.");
+                        target.getInfo().lastKicked = Time.millis() + (15 * 60)*1000;
+                        playerGroup.all().each(p -> p.uuid != null && p.uuid.equals(target.uuid), p -> p.con.kick(Packets.KickReason.vote));
                     } else {
                         allsendMessage("vote-kick-fail");
                     }
