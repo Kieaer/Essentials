@@ -15,9 +15,7 @@ public class DBConvert {
     private ArrayList<PlayerData> data = new ArrayList<>();
 
     public DBConvert(){
-        if(!config.isSqlite() && PluginData.getBoolean("sqlite")){
-            SQLite2DB();
-        }
+        if(!config.isSqlite() && PluginData.getBoolean("sqlite")) SQLite2DB();
     }
 
     public void SQLite2DB() {
