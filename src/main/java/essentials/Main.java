@@ -67,6 +67,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static essentials.Global.*;
+import static essentials.PluginData.*;
 import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
@@ -77,13 +78,6 @@ import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class Main extends Plugin {
-    private ArrayList<String> nukeblock = new ArrayList<>();
-    private static ArrayList<String> eventservers = new ArrayList<>();
-    static ArrayList<String> powerblock = new ArrayList<>();
-    static ArrayList<String> messagemonitor = new ArrayList<>();
-    static ArrayList<String> messagejump = new ArrayList<>();
-    static ArrayList<Tile> scancore = new ArrayList<>();
-    private ArrayList<Tile> nukedata = new ArrayList<>();
     private Array<mindustry.maps.Map> maplist = Vars.maps.all();
 
     public Client client;
@@ -108,7 +102,7 @@ public class Main extends Plugin {
 
         // 모든 플레이어 연결 상태를 0으로 설정
         try {
-            if (PluginData.getBoolean("unexception")) {
+            if (PluginConfig.getBoolean("unexception")) {
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
                 while (rs.next()) {
@@ -117,8 +111,8 @@ public class Main extends Plugin {
                     }
                 }
             } else {
-                PluginData.put("unexception", true);
-                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), PluginData);
+                PluginConfig.put("unexception", true);
+                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), PluginConfig);
             }
         }catch (Exception e){
             printError(e);
@@ -284,15 +278,11 @@ public class Main extends Plugin {
 
             // 만약 그 특정블록이 토륨 원자로이며, 맵 설정에서 원자로 폭발이 비활성화 되었을 경우
             if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor() && !state.rules.reactorExplosions) {
-                nukeblock.add(e.tile.entity.tileX() + "/" + e.tile.entity.tileY() + "/" + e.player.name);
+                nukeblock.add(new nukeblock(e.tile, e.player.name));
                 Thread t = new Thread(() -> {
                     try {
-                        for (String nukedata : nukeblock) {
-                            String[] data = nukedata.split("/");
-                            int x = Integer.parseInt(data[0]);
-                            int y = Integer.parseInt(data[1]);
-                            String builder = data[2];
-                            NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
+                        for (nukeblock data : nukeblock) {
+                            NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) data.tile.entity;
                             if (entity.heat >= 0.01) {
                                 sleep(50);
                                 for (int a = 0; a < playerGroup.size(); a++) {
@@ -300,8 +290,8 @@ public class Main extends Plugin {
                                     other.sendMessage(bundle(other, "detect-thorium"));
                                 }
 
-                                writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),builder));
-                                Call.onTileDestroyed(world.tile(x, y));
+                                writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),data.name));
+                                Call.onTileDestroyed(data.tile);
                             } else {
                                 sleep(1950);
                                 if (entity.heat >= 0.01) {
@@ -309,8 +299,8 @@ public class Main extends Plugin {
                                         Player other = playerGroup.all().get(a);
                                         other.sendMessage(bundle(other, "detect-thorium"));
                                     }
-                                    writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),builder));
-                                    Call.onTileDestroyed(world.tile(x, y));
+                                    writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),data.name));
+                                    Call.onTileDestroyed(data.tile);
                                 }
                             }
                         }
@@ -567,12 +557,12 @@ public class Main extends Plugin {
 
                 // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                 if (e.tile.entity.block == Blocks.message) {
-                    messagemonitor.add(e.tile.x + "|" + e.tile.y);
+                    messagemonitor.add(new messagemonitor(e.tile));
                 }
 
                 // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
                 if (e.tile.entity.block == Blocks.thoriumReactor) {
-                    nukeposition.add(e.tile.entity.tileX() + "/" + e.tile.entity.tileY());
+                    nukeposition.add(e.tile);
                     nukedata.add(e.tile);
                 }
                 if(config.isDebug() && config.isAntigrief()){
@@ -611,13 +601,7 @@ public class Main extends Plugin {
                     if (e.builder.buildRequest().block == Blocks.message) {
                         try {
                             for (int i = 0; i < powerblock.size(); i++) {
-                                String raw = powerblock.get(i);
-                                String[] data = raw.split("/");
-
-                                int x = Integer.parseInt(data[0]);
-                                int y = Integer.parseInt(data[1]);
-
-                                if (x == e.tile.x && y == e.tile.y) {
+                                if (powerblock.get(i).tile == e.tile) {
                                     powerblock.remove(i);
                                     break;
                                 }
@@ -766,16 +750,7 @@ public class Main extends Plugin {
                     try {
                         // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
                         for (int i = 0; i < powerblock.size(); i++) {
-                            String raw = powerblock.get(i);
-
-                            String[] data = raw.split("/");
-
-                            int x = Integer.parseInt(data[0]);
-                            int y = Integer.parseInt(data[1]);
-                            int target_x = Integer.parseInt(data[2]);
-                            int target_y = Integer.parseInt(data[3]);
-
-                            if (world.tile(x, y).block() != Blocks.message) {
+                            if (powerblock.get(i).tile.block() != Blocks.message) {
                                 powerblock.remove(i);
                                 return;
                             }
@@ -784,9 +759,9 @@ public class Main extends Plugin {
                             float product;
                             float using;
                             try {
-                                current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
-                                using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
-                                product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
+                                current = powerblock.get(i).tile.entity.power.graph.getPowerBalance() * 60;
+                                using = powerblock.get(i).tile.entity.power.graph.getPowerNeeded() * 60;
+                                product = powerblock.get(i).tile.entity.power.graph.getPowerProduced() * 60;
                             } catch (Exception ignored) {
                                 powerblock.remove(i);
                                 return;
@@ -795,7 +770,7 @@ public class Main extends Plugin {
                                     "Current: [sky]" + Math.round(current) + "[]\n" +
                                     "Using: [red]" + Math.round(using) + "[]\n" +
                                     "Production: [green]" + Math.round(product) + "[]";
-                            Call.setMessageBlockText(null, world.tile(x, y), text);
+                            Call.setMessageBlockText(null, powerblock.get(i).tile, text);
                         }
                         // 타이머 초기화
                         delaycount = 0;
@@ -1451,7 +1426,7 @@ public class Main extends Plugin {
                                 int lastport = Integer.parseInt(range[1]);
                                 int customport = ThreadLocalRandom.current().nextInt(firstport,lastport+1);
 
-                                eventservers.add(arg[1]+"/"+customport);
+                                eventservers.add(new eventservers(arg[1],customport));
 
                                 Threads.eventserver es = new Threads.eventserver(arg[1],arg[2],arg[3],customport);
                                 es.roomname = arg[1];
@@ -1484,13 +1459,11 @@ public class Main extends Plugin {
                         work.start();
                         break;
                     case "join":
-                        for (String eventserver : eventservers) {
-                            String[] data = eventserver.split("/");
-                            String name = data[0];
-                            if (name.equals(arg[1])) {
+                        for (eventservers data : eventservers) {
+                            if (data.roomname.equals(arg[1])) {
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
-                                Call.onConnect(player.con, currentip, Integer.parseInt(data[1]));
-                                nlog("log",currentip+":"+Integer.parseInt(data[1]));
+                                Call.onConnect(player.con, currentip, data.port);
+                                nlog("log",currentip+":"+data.port);
                                 break;
                             }
                         }

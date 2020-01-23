@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
-import static essentials.utils.Config.PluginData;
+import static essentials.utils.Config.PluginConfig;
 import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static mindustry.Vars.netServer;
@@ -343,7 +343,7 @@ public class PlayerDB{
             data1.put("date", newTime);
             data1.put("name", name);
 
-            PluginData.getArray("banned").add(data1);
+            PluginConfig.getArray("banned").add(data1);
 
             // Write player data
             writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", getTime(), bantimeset, uuid);

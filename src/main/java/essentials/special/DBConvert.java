@@ -9,13 +9,13 @@ import java.util.ArrayList;
 import static essentials.Global.config;
 import static essentials.Global.nbundle;
 import static essentials.core.PlayerDB.conn;
-import static essentials.utils.Config.PluginData;
+import static essentials.utils.Config.PluginConfig;
 
 public class DBConvert {
     private ArrayList<PlayerData> data = new ArrayList<>();
 
     public DBConvert(){
-        if(!config.isSqlite() && PluginData.getBoolean("sqlite")) SQLite2DB();
+        if(!config.isSqlite() && PluginConfig.getBoolean("sqlite")) SQLite2DB();
     }
 
     public void SQLite2DB() {
@@ -132,7 +132,7 @@ public class DBConvert {
                 System.out.print("\r"+copy+" "+current+"/"+size);
             }
             prepared.close();
-            PluginData.put("sqlite", false);
+            PluginConfig.put("sqlite", false);
             System.out.print("\n"+end+"\n");
         } catch (Exception e) {
             e.printStackTrace();

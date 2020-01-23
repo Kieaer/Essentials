@@ -28,7 +28,7 @@ import static mindustry.Vars.net;
 public class Config {
     private Map<String, Object> obj;
     private Fi path = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json");
-    public static JsonObject PluginData = new JsonObject();
+    public static JsonObject PluginConfig = new JsonObject();
     public static JsonArray jumpzone = new JsonArray();
     public static JsonArray jumpcount = new JsonArray();
     public static JsonArray jumpall = new JsonArray();
@@ -66,7 +66,7 @@ public class Config {
                 data.put("sqlite",config.isSqlite());
                 new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
             }
-            PluginData = data;
+            PluginConfig = data;
 
             update();
 

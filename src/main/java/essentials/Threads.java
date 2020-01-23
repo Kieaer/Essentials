@@ -41,7 +41,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static essentials.Global.*;
-import static essentials.Main.*;
+import static essentials.PluginData.*;
 import static essentials.core.Exp.exp;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.PlayerData;
@@ -53,8 +53,6 @@ public class Threads extends TimerTask{
     public static String playtime;
     public static String uptime;
     static boolean peacetime;
-    static ArrayList<String> nukeposition = new ArrayList<>();
-    static ArrayList<Process> process = new ArrayList<>();
     public static boolean isvoting;
 
     LocalTime time = LocalTime.of(0,0,0);
@@ -93,7 +91,7 @@ public class Threads extends TimerTask{
 
             if (time.isAfter(target)) {
                 banned.remove(i);
-                PluginData.getArray("banned").remove(i);
+                PluginConfig.getArray("banned").remove(i);
                 netServer.admins.unbanPlayerID(uuid);
                 nlog("log","[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + name + "/" + uuid + " player unbanned!");
                 break;
@@ -182,14 +180,10 @@ public class Threads extends TimerTask{
 
             // 메세지 블럭 감시
             for(int a=0;a<messagemonitor.size();a++) {
-                String[] xy = messagemonitor.get(a).split("\\|");
-                int targetx = Integer.parseInt(xy[0]);
-                int targety = Integer.parseInt(xy[1]);
-
                 String msg;
                 MessageBlock.MessageBlockEntity entity;
                 try {
-                    entity = (MessageBlock.MessageBlockEntity) world.tile(targetx, targety).entity;
+                    entity = (MessageBlock.MessageBlockEntity) messagemonitor.get(a).tile.entity;
                     msg = entity.message;
                 }catch (NullPointerException e){
                     messagemonitor.remove(a);
@@ -197,35 +191,28 @@ public class Threads extends TimerTask{
                 }
 
                 if (msg.equals("powerblock")) {
-                    int x = entity.tile.x;
-                    int y = entity.tile.y;
-                    int target_x;
-                    int target_y;
+                    Tile target;
 
                     if (entity.tile.getNearby(0).entity != null) {
-                        target_x = entity.tile.getNearby(0).x;
-                        target_y = entity.tile.getNearby(0).y;
+                        target = entity.tile.getNearby(0);
                     } else if (entity.tile.getNearby(1).entity != null) {
-                        target_x = entity.tile.getNearby(1).x;
-                        target_y = entity.tile.getNearby(1).y;
+                        target = entity.tile.getNearby(1);
                     } else if (entity.tile.getNearby(2).entity != null) {
-                        target_x = entity.tile.getNearby(2).x;
-                        target_y = entity.tile.getNearby(2).y;
+                        target = entity.tile.getNearby(2);
                     } else if (entity.tile.getNearby(3).entity != null) {
-                        target_x = entity.tile.getNearby(3).x;
-                        target_y = entity.tile.getNearby(3).y;
+                        target = entity.tile.getNearby(3);
                     } else {
                         return;
                     }
-                    powerblock.add(x + "/" + y + "/" + target_x + "/" + target_y);
+                    powerblock.add(new powerblock(entity.tile,target));
                     messagemonitor.remove(a);
                     break;
                 } else if (msg.contains("jump")) {
-                    messagejump.add(targetx + "|" + targety + "|" + msg);
+                    messagejump.add(new messagejump(messagemonitor.get(a).tile,msg));
                     messagemonitor.remove(a);
                     break;
                 } else if (msg.equals("scancore")) {
-                    scancore.add(world.tile(targetx, targety));
+                    scancore.add(messagemonitor.get(a).tile);
                     messagemonitor.remove(a);
                     break;
                 }
@@ -818,25 +805,23 @@ public class Threads extends TimerTask{
         public void run() {
             while(!Thread.currentThread().isInterrupted()) {
                 for (int a = 0; a < messagejump.size(); a++) {
-                    String[] xy = messagejump.get(a).split("\\|");
-                    int x = Integer.parseInt(xy[0]);
-                    int y = Integer.parseInt(xy[1]);
-                    String message = xy[2];
 
-                    if(world.tile(x,y).entity.block != Blocks.message){
+
+                    if(messagejump.get(a).tile.entity.block != Blocks.message){
                         messagejump.remove(a);
                         break;
                     }
-                    Call.setMessageBlockText(null, world.tile(x, y), "[green]Working...");
+                    Call.setMessageBlockText(null, messagejump.get(a).tile, "[green]Working...");
 
-                    String[] arr = message.split(" ");
+                    String[] arr = messagejump.get(a).message.split(" ");
                     String ip = arr[1];
 
+                    int fa = a;
                     pingServer(ip, result -> {
                         if (result.name != null){
-                            Call.setMessageBlockText(null, world.tile(x, y), "[green]"+result.players + " Players in this server.");
+                            Call.setMessageBlockText(null, messagejump.get(fa).tile, "[green]"+result.players + " Players in this server.");
                         } else {
-                            Call.setMessageBlockText(null, world.tile(x, y), "[scarlet]Server offline");
+                            Call.setMessageBlockText(null, messagejump.get(fa).tile, "[scarlet]Server offline");
                         }
                     });
                 }
