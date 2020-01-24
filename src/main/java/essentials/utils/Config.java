@@ -425,7 +425,7 @@ public class Config {
         return obj.getString("event-port","8000-8050");
     }
 
-    private void validfile(){
+    public void validfile(){
         final String path = "configs";
         File jarFile;
         try {
