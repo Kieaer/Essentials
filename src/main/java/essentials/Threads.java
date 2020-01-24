@@ -229,7 +229,7 @@ public class Threads extends TimerTask{
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
                         jumpcount.set(i2,new jumpcount(tile,value.serverip,result.players,digits.length));
                     } else {
-                        setno(value.tile);
+                        setno(value.tile, true);
                     }
                 });
             }

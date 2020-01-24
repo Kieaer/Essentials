@@ -497,11 +497,17 @@ public class Global {
     }
 
     // No 글자 표시
-    public static void setno(Tile tile){
-        // todo 원래 숫자와 겹치는 버그 수정
+    public static void setno(Tile tile, boolean duplicate){
         String[] pos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
         int[] n = {1,1,1,1,0,1,1,0,1,1,0,1,1,0,1};
         int[] o = {1,1,1,1,0,1,1,0,1,1,0,1,1,1,1};
+        if(duplicate){
+            for(int x=0;x<7;x++){
+                for(int y=0;y<5;y++){
+                    Call.onDeconstructFinish(world.tile(tile.x+x,tile.y+y), Blocks.air, 0);
+                }
+            }
+        }
 
         Tile target = world.tile(tile.x, tile.y);
         for(int a=0;a<15;a++) {
