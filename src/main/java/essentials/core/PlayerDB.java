@@ -1,10 +1,10 @@
 package essentials.core;
 
-import com.grack.nanojson.JsonObject;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
@@ -277,46 +277,46 @@ public class PlayerDB{
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
             while(rs.next()){
-                data.put("id", rs.getInt("id"));
-                data.put("name", rs.getString("name"));
-                data.put("uuid", rs.getString("uuid"));
-                data.put("country", rs.getString("country"));
-                data.put("country_code", rs.getString("country_code"));
-                data.put("language", rs.getString("language"));
-                data.put("isadmin", rs.getBoolean("isadmin"));
-                data.put("placecount", rs.getInt("placecount"));
-                data.put("breakcount", rs.getInt("breakcount"));
-                data.put("killcount", rs.getInt("killcount"));
-                data.put("deathcount", rs.getInt("deathcount"));
-                data.put("joincount", rs.getInt("joincount"));
-                data.put("kickcount", rs.getInt("kickcount"));
-                data.put("level", rs.getInt("level"));
-                data.put("exp", rs.getInt("exp"));
-                data.put("reqexp", rs.getInt("reqexp"));
-                data.put("reqtotalexp", rs.getString("reqtotalexp"));
-                data.put("firstdate", rs.getString("firstdate"));
-                data.put("lastdate", rs.getString("lastdate"));
-                data.put("lastplacename", rs.getString("lastplacename"));
-                data.put("lastbreakname", rs.getString("lastbreakname"));
-                data.put("lastchat", rs.getString("lastchat"));
-                data.put("playtime", rs.getString("playtime"));
-                data.put("attackclear", rs.getInt("attackclear"));
-                data.put("pvpwincount", rs.getInt("pvpwincount"));
-                data.put("pvplosecount", rs.getInt("pvplosecount"));
-                data.put("pvpbreakout", rs.getInt("pvpbreakout"));
-                data.put("reactorcount", rs.getInt("reactorcount"));
-                data.put("bantimeset", rs.getString("bantimeset"));
-                data.put("bantime", rs.getString("bantime"));
-                data.put("banned", rs.getBoolean("banned"));
-                data.put("translate", rs.getBoolean("translate"));
-                data.put("crosschat", rs.getBoolean("crosschat"));
-                data.put("colornick", rs.getBoolean("colornick"));
-                data.put("connected", rs.getBoolean("connected"));
-                data.put("connserver", rs.getString("connserver"));
-                data.put("permission", rs.getString("permission"));
-                data.put("udid",rs.getString("udid"));
-                data.put("accountid", rs.getString("accountid"));
-                data.put("accountpw", rs.getString("accountpw"));
+                data.add("id", rs.getInt("id"));
+                data.add("name", rs.getString("name"));
+                data.add("uuid", rs.getString("uuid"));
+                data.add("country", rs.getString("country"));
+                data.add("country_code", rs.getString("country_code"));
+                data.add("language", rs.getString("language"));
+                data.add("isadmin", rs.getBoolean("isadmin"));
+                data.add("placecount", rs.getInt("placecount"));
+                data.add("breakcount", rs.getInt("breakcount"));
+                data.add("killcount", rs.getInt("killcount"));
+                data.add("deathcount", rs.getInt("deathcount"));
+                data.add("joincount", rs.getInt("joincount"));
+                data.add("kickcount", rs.getInt("kickcount"));
+                data.add("level", rs.getInt("level"));
+                data.add("exp", rs.getInt("exp"));
+                data.add("reqexp", rs.getInt("reqexp"));
+                data.add("reqtotalexp", rs.getString("reqtotalexp"));
+                data.add("firstdate", rs.getString("firstdate"));
+                data.add("lastdate", rs.getString("lastdate"));
+                data.add("lastplacename", rs.getString("lastplacename"));
+                data.add("lastbreakname", rs.getString("lastbreakname"));
+                data.add("lastchat", rs.getString("lastchat"));
+                data.add("playtime", rs.getString("playtime"));
+                data.add("attackclear", rs.getInt("attackclear"));
+                data.add("pvpwincount", rs.getInt("pvpwincount"));
+                data.add("pvplosecount", rs.getInt("pvplosecount"));
+                data.add("pvpbreakout", rs.getInt("pvpbreakout"));
+                data.add("reactorcount", rs.getInt("reactorcount"));
+                data.add("bantimeset", rs.getString("bantimeset"));
+                data.add("bantime", rs.getString("bantime"));
+                data.add("banned", rs.getBoolean("banned"));
+                data.add("translate", rs.getBoolean("translate"));
+                data.add("crosschat", rs.getBoolean("crosschat"));
+                data.add("colornick", rs.getBoolean("colornick"));
+                data.add("connected", rs.getBoolean("connected"));
+                data.add("connserver", rs.getString("connserver"));
+                data.add("permission", rs.getString("permission"));
+                data.add("udid",rs.getString("udid"));
+                data.add("accountid", rs.getString("accountid"));
+                data.add("accountpw", rs.getString("accountpw"));
             }
             rs.close();
             stmt.close();
@@ -339,11 +339,11 @@ public class PlayerDB{
             String newTime = format.format(cal.getTime());
 
             JsonObject data1 = new JsonObject();
-            data1.put("uuid", uuid);
-            data1.put("date", newTime);
-            data1.put("name", name);
+            data1.add("uuid", uuid);
+            data1.add("date", newTime);
+            data1.add("name", name);
 
-            PluginConfig.getArray("banned").add(data1);
+            PluginConfig.get("banned").asArray().add(data1);
 
             // Write player data
             writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", getTime(), bantimeset, uuid);
@@ -758,13 +758,10 @@ public class PlayerDB{
             }
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
-            if (permission.getObject(player.permission).has("admin")) {
-                if (permission.getObject(player.permission).getBoolean("admin")) {
-                    target.isAdmin = true;
-
-                    player.isAdmin = true;
-                    PlayerDataSet(player.uuid, player);
-                }
+            if (permission.get(player.permission).asObject().getBoolean("admin", false)) {
+                target.isAdmin = true;
+                player.isAdmin = true;
+                PlayerDataSet(player.uuid, player);
             }
             nlog("debug", player.name + " Player permission set");
 

@@ -2,18 +2,17 @@ package essentials;
 
 import arc.Core;
 import arc.util.Log;
-import com.grack.nanojson.JsonObject;
-import com.grack.nanojson.JsonParser;
 import essentials.special.UTF8Control;
 import essentials.utils.Bundle;
 import essentials.utils.Config;
-import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 
@@ -36,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.core.PlayerDB.conn;
+import static essentials.utils.Permission.permission;
 import static mindustry.Vars.playerGroup;
 import static mindustry.Vars.world;
 
@@ -578,9 +578,9 @@ public class Global {
         HashMap <String, String> data = new HashMap<>();
         try {
             String json = Jsoup.connect("http://ipapi.co/"+ip+"/json").ignoreContentType(true).execute().body();
-            JsonObject result = JsonParser.object().from(json);
+            JsonObject result = JsonValue.readJSON(json).asObject();
 
-            if (result.has("reserved")) {
+            if (result.get("reserved") != null) {
                 data.put("country", "Local IP");
                 data.put("country_code", "LC");
                 data.put("languages", "en");
@@ -588,15 +588,15 @@ public class Global {
                 Locale locale;
                 while(true){
                     try {
-                        locale = new Locale(result.getString("languages"));
+                        locale = new Locale(result.getString("languages", null));
                         ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
                         RESOURCE_BUNDLE.getString("success");
                         break;
                     }catch (Exception e){
-                        String[] array = result.getString("languages").split(",");
+                        String[] array = result.getString("languages", null).split(",");
                         for(int a=0;a<array.length;a++){
                             try{
-                                locale = new Locale(result.getString("languages"));
+                                locale = new Locale(result.getString("languages", null));
                                 ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
                                 RESOURCE_BUNDLE.getString("success");
                                 break;
@@ -604,8 +604,8 @@ public class Global {
                         }
                     }
                 }
-                data.put("country", result.getString("country_name"));
-                data.put("country_code", result.getString("country"));
+                data.put("country", result.getString("country_name", "invalid"));
+                data.put("country_code", result.getString("country", "invalid"));
                 data.put("languages", locale.getLanguage());
             }
         } catch (Exception e) {
@@ -621,8 +621,8 @@ public class Global {
     public static String geolocation(String ip){
         try {
             String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).execute().body();
-            JsonObject result = JsonParser.object().from(json);
-            return result.getString("languages") == null ? "en" : result.getString("languages");
+            JsonObject result = JsonValue.readJSON(json).asObject();
+            return result.getString("languages","en");
         } catch (Exception e){
             printError(e);
             return "en";
@@ -650,9 +650,9 @@ public class Global {
     public static boolean checkperm(Player player, String command){
         if(isLogin(player) && !isNocore(player)){
             PlayerData p = PlayerData(player.uuid);
-            int size = Permission.permission.getObject(p.permission).getArray("permission").size();
+            int size = permission.get(p.permission).asObject().get("permission").asArray().size();
             for(int a=0;a<size;a++){
-                String permlevel = Permission.permission.getObject(p.permission).getArray("permission").getString(a);
+                String permlevel = permission.get(p.permission).asObject().get("permission").asArray().get(a).toString();
                 if(permlevel.equals(command) || permlevel.equals("ALL")){
                     return true;
                 }

@@ -25,14 +25,7 @@ dependencies{
     compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
 
     // json
-    compile group: 'com.grack', name: 'nanojson', version: '1.4'
-
-    // yaml
-    compile group: 'org.yaml', name: 'snakeyaml', version: '1.25'
-
-    // yaml to json
-    compile group: 'com.konghq', name: 'unirest-objectmapper-jackson', version: '3.3.00'
-    compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.10.1'
+    compile group: 'org.hjson', name: 'hjson', version: '3.0.0'
 
     // version check
     compile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'

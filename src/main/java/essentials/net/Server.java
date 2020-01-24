@@ -2,7 +2,6 @@ package essentials.net;
 
 import arc.Core;
 import arc.struct.Array;
-import com.grack.nanojson.*;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.core.GameState;
 import mindustry.core.Version;
@@ -11,6 +10,9 @@ import mindustry.game.Team;
 import mindustry.net.Administration;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
+import org.hjson.JsonArray;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.mindrot.jbcrypt.BCrypt;
@@ -184,11 +186,11 @@ public class Server implements Runnable {
                         return;
                     } else if (config.isBanshare()) {
                         try {
-                            JsonArray bandata = JsonParser.array().from(data);
+                            JsonArray bandata = JsonValue.readJSON(data).asArray();
                             if(data.substring(data.length()-5).equals("unban")){
                                 log("server","client-request-unban", remoteip);
                                 for (int i = 0; i < bandata.size(); i++) {
-                                    String[] array = bandata.getString(i).split("\\|", -1);
+                                    String[] array = bandata.get(i).asString().split("\\|", -1);
                                     if (array[0].length() == 12) {
                                         netServer.admins.unbanPlayerID(array[0]);
                                         if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
@@ -198,7 +200,7 @@ public class Server implements Runnable {
                                     if (array[0].equals("<unknown>")) {
                                         netServer.admins.unbanPlayerIP(array[1]);
                                     }
-                                    log("server","unban-done", bandata.getString(i));
+                                    log("server","unban-done", bandata.get(i).asString());
                                 }
 
                                 // send message to all clients
@@ -216,7 +218,7 @@ public class Server implements Runnable {
                             } else {
                                 log("server","client-request-banlist", remoteip);
                                 for (int i = 0; i < bandata.size(); i++) {
-                                    String[] array = bandata.getString(i).split("\\|", -1);
+                                    String[] array = bandata.get(i).asString().split("\\|", -1);
                                     if (array[0].length() == 12) {
                                         netServer.admins.banPlayerID(array[0]);
                                         if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
@@ -305,16 +307,15 @@ public class Server implements Runnable {
         }
 
         private String query() {
-            JsonStringWriter result = JsonWriter.string()
-                    .object()
-                    .value("players", playerGroup.size()) // 플레이어 인원
-                    .value("version", Version.build) // 버전
-                    .value("plugin-version", version)
-                    .value("playtime", playtime)
-                    .value("name", Core.settings.getString("servername"))
-                    .value("mapname", world.getMap().name())
-                    .value("wave", state.wave)
-                    .value("enemy-count", state.enemies);
+            JsonObject result = new JsonObject();
+            result.add("players", playerGroup.size()); // 플레이어 인원
+            result.add("version", Version.build); // 버전
+            result.add("plugin-version", version);
+            result.add("playtime", playtime);
+            result.add("name", Core.settings.getString("servername"));
+            result.add("mapname", world.getMap().name());
+            result.add("wave", state.wave);
+            result.add("enemy-count", state.enemies);
 
             boolean online = false;
             for(int a=0;a<playerGroup.size();a++){
@@ -323,39 +324,37 @@ public class Server implements Runnable {
                     online = true;
                 }
             }
-            result.value("admin_online", online);
+            result.add("admin_online", online);
 
-            result.array("playerlist");
+            JsonArray array = new JsonArray();
             for (Player p : playerGroup.all()) {
-                result.value(p.name); // player list
+                array.add(p.name); // player list
             }
-            result.end();
+            result.add("playerlist",array);
 
-            result.object("resource");
+            JsonObject items = new JsonObject();
             for (Item item : content.items()) {
                 if (item.type == ItemType.material) {
-                    result.value(item.name, state.teams.get(Team.sharded).cores.first().items.get(item)); // resources
+                    items.add(item.name, state.teams.get(Team.sharded).cores.first().items.get(item)); // resources
                 }
             }
-            result.end();
+            result.add("resource",items);
 
-            result.object("rank");
+            JsonObject rank = new JsonObject();
             try{
                 String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
                 Statement stmt = conn.createStatement();
                 for (String s : list) {
                     ResultSet rs = stmt.executeQuery("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
-                    result.object(s);
                     while (rs.next()) {
-                        result.value(rs.getString("name"), rs.getString(s));
+                        rank.add(rs.getString("name"), rs.getString(s));
                     }
-                    result.end();
                 }
             } catch (SQLException e) {
                 printError(e);
             }
 
-            return result.end().end().done();
+            return result.toString();
         }
 
         private String serverinfo() {
@@ -443,7 +442,7 @@ public class Server implements Runnable {
                             array.add(data);
                         }
                     }
-                    results.put(lists.get(a),array);
+                    results.add(lists.get(a),array);
                     rs.close();
                 }
                 stmt.close();
@@ -462,8 +461,8 @@ public class Server implements Runnable {
             }
             Document doc = Jsoup.parse(result.toString());
             for (String s : lists) {
-                for (int b = 0; b < results.getArray(s).size(); b++) {
-                    doc.getElementById(s).append(results.getArray(s).getString(b));
+                for (int b = 0; b < results.get(s).asArray().size(); b++) {
+                    doc.getElementById(s).append(results.get(s).asArray().get(b).asString());
                 }
             }
 
@@ -519,7 +518,7 @@ public class Server implements Runnable {
                         if (rs.next()) {
                             if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
                                 JsonObject db = getRaw(rs.getString("uuid"));
-                                String language = db.getString("language");
+                                String language = db.getString("language",null);
 
                                 String[] ranking = new String[12];
                                 ranking[0] = "SELECT uuid, placecount, RANK() over (ORDER BY placecount desc) valrank FROM players";
@@ -542,7 +541,7 @@ public class Server implements Runnable {
                                     for (String s : ranking) {
                                         ResultSet rs1 = stmt.executeQuery(s);
                                         while (rs1.next()) {
-                                            if (rs1.getString("uuid").equals(db.getString("uuid"))) {
+                                            if (rs1.getString("uuid").equals(db.getString("uuid",null))) {
                                                 array.add(rs1.getString("valrank"));
                                                 break;
                                             }

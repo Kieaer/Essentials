@@ -1,10 +1,8 @@
 package essentials.utils;
 
 import arc.Core;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.grack.nanojson.JsonObject;
-import com.grack.nanojson.JsonParser;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
 
 import static essentials.Global.nlog;
 import static essentials.Global.printError;
@@ -13,28 +11,22 @@ public class Permission {
     public static JsonObject permission;
 
     public Permission(){
-        if(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").exists()) {
+        if(Core.settings.getDataDirectory().child("mods/Essentials/permission.json").exists()) {
             try {
-                ObjectMapper yamlread = new ObjectMapper(new YAMLFactory());
-                Object obj = yamlread.readValue(Core.settings.getDataDirectory().child("mods/Essentials/permission.yml").readString(), Object.class);
-                ObjectMapper jsonwrite = new ObjectMapper();
-                permission = JsonParser.object().from(jsonwrite.writeValueAsString(obj));
-                for (String b : permission.keySet()) {
-                    nlog("debug", "target: " + b);
-                    if (permission.getObject(b).has("inheritance")) {
-                        String inheritance = permission.getObject(b).getString("inheritance");
-                        nlog("debug", "target inheritance: " + b + "/" + inheritance);
-                        while (permission.getObject(inheritance).has("inheritance")) {
-                            for (int a = 0; a < permission.getObject(inheritance).getArray("permission").size(); a++) {
-                                permission.getObject(b).getArray("permission").add(permission.getObject(inheritance).getArray("permission").get(a));
-                                nlog("debug", "target inheritance add: " + b + "/" + inheritance + "/" + permission.getObject(inheritance).getArray("permission").get(a));
-                            }
-                            inheritance = permission.getObject(inheritance).getString("inheritance");
-                        }
-                        if (!permission.getObject(inheritance).has("inheritance")) {
-                            for (int a = 0; a < permission.getObject(inheritance).getArray("permission").size(); a++) {
-                                permission.getObject(b).getArray("permission").add(permission.getObject(inheritance).getArray("permission").get(a));
-                                nlog("debug", "target inheritance add: " + b + "/" + inheritance + "/" + permission.getObject(inheritance).getArray("permission").get(a));
+                permission = JsonValue.readJSON(Core.settings.getDataDirectory().child("mods/Essentials/permission.json").reader()).asObject();
+                for (JsonObject.Member data : permission) {
+                    String name = data.getName();
+                    nlog("debug", "target: " + name);
+                    if(permission.get(name).asObject().get("inheritance") != null){
+                        String inheritance = permission.get(name).asObject().getString("inheritance",null);
+                        nlog("debug", "target inheritance: " + name + "/" + inheritance);
+                        for (JsonObject.Member as : permission.get(name).asObject().get("inheritance").asObject()) {
+                            while(inheritance != null) {
+                                for (int a = 0; a < permission.get(inheritance).asObject().get("permission").asArray().size(); a++) {
+                                    permission.get(name).asObject().get("permission").asArray().add(permission.get(inheritance).asObject().get("permission").asArray().get(a));
+                                    nlog("debug", "target inheritance add: " + name + "/" + inheritance + "/" + permission.get(inheritance).asObject().get("permission").asArray().get(a));
+                                }
+                                inheritance = permission.get(inheritance).asObject().getString("inheritance", null);
                             }
                         }
                     }

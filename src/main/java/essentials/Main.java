@@ -9,9 +9,6 @@ import arc.struct.Array;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grack.nanojson.JsonObject;
-import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
@@ -45,10 +42,11 @@ import mindustry.type.UnitType;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -61,7 +59,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -91,7 +88,11 @@ public class Main extends Plugin {
         // DB 형식 변환
         new DBConvert();
 
+        // 플러그인 설정 파일 불러오기
         config.main();
+
+        // DB 연결
+        playerDB.run();
 
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
@@ -100,12 +101,9 @@ public class Main extends Plugin {
             client.main(null, null, null);
         }
 
-        // 플레이어 DB 연결
-        openconnect();
-
         // 모든 플레이어 연결 상태를 0으로 설정
         try {
-            if (PluginConfig.getBoolean("unexception")) {
+            if (PluginConfig.getBoolean("unexception", false)) {
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
                 while (rs.next()) {
@@ -114,8 +112,7 @@ public class Main extends Plugin {
                     }
                 }
             } else {
-                PluginConfig.put("unexception", true);
-                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), PluginConfig);
+                PluginConfig.set("unexception", true);
             }
         }catch (Exception e){
             printError(e);
@@ -354,7 +351,7 @@ public class Main extends Plugin {
                             }
                         }
                     }
-                } else if (!config.isLoginenable()) {
+                } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
                     if (playerDB.register(e.player)) {
                         playerDB.load(e.player, null);
@@ -506,9 +503,9 @@ public class Main extends Plugin {
                                                 .followRedirects(true)
                                                 .execute()
                                                 .body();
-                                        JsonObject object = JsonParser.object().from(response);
-                                        if (!object.has("error")) {
-                                            String result = object.getObject("message").getObject("result").getString("translatedText");
+                                        JsonObject object = JsonValue.readJSON(response).asObject();
+                                        if (object.get("error") != null) {
+                                            String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
                                             if (data.translate) {
                                                 p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
                                             }
@@ -532,14 +529,8 @@ public class Main extends Plugin {
                 PlayerData target = PlayerData(e.player.uuid);
                 String name = e.tile.block().name;
                 try {
-                    Yaml yaml = new Yaml();
-                    Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
-                    int blockexp;
-                    if (obj.get(name) != null) {
-                        blockexp = (int) obj.get(name);
-                    } else {
-                        blockexp = 0;
-                    }
+                    JsonObject obj = JsonValue.readHjson(Core.settings.getDataDirectory().child("mods/Essentials/Exp.hjson").reader()).asObject();
+                    int blockexp = obj.getInt(name,0);
 
                     target.lastplacename = e.tile.block().name;
                     target.placecount++;
@@ -574,14 +565,8 @@ public class Main extends Plugin {
                     PlayerData target = PlayerData(((Player) e.builder).uuid);
                     String name = e.tile.block().name;
                     try {
-                        Yaml yaml = new Yaml();
-                        Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
-                        int blockexp;
-                        if (obj.get(name) != null) {
-                            blockexp = (int) obj.get(name);
-                        } else {
-                            blockexp = 0;
-                        }
+                        JsonObject obj = JsonValue.readHjson(Core.settings.getDataDirectory().child("mods/Essentials/Exp.hjson").reader()).asObject();
+                        int blockexp = obj.getInt(name,0);
 
                         target.lastbreakname = e.tile.block().name;
                         target.breakcount++;
@@ -608,16 +593,19 @@ public class Main extends Plugin {
                     // Exp Playing Game (EPG)
                     if (config.isExplimit()) {
                         int level = target.level;
-                        Yaml yaml = new Yaml();
-                        Map<String, Integer> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").readString()));
-                        if (obj.get(name) != null) {
-                            int blockreqlevel = obj.get(name);
-                            if (level < blockreqlevel) {
-                                Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
-                                ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
+                        try {
+                            JsonObject obj = JsonValue.readHjson(Core.settings.getDataDirectory().child("mods/Essentials/Exp.hjson").reader()).asObject();
+                            if (obj.get(name) != null) {
+                                int blockreqlevel = obj.getInt(name,999);
+                                if (level < blockreqlevel) {
+                                    Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
+                                    ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
+                                }
+                            } else {
+                                log("err", "epg-block-not-valid", name);
                             }
-                        } else {
-                            log("err", "epg-block-not-valid", name);
+                        }catch (Exception ex){
+                            printError(ex);
                         }
                     }
                 }
@@ -1007,7 +995,7 @@ public class Main extends Plugin {
             if(config.isUpdate()) {
                 log("client","client-checking-version");
                 try {
-                    JsonObject json = JsonParser.object().from(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body());
+                    JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
 
                     for(int a=0;a<mods.list().size;a++){
                         if(mods.list().get(a).meta.name.equals("Essentials")){
@@ -1015,7 +1003,7 @@ public class Main extends Plugin {
                         }
                     }
 
-                    DefaultArtifactVersion latest = new DefaultArtifactVersion(json.getString("tag_name"));
+                    DefaultArtifactVersion latest = new DefaultArtifactVersion(json.getString("tag_name",version));
                     DefaultArtifactVersion current = new DefaultArtifactVersion(version);
 
                     if (latest.compareTo(current) > 0) {
@@ -1024,7 +1012,7 @@ public class Main extends Plugin {
                         Thread t = new Thread(() -> {
                             try {
                                 nlog("log", nbundle("update-description", json.get("tag_name")));
-                                System.out.println(json.getString("body"));
+                                System.out.println(json.getString("body","No description found."));
                                 System.out.println(nbundle("plugin-downloading-standby"));
                                 timer.cancel();
                                 if (config.isServerenable()) {
@@ -1046,7 +1034,7 @@ public class Main extends Plugin {
                                 executorService.shutdown();
                                 closeconnect();
 
-                                URLDownload(new URL(json.getArray("assets").getObject(0).getString("browser_download_url")),
+                                URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
                                         Core.settings.getDataDirectory().child("mods/Essentials.jar").file(),
                                         nbundle("plugin-downloading"),
                                         nbundle("plugin-downloading-done"), null);
@@ -1230,8 +1218,8 @@ public class Main extends Plugin {
             openconnect();
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
-            for (String b : permission.keySet()) {
-                if (b.equals(arg[0])) {
+            for (JsonObject.Member data : permission) {
+                if(data.getName().equals(arg[0])){
                     writeData("UPDATE players SET permission = ?", arg[0]);
                     log("log", "success");
                     return;
@@ -1290,10 +1278,10 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 log("warn","player-not-found");
             }
-            for (String b : permission.keySet()) {
-                if (b.equals(arg[1])) {
+            for (JsonObject.Member data : permission) {
+                if(data.getName().equals(arg[0])){
                     writeData("UPDATE players SET permission = ? WHERE name = ?", arg[1], arg[0]);
-                    log("player", "success");
+                    log("log", "success");
                     return;
                 }
             }
@@ -1881,9 +1869,9 @@ public class Main extends Plugin {
             if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
                 player.sendMessage(bundle(player, "player-not-found"));
             }
-            for (String b : permission.keySet()) {
-                if (b.equals(arg[1])) {
-                    writeData("UPDATE players SET permission = ? WHERE name = ?", arg[0]);
+            for (JsonObject.Member data : permission) {
+                if(data.getName().equals(arg[0])){
+                    writeData("UPDATE players SET permission = ? WHERE name = ?", arg[1], arg[0]);
                     player.sendMessage(bundle(player, "success"));
                     return;
                 }

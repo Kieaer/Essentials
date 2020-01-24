@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static essentials.utils.Config.PluginConfig;
+
 public class PluginData {
     // 일회성 플러그인 데이터
     public static ArrayList<nukeblock> nukeblock = new ArrayList<>();
@@ -139,6 +141,8 @@ public class PluginData {
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(map);
             oos.close();
+
+            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(PluginConfig.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -151,21 +155,26 @@ public class PluginData {
             try {
                 FileOutputStream fos = new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").file());
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
+                map.put("jumpzone",new ArrayList<>());
+                map.put("jumpcount",new ArrayList<>());
+                map.put("jumptotal",new ArrayList<>());
+                map.put("blacklist",new ArrayList<>());
+                map.put("banned",new ArrayList<>());
                 oos.writeObject(map);
                 oos.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else {
+        } else if(Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").exists()){
             try {
                 FileInputStream fis = new FileInputStream(Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").file());
                 ObjectInputStream ois = new ObjectInputStream(fis);
-                Map<String, ArrayList> map = (Map<String, ArrayList>) ois.readObject();
-                jumpzone = map.get("jumpzone");
-                jumpcount = map.get("jumpcount");
-                jumptotal = map.get("jumptotal");
-                blacklist = map.get("blacklist");
-                banned = map.get("banned");
+                Map<String, Object> map = (Map<String, Object>) ois.readObject();
+                jumpzone = (ArrayList<jumpzone>) map.get("jumpzone");
+                jumpcount = (ArrayList<jumpcount>) map.get("jumpcount");
+                jumptotal = (ArrayList<jumptotal>) map.get("jumptotal");
+                blacklist = (ArrayList<String>) map.get("blacklist");
+                banned = (ArrayList<banned>) map.get("banned");
                 ois.close();
             } catch (Exception e) {
                 e.printStackTrace();

@@ -7,10 +7,6 @@ import arc.files.Fi;
 import arc.struct.Array;
 import arc.util.Strings;
 import arc.util.Time;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grack.nanojson.JsonObject;
-import com.grack.nanojson.JsonParser;
-import com.grack.nanojson.JsonParserException;
 import essentials.core.PlayerDB;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -28,6 +24,8 @@ import mindustry.type.ItemType;
 import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 import org.codehaus.plexus.util.FileUtils;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
 
 import java.io.File;
@@ -67,12 +65,8 @@ public class Threads extends TimerTask{
 
         // 데이터 저장
         JsonObject data = new JsonObject();
-        data.put("servername", Core.settings.getString("servername"));
-        try {
-            new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
-        } catch (IOException e) {
-            printError(e);
-        }
+        data.add("servername", Core.settings.getString("servername"));
+        Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(data.toString());
 
         // 현재 서버 이름에다가 클라이언트 서버에 대한 인원 새기기
         // new changename().start();
@@ -82,7 +76,7 @@ public class Threads extends TimerTask{
             LocalDateTime time = LocalDateTime.now();
             if (time.isAfter(banned.get(a).time)) {
                 banned.remove(a);
-                PluginConfig.getArray("banned").remove(a);
+                PluginConfig.get("banned").asArray().remove(a);
                 netServer.admins.unbanPlayerID(banned.get(a).uuid);
                 nlog("log","[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + banned.get(a).name + "/" + banned.get(a).uuid + " player unbanned!");
                 break;
@@ -270,8 +264,8 @@ public class Threads extends TimerTask{
                         try {
                             String message;
                             String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
-                            JsonObject result = JsonParser.object().from(json);
-                            String language = result.getString("languages") == null ? "en" : result.getString("languages");
+                            JsonObject result = JsonValue.readJSON(json).asObject();
+                            String language = result.getString("languages", "en");
                             if (config.getPasswordmethod().equals("discord")) {
                                 message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
                             } else {
@@ -398,10 +392,10 @@ public class Threads extends TimerTask{
                             pingServer("localhost", result -> {
                                 if (disablecount > 300) {
                                     try {
-                                        JsonObject settings = JsonParser.object().from(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").readString());
-                                        for (int a = 0; a < settings.getArray("servers").size(); a++) {
-                                            if (settings.getArray("servers").getObject(a).getInt("port") == customport) {
-                                                settings.getArray("servers").remove(a);
+                                        JsonObject settings = JsonValue.readJSON(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").reader()).asObject();
+                                        for (int a = 0; a < settings.get("servers").asArray().size(); a++) {
+                                            if (settings.get("servers").asArray().get(a).asObject().getInt("port",0) == customport) {
+                                                settings.get("servers").asArray().remove(a);
                                                 Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(settings.toString());
                                                 break;
                                             }
@@ -410,7 +404,7 @@ public class Threads extends TimerTask{
                                         finalP.destroy();
                                         process.remove(finalP);
                                         this.cancel();
-                                    } catch (JsonParserException e) {
+                                    } catch (IOException e) {
                                         printError(e);
                                     }
                                 } else if (result.players == 0) {

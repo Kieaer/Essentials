@@ -1,13 +1,13 @@
 package essentials.net;
 
 import arc.struct.Array;
-import com.grack.nanojson.JsonArray;
-import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.net.Administration;
+import org.hjson.JsonArray;
+import org.hjson.JsonValue;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -179,11 +179,11 @@ public class Client extends Thread{
                     }
                 } else if(config.isBanshare()){
                     try{
-                        JsonArray bandata = JsonParser.array().from(data);
+                        JsonArray bandata = JsonValue.readJSON(data).asArray();
                         if(data.substring(data.length()-5).equals("unban")){
                             log("client","server-request-unban");
                             for (int i = 0; i < bandata.size(); i++) {
-                                String[] array = bandata.getString(i).split("\\|", -1);
+                                String[] array = bandata.get(i).asString().split("\\|", -1);
                                 if (array[0].length() == 12) {
                                     netServer.admins.unbanPlayerID(array[0]);
                                     if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
@@ -193,11 +193,11 @@ public class Client extends Thread{
                                 if (array[0].equals("<unknown>")) {
                                     netServer.admins.unbanPlayerIP(array[1]);
                                 }
-                                log("client","unban-done", bandata.getString(i));
+                                log("client","unban-done", bandata.get(i).asString());
                             }
                         } else {
                             for (int i = 0; i < bandata.size(); i++) {
-                                String[] array = bandata.getString(i).split("\\|", -1);
+                                String[] array = bandata.get(i).asString().split("\\|", -1);
                                 if (array[0].length() == 12) {
                                     netServer.admins.banPlayerID(array[0]);
                                     if (!array[1].equals("<unknown>") && array[1].length() <= 15) {

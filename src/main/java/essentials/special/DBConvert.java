@@ -16,7 +16,7 @@ public class DBConvert {
 
     public DBConvert(){
         if(config != null) {
-            if (!config.isSqlite() && PluginConfig.getBoolean("sqlite")) SQLite2DB();
+            if (!config.isSqlite() && PluginConfig.getBoolean("sqlite", true)) SQLite2DB();
         }
     }
 
@@ -134,7 +134,7 @@ public class DBConvert {
                 System.out.print("\r"+copy+" "+current+"/"+size);
             }
             prepared.close();
-            PluginConfig.put("sqlite", false);
+            PluginConfig.add("sqlite", false);
             System.out.print("\n"+end+"\n");
         } catch (Exception e) {
             e.printStackTrace();
