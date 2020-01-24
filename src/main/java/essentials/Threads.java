@@ -142,7 +142,7 @@ public class Threads extends TimerTask{
                     if (target.isLogin) {
                         // Exp 계산
                         target.exp = target.exp + (int) (Math.random() * 5);
-                        target.playtime = LocalDateTime.parse(target.playtime).plusSeconds(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        target.playtime = LocalTime.parse(target.playtime, DateTimeFormatter.ofPattern("HH:mm.ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm.ss"));
                         if(!state.rules.editor){
                             exp(player.name, player.uuid);
                         }

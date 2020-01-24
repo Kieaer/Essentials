@@ -875,6 +875,9 @@ public class PlayerDB{
             this.udid = udid;
             this.accountid = accountid;
             this.accountpw = accountpw;
+
+            this.error = false;
+            this.isLogin = true;
         }
     }
     public static PlayerData PlayerData(String uuid){
