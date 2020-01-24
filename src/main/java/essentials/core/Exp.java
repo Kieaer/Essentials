@@ -1,11 +1,11 @@
 package essentials.core;
 
-import com.grack.nanojson.JsonObject;
 import mindustry.entities.type.Player;
 
 import static essentials.Global.bundle;
 import static essentials.Global.config;
-import static essentials.core.PlayerDB.writeData;
+import static essentials.core.PlayerDB.PlayerData;
+import static essentials.core.PlayerDB.PlayerDataSet;
 import static mindustry.Vars.playerGroup;
 
 public class Exp {
@@ -13,21 +13,22 @@ public class Exp {
     private static double EXPONENT = config.getExponent();
 
     public static void exp(String name, String uuid) {
-        JsonObject db = PlayerDB.getData(uuid);
+        PlayerData target = PlayerData(uuid);
 
-        int currentlevel = db.getInt("level");
+        int currentlevel = target.level;
         int max = (int) calculateFullTargetXp(currentlevel);
 
-        int xp =  db.getInt("exp");
+        int xp =  target.exp;
         int levelXp = max - xp;
         int level = calculateLevel(xp);
         int reqexp = (int)Math.floor(max);
         String reqtotalexp = xp+"("+(int) Math.floor(levelXp)+") / "+(int) Math.floor(max);
 
-        writeData("UPDATE players SET reqexp = ?, level = ?, reqtotalexp = ? WHERE uuid = ?",reqexp,level,reqtotalexp,uuid);
+        target.reqexp = reqexp;
+        target.level = level;
+        target.reqtotalexp = reqtotalexp;
 
-        int curlevel = (int) db.get("level");
-        if(curlevel < level && curlevel > config.getAlarmlevel() && config.isLevelupalarm()){
+        if(currentlevel < level && currentlevel > config.getAlarmlevel() && config.isLevelupalarm()){
             for(int a=0;a<playerGroup.size();a++){
                 Player player = playerGroup.all().get(a);
                 player.sendMessage(bundle(player, "player-levelup", name, level));
@@ -57,14 +58,9 @@ public class Exp {
     }
 
     public static void joinexp(String uuid){
-        JsonObject db = PlayerDB.getData(uuid);
-
-        int exp = db.getInt("exp");
-        int joincount = db.getInt("joincount");
-
-        int result = exp+joincount;
-
-        writeData("UPDATE players SET exp = ? WHERE uuid = ?",result,uuid);
+        PlayerData target = PlayerData(uuid);
+        target.exp = target.exp+target.joincount;
+        PlayerDataSet(uuid,target);
     }
 }
 

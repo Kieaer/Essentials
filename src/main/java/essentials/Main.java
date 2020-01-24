@@ -9,6 +9,7 @@ import arc.struct.Array;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
@@ -19,8 +20,9 @@ import essentials.core.Log;
 import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Server;
+import essentials.special.DBConvert;
+import essentials.special.DriverLoader;
 import essentials.special.IpAddressMatcher;
-import essentials.utils.Config;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -48,11 +50,12 @@ import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.URLConnection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -64,31 +67,30 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static essentials.Global.*;
+import static essentials.PluginData.*;
 import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
-import static essentials.utils.Config.jumpall;
-import static essentials.utils.Config.jumpzone;
-import static essentials.utils.Config.*;
+import static essentials.utils.Config.PluginConfig;
+import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class Main extends Plugin {
-    private ArrayList<String> nukeblock = new ArrayList<>();
-    private static ArrayList<String> eventservers = new ArrayList<>();
-    static ArrayList<String> powerblock = new ArrayList<>();
-    static ArrayList<String> messagemonitor = new ArrayList<>();
-    static ArrayList<String> messagejump = new ArrayList<>();
-    static ArrayList<Tile> scancore = new ArrayList<>();
-    private ArrayList<Tile> nukedata = new ArrayList<>();
     private Array<mindustry.maps.Map> maplist = Vars.maps.all();
 
     public Client client;
+    public PlayerDB playerDB = new PlayerDB();
 
     public Main() {
-        // 설정 시작
+        // DB 드라이버 다운로드
+        new DriverLoader();
+
+        // DB 형식 변환
+        new DBConvert();
+
         config.main();
 
         // 클라이언트 연결 확인
@@ -99,32 +101,31 @@ public class Main extends Plugin {
         }
 
         // 플레이어 DB 연결
-        PlayerDB playerdb = new PlayerDB();
+        openconnect();
 
         // 모든 플레이어 연결 상태를 0으로 설정
-        try{
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
-            while(rs.next()){
-                if(isLoginold(rs.getString("lastdate"))){
-                    writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", false, "none", rs.getInt("id"));
+        try {
+            if (PluginConfig.getBoolean("unexception")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
+                while (rs.next()) {
+                    if (isLoginold(rs.getString("lastdate"))) {
+                        writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", false, "none", rs.getInt("id"));
+                    }
                 }
+            } else {
+                PluginConfig.put("unexception", true);
+                new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), PluginConfig);
             }
-        } catch (SQLException e) {
-            printStackTrace(e);
+        }catch (Exception e){
+            printError(e);
         }
-
-        // 클라이언트 플레이어 카운트 (중복 실행을 방지하기 위해 별도 스레드로 실행)
-        executorService.submit(new jumpcheck());
 
         // 메세지 블럭에 의한 클라이언트 플레이어 카운트
         executorService.submit(new jumpdata());
 
         // 코어 자원소모 감시 시작
-        executorService.submit(new monitorresource());
-
-        // 임시로 밴한 플레이어들 밴 해제시간 카운트
-        executorService.submit(new bantime());
+        // executorService.submit(new monitorresource());
 
         // 서버간 이동 영역 표시
         executorService.submit(new visualjump());
@@ -154,25 +155,17 @@ public class Main extends Plugin {
 
         Events.on(TapEvent.class, e -> {
             if(isLogin(e.player)) {
-                for (int a = 0; a < jumpzone.size(); a++) {
-                    String jumpdata = jumpzone.getString(a);
-                    String[] data = jumpdata.split("/");
-                    int startx = Integer.parseInt(data[0]);
-                    int starty = Integer.parseInt(data[1]);
-                    int tilex = Integer.parseInt(data[2]);
-                    int tiley = Integer.parseInt(data[3]);
-                    String serverip = data[4];
-
-                    String ip = data[4];
+                for (jumpzone data : jumpzone) {
                     int port = 6567;
-                    if (serverip.contains(":") && Strings.canParsePostiveInt(serverip.split(":")[1])) {
-                        ip = serverip.split(":")[0];
-                        port = Strings.parseInt(serverip.split(":")[1]);
+                    String ip = data.ip;
+                    if (data.ip.contains(":") && Strings.canParsePostiveInt(data.ip.split(":")[1])) {
+                        ip = data.ip.split(":")[0];
+                        port = Strings.parseInt(data.ip.split(":")[1]);
                     }
 
-                    if (e.tile.x > startx && e.tile.x < tilex) {
-                        if (e.tile.y > starty && e.tile.y < tiley) {
-                            log("log", "player-jumped", e.player.name, serverip);
+                    if (e.tile.x > data.start.x && e.tile.x < data.finish.x) {
+                        if (e.tile.y > data.start.y && e.tile.y < data.finish.y) {
+                            log("log", "player-jumped", e.player.name, data.ip);
                             writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
                             Call.onConnect(e.player.con, ip, port);
                         }
@@ -208,18 +201,14 @@ public class Main extends Plugin {
                 if (index == 1) {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
-                        if (isLogin(player)) {
+                        PlayerData target = PlayerData(player.uuid);
+                        if (target.isLogin) {
                             if (player.getTeam().name.equals(e.winner.name)) {
-                                JsonObject db = getData(player.uuid);
-                                int pvpwin = db.getInt("pvpwincount");
-                                pvpwin++;
-                                writeData("UPDATE players SET pvpwincount = ? WHERE uuid = ?", pvpwin, player.uuid);
+                                target.pvpwincount++;
                             } else if (!player.getTeam().name.equals(e.winner.name)) {
-                                JsonObject db = getData(player.uuid);
-                                int pvplose = db.getInt("pvplosecount");
-                                pvplose++;
-                                writeData("UPDATE players SET pvplosecount = ? WHERE uuid = ?", pvplose, player.uuid);
+                                target.pvplosecount++;
                             }
+                            PlayerDataSet(target.uuid,target);
                         }
                     }
                     pvpteam.clear();
@@ -227,11 +216,10 @@ public class Main extends Plugin {
             } else if(state.rules.attackMode){
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    if (isLogin(player)) {
-                        JsonObject db = getData(player.uuid);
-                        int attackclear = db.getInt("attackclear");
-                        attackclear++;
-                        writeData("UPDATE players SET attackclear = ? WHERE uuid = ?", attackclear, player.uuid);
+                    PlayerData target = PlayerData(player.uuid);
+                    if (target.isLogin) {
+                        target.attackclear++;
+                        PlayerDataSet(target.uuid,target);
                     }
                 }
             }
@@ -249,15 +237,14 @@ public class Main extends Plugin {
 
         Events.on(PlayerConnect.class, e -> {
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
-            for(int a=0;a<blacklist.size();a++){
-                String s = blacklist.getString(a);
+            for (String s : blacklist) {
                 if (e.player.name.matches(s)) {
-                    try{
-                        String language = geolocation(Vars.netServer.admins.getInfo(e.player.uuid).lastIP);
+                    try {
+                        String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
                         Call.onKick(e.player.con, nbundle(language, "nickname-blacklisted-kick"));
                         log("log", "nickname-blacklisted", e.player.name);
                     } catch (Exception ex) {
-                        printStackTrace(ex);
+                        printError(ex);
                     }
                 }
             }
@@ -276,26 +263,20 @@ public class Main extends Plugin {
             }*/
         });
 
+        // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(DepositEvent.class, e -> {
-            // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
-            if(e.player.item() != null && e.player.mech != null) {
-                if (e.player.item().amount > e.player.mech.itemCapacity) {
-                    player.con.kick("Invalid request!");
-                    return;
-                }
+            if(e.player.item().amount > e.player.mech.itemCapacity){
+                player.con.kick("Invalid request!");
+                return;
             }
 
             // 만약 그 특정블록이 토륨 원자로이며, 맵 설정에서 원자로 폭발이 비활성화 되었을 경우
             if (e.tile.block() == Blocks.thoriumReactor && config.isDetectreactor() && !state.rules.reactorExplosions) {
-                nukeblock.add(e.tile.entity.tileX() + "/" + e.tile.entity.tileY() + "/" + e.player.name);
+                nukeblock.add(new nukeblock(e.tile, e.player.name));
                 Thread t = new Thread(() -> {
                     try {
-                        for (String nukedata : nukeblock) {
-                            String[] data = nukedata.split("/");
-                            int x = Integer.parseInt(data[0]);
-                            int y = Integer.parseInt(data[1]);
-                            String builder = data[2];
-                            NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) world.tile(x, y).entity;
+                        for (nukeblock data : nukeblock) {
+                            NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) data.tile.entity;
                             if (entity.heat >= 0.01) {
                                 sleep(50);
                                 for (int a = 0; a < playerGroup.size(); a++) {
@@ -303,8 +284,8 @@ public class Main extends Plugin {
                                     other.sendMessage(bundle(other, "detect-thorium"));
                                 }
 
-                                writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),builder));
-                                Call.onTileDestroyed(world.tile(x, y));
+                                writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),data.name));
+                                Call.onTileDestroyed(data.tile);
                             } else {
                                 sleep(1950);
                                 if (entity.heat >= 0.01) {
@@ -312,13 +293,13 @@ public class Main extends Plugin {
                                         Player other = playerGroup.all().get(a);
                                         other.sendMessage(bundle(other, "detect-thorium"));
                                     }
-                                    writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),builder));
-                                    Call.onTileDestroyed(world.tile(x, y));
+                                    writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),data.name));
+                                    Call.onTileDestroyed(data.tile);
                                 }
                             }
                         }
                     } catch (Exception ex) {
-                        printStackTrace(ex);
+                        printError(ex);
                     }
                 });
                 t.start();
@@ -347,20 +328,20 @@ public class Main extends Plugin {
             Call.onPlayerDeath(e.player);
 
             Thread t = new Thread(() -> {
-                Thread.currentThread().setName(e.player.name+" Player Join");
+                Thread.currentThread().setName(e.player.name+" Player Join thread");
                 if (config.isLoginenable()) {
                     if (isNocore(e.player)) {
-                        JsonObject db = getData(e.player.uuid);
-                        if (db.has("uuid")) {
-                            if (db.getString("uuid").equals(e.player.uuid)) {
+                        PlayerData player = PlayerData(e.player.uuid);
+                        if (!player.error) {
+                            if (player.uuid.equals(e.player.uuid)) {
                                 e.player.sendMessage(bundle(e.player, "autologin"));
-                                playerdb.load(e.player, null);
+                                playerDB.load(e.player, null);
                             }
                         } else {
                             // 로그인 요구
                             try {
                                 String message;
-                                String language = geolocation(Vars.netServer.admins.getInfo(e.player.uuid).lastIP);
+                                String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
 
                                 if (config.getPasswordmethod().equals("discord")) {
                                     message = nbundle(language, "login-require-discord")+"\n"+config.getDiscordLink();
@@ -369,14 +350,14 @@ public class Main extends Plugin {
                                 }
                                 Call.onInfoMessage(e.player.con, message);
                             } catch (Exception ex){
-                                printStackTrace(ex);
+                                printError(ex);
                             }
                         }
                     }
                 } else if (!config.isLoginenable()) {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (playerdb.register(e.player)) {
-                        playerdb.load(e.player, null);
+                    if (playerDB.register(e.player)) {
+                        playerDB.load(e.player, null);
                     } else {
                         Call.onKick(e.player.con, nbundle("plugin-error-kick"));
                     }
@@ -425,28 +406,25 @@ public class Main extends Plugin {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
-            String uuid = e.player.uuid;
-            if (isLogin(e.player)) {
-                if(state.rules.pvp && !state.gameOver){
-                    int breakout = getData(e.player.uuid).getInt("pvpbreakout");
-                    breakout++;
-                    writeData("UPDATE players SET connected = ?, connserver = ?, pvpbreakout = ? WHERE uuid = ?", false, "none", breakout, uuid);
-                } else {
-                    writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", uuid);
-                }
+            PlayerData player = PlayerData(e.player.uuid);
+            if (player.isLogin) {
+                player.connected = false;
+                player.connserver = "none";
+                if(state.rules.pvp && !state.gameOver) player.pvpbreakout++;
+                PlayerDataSave(player.uuid);
+                PlayerDataRemove(player.uuid);
             }
         });
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent.class, e -> {
             if (isLogin(e.player)) {
+                PlayerData target = PlayerData(e.player.uuid);
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
                 if (!check.equals("/")) {
-                    JsonObject db = getData(e.player.uuid);
-
                     if (e.message.matches("(.*쌍[\\S\\s]{0,2}(년|놈).*)|(.*(씨|시)[\\S\\s]{0,2}(벌|빨|발|바).*)|(.*장[\\S\\s]{0,2}애.*)|(.*(병|븅)[\\S\\s]{0,2}(신|쉰|싄).*)|(.*(좆|존|좃)[\\S\\s]{0,2}(같|되|는|나).*)|(.*(개|게)[\\S\\s]{0,2}(같|갓|새|세|쉐).*)|(.*(걸|느)[\\S\\s]{0,2}(레|금).*)|(.*(꼬|꽂|고)[\\S\\s]{0,2}(추|츄).*)|(.*(니|너)[\\S\\s]{0,2}(어|엄|엠|애|m|M).*)|(.*(노)[\\S\\s]{0,1}(애|앰).*)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(ㅅㅂ|ㅄ|ㄷㅊ)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(.*s[\\S\\s]{0,1}e[\\S\\s]{0,1}x.*)")) {
-                        Call.onKick(e.player.con, nbundle(db.getString("language"), "kick-swear"));
+                        Call.onKick(e.player.con, nbundle(target.language, "kick-swear"));
                     } else if (e.message.equals("y") && isvoting) {
                         // 투표가 진행중일때
                         if (Vote.list.contains(e.player.uuid)) {
@@ -473,7 +451,7 @@ public class Main extends Plugin {
                     }*/
 
                     // 서버간 대화기능 작동
-                    if (db.getBoolean("crosschat")) {
+                    if (target.crosschat) {
                         if (config.isClientenable()) {
                             client.main("chat", e.player, e.message);
                         } else if (config.isServerenable()) {
@@ -489,76 +467,113 @@ public class Main extends Plugin {
                             }
                         } else if (!config.isClientenable() && !config.isServerenable()) {
                             e.player.sendMessage(bundle(e.player, "no-any-network"));
-                            writeData("UPDATE players SET crosschat = ? WHERE uuid = ?", false, e.player.uuid);
+                            target.crosschat = false;
                         }
                     }
                 }
 
                 // 마지막 대화 데이터를 DB에 저장함
-                writeData("UPDATE players SET lastchat = ? WHERE uuid = ?", e.message, e.player.uuid);
+                target.lastchat = e.message;
 
                 // 번역
                 if (config.isEnableTranslate()) {
-                    Thread t = new Thread(() -> {
-                        try {
-                            JsonObject orignaldata = getData(e.player.uuid);
-                            for (int i = 0; i < playerGroup.size(); i++) {
-                                Player p = playerGroup.all().get(i);
-                                if (!isNocore(p)) {
-                                    JsonObject data = getData(p.uuid);
-                                    String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
-                                    String language = data.getString("language");
-                                    String orignal = orignaldata.getString("language");
-                                    if (!language.equals(orignal)) {
-                                        boolean found = false;
-                                        for (String s : support) {
-                                            if (orignal.equals(s)) {
-                                                found = true;
-                                                break;
-                                            }
+                    try {
+                        PlayerData orignaldata = PlayerData(e.player.uuid);
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player p = playerGroup.all().get(i);
+                            if (!isNocore(p)) {
+                                PlayerData data = PlayerData(p.uuid);
+                                String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
+                                String language = data.language;
+                                String orignal = orignaldata.language;
+                                if (!language.equals(orignal)) {
+                                    boolean found = false;
+                                    for (String s : support) {
+                                        if (orignal.equals(s)) {
+                                            found = true;
+                                            break;
                                         }
-                                        if (found) {
-                                            String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
-                                                    .method(Connection.Method.POST)
-                                                    .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
-                                                    .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
-                                                    .data("source", orignaldata.getString("language"))
-                                                    .data("target", data.getString("language"))
-                                                    .data("text", e.message)
-                                                    .ignoreContentType(true)
-                                                    .followRedirects(true)
-                                                    .execute()
-                                                    .body();
-                                            JsonObject object = JsonParser.object().from(response);
-                                            if (!object.has("error")) {
-                                                String result = object.getObject("message").getObject("result").getString("translatedText");
-                                                if (data.getBoolean("translate")) {
-                                                    p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
-                                                }
+                                    }
+                                    if (found) {
+                                        String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
+                                                .method(Connection.Method.POST)
+                                                .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
+                                                .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
+                                                .data("source", orignaldata.language)
+                                                .data("target", data.language)
+                                                .data("text", e.message)
+                                                .ignoreContentType(true)
+                                                .followRedirects(true)
+                                                .execute()
+                                                .body();
+                                        JsonObject object = JsonParser.object().from(response);
+                                        if (!object.has("error")) {
+                                            String result = object.getObject("message").getObject("result").getString("translatedText");
+                                            if (data.translate) {
+                                                p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
                                             }
                                         }
                                     }
                                 }
                             }
-                        } catch (Exception ex) {
-                            printStackTrace(ex);
                         }
-                    });
-                    t.start();
+                    } catch (Exception ex) {
+                        printError(ex);
+                    }
                 }
+
+                PlayerDataSet(target.uuid,target);
             }
         });
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent.class, e -> {
             if (!e.breaking && e.player != null && e.player.buildRequest() != null && !isNocore(e.player) && e.tile != null && e.player.buildRequest() != null) {
-                Thread t = new Thread(() -> {
-                    JsonObject db = getData(e.player.uuid);
+                PlayerData target = PlayerData(e.player.uuid);
+                String name = e.tile.block().name;
+                try {
+                    Yaml yaml = new Yaml();
+                    Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
+                    int blockexp;
+                    if (obj.get(name) != null) {
+                        blockexp = (int) obj.get(name);
+                    } else {
+                        blockexp = 0;
+                    }
+
+                    target.lastplacename = e.tile.block().name;
+                    target.placecount++;
+                    target.exp = target.exp + blockexp;
+                    if (e.player.buildRequest().block == Blocks.thoriumReactor) target.reactorcount++;
+                } catch (Exception ex) {
+                    printError(ex);
+                }
+
+                // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
+                if (e.tile.entity.block == Blocks.message) {
+                    messagemonitor.add(new messagemonitor(e.tile));
+                }
+
+                // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
+                if (e.tile.entity.block == Blocks.thoriumReactor) {
+                    nukeposition.add(e.tile);
+                    nukedata.add(e.tile);
+                }
+                if(config.isDebug() && config.isAntigrief()){
+                    log("log","antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                }
+
+                PlayerDataSet(target.uuid,target);
+            }
+        });
+
+        // 플레이어가 블럭을 뽀갰을 때
+        Events.on(BuildSelectEvent.class, e -> {
+            if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
+                if (e.breaking) {
+                    PlayerData target = PlayerData(((Player) e.builder).uuid);
                     String name = e.tile.block().name;
                     try {
-                        int data = db.getInt("placecount");
-                        int exp = db.getInt("exp");
-
                         Yaml yaml = new Yaml();
                         Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
                         int blockexp;
@@ -567,111 +582,44 @@ public class Main extends Plugin {
                         } else {
                             blockexp = 0;
                         }
-                        int newexp = exp + blockexp;
-                        data++;
 
-                        writeData("UPDATE players SET lastplacename = ?, placecount = ?, exp = ? WHERE uuid = ?", e.tile.block().name, data, newexp, e.player.uuid);
-
-
-                        if (e.player.buildRequest().block == Blocks.thoriumReactor) {
-                            int reactorcount = db.getInt("reactorcount");
-                            reactorcount++;
-                            writeData("UPDATE players SET reactorcount = ? WHERE uuid = ?", reactorcount, e.player.uuid);
-                        }
+                        target.lastbreakname = e.tile.block().name;
+                        target.breakcount++;
+                        target.exp = target.exp + blockexp;
                     } catch (Exception ex) {
-                        printStackTrace(ex);
+                        printError(ex);
+                        Call.onKick(((Player) e.builder).con, nbundle(target.language, "not-logged"));
                     }
 
-
-                    // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
-                    if (e.tile.entity.block == Blocks.message) {
-                        messagemonitor.add(e.tile.x+"|"+e.tile.y);
-                    }
-
-                    // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
-                    if (e.tile.entity.block == Blocks.thoriumReactor) {
-                        nukeposition.add(e.tile.entity.tileX() + "/" + e.tile.entity.tileY());
-                        nukedata.add(e.tile);
-                    }
-                });
-                executorService.submit(t);
-                if(config.isDebug() && config.isAntigrief()){
-                    log("log","antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
-                }
-            }
-        });
-
-        // 플레이어가 블럭을 뽀갰을 때
-        Events.on(BuildSelectEvent.class, e -> {
-            if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
-                if (e.breaking) {
-                    Thread t = new Thread(() -> {
-                        JsonObject db = getData(((Player) e.builder).uuid);
-                        String name = e.tile.block().name;
+                    // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
+                    if (e.builder.buildRequest().block == Blocks.message) {
                         try {
-                            int data = db.getInt("breakcount");
-                            int exp = db.getInt("exp");
-
-                            Yaml yaml = new Yaml();
-                            Map<String, Object> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/Exp.yml").readString()));
-                            int blockexp;
-                            if (obj.get(name) != null) {
-                                blockexp = (int) obj.get(name);
-                            } else {
-                                blockexp = 0;
-                            }
-                            int newexp = exp + blockexp;
-                            data++;
-
-                            writeData("UPDATE players SET lastplacename = ?, breakcount = ?, exp = ? WHERE uuid = ?", e.tile.block().name, data, newexp, ((Player) e.builder).uuid);
-                            if (e.builder.buildRequest() != null && e.builder.buildRequest().block == Blocks.thoriumReactor) {
-                                int reactorcount = db.getInt("reactorcount");
-                                reactorcount++;
-                                writeData("UPDATE players SET reactorcount = ? WHERE uuid = ?", reactorcount, ((Player) e.builder).uuid);
+                            for (int i = 0; i < powerblock.size(); i++) {
+                                if (powerblock.get(i).tile == e.tile) {
+                                    powerblock.remove(i);
+                                    break;
+                                }
                             }
                         } catch (Exception ex) {
-                            printStackTrace(ex);
-                            Call.onKick(((Player) e.builder).con, nbundle(db.getString("language"),"not-logged"));
+                            printError(ex);
                         }
+                    }
 
-                        // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
-                        if (e.builder.buildRequest().block == Blocks.message) {
-                            try {
-                                for (int i = 0; i < powerblock.size(); i++) {
-                                    String raw = powerblock.get(i);
-                                    String[] data = raw.split("/");
-
-                                    int x = Integer.parseInt(data[0]);
-                                    int y = Integer.parseInt(data[1]);
-
-                                    if (x == e.tile.x && y == e.tile.y) {
-                                        powerblock.remove(i);
-                                        break;
-                                    }
-                                }
-                            } catch (Exception ex) {
-                                printStackTrace(ex);
+                    // Exp Playing Game (EPG)
+                    if (config.isExplimit()) {
+                        int level = target.level;
+                        Yaml yaml = new Yaml();
+                        Map<String, Integer> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").readString()));
+                        if (obj.get(name) != null) {
+                            int blockreqlevel = obj.get(name);
+                            if (level < blockreqlevel) {
+                                Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
+                                ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
                             }
+                        } else {
+                            log("err", "epg-block-not-valid", name);
                         }
-
-                        // Exp Playing Game (EPG)
-                        if (config.isExplimit()) {
-                            int level = (int) db.get("level");
-                            Yaml yaml = new Yaml();
-                            Map<String, Integer> obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/BlockReqExp.yml").readString()));
-                            int blockreqlevel = 100;
-                            if (obj.get(name) != null) {
-                                blockreqlevel = obj.get(name);
-                                if (level < blockreqlevel) {
-                                    Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
-                                    ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
-                                }
-                            } else {
-                                log("err", "epg-block-not-valid", name);
-                            }
-                        }
-                    });
-                    executorService.submit(t);
+                    }
                 }
                 if(config.isDebug() && config.isAntigrief()){
                     log("log","antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
@@ -684,33 +632,23 @@ public class Main extends Plugin {
             // 뒤진(?) 유닛이 플레이어일때
             if (e.unit instanceof Player) {
                 Player player = (Player) e.unit;
-                JsonObject db = getData(player.uuid);
-                if (!state.teams.get(player.getTeam()).cores.isEmpty() && !db.isNull("deathcount")) {
-                    int deathcount = db.getInt("deathcount");
-                    deathcount++;
-                    writeData("UPDATE players SET deathcount = ? WHERE uuid = ?", deathcount, player.uuid);
+                PlayerData target = PlayerData(player.uuid);
+                if (!state.teams.get(player.getTeam()).cores.isEmpty()){
+                    target.deathcount++;
+                    PlayerDataSet(player.uuid,target);
                 }
             }
 
             // 터진 유닛수만큼 카운트해줌
             if (playerGroup != null && playerGroup.size() > 0) {
-                Thread t = new Thread(() -> {
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player player = playerGroup.all().get(i);
-                        if (!state.teams.get(player.getTeam()).cores.isEmpty()) {
-                            JsonObject db = getData(player.uuid);
-                            int killcount;
-                            if (db.has("killcount")) {
-                                killcount = db.getInt("killcount");
-                            } else {
-                                return;
-                            }
-                            killcount++;
-                            writeData("UPDATE players SET killcount = ? WHERE uuid = ?", killcount, player.uuid);
-                        }
+                for (int i = 0; i < playerGroup.size(); i++) {
+                    Player player = playerGroup.all().get(i);
+                    PlayerData target = PlayerData(player.uuid);
+                    if (!state.teams.get(player.getTeam()).cores.isEmpty()){
+                        target.killcount++;
+                        PlayerDataSet(player.uuid,target);
                     }
-                });
-                executorService.submit(t);
+                }
             }
         });
 
@@ -806,16 +744,7 @@ public class Main extends Plugin {
                     try {
                         // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
                         for (int i = 0; i < powerblock.size(); i++) {
-                            String raw = powerblock.get(i);
-
-                            String[] data = raw.split("/");
-
-                            int x = Integer.parseInt(data[0]);
-                            int y = Integer.parseInt(data[1]);
-                            int target_x = Integer.parseInt(data[2]);
-                            int target_y = Integer.parseInt(data[3]);
-
-                            if (world.tile(x, y).block() != Blocks.message) {
+                            if (powerblock.get(i).tile.block() != Blocks.message) {
                                 powerblock.remove(i);
                                 return;
                             }
@@ -824,9 +753,9 @@ public class Main extends Plugin {
                             float product;
                             float using;
                             try {
-                                current = world.tile(target_x, target_y).entity.power.graph.getPowerBalance() * 60;
-                                using = world.tile(target_x, target_y).entity.power.graph.getPowerNeeded() * 60;
-                                product = world.tile(target_x, target_y).entity.power.graph.getPowerProduced() * 60;
+                                current = powerblock.get(i).tile.entity.power.graph.getPowerBalance() * 60;
+                                using = powerblock.get(i).tile.entity.power.graph.getPowerNeeded() * 60;
+                                product = powerblock.get(i).tile.entity.power.graph.getPowerProduced() * 60;
                             } catch (Exception ignored) {
                                 powerblock.remove(i);
                                 return;
@@ -835,7 +764,7 @@ public class Main extends Plugin {
                                     "Current: [sky]" + Math.round(current) + "[]\n" +
                                     "Using: [red]" + Math.round(using) + "[]\n" +
                                     "Production: [green]" + Math.round(product) + "[]";
-                            Call.setMessageBlockText(null, world.tile(x, y), text);
+                            Call.setMessageBlockText(null, powerblock.get(i).tile, text);
                         }
                         // 타이머 초기화
                         delaycount = 0;
@@ -1002,7 +931,7 @@ public class Main extends Plugin {
                     log("log", "count-thread-disabled");
                 } catch (Exception e) {
                     log("err", "count-thread-disable-error");
-                    printStackTrace(e);
+                    printError(e);
                 }
 
                 // 서버 종료
@@ -1025,7 +954,7 @@ public class Main extends Plugin {
 
                         log("log", "server-thread-disabled");
                     } catch (Exception e) {
-                        printStackTrace(e);
+                        printError(e);
                         log("err", "server-thread-disable-error");
                     }
                 }
@@ -1062,7 +991,10 @@ public class Main extends Plugin {
                     }
                 }
 
+                PlayerDataSaveAll();
+                saveall();
                 log("log", "thread-disabled");
+
                 System.exit(0);
             }
         });
@@ -1093,8 +1025,6 @@ public class Main extends Plugin {
                             try {
                                 nlog("log", nbundle("update-description", json.get("tag_name")));
                                 System.out.println(json.getString("body"));
-                                URL url = new URL(json.getArray("assets").getObject(0).getString("browser_download_url"));
-
                                 System.out.println(nbundle("plugin-downloading-standby"));
                                 timer.cancel();
                                 if (config.isServerenable()) {
@@ -1116,29 +1046,15 @@ public class Main extends Plugin {
                                 executorService.shutdown();
                                 closeconnect();
 
-                                BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials.jar").file()));
-                                URLConnection urlConnection = url.openConnection();
-                                InputStream is = urlConnection.getInputStream();
-                                int size = urlConnection.getContentLength();
-                                byte[] buf = new byte[512];
-                                int byteRead;
-                                int byteWritten = 0;
-                                long startTime = System.currentTimeMillis();
-                                System.out.println(nbundle("plugin-downloading"));
-                                while ((byteRead = is.read(buf)) != -1) {
-                                    outputStream.write(buf, 0, byteRead);
-                                    byteWritten += byteRead;
-
-                                    printProgress(startTime,size,byteWritten);
-                                }
-                                is.close();
-                                outputStream.close();
-                                System.out.println("\n"+nbundle("plugin-downloading-done"));
+                                URLDownload(new URL(json.getArray("assets").getObject(0).getString("browser_download_url")),
+                                        Core.settings.getDataDirectory().child("mods/Essentials.jar").file(),
+                                        nbundle("plugin-downloading"),
+                                        nbundle("plugin-downloading-done"), null);
                                 Core.app.exit();
                                 System.exit(0);
                             }catch (Exception ex){
                                 System.out.println("\n"+nbundle("plugin-downloading-fail"));
-                                printStackTrace(ex);
+                                printError(ex);
                                 Core.app.exit();
                                 System.exit(0);
                             }
@@ -1150,7 +1066,7 @@ public class Main extends Plugin {
                         log("client","version-devel");
                     }
                 } catch (Exception ex) {
-                    printStackTrace(ex);
+                    printError(ex);
                 }
             }
 
@@ -1238,7 +1154,7 @@ public class Main extends Plugin {
                     stmt.close();
                     nlog("log","Data line end.");
                 }catch (Exception e){
-                    printStackTrace(e);
+                    printError(e);
                 }
             });
             executorService.execute(t);
@@ -1289,17 +1205,13 @@ public class Main extends Plugin {
                     log("log","jump-reset", "count");
                     break;
                 case "total":
-                    jumpall.clear();
+                    jumptotal.clear();
                     log("log","jump-reset", "total");
                     break;
                 default:
                     log("warn","Invalid option!");
                     break;
             }
-        });
-        handler.register("reload", "Reload Essentials config", arg -> {
-            config = new Config();
-            log("config","config-reloaded");
         });
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
@@ -1315,8 +1227,7 @@ public class Main extends Plugin {
 
             log("client","db-connecting");
             closeconnect();
-            PlayerDB db = new PlayerDB();
-            db.openconnect();
+            openconnect();
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
             for (String b : permission.keySet()) {
@@ -1356,7 +1267,7 @@ public class Main extends Plugin {
                 writeData("UPDATE players SET name = ? WHERE name = ?",arg[1],arg[0]);
                 log("log","player-nickname-change-to", arg[0], arg[1]);
             }catch (Exception e){
-                printStackTrace(e);
+                printError(e);
                 log("warn","player-not-found");
             }
         });
@@ -1434,19 +1345,15 @@ public class Main extends Plugin {
 
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if(!checkperm(player,"ch")) return;
-
-            JsonObject db = getData(player.uuid);
-            boolean value = db.getBoolean("crosschat");
-            int set;
-            if (!value) {
-                set = 1;
-                player.sendMessage(bundle(player, "crosschat"));
-            } else {
-                set = 0;
+            PlayerData target = PlayerData(player.uuid);
+            if (target.crosschat) {
+                target.crosschat = false;
                 player.sendMessage(bundle(player, "crosschat-disable"));
+            } else {
+                target.crosschat = true;
+                player.sendMessage(bundle(player, "crosschat"));
             }
-
-            writeData("UPDATE players SET crosschat = ? WHERE uuid = ?",set,player.uuid);
+            PlayerDataSet(player.uuid,target);
         });
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(!checkperm(player,"changepw")) return;
@@ -1465,17 +1372,15 @@ public class Main extends Plugin {
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
             if (!checkperm(player, "color")) return;
-            JsonObject db = getData(player.uuid);
-            boolean value = db.getBoolean("colornick");
-            int set;
-            if (!value) {
-                set = 1;
+            PlayerData target = PlayerData(player.uuid);
+            if (target.colornick) {
+                target.colornick = false;
                 player.sendMessage(bundle(player, "colornick"));
             } else {
-                set = 0;
+                target.colornick = true;
                 player.sendMessage(bundle(player, "colornick-disable"));
             }
-            writeData("UPDATE players SET colornick = ? WHERE uuid = ?",set,player.uuid);
+            PlayerDataSet(player.uuid,target);
         });
         handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
             if (!checkperm(player, "difficulty")) return;
@@ -1495,12 +1400,12 @@ public class Main extends Plugin {
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
             if(!checkperm(player,"event")) return;
             Thread t = new Thread(() -> {
-                String currentip = new getip().main();
+                String currentip = getip();
                 switch (arg[0]) {
                     case "host":
                         Thread work = new Thread(() -> {
-                            JsonObject db = getData(player.uuid);
-                            if (db.getInt("level") > 20 || player.isAdmin) {
+                            PlayerData target = PlayerData(player.uuid);
+                            if (target.level > 20 || player.isAdmin) {
                                 if (arg.length == 2) {
                                     player.sendMessage(bundle(player, "event-host-no-mapname"));
                                     return;
@@ -1516,7 +1421,7 @@ public class Main extends Plugin {
                                 int lastport = Integer.parseInt(range[1]);
                                 int customport = ThreadLocalRandom.current().nextInt(firstport,lastport+1);
 
-                                eventservers.add(arg[1]+"/"+customport);
+                                eventservers.add(new eventservers(arg[1],customport));
 
                                 Threads.eventserver es = new Threads.eventserver(arg[1],arg[2],arg[3],customport);
                                 es.roomname = arg[1];
@@ -1536,7 +1441,7 @@ public class Main extends Plugin {
                                 log("log","event-host-opened", player.name, customport);
 
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?",false, "none", player.uuid);
-                                if(db.getString("country").equals("Local IP")){
+                                if(target.country.equals("Local IP")){
                                     Call.onConnect(player.con,"127.0.0.1",customport);
                                 } else {
                                     Call.onConnect(player.con, currentip, customport);
@@ -1549,13 +1454,11 @@ public class Main extends Plugin {
                         work.start();
                         break;
                     case "join":
-                        for (String eventserver : eventservers) {
-                            String[] data = eventserver.split("/");
-                            String name = data[0];
-                            if (name.equals(arg[1])) {
+                        for (eventservers data : eventservers) {
+                            if (data.roomname.equals(arg[1])) {
                                 writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
-                                Call.onConnect(player.con, currentip, Integer.parseInt(data[1]));
-                                nlog("log",currentip+":"+Integer.parseInt(data[1]));
+                                Call.onConnect(player.con, currentip, data.port);
+                                nlog("log",currentip+":"+data.port);
                                 break;
                             }
                         }
@@ -1609,29 +1512,29 @@ public class Main extends Plugin {
             if(!checkperm(player,"info")) return;
             Thread t = new Thread(() -> {
                 String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-                JsonObject db = getData(player.uuid);
+                PlayerData db = PlayerData(player.uuid);
                 String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
                         "[#2B60DE]========================================[]\n" +
                         "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
                         "[green]" + nbundle(player, "player-uuid") + "[] : " + player.uuid + "\n" +
                         "[green]" + nbundle(player, "player-isMobile") + "[] : " + player.isMobile + "\n" +
                         "[green]" + nbundle(player, "player-ip") + "[] : " + ip + "\n" +
-                        "[green]" + nbundle(player, "player-country") + "[] : " + db.get("country") + "\n" +
-                        "[green]" + nbundle(player, "player-placecount") + "[] : " + db.get("placecount") + "\n" +
-                        "[green]" + nbundle(player, "player-breakcount") + "[] : " + db.get("breakcount") + "\n" +
-                        "[green]" + nbundle(player, "player-killcount") + "[] : " + db.get("killcount") + "\n" +
-                        "[green]" + nbundle(player, "player-deathcount") + "[] : " + db.get("deathcount") + "\n" +
-                        "[green]" + nbundle(player, "player-joincount") + "[] : " + db.get("joincount") + "\n" +
-                        "[green]" + nbundle(player, "player-kickcount") + "[] : " + db.get("kickcount") + "\n" +
-                        "[green]" + nbundle(player, "player-level") + "[] : " + db.get("level") + "\n" +
-                        "[green]" + nbundle(player, "player-reqtotalexp") + "[] : " + db.get("reqtotalexp") + "\n" +
-                        "[green]" + nbundle(player, "player-firstdate") + "[] : " + db.get("firstdate") + "\n" +
-                        "[green]" + nbundle(player, "player-lastdate") + "[] : " + db.get("lastdate") + "\n" +
-                        "[green]" + nbundle(player, "player-playtime") + "[] : " + db.get("playtime") + "\n" +
-                        "[green]" + nbundle(player, "player-attackclear") + "[] : " + db.get("attackclear") + "\n" +
-                        "[green]" + nbundle(player, "player-pvpwincount") + "[] : " + db.get("pvpwincount") + "\n" +
-                        "[green]" + nbundle(player, "player-pvplosecount") + "[] : " + db.get("pvplosecount") + "\n" +
-                        "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.get("pvpbreakout");
+                        "[green]" + nbundle(player, "player-country") + "[] : " + db.country + "\n" +
+                        "[green]" + nbundle(player, "player-placecount") + "[] : " + db.placecount + "\n" +
+                        "[green]" + nbundle(player, "player-breakcount") + "[] : " + db.breakcount + "\n" +
+                        "[green]" + nbundle(player, "player-killcount") + "[] : " + db.killcount + "\n" +
+                        "[green]" + nbundle(player, "player-deathcount") + "[] : " + db.deathcount + "\n" +
+                        "[green]" + nbundle(player, "player-joincount") + "[] : " + db.joincount + "\n" +
+                        "[green]" + nbundle(player, "player-kickcount") + "[] : " + db.kickcount + "\n" +
+                        "[green]" + nbundle(player, "player-level") + "[] : " + db.level + "\n" +
+                        "[green]" + nbundle(player, "player-reqtotalexp") + "[] : " + db.reqtotalexp + "\n" +
+                        "[green]" + nbundle(player, "player-firstdate") + "[] : " + db.firstdate + "\n" +
+                        "[green]" + nbundle(player, "player-lastdate") + "[] : " + db.lastdate + "\n" +
+                        "[green]" + nbundle(player, "player-playtime") + "[] : " + db.playtime + "\n" +
+                        "[green]" + nbundle(player, "player-attackclear") + "[] : " + db.attackclear + "\n" +
+                        "[green]" + nbundle(player, "player-pvpwincount") + "[] : " + db.pvpwincount + "\n" +
+                        "[green]" + nbundle(player, "player-pvplosecount") + "[] : " + db.pvplosecount + "\n" +
+                        "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.pvpbreakout;
                 Call.onInfoMessage(player.con, datatext);
             });
             executorService.submit(t);
@@ -1652,23 +1555,19 @@ public class Main extends Plugin {
                         return;
                     }
 
-                    int xt = player.tileX();
-                    int yt = player.tileY();
-                    int tilexfinal = xt + size;
-                    int tileyfinal = yt + size;
+                    int tf = player.tileX() + size;
+                    int ty = player.tileY() + size;
 
-                    // tilex, tiley, target tilex, target tiley, serverip
-                    jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1]);
+                    jumpzone.add(new jumpzone(world.tile(player.tileX(), player.tileY()),world.tile(tf,ty),arg[1]));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
-                    // serverip, tilex, tiley, players, number length
-                    jumpcount.add(arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+                    jumpcount.add(new jumpcount(world.tile(player.tileX(),player.tileY()),arg[1],0,0));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "total":
                     // tilex, tiley, total players, number length
-                    jumpall.add(player.tileX() + "/" + player.tileY() + "/0/0");
+                    jumptotal.add(new jumptotal(world.tile(player.tileX(),player.tileY()),0,0));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 default:
@@ -1767,11 +1666,7 @@ public class Main extends Plugin {
                             player.sendMessage(bundle(player,"no-parameter"));
                             return;
                         }
-                        // tilex, tiley, target tilex, target tiley, serverip, block
-                        String jumpdata = jumpzone.getString(a);
-                        String[] data = jumpdata.split("/");
-                        String ip = data[4];
-                        if(arg[1].equals(ip)) {
+                        if(arg[1].equals(jumpzone.get(a).ip)) {
                             jumpzone.remove(a);
                             player.sendMessage(bundle(player, "success"));
                             break;
@@ -1783,7 +1678,7 @@ public class Main extends Plugin {
                     player.sendMessage(bundle(player,"jump-reset","count"));
                     break;
                 case "total":
-                    jumpall.clear();
+                    jumptotal.clear();
                     player.sendMessage(bundle(player,"jump-reset","total"));
                     break;
                 default:
@@ -2127,18 +2022,15 @@ public class Main extends Plugin {
         });
         handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
             if(!checkperm(player,"tr")) return;
-            JsonObject db = getData(player.uuid);
-            boolean value = db.getBoolean("translate");
-            int set;
-            if (!value) {
-                set = 1;
+            PlayerData target = PlayerData(player.uuid);
+            if (target.translate) {
+                target.translate = false;
                 player.sendMessage(bundle(player, "translate"));
             } else {
-                set = 0;
+                target.translate = true;
                 player.sendMessage(bundle(player, "translate-disable"));
             }
-
-            writeData("UPDATE players SET translate = ? WHERE uuid = ?", set, player.uuid);
+            PlayerDataSet(player.uuid,target);
         });
         handler.<Player>register("vote", "<gameover/skipwave/kick/rollback/map> [mapid/mapname/playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
             if(!checkperm(player,"vote")) return;

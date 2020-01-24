@@ -38,7 +38,7 @@ import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.conn;
-import static essentials.core.PlayerDB.getData;
+import static essentials.core.PlayerDB.getRaw;
 import static mindustry.Vars.*;
 
 public class Server implements Runnable {
@@ -51,7 +51,7 @@ public class Server implements Runnable {
         try {
             serverSocket = new ServerSocket(config.getServerport());
         } catch (IOException e) {
-            printStackTrace(e);
+            printError(e);
             return;
         }
         log("server","server-enabled");
@@ -65,7 +65,7 @@ public class Server implements Runnable {
             } catch (SocketException s){
                 return;
             } catch (Exception e) {
-                printStackTrace(e);
+                printError(e);
             }
         }
     }
@@ -89,7 +89,7 @@ public class Server implements Runnable {
                 if(e.getMessage().equals("socket closed")){
                     return;
                 }
-                printStackTrace(e);
+                printError(e);
             }
         }
 
@@ -133,7 +133,7 @@ public class Server implements Runnable {
                         byte[] decrypted = decrypt(encrypted, spec, cipher);
                         data = new String(decrypted);
                     }catch (Exception e){
-                        printStackTrace(e);
+                        printError(e);
                         os.close();
                         in.close();
                         socket.close();
@@ -256,7 +256,7 @@ public class Server implements Runnable {
                                 }
                             }
                         } catch (Exception e) {
-                            printStackTrace(e);
+                            printError(e);
                         }
                     } else if(data.contains("checkban")) {
                         Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
@@ -290,14 +290,14 @@ public class Server implements Runnable {
                     }
                 } catch (Exception e) {
                     log("server","client-disconnected", remoteip);
-                    printStackTrace(e);
+                    printError(e);
                     try {
                         os.close();
                         in.close();
                         socket.close();
                         list.remove(this);
                     } catch (IOException ex) {
-                        printStackTrace(ex);
+                        printError(ex);
                     }
                     return;
                 }
@@ -352,7 +352,7 @@ public class Server implements Runnable {
                     result.end();
                 }
             } catch (SQLException e) {
-                printStackTrace(e);
+                printError(e);
             }
 
             return result.end().end().done();
@@ -448,7 +448,7 @@ public class Server implements Runnable {
                 }
                 stmt.close();
             } catch (Exception e) {
-                printStackTrace(e);
+                printError(e);
             }
 
 
@@ -518,7 +518,7 @@ public class Server implements Runnable {
                         ResultSet rs = pstm.executeQuery();
                         if (rs.next()) {
                             if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
-                                JsonObject db = getData(rs.getString("uuid"));
+                                JsonObject db = getRaw(rs.getString("uuid"));
                                 String language = db.getString("language");
 
                                 String[] ranking = new String[12];
@@ -661,7 +661,7 @@ public class Server implements Runnable {
                 list.remove(this);
                 log("server","client-disconnected-http", remoteip);
             }catch (Exception e){
-                printStackTrace(e);
+                printError(e);
                 try{
                     os.close();
                     in.close();
