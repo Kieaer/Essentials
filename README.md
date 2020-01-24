@@ -9,13 +9,13 @@ This plugin does a lot of disk read/write operations depending on the features u
 
 ### Minimum
 CPU: Athlon 200GE or Intel i5 2300<br>
-RAM: 256MB<br>
-Disk: HDD capable of more than 3MB/s random read/write.
+RAM: 20MB<br>
+Disk: HDD capable of more than 2MB/s random read/write.
 
 ### Recommand
 CPU: Ryzen 3 2200G or Intel i3 8100<br>
-RAM: 500MB<br>
-Disk: SSD capable of more than 10MB/s random read/write.
+RAM: 50MB<br>
+Disk: HDD capable of more than 5MB/s random read/write.
 
 ## Installation
 
