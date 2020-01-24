@@ -253,6 +253,15 @@ public class Main extends Plugin {
 
             if (e.player.name.length() > 32) e.player.con.kick("Nickname too long!");
 
+            // My server special code
+            if (!config.isAntigrief() && !config.isLoginenable() && config.isServerenable() && config.isQuery() && !config.isSqlite()) {
+                if (!PlayerData(e.player.uuid).error) {
+                    if (PlayerData(e.player.uuid).level > 30) {
+                        Call.onConnect(e.player.con, getip(), 7060);
+                    }
+                }
+            }
+
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
                     player.con.kick("The nickname is too short!\n닉네임이 너무 짧습니다!");
