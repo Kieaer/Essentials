@@ -23,8 +23,8 @@ public class DataMigration {
             root.child("config.hjson").writeString("{\n"+condata+"\n}".replace("colornick update interval","cupdatei"));
             root.child("config.yml").delete();
 
-            if (root.child("BlockReqExp.yml").exists()) move("BlockReqExp.yml");
-            if (root.child("Exp.yml").exists()) move("Exp.yml");
+            if (root.child("BlockReqExp.yml").exists()) move("BlockReqExp");
+            if (root.child("Exp.yml").exists()) move("Exp");
             if (root.child("permission.yml").exists()) {
                 String data = root.child("permission.yml").readString();
                 try {
