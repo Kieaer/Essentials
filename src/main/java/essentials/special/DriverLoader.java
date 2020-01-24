@@ -7,7 +7,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -17,7 +16,6 @@ import static essentials.Global.dbundle;
 
 public class DriverLoader implements Driver {
     private boolean tried = false;
-    private List<String> drivers = new ArrayList<>(Arrays.asList("org.mariadb.jdbc.Driver","org.postgresql.Driver","org.sqlite.JDBC"));
     private Driver driver;
 
     public DriverLoader(Driver driver) {
@@ -32,9 +30,17 @@ public class DriverLoader implements Driver {
     public void run() {
         try {
             Fi[] f = Core.settings.getDataDirectory().child("mods/Essentials/Driver/").list();
-            for (int a=0;a<drivers.size();a++) {
+            for (int a=0;a<3;a++) {
                 URLClassLoader classLoader = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
-                Driver driver = (Driver) Class.forName(drivers.get(a), true, classLoader).getDeclaredConstructor().newInstance();
+                String dr = "org.sqlite.JDBC";
+                for(int b=0;b<3;b++){
+                    if(f[a].name().contains("mariadb")){
+                        dr = "org.mariadb.jdbc.Driver";
+                    } else if(f[a].name().contains("postgresql")){
+                        dr = "org.postgresql.Driver";
+                    }
+                }
+                Driver driver = (Driver) Class.forName(dr, true, classLoader).getDeclaredConstructor().newInstance();
                 DriverManager.registerDriver(new DriverLoader(driver));
             }
         } catch (Exception e) {
