@@ -83,7 +83,7 @@ public class PluginData {
         public final Tile finish;
         public final String ip;
 
-        jumpzone(Tile start, Tile finish, String ip){
+        public jumpzone(Tile start, Tile finish, String ip){
             this.start = start;
             this.finish = finish;
             this.ip = ip;
@@ -96,7 +96,7 @@ public class PluginData {
         public int players;
         public int numbersize;
 
-        jumpcount(Tile tile, String serverip, int players, int numbersize){
+        public jumpcount(Tile tile, String serverip, int players, int numbersize){
             this.tile = tile;
             this.serverip = serverip;
             this.players = players;
@@ -109,7 +109,7 @@ public class PluginData {
         public int totalplayers;
         public int numbersize;
 
-        jumptotal(Tile tile, int totalplayers, int numbersize){
+        public jumptotal(Tile tile, int totalplayers, int numbersize){
             this.tile = tile;
             this.totalplayers = totalplayers;
             this.numbersize = numbersize;
@@ -121,7 +121,7 @@ public class PluginData {
         public final String name;
         public final String uuid;
 
-        banned(LocalDateTime time, String name, String uuid){
+        public banned(LocalDateTime time, String name, String uuid){
             this.time = time;
             this.name = name;
             this.uuid = uuid;

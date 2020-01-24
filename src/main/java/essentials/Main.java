@@ -18,6 +18,7 @@ import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Server;
 import essentials.special.DBConvert;
+import essentials.special.DataMigration;
 import essentials.special.DriverLoader;
 import essentials.special.IpAddressMatcher;
 import essentials.utils.Permission;
@@ -60,6 +61,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -82,6 +84,9 @@ public class Main extends Plugin {
     public PlayerDB playerDB = new PlayerDB();
 
     public Main() {
+        // 예전 데이터 변환
+        new DataMigration();
+
         // DB 드라이버 다운로드
         new DriverLoader();
 
@@ -702,6 +707,14 @@ public class Main extends Plugin {
         // 1초마다 실행되는 작업 시작
         timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
 
+        // 30초마다 실행되는 작업 시작
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                PlayerDataSaveAll();
+            }
+        }, 30000, 30000);
+
         // 롤백 명령어에서 사용될 자동 저장작업 시작
         if(config.isEnableRollback()) timer.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
 
@@ -920,6 +933,9 @@ public class Main extends Plugin {
             }
 
             public void dispose() {
+                PlayerDataSaveAll();
+                saveall();
+
                 // 타이머 스레드 종료
                 try {
                     timer.cancel();
@@ -989,8 +1005,6 @@ public class Main extends Plugin {
                     }
                 }
 
-                PlayerDataSaveAll();
-                saveall();
                 log("log", "thread-disabled");
 
                 System.exit(0);
@@ -1289,7 +1303,7 @@ public class Main extends Plugin {
                 log("warn","player-not-found");
             }
             for (JsonObject.Member data : permission) {
-                if(data.getName().equals(arg[0])){
+                if(data.getName().equals(arg[1])){
                     writeData("UPDATE players SET permission = ? WHERE name = ?", arg[1], arg[0]);
                     log("log", "success");
                     return;

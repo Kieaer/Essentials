@@ -57,7 +57,6 @@ public class Config {
     }
 
     void update(){
-        String bantrust = obj.getString("bantrust","127.0.0.1");
         String antirushtime = obj.getString("antirushtime","10:00");
         if(obj.getInt("version",0) < version) log("config","config-updated");
 
