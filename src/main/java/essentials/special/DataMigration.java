@@ -19,7 +19,10 @@ public class DataMigration {
     public DataMigration(){
         if(root.child("config.yml").exists()) {
             log("log", dbundle("data-migration"));
-            move("config.yml");
+            String condata = root.child("config.yml").readString();
+            root.child("config.hjson").writeString("{\n"+condata+"\n}".replace("colornick update interval","cupdatei"));
+            root.child("config.yml").delete();
+
             if (root.child("BlockReqExp.yml").exists()) move("BlockReqExp.yml");
             if (root.child("Exp.yml").exists()) move("Exp.yml");
             if (root.child("permission.yml").exists()) {
