@@ -579,13 +579,11 @@ public class PlayerDB{
     }
     // 비 로그인 기능 사용시 계정등록
     public boolean register(Player player) {
-        if (isLogin(player)) {
+        if (!isduplicate(player)) {
             HashMap<String, String> list = geolocation(player);
-            player.sendMessage(bundle(player, "player-name-changed", player.name));
-            return createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getTime(), getTime(), true, 0L, "", "blank", player);
-        } else {
-            return true;
+            createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getTime(), getTime(), true, 0L, "", "blank", player);
         }
+        return true;
     }
     public static boolean login(Player player, String id, String pw) {
         boolean result = false;
@@ -623,7 +621,7 @@ public class PlayerDB{
             nlog("debug", target.name + " Player load start");
 
             // 만약에 새 기기로 기존 계정에 로그인 했을때, 계정에 있던 DB를 가져와서 검사함
-            if (!player.error) {
+            if (!player.error && config.isLoginenable()) {
                 nlog("debug", player.name + " Player logged!");
                 String uuid = "";
                 try {
@@ -643,6 +641,8 @@ public class PlayerDB{
                 getInfo(uuid);
                 player = PlayerData(uuid);
 
+                nlog("debug", player.name + " Player data apply");
+
                 // 새 기기로 UUID 적용
                 if (!player.isLogin) {
                     try {
@@ -658,6 +658,7 @@ public class PlayerDB{
                         printError(e);
                     }
                 }
+                nlog("debug", player.name + " Player uuid data apply");
             }
 
             // 이 계정이 밴을 당했을 때 강퇴처리

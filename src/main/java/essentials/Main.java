@@ -353,10 +353,20 @@ public class Main extends Plugin {
                     }
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (playerDB.register(e.player)) {
-                        playerDB.load(e.player, null);
-                    } else {
-                        Call.onKick(e.player.con, nbundle("plugin-error-kick"));
+                    if (isNocore(e.player)) {
+                        PlayerData player = PlayerData(e.player.uuid);
+                        if (!player.error) {
+                            if (player.uuid.equals(e.player.uuid)) {
+                                e.player.sendMessage(bundle(e.player, "autologin"));
+                                playerDB.load(e.player, null);
+                            }
+                        } else {
+                            if (playerDB.register(e.player)) {
+                                playerDB.load(e.player, null);
+                            } else {
+                                Call.onKick(e.player.con, nbundle("plugin-error-kick"));
+                            }
+                        }
                     }
                 }
                 // VPN을 사용중인지 확인
