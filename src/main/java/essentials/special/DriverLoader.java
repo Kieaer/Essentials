@@ -13,7 +13,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import static essentials.Global.URLDownload;
-import static essentials.Global.nbundle;
+import static essentials.Global.dbundle;
 
 public class DriverLoader implements Driver {
     private boolean tried = false;
@@ -54,11 +54,12 @@ public class DriverLoader implements Driver {
             urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
             urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
 
-            System.out.println(nbundle("driver-downloading"));
+            System.out.println(dbundle("driver-downloading"));
 
             for (URL value : urls) {
                 String url = value.toString();
                 String filename = url.substring(url.lastIndexOf('/') + 1);
+                Core.settings.getDataDirectory().child("mods/Essentials/Driver/" + filename).writeString("");
                 URLDownload(value,
                         Core.settings.getDataDirectory().child("mods/Essentials/Driver/" + filename).file(),
                         filename + " Downloading...",

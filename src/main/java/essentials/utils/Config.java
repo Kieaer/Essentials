@@ -3,7 +3,6 @@ package essentials.utils;
 import arc.Core;
 import arc.files.Fi;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grack.nanojson.JsonArray;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 import com.grack.nanojson.JsonParserException;
@@ -16,6 +15,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.time.LocalTime;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,29 +23,20 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static essentials.Global.*;
+import static essentials.PluginData.loadall;
 import static mindustry.Vars.net;
 
 public class Config {
-    private Map<String, Object> obj;
+    private Map<String, Object> obj = new HashMap<>();
     private Fi path = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json");
     public static JsonObject PluginConfig = new JsonObject();
-    public static JsonArray jumpzone = new JsonArray();
-    public static JsonArray jumpcount = new JsonArray();
-    public static JsonArray jumpall = new JsonArray();
-    public static JsonArray blacklist = new JsonArray();
-    public static JsonArray banned = new JsonArray();
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
     static int version = 9;
 
-    public Config(){
+    public void main(){
         Yaml yaml = new Yaml();
-        if (!Core.settings.getDataDirectory().child("mods/Essentials/config.yml").exists()) {
-            Core.settings.getDataDirectory().child("mods/Essentials/config.yml").writeString("language: en");
-        }
-        obj = yaml.load(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString());
-
         validfile();
         try{
             if(!path.exists()){
@@ -55,28 +46,19 @@ public class Config {
             JsonObject data = JsonParser.object().from(path.read());
 
             if(data.isEmpty()){
-                JsonArray empty = new JsonArray();
-                data.put("banned",empty);
-                data.put("blacklist",empty);
-                data.put("jumpzone",empty);
-                data.put("jumpall",empty);
-                data.put("jumpcount",empty);
                 data.put("servername", Core.settings.getString("servername"));
                 data.put("unexception",false);
-                data.put("sqlite",config.isSqlite());
+                data.put("sqlite",true);
                 new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
             }
             PluginConfig = data;
 
+            obj.put("language","en");
             update();
 
             obj = yaml.load(String.valueOf(Core.settings.getDataDirectory().child("mods/Essentials/config.yml").readString()));
 
-            jumpzone = JsonParser.object().from(path.read()).getArray("jumpzone");
-            jumpcount = JsonParser.object().from(path.read()).getArray("jumpcount");
-            jumpall = JsonParser.object().from(path.read()).getArray("jumpall");
-            blacklist = JsonParser.object().from(path.read()).getArray("blacklist");
-            banned = JsonParser.object().from(path.read()).getArray("banned");
+            loadall();
         } catch (JsonParserException | IOException e){
             printError(e);
         }

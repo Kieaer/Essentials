@@ -72,7 +72,8 @@ import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
-import static essentials.utils.Config.*;
+import static essentials.utils.Config.PluginConfig;
+import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
@@ -89,6 +90,8 @@ public class Main extends Plugin {
 
         // DB 형식 변환
         new DBConvert();
+
+        config.main();
 
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
@@ -152,25 +155,17 @@ public class Main extends Plugin {
 
         Events.on(TapEvent.class, e -> {
             if(isLogin(e.player)) {
-                for (int a = 0; a < jumpzone.size(); a++) {
-                    String jumpdata = jumpzone.getString(a);
-                    String[] data = jumpdata.split("/");
-                    int startx = Integer.parseInt(data[0]);
-                    int starty = Integer.parseInt(data[1]);
-                    int tilex = Integer.parseInt(data[2]);
-                    int tiley = Integer.parseInt(data[3]);
-                    String serverip = data[4];
-
-                    String ip = data[4];
+                for (jumpzone data : jumpzone) {
                     int port = 6567;
-                    if (serverip.contains(":") && Strings.canParsePostiveInt(serverip.split(":")[1])) {
-                        ip = serverip.split(":")[0];
-                        port = Strings.parseInt(serverip.split(":")[1]);
+                    String ip = data.ip;
+                    if (data.ip.contains(":") && Strings.canParsePostiveInt(data.ip.split(":")[1])) {
+                        ip = data.ip.split(":")[0];
+                        port = Strings.parseInt(data.ip.split(":")[1]);
                     }
 
-                    if (e.tile.x > startx && e.tile.x < tilex) {
-                        if (e.tile.y > starty && e.tile.y < tiley) {
-                            log("log", "player-jumped", e.player.name, serverip);
+                    if (e.tile.x > data.start.x && e.tile.x < data.finish.x) {
+                        if (e.tile.y > data.start.y && e.tile.y < data.finish.y) {
+                            log("log", "player-jumped", e.player.name, data.ip);
                             writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
                             Call.onConnect(e.player.con, ip, port);
                         }
@@ -242,10 +237,9 @@ public class Main extends Plugin {
 
         Events.on(PlayerConnect.class, e -> {
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
-            for(int a=0;a<blacklist.size();a++){
-                String s = blacklist.getString(a);
+            for (String s : blacklist) {
                 if (e.player.name.matches(s)) {
-                    try{
+                    try {
                         String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
                         Call.onKick(e.player.con, nbundle(language, "nickname-blacklisted-kick"));
                         log("log", "nickname-blacklisted", e.player.name);
@@ -998,6 +992,7 @@ public class Main extends Plugin {
                 }
 
                 PlayerDataSaveAll();
+                saveall();
                 log("log", "thread-disabled");
 
                 System.exit(0);
@@ -1210,7 +1205,7 @@ public class Main extends Plugin {
                     log("log","jump-reset", "count");
                     break;
                 case "total":
-                    jumpall.clear();
+                    jumptotal.clear();
                     log("log","jump-reset", "total");
                     break;
                 default:
@@ -1560,23 +1555,19 @@ public class Main extends Plugin {
                         return;
                     }
 
-                    int xt = player.tileX();
-                    int yt = player.tileY();
-                    int tilexfinal = xt + size;
-                    int tileyfinal = yt + size;
+                    int tf = player.tileX() + size;
+                    int ty = player.tileY() + size;
 
-                    // tilex, tiley, target tilex, target tiley, serverip
-                    jumpzone.add(xt + "/" + yt + "/" + tilexfinal + "/" + tileyfinal + "/" + arg[1]);
+                    jumpzone.add(new jumpzone(world.tile(player.tileX(), player.tileY()),world.tile(tf,ty),arg[1]));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
-                    // serverip, tilex, tiley, players, number length
-                    jumpcount.add(arg[1] + "/" + player.tileX() + "/" + player.tileY() + "/0/0");
+                    jumpcount.add(new jumpcount(world.tile(player.tileX(),player.tileY()),arg[1],0,0));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "total":
                     // tilex, tiley, total players, number length
-                    jumpall.add(player.tileX() + "/" + player.tileY() + "/0/0");
+                    jumptotal.add(new jumptotal(world.tile(player.tileX(),player.tileY()),0,0));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 default:
@@ -1675,11 +1666,7 @@ public class Main extends Plugin {
                             player.sendMessage(bundle(player,"no-parameter"));
                             return;
                         }
-                        // tilex, tiley, target tilex, target tiley, serverip, block
-                        String jumpdata = jumpzone.getString(a);
-                        String[] data = jumpdata.split("/");
-                        String ip = data[4];
-                        if(arg[1].equals(ip)) {
+                        if(arg[1].equals(jumpzone.get(a).ip)) {
                             jumpzone.remove(a);
                             player.sendMessage(bundle(player, "success"));
                             break;
@@ -1691,7 +1678,7 @@ public class Main extends Plugin {
                     player.sendMessage(bundle(player,"jump-reset","count"));
                     break;
                 case "total":
-                    jumpall.clear();
+                    jumptotal.clear();
                     player.sendMessage(bundle(player,"jump-reset","total"));
                     break;
                 default:

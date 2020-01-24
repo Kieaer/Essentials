@@ -40,7 +40,7 @@ import static mindustry.Vars.playerGroup;
 import static mindustry.Vars.world;
 
 public class Global {
-    public static Config config = new Config(); // 설정 파일들
+    public static Config config = new Config();
     public static String version;
 
     final static String tag = "[Essential] ";
@@ -280,6 +280,11 @@ public class Global {
     public static String nbundle(String value){
         Locale locale = new Locale(config.getLanguage());
         Bundle bundle = new Bundle(locale);
+        return bundle.getNormal(value);
+    }
+
+    public static String dbundle(String value){
+        Bundle bundle = new Bundle(Locale.getDefault());
         return bundle.getNormal(value);
     }
 
@@ -817,7 +822,7 @@ public class Global {
             outputStream.close();
         }catch (Exception e){
             if(error_message != null) System.out.println("\n"+error_message);
-            printError(e);
+            e.printStackTrace();
         }
     }
 }

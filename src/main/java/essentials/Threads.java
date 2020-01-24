@@ -46,7 +46,7 @@ import static essentials.core.Exp.exp;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.special.PingServer.pingServer;
-import static essentials.utils.Config.*;
+import static essentials.utils.Config.PluginConfig;
 import static mindustry.Vars.*;
 
 public class Threads extends TimerTask{
@@ -65,11 +65,6 @@ public class Threads extends TimerTask{
 
         // 데이터 저장
         JsonObject data = new JsonObject();
-        data.put("banned",banned);
-        data.put("blacklist",blacklist);
-        data.put("jumpzone",jumpzone);
-        data.put("jumpall",jumpall);
-        data.put("jumpcount",jumpcount);
         data.put("servername", Core.settings.getString("servername"));
         try {
             new ObjectMapper().writeValue(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").file(), data);
@@ -81,19 +76,13 @@ public class Threads extends TimerTask{
         // new changename().start();
 
         // 임시로 밴당한 유저 감시
-        for (int i = 0; i < banned.size(); i++) {
-            JsonObject value = banned.getObject(i);
+        for (int a = 0; a < banned.size(); a++) {
             LocalDateTime time = LocalDateTime.now();
-            LocalDateTime target = LocalDateTime.parse(value.getString("time"));
-
-            String uuid = value.getString("uuid");
-            String name = value.getString("name");
-
-            if (time.isAfter(target)) {
-                banned.remove(i);
-                PluginConfig.getArray("banned").remove(i);
-                netServer.admins.unbanPlayerID(uuid);
-                nlog("log","[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + name + "/" + uuid + " player unbanned!");
+            if (time.isAfter(banned.get(a).time)) {
+                banned.remove(a);
+                PluginConfig.getArray("banned").remove(a);
+                netServer.admins.unbanPlayerID(banned.get(a).uuid);
+                nlog("log","[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + banned.get(a).name + "/" + banned.get(a).uuid + " player unbanned!");
                 break;
             }
         }
@@ -106,11 +95,11 @@ public class Threads extends TimerTask{
             // 맵 플탐 카운트
             playtime = ptime.plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             // Anti PvP rushing timer
-            if(config.isEnableantirush() && Vars.state.rules.pvp && ptime.isAfter(config.getAntirushtime()) && peacetime) {
+            if (config.isEnableantirush() && state.rules.pvp && ptime.isAfter(config.getAntirushtime()) && peacetime) {
                 state.rules.playerDamageMultiplier = 0.66f;
                 state.rules.playerHealthMultiplier = 0.8f;
                 peacetime = false;
-                for(int i = 0; i < playerGroup.size(); i++) {
+                for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     player.sendMessage(bundle("pvp-peacetime"));
                     Call.onPlayerDeath(player);
@@ -118,47 +107,34 @@ public class Threads extends TimerTask{
             }
 
             // 모든 클라이언트 서버에 대한 인원 총합 카운트
-            if(jumpall.size() > 0){
-                for (int i=0;i<jumpall.size();i++) {
-                    String jumpdata = jumpall.getString(i);
-                    String[] value = jumpdata.split("/");
-                    int x = Integer.parseInt(value[0]);
-                    int y = Integer.parseInt(value[1]);
-                    int count = Integer.parseInt(value[2]);
-                    int length = Integer.parseInt(value[3]);
+            for (int a = 0; a < jumptotal.size(); a++) {
+                int result = 0;
+                for (jumpcount value : jumpcount) result = result + value.players;
 
-                    int result = 0;
-                    for (int a=0;i<jumpcount.size();a++) {
-                        String dat = jumpcount.getString(a);
-                        String[] re = dat.split("/");
-                        result += Integer.parseInt(re[3]);
-                    }
+                String str = String.valueOf(result);
+                int[] digits = new int[str.length()];
+                for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
-                    String str = String.valueOf(result);
-                    int[] digits = new int[str.length()];
-                    for(int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
-
-                    Tile tile = world.tile(x, y);
-                    if(count != result) {
-                        if(length != digits.length){
-                            for(int px=0;px<3;px++){
-                                for(int py=0;py<5;py++){
-                                    Call.onDeconstructFinish(world.tile(tile.x+4+px,tile.y+py), Blocks.air, 0);
-                                }
+                Tile tile = jumptotal.get(a).tile;
+                if (jumptotal.get(a).totalplayers != result) {
+                    if (jumptotal.get(a).numbersize != digits.length) {
+                        for (int px = 0; px < 3; px++) {
+                            for (int py = 0; py < 5; py++) {
+                                Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
                             }
                         }
-                        for (int digit : digits) {
-                            setcount(tile, digit);
-                            tile = world.tile(tile.x+4, tile.y);
-                        }
-                    } else {
-                        for(int l=0;l<length;l++) {
-                            setcount(tile, digits[l]);
-                            tile = world.tile(x+4, y);
-                        }
                     }
-                    jumpall.set(i, x+"/"+y+"/"+result+"/"+digits.length);
+                    for (int digit : digits) {
+                        setcount(tile, digit);
+                        tile = world.tile(tile.x + 4, tile.y);
+                    }
+                } else {
+                    for (int l = 0; l < jumptotal.get(a).numbersize; l++) {
+                        setcount(tile, digits[l]);
+                        tile = world.tile(tile.x + 4, tile.y);
+                    }
                 }
+                jumptotal.set(a, new jumptotal(tile, result, digits.length));
             }
 
             // 플레이어 플탐 카운트
@@ -220,24 +196,18 @@ public class Threads extends TimerTask{
 
             // 서버 인원 확인
             for (int i = 0; i < jumpcount.size(); i++) {
-                String jumpdata = jumpcount.getString(i);
-                String[] value = jumpdata.split("/");
-                String serverip = value[0];
-                int x = Integer.parseInt(value[1]);
-                int y = Integer.parseInt(value[2]);
-                String count = value[3];
-                int length = Integer.parseInt(value[4]);
-
                 int i2 = i;
-                pingServer(serverip, result -> {
+                jumpcount value = jumpcount.get(i);
+
+                pingServer(jumpcount.get(i).serverip, result -> {
                     if (result.name != null) {
                         String str = String.valueOf(result.players);
                         int[] digits = new int[str.length()];
                         for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
-                        Tile tile = world.tile(x, y);
-                        if (!count.equals(str)) {
-                            if (length != digits.length) {
+                        Tile tile = value.tile;
+                        if (value.players != result.players) {
+                            if (value.numbersize != digits.length) {
                                 for (int px = 0; px < 3; px++) {
                                     for (int py = 0; py < 5; py++) {
                                         Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
@@ -249,41 +219,33 @@ public class Threads extends TimerTask{
                                 tile = world.tile(tile.x + 4, tile.y);
                             }
                         } else {
-                            for (int l = 0; l < length; l++) {
+                            for (int l = 0; l < value.numbersize; l++) {
                                 setcount(tile, digits[l]);
-                                tile = world.tile(x + 4, y);
+                                tile = world.tile(value.tile.x + 4, value.tile.y);
                             }
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                        jumpcount.set(i2, serverip + "/" + x + "/" + y + "/" + result.players + "/" + digits.length);
+                        jumpcount.set(i2,new jumpcount(tile,value.serverip,result.players,digits.length));
                     } else {
-                        setno(world.tile(x, y));
+                        setno(value.tile);
                     }
                 });
             }
 
             // 서버간 이동 영역에 플레이어가 있는지 확인
-            for (int i=0;i<jumpzone.size();i++) {
-                String jumpdata = jumpzone.getString(i);
-                String[] value = jumpdata.split("/");
-                int startx = Integer.parseInt(value[0]);
-                int starty = Integer.parseInt(value[1]);
-                int tilex = Integer.parseInt(value[2]);
-                int tiley = Integer.parseInt(value[3]);
-                String serverip = value[4];
-
-                for(int ix = 0; ix < playerGroup.size(); ix++) {
+            for (jumpzone value : jumpzone) {
+                for (int ix = 0; ix < playerGroup.size(); ix++) {
                     Player player = playerGroup.all().get(ix);
-                    if (player.tileX() > startx && player.tileX() < tilex) {
-                        if (player.tileY() > starty && player.tileY() < tiley){
-                            String resultIP = value[4];
+                    if (player.tileX() > value.start.x && player.tileX() < value.finish.x) {
+                        if (player.tileY() > value.start.y && player.tileY() < value.finish.y) {
+                            String resultIP = value.ip;
                             int port = 6567;
-                            if(value[4].contains(":") && Strings.canParsePostiveInt(value[4].split(":")[1])){
-                                resultIP = value[4].split(":")[0];
-                                port = Strings.parseInt(value[4].split(":")[1]);
+                            if (resultIP.contains(":") && Strings.canParsePostiveInt(resultIP.split(":")[1])) {
+                                resultIP = resultIP.split(":")[0];
+                                port = Strings.parseInt(resultIP.split(":")[1]);
                             }
-                            Global.log("player-jumped", player.name, resultIP+":"+port);
-                            Call.onConnect(player.con, serverip, port);
+                            log("player-jumped", player.name, resultIP + ":" + port);
+                            Call.onConnect(player.con, resultIP, port);
                         }
                     }
                 }
@@ -327,11 +289,7 @@ public class Threads extends TimerTask{
         public void run(){
             if(jumpcount.size() > 1){
                 int result = 0;
-                for (int a=0;a<jumpcount.size();a++) {
-                    String dat = jumpcount.getString(a);
-                    String[] re = dat.split("/");
-                    result += Integer.parseInt(re[3]);
-                }
+                for (jumpcount value : jumpcount) result = result + value.players;
                 Core.settings.put("servername", config.getServername()+", "+result+" players");
             }
         }
@@ -860,47 +818,45 @@ public class Threads extends TimerTask{
         public void main(){
             length = jumpzone.size();
 
-            for (int b = 0; b < jumpzone.size(); b++) {
-                String[] data = jumpzone.getString(b).split("/");
+            for (jumpzone data : jumpzone) {
                 Thread t = new Thread(() -> {
                     try {
                         while (!Thread.currentThread().isInterrupted()) {
-                            String ip = data[4];
+                            String ip = data.ip;
                             AtomicBoolean online = new AtomicBoolean(false);
-                            pingServer(ip,result->{if(result.name != null) online.set(true);});
-                            if(online.get()) {
-                                int xt = Integer.parseInt(data[0]);
-                                int yt = Integer.parseInt(data[1]);
-                                int tilexfinal = Integer.parseInt(data[2]) - 1;
-                                int tileyfinal = Integer.parseInt(data[3]) - 1;
-                                int size = tilexfinal - xt;
+                            pingServer(ip, result -> {
+                                if (result.name != null) online.set(true);
+                            });
+                            if (online.get()) {
+                                int size = data.start.x - data.finish.x;
 
                                 for (int x = 0; x < size; x++) {
-                                    Tile tile = world.tile(xt + x, yt);
+                                    Tile tile = world.tile(data.start.x + x, data.start.y);
                                     Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                     sleep(96);
                                 }
                                 for (int y = 0; y < size; y++) {
-                                    Tile tile = world.tile(tilexfinal, yt + y);
+                                    Tile tile = world.tile(data.finish.x, data.start.y + y);
                                     Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                     sleep(96);
                                 }
                                 for (int x = 0; x < size; x++) {
-                                    Tile tile = world.tile(tilexfinal - x, tileyfinal);
+                                    Tile tile = world.tile(data.finish.x - x, data.finish.y);
                                     Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                     sleep(96);
                                 }
                                 for (int y = 0; y < size; y++) {
-                                    Tile tile = world.tile(xt, tileyfinal - y);
+                                    Tile tile = world.tile(data.start.x, data.finish.y - y);
                                     Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                     sleep(96);
                                 }
                             } else {
-                                nlog("debug","jump zone"+ip+" offline! After 30 seconds, try to connect again.");
+                                nlog("debug", "jump zone" + ip + " offline! After 30 seconds, try to connect again.");
                                 sleep(30000);
                             }
                         }
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                 });
                 thread.add(t);
                 t.start();

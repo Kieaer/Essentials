@@ -7,7 +7,7 @@ import java.sql.*;
 import java.util.ArrayList;
 
 import static essentials.Global.config;
-import static essentials.Global.nbundle;
+import static essentials.Global.dbundle;
 import static essentials.core.PlayerDB.conn;
 import static essentials.utils.Config.PluginConfig;
 
@@ -15,15 +15,17 @@ public class DBConvert {
     private ArrayList<PlayerData> data = new ArrayList<>();
 
     public DBConvert(){
-        if(!config.isSqlite() && PluginConfig.getBoolean("sqlite")) SQLite2DB();
+        if(config != null) {
+            if (!config.isSqlite() && PluginConfig.getBoolean("sqlite")) SQLite2DB();
+        }
     }
 
     public void SQLite2DB() {
         try {
-            String start = nbundle("db-transfer-start");
-            String progress = nbundle("db-transfer-progress");
-            String copy = nbundle("db-transfer-copy");
-            String end = nbundle("db-transfer-end");
+            String start = dbundle("db-transfer-start");
+            String progress = dbundle("db-transfer-progress");
+            String copy = dbundle("db-transfer-copy");
+            String end = dbundle("db-transfer-end");
 
             // SQLite 데이터 가져오기
             Connection con = DriverManager.getConnection("jdbc:sqlite:" + Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3"));
