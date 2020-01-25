@@ -35,7 +35,7 @@ public class PingServer {
             listener.accept(readServerData(buffer, ip, System.currentTimeMillis() - start));
             socket.disconnect();
         } catch (Exception e) {
-            listener.accept(new Host(null, ip, null, 0, 0, 0, null, null, 0));
+            listener.accept(new Host(null, ip, null, 0, 0, 0, null, null, 0, null));
         }
     }
 
