@@ -2111,5 +2111,8 @@ public class Main extends Plugin {
             Vote vote = new Vote(player, arg[0], other);
             vote.command();
         });
+        handler.<Player>register("test", "<message> <duration>", "test", (arg, player) -> {
+            Call.onInfoToast(arg[0], Float.parseFloat(arg[1]));
+        });
     }
 }

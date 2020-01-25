@@ -730,10 +730,10 @@ public class Global {
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
-                System.out.println(rs.getString("id"));
+                nlog("debug", rs.getString("id"));
                 return true;
             } else {
-                System.out.println("false");
+                nlog("debug", "false");
                 return false;
             }
         }catch (SQLException e){

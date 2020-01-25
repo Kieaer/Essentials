@@ -1,19 +1,19 @@
 package essentials.core;
 
 import mindustry.entities.type.Player;
+import mindustry.gen.Call;
 
-import static essentials.Global.bundle;
 import static essentials.Global.config;
+import static essentials.Global.nbundle;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.core.PlayerDB.PlayerDataSet;
-import static mindustry.Vars.playerGroup;
 
 public class Exp {
     private static double BASE_XP = config.getBasexp();
     private static double EXPONENT = config.getExponent();
 
-    public static void exp(String name, String uuid) {
-        PlayerData target = PlayerData(uuid);
+    public static void exp(Player player) {
+        PlayerData target = PlayerData(player.uuid);
 
         int currentlevel = target.level;
         int max = (int) calculateFullTargetXp(currentlevel);
@@ -29,10 +29,7 @@ public class Exp {
         target.reqtotalexp = reqtotalexp;
 
         if(currentlevel < level && currentlevel > config.getAlarmlevel() && config.isLevelupalarm()){
-            for(int a=0;a<playerGroup.size();a++){
-                Player player = playerGroup.all().get(a);
-                player.sendMessage(bundle(player, "player-levelup", name, level));
-            }
+            Call.onInfoToast(nbundle("player-levelup",player.name,level),600);
         }
     }
 

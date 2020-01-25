@@ -143,7 +143,7 @@ public class Threads extends TimerTask{
                         // Exp 계산
                         target.exp = target.exp + (int) (Math.random() * 5);
                         target.playtime = LocalTime.parse(target.playtime, DateTimeFormatter.ofPattern("HH:mm.ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm.ss"));
-                        if(!state.rules.editor) exp(player.name, player.uuid);
+                        if(!state.rules.editor) exp(player);
                     }
                 }
             }
