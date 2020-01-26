@@ -74,6 +74,7 @@ import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
+import static mindustry.core.NetClient.colorizeName;
 
 public class Main extends Plugin {
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -460,14 +461,13 @@ public class Main extends Plugin {
                                     others.sendMessage(bundle(others, "vote-current", current, Vote.require - current));
                             }
                         }
-                    }/* else {
-                        String perm = db.getString("permission");
-                        if(permission.getObject(perm).has("prefix")) {
-                            Call.sendMessage(permission.getObject(perm).getString("prefix").replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
+                    } else {
+                        if(permission.get(target.permission).asObject().get("prefix") != null) {
+                            Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
-                            Call.sendMessage(colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
+                            Call.sendMessage("[orange]["+colorizeName(e.player.id, e.player.name) + "[orange]][white] : " + e.message);
                         }
-                    }*/
+                    }
 
                     // 서버간 대화기능 작동
                     if (target.crosschat) {
@@ -1096,7 +1096,7 @@ public class Main extends Plugin {
             }
 
             // 채팅 포맷 변경
-            // netServer.admins.addChatFilter((player, text) -> null);
+            netServer.admins.addChatFilter((player, text) -> null);
         });
     }
 
