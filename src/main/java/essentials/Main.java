@@ -17,10 +17,7 @@ import essentials.core.Log;
 import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Server;
-import essentials.special.DBConvert;
-import essentials.special.DataMigration;
-import essentials.special.DriverLoader;
-import essentials.special.IpAddressMatcher;
+import essentials.special.*;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -33,6 +30,8 @@ import mindustry.game.EventType.*;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
+import mindustry.mod.Mod;
+import mindustry.mod.Mods;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
@@ -55,13 +54,11 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static arc.util.Log.info;
 import static essentials.Global.*;
 import static essentials.PluginData.*;
 import static essentials.Threads.*;
@@ -1054,6 +1051,72 @@ public class Main extends Plugin {
 
     @Override
     public void registerServerCommands(CommandHandler handler){
+        handler.register("gendocs", "Generate Essentials README.md", (arg) -> {
+            log("log","readme-generating");
+            // README.md 생성
+            String header = "# Essentials\n" +
+                    "Add more commands to the server.\n\n" +
+                    "I'm getting a lot of suggestions.<br>\n" +
+                    "Please submit your idea to this repository issues or Mindustry official discord!\n\n" +
+                    "## Requirements for running this plugin\n" +
+                    "This plugin does a lot of disk read/write operations depending on the features usage.\n\n" +
+                    "### Minimum\n" +
+                    "CPU: Athlon 200GE or Intel i5 2300<br>\n" +
+                    "RAM: 20MB<br>\n" +
+                    "Disk: HDD capable of more than 2MB/s random read/write.\n\n" +
+                    "### Recommand\n" +
+                    "CPU: Ryzen 3 2200G or Intel i3 8100<br>\n" +
+                    "RAM: 50MB<br>\n" +
+                    "Disk: HDD capable of more than 5MB/s random read/write.\n\n" +
+                    "## Installation\n\n" +
+                    "Put this plugin in the ``<server folder location>/config/mods`` folder.\n\n";
+            String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
+            String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
+            String tmp;
+            List<String> servercommands = new ArrayList<>(Arrays.asList(
+                    "help","version","exit","stop","host","maps","reloadmaps","status",
+                    "mods","mod","js","say","difficulty","rules","fillitems","playerlimit",
+                    "config","subnet-ban","whitelisted","whitelist-add","whitelist-remove",
+                    "shuffle","nextmap","kick","ban","bans","unban","admin","unadmin",
+                    "admins","runwave","load","save","saves","gameover","info","search", "gc"
+            ));
+            List<String> clientcommands = new ArrayList<>(Arrays.asList(
+                    "help","t","sync"
+            ));
+            String gentime = "\nREADME.md Generated time: "+DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
+
+            StringBuilder tempbuild = new StringBuilder();
+            for(int a=0;a<netServer.clientCommands.getCommandList().size;a++){
+                CommandHandler.Command command = netServer.clientCommands.getCommandList().get(a);
+                boolean dup = false;
+                for(String as : clientcommands){
+                    if(command.text.equals(as)){
+                        dup = true;
+                        break;
+                    }
+                }
+                if(!dup){
+                    String temp = "| "+command.text+" | "+StringUtils.encodeHtml(command.paramText)+" | "+command.description+" |\n";
+                    tempbuild.append(temp);
+                }
+            }
+            tmp = header+serverdoc+tempbuild.toString()+"\n";
+            for(CommandHandler.Command command : handler.getCommandList()) {
+                boolean dup = false;
+                for(String as : servercommands){
+                    if(command.text.equals(as)){
+                        dup = true;
+                        break;
+                    }
+                }
+                if(!dup){
+                    String temp = "| "+command.text+" | "+StringUtils.encodeHtml(command.paramText)+" | "+command.description+" |\n";
+                    tempbuild.append(temp);
+                }
+            }
+            root.child("README.md").writeString(tmp+clientdoc+tempbuild.toString()+gentime);
+            log("log","success");
+        });
         handler.register("accountban","<ban/unban> <account_uuid>", "Ban player account", (arg) -> {
             if(arg[0].equals("ban")) {
                 if (arg[1].length() == 12) {

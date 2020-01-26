@@ -1,5 +1,5 @@
 # Essentials
-Add more commands to the server.  
+Add more commands to the server.
 
 I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
@@ -20,60 +20,151 @@ Disk: HDD capable of more than 5MB/s random read/write.
 ## Installation
 
 Put this plugin in the ``<server folder location>/config/mods`` folder.
-  
+
+## Server commands
+
+| Command | Parameter | Description |
+|:---|:---|:--- |
+| ch |  | Send chat to another server. |
+| changepw | &lt;new_password&gt; | Change account password |
+| color |  | Enable color nickname |
+| difficulty | &lt;difficulty&gt; | Set server difficulty |
+| despawn |  | Kill all enemy units |
+| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
+| getpos |  | Get your current position info |
+| info |  | Show your information |
+| jump | &lt;zone/count/total&gt; [serverip] [range] | Create a server-to-server jumping zone. |
+| kickall |  | Kick all players |
+| kill | &lt;player&gt; | Kill player. |
+| login | &lt;id&gt; &lt;password&gt; | Access your account |
+| logout |  | Log-out of your account. |
+| maps | [page] | Show server maps |
+| me | &lt;text...&gt; | broadcast * message |
+| motd |  | Show server motd. |
+| save |  | Auto rollback map early save |
+| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
+| register | &lt;accountid&gt; &lt;password&gt; | Register account |
+| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
+| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
+| status |  | Show server status |
+| suicide |  | Kill yourself. |
+| team | [Team...] | Change team (PvP only) |
+| tempban | &lt;player&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
+| time |  | Show server time |
+| tp | &lt;player&gt; | Teleport to other players |
+| tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
+| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
+| ch |  | Send chat to another server. |
+| changepw | &lt;new_password&gt; | Change account password |
+| color |  | Enable color nickname |
+| difficulty | &lt;difficulty&gt; | Set server difficulty |
+| despawn |  | Kill all enemy units |
+| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
+| getpos |  | Get your current position info |
+| info |  | Show your information |
+| jump | &lt;zone/count/total&gt; [serverip] [range] | Create a server-to-server jumping zone. |
+| kickall |  | Kick all players |
+| kill | &lt;player&gt; | Kill player. |
+| login | &lt;id&gt; &lt;password&gt; | Access your account |
+| logout |  | Log-out of your account. |
+| maps | [page] | Show server maps |
+| me | &lt;text...&gt; | broadcast * message |
+| motd |  | Show server motd. |
+| save |  | Auto rollback map early save |
+| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
+| register | &lt;accountid&gt; &lt;password&gt; | Register account |
+| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
+| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
+| status |  | Show server status |
+| suicide |  | Kill yourself. |
+| team | [Team...] | Change team (PvP only) |
+| tempban | &lt;player&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
+| time |  | Show server time |
+| tp | &lt;player&gt; | Teleport to other players |
+| tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
+| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
+| vote | &lt;gameover/skipwave/kick/rollback/map&gt; [mapid/mapname/playername...] | Vote surrender or skip wave, Long-time kick |
+| votekick | &lt;player_name&gt; | Player kick starts voting. |
+
 ## Client commands
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| ch | &lt;massage&gt; | Send chat to another server <br> You must modify the settings in ``config/plugins/Essentials/config.hjson`` |
-| changepw | &lt;new password&gt; | Change account password |
-| color |  | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
+| ch |  | Send chat to another server. |
+| changepw | &lt;new_password&gt; | Change account password |
+| color |  | Enable color nickname |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
-| despawn |  | Kill all units ||
+| despawn |  | Kill all enemy units |
 | event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
-| getpos |  | Show your current position position |
-| help | [page] | Show command lists |
-| info |  | Show player information |
-| jump | &lt;zone/count/total&gt; [serverip] [port] [range] [block-type(1~6)] | Create a server-to-server jumping zone. |
+| getpos |  | Get your current position info |
+| info |  | Show your information |
+| jump | &lt;zone/count/total&gt; [serverip] [range] | Create a server-to-server jumping zone. |
 | kickall |  | Kick all players |
-| kill | &lt;player name&gt; | Kill other players |
-| login | &lt;account id&gt; &lt;password&gt; | Login to account. |
-| logout |  | Log out of my account |
-| maps | [page] |  Show server maps |
-| me | &lt;msg&gt; | Show special chat format |
-| motd |  | Show server motd <br> Can modify from ``config/plugins/Essentials/motd.txt`` |
-| register | &lt;account id&gt; &lt;new password&gt; | Register accoun<br>Example - ``/register test test123`` |
-| save |  | Save current map |
-| spawn | &lt;mob name&gt; &lt;count&gt; &lt;team name&gt; [name] | Spawn mob in player location |
-| setperm | &lt;player name&gt; &lt;group name&gt; | Set player permission |
-| status |  | Show currently server status (TPS, RAM, Players/ban count) |
-| suicide |  | Kill yourself |
+| kill | &lt;player&gt; | Kill player. |
+| login | &lt;id&gt; &lt;password&gt; | Access your account |
+| logout |  | Log-out of your account. |
+| maps | [page] | Show server maps |
+| me | &lt;text...&gt; | broadcast * message |
+| motd |  | Show server motd. |
+| save |  | Auto rollback map early save |
+| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
+| register | &lt;accountid&gt; &lt;password&gt; | Register account |
+| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
+| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
+| status |  | Show server status |
+| suicide |  | Kill yourself. |
 | team | [Team...] | Change team (PvP only) |
-| tempban | &lt;player name&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
-| time |  | Show server local time |
-| tpp | &lt;player name&gt; &lt;another player name&gt; | Teleport player to other players |
-| tp | &lt;player name&gt; | Teleport to players |
-| vote | &lt;gameover/skipwave/kick/rollback/map&gt; [name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
-| votekick | &lt;player name&gt; | Player kick starts voting |
-
-## Console commands
-
-| Command | Parameter | Description |
-|:---|:---|:---|
-| accountban | &lt;ban/unban&gt; &lt;account_uuid&gt; | Ban player account |
-| admin | &lt;player name&gt; | **!! Disabled command !!** |
-| allinfo | &lt;player name&gt; | Show player information |
-| ban | &lt;uuid/name/ip&gt; &lt;username/ip/uuid&gt; | Ban a person. |
-| bansync |  | Ban list synchronization from main server |
-| blacklist | &lt;add/remove&gt; &lt;player name&gt; | Block special nickname. |
-| reset | &lt;zone/count/total&gt; | Clear a server-to-server jumping zone data. |
-| reload |  | Reload Essentials config |
-| reconnect |  | Reconnect remote server (Essentials server only!) |
+| tempban | &lt;player&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
+| time |  | Show server time |
+| tp | &lt;player&gt; | Teleport to other players |
+| tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
+| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
+| ch |  | Send chat to another server. |
+| changepw | &lt;new_password&gt; | Change account password |
+| color |  | Enable color nickname |
+| difficulty | &lt;difficulty&gt; | Set server difficulty |
+| despawn |  | Kill all enemy units |
+| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
+| getpos |  | Get your current position info |
+| info |  | Show your information |
+| jump | &lt;zone/count/total&gt; [serverip] [range] | Create a server-to-server jumping zone. |
 | kickall |  | Kick all players |
-| kill | &lt;player name&gt; | Kill target player |
-| nick | &lt;player name&gt; &lt;new name&gt; | Show player information |
-| pvp | &lt;anticoal/timer&gt; [time...] | Set gamerule with PvP mode |
-| setperm | &lt;player name&gt; &lt;group name&gt; | Set player permission group |
-| sync | &lt;player name&gt; | Force sync request from the target player |
-| team | &lt;player name&gt; | Change target player team |
-| tempban | &lt;uuid/name/ip&gt; &lt;username/ip/uuid&gt; | Temporarily ban player. time unit: 1 hours |
+| kill | &lt;player&gt; | Kill player. |
+| login | &lt;id&gt; &lt;password&gt; | Access your account |
+| logout |  | Log-out of your account. |
+| maps | [page] | Show server maps |
+| me | &lt;text...&gt; | broadcast * message |
+| motd |  | Show server motd. |
+| save |  | Auto rollback map early save |
+| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
+| register | &lt;accountid&gt; &lt;password&gt; | Register account |
+| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
+| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
+| status |  | Show server status |
+| suicide |  | Kill yourself. |
+| team | [Team...] | Change team (PvP only) |
+| tempban | &lt;player&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
+| time |  | Show server time |
+| tp | &lt;player&gt; | Teleport to other players |
+| tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
+| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
+| vote | &lt;gameover/skipwave/kick/rollback/map&gt; [mapid/mapname/playername...] | Vote surrender or skip wave, Long-time kick |
+| votekick | &lt;player_name&gt; | Player kick starts voting. |
+| gendocs |  | Generate Essentials README.md |
+| accountban | &lt;ban/unban&gt; &lt;account_uuid&gt; | Ban player account |
+| allinfo | &lt;name&gt; | Show player information. |
+| bansync |  | Ban list synchronization from main server. |
+| blacklist | &lt;add/remove&gt; &lt;nickname&gt; | Block special nickname. |
+| reset | &lt;zone/count/total&gt; | Clear a server-to-server jumping zone data. |
+| reconnect |  | Reconnect remote server (Essentials server only!) |
+| unadminall | &lt;default_group_name&gt; | Remove all player admin status |
+| kickall |  | Kick all players. |
+| kill | &lt;username&gt; | Kill target player. |
+| nick | &lt;name&gt; &lt;newname...&gt; | Set player nickname |
+| pvp | &lt;anticoal/timer&gt; [time...] | Set gamerule with PvP mode. |
+| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission group |
+| sync | &lt;player&gt; | Force sync request from the target player. |
+| team | [name] | Change target player team. |
+| tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
+
+README.md Generated time: 2020-01-27 01:58:40
