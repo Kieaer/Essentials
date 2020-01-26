@@ -24,7 +24,6 @@ import essentials.special.IpAddressMatcher;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.content.Items;
 import mindustry.content.UnitTypes;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
@@ -38,7 +37,6 @@ import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
 import mindustry.type.Item;
-import mindustry.type.ItemType;
 import mindustry.type.UnitType;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
@@ -134,15 +132,11 @@ public class Main extends Plugin {
         executorService.submit(new visualjump());
 
         // 기록 시작
-        if (config.isLogging()) {
-            new Log();
-        }
+        if (config.isLogging()) new Log();
 
         // 서버기능 시작
         Thread server = new Thread(new Server());
-        if (config.isServerenable()) {
-            server.start();
-        }
+        if (config.isServerenable()) server.start();
 
         // 권한 기능 시작
         new Permission();
@@ -843,7 +837,7 @@ public class Main extends Plugin {
                                 }
                             }
                         }
-                    }*/
+                    }
                     // 코어 자원 소모량 감시
                     try {
                         for (Item item : content.items()) {
@@ -902,7 +896,7 @@ public class Main extends Plugin {
                             Call.setMessageBlockText(null, scancore.get(a), scancore_text.toString());
                             scancore_text.setLength(0);
                         }
-                    }catch (Exception ignored){}
+                    }catch (Exception ignored){}*/
                     scandelay = 0;
                 } else {
                     scandelay++;
@@ -1323,6 +1317,7 @@ public class Main extends Plugin {
             for (JsonObject.Member data : permission) {
                 if(data.getName().equals(arg[1])){
                     PlayerData(player.uuid).permission = arg[1];
+                    PlayerDataSave(player.uuid);
                     log("log", "success");
                     return;
                 }
@@ -1546,14 +1541,12 @@ public class Main extends Plugin {
         });
         handler.<Player>register("info", "Show your information", (arg, player) -> {
             if (!checkperm(player, "info")) return;
-            String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
             PlayerData db = PlayerData(player.uuid);
             String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
-                    "[#2B60DE]========================================[]\n" +
+                    "[#2B60DE]====================================[]\n" +
                     "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
                     "[green]" + nbundle(player, "player-uuid") + "[] : " + player.uuid + "\n" +
                     "[green]" + nbundle(player, "player-isMobile") + "[] : " + player.isMobile + "\n" +
-                    "[green]" + nbundle(player, "player-ip") + "[] : " + ip + "\n" +
                     "[green]" + nbundle(player, "player-country") + "[] : " + db.country + "\n" +
                     "[green]" + nbundle(player, "player-placecount") + "[] : " + db.placecount + "\n" +
                     "[green]" + nbundle(player, "player-breakcount") + "[] : " + db.breakcount + "\n" +
@@ -1924,6 +1917,7 @@ public class Main extends Plugin {
                 if(data.getName().equals(arg[0])){
                     PlayerData val = PlayerData(target.uuid);
                     val.permission = arg[1];
+                    PlayerDataSave(target.uuid);
                     player.sendMessage(bundle(player, "success"));
                     return;
                 }
@@ -2020,7 +2014,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(player, "player-not-found"));
                 return;
             }
-            player.setNet(other.x, other.y);
+            player.setNet(other.getX(), other.getY());
         });
         handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
             if (!checkperm(player, "tpp")) return;
@@ -2126,8 +2120,8 @@ public class Main extends Plugin {
 
             new Vote(player, arg[0], other);
         });
-        handler.<Player>register("test", "<message> <duration>", "test", (arg, player) -> {
-            Call.onInfoToast(arg[0], Float.parseFloat(arg[1]));
-        });
+        /*handler.<Player>register("test", "<message> <width> <height> <duration> <align> <top> <left> <bottom> <right>", "test", (arg, player) -> {
+            Call.onInfoPopup(player.con,arg[0],Float.parseFloat(arg[1]),Float.parseFloat(arg[2]),Float.parseFloat(arg[3]),Integer.parseInt(arg[4]), Integer.parseInt(arg[5]), Integer.parseInt(arg[6]), Integer.parseInt(arg[7]), Integer.parseInt(arg[8]));
+        });*/
     }
 }

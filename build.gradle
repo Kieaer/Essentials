@@ -22,7 +22,8 @@ compileJava {options.encoding = "UTF-8"}
 
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$targetversion"
-    compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
+    //compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
+    compileOnly files("C:\\Users\\cloud\\Desktop\\Mindustry-master\\core\\build\\libs\\core-release.jar")
 
     // json
     compile group: 'org.hjson', name: 'hjson', version: '3.0.0'

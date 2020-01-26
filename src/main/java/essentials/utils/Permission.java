@@ -24,8 +24,8 @@ public class Permission {
                         nlog("debug", "target inheritance: " + name + "/" + inheritance);
                         while (inheritance != null) {
                             for (int a = 0; a < permission.get(inheritance).asObject().get("permission").asArray().size(); a++) {
-                                permission.get(name).asObject().get("permission").asArray().add(permission.get(inheritance).asObject().get("permission").asArray().get(a));
-                                nlog("debug", "target inheritance add: " + name + "/" + inheritance + "/" + permission.get(inheritance).asObject().get("permission").asArray().get(a));
+                                permission.get(name).asObject().get("permission").asArray().add(permission.get(inheritance).asObject().get("permission").asArray().get(a).asString());
+                                nlog("debug", "target inheritance add: " + name + "/" + inheritance + "/" + permission.get(inheritance).asObject().get("permission").asArray().get(a).asString());
                             }
                             inheritance = permission.get(inheritance).asObject().getString("inheritance", null);
                         }

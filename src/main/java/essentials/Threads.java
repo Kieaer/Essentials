@@ -761,8 +761,6 @@ public class Threads extends TimerTask{
         public void run() {
             while(!Thread.currentThread().isInterrupted()) {
                 for (int a = 0; a < messagejump.size(); a++) {
-
-
                     if(messagejump.get(a).tile.entity.block != Blocks.message){
                         messagejump.remove(a);
                         break;
