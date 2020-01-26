@@ -1534,35 +1534,32 @@ public class Main extends Plugin {
             player.sendMessage(result.toString().substring(0, result.length()-1));
         });
         handler.<Player>register("info", "Show your information", (arg, player) -> {
-            if(!checkperm(player,"info")) return;
-            Thread t = new Thread(() -> {
-                String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-                PlayerData db = PlayerData(player.uuid);
-                String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
-                        "[#2B60DE]========================================[]\n" +
-                        "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
-                        "[green]" + nbundle(player, "player-uuid") + "[] : " + player.uuid + "\n" +
-                        "[green]" + nbundle(player, "player-isMobile") + "[] : " + player.isMobile + "\n" +
-                        "[green]" + nbundle(player, "player-ip") + "[] : " + ip + "\n" +
-                        "[green]" + nbundle(player, "player-country") + "[] : " + db.country + "\n" +
-                        "[green]" + nbundle(player, "player-placecount") + "[] : " + db.placecount + "\n" +
-                        "[green]" + nbundle(player, "player-breakcount") + "[] : " + db.breakcount + "\n" +
-                        "[green]" + nbundle(player, "player-killcount") + "[] : " + db.killcount + "\n" +
-                        "[green]" + nbundle(player, "player-deathcount") + "[] : " + db.deathcount + "\n" +
-                        "[green]" + nbundle(player, "player-joincount") + "[] : " + db.joincount + "\n" +
-                        "[green]" + nbundle(player, "player-kickcount") + "[] : " + db.kickcount + "\n" +
-                        "[green]" + nbundle(player, "player-level") + "[] : " + db.level + "\n" +
-                        "[green]" + nbundle(player, "player-reqtotalexp") + "[] : " + db.reqtotalexp + "\n" +
-                        "[green]" + nbundle(player, "player-firstdate") + "[] : " + db.firstdate + "\n" +
-                        "[green]" + nbundle(player, "player-lastdate") + "[] : " + db.lastdate + "\n" +
-                        "[green]" + nbundle(player, "player-playtime") + "[] : " + db.playtime + "\n" +
-                        "[green]" + nbundle(player, "player-attackclear") + "[] : " + db.attackclear + "\n" +
-                        "[green]" + nbundle(player, "player-pvpwincount") + "[] : " + db.pvpwincount + "\n" +
-                        "[green]" + nbundle(player, "player-pvplosecount") + "[] : " + db.pvplosecount + "\n" +
-                        "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.pvpbreakout;
-                Call.onInfoMessage(player.con, datatext);
-            });
-            executorService.submit(t);
+            if (!checkperm(player, "info")) return;
+            String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+            PlayerData db = PlayerData(player.uuid);
+            String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
+                    "[#2B60DE]========================================[]\n" +
+                    "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
+                    "[green]" + nbundle(player, "player-uuid") + "[] : " + player.uuid + "\n" +
+                    "[green]" + nbundle(player, "player-isMobile") + "[] : " + player.isMobile + "\n" +
+                    "[green]" + nbundle(player, "player-ip") + "[] : " + ip + "\n" +
+                    "[green]" + nbundle(player, "player-country") + "[] : " + db.country + "\n" +
+                    "[green]" + nbundle(player, "player-placecount") + "[] : " + db.placecount + "\n" +
+                    "[green]" + nbundle(player, "player-breakcount") + "[] : " + db.breakcount + "\n" +
+                    "[green]" + nbundle(player, "player-killcount") + "[] : " + db.killcount + "\n" +
+                    "[green]" + nbundle(player, "player-deathcount") + "[] : " + db.deathcount + "\n" +
+                    "[green]" + nbundle(player, "player-joincount") + "[] : " + db.joincount + "\n" +
+                    "[green]" + nbundle(player, "player-kickcount") + "[] : " + db.kickcount + "\n" +
+                    "[green]" + nbundle(player, "player-level") + "[] : " + db.level + "\n" +
+                    "[green]" + nbundle(player, "player-reqtotalexp") + "[] : " + db.reqtotalexp + "\n" +
+                    "[green]" + nbundle(player, "player-firstdate") + "[] : " + db.firstdate + "\n" +
+                    "[green]" + nbundle(player, "player-lastdate") + "[] : " + db.lastdate + "\n" +
+                    "[green]" + nbundle(player, "player-playtime") + "[] : " + db.playtime + "\n" +
+                    "[green]" + nbundle(player, "player-attackclear") + "[] : " + db.attackclear + "\n" +
+                    "[green]" + nbundle(player, "player-pvpwincount") + "[] : " + db.pvpwincount + "\n" +
+                    "[green]" + nbundle(player, "player-pvplosecount") + "[] : " + db.pvplosecount + "\n" +
+                    "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.pvpbreakout;
+            Call.onInfoMessage(player.con, datatext);
         });
         handler.<Player>register("jump", "<zone/count/total> [serverip] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!checkperm(player, "jump")) return;
