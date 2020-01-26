@@ -43,7 +43,6 @@ import mindustry.world.blocks.power.NuclearReactor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -493,53 +492,6 @@ public class Main extends Plugin {
 
                 // 마지막 대화 데이터를 DB에 저장함
                 target.lastchat = e.message;
-
-                // 번역
-                if (config.isEnableTranslate()) {
-                    try {
-                        PlayerData orignaldata = PlayerData(e.player.uuid);
-                        for (int i = 0; i < playerGroup.size(); i++) {
-                            Player p = playerGroup.all().get(i);
-                            if (!isNocore(p)) {
-                                PlayerData data = PlayerData(p.uuid);
-                                String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
-                                String language = data.language;
-                                String orignal = orignaldata.language;
-                                if (!language.equals(orignal)) {
-                                    boolean found = false;
-                                    for (String s : support) {
-                                        if (orignal.equals(s)) {
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (found) {
-                                        String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
-                                                .method(Connection.Method.POST)
-                                                .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
-                                                .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
-                                                .data("source", orignaldata.language)
-                                                .data("target", data.language)
-                                                .data("text", e.message)
-                                                .ignoreContentType(true)
-                                                .followRedirects(true)
-                                                .execute()
-                                                .body();
-                                        JsonObject object = JsonValue.readJSON(response).asObject();
-                                        if (object.get("error") != null) {
-                                            String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
-                                            if (data.translate) {
-                                                p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception ex) {
-                        printError(ex);
-                    }
-                }
 
                 PlayerDataSet(target.uuid,target);
             }
@@ -2053,18 +2005,6 @@ public class Main extends Plugin {
                 return;
             }
             player.setNet(x, y);
-        });
-        handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
-            if(!checkperm(player,"tr")) return;
-            PlayerData target = PlayerData(player.uuid);
-            if (target.translate) {
-                target.translate = false;
-                player.sendMessage(bundle(player, "translate"));
-            } else {
-                target.translate = true;
-                player.sendMessage(bundle(player, "translate-disable"));
-            }
-            PlayerDataSet(player.uuid,target);
         });
         handler.<Player>register("vote", "<gameover/skipwave/kick/rollback/map> [mapid/mapname/playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
             if(!checkperm(player,"vote")) return;

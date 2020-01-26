@@ -164,12 +164,6 @@ public class Config {
                 "  discord-register-role: " + getDiscordRole() +"\n" +
                 "  discord-command-prefix: " + getDiscordPrefix() + "\n" +
                 "\n" +
-                "  # "+nbundle("config-papago-description")+"\n" +
-                "  # "+nbundle("config-papago-child-description")+"\n" +
-                "  enable-translate: " + isEnableTranslate() + "\n" +
-                "  clientId: " + getClientId() + "\n" +
-                "  clientSecret: " + getClientSecret() + "\n" +
-                "\n" +
                 "  # "+nbundle("config-debug-description")+"\n" +
                 "  debug: " + isDebug() + "\n" +
                 "\n" +
@@ -362,18 +356,6 @@ public class Config {
 
     public String getDBpw(){
         return obj.getString("dbpw","none");
-    }
-
-    public boolean isEnableTranslate(){
-        return obj.getBoolean("enable-translate",false);
-    }
-
-    public String getClientId(){
-        return obj.getString("clientId","none");
-    }
-
-    public String getClientSecret(){
-        return obj.getString("clientSecret","none");
     }
 
     public boolean isDebug(){

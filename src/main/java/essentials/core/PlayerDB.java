@@ -71,7 +71,6 @@ public class PlayerDB{
                         "bantimeset INTEGER,\n" +
                         "bantime TEXT,\n" +
                         "banned TEXT,\n" +
-                        "translate TEXT,\n" +
                         "crosschat TEXT,\n" +
                         "colornick TEXT,\n" +
                         "connected TEXT,\n" +
@@ -115,7 +114,6 @@ public class PlayerDB{
                             "`bantimeset` INT(11) NULL DEFAULT NULL,\n" +
                             "`bantime` TINYTEXT NULL DEFAULT NULL,\n" +
                             "`banned` TINYINT(4) NULL DEFAULT NULL,\n" +
-                            "`translate` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`crosschat` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`colornick` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`connected` TINYINT(4) NULL DEFAULT NULL,\n" +
@@ -147,9 +145,9 @@ public class PlayerDB{
             if(uuid.equals("InactiveAAA=") || !isduplicate(uuid)){
                 String sql;
                 if(config.isSqlite()){
-                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
-                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 }
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
@@ -182,7 +180,6 @@ public class PlayerDB{
                 pstmt.setInt(28, 0); // bantimeset
                 pstmt.setString(29, "none"); // bantime
                 pstmt.setBoolean(30, false);
-                pstmt.setBoolean(31, false); // translate
                 pstmt.setBoolean(32, false); // crosschat
                 pstmt.setBoolean(33, false); // colornick
                 pstmt.setBoolean(34, connected); // connected
@@ -246,7 +243,6 @@ public class PlayerDB{
                         rs.getInt("bantimeset"),
                         rs.getString("bantime"),
                         rs.getBoolean("banned"),
-                        rs.getBoolean("translate"),
                         rs.getBoolean("crosschat"),
                         rs.getBoolean("colornick"),
                         rs.getBoolean("connected"),
@@ -307,7 +303,6 @@ public class PlayerDB{
                 data.add("bantimeset", rs.getString("bantimeset"));
                 data.add("bantime", rs.getString("bantime"));
                 data.add("banned", rs.getBoolean("banned"));
-                data.add("translate", rs.getBoolean("translate"));
                 data.add("crosschat", rs.getBoolean("crosschat"));
                 data.add("colornick", rs.getBoolean("colornick"));
                 data.add("connected", rs.getBoolean("connected"));
@@ -751,7 +746,6 @@ public class PlayerDB{
         public int bantimeset;
         public String bantime;
         public boolean banned;
-        public boolean translate;
         public boolean crosschat;
         public boolean colornick;
         public boolean connected;
@@ -769,7 +763,7 @@ public class PlayerDB{
             this.isLogin = isLogin;
         }
 
-        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw){
+        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw){
             this.id = id;
             this.name = name;
             this.uuid = uuid;
@@ -801,7 +795,6 @@ public class PlayerDB{
             this.bantimeset = bantimeset;
             this.bantime = bantime;
             this.banned = banned;
-            this.translate = translate;
             this.crosschat = crosschat;
             this.colornick = colornick;
             this.connected = connected;
@@ -851,7 +844,7 @@ public class PlayerDB{
         for (PlayerData player : Players) {
             if (player.uuid.equals(uuid)) {
                 try {
-                    String sql = "UPDATE players SET name=?,uuid=?,country=?,country_code=?,language=?,isadmin=?,placecount=?,breakcount=?,killcount=?,deathcount=?,joincount=?,kickcount=?,level=?,exp=?,reqexp=?,reqtotalexp=?,firstdate=?,lastdate=?,lastplacename=?,lastbreakname=?,lastchat=?,playtime=?,attackclear=?,pvpwincount=?,pvplosecount=?,pvpbreakout=?,reactorcount=?,bantimeset=?,bantime=?,banned=?,translate=?,crosschat=?,colornick=?,connected=?,connserver=?,permission=?,udid=? WHERE uuid=?";
+                    String sql = "UPDATE players SET name=?,uuid=?,country=?,country_code=?,language=?,isadmin=?,placecount=?,breakcount=?,killcount=?,deathcount=?,joincount=?,kickcount=?,level=?,exp=?,reqexp=?,reqtotalexp=?,firstdate=?,lastdate=?,lastplacename=?,lastbreakname=?,lastchat=?,playtime=?,attackclear=?,pvpwincount=?,pvplosecount=?,pvpbreakout=?,reactorcount=?,bantimeset=?,bantime=?,banned=?,crosschat=?,colornick=?,connected=?,connserver=?,permission=?,udid=? WHERE uuid=?";
                     PreparedStatement pstmt = conn.prepareStatement(sql);
                     pstmt.setString(1, player.name);
                     pstmt.setString(2, player.uuid);
@@ -883,7 +876,6 @@ public class PlayerDB{
                     pstmt.setInt(28, player.bantimeset); // bantimeset
                     pstmt.setString(29, player.bantime); // bantime
                     pstmt.setBoolean(30, player.banned);
-                    pstmt.setBoolean(31, player.translate); // translate
                     pstmt.setBoolean(32, player.crosschat); // crosschat
                     pstmt.setBoolean(33, player.colornick); // colornick
                     pstmt.setBoolean(34, player.connected); // connected

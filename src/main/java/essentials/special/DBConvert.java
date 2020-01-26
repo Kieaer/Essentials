@@ -71,7 +71,6 @@ public class DBConvert {
                         rs.getInt("bantimeset"),
                         rs.getString("bantime"),
                         rs.getBoolean("banned"),
-                        rs.getBoolean("translate"),
                         rs.getBoolean("crosschat"),
                         rs.getBoolean("colornick"),
                         rs.getBoolean("connected"),
@@ -89,7 +88,7 @@ public class DBConvert {
             System.out.print("\n");
 
             // DB 붙여넣기
-            String sql = "INSERT INTO players(id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO players(id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             prepared = conn.prepareStatement(sql);
             for (PlayerData data : data) {
                 prepared.setInt(0, data.id);
@@ -123,7 +122,6 @@ public class DBConvert {
                 prepared.setInt(28, data.bantimeset); // bantimeset
                 prepared.setString(29, data.bantime); // bantime
                 prepared.setBoolean(30, data.banned);
-                prepared.setBoolean(31, data.translate); // translate
                 prepared.setBoolean(32, data.crosschat); // crosschat
                 prepared.setBoolean(33, data.colornick); // colornick
                 prepared.setBoolean(34, data.connected); // connected

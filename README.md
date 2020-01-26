@@ -53,7 +53,6 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | time |  | Show server local time |
 | tpp | &lt;player name&gt; &lt;another player name&gt; | Teleport player to other players |
 | tp | &lt;player name&gt; | Teleport to players |
-| tr |  | Enable/disable auto translate <br> Currently only support Korean to English. |
 | vote | &lt;gameover/skipwave/kick/rollback/map&gt; [name] | Enable animated rainbow nickname. <br> Must enable 'realname' and can use admin. |
 | votekick | &lt;player name&gt; | Player kick starts voting |
 
