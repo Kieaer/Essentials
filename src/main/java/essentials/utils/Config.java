@@ -181,6 +181,9 @@ public class Config {
                 "  hard: "+getHard()+"\n" +
                 "  insane: "+getInsane()+"\n" +
                 "\n" +
+                "  # "+nbundle("config-border-description")+"\n" +
+                "  border: "+isBorder()+"\n" +
+                "\n" +
                 "  # "+nbundle("config-spawnlimit-description")+"\n" +
                 "  spawnlimit: "+getSpawnlimit() +"\n" +
                 "\n" +
@@ -392,6 +395,10 @@ public class Config {
 
     public int getInsane(){
         return obj.getInt("insane",10);
+    }
+
+    public boolean isBorder(){
+        return obj.getBoolean("border",false);
     }
 
     public int getSpawnlimit(){

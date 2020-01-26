@@ -30,8 +30,6 @@ import mindustry.game.EventType.*;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
-import mindustry.mod.Mod;
-import mindustry.mod.Mods;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
@@ -58,7 +56,6 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-import static arc.util.Log.info;
 import static essentials.Global.*;
 import static essentials.PluginData.*;
 import static essentials.Threads.*;
@@ -700,12 +697,19 @@ public class Main extends Plugin {
 
             @Override
             public void update() {
-/*                if(resetdelay >= 300){
+                /*if(resetdelay >= 300){
                     resetdelay = 0;
                     cool = false;
                 } else {
                     resetdelay++;
                 }*/
+
+                if(config.isBorder()) {
+                    for (Player p : playerGroup.all()) {
+                        if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
+                            Call.onPlayerDeath(p);
+                    }
+                }
 
                 if (delaycount == 30) {
                     try {
