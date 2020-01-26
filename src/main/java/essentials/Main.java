@@ -1257,6 +1257,7 @@ public class Main extends Plugin {
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
             for (JsonObject.Member data : permission) {
                 if(data.getName().equals(arg[0])){
+                    for(Player player : playerGroup) player.isAdmin = false;
                     writeData("UPDATE players SET permission = ?", arg[0]);
                     log("log", "success");
                     return;
@@ -1283,13 +1284,15 @@ public class Main extends Plugin {
                 log("warn","player-not-found");
             }
         });
-        handler.register("nick", "<name> <newname...>", "Show player information.", (arg) -> {
+        handler.register("nick", "<name> <newname...>", "Set player nickname", (arg) -> {
             if(arg.length < 1) {
                 log("warn","no-parameter");
                 return;
             }
             try{
-                writeData("UPDATE players SET name = ? WHERE name = ?",arg[1],arg[0]);
+                Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+                player.name = arg[1];
+                PlayerData(player.uuid).name = arg[1];
                 log("log","player-nickname-change-to", arg[0], arg[1]);
             }catch (Exception e){
                 printError(e);
@@ -1312,12 +1315,14 @@ public class Main extends Plugin {
             nlog("log","Currently not supported!");
         });
         handler.register("setperm", "<player_name> <group>", "Set player permission group", arg -> {
-            if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
+            Player player = playerGroup.find(p -> p.name.equals(arg[0]));
+            if(player == null){
                 log("warn","player-not-found");
+                return;
             }
             for (JsonObject.Member data : permission) {
                 if(data.getName().equals(arg[1])){
-                    writeData("UPDATE players SET permission = ? WHERE name = ?", arg[1], arg[0]);
+                    PlayerData(player.uuid).permission = arg[1];
                     log("log", "success");
                     return;
                 }
@@ -1388,8 +1393,8 @@ public class Main extends Plugin {
             }
             try{
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
-                String hashed = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
-                writeData("UPDATE players SET accountpw = ? WHERE uuid = ?",hashed,player.uuid);
+                PlayerData(player.uuid).accountpw = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
+                PlayerDataSave(player.uuid);
                 player.sendMessage(bundle(player,"success"));
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -1465,7 +1470,10 @@ public class Main extends Plugin {
                                 }
                                 log("log","event-host-opened", player.name, customport);
 
-                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?",false, "none", player.uuid);
+                                PlayerData data = PlayerData(player.uuid);
+                                data.connected = false;
+                                data.connserver = "none";
+                                PlayerDataSave(player.uuid);
                                 if(target.country.equals("Local IP")){
                                     Call.onConnect(player.con,"127.0.0.1",customport);
                                 } else {
@@ -1481,7 +1489,10 @@ public class Main extends Plugin {
                     case "join":
                         for (eventservers data : eventservers) {
                             if (data.roomname.equals(arg[1])) {
-                                writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", player.uuid);
+                                PlayerData val = PlayerData(player.uuid);
+                                val.connected = false;
+                                val.connserver = "none";
+                                PlayerDataSave(player.uuid);
                                 Call.onConnect(player.con, currentip, data.port);
                                 nlog("log",currentip+":"+data.port);
                                 break;
@@ -1633,7 +1644,11 @@ public class Main extends Plugin {
         handler.<Player>register("logout","Log-out of your account.", (arg, player) -> {
             if(!checkperm(player,"logout")) return;
             if(config.isLoginenable()) {
-                writeData("UPDATE players SET connected = ?, uuid = ? WHERE uuid = ?", false, "LogoutAAAAA=", player.uuid);
+                PlayerData data = PlayerData(player.uuid);
+                data.connected = false;
+                data.connserver = "none";
+                data.uuid = "LogoutAAAAA=";
+                PlayerDataSave(player.uuid);
                 Call.onKick(player.con, nbundle("logout"));
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));
@@ -1900,12 +1915,15 @@ public class Main extends Plugin {
         });
         handler.<Player>register("setperm", "<player_name> <group>", "Set player permission", (arg, player) -> {
             if(!checkperm(player,"setperm")) return;
-            if(playerGroup.find(p -> p.name.equals(arg[0])) == null){
+            Player target = playerGroup.find(p -> p.name.equals(arg[0]));
+            if(target == null){
                 player.sendMessage(bundle(player, "player-not-found"));
+                return;
             }
             for (JsonObject.Member data : permission) {
                 if(data.getName().equals(arg[0])){
-                    writeData("UPDATE players SET permission = ? WHERE name = ?", arg[1], arg[0]);
+                    PlayerData val = PlayerData(target.uuid);
+                    val.permission = arg[1];
                     player.sendMessage(bundle(player, "success"));
                     return;
                 }
