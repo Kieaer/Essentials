@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static essentials.Global.root;
+import static essentials.Main.root;
 import static essentials.utils.Config.PluginConfig;
 
 public class PluginData {

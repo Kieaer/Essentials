@@ -13,12 +13,14 @@ import java.net.URISyntaxException;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static essentials.Global.*;
+import static essentials.Main.root;
 import static essentials.PluginData.loadall;
 import static mindustry.Vars.net;
 
@@ -51,6 +53,8 @@ public class Config {
             update();
 
             loadall();
+            log("config","config-language",new Locale(config.getLanguage()).getDisplayLanguage());
+            log("config","config-loaded");
         } catch (IOException e){
             printError(e);
         }
@@ -193,7 +197,6 @@ public class Config {
                 "  event-port: "+getEventport()+"\n"+
                 "}";
         root.child("config.hjson").writeString(text);
-        log("config","config-loaded");
     }
 
     public String getClienthost(){

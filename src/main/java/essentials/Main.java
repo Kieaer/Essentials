@@ -78,8 +78,9 @@ import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class Main extends Plugin {
-    private Array<mindustry.maps.Map> maplist = Vars.maps.all();
+    public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
+    private Array<mindustry.maps.Map> maplist = Vars.maps.all();
     public Client client;
     public PlayerDB playerDB = new PlayerDB();
 

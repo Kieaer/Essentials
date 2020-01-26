@@ -8,7 +8,8 @@ import org.hjson.JsonValue;
 
 import java.time.LocalDateTime;
 
-import static essentials.Global.*;
+import static essentials.Global.config;
+import static essentials.Global.dbundle;
 import static essentials.PluginData.saveall;
 
 public class DataMigration {
@@ -16,7 +17,7 @@ public class DataMigration {
 
     public DataMigration(){
         if(root.child("config.yml").exists()) {
-            log("log", dbundle("data-migration"));
+            System.out.print("\r"+dbundle("data-migration"));
             String condata = root.child("config.yml").readString();
             condata = condata.replace("colornick update interval","cupdatei").replace("null","none");
             root.child("config.hjson").writeString("{\n"+condata+"\n}");
@@ -31,18 +32,20 @@ public class DataMigration {
             if (root.child("data/data.json").exists()) {
                 String data = root.child("data/data.json").readString();
                 JsonObject value = JsonValue.readJSON(data).asObject();
-                JsonObject arrays = value.get("banned").asObject();
-                saveall();
-                for (int a = 0; a < arrays.size(); a++) {
-                    LocalDateTime date = LocalDateTime.parse(arrays.get("date").asString());
-                    String name = arrays.get("name").asString();
-                    String uuid = arrays.get("uuid").asString();
-                    PluginData.banned.add(new PluginData.banned(date, name, uuid));
+                if(value.get("banned") != null) {
+                    JsonObject arrays = value.get("banned").asObject();
+                    saveall();
+                    for (int a = 0; a < arrays.size(); a++) {
+                        LocalDateTime date = LocalDateTime.parse(arrays.get("date").asString());
+                        String name = arrays.get("name").asString();
+                        String uuid = arrays.get("uuid").asString();
+                        PluginData.banned.add(new PluginData.banned(date, name, uuid));
+                    }
+                    // 서버간 이동 데이터들은 변환하지 않음
+                    root.child("data/data.json").delete();
                 }
-                // 서버간 이동 데이터들은 변환하지 않음
-                root.child("data/data.json").delete();
             }
-            log("log", dbundle("success"));
+            System.out.print("\r"+dbundle("data-migration")+" "+dbundle("success")+"\n");
         }
     }
 

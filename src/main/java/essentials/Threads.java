@@ -41,6 +41,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static essentials.Global.*;
+import static essentials.Main.root;
 import static essentials.PluginData.*;
 import static essentials.core.Exp.exp;
 import static essentials.core.Log.writelog;

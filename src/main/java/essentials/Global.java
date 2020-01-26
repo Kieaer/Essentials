@@ -1,7 +1,5 @@
 package essentials;
 
-import arc.Core;
-import arc.files.Fi;
 import arc.util.Log;
 import essentials.special.UTF8Control;
 import essentials.utils.Bundle;
@@ -33,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static essentials.Main.root;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.core.PlayerDB.conn;
@@ -43,7 +42,6 @@ import static mindustry.Vars.world;
 public class Global {
     public static Config config = new Config();
     public static String version;
-    public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     final static String tag = "[Essential] ";
     final static String servertag = "[EssentialServer] ";

@@ -3,7 +3,9 @@ package essentials.utils;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
-import static essentials.Global.*;
+import static essentials.Global.nlog;
+import static essentials.Global.printError;
+import static essentials.Main.root;
 
 public class Permission {
     public static JsonObject permission;
