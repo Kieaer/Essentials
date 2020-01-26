@@ -168,7 +168,10 @@ public class Main extends Plugin {
                     if (e.tile.x > data.start.x && e.tile.x < data.finish.x) {
                         if (e.tile.y > data.start.y && e.tile.y < data.finish.y) {
                             log("log", "player-jumped", e.player.name, data.ip);
-                            writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", e.player.uuid);
+                            PlayerData player = PlayerData(e.player.uuid);
+                            player.connected = false;
+                            player.connserver = "none";
+                            PlayerDataSave(e.player.uuid);
                             Call.onConnect(e.player.con, ip, port);
                         }
                     }
