@@ -577,17 +577,20 @@ public class Threads extends TimerTask{
             Vote.player = player;
             Vote.type = type;
             Vote.target = target;
+            command();
         }
 
         Vote(Player player, String type, Map map){
             Vote.player = player;
             Vote.type = type;
             Vote.map = map;
+            command();
         }
 
         Vote(Player player, String type){
             Vote.player = player;
             Vote.type = type;
+            command();
         }
 
         // 1초마다 실행됨

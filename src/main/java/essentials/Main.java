@@ -2071,8 +2071,7 @@ public class Main extends Plugin {
                         return;
                     }
                     // 강퇴 투표
-                    Vote vote = new Vote(player, arg[0], other);
-                    vote.command();
+                    new Vote(player, arg[0], other);
                 } else if(arg[0].equals("map")){
                     // 맵 투표
                     mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
@@ -2082,8 +2081,7 @@ public class Main extends Plugin {
                     if (world == null) {
                         player.sendMessage(bundle(player, "vote-map-not-found"));
                     } else {
-                        Vote vote = new Vote(player, arg[0], world);
-                        vote.command();
+                        new Vote(player, arg[0], world);
                     }
                 }
             } else {
@@ -2092,8 +2090,7 @@ public class Main extends Plugin {
                     return;
                 }
                 // 게임 오버, wave 넘어가기, 롤백
-                Vote vote = new Vote(player, arg[0]);
-                vote.command();
+                new Vote(player, arg[0]);
             }
         });
         handler.<Player>register("votekick", "<player_name>", "Player kick starts voting.", (arg, player) -> {
@@ -2108,8 +2105,7 @@ public class Main extends Plugin {
                 return;
             }
 
-            Vote vote = new Vote(player, arg[0], other);
-            vote.command();
+            new Vote(player, arg[0], other);
         });
         handler.<Player>register("test", "<message> <duration>", "test", (arg, player) -> {
             Call.onInfoToast(arg[0], Float.parseFloat(arg[1]));

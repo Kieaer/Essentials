@@ -26,14 +26,13 @@ import static mindustry.Vars.playerGroup;
 
 public class PlayerDB{
     public static Connection conn;
-    private static ArrayList<Thread> griefthread = new ArrayList<>();
     public static ArrayList<Player> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
 
     public void run(){
         openconnect();
         createNewDataFile();
-        Upgrade();
+        //Upgrade();
     }
 
     public void createNewDataFile(){
@@ -120,8 +119,8 @@ public class PlayerDB{
                             "`crosschat` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`colornick` TINYINT(4) NULL DEFAULT NULL,\n" +
                             "`connected` TINYINT(4) NULL DEFAULT NULL,\n" +
-                            "`connserver` TINYTEXT NULL DEFAULT 'none',\n" +
-                            "`permission` TINYTEXT NULL DEFAULT 'default',\n" +
+                            "`connserver` TEXT NULL DEFAULT 'none',\n" +
+                            "`permission` TEXT NULL DEFAULT 'default',\n" +
                             "`udid` TEXT NULL DEFAULT NULL,\n" +
                             "`accountid` TEXT NULL DEFAULT NULL,\n" +
                             "`accountpw` TEXT NULL DEFAULT NULL,\n" +
@@ -358,70 +357,6 @@ public class PlayerDB{
         } else {
             PlayerData(uuid).banned = false;
             return false;
-        }
-    }
-    public void Upgrade() {
-        String v1sql;
-        String v1update;
-        String v2update;
-        String v2sql;
-        String v3sql;
-        String v3update;
-        String v4sql;
-        String v4update;
-
-        if(config.isSqlite()){
-            v1sql = "ALTER TABLE players ADD COLUMN connserver TEXT AFTER connected;";
-            v1update = "UPDATE players SET connected = 0";
-            v2sql = "ALTER TABLE players ADD COLUMN permission TEXT AFTER connserver;";
-            v2update = "UPDATE players SET permission = default";
-            v3sql = "ALTER TABLE players ADD COLUMN banned TEXT AFTER bantime;";
-            v4sql = "ALTER TABLE players ADD COLUMN udid TEXT AFTER permission;";
-            v4update = "UPDATE players SET udid = none";
-        } else {
-            v1sql = "ALTER TABLE `players` ADD COLUMN `connserver` TINYTEXT DEFAULT NULL AFTER connected;";
-            v1update = "UPDATE players SET connected = 0";
-            v2sql = "ALTER TABLE `players` ADD COLUMN `permission` TINYTEXT `default` NULL AFTER connserver;";
-            v2update = "UPDATE players SET permission = 'default'";
-            v3sql = "ALTER TABLE `players` ADD COLUMN `banned` TINYINT DEFAULT NULL AFTER bantime;";
-            v4sql = "ALTER TABLE `players` ADD COLUMN `udid` TEXT DEFAULT NULL AFTER permission;";
-            v4update = "UPDATE players SET udid = 'none'";
-        }
-        v3update = "UPDATE players SET banned = 0";
-
-        try {
-            DatabaseMetaData metadata = conn.getMetaData();
-            Statement stmt = conn.createStatement();
-            ResultSet resultSet;
-            resultSet = metadata.getColumns(null, null, "players", "connserver");
-            if (!resultSet.next()) {
-                stmt.execute(v1sql);
-                stmt.execute(v1update);
-                log("player","db-upgrade");
-            }
-            resultSet = metadata.getColumns(null, null, "players", "permission");
-            if(!resultSet.next()){
-                stmt.execute(v2sql);
-                stmt.execute(v2update);
-                log("player","db-upgrade");
-            }
-            resultSet = metadata.getColumns(null, null, "players", "banned");
-            if(!resultSet.next()){
-                stmt.execute(v3sql);
-                stmt.execute(v3update);
-                log("player","db-upgrade");
-            }
-            resultSet = metadata.getColumns(null, null, "players", "udid");
-            if(!resultSet.next()){
-                stmt.execute(v4sql);
-                stmt.execute(v4update);
-                log("player","db-upgrade");
-            }
-            resultSet.close();
-            stmt.close();
-        } catch (SQLException e) {
-            if (e.getErrorCode() == 1060) return;
-            printError(e);
         }
     }
     public static void openconnect() {
