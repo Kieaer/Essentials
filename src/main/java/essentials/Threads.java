@@ -66,7 +66,7 @@ public class Threads extends TimerTask{
         // 데이터 저장
         JsonObject data = new JsonObject();
         data.add("servername", Core.settings.getString("servername"));
-        Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(data.toString());
+        root.child("data/data.json").writeString(data.toString());
 
         // 현재 서버 이름에다가 클라이언트 서버에 대한 인원 새기기
         // new changename().start();
@@ -390,11 +390,11 @@ public class Threads extends TimerTask{
                             pingServer("localhost", result -> {
                                 if (disablecount > 300) {
                                     try {
-                                        JsonObject settings = JsonValue.readJSON(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").reader()).asObject();
+                                        JsonObject settings = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
                                         for (int a = 0; a < settings.get("servers").asArray().size(); a++) {
                                             if (settings.get("servers").asArray().get(a).asObject().getInt("port",0) == customport) {
                                                 settings.get("servers").asArray().remove(a);
-                                                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(settings.toString());
+                                                root.child("data/data.json").writeString(settings.toString());
                                                 break;
                                             }
                                         }

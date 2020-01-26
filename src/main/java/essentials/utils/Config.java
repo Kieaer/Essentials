@@ -24,7 +24,7 @@ import static mindustry.Vars.net;
 
 public class Config {
     private JsonObject obj = new JsonObject();
-    private Fi path = Core.settings.getDataDirectory().child("mods/Essentials/data/data.json");
+    private Fi path = root.child("data/data.json");
     public static JsonObject PluginConfig = new JsonObject();
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
@@ -40,14 +40,14 @@ public class Config {
                 data.add("servername", Core.settings.getString("servername"));
                 data.add("unexception",false);
                 data.add("sqlite",true);
-                Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(data.toString());
+                root.child("data/data.json").writeString(data.toString());
             } else {
-                data = JsonValue.readJSON(Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").reader()).asObject();
+                data = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
             }
 
             PluginConfig = data;
 
-            if(Core.settings.getDataDirectory().child("mods/Essentials/config.hjson").exists()) obj = JsonValue.readHjson(Core.settings.getDataDirectory().child("mods/Essentials/config.hjson").reader()).asObject();
+            if(root.child("config.hjson").exists()) obj = JsonValue.readHjson(root.child("config.hjson").reader()).asObject();
             update();
 
             loadall();
@@ -192,7 +192,7 @@ public class Config {
                 "  # "+nbundle("config-event-port-description")+"\n"+
                 "  event-port: "+getEventport()+"\n"+
                 "}";
-        Core.settings.getDataDirectory().child("mods/Essentials/config.hjson").writeString(text);
+        root.child("config.hjson").writeString(text);
         log("config","config-loaded");
     }
 
@@ -347,7 +347,7 @@ public class Config {
 
     public String getDBurl(){
         if(isSqlite()){
-            return "jdbc:sqlite:"+Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3");
+            return "jdbc:sqlite:"+root.child("data/player.sqlite3");
         } else {
             return obj.getString("dburl","none");
         }
@@ -445,13 +445,13 @@ public class Config {
                     String name = entries.nextElement().getName();
                     if (name.startsWith(path + "/")) {
                         if (!name.equals(path + "/")) {
-                            if(!Core.settings.getDataDirectory().child("mods/Essentials/" + name.replaceFirst("configs/", "")).exists()) {
+                            if(!root.child("" + name.replaceFirst("configs/", "")).exists()) {
                                 if (!name.contains(".")) {
-                                    Core.settings.getDataDirectory().child("mods/Essentials/" + name.replaceFirst("configs/", "")).mkdirs();
+                                    root.child("" + name.replaceFirst("configs/", "")).mkdirs();
                                     continue;
                                 }
                                 InputStream reader = getClass().getResourceAsStream("/" + name);
-                                Core.settings.getDataDirectory().child("mods/Essentials/" + name.replaceFirst("configs/", "")).write(reader, false);
+                                root.child("" + name.replaceFirst("configs/", "")).write(reader, false);
                             }
                         }
                     }

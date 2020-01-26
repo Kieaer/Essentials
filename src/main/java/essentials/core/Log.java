@@ -1,6 +1,5 @@
 package essentials.core;
 
-import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import mindustry.Vars;
@@ -14,8 +13,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static essentials.Global.getTime;
-import static essentials.Global.nbundle;
+import static essentials.Global.*;
 import static essentials.utils.Config.singleService;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -63,10 +61,10 @@ public class Log{
     public static void writelog(String type, String text){
         Thread t = new Thread(() -> {
             String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now());
-            Path newlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/log/" + type + ".log").path());
-            Path oldlog = Paths.get(Core.settings.getDataDirectory().child("mods/Essentials/log/old/" + type + "/" + date + ".log").path());
-            Fi mainlog = Core.settings.getDataDirectory().child("mods/Essentials/log/" + type + ".log");
-            Fi logfolder = Core.settings.getDataDirectory().child("mods/Essentials/log");
+            Path newlog = Paths.get(root.child("log/" + type + ".log").path());
+            Path oldlog = Paths.get(root.child("log/old/" + type + "/" + date + ".log").path());
+            Fi mainlog = root.child("log/" + type + ".log");
+            Fi logfolder = root.child("log");
 
             if (mainlog != null && mainlog.length() > 1024 * 512) {
                 mainlog.writeString(nbundle("log-file-end", (Object) date), true);

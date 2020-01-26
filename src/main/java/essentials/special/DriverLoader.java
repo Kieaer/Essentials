@@ -17,6 +17,7 @@ import static essentials.Global.dbundle;
 public class DriverLoader implements Driver {
     private boolean tried = false;
     private Driver driver;
+    Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     public DriverLoader(Driver driver) {
         if (driver == null) throw new IllegalArgumentException("Driver must not be null.");
@@ -29,7 +30,7 @@ public class DriverLoader implements Driver {
 
     public void run() {
         try {
-            Fi[] f = Core.settings.getDataDirectory().child("mods/Essentials/Driver/").list();
+            Fi[] f = root.child("Driver/").list();
             for (int a=0;a<3;a++) {
                 URLClassLoader classLoader = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
                 String dr = "org.sqlite.JDBC";
@@ -65,9 +66,9 @@ public class DriverLoader implements Driver {
             for (URL value : urls) {
                 String url = value.toString();
                 String filename = url.substring(url.lastIndexOf('/') + 1);
-                Core.settings.getDataDirectory().child("mods/Essentials/Driver/" + filename).writeString("");
+                root.child("Driver/" + filename).writeString("");
                 URLDownload(value,
-                        Core.settings.getDataDirectory().child("mods/Essentials/Driver/" + filename).file(),
+                        root.child("Driver/" + filename).file(),
                         filename + " Downloading...",
                         null, null);
             }

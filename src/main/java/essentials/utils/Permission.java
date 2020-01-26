@@ -1,19 +1,17 @@
 package essentials.utils;
 
-import arc.Core;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
-import static essentials.Global.nlog;
-import static essentials.Global.printError;
+import static essentials.Global.*;
 
 public class Permission {
     public static JsonObject permission;
 
     public Permission(){
-        if(Core.settings.getDataDirectory().child("mods/Essentials/permission.hjson").exists()) {
+        if(root.child("permission.hjson").exists()) {
             try {
-                permission = JsonValue.readJSON(Core.settings.getDataDirectory().child("mods/Essentials/permission.hjson").reader()).asObject();
+                permission = JsonValue.readJSON(root.child("permission.hjson").reader()).asObject();
                 for (JsonObject.Member data : permission) {
                     String name = data.getName();
                     nlog("debug", "target: " + name);

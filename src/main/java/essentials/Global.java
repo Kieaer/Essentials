@@ -1,6 +1,7 @@
 package essentials;
 
 import arc.Core;
+import arc.files.Fi;
 import arc.util.Log;
 import essentials.special.UTF8Control;
 import essentials.utils.Bundle;
@@ -42,6 +43,7 @@ import static mindustry.Vars.world;
 public class Global {
     public static Config config = new Config();
     public static String version;
+    public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     final static String tag = "[Essential] ";
     final static String servertag = "[EssentialServer] ";
@@ -489,10 +491,10 @@ public class Global {
     // 각 언어별 motd
     public static String getmotd(Player player){
         PlayerData p = PlayerData(player.uuid);
-        if(Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+p.language+".txt").exists()){
-            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_"+p.language+".txt").readString();
+        if(root.child("motd/motd_"+p.language+".txt").exists()){
+            return root.child("motd/motd_"+p.language+".txt").readString();
         } else {
-            return Core.settings.getDataDirectory().child("mods/Essentials/motd/motd_en.txt").readString();
+            return root.child("motd/motd_en.txt").readString();
         }
     }
 

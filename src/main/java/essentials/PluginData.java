@@ -1,6 +1,5 @@
 package essentials;
 
-import arc.Core;
 import mindustry.world.Tile;
 
 import java.io.*;
@@ -9,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static essentials.Global.root;
 import static essentials.utils.Config.PluginConfig;
 
 public class PluginData {
@@ -137,12 +137,12 @@ public class PluginData {
         map.put("banned",banned);
 
         try {
-            FileOutputStream fos = new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").file());
+            FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(map);
             oos.close();
 
-            Core.settings.getDataDirectory().child("mods/Essentials/data/data.json").writeString(PluginConfig.toString());
+            root.child("data/data.json").writeString(PluginConfig.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -150,10 +150,10 @@ public class PluginData {
 
     @SuppressWarnings("unchecked") // 의도적인 작동임
     public static void loadall(){
-        if(!Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").exists()){
+        if(!root.child("data/PluginData.object").exists()){
             Map<String, ArrayList<Object>> map = new HashMap<>();
             try {
-                FileOutputStream fos = new FileOutputStream(Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").file());
+                FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
                 map.put("jumpzone",new ArrayList<>());
                 map.put("jumpcount",new ArrayList<>());
@@ -165,9 +165,9 @@ public class PluginData {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else if(Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").exists()){
+        } else if(root.child("data/PluginData.object").exists()){
             try {
-                FileInputStream fis = new FileInputStream(Core.settings.getDataDirectory().child("mods/Essentials/data/PluginData.object").file());
+                FileInputStream fis = new FileInputStream(root.child("data/PluginData.object").file());
                 ObjectInputStream ois = new ObjectInputStream(fis);
                 Map<String, Object> map = (Map<String, Object>) ois.readObject();
                 jumpzone = (ArrayList<jumpzone>) map.get("jumpzone");

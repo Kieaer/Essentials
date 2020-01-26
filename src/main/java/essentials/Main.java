@@ -553,7 +553,7 @@ public class Main extends Plugin {
                 PlayerData target = PlayerData(e.player.uuid);
                 String name = e.tile.block().name;
                 try {
-                    JsonObject obj = JsonValue.readHjson(Core.settings.getDataDirectory().child("mods/Essentials/Exp.hjson").reader()).asObject();
+                    JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                     int blockexp = obj.getInt(name,0);
 
                     target.lastplacename = e.tile.block().name;
@@ -589,7 +589,7 @@ public class Main extends Plugin {
                     PlayerData target = PlayerData(((Player) e.builder).uuid);
                     String name = e.tile.block().name;
                     try {
-                        JsonObject obj = JsonValue.readHjson(Core.settings.getDataDirectory().child("mods/Essentials/Exp.hjson").reader()).asObject();
+                        JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                         int blockexp = obj.getInt(name,0);
 
                         target.lastbreakname = e.tile.block().name;
@@ -618,7 +618,7 @@ public class Main extends Plugin {
                     if (config.isExplimit()) {
                         int level = target.level;
                         try {
-                            JsonObject obj = JsonValue.readHjson(Core.settings.getDataDirectory().child("mods/Essentials/Exp.hjson").reader()).asObject();
+                            JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                             if (obj.get(name) != null) {
                                 int blockreqlevel = obj.getInt(name,999);
                                 if (level < blockreqlevel) {

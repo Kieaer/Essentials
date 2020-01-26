@@ -1,6 +1,7 @@
 package essentials.special;
 
 import arc.Core;
+import arc.files.Fi;
 import essentials.core.PlayerDB.PlayerData;
 
 import java.sql.*;
@@ -13,6 +14,7 @@ import static essentials.utils.Config.PluginConfig;
 
 public class DBConvert {
     private ArrayList<PlayerData> data = new ArrayList<>();
+    Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     public DBConvert(){
         if(config != null) {
@@ -28,7 +30,7 @@ public class DBConvert {
             String end = dbundle("db-transfer-end");
 
             // SQLite 데이터 가져오기
-            Connection con = DriverManager.getConnection("jdbc:sqlite:" + Core.settings.getDataDirectory().child("mods/Essentials/data/player.sqlite3"));
+            Connection con = DriverManager.getConnection("jdbc:sqlite:" + root.child("data/player.sqlite3"));
             PreparedStatement prepared = con.prepareStatement("SELECT * FROM players");
             ResultSet rs = prepared.executeQuery();
             ResultSetMetaData rsmd = rs.getMetaData();
