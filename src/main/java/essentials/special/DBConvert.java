@@ -122,14 +122,14 @@ public class DBConvert {
                 prepared.setInt(28, data.bantimeset); // bantimeset
                 prepared.setString(29, data.bantime); // bantime
                 prepared.setBoolean(30, data.banned);
-                prepared.setBoolean(32, data.crosschat); // crosschat
-                prepared.setBoolean(33, data.colornick); // colornick
-                prepared.setBoolean(34, data.connected); // connected
-                prepared.setString(35, data.connserver); // connected server ip
-                prepared.setString(36, data.permission); // set permission
-                prepared.setLong(37, data.udid); // UDID
-                prepared.setString(38, data.accountid);
-                prepared.setString(39, data.accountpw);
+                prepared.setBoolean(31, data.crosschat); // crosschat
+                prepared.setBoolean(32, data.colornick); // colornick
+                prepared.setBoolean(33, data.connected); // connected
+                prepared.setString(34, data.connserver); // connected server ip
+                prepared.setString(35, data.permission); // set permission
+                prepared.setLong(36, data.udid); // UDID
+                prepared.setString(37, data.accountid);
+                prepared.setString(38, data.accountpw);
                 prepared.execute();
                 System.out.print("\r"+copy+" "+current+"/"+size);
             }

@@ -876,13 +876,13 @@ public class PlayerDB{
                     pstmt.setInt(28, player.bantimeset); // bantimeset
                     pstmt.setString(29, player.bantime); // bantime
                     pstmt.setBoolean(30, player.banned);
-                    pstmt.setBoolean(32, player.crosschat); // crosschat
-                    pstmt.setBoolean(33, player.colornick); // colornick
-                    pstmt.setBoolean(34, player.connected); // connected
-                    pstmt.setString(35, player.connserver); // connected server ip
-                    pstmt.setString(36, player.permission); // set permission
-                    pstmt.setLong(37, player.udid); // UDID
-                    pstmt.setString(38, player.uuid);
+                    pstmt.setBoolean(31, player.crosschat); // crosschat
+                    pstmt.setBoolean(32, player.colornick); // colornick
+                    pstmt.setBoolean(33, player.connected); // connected
+                    pstmt.setString(34, player.connserver); // connected server ip
+                    pstmt.setString(35, player.permission); // set permission
+                    pstmt.setLong(36, player.udid); // UDID
+                    pstmt.setString(37, player.uuid);
                     pstmt.execute();
                     pstmt.close();
                 } catch (Exception e) {
