@@ -653,7 +653,7 @@ public class Global {
             PlayerData p = PlayerData(player.uuid);
             int size = permission.get(p.permission).asObject().get("permission").asArray().size();
             for(int a=0;a<size;a++){
-                String permlevel = permission.get(p.permission).asObject().get("permission").asArray().get(a).toString();
+                String permlevel = permission.get(p.permission).asObject().get("permission").asArray().get(a).asString();
                 if(permlevel.equals(command) || permlevel.equals("ALL")){
                     return true;
                 }

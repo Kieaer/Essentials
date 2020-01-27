@@ -325,15 +325,40 @@ public class Main extends Plugin {
             }
             e.player.setTeam(team);
             Call.onPlayerDeath(e.player);
+            getInfo(e.player.uuid);
 
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name+" Player Join thread");
-                if (config.isLoginenable()) {
-                    if (isNocore(e.player)) {
-                        PlayerData player = PlayerData(e.player.uuid);
+                if (config.isLoginenable() && isNocore(e.player)) {
+                    PlayerData player = PlayerData(e.player.uuid);
+                    nlog("debug",e.player.name+" data get");
+                    if(config.getPasswordmethod().equals("mixed")) {
+                        nlog("debug",e.player.name+" mixed");
                         if (!player.error) {
+                            nlog("debug",e.player.name+" data found");
+                            if (player.uuid.equals(e.player.uuid) && player.udid != 0L) {
+                                nlog("debug",e.player.name+" discord account found");
+                                Thread conn = new Thread(() -> Call.onConnect(e.player.con, hostip, 7060));
+                                conn.start();
+                            } else {
+                                nlog("debug",e.player.name+" discord account not found");
+                                e.player.sendMessage(bundle(e.player, "autologin"));
+                                playerDB.load(e.player, null);
+                            }
+                        } else {
+                            nlog("debug",e.player.name+" data not found");
+                            if (playerDB.register(e.player)) {
+                                playerDB.load(e.player, null);
+                            } else {
+                                Call.onKick(e.player.con, nbundle("plugin-error-kick"));
+                            }
+                        }
+                    } else {
+                        nlog("debug",e.player.name+" not mixed");
+                        if (!player.error) {
+                            nlog("debug",e.player.name+" data found");
                             if (player.uuid.equals(e.player.uuid)) {
-                                if(config.getPasswordmethod().equals("custom")){
+                                if(config.getPasswordmethod().equals("mixed")){
                                     Thread conn = new Thread(() -> Call.onConnect(e.player.con,hostip,7060));
                                     conn.start();
                                 } else {
@@ -343,18 +368,26 @@ public class Main extends Plugin {
                             }
                         } else {
                             // 로그인 요구
-                            try {
-                                String message;
-                                String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
-
-                                if (config.getPasswordmethod().equals("discord")) {
-                                    message = nbundle(language, "login-require-discord")+"\n"+config.getDiscordLink();
+                            if(config.getPasswordmethod().equals("mixed")) {
+                                if (playerDB.register(e.player)) {
+                                    playerDB.load(e.player, null);
                                 } else {
-                                    message = nbundle(language, "login-require-password");
+                                    Call.onKick(e.player.con, nbundle("plugin-error-kick"));
                                 }
-                                Call.onInfoMessage(e.player.con, message);
-                            } catch (Exception ex){
-                                printError(ex);
+                            } else {
+                                try {
+                                    String message;
+                                    String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
+
+                                    if (config.getPasswordmethod().equals("discord")) {
+                                        message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
+                                    } else {
+                                        message = nbundle(language, "login-require-password");
+                                    }
+                                    Call.onInfoMessage(e.player.con, message);
+                                } catch (Exception ex) {
+                                    printError(ex);
+                                }
                             }
                         }
                     }
@@ -426,6 +459,7 @@ public class Main extends Plugin {
                 player.connserver = "none";
                 if(state.rules.pvp && !state.gameOver) player.pvpbreakout++;
                 PlayerDataSave(player.uuid);
+            } else {
                 PlayerDataRemove(player.uuid);
             }
         });
@@ -1044,7 +1078,7 @@ public class Main extends Plugin {
             }
 
             // Discord 봇 시작
-            if(config.getPasswordmethod().equals("discord")){
+            if(config.getPasswordmethod().equals("discord") || config.getPasswordmethod().equals("mixed")){
                 Discord ds = new Discord();
                 ds.main();
             }
@@ -1636,7 +1670,7 @@ public class Main extends Plugin {
             if (config.isLoginenable()) {
                 if(!isLogin(player)) {
                     if (PlayerDB.login(player, arg[0], arg[1])) {
-                        if(config.getPasswordmethod().equals("custom")){
+                        if(config.getPasswordmethod().equals("mixed")){
                             Thread t = new Thread(() -> {
                                 Call.onConnect(player.con, hostip,7060);
                             });
@@ -1807,7 +1841,7 @@ public class Main extends Plugin {
             case "discord":
                 handler.<Player>register("register", "Register account", (arg, player) -> player.sendMessage("Join discord and use !signup command!\n" + config.getDiscordLink()));
                 break;
-            /*case "custom":
+            /*case "mixed":
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
                         if (playerDB.register(player, arg[0], arg[1], true)) {

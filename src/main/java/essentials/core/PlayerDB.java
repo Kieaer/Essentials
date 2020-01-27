@@ -182,14 +182,14 @@ public class PlayerDB{
                 pstmt.setInt(28, 0); // bantimeset
                 pstmt.setString(29, "none"); // bantime
                 pstmt.setBoolean(30, false);
-                pstmt.setBoolean(32, false); // crosschat
-                pstmt.setBoolean(33, false); // colornick
-                pstmt.setBoolean(34, connected); // connected
-                pstmt.setString(35, hostip); // connected server ip
-                pstmt.setString(36, "default"); // set permission
-                pstmt.setLong(37, udid); // UDID
-                pstmt.setString(38, accountid);
-                pstmt.setString(39, accountpw);
+                pstmt.setBoolean(31, false); // crosschat
+                pstmt.setBoolean(32, false); // colornick
+                pstmt.setBoolean(33, connected); // connected
+                pstmt.setString(34, hostip); // connected server ip
+                pstmt.setString(35, "default"); // set permission
+                pstmt.setLong(36, udid); // UDID
+                pstmt.setString(37, accountid);
+                pstmt.setString(38, accountpw);
                 pstmt.execute();
                 pstmt.close();
                 if(player != null) player.sendMessage(bundle("player-id", player.name));
@@ -557,14 +557,15 @@ public class PlayerDB{
                     if (rs.next()) {
                         uuid = rs.getString("uuid");
                     }
+                    nlog("debug", player.name + " DATA UUID: "+uuid);
                     rs.close();
                     stmt.close();
                 } catch (SQLException e) {
                     printError(e);
                 }
                 PlayerDataRemove(target.uuid);
-                getInfo(uuid);
-                player = PlayerData(uuid);
+                getInfo(target.uuid);
+                player = PlayerData(target.uuid);
 
                 nlog("debug", player.name + " Player data apply");
 
@@ -575,6 +576,14 @@ public class PlayerDB{
                         stmt.setString(1, player.uuid);
                         stmt.setString(2, id);
                         stmt.execute();
+
+                        String sql = "SELECT uuid FROM players WHERE accountid = ?";
+                        stmt = conn.prepareStatement(sql);
+                        stmt.setString(1, id);
+                        ResultSet rs = stmt.executeQuery();
+                        if (rs.next()) {
+                            uuid = rs.getString("uuid");
+                        }
 
                         PlayerDataRemove(target.uuid);
                         getInfo(uuid);
