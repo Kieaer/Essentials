@@ -42,6 +42,7 @@ import static mindustry.Vars.world;
 public class Global {
     public static Config config = new Config();
     public static String version;
+    public static String hostip = getip();
 
     final static String tag = "[Essential] ";
     final static String servertag = "[EssentialServer] ";

@@ -185,7 +185,7 @@ public class PlayerDB{
                 pstmt.setBoolean(32, false); // crosschat
                 pstmt.setBoolean(33, false); // colornick
                 pstmt.setBoolean(34, connected); // connected
-                pstmt.setString(35, getip()); // connected server ip
+                pstmt.setString(35, hostip); // connected server ip
                 pstmt.setString(36, "default"); // set permission
                 pstmt.setLong(37, udid); // UDID
                 pstmt.setString(38, accountid);
@@ -460,7 +460,7 @@ public class PlayerDB{
         return true;
     }
 	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String id, String pw) {
+	public boolean register(Player player, String id, String pw, boolean rewrite) {
         // 비밀번호 보안 확인
         if(checkpw(player, id, pw)) {
             try {
@@ -484,6 +484,7 @@ public class PlayerDB{
                     HashMap<String, String> list = geolocation(player);
 
                     if (!isduplicate(player)) {
+                        if(rewrite) writeData("DELETE FROM players WHERE uuid = ?",player.uuid);
                         createNewDatabase(nickname, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, 0L, "", hashed, player);
                     } else {
                         player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
@@ -606,12 +607,11 @@ public class PlayerDB{
                 }
             }
 
-            String currentip = getip();
             nlog("debug", player.name + " Player ip collected");
 
             player.connected = true;
             player.lastdate = getTime();
-            player.connserver = currentip;
+            player.connserver = hostip;
 
             if (id != null) {
                 player.uuid = target.uuid;

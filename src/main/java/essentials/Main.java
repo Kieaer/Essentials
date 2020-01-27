@@ -74,7 +74,7 @@ public class Main extends Plugin {
 
     private Array<mindustry.maps.Map> maplist = Vars.maps.all();
     public Client client;
-    public PlayerDB playerDB = new PlayerDB();
+    public static PlayerDB playerDB = new PlayerDB();
 
     public Main() {
         // 예전 데이터 변환
@@ -244,6 +244,8 @@ public class Main extends Plugin {
             }
 
             if (e.player.name.length() > 32) Call.onKick(e.player.con,"Nickname too long!");
+            if (e.player.name.matches(".*\\[.*].*")) Call.onKick(e.player.con,"Color tags can't be used for nicknames on this server.");
+            if (e.player.name.contains("　")) Call.onKick(e.player.con,"Don't use blank speical charactor nickname!");
 
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
@@ -328,8 +330,13 @@ public class Main extends Plugin {
                         PlayerData player = PlayerData(e.player.uuid);
                         if (!player.error) {
                             if (player.uuid.equals(e.player.uuid)) {
-                                e.player.sendMessage(bundle(e.player, "autologin"));
-                                playerDB.load(e.player, null);
+                                if(config.getPasswordmethod().equals("custom")){
+                                    Thread conn = new Thread(() -> Call.onConnect(e.player.con,hostip,7060));
+                                    conn.start();
+                                } else {
+                                    e.player.sendMessage(bundle(e.player, "autologin"));
+                                    playerDB.load(e.player, null);
+                                }
                             }
                         } else {
                             // 로그인 요구
@@ -1435,7 +1442,6 @@ public class Main extends Plugin {
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
             if(!checkperm(player,"event")) return;
             Thread t = new Thread(() -> {
-                String currentip = getip();
                 switch (arg[0]) {
                     case "host":
                         Thread work = new Thread(() -> {
@@ -1482,9 +1488,9 @@ public class Main extends Plugin {
                                 if(target.country.equals("Local IP")){
                                     Call.onConnect(player.con,"127.0.0.1",customport);
                                 } else {
-                                    Call.onConnect(player.con, currentip, customport);
+                                    Call.onConnect(player.con, hostip, customport);
                                 }
-                                nlog("log",currentip+":"+customport);
+                                nlog("log",hostip+":"+customport);
                             } else {
                                 player.sendMessage(bundle(player, "event-level"));
                             }
@@ -1498,8 +1504,8 @@ public class Main extends Plugin {
                                 val.connected = false;
                                 val.connserver = "none";
                                 PlayerDataSave(player.uuid);
-                                Call.onConnect(player.con, currentip, data.port);
-                                nlog("log",currentip+":"+data.port);
+                                Call.onConnect(player.con, hostip, data.port);
+                                nlog("log",hostip+":"+data.port);
                                 break;
                             }
                         }
@@ -1627,12 +1633,18 @@ public class Main extends Plugin {
             if (config.isLoginenable()) {
                 if(!isLogin(player)) {
                     if (PlayerDB.login(player, arg[0], arg[1])) {
-                        PlayerDB playerdb = new PlayerDB();
-                        playerdb.load(player, arg[0]);
-                        if (!isLogin(player)) {
-                            player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
+                        if(config.getPasswordmethod().equals("custom")){
+                            Thread t = new Thread(() -> {
+                                Call.onConnect(player.con, hostip,7060);
+                            });
+                            t.start();
                         } else {
-                            player.sendMessage(bundle(player, "login-success"));
+                            playerDB.load(player, arg[0]);
+                            if (!isLogin(player)) {
+                                player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
+                            } else {
+                                player.sendMessage(bundle(player, "login-success"));
+                            }
                         }
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
@@ -1762,8 +1774,7 @@ public class Main extends Plugin {
             case "password":
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
-                        PlayerDB playerdb = new PlayerDB();
-                        if (playerdb.register(player, arg[0], arg[1])) {
+                        if (playerDB.register(player, arg[0], arg[1], false)) {
                             if (Vars.state.rules.pvp) {
                                 int index = player.getTeam().id + 1;
                                 while (index != player.getTeam().id) {
@@ -1792,6 +1803,22 @@ public class Main extends Plugin {
                 break;
             case "discord":
                 handler.<Player>register("register", "Register account", (arg, player) -> player.sendMessage("Join discord and use !signup command!\n" + config.getDiscordLink()));
+                break;
+            /*case "custom":
+                handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
+                    if (config.isLoginenable()) {
+                        if (playerDB.register(player, arg[0], arg[1], true)) {
+                            PlayerDataRemove(player.uuid);
+                            Thread t = new Thread(() -> Call.onConnect(player.con,getip(),7060));
+                            t.start();
+                        } else {
+                            player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
+                        }
+                    } else {
+                        player.sendMessage(bundle(player, "login-not-use"));
+                    }
+                });
+                break;*/
         }
         handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
             if (!checkperm(player, "spawn")) return;
