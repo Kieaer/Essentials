@@ -1,5 +1,6 @@
 package essentials.core;
 
+import essentials.PluginData;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
@@ -11,14 +12,15 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
-import static essentials.utils.Config.PluginConfig;
 import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static mindustry.Vars.netServer;
@@ -325,22 +327,14 @@ public class PlayerDB{
 	public static void addtimeban(String name, String uuid, int bantimeset) {
         // Write ban data
         try {
-            SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd a hh:mm.ss", Locale.ENGLISH);
-            Date d1 = format.parse(getTime());
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(d1);
-            cal.add(Calendar.HOUR, bantimeset);
-            String newTime = format.format(cal.getTime());
-
-            JsonObject data1 = new JsonObject();
-            data1.add("uuid", uuid);
-            data1.add("date", newTime);
-            data1.add("name", name);
-
-            PluginConfig.get("banned").asArray().add(data1);
+            SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd hh:mm.ss", Locale.ENGLISH);
+            PluginData.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid));
 
             // Write player data
-            writeData("UPDATE players SET bantime = ?, bantimeset = ? WHERE uuid = ?", getTime(), bantimeset, uuid);
+            PlayerData player = PlayerData(uuid);
+            player.bantime = getTime();
+            player.bantimeset = bantimeset;
+            PlayerDataSave(uuid);
         } catch (Exception e) {
             printError(e);
         }
