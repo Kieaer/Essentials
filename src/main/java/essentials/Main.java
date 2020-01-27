@@ -243,9 +243,12 @@ public class Main extends Plugin {
                 }
             }
 
-            if (e.player.name.length() > 32) Call.onKick(e.player.con,"Nickname too long!");
-            if (e.player.name.matches(".*\\[.*].*")) Call.onKick(e.player.con,"Color tags can't be used for nicknames on this server.");
-            if (e.player.name.contains("　")) Call.onKick(e.player.con,"Don't use blank speical charactor nickname!");
+            if (config.isStrictname()) {
+                if (e.player.name.length() > 32) Call.onKick(e.player.con, "Nickname too long!");
+                if (e.player.name.matches(".*\\[.*].*")) Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
+                if (e.player.name.contains("　")) Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
+                if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");
+            }
 
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
@@ -2131,7 +2134,7 @@ public class Main extends Plugin {
                 new Vote(player, arg[0]);
             }
         });
-        handler.<Player>register("votekick", "<player_name>", "Player kick starts voting.", (arg, player) -> {
+        handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
             if(!checkperm(player,"votekick")) return;
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
             if (other == null) {

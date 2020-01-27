@@ -31,7 +31,7 @@ public class Discord extends ListenerAdapter {
             jda.addEventListener(new Discord());
             guild = jda.getGuildById(config.getDiscordGuild());
             if(guild != null){
-                channel = guild.getTextChannelById(config.getDiscordRoom());
+                channel = guild.getTextChannelsByName(config.getDiscordRoom(),true).get(0);
                 log("log","discord-enabled");
             } else {
                 log("err","discord-error");
@@ -45,9 +45,9 @@ public class Discord extends ListenerAdapter {
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent e) {
         event = e;
-        if(e.getTextChannel().getIdLong() == config.getDiscordRoom()) {
-            if (e.getMessage().getContentRaw().equals("!help")) {
-                e.getMessage().delete().queue();
+        if(!e.getAuthor().isBot()) e.getMessage().delete().queue();
+        if(e.getChannel().getName().equals(config.getDiscordRoom())) {
+            if (e.getMessage().getContentRaw().equals(config.getDiscordPrefix()+"help")) {
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +
                         "**!signup <new account id> <new password> <password repeat>** Account register to kr server. Nickname and password can't use blank.\n" +
@@ -60,8 +60,7 @@ public class Discord extends ListenerAdapter {
                 send(message);
             }
 
-            if (e.getMessage().getContentRaw().matches("!signup.*")) {
-                e.getMessage().delete().queue();
+            if (e.getMessage().getContentRaw().matches(config.getDiscordPrefix()+"signup.*")) {
                 String message = e.getMessage().getContentRaw().replace("!signup ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){
@@ -98,8 +97,7 @@ public class Discord extends ListenerAdapter {
                 }
             }
 
-            if (e.getMessage().getContentRaw().matches("!changepw.*")) {
-                e.getMessage().delete().queue();
+            if (e.getMessage().getContentRaw().matches(config.getDiscordPrefix()+"changepw.*")) {
                 String message = e.getMessage().getContentRaw().replace("!changepw ", "");
                 String[] data = message.split(" ");
                 if(data.length != 3){

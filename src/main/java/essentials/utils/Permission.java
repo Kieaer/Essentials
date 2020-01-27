@@ -2,7 +2,6 @@ package essentials.utils;
 
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
-import org.hjson.Stringify;
 
 import static essentials.Global.nlog;
 import static essentials.Global.printError;
@@ -15,7 +14,6 @@ public class Permission {
         if(root.child("permission.hjson").exists()) {
             try {
                 permission = JsonValue.readHjson(root.child("permission.hjson").reader()).asObject();
-                System.out.println(permission.toString(Stringify.HJSON));
                 for (JsonObject.Member data : permission) {
                     String name = data.getName();
                     nlog("debug", "target: " + name);

@@ -49,7 +49,8 @@ public class Config {
 
             PluginConfig = data;
 
-            if(root.child("config.hjson").exists()) obj = JsonValue.readHjson(root.child("config.hjson").reader()).asObject();
+            if(root.child("config.hjson").exists()) obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
+            System.out.println(config.getDiscordRoom());
             update();
 
             loadall();
@@ -329,8 +330,8 @@ public class Config {
         return obj.getLong("discord-guild",0L);
     }
 
-    public Long getDiscordRoom(){
-        return obj.getLong("discord-room",0L);
+    public String getDiscordRoom(){
+        return obj.getString("discord-room","none");
     }
 
     public String getDiscordLink(){
