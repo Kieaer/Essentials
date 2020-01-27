@@ -620,7 +620,7 @@ public class Global {
 
     public static String geolocation(String ip){
         try {
-            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).execute().body();
+            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(5*1000).execute().body();
             JsonObject result = JsonValue.readJSON(json).asObject();
             return result.getString("languages","en");
         } catch (Exception e){

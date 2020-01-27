@@ -118,7 +118,20 @@ public class Server implements Runnable {
                         while (in.ready()) {
                             payload.append((char) in.read());
                         }
-                        httpserver(value, payload.toString(), remoteip);
+                        if(value.matches("POST /rank HTTP/.*") && payload.toString().split("\\|\\|\\|").length != 2){
+                            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+                            bw.write("Login failed!\n");
+                            bw.flush();
+                            bw.close();
+                            os.close();
+                            in.close();
+                            socket.close();
+                            list.remove(this);
+                            log("server","client-disconnected-http", remoteip);
+                            return;
+                        } else {
+                            httpserver(value, payload.toString());
+                        }
                         return;
                     }
 
@@ -394,7 +407,6 @@ public class Server implements Runnable {
         private String rankingdata() throws IOException {
             ArrayList<String> lists = new ArrayList<>(Arrays.asList("placecount","breakcount","killcount","joincount","kickcount","exp","playtime","pvpwincount","reactorcount","attackclear"));
             JsonObject results = new JsonObject();
-            //ArrayList<String> results = new ArrayList<>();
 
             String language = new Locale(geolocation(remoteip)).getLanguage();
 
@@ -481,7 +493,7 @@ public class Server implements Runnable {
             return doc.toString();
         }
 
-        private void httpserver(String receive, String payload, String ip){
+        private void httpserver(String receive, String payload){
             try {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
@@ -594,7 +606,7 @@ public class Server implements Runnable {
                                 }
                                 bw.write(datatext);
                             } else {
-                                bw.write("Login failed!\nLogin failed!");
+                                bw.write("Login failed!");
                             }
                         } else {
                             bw.write("Login failed!");
