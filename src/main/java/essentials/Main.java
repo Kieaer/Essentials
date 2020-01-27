@@ -312,103 +312,73 @@ public class Main extends Plugin {
         Events.on(PlayerJoin.class, e -> {
             e.player.isAdmin = false;
 
-            Team team = Team.crux;
-            int index = e.player.getTeam().id+1;
-            while (index != e.player.getTeam().id){
-                if (index >= Team.all().length){
-                    index = 0;
-                }
-                if (state.teams.get(Team.all()[index]).cores.isEmpty()){
-                    team = Team.all()[index];
-                }
-                index++;
-            }
-            e.player.setTeam(team);
-            Call.onPlayerDeath(e.player);
+            e.player.kill();
+            e.player.setTeam(Team.derelict);
             getInfo(e.player.uuid);
 
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name+" Player Join thread");
+                PlayerData player = PlayerData(e.player.uuid);
+
                 if (config.isLoginenable() && isNocore(e.player)) {
-                    PlayerData player = PlayerData(e.player.uuid);
-                    nlog("debug",e.player.name+" data get");
                     if(config.getPasswordmethod().equals("mixed")) {
-                        nlog("debug",e.player.name+" mixed");
                         if (!player.error) {
-                            nlog("debug",e.player.name+" data found");
-                            if (player.uuid.equals(e.player.uuid) && player.udid != 0L) {
-                                nlog("debug",e.player.name+" discord account found");
-                                Thread conn = new Thread(() -> Call.onConnect(e.player.con, hostip, 7060));
-                                conn.start();
+                            if (player.udid != 0L) {
+                                new Thread(() -> Call.onConnect(e.player.con, hostip, 7060)).start();
                             } else {
-                                nlog("debug",e.player.name+" discord account not found");
                                 e.player.sendMessage(bundle(e.player, "autologin"));
-                                playerDB.load(e.player, null);
+                                playerDB.load(e.player);
                             }
                         } else {
-                            nlog("debug",e.player.name+" data not found");
                             if (playerDB.register(e.player)) {
-                                playerDB.load(e.player, null);
+                                playerDB.load(e.player);
                             } else {
                                 Call.onKick(e.player.con, nbundle("plugin-error-kick"));
                             }
                         }
-                    } else {
-                        nlog("debug",e.player.name+" not mixed");
+                    } else if(config.getPasswordmethod().equals("discord")){
                         if (!player.error) {
-                            nlog("debug",e.player.name+" data found");
-                            if (player.uuid.equals(e.player.uuid)) {
-                                if(config.getPasswordmethod().equals("mixed")){
-                                    Thread conn = new Thread(() -> Call.onConnect(e.player.con,hostip,7060));
-                                    conn.start();
-                                } else {
-                                    e.player.sendMessage(bundle(e.player, "autologin"));
-                                    playerDB.load(e.player, null);
-                                }
-                            }
+                            e.player.sendMessage(bundle(e.player, "autologin"));
+                            playerDB.load(e.player);
                         } else {
-                            // 로그인 요구
-                            if(config.getPasswordmethod().equals("mixed")) {
-                                if (playerDB.register(e.player)) {
-                                    playerDB.load(e.player, null);
-                                } else {
-                                    Call.onKick(e.player.con, nbundle("plugin-error-kick"));
-                                }
+                            String message;
+                            String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
+                            if (config.getPasswordmethod().equals("discord")) {
+                                message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
                             } else {
-                                try {
-                                    String message;
-                                    String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
-
-                                    if (config.getPasswordmethod().equals("discord")) {
-                                        message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
-                                    } else {
-                                        message = nbundle(language, "login-require-password");
-                                    }
-                                    Call.onInfoMessage(e.player.con, message);
-                                } catch (Exception ex) {
-                                    printError(ex);
-                                }
+                                message = nbundle(language, "login-require-password");
                             }
+                            Call.onInfoMessage(e.player.con, message);
+                        }
+                    } else {
+                        if (!player.error) {
+                            e.player.sendMessage(bundle(e.player, "autologin"));
+                            playerDB.load(e.player);
+                        } else {
+                            String message;
+                            String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
+                            if (config.getPasswordmethod().equals("discord")) {
+                                message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
+                            } else {
+                                message = nbundle(language, "login-require-password");
+                            }
+                            Call.onInfoMessage(e.player.con, message);
                         }
                     }
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (isNocore(e.player)) {
-                        PlayerData player = PlayerData(e.player.uuid);
-                        if (!player.error) {
-                            if (player.uuid.equals(e.player.uuid)) {
-                                e.player.sendMessage(bundle(e.player, "autologin"));
-                                playerDB.load(e.player, null);
-                            }
+                    if (!player.error) {
+                        e.player.sendMessage(bundle(e.player, "autologin"));
+                        playerDB.load(e.player);
+                    } else {
+                        if (playerDB.register(e.player)) {
+                            playerDB.load(e.player);
                         } else {
-                            if (playerDB.register(e.player)) {
-                                playerDB.load(e.player, null);
-                            } else {
-                                Call.onKick(e.player.con, nbundle("plugin-error-kick"));
-                            }
+                            Call.onKick(e.player.con, nbundle("plugin-error-kick"));
                         }
                     }
                 }
+
                 // VPN을 사용중인지 확인
                 if (config.isAntivpn()) {
                     try {
@@ -466,6 +436,8 @@ public class Main extends Plugin {
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent.class, e -> {
+            System.out.println(e.message);
+
             if (isLogin(e.player)) {
                 PlayerData target = PlayerData(e.player.uuid);
                 String check = String.valueOf(e.message.charAt(0));
@@ -493,7 +465,7 @@ public class Main extends Plugin {
                         if(permission.get(target.permission).asObject().get("prefix") != null) {
                             Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
-                            Call.sendMessage("[orange]["+colorizeName(e.player.id, e.player.name) + "[orange]][white] : " + e.message);
+                            Call.sendMessage("[orange]"+colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
                         }
                     }
 
@@ -1676,7 +1648,7 @@ public class Main extends Plugin {
                             });
                             t.start();
                         } else {
-                            playerDB.load(player, arg[0]);
+                            playerDB.load(player);
                             if (!isLogin(player)) {
                                 player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
                             } else {
@@ -1811,7 +1783,7 @@ public class Main extends Plugin {
             case "password":
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
-                        if (playerDB.register(player, arg[0], arg[1], false)) {
+                        if (playerDB.register(player, arg[0], arg[1])) {
                             if (Vars.state.rules.pvp) {
                                 int index = player.getTeam().id + 1;
                                 while (index != player.getTeam().id) {
@@ -1827,7 +1799,6 @@ public class Main extends Plugin {
                             } else {
                                 player.setTeam(Team.sharded);
                             }
-
                             Call.onPlayerDeath(player);
                             player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                         } else {

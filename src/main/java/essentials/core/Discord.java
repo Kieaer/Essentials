@@ -45,8 +45,8 @@ public class Discord extends ListenerAdapter {
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent e) {
         event = e;
-        if(!e.getAuthor().isBot()) e.getMessage().delete().queue();
         if(e.getChannel().getName().equals(config.getDiscordRoom())) {
+            if(!e.getAuthor().isBot()) e.getMessage().delete().queue();
             if (e.getMessage().getContentRaw().equals(config.getDiscordPrefix()+"help")) {
                 String message = ">>> Command list\n" +
                         "**!help** Show discord bot commands\n" +

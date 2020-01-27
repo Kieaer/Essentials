@@ -50,7 +50,6 @@ public class Config {
             PluginConfig = data;
 
             if(root.child("config.hjson").exists()) obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
-            System.out.println(config.getDiscordRoom());
             update();
 
             loadall();

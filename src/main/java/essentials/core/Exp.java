@@ -53,11 +53,5 @@ public class Exp {
         } while (maxXp < xp);
         return level;
     }
-
-    public static void joinexp(String uuid){
-        PlayerData target = PlayerData(uuid);
-        target.exp = target.exp+target.joincount;
-        PlayerDataSet(uuid,target);
-    }
 }
 

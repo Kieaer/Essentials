@@ -34,7 +34,6 @@ public class PlayerDB{
     public void run(){
         openconnect();
         createNewDataFile();
-        //Upgrade();
     }
 
     public void createNewDataFile(){
@@ -141,6 +140,7 @@ public class PlayerDB{
             printError(ex);
         }
     }
+
 	public static boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, boolean connected, Long udid, String accountid, String accountpw, Player player) {
         boolean result = false;
         try {
@@ -206,14 +206,18 @@ public class PlayerDB{
         }
         return result;
 	}
+
 	// 메모리 사용 (빠름)
-	public static void getInfo(String uuid){
+	public static PlayerData getInfo(String uuid){
+        PlayerData data = new PlayerData(true,false);
         try {
-            String sql = "SELECT * FROM players WHERE uuid='"+uuid+"'";
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
+            String sql = "SELECT * FROM players WHERE uuid=?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1,uuid);
+            ResultSet rs = stmt.executeQuery();
             if(rs.next()){
-                Players.add(new PlayerData(
+                nlog("debug", uuid+" Data found!");
+                data = new PlayerData(
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("uuid"),
@@ -253,9 +257,9 @@ public class PlayerDB{
                         rs.getLong("udid"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
-                ));
+                );
             } else {
-                Players.add(new PlayerData(true,false));
+                nlog("debug", uuid+" Data not found!");
             }
             rs.close();
             stmt.close();
@@ -265,7 +269,9 @@ public class PlayerDB{
             }
             printError(e);
         }
+        return data;
     }
+
     // DB 사용 (느림)
     public static JsonObject getRaw(String uuid){
         JsonObject data = new JsonObject();
@@ -324,21 +330,20 @@ public class PlayerDB{
         }
         return data;
     }
+
 	public static void addtimeban(String name, String uuid, int bantimeset) {
         // Write ban data
         try {
-            SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd hh:mm.ss", Locale.ENGLISH);
             PluginData.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid));
-
-            // Write player data
             PlayerData player = PlayerData(uuid);
             player.bantime = getTime();
             player.bantimeset = bantimeset;
-            PlayerDataSave(uuid);
+            PlayerDataSet(uuid,player);
         } catch (Exception e) {
             printError(e);
         }
     }
+
     public static boolean accountban(boolean ban, String uuid){
         if(ban){
             PlayerData(uuid).banned = true;
@@ -348,6 +353,7 @@ public class PlayerDB{
             return false;
         }
     }
+
     public static void openconnect() {
         try {
             if (config.isSqlite()) {
@@ -367,6 +373,7 @@ public class PlayerDB{
             nlog("warn","SQL ERROR!");
         }
     }
+
     public static boolean closeconnect(){
         try {
             conn.close();
@@ -376,6 +383,7 @@ public class PlayerDB{
             return false;
         }
     }
+
 	public static void writeData(String sql, Object... data){
         Thread t = new Thread(() -> {
             try {
@@ -410,6 +418,7 @@ public class PlayerDB{
         });
         executorService.submit(t);
 	}
+
 	public static boolean checkpw(Player player, String id, String pw){
         // 영문(소문자), 숫자, 7~20자리
         String pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$";
@@ -459,56 +468,71 @@ public class PlayerDB{
         }
         return true;
     }
+
 	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String id, String pw, boolean rewrite) {
+	public boolean register(Player player, String id, String pw) {
         // 비밀번호 보안 확인
-        if(checkpw(player, id, pw)) {
-            try {
-                Class.forName("org.mindrot.jbcrypt.BCrypt");
-                String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
-
-                if (isduplicateid(id)) {
-                    player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
-                            "[green][Essentials] [orange]이 계정명은 이미 사용중입니다!");
-                    log("player", "password-already-accountid", id);
-                    return false;
-                } else {
-                    // 한국어, 중국어, 일어, 러시아어, 영어, 숫자만 허용
-                    String nickname = player.name;
-                    //String nickname = player.name.replaceAll("[^\uac00-\ud7a3\u2E80-\u2eff\u3400-\u4dbf\u4e00-\u9fbf\uf9000\ufaff\u20000-\u2a6df\u3040-\u309f\u30a0-\u30ff\u31f0-\u31ff\u0400-\u052f0-9a-zA-Z\\s]", "");
-
-                    nlog("debug", player.name + " Account not found");
-                    LocalDateTime now = LocalDateTime.now();
-                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss", Locale.ENGLISH);
-                    String nowString = now.format(dateTimeFormatter);
-                    HashMap<String, String> list = geolocation(player);
-
-                    if (!isduplicate(player)) {
-                        if(rewrite) writeData("DELETE FROM players WHERE uuid = ?",player.uuid);
-                        createNewDatabase(nickname, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, nowString, nowString, true, 0L, "", hashed, player);
-                    } else {
-                        player.sendMessage("[green][Essentials] [orange]You already have an account!\n" +
-                                "[green][Essentials] [orange]당신은 이미 계정을 가지고 있습니다!");
-                        log("player", "password-already-account", player.name);
-                        return false;
-                    }
+        if(checkpw(player,id,pw)) {
+            String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
+            HashMap<String, String> list = geolocation(player);
+            if (!isduplicate(player)) {
+                if (createNewDatabase(
+                        player.name, // 이름
+                        player.uuid, // UUID
+                        list.get("country"), // 국가명
+                        list.get("country_code"), // 국가 코드
+                        list.get("languages"), // 언어
+                        player.isAdmin, // 관리자 여부
+                        netServer.admins.getInfo(player.uuid).timesJoined, // 총 서버 입장횟수
+                        netServer.admins.getInfo(player.uuid).timesKicked, // 총 서버 강퇴횟수
+                        getTime(), // 최초 접속일
+                        getTime(), // 마지막 접속일
+                        true, // 서버 연결여부
+                        0L, // Discord UDID
+                        id, // 계정 ID
+                        hashed, // 계정 비밀번호
+                        player) // 플레이어
+                ) {
+                    nlog("debug", player.name + " Player DB Created!");
                     player.sendMessage(bundle(player, "player-name-changed", player.name));
+                    return true;
+                } else {
+                    nlog("debug", player.name + " Player DB create failed!");
+                    return false;
                 }
-            } catch (Exception e) {
-                printError(e);
+            } else {
+                player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
+                        "[green][Essentials] [orange]이 계정명은 이미 사용중입니다!");
+                log("player", "password-already-accountid", id);
+                return false;
             }
-            return true;
-        } else {
-            return false;
         }
+        return false;
     }
     // 비 로그인 기능 사용시 계정등록
     public boolean register(Player player) {
-        if (!isduplicate(player)) {
+        if (!isduplicate(player)) { // 계정 중복 확인
             HashMap<String, String> list = geolocation(player);
-            createNewDatabase(player.name, player.uuid, list.get("country"), list.get("country_code"), list.get("languages"), player.isAdmin, netServer.admins.getInfo(player.uuid).timesJoined, netServer.admins.getInfo(player.uuid).timesKicked, getTime(), getTime(), true, 0L, "", "blank", player);
+            return createNewDatabase(
+                    player.name, // 이름
+                    player.uuid, // UUID
+                    list.get("country"), // 국가명
+                    list.get("country_code"), // 국가 코드
+                    list.get("languages"), // 언어
+                    player.isAdmin, // 관리자 여부
+                    netServer.admins.getInfo(player.uuid).timesJoined, // 총 서버 입장횟수
+                    netServer.admins.getInfo(player.uuid).timesKicked, // 총 서버 강퇴횟수
+                    getTime(), // 최초 접속일
+                    getTime(), // 마지막 접속일
+                    true, // 서버 연결여부
+                    0L, // Discord UDID
+                    player.name, // 계정 ID
+                    "blank", // 계정 PW
+                    player // 플레이어
+            );
+        } else {
+            return false;
         }
-        return true;
     }
     public static boolean login(Player player, String id, String pw) {
         boolean result = false;
@@ -539,94 +563,24 @@ public class PlayerDB{
         }
         return result;
     }
-    public void load(Player target, String id) {
+    public void load(Player target) {
         Thread thread = new Thread(() -> {
             getInfo(target.uuid);
             PlayerData player = PlayerData(target.uuid);
             nlog("debug", target.name + " Player load start");
 
-            // 만약에 새 기기로 기존 계정에 로그인 했을때, 계정에 있던 DB를 가져와서 검사함
-            if (!player.error && config.isLoginenable()) {
-                nlog("debug", player.name + " Player logged!");
-                String uuid = "";
-                try {
-                    String sql = "SELECT uuid FROM players WHERE accountid = ?";
-                    PreparedStatement stmt = conn.prepareStatement(sql);
-                    stmt.setString(1, id);
-                    ResultSet rs = stmt.executeQuery();
-                    if (rs.next()) {
-                        uuid = rs.getString("uuid");
-                    }
-                    nlog("debug", player.name + " DATA UUID: "+uuid);
-                    rs.close();
-                    stmt.close();
-                } catch (SQLException e) {
-                    printError(e);
-                }
-                PlayerDataRemove(target.uuid);
-                getInfo(target.uuid);
-                player = PlayerData(target.uuid);
-
-                nlog("debug", player.name + " Player data apply");
-
-                // 새 기기로 UUID 적용
-                if (!player.isLogin) {
-                    try {
-                        PreparedStatement stmt = conn.prepareStatement("UPDATE players SET uuid = ? WHERE accountid = ?");
-                        stmt.setString(1, player.uuid);
-                        stmt.setString(2, id);
-                        stmt.execute();
-
-                        String sql = "SELECT uuid FROM players WHERE accountid = ?";
-                        stmt = conn.prepareStatement(sql);
-                        stmt.setString(1, id);
-                        ResultSet rs = stmt.executeQuery();
-                        if (rs.next()) {
-                            uuid = rs.getString("uuid");
-                        }
-
-                        PlayerDataRemove(target.uuid);
-                        getInfo(uuid);
-                        player = PlayerData(uuid);
-                    } catch (SQLException e) {
-                        printError(e);
-                    }
-                }
-                nlog("debug", player.name + " Player uuid data apply");
-            }
-
-            // 이 계정이 밴을 당했을 때 강퇴처리
-            if (player.banned) {
-                netServer.admins.banPlayerID(player.uuid);
-                target.con.kick("This account can't use.");
-                return;
-            }
-
-            // 중복 로그인 검사
-            if (config.isValidconnect()) {
-                nlog("debug", player.name + " Player validate start");
-                if (player.connected) {
-                    for (int a = 0; a < playerGroup.size(); a++) {
-                        String p = playerGroup.all().get(a).uuid;
-                        if (p.equals(player.uuid)) {
-                            target.con.kick(nbundle(target, "tried-connected-account"));
-                            return;
-                        }
-                    }
-                }
-            }
-
-            nlog("debug", player.name + " Player ip collected");
-
+            // 새 기기로 UUID 적용
+            player.uuid = target.uuid;
             player.connected = true;
             player.lastdate = getTime();
             player.connserver = hostip;
 
-            if (id != null) {
-                player.uuid = target.uuid;
-                PlayerDataSet(player.uuid, player);
+            // 이 계정이 밴을 당했을 때 강퇴처리
+            if (player.banned) {
+                netServer.admins.banPlayerID(player.uuid);
+                Call.onKick(target.con,"This account can't use.");
+                return;
             }
-            nlog("debug", player.name + " Player data write");
 
             // 플레이어 팀 설정
             if (Vars.state.rules.pvp) {
@@ -649,10 +603,7 @@ public class PlayerDB{
             } else {
                 target.setTeam(Team.sharded);
             }
-
-            nlog("debug", player.name + " Player Team set");
-            Call.onPlayerDeath(target);
-            nlog("debug", player.name + " Player Respawned");
+            target.kill();
 
             // 입장 메세지 표시
             String motd = getmotd(target);
@@ -662,42 +613,27 @@ public class PlayerDB{
             } else {
                 target.sendMessage(motd);
             }
-            nlog("debug", player.name + " Player show motd");
 
             // 고정닉 기능이 켜져있을 경우, 플레이어 닉네임 설정
-            if (config.isRealname() || config.getPasswordmethod().equals("discord")) {
-                target.name = player.name;
-                nlog("debug", player.name + " Player Set nickname. " + player.name + " to " + target.name + ".");
-            }
+            if (config.isRealname() || config.getPasswordmethod().equals("discord")) target.name = player.name;
 
             // 서버 입장시 경험치 획득
-            Exp.joinexp(player.uuid);
-            nlog("debug", player.name + " Player increase exp");
+            player.exp = player.exp+player.joincount;
 
             // 컬러닉 기능 설정
-            if (config.isRealname() && player.colornick) {
-                // 컬러닉 스레드 시작
-                new Thread(new ColorNick(target)).start();
-            } else if (!config.isRealname() && player.colornick) {
-                log("player", "colornick-require");
-                player.colornick = false;
-                PlayerDataSet(player.uuid, player);
-            }
-            nlog("debug", player.name + " Player pass colornick");
-
-            // 플레이어별 테러 감지 시작
-            if (config.isAntigrief() && !player.isAdmin) {
-                //new Threads.checkgrief(target).start();
-                nlog("debug", player.name + " Player anti-grief start");
+            if (player.colornick){
+                if(config.isRealname()){
+                    new Thread(new ColorNick(target)).start();
+                } else {
+                    player.colornick = false;
+                }
             }
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
             if (permission.get(player.permission).asObject().getBoolean("admin", false)) {
                 target.isAdmin = true;
                 player.isAdmin = true;
-                PlayerDataSet(player.uuid, player);
             }
-            nlog("debug", player.name + " Player permission set");
 
             // 플레이어 위치 정보가 없을경우, 위치 정보 가져오기
             if (player.country.equals("invalid")) {
@@ -705,14 +641,14 @@ public class PlayerDB{
                 player.country = list.get("country");
                 player.country_code = list.get("country_code");
                 player.language = list.get("languages");
-                PlayerDataSet(player.uuid, player);
             }
-            nlog("debug", player.name + " Player country data collected");
 
             // 플레이어 접속 횟수 카운트
             player.joincount = player.joincount++;
-            PlayerDataSet(player.uuid, player);
-            nlog("debug", player.name + " Player data full loaded!");
+
+            // 데이터 저장
+            PlayerDataSet(target.uuid, player);
+            PlayerDataSave(target.uuid);
         });
         executorService.submit(thread);
     }
@@ -811,20 +747,21 @@ public class PlayerDB{
             this.isLogin = true;
         }
     }
+
     public static PlayerData PlayerData(String uuid){
+        PlayerData data = new PlayerData(true, false);
         for (PlayerData player : Players) {
-            if (player.error) return new PlayerData(true, false);
-            if (player.uuid.equals(uuid)) {
-                return player;
+            if (!player.error && player.uuid.equals(uuid)) {
+                data = player;
             }
         }
-        return new PlayerData(true, false);
+        return data;
     }
 
     public static boolean PlayerDataRemove(String uuid){
         for(int a=0;a<Players.size();a++){
             PlayerData player = Players.get(a);
-            if (player.uuid.equals(uuid)) {
+            if (player.uuid == null || player.uuid.equals(uuid)) {
                 Players.remove(a);
                 return true;
             }
@@ -888,14 +825,15 @@ public class PlayerDB{
                     pstmt.setString(37, player.uuid);
                     pstmt.execute();
                     pstmt.close();
+                    return true;
                 } catch (Exception e) {
                     printError(e);
                 }
-                return true;
             }
         }
         return false;
     }
+
     public static void PlayerDataSaveAll(){
         for (PlayerData player : Players) PlayerDataSave(player.uuid);
     }

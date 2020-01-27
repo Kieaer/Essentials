@@ -632,9 +632,7 @@ public class Global {
 
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
-        PlayerData target = PlayerData(player.uuid);
-        if(!target.isLogin) return false;
-        return target.connected;
+        return PlayerData(player.uuid).isLogin;
     }
 
     // 비 로그인 유저 확인 (코어)
@@ -715,7 +713,7 @@ public class Global {
 
     public static boolean isduplicate(Player player){
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT id FROM players WHERE uuid = ?");
             stmt.setString(1, player.uuid);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -734,7 +732,7 @@ public class Global {
                 nlog("debug", rs.getString("id"));
                 return true;
             } else {
-                nlog("debug", "false");
+                nlog("debug", "not duplicate this uuid");
                 return false;
             }
         }catch (SQLException e){
