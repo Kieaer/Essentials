@@ -463,7 +463,7 @@ public class Main extends Plugin {
                         if(permission.get(target.permission).asObject().get("prefix") != null) {
                             Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
                         } else {
-                            Call.sendMessage("[orange]"+colorizeName(e.player.id, e.player.name) + "[white] : " + e.message);
+                            Call.sendMessage("[orange]"+colorizeName(e.player.id, e.player.name) + "[orange] :[white] " + e.message);
                         }
                     }
 
