@@ -844,12 +844,11 @@ public class Threads extends TimerTask{
                                     }
                                     if(size < 5) sleep(2000);
                                 } else {
-                                    System.out.print("fail");
                                     nlog("debug", "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
                                     sleep(30000);
                                 }
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                this.interrupt();
                             }
                         });
                     }
