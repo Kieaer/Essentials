@@ -5,7 +5,6 @@ import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import arc.struct.Array;
-import arc.util.Strings;
 import arc.util.Time;
 import essentials.core.PlayerDB;
 import mindustry.Vars;
@@ -220,7 +219,7 @@ public class Threads extends TimerTask{
                             }
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                        jumpcount.set(i2,new jumpcount(tile,value.serverip,result.players,digits.length));
+                        jumpcount.set(i2,new jumpcount(value.tile,value.serverip,result.players,digits.length));
                     } else {
                         setno(value.tile, true);
                     }
@@ -228,7 +227,7 @@ public class Threads extends TimerTask{
             }
 
             // 서버간 이동 영역에 플레이어가 있는지 확인
-            for (jumpzone value : jumpzone) {
+            /*for (jumpzone value : jumpzone) {
                 for (int ix = 0; ix < playerGroup.size(); ix++) {
                     Player player = playerGroup.all().get(ix);
                     if (player.tileX() > value.start.x && player.tileX() < value.finish.x) {
@@ -236,15 +235,16 @@ public class Threads extends TimerTask{
                             String resultIP = value.ip;
                             int port = 6567;
                             if (resultIP.contains(":") && Strings.canParsePostiveInt(resultIP.split(":")[1])) {
-                                resultIP = resultIP.split(":")[0];
-                                port = Strings.parseInt(resultIP.split(":")[1]);
+                                String[] temp = resultIP.split(":");
+                                resultIP = temp[0];
+                                port = Integer.parseInt(temp[1]);
                             }
                             log("player-jumped", player.name, resultIP + ":" + port);
                             Call.onConnect(player.con, resultIP, port);
                         }
                     }
                 }
-            }
+            }*/
         }
     }
     public static class checkgrief extends Thread {
