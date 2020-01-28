@@ -15,7 +15,6 @@ public class PingServer {
         try {
             String resultIP = ip;
             int port = 6567;
-
             if(ip.contains(":") && Strings.canParsePostiveInt(ip.split(":")[1])){
                 resultIP = ip.split(":")[0];
                 port = Strings.parseInt(ip.split(":")[1]);
@@ -34,6 +33,7 @@ public class PingServer {
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
             listener.accept(readServerData(buffer, ip, System.currentTimeMillis() - start));
             socket.disconnect();
+            socket.close();
         } catch (Exception e) {
             listener.accept(new Host(null, ip, null, 0, 0, 0, null, null, 0, null));
         }
