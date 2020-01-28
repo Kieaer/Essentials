@@ -73,7 +73,7 @@ public class Threads extends TimerTask{
         // 임시로 밴당한 유저 감시
         for (int a = 0; a < banned.size(); a++) {
             LocalDateTime time = LocalDateTime.now();
-            if (time.isAfter(banned.get(a).time)) {
+            if (time.isAfter(banned.get(a).getTime())) {
                 banned.remove(a);
                 PluginConfig.get("banned").asArray().remove(a);
                 netServer.admins.unbanPlayerID(banned.get(a).uuid);
@@ -110,7 +110,7 @@ public class Threads extends TimerTask{
                 int[] digits = new int[str.length()];
                 for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
-                Tile tile = jumptotal.get(a).tile;
+                Tile tile = jumptotal.get(a).getTile();
                 if (jumptotal.get(a).totalplayers != result) {
                     if (jumptotal.get(a).numbersize != digits.length) {
                         for (int px = 0; px < 3; px++) {
@@ -198,7 +198,7 @@ public class Threads extends TimerTask{
                         int[] digits = new int[str.length()];
                         for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
-                        Tile tile = value.tile;
+                        Tile tile = value.getTile();
                         if (value.players != result.players) {
                             if (value.numbersize != digits.length) {
                                 for (int px = 0; px < 3; px++) {
@@ -214,13 +214,13 @@ public class Threads extends TimerTask{
                         } else {
                             for (int l = 0; l < value.numbersize; l++) {
                                 setcount(tile, digits[l]);
-                                tile = world.tile(value.tile.x + 4, value.tile.y);
+                                tile = world.tile(value.getTile().x + 4, value.getTile().y);
                             }
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                        jumpcount.set(i2,new jumpcount(value.tile,value.serverip,result.players,digits.length));
+                        jumpcount.set(i2,new jumpcount(value.getTile(),value.serverip,result.players,digits.length));
                     } else {
-                        setno(value.tile, true);
+                        setno(value.getTile(), true);
                     }
                 });
             }
@@ -820,25 +820,25 @@ public class Threads extends TimerTask{
                         pingServer(ip, result -> {
                             try {
                                 if (result.name != null) {
-                                    int size = data.finish.x - data.start.x;
+                                    int size = data.getFinishTile().x - data.getStartTile().x;
 
                                     for (int x = 0; x < size; x++) {
-                                        Tile tile = world.tile(data.start.x + x, data.start.y);
+                                        Tile tile = world.tile(data.getStartTile().x + x, data.getStartTile().y);
                                         Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }
                                     for (int y = 0; y < size; y++) {
-                                        Tile tile = world.tile(data.finish.x, data.start.y + y);
+                                        Tile tile = world.tile(data.getFinishTile().x, data.getStartTile().y + y);
                                         Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }
                                     for (int x = 0; x < size; x++) {
-                                        Tile tile = world.tile(data.finish.x - x, data.finish.y);
+                                        Tile tile = world.tile(data.getFinishTile().x - x, data.getFinishTile().y);
                                         Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }
                                     for (int y = 0; y < size; y++) {
-                                        Tile tile = world.tile(data.start.x, data.finish.y - y);
+                                        Tile tile = world.tile(data.getStartTile().x, data.getFinishTile().y - y);
                                         Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }

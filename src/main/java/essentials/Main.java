@@ -154,8 +154,8 @@ public class Main extends Plugin {
                         port = Strings.parseInt(data.ip.split(":")[1]);
                     }
 
-                    if (e.tile.x > data.start.x && e.tile.x < data.finish.x) {
-                        if (e.tile.y > data.start.y && e.tile.y < data.finish.y) {
+                    if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
+                        if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
                             log("log", "player-jumped", e.player.name, data.ip);
                             PlayerData player = PlayerData(e.player.uuid);
                             player.connected = false;
@@ -670,6 +670,7 @@ public class Main extends Plugin {
             @Override
             public void run() {
                 PlayerDataSaveAll();
+                saveall();
             }
         }, 30000, 30000);
 

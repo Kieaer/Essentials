@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static essentials.Main.root;
 import static essentials.utils.Config.PluginConfig;
+import static mindustry.Vars.world;
 
 public class PluginData {
     // 일회성 플러그인 데이터
@@ -79,52 +80,80 @@ public class PluginData {
     }
 
     public static class jumpzone implements Serializable{
-        public final Tile start;
-        public final Tile finish;
+        public final int startx;
+        public final int starty;
+        public final int finishx;
+        public final int finishy;
         public final String ip;
 
         public jumpzone(Tile start, Tile finish, String ip){
-            this.start = start;
-            this.finish = finish;
+            this.startx = start.x;
+            this.starty = start.y;
+            this.finishx = finish.x;
+            this.finishy = finish.y;
             this.ip = ip;
+        }
+
+        public Tile getStartTile(){
+            return world.tile(startx,starty);
+        }
+
+        public Tile getFinishTile(){
+            return world.tile(finishx,finishy);
         }
     }
 
     public static class jumpcount implements Serializable{
-        public final Tile tile;
+        public final int x;
+        public final int y;
         public final String serverip;
         public int players;
         public int numbersize;
 
         public jumpcount(Tile tile, String serverip, int players, int numbersize){
-            this.tile = tile;
+            this.x = tile.x;
+            this.y = tile.y;
             this.serverip = serverip;
             this.players = players;
             this.numbersize = numbersize;
         }
+
+        public Tile getTile(){
+            return world.tile(x,y);
+        }
     }
 
     public static class jumptotal implements Serializable{
-        public final Tile tile;
+        public final int x;
+        public final int y;
         public int totalplayers;
         public int numbersize;
 
         public jumptotal(Tile tile, int totalplayers, int numbersize){
-            this.tile = tile;
+            this.x = tile.x;
+            this.y = tile.y;
             this.totalplayers = totalplayers;
             this.numbersize = numbersize;
+        }
+
+        public Tile getTile(){
+            return world.tile(x,y);
         }
     }
 
     public static class banned implements Serializable{
-        public final LocalDateTime time;
+        public final String time;
         public final String name;
         public final String uuid;
 
         public banned(LocalDateTime time, String name, String uuid){
-            this.time = time;
+            this.time = time.toString();
             this.name = name;
             this.uuid = uuid;
+        }
+
+        public LocalDateTime getTime(){
+            return LocalDateTime.parse(time);
         }
     }
 
