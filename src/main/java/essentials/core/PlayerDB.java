@@ -9,13 +9,10 @@ import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -216,7 +213,6 @@ public class PlayerDB{
             stmt.setString(1,uuid);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
-                nlog("debug", uuid+" Data found!");
                 data = new PlayerData(
                         rs.getInt("id"),
                         rs.getString("name"),
@@ -567,7 +563,6 @@ public class PlayerDB{
         Thread thread = new Thread(() -> {
             getInfo(target.uuid);
             PlayerData player = PlayerData(target.uuid);
-            nlog("debug", target.name + " Player load start");
 
             // 새 기기로 UUID 적용
             player.uuid = target.uuid;
@@ -761,7 +756,7 @@ public class PlayerDB{
     public static boolean PlayerDataRemove(String uuid){
         for(int a=0;a<Players.size();a++){
             PlayerData player = Players.get(a);
-            if (player.uuid == null || player.uuid.equals(uuid)) {
+            if (!player.error || player.uuid.equals(uuid)) {
                 Players.remove(a);
                 return true;
             }
@@ -772,7 +767,7 @@ public class PlayerDB{
     public static boolean PlayerDataSet(String uuid, PlayerData data){
         for(int a=0;a<Players.size();a++){
             PlayerData player = Players.get(a);
-            if (player.uuid.equals(uuid)) {
+            if (!player.error && player.uuid.equals(uuid)) {
                 Players.set(a,data);
                 return true;
             }
@@ -782,7 +777,7 @@ public class PlayerDB{
 
     public static boolean PlayerDataSave(String uuid){
         for (PlayerData player : Players) {
-            if (player.uuid.equals(uuid)) {
+            if (!player.error && player.uuid.equals(uuid)) {
                 try {
                     String sql = "UPDATE players SET name=?,uuid=?,country=?,country_code=?,language=?,isadmin=?,placecount=?,breakcount=?,killcount=?,deathcount=?,joincount=?,kickcount=?,level=?,exp=?,reqexp=?,reqtotalexp=?,firstdate=?,lastdate=?,lastplacename=?,lastbreakname=?,lastchat=?,playtime=?,attackclear=?,pvpwincount=?,pvplosecount=?,pvpbreakout=?,reactorcount=?,bantimeset=?,bantime=?,banned=?,crosschat=?,colornick=?,connected=?,connserver=?,permission=?,udid=? WHERE uuid=?";
                     PreparedStatement pstmt = conn.prepareStatement(sql);

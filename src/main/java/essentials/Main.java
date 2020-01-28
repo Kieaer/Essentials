@@ -114,13 +114,13 @@ public class Main extends Plugin {
             }
         }catch (Exception e){
             printError(e);
-        }
+    }
 
-        // 메세지 블럭에 의한 클라이언트 플레이어 카운트
+    // 메세지 블럭에 의한 클라이언트 플레이어 카운트
         executorService.submit(new jumpdata());
 
-        // 코어 자원소모 감시 시작
-        // executorService.submit(new monitorresource());
+    // 코어 자원소모 감시 시작
+    // executorService.submit(new monitorresource());
 
         // 서버간 이동 영역 표시
         executorService.submit(new visualjump());
@@ -314,11 +314,11 @@ public class Main extends Plugin {
 
             e.player.kill();
             e.player.setTeam(Team.derelict);
-            getInfo(e.player.uuid);
 
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name+" Player Join thread");
-                PlayerData player = PlayerData(e.player.uuid);
+                PlayerData player = getInfo(e.player.uuid);
+                Players.add(player);
 
                 if (config.isLoginenable() && isNocore(e.player)) {
                     if(config.getPasswordmethod().equals("mixed")) {
@@ -436,8 +436,6 @@ public class Main extends Plugin {
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent.class, e -> {
-            System.out.println(e.message);
-
             if (isLogin(e.player)) {
                 PlayerData target = PlayerData(e.player.uuid);
                 String check = String.valueOf(e.message.charAt(0));
@@ -1642,24 +1640,21 @@ public class Main extends Plugin {
             if (config.isLoginenable()) {
                 if(!isLogin(player)) {
                     if (PlayerDB.login(player, arg[0], arg[1])) {
-                        if(config.getPasswordmethod().equals("mixed")){
-                            Thread t = new Thread(() -> {
-                                Call.onConnect(player.con, hostip,7060);
-                            });
-                            t.start();
+                        playerDB.load(player);
+                        if (!isLogin(player)) {
+                            player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
                         } else {
-                            playerDB.load(player);
-                            if (!isLogin(player)) {
-                                player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
-                            } else {
-                                player.sendMessage(bundle(player, "login-success"));
-                            }
+                            player.sendMessage(bundle(player, "login-success"));
                         }
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
                     }
                 } else {
-                    player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
+                    if(config.getPasswordmethod().equals("mixed")){
+                        if (PlayerDB.login(player, arg[0], arg[1])) Call.onConnect(player.con, hostip, 7060);
+                    } else {
+                        player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
+                    }
                 }
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));
