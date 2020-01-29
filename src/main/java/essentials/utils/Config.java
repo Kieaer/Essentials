@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Locale;
@@ -270,7 +271,7 @@ public class Config {
     }
 
     public LocalTime getAntirushtime() {
-        return LocalTime.parse(obj.getString("antirushtime","10:00"));
+        return LocalTime.parse(obj.getString("antirushtime","00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
 
     public boolean isAntigrief(){

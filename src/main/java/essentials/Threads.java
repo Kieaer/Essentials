@@ -51,7 +51,6 @@ import static mindustry.Vars.*;
 public class Threads extends TimerTask{
     public static LocalTime playtime = LocalTime.of(0,0,0);
     public static LocalTime uptime = LocalTime.of(0,0,0);
-    static boolean peacetime;
     public static boolean isvoting;
 
     @Override
@@ -87,10 +86,9 @@ public class Threads extends TimerTask{
             // 맵 플탐 카운트
             playtime = playtime.plusSeconds(1);
             // Anti PvP rushing timer
-            if (config.isEnableantirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime()) && peacetime) {
+            if (config.isEnableantirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime())) {
                 state.rules.playerDamageMultiplier = 0.66f;
                 state.rules.playerHealthMultiplier = 0.8f;
-                peacetime = false;
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     player.sendMessage(bundle("pvp-peacetime"));

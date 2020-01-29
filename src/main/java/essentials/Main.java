@@ -226,7 +226,6 @@ public class Main extends Plugin {
 
             // 전력 노드 정보 초기화
             powerblock.clear();
-            peacetime = true;
         });
 
         Events.on(PlayerConnect.class, e -> {
@@ -401,7 +400,7 @@ public class Main extends Plugin {
             t.start();
 
             // PvP 평화시간 설정
-            if (config.isEnableantirush() && state.rules.pvp && peacetime) {
+            if (config.isEnableantirush() && state.rules.pvp && playtime.isBefore(config.getAntirushtime())) {
                 state.rules.playerDamageMultiplier = 0f;
                 state.rules.playerHealthMultiplier = 0.001f;
             }
