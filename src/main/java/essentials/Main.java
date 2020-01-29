@@ -461,9 +461,9 @@ public class Main extends Plugin {
                         }
                     } else {
                         if(permission.get(target.permission).asObject().get("prefix") != null) {
-                            Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,e.player.name)).replace("%2", e.message));
+                            Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,target.name)).replace("%2", e.message));
                         } else {
-                            Call.sendMessage("[orange]"+colorizeName(e.player.id, e.player.name) + "[orange] :[white] " + e.message);
+                            Call.sendMessage("[orange]"+colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message);
                         }
                     }
 
