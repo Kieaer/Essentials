@@ -424,7 +424,8 @@ public class Threads extends TimerTask{
     public static class ColorNick implements Runnable{
         private static int colorOffset = 0;
         private static long updateIntervalMs = config.getCupdatei();
-        Player player;
+
+        final Player player;
 
         public ColorNick(Player player){
             this.player = player;
@@ -782,30 +783,15 @@ public class Threads extends TimerTask{
         }
     }
     public static class visualjump extends Thread{
-        int length;
-        ArrayList<Thread> thread = new ArrayList<>();
+        public static int length = 0;
+        public static ArrayList<Thread> thread = new ArrayList<>();
 
         @Override
         public void run() {
             main();
-
-            while(!currentThread().isInterrupted()) {
-                try {
-                    if (length != jumpzone.size()) {
-                        for (Thread value : thread) {
-                            value.interrupt();
-                        }
-                        thread.clear();
-                        sleep(3000);
-                        main();
-                    } else {
-                        sleep(3000);
-                    }
-                } catch (InterruptedException ignored) {}
-            }
         }
 
-        public void main(){
+        public static void main(){
             length = jumpzone.size();
 
             for (jumpzone data : jumpzone) {
@@ -842,9 +828,7 @@ public class Threads extends TimerTask{
                                     nlog("debug", "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
                                     sleep(30000);
                                 }
-                            } catch (InterruptedException e) {
-                                this.interrupt();
-                            }
+                            } catch (InterruptedException ignored) {}
                         });
                     }
                 });

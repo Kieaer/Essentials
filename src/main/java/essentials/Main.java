@@ -96,7 +96,7 @@ public class Main extends Plugin {
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
             client = new Client();
-            log("client","server-connecting");
+            log("client", "server-connecting");
             client.main(null, null, null);
         }
 
@@ -113,15 +113,15 @@ public class Main extends Plugin {
             } else {
                 PluginConfig.set("unexception", true);
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             printError(e);
-    }
+        }
 
-    // 메세지 블럭에 의한 클라이언트 플레이어 카운트
+        // 메세지 블럭에 의한 클라이언트 플레이어 카운트
         executorService.submit(new jumpdata());
 
-    // 코어 자원소모 감시 시작
-    // executorService.submit(new monitorresource());
+        // 코어 자원소모 감시 시작
+        // executorService.submit(new monitorresource());
 
         // 서버간 이동 영역 표시
         executorService.submit(new visualjump());
@@ -1421,10 +1421,10 @@ public class Main extends Plugin {
             PlayerData target = PlayerData(player.uuid);
             if (target.colornick) {
                 target.colornick = false;
-                player.sendMessage(bundle(player, "colornick"));
+                player.sendMessage(bundle(player, "colornick-disable"));
             } else {
                 target.colornick = true;
-                player.sendMessage(bundle(player, "colornick-disable"));
+                player.sendMessage(bundle(player, "colornick"));
             }
             PlayerDataSet(player.uuid,target);
         });
@@ -1720,6 +1720,11 @@ public class Main extends Plugin {
                         }
                         if(arg[1].equals(jumpzone.get(a).ip)) {
                             jumpzone.remove(a);
+                            for (Thread value : visualjump.thread) {
+                                value.interrupt();
+                            }
+                            visualjump.thread.clear();
+                            visualjump.main();
                             player.sendMessage(bundle(player, "success"));
                             break;
                         }
@@ -1955,6 +1960,7 @@ public class Main extends Plugin {
                     val.permission = arg[1];
                     PlayerDataSave(val);
                     player.sendMessage(bundle(player, "success"));
+                    target.sendMessage(bundle(target,"perm-changed"));
                     return;
                 }
             }
