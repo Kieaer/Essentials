@@ -643,7 +643,7 @@ public class PlayerDB{
 
             // 데이터 저장
             PlayerDataSet(target.uuid, player);
-            PlayerDataSave(target.uuid);
+            PlayerDataSave(player);
         });
         executorService.submit(thread);
     }
@@ -768,61 +768,55 @@ public class PlayerDB{
         return false;
     }
 
-    public static boolean PlayerDataSave(String uuid){
-        for (PlayerData player : Players) {
-            if (!player.error && player.uuid.equals(uuid)) {
-                try {
-                    String sql = "UPDATE players SET name=?,uuid=?,country=?,country_code=?,language=?,isadmin=?,placecount=?,breakcount=?,killcount=?,deathcount=?,joincount=?,kickcount=?,level=?,exp=?,reqexp=?,reqtotalexp=?,firstdate=?,lastdate=?,lastplacename=?,lastbreakname=?,lastchat=?,playtime=?,attackclear=?,pvpwincount=?,pvplosecount=?,pvpbreakout=?,reactorcount=?,bantimeset=?,bantime=?,banned=?,crosschat=?,colornick=?,connected=?,connserver=?,permission=?,udid=? WHERE uuid=?";
-                    PreparedStatement pstmt = conn.prepareStatement(sql);
-                    pstmt.setString(1, player.name);
-                    pstmt.setString(2, player.uuid);
-                    pstmt.setString(3, player.country);
-                    pstmt.setString(4, player.country_code);
-                    pstmt.setString(5, player.language);
-                    pstmt.setBoolean(6, player.isAdmin);
-                    pstmt.setInt(7, player.placecount); // placecount
-                    pstmt.setInt(8, player.breakcount); // breakcount
-                    pstmt.setInt(9, player.killcount); // killcount
-                    pstmt.setInt(10, player.deathcount); // deathcount
-                    pstmt.setInt(11, player.joincount);
-                    pstmt.setInt(12, player.kickcount);
-                    pstmt.setInt(13, player.level); // level
-                    pstmt.setInt(14, player.exp); // exp
-                    pstmt.setInt(15, player.reqexp); // reqexp
-                    pstmt.setString(16, player.reqtotalexp); // reqtotalexp
-                    pstmt.setString(17, player.firstdate);
-                    pstmt.setString(18, player.lastdate);
-                    pstmt.setString(19, player.lastplacename); // lastplacename
-                    pstmt.setString(20, player.lastbreakname); // lastbreakname
-                    pstmt.setString(21, player.lastchat); // lastchat
-                    pstmt.setString(22, player.playtime); // playtime
-                    pstmt.setInt(23, player.attackclear); // attackclear
-                    pstmt.setInt(24, player.pvpwincount); // pvpwincount
-                    pstmt.setInt(25, player.pvplosecount); // pvplosecount
-                    pstmt.setInt(26, player.pvpbreakout); // pvpbreakcount
-                    pstmt.setInt(27, player.reactorcount); // reactorcount
-                    pstmt.setInt(28, player.bantimeset); // bantimeset
-                    pstmt.setString(29, player.bantime); // bantime
-                    pstmt.setBoolean(30, player.banned);
-                    pstmt.setBoolean(31, player.crosschat); // crosschat
-                    pstmt.setBoolean(32, player.colornick); // colornick
-                    pstmt.setBoolean(33, player.connected); // connected
-                    pstmt.setString(34, player.connserver); // connected server ip
-                    pstmt.setString(35, player.permission); // set permission
-                    pstmt.setLong(36, player.udid); // UDID
-                    pstmt.setString(37, player.uuid);
-                    pstmt.execute();
-                    pstmt.close();
-                    return true;
-                } catch (Exception e) {
-                    printError(e);
-                }
-            }
+    public static void PlayerDataSave(PlayerData data) {
+        try {
+            String sql = "UPDATE players SET name=?,uuid=?,country=?,country_code=?,language=?,isadmin=?,placecount=?,breakcount=?,killcount=?,deathcount=?,joincount=?,kickcount=?,level=?,exp=?,reqexp=?,reqtotalexp=?,firstdate=?,lastdate=?,lastplacename=?,lastbreakname=?,lastchat=?,playtime=?,attackclear=?,pvpwincount=?,pvplosecount=?,pvpbreakout=?,reactorcount=?,bantimeset=?,bantime=?,banned=?,crosschat=?,colornick=?,connected=?,connserver=?,permission=?,udid=? WHERE uuid=?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, data.name);
+            pstmt.setString(2, data.uuid);
+            pstmt.setString(3, data.country);
+            pstmt.setString(4, data.country_code);
+            pstmt.setString(5, data.language);
+            pstmt.setBoolean(6, data.isAdmin);
+            pstmt.setInt(7, data.placecount); // placecount
+            pstmt.setInt(8, data.breakcount); // breakcount
+            pstmt.setInt(9, data.killcount); // killcount
+            pstmt.setInt(10, data.deathcount); // deathcount
+            pstmt.setInt(11, data.joincount);
+            pstmt.setInt(12, data.kickcount);
+            pstmt.setInt(13, data.level); // level
+            pstmt.setInt(14, data.exp); // exp
+            pstmt.setInt(15, data.reqexp); // reqexp
+            pstmt.setString(16, data.reqtotalexp); // reqtotalexp
+            pstmt.setString(17, data.firstdate);
+            pstmt.setString(18, data.lastdate);
+            pstmt.setString(19, data.lastplacename); // lastplacename
+            pstmt.setString(20, data.lastbreakname); // lastbreakname
+            pstmt.setString(21, data.lastchat); // lastchat
+            pstmt.setString(22, data.playtime); // playtime
+            pstmt.setInt(23, data.attackclear); // attackclear
+            pstmt.setInt(24, data.pvpwincount); // pvpwincount
+            pstmt.setInt(25, data.pvplosecount); // pvplosecount
+            pstmt.setInt(26, data.pvpbreakout); // pvpbreakcount
+            pstmt.setInt(27, data.reactorcount); // reactorcount
+            pstmt.setInt(28, data.bantimeset); // bantimeset
+            pstmt.setString(29, data.bantime); // bantime
+            pstmt.setBoolean(30, data.banned);
+            pstmt.setBoolean(31, data.crosschat); // crosschat
+            pstmt.setBoolean(32, data.colornick); // colornick
+            pstmt.setBoolean(33, data.connected); // connected
+            pstmt.setString(34, data.connserver); // connected server ip
+            pstmt.setString(35, data.permission); // set permission
+            pstmt.setLong(36, data.udid); // UDID
+            pstmt.setString(37, data.uuid);
+            pstmt.execute();
+            pstmt.close();
+        } catch (Exception e) {
+            printError(e);
         }
-        return false;
     }
 
     public static void PlayerDataSaveAll(){
-        for (PlayerData player : Players) PlayerDataSave(player.uuid);
+        for (PlayerData player : Players) PlayerDataSave(player);
     }
 }

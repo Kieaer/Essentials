@@ -161,7 +161,7 @@ public class Main extends Plugin {
                             PlayerData player = PlayerData(e.player.uuid);
                             player.connected = false;
                             player.connserver = "none";
-                            PlayerDataSave(e.player.uuid);
+                            PlayerDataSave(player);
                             Call.onConnect(e.player.con, ip, port);
                         }
                     }
@@ -427,7 +427,7 @@ public class Main extends Plugin {
                 player.connected = false;
                 player.connserver = "none";
                 if(state.rules.pvp && !state.gameOver) player.pvpbreakout++;
-                PlayerDataSave(player.uuid);
+                PlayerDataSave(player);
             } else {
                 PlayerDataRemove(player);
             }
@@ -1337,8 +1337,9 @@ public class Main extends Plugin {
             }
             for (JsonObject.Member data : permission) {
                 if(data.getName().equals(arg[1])){
-                    PlayerData(player.uuid).permission = arg[1];
-                    PlayerDataSave(player.uuid);
+                    PlayerData p = PlayerData(player.uuid);
+                    p.permission = arg[1];
+                    PlayerDataSave(p);
                     log("log", "success");
                     return;
                 }
@@ -1409,8 +1410,9 @@ public class Main extends Plugin {
             }
             try{
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
-                PlayerData(player.uuid).accountpw = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
-                PlayerDataSave(player.uuid);
+                PlayerData p = PlayerData(player.uuid);
+                p.accountpw = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
+                PlayerDataSave(p);
                 player.sendMessage(bundle(player,"success"));
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -1485,10 +1487,9 @@ public class Main extends Plugin {
                                 }
                                 log("log","event-host-opened", player.name, customport);
 
-                                PlayerData data = PlayerData(player.uuid);
-                                data.connected = false;
-                                data.connserver = "none";
-                                PlayerDataSave(player.uuid);
+                                target.connected = false;
+                                target.connserver = "none";
+                                PlayerDataSave(target);
                                 if(target.country.equals("Local IP")){
                                     Call.onConnect(player.con,"127.0.0.1",customport);
                                 } else {
@@ -1507,7 +1508,7 @@ public class Main extends Plugin {
                                 PlayerData val = PlayerData(player.uuid);
                                 val.connected = false;
                                 val.connserver = "none";
-                                PlayerDataSave(player.uuid);
+                                PlayerDataSave(val);
                                 Call.onConnect(player.con, hostip, data.port);
                                 nlog("log",hostip+":"+data.port);
                                 break;
@@ -1664,7 +1665,7 @@ public class Main extends Plugin {
                 data.connected = false;
                 data.connserver = "none";
                 data.uuid = "LogoutAAAAA=";
-                PlayerDataSave(player.uuid);
+                PlayerDataSave(data);
                 Call.onKick(player.con, nbundle("logout"));
             } else {
                 player.sendMessage(bundle(player, "login-not-use"));
@@ -1954,7 +1955,7 @@ public class Main extends Plugin {
                 if(data.getName().equals(arg[0])){
                     PlayerData val = PlayerData(target.uuid);
                     val.permission = arg[1];
-                    PlayerDataSave(target.uuid);
+                    PlayerDataSave(val);
                     player.sendMessage(bundle(player, "success"));
                     return;
                 }
