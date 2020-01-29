@@ -1,7 +1,7 @@
 {
   owner: {
     admin: true
-    prefix: "[sky][Owner] %1[ornage] : [white]%2"
+    prefix: "[sky][Owner] %1[orange] : [white]%2"
     permission: [
       ALL
     ]
@@ -9,7 +9,7 @@
   admin: {
     inheritance: newadmin
     admin: true
-    prefix: "[yellow][Admin] %1[ornage] : [white]%2"
+    prefix: "[yellow][Admin] %1[orange] : [white]%2"
     permission: [
       color
       difficulty
@@ -22,7 +22,7 @@
   newadmin: {
     inheritance: default
     admin: true
-    prefix: "[yellow][New admin] %1[ornage] : [white]%2"
+    prefix: "[yellow][New admin] %1[orange] : [white]%2"
     permission: [
       kill
       me
