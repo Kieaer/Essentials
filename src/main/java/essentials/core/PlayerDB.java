@@ -484,7 +484,7 @@ public class PlayerDB{
                         getTime(), // 최초 접속일
                         getTime(), // 마지막 접속일
                         true, // 서버 연결여부
-                        0L, // Discord UDID
+                        Long.MIN_VALUE, // Discord UDID
                         id, // 계정 ID
                         hashed, // 계정 비밀번호
                         player) // 플레이어
@@ -561,7 +561,7 @@ public class PlayerDB{
     }
     public void load(Player target) {
         Thread thread = new Thread(() -> {
-            getInfo(target.uuid);
+            Players.add(getInfo(target.uuid));
             PlayerData player = PlayerData(target.uuid);
 
             // 새 기기로 UUID 적용
@@ -817,6 +817,45 @@ public class PlayerDB{
     }
 
     public static void PlayerDataSaveAll(){
-        for (PlayerData player : Players) PlayerDataSave(player);
+        for (PlayerData player : Players){
+            /*System.out.println("name: "+player.name);
+            System.out.println("uuid: "+player.uuid);
+            System.out.println("country: "+player.country);
+            System.out.println("country_code: "+player.country_code);
+            System.out.println("language: "+player.language);
+            System.out.println("isAdmin: "+player.isAdmin);
+            System.out.println("placecount: "+player.placecount);
+            System.out.println("breakcount: "+player.breakcount);
+            System.out.println("killcount: "+player.killcount);
+            System.out.println("deathcount: "+player.deathcount);
+            System.out.println("joincount: "+player.joincount);
+            System.out.println("kickcount: "+player.kickcount);
+            System.out.println("level: "+player.level);
+            System.out.println("exp: "+player.exp);
+            System.out.println("reqexp: "+player.reqexp);
+            System.out.println("reqtotalexp: "+player.reqtotalexp);
+            System.out.println("firstdate: "+player.firstdate);
+            System.out.println("lastdate: "+player.lastdate);
+            System.out.println("lastplacename: "+player.lastplacename);
+            System.out.println("lastbreakname: "+player.lastbreakname);
+            System.out.println("lastchat: "+player.lastchat);
+            System.out.println("playtime: "+player.playtime);
+            System.out.println("attackclear: "+player.attackclear);
+            System.out.println("pvpwincount: "+player.pvpwincount);
+            System.out.println("pvplosecount: "+player.pvplosecount);
+            System.out.println("pvpbreakout: "+player.pvpbreakout);
+            System.out.println("reactorcount: "+player.reactorcount);
+            System.out.println("bantimeset: "+player.bantimeset);
+            System.out.println("bantime: "+player.bantime);
+            System.out.println("banned: "+player.banned);
+            System.out.println("crosschat: "+player.crosschat);
+            System.out.println("colornick: "+player.colornick);
+            System.out.println("connected: "+player.connected);
+            System.out.println("connserver: "+player.connserver);
+            System.out.println("permission: "+player.permission);
+            System.out.println("udid: "+player.udid);
+            System.out.println("uuid: "+player.uuid);*/
+            PlayerDataSave(player);
+        }
     }
 }

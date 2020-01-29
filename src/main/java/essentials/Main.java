@@ -317,12 +317,10 @@ public class Main extends Plugin {
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name+" Player Join thread");
                 PlayerData player = getInfo(e.player.uuid);
-                Players.add(player);
-
                 if (config.isLoginenable() && isNocore(e.player)) {
                     if(config.getPasswordmethod().equals("mixed")) {
                         if (!player.error) {
-                            if (player.udid != 0L) {
+                            if (player.udid != Long.MIN_VALUE) {
                                 new Thread(() -> Call.onConnect(e.player.con, hostip, 7060)).start();
                             } else {
                                 e.player.sendMessage(bundle(e.player, "autologin"));
