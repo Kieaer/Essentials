@@ -4,20 +4,28 @@ import essentials.special.UTF8Control;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import static essentials.Global.config;
 import static essentials.Global.nlog;
+import static essentials.Main.root;
 import static essentials.core.Log.writelog;
 
 public class Bundle {
     private ResourceBundle RESOURCE_BUNDLE;
     public Bundle(Locale locale){
         try{
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
+            if(root.child("bundle.properties").exists()){
+                RESOURCE_BUNDLE = new PropertyResourceBundle(Files.newInputStream(Paths.get(root.child("bundle.properties").path())));
+            } else {
+                RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
+            }
         }catch (Exception e){
             RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.getDefault(), new UTF8Control());
         }

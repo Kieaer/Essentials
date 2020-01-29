@@ -1708,7 +1708,7 @@ public class Main extends Plugin {
             if(!checkperm(player,"players")) return;
             StringBuilder build = new StringBuilder();
             int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
-            int pages = Mathf.ceil((float)maplist.size / 6);
+            int pages = Mathf.ceil((float)players.size / 6);
 
             page --;
             if(page > pages || page < 0){
@@ -1717,8 +1717,8 @@ public class Main extends Plugin {
             }
 
             build.append("[green]==[white] Players list page ").append(page).append("/").append(pages).append(" [green]==[white]\n");
-            for(int a=6*page;a<Math.min(6 * (page + 1), maplist.size);a++){
-                build.append("[gray]").append(a).append("[] ").append(maplist.get(a).name()).append("\n");
+            for(int a=6*page;a<Math.min(6 * (page + 1), players.size);a++){
+                build.append("[gray]").append(a).append("[] ").append(players.get(a).name).append("\n");
             }
             player.sendMessage(build.toString());
         });

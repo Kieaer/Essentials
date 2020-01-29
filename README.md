@@ -41,38 +41,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | maps | [page] | Show server maps |
 | me | &lt;text...&gt; | broadcast * message |
 | motd |  | Show server motd. |
+| players |  | Show players list |
 | save |  | Auto rollback map early save |
 | reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
-| register | &lt;accountid&gt; &lt;password&gt; | Register account |
-| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
-| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
-| status |  | Show server status |
-| suicide |  | Kill yourself. |
-| team | [Team...] | Change team (PvP only) |
-| tempban | &lt;player&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
-| time |  | Show server time |
-| tp | &lt;player&gt; | Teleport to other players |
-| tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
-| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
-| ch |  | Send chat to another server. |
-| changepw | &lt;new_password&gt; | Change account password |
-| color |  | Enable color nickname |
-| difficulty | &lt;difficulty&gt; | Set server difficulty |
-| despawn |  | Kill all enemy units |
-| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
-| getpos |  | Get your current position info |
-| info |  | Show your information |
-| jump | &lt;zone/count/total&gt; [serverip] [range] | Create a server-to-server jumping zone. |
-| kickall |  | Kick all players |
-| kill | &lt;player&gt; | Kill player. |
-| login | &lt;id&gt; &lt;password&gt; | Access your account |
-| logout |  | Log-out of your account. |
-| maps | [page] | Show server maps |
-| me | &lt;text...&gt; | broadcast * message |
-| motd |  | Show server motd. |
-| save |  | Auto rollback map early save |
-| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
-| register | &lt;accountid&gt; &lt;password&gt; | Register account |
 | spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
 | setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
 | status |  | Show server status |
@@ -84,7 +55,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
 | tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
 | vote | &lt;gameover/skipwave/kick/rollback/map&gt; [mapid/mapname/playername...] | Vote surrender or skip wave, Long-time kick |
-| votekick | &lt;player_name&gt; | Player kick starts voting. |
+| votekick | [player_name] | Player kick starts voting. |
 
 ## Client commands
 
@@ -106,38 +77,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | maps | [page] | Show server maps |
 | me | &lt;text...&gt; | broadcast * message |
 | motd |  | Show server motd. |
+| players |  | Show players list |
 | save |  | Auto rollback map early save |
 | reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
-| register | &lt;accountid&gt; &lt;password&gt; | Register account |
-| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
-| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
-| status |  | Show server status |
-| suicide |  | Kill yourself. |
-| team | [Team...] | Change team (PvP only) |
-| tempban | &lt;player&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
-| time |  | Show server time |
-| tp | &lt;player&gt; | Teleport to other players |
-| tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
-| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
-| ch |  | Send chat to another server. |
-| changepw | &lt;new_password&gt; | Change account password |
-| color |  | Enable color nickname |
-| difficulty | &lt;difficulty&gt; | Set server difficulty |
-| despawn |  | Kill all enemy units |
-| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
-| getpos |  | Get your current position info |
-| info |  | Show your information |
-| jump | &lt;zone/count/total&gt; [serverip] [range] | Create a server-to-server jumping zone. |
-| kickall |  | Kick all players |
-| kill | &lt;player&gt; | Kill player. |
-| login | &lt;id&gt; &lt;password&gt; | Access your account |
-| logout |  | Log-out of your account. |
-| maps | [page] | Show server maps |
-| me | &lt;text...&gt; | broadcast * message |
-| motd |  | Show server motd. |
-| save |  | Auto rollback map early save |
-| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
-| register | &lt;accountid&gt; &lt;password&gt; | Register account |
 | spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
 | setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
 | status |  | Show server status |
@@ -149,7 +91,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
 | tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
 | vote | &lt;gameover/skipwave/kick/rollback/map&gt; [mapid/mapname/playername...] | Vote surrender or skip wave, Long-time kick |
-| votekick | &lt;player_name&gt; | Player kick starts voting. |
+| votekick | [player_name] | Player kick starts voting. |
 | gendocs |  | Generate Essentials README.md |
 | accountban | &lt;ban/unban&gt; &lt;account_uuid&gt; | Ban player account |
 | allinfo | &lt;name&gt; | Show player information. |
@@ -167,4 +109,4 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | team | [name] | Change target player team. |
 | tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
 
-README.md Generated time: 2020-01-27 01:58:40
+README.md Generated time: 2020-01-29 22:54:59
