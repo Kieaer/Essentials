@@ -753,15 +753,8 @@ public class PlayerDB{
         return data;
     }
 
-    public static boolean PlayerDataRemove(String uuid){
-        for(int a=0;a<Players.size();a++){
-            PlayerData player = Players.get(a);
-            if (!player.error && player.uuid.equals(uuid)) {
-                Players.remove(a);
-                return true;
-            }
-        }
-        return false;
+    public static void PlayerDataRemove(PlayerData data){
+        Players.remove(data);
     }
 
     public static boolean PlayerDataSet(String uuid, PlayerData data){

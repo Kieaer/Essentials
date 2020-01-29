@@ -429,7 +429,7 @@ public class Main extends Plugin {
                 if(state.rules.pvp && !state.gameOver) player.pvpbreakout++;
                 PlayerDataSave(player.uuid);
             } else {
-                PlayerDataRemove(player.uuid);
+                PlayerDataRemove(player);
             }
         });
 
