@@ -74,6 +74,7 @@ public class Main extends Plugin {
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     private Array<mindustry.maps.Map> maplist = Vars.maps.all();
+    private Array<Player> players = new Array<>();
     public Client client;
     public static PlayerDB playerDB = new PlayerDB();
 
@@ -309,6 +310,7 @@ public class Main extends Plugin {
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(PlayerJoin.class, e -> {
+            players.add(e.player);
             e.player.isAdmin = false;
 
             e.player.kill();
@@ -420,6 +422,7 @@ public class Main extends Plugin {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave.class, e -> {
+            players.remove(e.player);
             PlayerData player = PlayerData(e.player.uuid);
             if (player.isLogin) {
                 player.connected = false;
@@ -1701,6 +1704,24 @@ public class Main extends Plugin {
                 player.sendMessage(motd);
             }
         });
+        handler.<Player>register("players", "Show players list", (arg, player) -> {
+            if(!checkperm(player,"players")) return;
+            StringBuilder build = new StringBuilder();
+            int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
+            int pages = Mathf.ceil((float)maplist.size / 6);
+
+            page --;
+            if(page > pages || page < 0){
+                player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] " + pages + "[scarlet].");
+                return;
+            }
+
+            build.append("[green]==[white] Players list page ").append(page).append("/").append(pages).append(" [green]==[white]\n");
+            for(int a=6*page;a<Math.min(6 * (page + 1), maplist.size);a++){
+                build.append("[gray]").append(a).append("[] ").append(maplist.get(a).name()).append("\n");
+            }
+            player.sendMessage(build.toString());
+        });
         handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
             if (!checkperm(player, "save")) return;
             Core.app.post(() -> {
@@ -2105,6 +2126,7 @@ public class Main extends Plugin {
             if(arg.length == 2) {
                 if(arg[0].equals("kick")) {
                     Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+                    if (other == null) other = players.get(Integer.parseInt(arg[1]));
                     if (other == null) {
                         player.sendMessage(bundle(player, "player-not-found"));
                         return;
@@ -2118,9 +2140,7 @@ public class Main extends Plugin {
                 } else if(arg[0].equals("map")){
                     // 맵 투표
                     mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
-                    if (world == null){
-                        world = maplist.get(Integer.parseInt(arg[1]));
-                    }
+                    if (world == null) world = maplist.get(Integer.parseInt(arg[1]));
                     if (world == null) {
                         player.sendMessage(bundle(player, "vote-map-not-found"));
                     } else {
@@ -2139,6 +2159,7 @@ public class Main extends Plugin {
         handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
             if(!checkperm(player,"votekick")) return;
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+            if (other == null) other = players.get(Integer.parseInt(arg[1]));
             if (other == null) {
                 player.sendMessage(bundle(player, "player-not-found"));
                 return;
