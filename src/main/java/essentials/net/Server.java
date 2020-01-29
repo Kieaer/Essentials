@@ -324,7 +324,7 @@ public class Server implements Runnable {
             result.add("players", playerGroup.size()); // 플레이어 인원
             result.add("version", Version.build); // 버전
             result.add("plugin-version", version);
-            result.add("playtime", playtime);
+            result.add("playtime", playtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             result.add("name", Core.settings.getString("servername"));
             result.add("mapname", world.getMap().name());
             result.add("wave", state.wave);
@@ -382,8 +382,8 @@ public class Server implements Runnable {
                 }
                 int version = Version.build;
                 String description = Core.settings.getString("servername");
-                String worldtime = playtime;
-                String serveruptime = uptime;
+                String worldtime = playtime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                String serveruptime = uptime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
                 StringBuilder items = new StringBuilder();
                 for (Item item : content.items()) {
                     if (item.type == ItemType.material) {

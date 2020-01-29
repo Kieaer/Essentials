@@ -51,6 +51,7 @@ import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -221,11 +222,10 @@ public class Main extends Plugin {
 
         // 맵이 불러와졌을 때
         Events.on(WorldLoadEvent.class, e -> {
-            playtime = "00:00.00";
+            playtime = LocalTime.of(0,0,0);
 
             // 전력 노드 정보 초기화
             powerblock.clear();
-
             peacetime = true;
         });
 
@@ -976,9 +976,6 @@ public class Main extends Plugin {
                 System.exit(0);
             }
         });
-
-        // 서버가 켜진 시간을 0으로 설정
-        uptime = "00:00.00";
 
         Events.on(ServerLoadEvent.class, e-> {
             // 업데이트 확인

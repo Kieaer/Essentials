@@ -49,18 +49,15 @@ import static essentials.utils.Config.PluginConfig;
 import static mindustry.Vars.*;
 
 public class Threads extends TimerTask{
-    public static String playtime;
-    public static String uptime;
+    public static LocalTime playtime = LocalTime.of(0,0,0);
+    public static LocalTime uptime = LocalTime.of(0,0,0);
     static boolean peacetime;
     public static boolean isvoting;
-
-    LocalTime time = LocalTime.of(0,0,0);
-    LocalTime ptime = LocalTime.of(0,0,0);
 
     @Override
     public void run() {
         // 서버 켜진시간 카운트
-        uptime = time.plusSeconds(1).format(DateTimeFormatter.ofPattern("hh:mm:ss"));
+        uptime = uptime.plusSeconds(1);
 
         // 데이터 저장
         JsonObject data = new JsonObject();
@@ -88,9 +85,9 @@ public class Threads extends TimerTask{
             // new jumpzone().start();
 
             // 맵 플탐 카운트
-            playtime = ptime.plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            playtime = playtime.plusSeconds(1);
             // Anti PvP rushing timer
-            if (config.isEnableantirush() && state.rules.pvp && ptime.isAfter(config.getAntirushtime()) && peacetime) {
+            if (config.isEnableantirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime()) && peacetime) {
                 state.rules.playerDamageMultiplier = 0.66f;
                 state.rules.playerHealthMultiplier = 0.8f;
                 peacetime = false;
