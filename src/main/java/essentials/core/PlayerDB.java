@@ -756,7 +756,7 @@ public class PlayerDB{
     public static boolean PlayerDataRemove(String uuid){
         for(int a=0;a<Players.size();a++){
             PlayerData player = Players.get(a);
-            if (!player.error || player.uuid.equals(uuid)) {
+            if (!player.error && player.uuid.equals(uuid)) {
                 Players.remove(a);
                 return true;
             }
