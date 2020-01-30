@@ -32,8 +32,8 @@ public class Config {
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-    public static int version = 9;
-    public static int DBVersion = 9;
+    public static int version = 10;
+    public static int DBVersion = 10;
 
     public void main(){
         validfile();
