@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Threads.ColorNick;
+import static essentials.utils.Config.DBVersion;
 import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
 import static mindustry.Vars.netServer;
@@ -31,6 +32,9 @@ public class PlayerDB{
     public void run(){
         openconnect();
         createNewDataFile();
+        if(DBVersion < config.getVersion()) {
+            Upgrade();
+        }
     }
 
     public void createNewDataFile(){
@@ -864,6 +868,116 @@ public class PlayerDB{
             System.out.println("udid: "+player.udid);
             System.out.println("uuid: "+player.uuid);*/
             PlayerDataSave(player);
+        }
+    }
+
+    public void Upgrade(){
+        ArrayList<PlayerData> buffer = new ArrayList<>();
+        try{
+            PreparedStatement pstm = conn.prepareStatement("SELECT * FROM players");
+            ResultSet rs = pstm.executeQuery();
+            while(rs.next()){
+                buffer.add(new PlayerData(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("uuid"),
+                        rs.getString("country"),
+                        rs.getString("country_code"),
+                        rs.getString("language"),
+                        rs.getBoolean("isadmin"),
+                        rs.getInt("placecount"),
+                        rs.getInt("breakcount"),
+                        rs.getInt("killcount"),
+                        rs.getInt("deathcount"),
+                        rs.getInt("joincount"),
+                        rs.getInt("kickcount"),
+                        rs.getInt("level"),
+                        rs.getInt("exp"),
+                        rs.getInt("reqexp"),
+                        rs.getString("reqtotalexp"),
+                        rs.getString("firstdate"),
+                        rs.getString("lastdate"),
+                        rs.getString("lastplacename"),
+                        rs.getString("lastbreakname"),
+                        rs.getString("lastchat"),
+                        rs.getString("playtime"),
+                        rs.getInt("attackclear"),
+                        rs.getInt("pvpwincount"),
+                        rs.getInt("pvplosecount"),
+                        rs.getInt("pvpbreakout"),
+                        rs.getInt("reactorcount"),
+                        rs.getInt("bantimeset"),
+                        rs.getString("bantime"),
+                        rs.getBoolean("banned"),
+                        rs.getBoolean("translate"),
+                        rs.getBoolean("crosschat"),
+                        rs.getBoolean("colornick"),
+                        rs.getBoolean("connected"),
+                        rs.getString("connserver"),
+                        rs.getString("permission"),
+                        rs.getLong("udid"),
+                        rs.getString("accountid"),
+                        rs.getString("accountpw")
+                        )
+                );
+            }
+            rs.close();
+
+            createNewDataFile();
+            String sql;
+            if(config.isSqlite()){
+                sql = "INSERT INTO players ('id', 'name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            } else {
+                sql = "INSERT INTO players (id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            }
+            for(PlayerData data : buffer){
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1,data.id);
+                pstmt.setString(2, data.name);
+                pstmt.setString(3, data.uuid);
+                pstmt.setString(4, data.country);
+                pstmt.setString(5, data.country_code);
+                pstmt.setString(6, data.language);
+                pstmt.setBoolean(7, data.isAdmin);
+                pstmt.setInt(8, data.placecount); // placecount
+                pstmt.setInt(9, data.breakcount); // breakcount
+                pstmt.setInt(10, data.killcount); // killcount
+                pstmt.setInt(11, data.deathcount); // deathcount
+                pstmt.setInt(12, data.joincount);
+                pstmt.setInt(13, data.kickcount);
+                pstmt.setInt(14, data.level); // level
+                pstmt.setInt(15, data.exp); // exp
+                pstmt.setInt(16, data.reqexp); // reqexp
+                pstmt.setString(17, data.reqtotalexp); // reqtotalexp
+                pstmt.setString(18, data.firstdate);
+                pstmt.setString(19, data.lastdate);
+                pstmt.setString(20, data.lastplacename); // lastplacename
+                pstmt.setString(21, data.lastbreakname); // lastbreakname
+                pstmt.setString(22, data.lastchat); // lastchat
+                pstmt.setString(23, data.playtime); // playtime
+                pstmt.setInt(24, data.attackclear); // attackclear
+                pstmt.setInt(25, data.pvpwincount); // pvpwincount
+                pstmt.setInt(26, data.pvplosecount); // pvplosecount
+                pstmt.setInt(27, data.pvpbreakout); // pvpbreakcount
+                pstmt.setInt(28, data.reactorcount); // reactorcount
+                pstmt.setInt(29, data.bantimeset); // bantimeset
+                pstmt.setString(30, data.bantime); // bantime
+                pstmt.setBoolean(31, data.banned);
+                pstmt.setBoolean(32, data.translate); // translate
+                pstmt.setBoolean(33, data.crosschat); // crosschat
+                pstmt.setBoolean(34, data.colornick); // colornick
+                pstmt.setBoolean(35, data.connected); // connected
+                pstmt.setString(36, data.connserver); // connected server ip
+                pstmt.setString(37, data.permission); // set permission
+                pstmt.setLong(38, data.udid); // UDID
+                pstmt.setString(39, data.uuid);
+                pstmt.setString(40,data.accountid);
+                pstmt.setString(41,data.accountpw);
+                pstmt.execute();
+                pstmt.close();
+            }
+        }catch (SQLException e){
+            printError(e);
         }
     }
 }

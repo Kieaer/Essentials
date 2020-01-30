@@ -32,7 +32,8 @@ public class Config {
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-    static int version = 9;
+    public static int version = 9;
+    public static int DBVersion = 9;
 
     public void main(){
         validfile();
@@ -67,7 +68,7 @@ public class Config {
 
         String text = "{\n"+
                 "  # "+nbundle("config-version-description")+"\n" +
-                "  version: "+version+"\n" +
+                "  version: "+getVersion()+"\n" +
                 "\n" +
                 "  # "+nbundle("config-language-description")+"\n" +
                 "  language: "+getLanguage()+"\n" +
@@ -268,6 +269,9 @@ public class Config {
         return obj.getBoolean("query",false);
     }
 
+    public int getVersion(){
+        return obj.getInt("version", version);
+    }
     public String getLanguage(){
         return obj.getString("language","en");
     }
