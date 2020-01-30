@@ -1107,7 +1107,9 @@ public class Main extends Plugin {
                     tempbuild.append(temp);
                 }
             }
-            tmp = header+serverdoc+tempbuild.toString()+"\n";
+            tmp = header+clientdoc+tempbuild.toString()+"\n";
+            tempbuild = new StringBuilder();
+
             for(CommandHandler.Command command : handler.getCommandList()) {
                 boolean dup = false;
                 for(String as : servercommands){
@@ -1121,7 +1123,7 @@ public class Main extends Plugin {
                     tempbuild.append(temp);
                 }
             }
-            root.child("README.md").writeString(tmp+clientdoc+tempbuild.toString()+gentime);
+            root.child("README.md").writeString(tmp+serverdoc+tempbuild.toString()+gentime);
             log("log","success");
         });
         handler.register("accountban","<ban/unban> <account_uuid>", "Ban player account", (arg) -> {
