@@ -54,6 +54,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tp | &lt;player&gt; | Teleport to other players |
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
 | tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
+| tr |  | Enable/disable Translate all chat |
 | vote | &lt;gameover/skipwave/kick/rollback/map&gt; [mapid/mapname/playername...] | Vote surrender or skip wave, Long-time kick |
 | votekick | [player_name] | Player kick starts voting. |
 
@@ -78,4 +79,4 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | team | [name] | Change target player team. |
 | tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
 
-README.md Generated time: 2020-01-30 21:31:26
+README.md Generated time: 2020-01-30 22:20:47
