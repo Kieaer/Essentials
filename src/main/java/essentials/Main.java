@@ -466,6 +466,7 @@ public class Main extends Plugin {
                         } else {
                             Call.sendMessage("[orange]"+colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message);
                         }
+                        arc.util.Log.info("<&y{0}: &lm{1}&lg>", e.player.name, e.message);
                     }
 
                     // 서버간 대화기능 작동
