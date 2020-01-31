@@ -10,6 +10,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -702,6 +703,10 @@ public class PlayerDB{
         public boolean error;
         public boolean isLogin;
 
+        public LocalTime afk;
+        public int afk_tilex;
+        public int afk_tiley;
+
         PlayerData(boolean error, boolean isLogin){
             this.error = error;
             this.isLogin = isLogin;
@@ -751,6 +756,10 @@ public class PlayerDB{
 
             this.error = false;
             this.isLogin = true;
+
+            this.afk = LocalTime.of(0,0,0);
+            this.afk_tilex = 0;
+            this.afk_tiley = 0;
         }
     }
 
