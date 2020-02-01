@@ -461,33 +461,81 @@ public class Main extends Plugin {
                             }
                         }
                     } else {
-                        if(permission.get(target.permission).asObject().get("prefix") != null) {
-                            Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,target.name)).replace("%2", e.message));
-                        } else {
-                            Call.sendMessage("[orange]"+colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message);
+                        if(!target.mute){
+                            if(permission.get(target.permission).asObject().get("prefix") != null) {
+                                Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,target.name)).replace("%2", e.message));
+                            } else {
+                                Call.sendMessage("[orange]"+colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message);
+                            }
+
+                            // 서버간 대화기능 작동
+                            if (target.crosschat) {
+                                if (config.isClientenable()) {
+                                    client.main("chat", e.player, e.message);
+                                } else if (config.isServerenable()) {
+                                    // 메세지를 모든 클라이언트에게 전송함
+                                    String msg = "[" + e.player.name + "]: " + e.message;
+                                    try {
+                                        for (Server.Service ser : Server.list) {
+                                            ser.os.writeBytes(Base64.encode(encrypt(msg, ser.spec, ser.cipher)));
+                                            ser.os.flush();
+                                        }
+                                    } catch (Exception ex) {
+                                        ex.printStackTrace();
+                                    }
+                                } else if (!config.isClientenable() && !config.isServerenable()) {
+                                    e.player.sendMessage(bundle(e.player, "no-any-network"));
+                                    target.crosschat = false;
+                                }
+                            }
+
+                            if (config.isEnableTranslate()) {
+                                try {
+                                    PlayerData orignaldata = PlayerData(e.player.uuid);
+                                    for (int i = 0; i < playerGroup.size(); i++) {
+                                        Player p = playerGroup.all().get(i);
+                                        if (!isNocore(p)) {
+                                            PlayerData data = PlayerData(p.uuid);
+                                            String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
+                                            String language = data.language;
+                                            String orignal = orignaldata.language;
+                                            if (!language.equals(orignal)) {
+                                                boolean found = false;
+                                                for (String s : support) {
+                                                    if (orignal.equals(s)) {
+                                                        found = true;
+                                                        break;
+                                                    }
+                                                }
+                                                if (found) {
+                                                    String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
+                                                            .method(Connection.Method.POST)
+                                                            .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
+                                                            .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
+                                                            .data("source", orignaldata.language)
+                                                            .data("target", data.language)
+                                                            .data("text", e.message)
+                                                            .ignoreContentType(true)
+                                                            .followRedirects(true)
+                                                            .execute()
+                                                            .body();
+                                                    JsonObject object = JsonValue.readJSON(response).asObject();
+                                                    if (object.get("error") != null) {
+                                                        String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
+                                                        if (data.translate) {
+                                                            p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (Exception ex) {
+                                    printError(ex);
+                                }
+                            }
                         }
                         arc.util.Log.info("<&y{0}: &lm{1}&lg>", e.player.name, e.message);
-                    }
-
-                    // 서버간 대화기능 작동
-                    if (target.crosschat) {
-                        if (config.isClientenable()) {
-                            client.main("chat", e.player, e.message);
-                        } else if (config.isServerenable()) {
-                            // 메세지를 모든 클라이언트에게 전송함
-                            String msg = "[" + e.player.name + "]: " + e.message;
-                            try {
-                                for (Server.Service ser : Server.list) {
-                                    ser.os.writeBytes(Base64.encode(encrypt(msg, ser.spec, ser.cipher)));
-                                    ser.os.flush();
-                                }
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                        } else if (!config.isClientenable() && !config.isServerenable()) {
-                            e.player.sendMessage(bundle(e.player, "no-any-network"));
-                            target.crosschat = false;
-                        }
                     }
                 }
 
@@ -495,52 +543,6 @@ public class Main extends Plugin {
                 target.lastchat = e.message;
 
                 // 번역
-                if (config.isEnableTranslate()) {
-                    try {
-                        PlayerData orignaldata = PlayerData(e.player.uuid);
-                        for (int i = 0; i < playerGroup.size(); i++) {
-                            Player p = playerGroup.all().get(i);
-                            if (!isNocore(p)) {
-                                PlayerData data = PlayerData(p.uuid);
-                                String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
-                                String language = data.language;
-                                String orignal = orignaldata.language;
-                                if (!language.equals(orignal)) {
-                                    boolean found = false;
-                                    for (String s : support) {
-                                        if (orignal.equals(s)) {
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (found) {
-                                        String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
-                                                .method(Connection.Method.POST)
-                                                .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
-                                                .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
-                                                .data("source", orignaldata.language)
-                                                .data("target", data.language)
-                                                .data("text", e.message)
-                                                .ignoreContentType(true)
-                                                .followRedirects(true)
-                                                .execute()
-                                                .body();
-                                        JsonObject object = JsonValue.readJSON(response).asObject();
-                                        if (object.get("error") != null) {
-                                            String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
-                                            if (data.translate) {
-                                                p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception ex) {
-                        printError(ex);
-                    }
-                }
-
                 PlayerDataSet(target.uuid,target);
             }
         });
@@ -1349,6 +1351,22 @@ public class Main extends Plugin {
                 other.kill();
             } else {
                 log("warn","player-not-found");
+            }
+        });
+        handler.register("mute","[Player name]", "Mute/unmute player", (arg, player) -> {
+            Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+            if (other == null) {
+                log("warn","player-not-found");
+            } else {
+                PlayerData data = PlayerData(other.uuid);
+                if(data.mute){
+                    data.mute = false;
+                    log("log","player-unmute",data.name);
+                } else {
+                    data.mute = true;
+                    log("log","player-muted",data.name);
+                }
+                PlayerDataSet(data.uuid,data);
             }
         });
         handler.register("nick", "<name> <newname...>", "Set player nickname", (arg) -> {
@@ -2217,6 +2235,23 @@ public class Main extends Plugin {
                 }
                 // 게임 오버, wave 넘어가기, 롤백
                 new Vote(player, arg[0]);
+            }
+        });
+        handler.<Player>register("mute","[Player name]", "Mute/unmute player", (arg, player) -> {
+            if(!checkperm(player,"mute")) return;
+            Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+            if (other == null) {
+                player.sendMessage(bundle(player, "player-not-found"));
+            } else {
+                PlayerData data = PlayerData(other.uuid);
+                if(data.mute){
+                    data.mute = false;
+                    player.sendMessage(bundle("player-unmute",data.name));
+                } else {
+                    data.mute = true;
+                    player.sendMessage(bundle("player-muted", data.name));
+                }
+                PlayerDataSet(data.uuid,data);
             }
         });
         handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {

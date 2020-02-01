@@ -77,6 +77,7 @@ public class DBConvert {
                         rs.getBoolean("connected"),
                         rs.getString("connserver"),
                         rs.getString("permission"),
+                        rs.getBoolean("mute"),
                         rs.getLong("udid"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
@@ -89,7 +90,7 @@ public class DBConvert {
             System.out.print("\n");
 
             // DB 붙여넣기
-            String sql = "INSERT INTO players(id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO players(id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             prepared = conn.prepareStatement(sql);
             for (PlayerData data : data) {
                 prepared.setInt(0, data.id);
@@ -129,9 +130,10 @@ public class DBConvert {
                 prepared.setBoolean(34, data.connected); // connected
                 prepared.setString(35, data.connserver); // connected server ip
                 prepared.setString(36, data.permission); // set permission
-                prepared.setLong(37, data.udid); // UDID
-                prepared.setString(38, data.accountid);
-                prepared.setString(39, data.accountpw);
+                prepared.setBoolean(37, data.mute); // 채팅 금지
+                prepared.setLong(38, data.udid); // UDID
+                prepared.setString(39, data.accountid);
+                prepared.setString(40, data.accountpw);
                 prepared.execute();
                 System.out.print("\r"+copy+" "+current+"/"+size);
             }

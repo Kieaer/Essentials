@@ -259,6 +259,7 @@ public class PlayerDB{
                         rs.getBoolean("connected"),
                         rs.getString("connserver"),
                         rs.getString("permission"),
+                        rs.getBoolean("mute"),
                         rs.getLong("udid"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
@@ -696,6 +697,7 @@ public class PlayerDB{
         public boolean connected;
         public String connserver;
         public String permission;
+        public boolean mute;
         public Long udid;
         public String accountid;
         public String accountpw;
@@ -712,7 +714,7 @@ public class PlayerDB{
             this.isLogin = isLogin;
         }
 
-        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw){
+        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, Long udid, String accountid, String accountpw){
             this.id = id;
             this.name = name;
             this.uuid = uuid;
@@ -750,6 +752,7 @@ public class PlayerDB{
             this.connected = connected;
             this.connserver = connserver;
             this.permission = permission;
+            this.mute = mute;
             this.udid = udid;
             this.accountid = accountid;
             this.accountpw = accountpw;
@@ -924,6 +927,7 @@ public class PlayerDB{
                         rs.getBoolean("connected"),
                         rs.getString("connserver"),
                         rs.getString("permission"),
+                        rs.getBoolean("mute"),
                         rs.getLong("udid"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
@@ -935,9 +939,9 @@ public class PlayerDB{
             createNewDataFile();
             String sql;
             if(config.isSqlite()){
-                sql = "INSERT INTO players ('id', 'name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                sql = "INSERT INTO players ('id', 'name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             } else {
-                sql = "INSERT INTO players (id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                sql = "INSERT INTO players (id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             }
             for(PlayerData data : buffer){
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -978,10 +982,11 @@ public class PlayerDB{
                 pstmt.setBoolean(35, data.connected); // connected
                 pstmt.setString(36, data.connserver); // connected server ip
                 pstmt.setString(37, data.permission); // set permission
-                pstmt.setLong(38, data.udid); // UDID
-                pstmt.setString(39, data.uuid);
-                pstmt.setString(40,data.accountid);
-                pstmt.setString(41,data.accountpw);
+                pstmt.setBoolean(38, data.mute); // mute
+                pstmt.setLong(39, data.udid); // UDID
+                pstmt.setString(40, data.uuid);
+                pstmt.setString(41,data.accountid);
+                pstmt.setString(42,data.accountpw);
                 pstmt.execute();
                 pstmt.close();
             }
