@@ -70,6 +70,7 @@ import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
+import static mindustry.core.NetClient.onSetRules;
 
 public class Main extends Plugin {
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -404,6 +405,7 @@ public class Main extends Plugin {
             if (config.isEnableantirush() && state.rules.pvp && playtime.isBefore(config.getAntirushtime())) {
                 state.rules.playerDamageMultiplier = 0f;
                 state.rules.playerHealthMultiplier = 0.001f;
+                onSetRules(state.rules);
             }
 
             // 플레이어 인원별 난이도 설정
@@ -461,11 +463,11 @@ public class Main extends Plugin {
                             }
                         }
                     } else {
-                        if(!target.mute){
-                            if(permission.get(target.permission).asObject().get("prefix") != null) {
-                                Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1",colorizeName(e.player.id,target.name)).replace("%2", e.message));
+                        if(!target.mute) {
+                            if (permission.get(target.permission).asObject().get("prefix") != null) {
+                                Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, target.name)).replace("%2", e.message));
                             } else {
-                                Call.sendMessage("[orange]"+colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message);
+                                Call.sendMessage("[orange]" + colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message);
                             }
 
                             // 서버간 대화기능 작동
@@ -488,52 +490,6 @@ public class Main extends Plugin {
                                     target.crosschat = false;
                                 }
                             }
-
-                            if (config.isEnableTranslate()) {
-                                try {
-                                    PlayerData orignaldata = PlayerData(e.player.uuid);
-                                    for (int i = 0; i < playerGroup.size(); i++) {
-                                        Player p = playerGroup.all().get(i);
-                                        if (!isNocore(p)) {
-                                            PlayerData data = PlayerData(p.uuid);
-                                            String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
-                                            String language = data.language;
-                                            String orignal = orignaldata.language;
-                                            if (!language.equals(orignal)) {
-                                                boolean found = false;
-                                                for (String s : support) {
-                                                    if (orignal.equals(s)) {
-                                                        found = true;
-                                                        break;
-                                                    }
-                                                }
-                                                if (found) {
-                                                    String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
-                                                            .method(Connection.Method.POST)
-                                                            .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
-                                                            .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
-                                                            .data("source", orignaldata.language)
-                                                            .data("target", data.language)
-                                                            .data("text", e.message)
-                                                            .ignoreContentType(true)
-                                                            .followRedirects(true)
-                                                            .execute()
-                                                            .body();
-                                                    JsonObject object = JsonValue.readJSON(response).asObject();
-                                                    if (object.get("error") != null) {
-                                                        String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
-                                                        if (data.translate) {
-                                                            p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                } catch (Exception ex) {
-                                    printError(ex);
-                                }
-                            }
                         }
                         arc.util.Log.info("<&y{0}: &lm{1}&lg>", e.player.name, e.message);
                     }
@@ -543,6 +499,52 @@ public class Main extends Plugin {
                 target.lastchat = e.message;
 
                 // 번역
+                if (config.isEnableTranslate()) {
+                    try {
+                        PlayerData orignaldata = PlayerData(e.player.uuid);
+                        for (int i = 0; i < playerGroup.size(); i++) {
+                            Player p = playerGroup.all().get(i);
+                            if (!isNocore(p)) {
+                                PlayerData data = PlayerData(p.uuid);
+                                String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
+                                String language = data.language;
+                                String orignal = orignaldata.language;
+                                if (!language.equals(orignal)) {
+                                    boolean found = false;
+                                    for (String s : support) {
+                                        if (orignal.equals(s)) {
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found) {
+                                        String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
+                                                .method(Connection.Method.POST)
+                                                .header("X-NCP-APIGW-API-KEY-ID", config.getClientId())
+                                                .header("X-NCP-APIGW-API-KEY", config.getClientSecret())
+                                                .data("source", orignaldata.language)
+                                                .data("target", data.language)
+                                                .data("text", e.message)
+                                                .ignoreContentType(true)
+                                                .followRedirects(true)
+                                                .execute()
+                                                .body();
+                                        JsonObject object = JsonValue.readJSON(response).asObject();
+                                        if (object.get("error") != null) {
+                                            String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
+                                            if (data.translate) {
+                                                p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception ex) {
+                        printError(ex);
+                    }
+                }
+
                 PlayerDataSet(target.uuid,target);
             }
         });

@@ -47,6 +47,7 @@ import static essentials.core.PlayerDB.PlayerData;
 import static essentials.special.PingServer.pingServer;
 import static essentials.utils.Config.PluginConfig;
 import static mindustry.Vars.*;
+import static mindustry.core.NetClient.onSetRules;
 
 public class Threads extends TimerTask{
     public static LocalTime playtime = LocalTime.of(0,0,0);
@@ -85,10 +86,12 @@ public class Threads extends TimerTask{
 
             // 맵 플탐 카운트
             playtime = playtime.plusSeconds(1);
-            // Anti PvP rushing timer
+
+            // PvP 평화시간 카운트
             if (config.isEnableantirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime())) {
                 state.rules.playerDamageMultiplier = 0.66f;
                 state.rules.playerHealthMultiplier = 0.8f;
+                onSetRules(state.rules);
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     player.sendMessage(bundle("pvp-peacetime"));
