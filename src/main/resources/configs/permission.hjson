@@ -17,6 +17,7 @@
       tempban
       save
       spawn
+      weather
     ]
   }
   newadmin: {

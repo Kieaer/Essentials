@@ -1355,7 +1355,7 @@ public class Main extends Plugin {
                 log("warn","player-not-found");
             }
         });
-        handler.register("mute","[Player name]", "Mute/unmute player", (arg, player) -> {
+        handler.register("mute","<Player_name>", "Mute/unmute player", (arg, player) -> {
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if (other == null) {
                 log("warn","player-not-found");
@@ -2239,7 +2239,31 @@ public class Main extends Plugin {
                 new Vote(player, arg[0]);
             }
         });
-        handler.<Player>register("mute","[Player name]", "Mute/unmute player", (arg, player) -> {
+        handler.<Player>register("weather","<day,eday,night,enight>","Change map light", (arg, player) ->{
+            if(!checkperm(player,"weather")) return;
+            // Command idea from Minecraft EssentialsX and Quezler's plugin!
+            // Useful with the Quezler's plugin.
+            state.rules.lighting = true;
+            switch (arg[0]){
+                case "day":
+                    state.rules.ambientLight.a = 0f;
+                    break;
+                case "eday":
+                    state.rules.ambientLight.a = 0.3f;
+                    break;
+                case "night":
+                    state.rules.ambientLight.a = 0.7f;
+                    break;
+                case "enight":
+                    state.rules.ambientLight.a = 0.85f;
+                    break;
+                default:
+                    return;
+            }
+            Call.onSetRules(state.rules);
+            player.sendMessage("DONE!");
+        });
+        handler.<Player>register("mute","<Player_name>", "Mute/unmute player", (arg, player) -> {
             if(!checkperm(player,"mute")) return;
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if (other == null) {
