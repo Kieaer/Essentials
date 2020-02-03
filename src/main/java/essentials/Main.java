@@ -324,7 +324,7 @@ public class Main extends Plugin {
                 if (config.isLoginenable() && isNocore(e.player)) {
                     if(config.getPasswordmethod().equals("mixed")) {
                         if (!player.error) {
-                            if (player.udid != Long.MIN_VALUE) {
+                            if (player.udid != 0L || (player.udid != 0L && player.uuid.equals("InactiveAAA="))) {
                                 new Thread(() -> Call.onConnect(e.player.con, hostip, 7060)).start();
                             } else {
                                 e.player.sendMessage(bundle(e.player, "autologin"));
@@ -1455,6 +1455,16 @@ public class Main extends Plugin {
             log("log","tempban", other.name, arg[1]);
             other.con.kick("Temp kicked");
         });
+        handler.register("average","Show average players", arg -> {
+            Integer sum = 0;
+            if(average == null) average = new ArrayList<>();
+            if(!average.isEmpty()) {
+                for (Integer mark : average) {
+                    sum += mark;
+                }
+                System.out.println("총 평균 서버인원: "+sum.floatValue() / average.size()+"명");
+            }
+        });
     }
 
     @Override
@@ -2063,7 +2073,6 @@ public class Main extends Plugin {
             player.sendMessage(nbundle(player, "server-status"));
             player.sendMessage("[#2B60DE]========================================[]");
             float fps = Math.round((int) 60f / Time.delta());
-            player.sendMessage(nbundle(player, "server-status-online", fps, Vars.playerGroup.size()));
             int idb = 0;
             int ipb = 0;
 
@@ -2077,7 +2086,7 @@ public class Main extends Plugin {
                 ipb++;
             }
             int bancount = idb + ipb;
-            player.sendMessage(nbundle(player, "server-status-banstat", bancount, idb, ipb, Threads.playtime, Threads.uptime));
+            player.sendMessage(nbundle(player, "server-status-banstat", fps, Vars.playerGroup.size(), bancount, idb, ipb, Threads.playtime, Threads.uptime, version));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if(!checkperm(player,"suicide")) return;
@@ -2297,6 +2306,23 @@ public class Main extends Plugin {
         });
         /*handler.<Player>register("test", "<message> <width> <height> <duration> <align> <top> <left> <bottom> <right>", "test", (arg, player) -> {
             Call.onInfoPopup(player.con,arg[0],Float.parseFloat(arg[1]),Float.parseFloat(arg[2]),Float.parseFloat(arg[3]),Integer.parseInt(arg[4]), Integer.parseInt(arg[5]), Integer.parseInt(arg[6]), Integer.parseInt(arg[7]), Integer.parseInt(arg[8]));
+        });*/
+        /*handler.<Player>register("test","testas",(arg, player)->{
+            //Call.setTile(world.tile(player.tileX(),player.tileY()),Blocks.icerocks,Team.sharded,0);
+            Thread t = new Thread(() -> {
+                for(int a=0;a<2000;a++) {
+                    Call.onConstructFinish(world.tile(player.tileX(),player.tileY()), Blocks.icerocks, 0, (byte) 0, Team.sharded, false);
+                    netServer.sendWorldData(player);
+                    try {
+                        sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            t.start();
+            //Call.onConstructFinish(world.tile(player.tileX(),player.tileY()),Blocks.icerocks,0,(byte)0,Team.sharded,false);
+            //Call.onWorldDataBegin();
         });*/
     }
 }

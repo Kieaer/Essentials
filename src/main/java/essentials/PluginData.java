@@ -5,6 +5,7 @@ import mindustry.world.Tile;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class PluginData {
     public static ArrayList<jumptotal> jumptotal = new ArrayList<>();
     public static ArrayList<String> blacklist = new ArrayList<>();
     public static ArrayList<banned> banned = new ArrayList<>();
+    public static ArrayList<Integer> average = new ArrayList<>();
 
     public static class nukeblock{
         public final Tile tile;
@@ -164,6 +166,7 @@ public class PluginData {
         map.put("jumptotal", jumptotal);
         map.put("blacklist", blacklist);
         map.put("banned",banned);
+        map.put("average",average);
 
         try {
             FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
@@ -189,6 +192,7 @@ public class PluginData {
                 map.put("jumptotal",new ArrayList<>());
                 map.put("blacklist",new ArrayList<>());
                 map.put("banned",new ArrayList<>());
+                map.put("average",new ArrayList<>());
                 oos.writeObject(map);
                 oos.close();
             } catch (Exception e) {
@@ -204,6 +208,7 @@ public class PluginData {
                 jumptotal = (ArrayList<jumptotal>) map.get("jumptotal");
                 blacklist = (ArrayList<String>) map.get("blacklist");
                 banned = (ArrayList<banned>) map.get("banned");
+                average = average != null ? (ArrayList<Integer>) map.get("average") : new ArrayList<>();
                 ois.close();
             } catch (Exception e) {
                 e.printStackTrace();
