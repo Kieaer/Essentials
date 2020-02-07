@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -859,7 +860,10 @@ public class PlayerDB{
     }
 
     public static void PlayerDataSaveAll(){
-        for (PlayerData player : Players){
+        // java.util.ConcurrentModificationException
+        Iterator<PlayerData> iter = Players.iterator();
+        while (iter.hasNext()) {
+            PlayerData player = iter.next();
             /*System.out.println("name: "+player.name);
             System.out.println("uuid: "+player.uuid);
             System.out.println("country: "+player.country);
