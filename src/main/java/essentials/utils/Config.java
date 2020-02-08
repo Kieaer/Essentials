@@ -77,6 +77,7 @@ public class Config {
                 "  # "+nbundle("config-server/client-child-description")+"\n" +
                 "  server-enable: " + isServerenable() + "\n" +
                 "  server-port: " + getServerport() + "\n" +
+                "  data-sharing: " + isDataSharing() + "\n" +
                 "\n" +
                 "  client-enable: " + isClientenable() + "\n" +
                 "  client-port: " + getClientport() + "\n" +
@@ -214,6 +215,10 @@ public class Config {
 
     public int getServerport(){
         return obj.getInt("server-port",25000);
+    }
+
+    public boolean isDataSharing(){
+        return obj.getBoolean("data-sharing",false);
     }
 
     public boolean isRealname(){

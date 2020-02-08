@@ -21,6 +21,7 @@ import essentials.special.*;
 import essentials.utils.Permission;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
@@ -34,6 +35,7 @@ import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
 import mindustry.type.Item;
+import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
@@ -2067,6 +2069,46 @@ public class Main extends Plugin {
                 }
             }
             player.sendMessage(bundle(player, "perm-group-not-found"));
+        });
+        handler.<Player>register("setmech","<Mech> [player]", "Set player mech", (arg, player) -> {
+            if(!checkperm(player,"setmech")) return;
+            Mech mech = Mechs.starter;
+            switch(arg[0]){
+                case "alpha":
+                    mech = Mechs.alpha;
+                    break;
+                case "dart":
+                    mech = Mechs.dart;
+                    break;
+                case "delta":
+                    mech = Mechs.glaive;
+                    break;
+                case "javalin":
+                    mech = Mechs.javelin;
+                    break;
+                case "omega":
+                    mech = Mechs.omega;
+                    break;
+                case "tau":
+                    mech = Mechs.tau;
+                    break;
+                case "trident":
+                    mech = Mechs.trident;
+                    break;
+            }
+            if(arg.length == 1){
+                for(Player p : playerGroup.all()){
+                    p.mech = mech;
+                }
+            } else {
+                Player target = playerGroup.find(p -> p.name.equals(arg[1]));
+                if (target == null) {
+                    player.sendMessage(bundle(player, "player-not-found"));
+                    return;
+                }
+                target.mech = mech;
+            }
+            player.sendMessage(bundle(player,"success"));
         });
         handler.<Player>register("status", "Show server status", (arg, player) -> {
             if(!checkperm(player,"status")) return;

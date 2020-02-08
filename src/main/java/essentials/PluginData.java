@@ -5,10 +5,10 @@ import mindustry.world.Tile;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static essentials.Global.getip;
 import static essentials.Main.root;
 import static essentials.utils.Config.PluginConfig;
 import static mindustry.Vars.world;
@@ -24,6 +24,7 @@ public class PluginData {
     public static ArrayList<Tile> nukedata = new ArrayList<>();
     public static ArrayList<Tile> nukeposition = new ArrayList<>();
     public static ArrayList<Process> process = new ArrayList<>();
+    public static String ip = getip();
 
     // 종료시 저장되는 플러그인 데이터
     public static ArrayList<jumpzone> jumpzone = new ArrayList<>();
@@ -178,6 +179,17 @@ public class PluginData {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static Map<String, ArrayList<?>> extract() {
+        Map<String, ArrayList<?>> map = new HashMap<>();
+        map.put("jumpzone", jumpzone);
+        map.put("jumpcount", jumpcount);
+        map.put("jumptotal", jumptotal);
+        map.put("blacklist", blacklist);
+        map.put("banned", banned);
+        map.put("average", average);
+        return map;
     }
 
     @SuppressWarnings("unchecked") // 의도적인 작동임

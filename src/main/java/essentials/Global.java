@@ -705,6 +705,11 @@ public class Global {
         return cipher.doFinal(data.getBytes());
     }
 
+    public static byte[] encrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
+        cipher.init(Cipher.ENCRYPT_MODE, spec);
+        return cipher.doFinal(data);
+    }
+
     // 패킷 복호화
     public static byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
         cipher.init(Cipher.DECRYPT_MODE, spec);
@@ -800,7 +805,6 @@ public class Global {
             BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
             return in.readLine();
         }catch (Exception e){
-            e.printStackTrace();
             return "127.0.0.1";
         }
     }

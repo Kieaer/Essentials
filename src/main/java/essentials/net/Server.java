@@ -300,6 +300,13 @@ public class Server implements Runnable {
                             os.writeBytes(Base64.encode(encrypt("false",spec,cipher))+"\n");
                         }
                         os.flush();
+                    } else if(config.isDataSharing()) {
+                        // Plugin data sharing
+                        /*CipherOutputStream cipherOutputStream = new CipherOutputStream( new BufferedOutputStream( new FileOutputStream( fileName ) ), cipher );
+                        new ObjectOutputStream(socket.getOutputStream()).writeObject(Players);
+                        os.writeBytes(Base64.encode(encrypt(Players.,spec,cipher))+"\n");
+                        Players.toArray();
+                        extract();*/
                     } else {
                         nlog("warn","Invalid data - " + data);
                     }

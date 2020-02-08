@@ -4,7 +4,7 @@ import org.junit.Test;
 
 public class PlayerDB {
     @Test
-    public void testOpenconnect(){
+    public void testOpenconnect() {
 
     }
 
