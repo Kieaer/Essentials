@@ -37,6 +37,7 @@ import mindustry.plugin.Plugin;
 import mindustry.type.Item;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
+import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.NuclearReactor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -2069,6 +2070,19 @@ public class Main extends Plugin {
                 }
             }
             player.sendMessage(bundle(player, "perm-group-not-found"));
+        });
+        handler.<Player>register("spawn-core","<smail/normal/big>", "Make new core", (arg, player) -> {
+            if(!checkperm(player,"spawn-core")) return;
+            Block core = Blocks.coreShard;
+            switch(arg[0]){
+                case "normal":
+                    core = Blocks.coreFoundation;
+                    break;
+                case "big":
+                    core = Blocks.coreNucleus;
+                    break;
+            }
+            Call.onConstructFinish(world.tile(player.tileX(),player.tileY()), core,0,(byte)0,player.getTeam(),false);
         });
         handler.<Player>register("setmech","<Mech> [player]", "Set player mech", (arg, player) -> {
             if(!checkperm(player,"setmech")) return;

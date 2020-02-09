@@ -33,6 +33,7 @@
       tpp
       mute
       setmech
+      spawn-core
     ]
   }
   default: {
