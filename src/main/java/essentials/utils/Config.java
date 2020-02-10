@@ -175,6 +175,7 @@ public class Config {
                 "\n" +
                 "  # "+nbundle("config-debug-description")+"\n" +
                 "  debug: " + isDebug() + "\n" +
+                "  crash-report: " + isCrashReport() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-savetime-description")+"\n" +
                 "  savetime: " + getSavetime() + "\n" +
@@ -391,6 +392,10 @@ public class Config {
 
     public boolean isDebug(){
         return obj.getBoolean("debug",false);
+    }
+
+    public boolean isCrashReport(){
+        return obj.getBoolean("crash-report",true);
     }
 
     public int getSavetime(){

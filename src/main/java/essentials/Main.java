@@ -735,6 +735,17 @@ public class Main extends Plugin {
             }
         }, 30000, 30000);
 
+        // 1분마다 실행되는 작업 시작
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                int re = 0;
+                for (jumpcount value : jumpcount) re = re + value.players;
+                if(average == null) average = new ArrayList<>();
+                average.add(re+playerGroup.size());
+            }
+        },60000,60000);
+
         // 롤백 명령어에서 사용될 자동 저장작업 시작
         if(config.isEnableRollback()) timer.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
 
@@ -1317,7 +1328,7 @@ public class Main extends Plugin {
                 for (Integer mark : average) {
                     sum += mark;
                 }
-                System.out.println("총 평균 서버인원: "+sum.floatValue() / average.size()+"명");
+                System.out.println("Total server average players: "+sum.floatValue() / average.size()+" players");
             }
         });
     }

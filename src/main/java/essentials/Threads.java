@@ -84,11 +84,6 @@ public class Threads extends TimerTask{
             // 서버간 이동 패드에 플레이어가 있는지 확인
             // new jumpzone().start();
 
-            int re = 0;
-            for (jumpcount value : jumpcount) re = re + value.players;
-            if(average == null) average = new ArrayList<>();
-            average.add(re+playerGroup.size());
-
             // 맵 플탐 카운트
             playtime = playtime.plusSeconds(1);
 

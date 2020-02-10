@@ -44,8 +44,11 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | players |  | Show players list |
 | save |  | Auto rollback map early save |
 | reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
+| register | &lt;accountid&gt; &lt;password&gt; | Register account |
 | spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playername] | Spawn mob in player position |
 | setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
+| spawn-core | &lt;smail/normal/big&gt; | Make new core |
+| setmech | &lt;Mech&gt; [player] | Set player mech |
 | status |  | Show server status |
 | suicide |  | Kill yourself. |
 | team | [Team...] | Change team (PvP only) |
@@ -55,7 +58,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
 | tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
 | tr |  | Enable/disable Translate all chat |
-| vote | &lt;gameover/skipwave/kick/rollback/map&gt; [mapid/mapname/playername...] | Vote surrender or skip wave, Long-time kick |
+| vote | &lt;mode&gt; [parameter...] | Voting system (Use /vote to check detail commands) |
+| weather | &lt;day,eday,night,enight&gt; | Change map light |
+| mute | &lt;Player_name&gt; | Mute/unmute player |
 | votekick | [player_name] | Player kick starts voting. |
 
 ## Server commands
@@ -72,11 +77,13 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | unadminall | &lt;default_group_name&gt; | Remove all player admin status |
 | kickall |  | Kick all players. |
 | kill | &lt;username&gt; | Kill target player. |
+| mute | &lt;Player_name&gt; | Mute/unmute player |
 | nick | &lt;name&gt; &lt;newname...&gt; | Set player nickname |
 | pvp | &lt;anticoal/timer&gt; [time...] | Set gamerule with PvP mode. |
 | setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission group |
 | sync | &lt;player&gt; | Force sync request from the target player. |
 | team | [name] | Change target player team. |
 | tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
+| average |  | Show average players |
 
-README.md Generated time: 2020-01-30 22:20:47
+README.md Generated time: 2020-02-10 23:11:29
