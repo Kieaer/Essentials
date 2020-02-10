@@ -37,7 +37,7 @@ public class Discord extends ListenerAdapter {
                 log("err","discord-error");
             }
         }catch (Exception e){
-            e.printStackTrace();
+            printError(e);
         }
     }
 

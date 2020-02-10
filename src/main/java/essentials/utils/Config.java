@@ -32,7 +32,7 @@ public class Config {
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-    public static int version = 10;
+    public static int config_version = 10;
     public static int DBVersion = 10;
 
     public void main(){
@@ -64,7 +64,7 @@ public class Config {
 
     void update(){
         String antirushtime = obj.getString("antirushtime","10:00");
-        if(obj.getInt("version",0) < version) log("config","config-updated");
+        if(obj.getInt("version",0) < config_version) log("config","config-updated");
 
         String text = "{\n"+
                 "  # "+nbundle("config-version-description")+"\n" +
@@ -275,7 +275,7 @@ public class Config {
     }
 
     public int getVersion(){
-        return obj.getInt("version", version);
+        return obj.getInt("version", config_version);
     }
     public String getLanguage(){
         return obj.getString("language","en");
@@ -478,7 +478,7 @@ public class Config {
                 }
                 jar.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                printError(e);
             }
         }
     }

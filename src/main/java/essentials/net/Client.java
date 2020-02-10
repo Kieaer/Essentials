@@ -72,7 +72,7 @@ public class Client extends Thread{
                     writeData("UPDATE players SET crosschat = ? WHERE uuid = ?",0, player.uuid);
                 }
             } catch (Exception e){
-                e.printStackTrace();
+                printError(e);
             }
         } else {
             switch (option) {
@@ -108,7 +108,7 @@ public class Client extends Thread{
                         Call.sendMessage("[#357EC7][SC] " + msg);
                         log("client","client-sent-message", config.getClienthost(), message);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        printError(e);
                     }
                     break;
                 case "exit":

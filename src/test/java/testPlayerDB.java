@@ -67,16 +67,12 @@ public class testPlayerDB {
     }
 
     @Test
-    public void testPlayerDBWrite() throws InterruptedException {
-        Thread first = new Thread(() -> {
-            for (int a = 0; a < 100; a++) {
-                System.out.print("\r" + a + "...");
-                createData(a);
-                System.out.flush();
-            }
-        });
-        first.start();
-        first.join();
+    public void testPlayerDBWrite() {
+        for (int a = 0; a < 100; a++) {
+            System.out.print("\r" + a + "...");
+            createData(a);
+            System.out.flush();
+        }
     }
 
     @Test

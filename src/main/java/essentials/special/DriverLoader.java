@@ -74,8 +74,8 @@ public class DriverLoader implements Driver {
             }
             tried = true;
             run();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

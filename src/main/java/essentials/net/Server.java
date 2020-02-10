@@ -330,7 +330,7 @@ public class Server implements Runnable {
             JsonObject result = new JsonObject();
             result.add("players", playerGroup.size()); // 플레이어 인원
             result.add("version", Version.build); // 버전
-            result.add("plugin-version", version);
+            result.add("plugin-version", plugin_version);
             result.add("playtime", playtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             result.add("name", Core.settings.getString("servername"));
             result.add("mapname", world.getMap().name());
@@ -512,7 +512,7 @@ public class Server implements Runnable {
                         String data = query();
                         bw.write("HTTP/1.1 200 OK\r\n");
                         bw.write("Date: " + time + "\r\n");
-                        bw.write("Server: Mindustry/Essentials "+version+"\r\n");
+                        bw.write("Server: Mindustry/Essentials "+ plugin_version +"\r\n");
                         bw.write("Content-Type: application/json; charset=utf-8\r\n");
                         bw.write("Content-Length: " + data.getBytes().length + 1 + "\r\n");
                         bw.write("\r\n");
@@ -521,7 +521,7 @@ public class Server implements Runnable {
                         String rank = rankingdata();
                         bw.write("HTTP/1.1 200 OK\r\n");
                         bw.write("Date: " + time + "\r\n");
-                        bw.write("Server: Mindustry/Essentials "+version+"\r\n");
+                        bw.write("Server: Mindustry/Essentials "+ plugin_version +"\r\n");
                         bw.write("Content-Type: text/html; charset=utf-8\r\n");
                         bw.write("Content-Length: " + rank.getBytes().length + 1 + "\r\n");
                         bw.write("\r\n");

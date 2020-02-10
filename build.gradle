@@ -1,4 +1,4 @@
-apply plugin: "java"
+apply plugin: 'java-library'
 
 version '8.0'
 
@@ -30,37 +30,37 @@ dependencies{
     //compileOnly files("C:\\Users\\cloud\\Desktop\\Mindustry-master\\core\\build\\libs\\core-release.jar")
 
     // json
-    implementation group: 'org.hjson', name: 'hjson', version: '3.0.0'
+    compile group: 'org.hjson', name: 'hjson', version: '3.0.0'
 
     // version check
-    implementation group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
+    compile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
 
     // encrypt library
-    implementation group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
+    compile group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
 
     // JSOUP library
-    implementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+    compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
 
     // Discord
-    implementation ('net.dv8tion:JDA:4.0.0_73') {
+    compile ('net.dv8tion:JDA:4.0.0_73') {
         exclude module: 'opus-java'
     }
-    implementation 'org.slf4j:slf4j-nop:1.7.25'
+    compile 'org.slf4j:slf4j-nop:1.7.25'
 
-    implementation group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.0-rc2'
+    compile group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.0-rc2'
 
-    testImplementation group: 'junit', name: 'junit', version: '4.13'
-    testImplementation "com.github.Anuken.Arc:arc-core:$targetversion"
-    testImplementation "com.github.Anuken.Mindustry:core:$targetversion"
-    testImplementation group: 'org.hjson', name: 'hjson', version: '3.0.0'
-    testImplementation group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
-    testImplementation group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
-    testImplementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
-    testImplementation ('net.dv8tion:JDA:4.0.0_73') {
+    testCompile group: 'junit', name: 'junit', version: '4.13'
+    testCompile "com.github.Anuken.Arc:arc-core:$targetversion"
+    testCompile "com.github.Anuken.Mindustry:core:$targetversion"
+    testCompile group: 'org.hjson', name: 'hjson', version: '3.0.0'
+    testCompile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'
+    testCompile group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
+    testCompile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+    testCompile ('net.dv8tion:JDA:4.0.0_73') {
         exclude module: 'opus-java'
     }
-    testImplementation 'org.slf4j:slf4j-nop:1.7.25'
-    testImplementation group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.0-rc2'
+    testCompile 'org.slf4j:slf4j-nop:1.7.25'
+    testCompile group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.0-rc2'
 }
 
 jar{

@@ -437,7 +437,7 @@ public class Threads extends TimerTask{
                         }
                     });
                 }catch (Exception e){
-                    e.printStackTrace();
+                    printError(e);
                 }
             }
         }
@@ -775,7 +775,7 @@ public class Threads extends TimerTask{
     public static class jumpdata extends Thread{
         @Override
         public void run() {
-            while(!Thread.currentThread().isInterrupted()) {
+            while(true) {
                 for (int a = 0; a < messagejump.size(); a++) {
                     if(messagejump.get(a).tile.entity.block != Blocks.message){
                         messagejump.remove(a);
@@ -796,9 +796,9 @@ public class Threads extends TimerTask{
                     });
                 }
                 try {
-                    Thread.sleep(2500);
+                    sleep(2500);
                 } catch (InterruptedException e) {
-                    printError(e);
+                    return;
                 }
             }
         }
@@ -817,7 +817,7 @@ public class Threads extends TimerTask{
 
             for (jumpzone data : jumpzone) {
                 Thread t = new Thread(() -> {
-                    while (!Thread.currentThread().isInterrupted()) {
+                    while (true) {
                         String ip = data.ip;
                         if(state.is(GameState.State.playing)) {
                             pingServer(ip, result -> {
@@ -856,7 +856,9 @@ public class Threads extends TimerTask{
                         } else {
                             try {
                                 sleep(1000);
-                            } catch (InterruptedException ignored) {}
+                            } catch (InterruptedException ignored) {
+                                return;
+                            }
                         }
                     }
                 });

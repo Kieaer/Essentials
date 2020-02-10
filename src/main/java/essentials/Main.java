@@ -34,7 +34,6 @@ import mindustry.io.SaveIO;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
-import mindustry.type.Item;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
@@ -67,8 +66,7 @@ import static essentials.Threads.*;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
-import static essentials.utils.Config.PluginConfig;
-import static essentials.utils.Config.executorService;
+import static essentials.utils.Config.*;
 import static essentials.utils.Permission.permission;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
@@ -82,6 +80,12 @@ public class Main extends Plugin {
     private Array<Player> players = new Array<>();
     public Client client;
     public static PlayerDB playerDB = new PlayerDB();
+
+    // Trigger variables
+    int tick = 0;
+    boolean reactor_warn1 = false;
+    boolean reactor_warn2 = false;
+    boolean reactor_warn3 = false;
 
     public Main() {
         // 예전 데이터 변환
@@ -124,7 +128,8 @@ public class Main extends Plugin {
         }
 
         // 메세지 블럭에 의한 클라이언트 플레이어 카운트
-        executorService.submit(new jumpdata());
+        Thread jumpdata = new jumpdata();
+        jumpdata.start();
 
         // 코어 자원소모 감시 시작
         // executorService.submit(new monitorresource());
@@ -734,14 +739,8 @@ public class Main extends Plugin {
         if(config.isEnableRollback()) timer.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
 
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
-        Core.app.addListener(new ApplicationListener() {
-            int scandelay,delaycount,resetdelay,copper,lead,graphite,titanium,thorium,silicon,phase_fabric,surge_alloy,plastanium,metaglass = 0;
-            boolean a1, a2, a3 = false;
-            StringBuilder scancore_text = new StringBuilder();
-            // public Array<Integer> pre = new Array<>();
-            // public Array<Item> name = new Array<>();
-
-            void setText(int orignal, int amount, Item item){
+        Events.on(Trigger.update.getClass(), e -> {
+            /*void setText(int orignal, int amount, Item item){
                 String color;
                 String data;
                 int val;
@@ -755,222 +754,100 @@ public class Main extends Plugin {
                     data = "[]" + item.name + ": " + color + val + "/s\n";
                     scancore_text.append(data);
                 }
-            }
+            }*/
 
-            @Override
-            public void update() {
-                /*if(resetdelay >= 300){
-                    resetdelay = 0;
-                    cool = false;
-                } else {
-                    resetdelay++;
-                }*/
-
-                if(config.isBorder()) {
-                    for (Player p : playerGroup.all()) {
-                        if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
-                            Call.onPlayerDeath(p);
-                    }
-                }
-
-                if (delaycount == 30) {
-                    try {
-                        // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
-                        for (int i = 0; i < powerblock.size(); i++) {
-                            if (powerblock.get(i).tile.block() != Blocks.message) {
-                                powerblock.remove(i);
-                                return;
-                            }
-
-                            float current;
-                            float product;
-                            float using;
-                            try {
-                                current = powerblock.get(i).tile.entity.power.graph.getPowerBalance() * 60;
-                                using = powerblock.get(i).tile.entity.power.graph.getPowerNeeded() * 60;
-                                product = powerblock.get(i).tile.entity.power.graph.getPowerProduced() * 60;
-                            } catch (Exception ignored) {
-                                powerblock.remove(i);
-                                return;
-                            }
-                            String text = "Power status\n" +
-                                    "Current: [sky]" + Math.round(current) + "[]\n" +
-                                    "Using: [red]" + Math.round(using) + "[]\n" +
-                                    "Production: [green]" + Math.round(product) + "[]";
-                            Call.setMessageBlockText(null, powerblock.get(i).tile, text);
-                        }
-                        // 타이머 초기화
-                        delaycount = 0;
-                        a1 = false;
-                        a2 = false;
-                        a3 = false;
-                    } catch (Exception ignored) {}
-                } else {
-                    delaycount++;
-                }
-
-                if(scandelay == 60){
-                    /*if(state.is(GameState.State.playing)) {
-                        for (Item item : content.items()) {
-                            if (item.type == ItemType.material) {
-                                pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
-                                name.add(item);
-                            }
-                        }
-
-                        for (int a=0;a<content.items().size;a++){
-                            Item item = content.item(a);
-                            if (item.type == ItemType.material) {
-                                int resource;
-                                if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                                if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                    resource = state.teams.get(Team.sharded).cores.first().items.get(item);
-                                } else {
-                                    return;
-                                }
-                                int temp = resource - pre.get(a);
-                                nlog("debug",resource+"/"+pre.get(a));
-                                if(resetdelay >= 600){
-                                    pre.set(a,resource);
-                                }
-                                if (temp < -55 && !cool) {
-                                    StringBuilder using = new StringBuilder();
-                                    for (int b = 0; b < playerGroup.size(); b++) {
-                                        Player p = playerGroup.all().get(b);
-                                        if (p.buildRequest() != null) {
-                                            for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
-                                                Item ad = p.buildRequest().block.requirements[c].item;
-                                                if (ad == name.get(a)) {
-                                                    using.append(p.name).append(", ");
-                                                }
-                                            }
-                                        }
-                                    }
-                                    allsendMessage("resource-fast", name.get(a).name);
-                                    allsendMessage("resource-fast-use", name.get(a).name, using);
-                                    cool = true;
-                                }
-                            }
-                        }
-                    }
-                    // 코어 자원 소모량 감시
-                    try {
-                        for (Item item : content.items()) {
-                            if (item.type == ItemType.material) {
-                                int amount = state.teams.get(Team.sharded).cores.first().items.get(item);
-                                switch (item.name) {
-                                    case "copper":
-                                        setText(copper, amount, Items.copper);
-                                        copper = amount;
-                                        break;
-                                    case "lead":
-                                        setText(lead, amount, Items.lead);
-                                        lead = amount;
-                                        break;
-                                    case "graphite":
-                                        setText(graphite, amount, Items.graphite);
-                                        graphite = amount;
-                                        break;
-                                    case "titanium":
-                                        setText(titanium, amount, Items.titanium);
-                                        titanium = amount;
-                                        break;
-                                    case "thorium":
-                                        setText(thorium, amount, Items.thorium);
-                                        thorium = amount;
-                                        break;
-                                    case "silicon":
-                                        setText(silicon, amount, Items.silicon);
-                                        silicon = amount;
-                                        break;
-                                    case "phase-fabric":
-                                        setText(phase_fabric, amount, Items.phasefabric);
-                                        phase_fabric = amount;
-                                        break;
-                                    case "surge-alloy":
-                                        setText(surge_alloy, amount, Items.surgealloy);
-                                        surge_alloy = amount;
-                                        break;
-                                    case "plastanium":
-                                        setText(plastanium, amount, Items.plastanium);
-                                        plastanium = amount;
-                                        break;
-                                    case "metaglass":
-                                        setText(metaglass, amount, Items.metaglass);
-                                        metaglass = amount;
-                                        break;
-                                }
-                            }
-                        }
-
-                        for (int a = 0; a < scancore.size(); a++) {
-                            if (scancore.get(a).entity == null || scancore.get(a).entity.block != Blocks.message) {
-                                scancore.remove(a);
-                                break;
-                            }
-                            Call.setMessageBlockText(null, scancore.get(a), scancore_text.toString());
-                            scancore_text.setLength(0);
-                        }
-                    }catch (Exception ignored){}*/
-                    scandelay = 0;
-                } else {
-                    scandelay++;
-                }
-
-                // 핵 폭발감지
-                if(config.isDetectreactor()) {
-                    for (int i = 0; i < nukedata.size(); i++) {
-                        Tile target = nukedata.get(i);
-                        try {
-                            NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
-                            if (entity.heat >= 0.2f && entity.heat <= 0.39f && !a1) {
-                                allsendMessage("thorium-overheat-green", Math.round(entity.heat * 100), target.x, target.y);
-                                a1 = true;
-                            }
-                            if (entity.heat >= 0.4f && entity.heat <= 0.79f && !a2) {
-                                allsendMessage("thorium-overheat-yellow", Math.round(entity.heat * 100), target.x, target.y);
-                                a2 = true;
-                            }
-                            if (entity.heat >= 0.8f && entity.heat <= 0.95f && !a3) {
-                                allsendMessage("thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y);
-                                a3 = true;
-                            }
-                            if (entity.heat >= 0.95f) {
-                                for (int a = 0; a < playerGroup.size(); a++) {
-                                    Player p = playerGroup.all().get(a);
-                                    p.sendMessage(bundle(p, "thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y));
-                                    if (p.isAdmin) {
-                                        p.setNet(target.x * 8, target.y * 8);
-                                    }
-                                }
-                                Call.onDeconstructFinish(target, Blocks.air, 0);
-                                allsendMessage("thorium-removed");
-                            }
-                        } catch (Exception ignored) {
-                            nukedata.remove(i);
-                            break;
-                        }
-                    }
+            if(config.isBorder()) {
+                for (Player p : playerGroup.all()) {
+                    if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
+                        Call.onPlayerDeath(p);
                 }
             }
 
-            public void dispose() {
-                PlayerDataSaveAll();
-                saveall();
-
-                // 타이머 스레드 종료
+            if (tick == 30) {
                 try {
-                    timer.cancel();
-                    if (isvoting) {
-                        Vote.cancel();
-                    }
-                    log("log", "count-thread-disabled");
-                } catch (Exception e) {
-                    log("err", "count-thread-disable-error");
-                    printError(e);
-                }
+                    // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
+                    for (int i = 0; i < powerblock.size(); i++) {
+                        if (powerblock.get(i).tile.block() != Blocks.message) {
+                            powerblock.remove(i);
+                            return;
+                        }
 
-                // 서버 종료
+                        float current;
+                        float product;
+                        float using;
+                        try {
+                            current = powerblock.get(i).tile.entity.power.graph.getPowerBalance() * 60;
+                            using = powerblock.get(i).tile.entity.power.graph.getPowerNeeded() * 60;
+                            product = powerblock.get(i).tile.entity.power.graph.getPowerProduced() * 60;
+                        } catch (Exception ignored) {
+                            powerblock.remove(i);
+                            return;
+                        }
+                        String text = "Power status\n" +
+                                "Current: [sky]" + Math.round(current) + "[]\n" +
+                                "Using: [red]" + Math.round(using) + "[]\n" +
+                                "Production: [green]" + Math.round(product) + "[]";
+                        Call.setMessageBlockText(null, powerblock.get(i).tile, text);
+                    }
+                    // 타이머 초기화
+                    tick = 0;
+                    reactor_warn1 = false;
+                    reactor_warn2 = false;
+                    reactor_warn3 = false;
+                } catch (Exception ignored) {}
+            } else {
+                tick++;
+            }
+
+            // 핵 폭발감지
+            if(config.isDetectreactor()) {
+                for (int i = 0; i < nukedata.size(); i++) {
+                    Tile target = nukedata.get(i);
+                    try {
+                        NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
+                        if (entity.heat >= 0.2f && entity.heat <= 0.39f && !reactor_warn1) {
+                            allsendMessage("thorium-overheat-green", Math.round(entity.heat * 100), target.x, target.y);
+                            reactor_warn1 = true;
+                        }
+                        if (entity.heat >= 0.4f && entity.heat <= 0.79f && !reactor_warn2) {
+                            allsendMessage("thorium-overheat-yellow", Math.round(entity.heat * 100), target.x, target.y);
+                            reactor_warn2 = true;
+                        }
+                        if (entity.heat >= 0.8f && entity.heat <= 0.95f && !reactor_warn3) {
+                            allsendMessage("thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y);
+                            reactor_warn3 = true;
+                        }
+                        if (entity.heat >= 0.95f) {
+                            for (int a = 0; a < playerGroup.size(); a++) {
+                                Player p = playerGroup.all().get(a);
+                                p.sendMessage(bundle(p, "thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y));
+                                if (p.isAdmin) {
+                                    p.setNet(target.x * 8, target.y * 8);
+                                }
+                            }
+                            Call.onDeconstructFinish(target, Blocks.air, 0);
+                            allsendMessage("thorium-removed");
+                        }
+                    } catch (Exception ignored) {
+                        nukedata.remove(i);
+                        break;
+                    }
+                }
+            }
+        });
+
+        Core.app.addListener(new ApplicationListener() {
+            public void dispose() {
+                boolean error = false;
+
+                PlayerDataSaveAll(); // 플레이어 데이터 저장
+                saveall(); // 플러그인 데이터 저장
+                executorService.shutdown(); // 스레드 종료
+                singleService.shutdown(); // 로그 스레드 종료
+                timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
+                if (isvoting) Vote.cancel(); // 투표 종료
+                jumpdata.interrupt(); // 다른 서버상태 확인 스레드 종료
+                closeconnect(); // DB 연결 종료
                 if (config.isServerenable()) {
                     try {
                         for (Server.Service ser : Server.list) {
@@ -978,11 +855,7 @@ public class Main extends Plugin {
                             ser.os.close();
                             ser.in.close();
                             ser.socket.close();
-                            if (ser.isInterrupted()) {
-                                Server.list.remove(ser);
-                            } else {
-                                log("err", "server-thread-disable-error");
-                            }
+                            Server.list.remove(ser);
                         }
 
                         Server.serverSocket.close();
@@ -990,6 +863,7 @@ public class Main extends Plugin {
 
                         log("log", "server-thread-disabled");
                     } catch (Exception e) {
+                        error = true;
                         printError(e);
                         log("err", "server-thread-disable-error");
                     }
@@ -1002,34 +876,12 @@ public class Main extends Plugin {
                 }
 
                 // 모든 이벤트 서버 종료
-                for (Process value : process) {
-                    value.destroy();
-                    if (value.isAlive()) {
-                        try {
-                            throw new Exception("Process stop failed");
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
+                for (Process value : process) value.destroy();
+                if(!error){
+                    log("log", "thread-disabled");
+                } else {
+                    log("log","thread-not-dead");
                 }
-
-                // 모든 스레드 종료
-                executorService.shutdown();
-                if (executorService.isTerminated() && executorService.isShutdown() && config.isDebug())
-                    log("debug", "executorservice dead");
-
-                // DB 종료
-                if (!closeconnect() && config.isDebug()) {
-                    try {
-                        throw new Exception("DB stop failed");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                log("log", "thread-disabled");
-
-                System.exit(0);
             }
         });
 
@@ -1042,12 +894,12 @@ public class Main extends Plugin {
 
                     for(int a=0;a<mods.list().size;a++){
                         if(mods.list().get(a).meta.name.equals("Essentials")){
-                            version = mods.list().get(a).meta.version;
+                            plugin_version = mods.list().get(a).meta.version;
                         }
                     }
 
-                    DefaultArtifactVersion latest = new DefaultArtifactVersion(json.getString("tag_name",version));
-                    DefaultArtifactVersion current = new DefaultArtifactVersion(version);
+                    DefaultArtifactVersion latest = new DefaultArtifactVersion(json.getString("tag_name", plugin_version));
+                    DefaultArtifactVersion current = new DefaultArtifactVersion(plugin_version);
 
                     if (latest.compareTo(current) > 0) {
                         log("client","version-new");
@@ -1500,7 +1352,7 @@ public class Main extends Plugin {
                 PlayerDataSave(p);
                 player.sendMessage(bundle(player,"success"));
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                printError(e);
             }
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
@@ -1568,7 +1420,7 @@ public class Main extends Plugin {
                                 try {
                                     es.join();
                                 } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                                    printError(e);
                                 }
                                 log("log","event-host-opened", player.name, customport);
 
@@ -2142,7 +1994,7 @@ public class Main extends Plugin {
                 ipb++;
             }
             int bancount = idb + ipb;
-            player.sendMessage(nbundle(player, "server-status-banstat", fps, Vars.playerGroup.size(), bancount, idb, ipb, Threads.playtime, Threads.uptime, version));
+            player.sendMessage(nbundle(player, "server-status-banstat", fps, Vars.playerGroup.size(), bancount, idb, ipb, Threads.playtime, Threads.uptime, plugin_version));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if(!checkperm(player,"suicide")) return;
@@ -2265,7 +2117,7 @@ public class Main extends Plugin {
             }
             PlayerDataSet(player.uuid,target);
         });
-        handler.<Player>register("vote", "<gameover/skipwave/kick/rollback/map> [mapid/mapname/playername...]", "Vote surrender or skip wave, Long-time kick", (arg, player) -> {
+        handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
             if(!checkperm(player,"vote")) return;
             if(isvoting){
                 player.sendMessage(bundle(player, "vote-in-processing"));
@@ -2296,6 +2148,14 @@ public class Main extends Plugin {
                     }
                 }
             } else {
+                if(arg.length == 0){
+                    player.sendMessage(bundle(player, "vote-list"));
+                    return;
+                }
+                if(arg.length == 1 && arg[1].equals("gamemode")){
+                    player.sendMessage(bundle(player, "vote-list-gamemode"));
+                    return;
+                }
                 if(arg[0].equals("map") || arg[0].equals("kick")){
                     player.sendMessage(bundle(player, "vote-map-not-found"));
                     return;
@@ -2372,7 +2232,7 @@ public class Main extends Plugin {
                     try {
                         sleep(100);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        printError(e);
                     }
                 }
             });

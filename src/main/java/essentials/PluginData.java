@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static essentials.Global.getip;
+import static essentials.Global.printError;
 import static essentials.Main.root;
 import static essentials.utils.Config.PluginConfig;
 import static mindustry.Vars.world;
@@ -177,7 +178,7 @@ public class PluginData {
 
             root.child("data/data.json").writeString(PluginConfig.toString());
         } catch (Exception e) {
-            e.printStackTrace();
+            printError(e);
         }
     }
 
@@ -208,7 +209,7 @@ public class PluginData {
                 oos.writeObject(map);
                 oos.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                printError(e);
             }
         } else if(root.child("data/PluginData.object").exists()){
             try {
@@ -223,7 +224,7 @@ public class PluginData {
                 average = average != null ? (ArrayList<Integer>) map.get("average") : new ArrayList<>();
                 ois.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                printError(e);
             }
         }
     }

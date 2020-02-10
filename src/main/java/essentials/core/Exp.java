@@ -6,7 +6,6 @@ import mindustry.gen.Call;
 import static essentials.Global.config;
 import static essentials.Global.nbundle;
 import static essentials.core.PlayerDB.PlayerData;
-import static essentials.core.PlayerDB.PlayerDataSet;
 
 public class Exp {
     private static double BASE_XP = config.getBasexp();

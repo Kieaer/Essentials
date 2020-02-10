@@ -41,7 +41,7 @@ import static mindustry.Vars.world;
 
 public class Global {
     public static Config config = new Config();
-    public static String version;
+    public static String plugin_version;
     public static String hostip = getip();
 
     final static String tag = "[Essential] ";
@@ -182,19 +182,22 @@ public class Global {
         if(!config.isDebug()){
             StringBuilder sb = new StringBuilder();
             try {
-                sb.append(e.toString());
-                sb.append("\n");
+                sb.append(e.toString())
+                .append("\n")
+                .append("TIME: ")
+                .append(getTime())
+                .append("\n");
                 StackTraceElement[] element = e.getStackTrace();
-                for (StackTraceElement stackTraceElement : element) {
-                    sb.append("\tat ");
-                    sb.append(stackTraceElement.toString());
-                    sb.append("\n");
+                for (StackTraceElement error : element) {
+                    sb.append("\tat ")
+                    .append(error.toString())
+                    .append("\n");
                 }
                 sb.append("=================================================\n");
                 String text = sb.toString();
 
                 writelog("error", text);
-                nlog("err","Internal error! - "+e.getMessage());
+                nlog("err","Plugin internal error! - "+e.getMessage());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -831,7 +834,7 @@ public class Global {
             outputStream.close();
         }catch (Exception e){
             if(error_message != null) System.out.println("\n"+error_message);
-            e.printStackTrace();
+            printError(e);
         }
     }
 }
