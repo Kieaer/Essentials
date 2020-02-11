@@ -708,11 +708,6 @@ public class Global {
         return cipher.doFinal(data.getBytes());
     }
 
-    public static byte[] encrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
-        cipher.init(Cipher.ENCRYPT_MODE, spec);
-        return cipher.doFinal(data);
-    }
-
     // 패킷 복호화
     public static byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
         cipher.init(Cipher.DECRYPT_MODE, spec);

@@ -9,7 +9,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class testPlayerDB {
-    ArrayList<PlayerDB.PlayerData> data = new ArrayList<>();
+    public static ArrayList<PlayerDB.PlayerData> data = new ArrayList<>();
     Random rd = new Random();
 
     void createData(int a){
@@ -68,41 +68,16 @@ public class testPlayerDB {
 
     @Test
     public void testPlayerDBWrite() {
-        for (int a = 0; a < 100; a++) {
-            System.out.print("\r" + a + "...");
-            createData(a);
-            System.out.flush();
-        }
+        for (int a = 0; a < 30; a++) createData(a);
+        assert data != null;
     }
 
     @Test
-    public void testPlayerDBRead(){
+    public void testPlayerDBWriteRead(){
+        for (int a = 0; a < 30; a++) createData(a);
         for (int a=0;a<20;a++){
-            PlayerDB.PlayerData result = data.get(ThreadLocalRandom.current().nextInt(0, 100));
+            PlayerDB.PlayerData result = data.get(ThreadLocalRandom.current().nextInt(0, 20));
             assert result.udid == 0L;
         }
-    }
-
-    @Test
-    public void testPlayerDBWriteRemove() throws InterruptedException {
-        data = new ArrayList<>();
-        Thread write = new Thread(() -> {
-            for (int a = 0; a < 100; a++) {
-                System.out.print("\r" + a + "...");
-                createData(a);
-                System.out.flush();
-            }
-        });
-        write.start();
-        write.join();
-        Thread remove = new Thread(() -> {
-            data.remove(1);
-            data.remove(5);
-            data.remove(8);
-            data.remove(19);
-            data.remove(36);
-        });
-        remove.start();
-        remove.join();
     }
 }

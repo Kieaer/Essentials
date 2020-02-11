@@ -332,7 +332,7 @@ public class Main extends Plugin {
                 if (config.isLoginenable() && isNocore(e.player)) {
                     if(config.getPasswordmethod().equals("mixed")) {
                         if (!player.error) {
-                            if (player.udid != 0L || (player.udid != 0L && player.uuid.equals("InactiveAAA="))) {
+                            if (player.udid != 0L) {
                                 new Thread(() -> Call.onConnect(e.player.con, hostip, 7060)).start();
                             } else {
                                 e.player.sendMessage(bundle(e.player, "autologin"));
@@ -2163,7 +2163,7 @@ public class Main extends Plugin {
                     player.sendMessage(bundle(player, "vote-list"));
                     return;
                 }
-                if(arg.length == 1 && arg[1].equals("gamemode")){
+                if(arg[1].equals("gamemode")){
                     player.sendMessage(bundle(player, "vote-list-gamemode"));
                     return;
                 }

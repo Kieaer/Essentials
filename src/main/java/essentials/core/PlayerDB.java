@@ -399,13 +399,11 @@ public class PlayerDB{
         }
     }
 
-    public static boolean closeconnect(){
+    public static void closeconnect(){
         try {
             conn.close();
-            return true;
         } catch (Exception e) {
             printError(e);
-            return false;
         }
     }
 
@@ -798,15 +796,14 @@ public class PlayerDB{
         Players.remove(data);
     }
 
-    public static boolean PlayerDataSet(String uuid, PlayerData data){
+    public static void PlayerDataSet(String uuid, PlayerData data){
         for(int a=0;a<Players.size();a++){
             PlayerData player = Players.get(a);
             if (!player.error && player.uuid.equals(uuid)) {
                 Players.set(a,data);
-                return true;
+                return;
             }
         }
-        return false;
     }
 
     public static void PlayerDataSave(PlayerData data) {
