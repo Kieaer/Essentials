@@ -1519,12 +1519,19 @@ public class Main extends Plugin {
         handler.<Player>register("info", "Show your information", (arg, player) -> {
             if (!checkperm(player, "info")) return;
             PlayerData db = PlayerData(player.uuid);
+            Locale locale = new Locale(db.country_code);
+            String lc = db.country_code;
+            if(db.country_code.contains(",")) lc = db.language.split(",")[0];
+            if (lc.split("_").length > 1) {
+                String[] array = lc.split("_");
+                locale = new Locale(array[0], array[1]);
+                System.out.println(Arrays.toString(array));
+            }
             String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
                     "[#2B60DE]====================================[]\n" +
                     "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
-                    "[green]" + nbundle(player, "player-uuid") + "[] : " + player.uuid + "\n" +
                     "[green]" + nbundle(player, "player-isMobile") + "[] : " + player.isMobile + "\n" +
-                    "[green]" + nbundle(player, "player-country") + "[] : " + db.country + "\n" +
+                    "[green]" + nbundle(player, "player-country") + "[] : " + locale.getDisplayCountry() + "\n" +
                     "[green]" + nbundle(player, "player-placecount") + "[] : " + db.placecount + "\n" +
                     "[green]" + nbundle(player, "player-breakcount") + "[] : " + db.breakcount + "\n" +
                     "[green]" + nbundle(player, "player-killcount") + "[] : " + db.killcount + "\n" +

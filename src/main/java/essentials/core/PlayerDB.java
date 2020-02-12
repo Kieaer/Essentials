@@ -11,10 +11,8 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -215,7 +213,7 @@ public class PlayerDB{
                 pstmt.setString(39, accountpw);
                 pstmt.execute();
                 pstmt.close();
-                if(player != null) player.sendMessage(bundle("player-id", player.name));
+                if(player != null) player.sendMessage(bundle(player, "player-id", player.name));
                 log("player","player-db-created", name);
                 result = true;
             } else {
@@ -498,13 +496,19 @@ public class PlayerDB{
         if(checkpw(player,id,pw)) {
             String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
             HashMap<String, String> list = geolocation(player);
+            Locale locale = new Locale(list.get("country_code"));
+            String lc = list.get("country_code").split(",")[0];
+            if(lc.split("_").length == 2){
+                String[] array = lc.split("_");
+                locale = new Locale(array[0], array[1]);
+            }
             if (!isduplicate(player)) {
                 if (createNewDatabase(
                         player.name, // 이름
                         player.uuid, // UUID
-                        list.get("country"), // 국가명
-                        list.get("country_code"), // 국가 코드
-                        list.get("languages"), // 언어
+                        locale.getDisplayCountry(Locale.US), // 국가명
+                        locale.toString(), // 국가 코드
+                        locale.getLanguage(), // 언어
                         player.isAdmin, // 관리자 여부
                         netServer.admins.getInfo(player.uuid).timesJoined, // 총 서버 입장횟수
                         netServer.admins.getInfo(player.uuid).timesKicked, // 총 서버 강퇴횟수
@@ -536,12 +540,18 @@ public class PlayerDB{
     public boolean register(Player player) {
         if (!isduplicate(player)) { // 계정 중복 확인
             HashMap<String, String> list = geolocation(player);
+            Locale locale = new Locale(list.get("country_code"));
+            String lc = list.get("country_code").split(",")[0];
+            if(lc.split("_").length == 2){
+                String[] array = lc.split("_");
+                locale = new Locale(array[0], array[1]);
+            }
             return createNewDatabase(
                     player.name, // 이름
                     player.uuid, // UUID
-                    list.get("country"), // 국가명
-                    list.get("country_code"), // 국가 코드
-                    list.get("languages"), // 언어
+                    locale.getDisplayCountry(Locale.US), // 국가명
+                    locale.toString(), // 국가 코드
+                    locale.getLanguage(), // 언어
                     player.isAdmin, // 관리자 여부
                     netServer.admins.getInfo(player.uuid).timesJoined, // 총 서버 입장횟수
                     netServer.admins.getInfo(player.uuid).timesKicked, // 총 서버 강퇴횟수

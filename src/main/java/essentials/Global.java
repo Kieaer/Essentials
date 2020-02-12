@@ -592,7 +592,7 @@ public class Global {
                 Locale locale;
                 while(true){
                     try {
-                        locale = new Locale(result.getString("languages", null));
+                        locale = new Locale(result.getString("country_code", null));
                         ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
                         RESOURCE_BUNDLE.getString("success");
                         break;
@@ -600,7 +600,7 @@ public class Global {
                         String[] array = result.getString("languages", null).split(",");
                         for(int a=0;a<array.length;a++){
                             try{
-                                locale = new Locale(result.getString("languages", null));
+                                locale = new Locale(result.getString("country_code", null));
                                 ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
                                 RESOURCE_BUNDLE.getString("success");
                                 break;
