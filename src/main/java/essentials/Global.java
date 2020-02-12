@@ -585,9 +585,9 @@ public class Global {
             JsonObject result = JsonValue.readJSON(json).asObject();
 
             if (result.get("reserved") != null) {
-                data.put("country", "Local IP");
-                data.put("country_code", "LC");
-                data.put("languages", "en");
+                data.put("country", Locale.getDefault().getDisplayCountry(Locale.US));
+                data.put("country_code", Locale.getDefault().toString());
+                data.put("languages", Locale.getDefault().getLanguage());
             } else {
                 Locale locale;
                 while(true){
@@ -608,15 +608,15 @@ public class Global {
                         }
                     }
                 }
-                data.put("country", result.getString("country_name", "invalid"));
-                data.put("country_code", result.getString("country", "invalid"));
+                data.put("country", locale.getDisplayCountry(Locale.US));
+                data.put("country_code", locale.toString());
                 data.put("languages", locale.getLanguage());
             }
         } catch (Exception e) {
             printError(e);
-            data.put("country", "invalid");
-            data.put("country_code", "invalid");
-            data.put("languages", "en");
+            data.put("country", Locale.getDefault().getDisplayCountry(Locale.US));
+            data.put("country_code", Locale.getDefault().toString());
+            data.put("languages", Locale.getDefault().getLanguage());
         }
 
         return data;
