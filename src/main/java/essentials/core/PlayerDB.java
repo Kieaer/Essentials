@@ -29,7 +29,7 @@ public class PlayerDB{
     public static Connection conn;
     public static ArrayList<Player> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
-    int DBVersion = 1;
+    int DBVersion = 2;
 
     public void run(){
         openconnect();
@@ -89,7 +89,7 @@ public class PlayerDB{
                     sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
                             "`id` INT(11) NOT NULL AUTO_INCREMENT,\n" +
                             "`name` TEXT NOT NULL,\n" +
-                            "`uuid` VARCHAR(12) NOT NULL,\n" +
+                            "`uuid` TINYTEXT NOT NULL,\n" +
                             "`country` TEXT NOT NULL,\n" +
                             "`country_code` TEXT NOT NULL,\n" +
                             "`language` TEXT NOT NULL,\n" +
@@ -909,6 +909,7 @@ public class PlayerDB{
             ResultSet rs = pstm.executeQuery();
             rs.next();
             int current_version = rs.getInt("dbversion");
+            System.out.println(current_version);
             if(current_version < DBVersion) {
                 conn.prepareStatement("ALTER table players ADD column IF NOT EXISTS mute TEXT AFTER permission").execute();
                 pstm = conn.prepareStatement("SELECT * FROM players");
@@ -1014,6 +1015,16 @@ public class PlayerDB{
                     pstmt.execute();
                     pstmt.close();
                 }
+                current_version++;
+                log("player","db-upgrade");
+            }
+            if(current_version < DBVersion) {
+                if (!config.isSqlite()) conn.prepareStatement("ALTER TABLE players CHANGE COLUMN uuid uuid TINYTEXT NULL DEFAULT NULL AFTER name;").execute();
+                conn.prepareStatement("UPDATE data SET dbversion=2").execute();
+                PreparedStatement reset = conn.prepareStatement("UPDATE players SET uuid = ?");
+                reset.setString(1,"none");
+                reset.execute();
+                log("player","db-upgrade");
             }
         }catch (SQLException e){
             printError(e);
