@@ -23,6 +23,7 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
+import mindustry.core.Version;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.Unit;
@@ -88,6 +89,13 @@ public class Main extends Plugin {
     boolean reactor_warn3 = false;
 
     public Main() {
+        // Server version check
+        if(Version.build != 104){
+            System.out.println("Essentials "+plugin_version+" only works with mindustry build 104.");
+            Core.app.dispose();
+            return;
+        }
+
         // 예전 데이터 변환
         new DataMigration();
 
