@@ -731,9 +731,12 @@ public class PlayerDB{
         public boolean error;
         public boolean isLogin;
 
-        public LocalTime afk;
-        public int afk_tilex;
-        public int afk_tiley;
+        public LocalTime afk = LocalTime.of(0,0,0);
+        public int afk_tilex = 0;
+        public int afk_tiley = 0;
+
+        public int grief_build_count = 0; // 블럭 설치 계산
+        public int grief_destory_count = 0; // 블럭 파괴 계산
 
         PlayerData(boolean error, boolean isLogin){
             this.error = error;
@@ -785,10 +788,6 @@ public class PlayerDB{
 
             this.error = false;
             this.isLogin = true;
-
-            this.afk = LocalTime.of(0,0,0);
-            this.afk_tilex = 0;
-            this.afk_tiley = 0;
         }
     }
 

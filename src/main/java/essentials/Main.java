@@ -88,6 +88,8 @@ public class Main extends Plugin {
     boolean reactor_warn2 = false;
     boolean reactor_warn3 = false;
 
+    public static Timer timer = new Timer(true);
+
     public Main() {
         // Server version check
         if(Version.build != 104){
@@ -726,7 +728,6 @@ public class Main extends Plugin {
         });
 
         // 로그인 기능이 켜져있을때, 비 로그인 사용자들에게 알림을 해줌
-        Timer timer = new Timer(true);
         if (config.isLoginenable()) {
             timer.scheduleAtFixedRate(new login(), 60000, 60000);
         }
