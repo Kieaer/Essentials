@@ -158,11 +158,9 @@ public class Main extends Plugin {
         new Permission();
 
         Events.on(TapConfigEvent.class, e -> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isBlockdetect() && config.isAlertdeposit()) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAlertaction() && config.isAlertaction()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
-                if(config.isDebug() && config.isAntigrief()){
-                    log("log","antigrief-build-config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
-                }
+                if(config.isDebug()) log("log","antigrief-build-config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
             }
         });
 
@@ -193,9 +191,7 @@ public class Main extends Plugin {
         Events.on(WithdrawEvent.class, e->{
             if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.isAntigrief()) {
                 allsendMessage("log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
-                if (config.isDebug() && config.isAntigrief()) {
-                    log("log","log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
-                }
+                if (config.isDebug()) log("log","log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
             }
             if(e.tile.entity != null && e.tile.entity.block != null && e.player.name != null && config.isAntigrief() && state.rules.pvp){
                 if(e.item.flammability > 0.001f) {
@@ -323,9 +319,7 @@ public class Main extends Plugin {
                 });
                 t.start();
             }
-            if(config.isAlertdeposit()) {
-                allsendMessage("depositevent", e.player.name, e.player.item().item.name, e.tile.block().name);
-            }
+            if(config.isAlertaction()) allsendMessage("depositevent", e.player.name, e.player.item().item.name, e.tile.block().name);
         });
 
         // 플레이어가 서버에 들어왔을 때

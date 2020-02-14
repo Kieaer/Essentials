@@ -32,8 +32,7 @@ public class Config {
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-    public static int config_version = 10;
-    public static int DBVersion = 10;
+    public static int config_version = 11;
 
     public void main(){
         validfile();
@@ -99,11 +98,9 @@ public class Config {
                 "  scanresource: " + isScanresource() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-antigrief-description")+"\n" +
-                "  # "+nbundle("config-blockdetect-description")+"\n" +
-                "  # "+nbundle("config-alertdeposit-description")+"\n" +
+                "  # "+nbundle("config-antigrief-alert-description")+"\n" +
                 "  antigrief: "+ isAntigrief() + "\n" +
-                "  alert-blockdetect: "+ isBlockdetect() + "\n" +
-                "  alert-deposit: " + isAlertdeposit() + "\n" +
+                "  alert-action: "+ isAlertaction() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-exp-description")+"\n" +
                 "  # "+nbundle("config-exp-explimit-description")+"\n" +
@@ -294,12 +291,8 @@ public class Config {
         return obj.getBoolean("antigrief",false);
     }
 
-    public boolean isBlockdetect(){
-        return obj.getBoolean("alert-blockdetect",false);
-    }
-
-    public boolean isAlertdeposit(){
-        return obj.getBoolean("alertdeposit",false);
+    public boolean isAlertaction(){
+        return obj.getBoolean("alert-action",false);
     }
 
     public boolean isExplimit(){

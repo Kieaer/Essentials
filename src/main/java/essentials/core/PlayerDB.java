@@ -5,6 +5,7 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -737,6 +738,7 @@ public class PlayerDB{
 
         public int grief_build_count = 0; // 블럭 설치 계산
         public int grief_destory_count = 0; // 블럭 파괴 계산
+        public ArrayList<Tile> grief_tilelist = new ArrayList<>(); // 건설한 블록 개수
 
         PlayerData(boolean error, boolean isLogin){
             this.error = error;
@@ -918,7 +920,6 @@ public class PlayerDB{
             ResultSet rs = pstm.executeQuery();
             rs.next();
             int current_version = rs.getInt("dbversion");
-            System.out.println(current_version);
             if(current_version < DBVersion) {
                 conn.prepareStatement("ALTER table players ADD column IF NOT EXISTS mute TEXT AFTER permission").execute();
                 pstm = conn.prepareStatement("SELECT * FROM players");
