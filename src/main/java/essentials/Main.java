@@ -12,6 +12,7 @@ import arc.util.Time;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
+import essentials.core.Anti;
 import essentials.core.Discord;
 import essentials.core.Log;
 import essentials.core.PlayerDB;
@@ -156,6 +157,9 @@ public class Main extends Plugin {
 
         // 권한 기능 시작
         new Permission();
+
+        // 테러방지 기능 시작
+        if (config.isAntigrief()) new Anti();
 
         Events.on(TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAlertaction() && config.isAlertaction()) {
@@ -425,12 +429,16 @@ public class Main extends Plugin {
                 int total = playerGroup.size();
                 if(config.getEasy() >= total){
                     state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
+                    allsendMessage("difficulty-easy");
                 } else if(config.getNormal() == total){
                     state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
+                    allsendMessage("difficulty-normal");
                 } else if(config.getHard() == total){
                     state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
+                    allsendMessage("difficulty-hard");
                 } else if(config.getInsane() <= total){
                     state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
+                    allsendMessage("difficulty-insane");
                 }
             }
         });
