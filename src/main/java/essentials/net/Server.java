@@ -219,8 +219,8 @@ public class Server implements Runnable {
                                 // send message to all clients
                                 for (Service ser : list) {
                                     String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
-                                    for (int a = 0; a < config.getBantrust().length; a++) {
-                                        String ip = config.getBantrust()[a];
+                                    for (int a = 0; a < config.getBantrust().size(); a++) {
+                                        String ip = config.getBantrust().get(a).asString();
                                         if (ip.equals(remoteip)) {
                                             ser.os.writeBytes(Base64.encode(encrypt(data,ser.spec,ser.cipher))+"\n");
                                             ser.os.flush();
@@ -260,8 +260,8 @@ public class Server implements Runnable {
                                 // send message to all clients
                                 for (Service ser : list) {
                                     String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
-                                    for (int a = 0; a < config.getBantrust().length; a++) {
-                                        String ip = config.getBantrust()[a];
+                                    for (int a = 0; a < config.getBantrust().size(); a++) {
+                                        String ip = config.getBantrust().get(a).asString();
                                         if (ip.equals(remoteip)) {
                                             ser.os.writeBytes(Base64.encode(encrypt(data1.toString(),spec,cipher))+"\n");
                                             ser.os.flush();

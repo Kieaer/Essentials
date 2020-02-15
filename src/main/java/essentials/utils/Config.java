@@ -3,6 +3,7 @@ package essentials.utils;
 import arc.Core;
 import arc.files.Fi;
 import essentials.Global;
+import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
@@ -12,7 +13,6 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -62,7 +62,7 @@ public class Config {
     }
 
     void update(){
-        String antirushtime = obj.getString("antirushtime","10:00");
+        String antirushtime = obj.getString("antirushtime","10.00");
         if(obj.getInt("version",0) < config_version) log("config","config-updated");
 
         String text = "{\n"+
@@ -120,7 +120,7 @@ public class Config {
                 "\n" +
                 "  # "+nbundle("config-bantrust-description")+"\n" +
                 "  # "+nbundle("config-bantrust-child-description")+"\n" +
-                "  bantrust: " + Arrays.toString(getBantrust()).replace("[","").replace("]","") + "\n" +
+                "  bantrust: " + getBantrust() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-query-description")+"\n" +
                 "  # "+nbundle("config-query-child-description")+"\n" +
@@ -259,9 +259,8 @@ public class Config {
         return obj.getBoolean("banshare",false);
     }
 
-    public String[] getBantrust(){
-        String ban = obj.getString("bantrust","");
-        return ban.split(",");
+    public JsonArray getBantrust(){
+        return obj.get("bantrust").asArray();
     }
 
     public boolean isAntivpn(){
