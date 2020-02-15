@@ -6,13 +6,13 @@ import essentials.Global;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import org.hjson.ParseException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -39,13 +39,13 @@ public class Config {
         try{
             JsonObject data = new JsonObject();
 
-            if(!path.exists()){
+            try {
+                data = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
+            }catch (ParseException ignored){
                 data.add("servername", Core.settings.getString("servername"));
                 data.add("unexception",false);
                 data.add("sqlite",true);
                 root.child("data/data.json").writeString(data.toString());
-            } else {
-                data = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
             }
 
             PluginConfig = data;
@@ -62,7 +62,7 @@ public class Config {
     }
 
     void update(){
-        String antirushtime = obj.getString("antirushtime","10.00");
+        int antirushtime = obj.getInt("antirushtime",600);
         if(obj.getInt("version",0) < config_version) log("config","config-updated");
 
         String text = "{\n"+
@@ -260,7 +260,7 @@ public class Config {
     }
 
     public JsonArray getBantrust(){
-        return obj.get("bantrust").asArray();
+        return obj.get("bantrust") != null ? obj.get("bantrust").asArray() : new JsonArray().add("127.0.0.1").asArray();
     }
 
     public boolean isAntivpn(){
@@ -283,7 +283,7 @@ public class Config {
     }
 
     public LocalTime getAntirushtime() {
-        return LocalTime.parse(obj.getString("antirushtime","00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
+        return obj.get("antirushtime") != null ? LocalTime.of(0,0,0).plusSeconds(obj.get("antirushtime").asInt()) : LocalTime.of(0,10,0);
     }
 
     public boolean isAntigrief(){

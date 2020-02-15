@@ -6,13 +6,13 @@ import arc.Events;
 import arc.files.Fi;
 import arc.math.Mathf;
 import arc.struct.Array;
+import arc.util.Align;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
-import essentials.core.Anti;
 import essentials.core.Discord;
 import essentials.core.Log;
 import essentials.core.PlayerDB;
@@ -159,7 +159,7 @@ public class Main extends Plugin {
         new Permission();
 
         // 테러방지 기능 시작
-        if (config.isAntigrief()) new Anti();
+        // if (config.isAntigrief()) new Anti();
 
         Events.on(TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAlertaction() && config.isAlertaction()) {
@@ -777,6 +777,13 @@ public class Main extends Plugin {
                     scancore_text.append(data);
                 }
             }*/
+            for (Player p : playerGroup.all()) {
+                PlayerData data = PlayerData(p.uuid);
+                if(data.isLogin){
+                    String message = "Exp: "+data.exp+"\nLevel: "+data.level+"\nReq: "+data.reqtotalexp+"\nServer received pointer location:"+Math.round(p.pointerX)+"/"+Math.round(p.pointerY);
+                    Call.onInfoPopup(p.con,message,0.02f, Align.left,0,0,0,0);
+                }
+            }
 
             if(config.isBorder()) {
                 for (Player p : playerGroup.all()) {

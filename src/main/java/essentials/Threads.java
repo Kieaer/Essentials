@@ -140,6 +140,8 @@ public class Threads extends TimerTask{
                     if (target.isLogin) {
                         // Exp 계산
                         target.exp = target.exp + (int) (Math.random() * 5);
+
+                        // 잠수 및 플레이 시간 계산
                         target.playtime = LocalTime.parse(target.playtime, DateTimeFormatter.ofPattern("HH:mm.ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm.ss"));
                         if(target.afk_tilex == player.tileX() && target.afk_tiley == player.tileY()){
                             target.afk = target.afk.plusSeconds(1);
@@ -151,6 +153,7 @@ public class Threads extends TimerTask{
                         }
                         target.afk_tilex = player.tileX();
                         target.afk_tiley = player.tileY();
+
                         if(!state.rules.editor) exp(player);
                         if(kick) Call.onKick(player.con,"AFK");
                     }
