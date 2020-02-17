@@ -6,7 +6,6 @@ import arc.Events;
 import arc.files.Fi;
 import arc.math.Mathf;
 import arc.struct.Array;
-import arc.util.Align;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
@@ -586,6 +585,9 @@ public class Main extends Plugin {
                     printError(ex);
                 }
 
+                target.grief_build_count++;
+                target.grief_tilelist.add(new short[]{e.tile.x,e.tile.y});
+
                 // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                 if (e.tile.entity.block == Blocks.message) {
                     messagemonitor.add(new messagemonitor(e.tile));
@@ -596,8 +598,29 @@ public class Main extends Plugin {
                     nukeposition.add(e.tile);
                     nukedata.add(e.tile);
                 }
+
                 if(config.isDebug() && config.isAntigrief()){
                     log("log","antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                }
+
+                // 필터 아트 감지
+                int sorter_count = 0;
+                //int conveyor_count = 0;
+                for(short[] t : target.grief_tilelist){
+                    Tile tile = world.tile(t[0],t[1]);
+                    if(tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) sorter_count++;
+                    //if(tile.entity.block == Blocks.conveyor || tile.entity.block == Blocks.armoredConveyor || tile.entity.block == Blocks.titaniumConveyor) conveyor_count++;
+                }
+                if(sorter_count > 10){
+                    for(short[] t : target.grief_tilelist){
+                        Tile tile = world.tile(t[0],t[1]);
+                        if(tile.entity.block != null) {
+                            if (tile.entity.block == Blocks.sorter || tile.entity.block == Blocks.invertedSorter) {
+                                Call.onDeconstructFinish(tile,Blocks.air,e.player.id);
+                            }
+                        }
+                    }
+                    target.grief_tilelist.clear();
                 }
 
                 PlayerDataSet(target.uuid,target);
@@ -612,7 +635,7 @@ public class Main extends Plugin {
                     String name = e.tile.block().name;
                     try {
                         JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
-                        int blockexp = obj.getInt(name,0);
+                        int blockexp = obj.getInt(name, 0);
 
                         target.lastbreakname = e.tile.block().name;
                         target.breakcount++;
@@ -642,7 +665,7 @@ public class Main extends Plugin {
                         try {
                             JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                             if (obj.get(name) != null) {
-                                int blockreqlevel = obj.getInt(name,999);
+                                int blockreqlevel = obj.getInt(name, 999);
                                 if (level < blockreqlevel) {
                                     Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
                                     ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
@@ -650,10 +673,22 @@ public class Main extends Plugin {
                             } else {
                                 log("err", "epg-block-not-valid", name);
                             }
-                        }catch (Exception ex){
+                        } catch (Exception ex) {
                             printError(ex);
                         }
                     }
+
+                    /*if(e.builder.buildRequest().block == Blocks.conveyor || e.builder.buildRequest().block == Blocks.armoredConveyor || e.builder.buildRequest().block == Blocks.titaniumConveyor){
+                        for(int a=0;a<conveyor.size();a++){
+                            if(conveyor.get(a) == e.tile){
+                                conveyor.remove(a);
+                                break;
+                            }
+                        }
+                    }*/
+
+                    target.grief_destory_count++;
+                    if (target.grief_destory_count > 30) nlog("log", target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                 }
                 if(config.isDebug() && config.isAntigrief()){
                     log("log","antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
@@ -777,13 +812,22 @@ public class Main extends Plugin {
                     scancore_text.append(data);
                 }
             }*/
-            for (Player p : playerGroup.all()) {
+            /*for (Player p : playerGroup.all()) {
                 PlayerData data = PlayerData(p.uuid);
                 if(data.isLogin){
                     String message = "Exp: "+data.exp+"\nLevel: "+data.level+"\nReq: "+data.reqtotalexp+"\nServer received pointer location:"+Math.round(p.pointerX)+"/"+Math.round(p.pointerY);
                     Call.onInfoPopup(p.con,message,0.02f, Align.left,0,0,0,0);
                 }
-            }
+            }*/
+
+            /*for(Tile tile : conveyor){
+                if(tile.block() != null) {
+                    if (tile.rotation() != world.tile(tile.x, tile.y).rotation()) {
+                        nlog("log", "orignal: " + tile.rotation() + ", current: " + world.tile(tile.x, tile.y).rotation());
+                        Call.onConstructFinish(world.tile(tile.x, tile.y), tile.entity.block, 0, tile.rotation(), Team.sharded, false);
+                    }
+                }
+            }*/
 
             if(config.isBorder()) {
                 for (Player p : playerGroup.all()) {

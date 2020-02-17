@@ -143,20 +143,22 @@ public class Threads extends TimerTask{
 
                         // 잠수 및 플레이 시간 계산
                         target.playtime = LocalTime.parse(target.playtime, DateTimeFormatter.ofPattern("HH:mm.ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm.ss"));
-                        if(target.afk_tilex == player.tileX() && target.afk_tiley == player.tileY()){
+                        if (target.afk_tilex == player.tileX() && target.afk_tiley == player.tileY()) {
                             target.afk = target.afk.plusSeconds(1);
-                            if(target.afk == LocalTime.of(0,5,0)){
+                            if (target.afk == LocalTime.of(0, 5, 0)) {
                                 kick = true;
                             }
                         } else {
-                            target.afk = LocalTime.of(0,0,0);
+                            target.afk = LocalTime.of(0, 0, 0);
                         }
                         target.afk_tilex = player.tileX();
                         target.afk_tiley = player.tileY();
 
-                        if(!state.rules.editor) exp(player);
-                        if(kick) Call.onKick(player.con,"AFK");
+                        if (!state.rules.editor) exp(player);
+                        if (kick) Call.onKick(player.con, "AFK");
                     }
+                    if (target.grief_destory_count > 0) target.grief_destory_count--;
+                    if (target.grief_build_count > 0) target.grief_build_count--;
                 }
             }
 

@@ -5,7 +5,6 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
-import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -738,7 +737,7 @@ public class PlayerDB{
 
         public int grief_build_count = 0; // 블럭 설치 계산
         public int grief_destory_count = 0; // 블럭 파괴 계산
-        public ArrayList<Tile> grief_tilelist = new ArrayList<>(); // 건설한 블록 개수
+        public ArrayList<short[]> grief_tilelist = new ArrayList<>(); // 건설한 블록 개수
 
         PlayerData(boolean error, boolean isLogin){
             this.error = error;
