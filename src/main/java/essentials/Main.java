@@ -1781,13 +1781,12 @@ public class Main extends Plugin {
             }
         });
         switch (config.getPasswordmethod()) {
-            /*case "email":
+            case "email":
                 handler.<Player>register("register", "<accountid> <password> <email>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
                         PlayerDB playerdb = new PlayerDB();
                         if (playerdb.register(player, arg[0], arg[1], "email", arg[2])) {
-                            setTeam(player);
-                            Call.onPlayerDeath(player);
+                            playerdb.load(player);
                             player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                         } else {
                             player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
@@ -1797,6 +1796,7 @@ public class Main extends Plugin {
                     }
                 });
                 break;
+                /*
             case "sms":
                 handler.<Player>register("register", "<accountid> <password> <phone-number>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
@@ -1816,7 +1816,7 @@ public class Main extends Plugin {
             case "password":
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
-                        if (playerDB.register(player, arg[0], arg[1])) {
+                        if (playerDB.register(player, arg[0], arg[1], "password")) {
                             if (Vars.state.rules.pvp) {
                                 int index = player.getTeam().id + 1;
                                 while (index != player.getTeam().id) {

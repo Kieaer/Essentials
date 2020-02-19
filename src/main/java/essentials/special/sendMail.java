@@ -17,7 +17,7 @@ public class sendMail {
     String subject;
     String text;
 
-    sendMail(String smtp, int port, String email, String password, String sender, String targetname, String targetmail, String subject, String text){
+    public sendMail(String smtp, int port, String email, String password, String sender, String targetname, String targetmail, String subject, String text){
         this.smtp = smtp;
         this.port = port;
         this.email = email;

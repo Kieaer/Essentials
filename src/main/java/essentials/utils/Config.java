@@ -154,6 +154,11 @@ public class Config {
                 "  loginenable: " + isLoginenable() + "\n" +
                 "  loginmethod: " + getPasswordmethod() + "\n" +
                 "  validconnect: " + isValidconnect() + "\n" +
+                "  email-smtp-server: " + getEmailServer() + "\n" +
+                "  email-smtp-port: " + getEmailPort() + "\n" +
+                "  email-smtp-accountid: " + getEmailAccountID() + "\n" +
+                "  email-smtp-username: " + getEmailUsername() + "\n" +
+                "  email-smtp-password: " + getEmailPassword() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-discord-description")+"\n" +
                 "  # "+nbundle("config-discord-role-description")+"\n" +
@@ -328,6 +333,26 @@ public class Config {
 
     public boolean isValidconnect(){
         return obj.getBoolean("validconnect",false);
+    }
+
+    public String getEmailServer(){
+        return obj.getString("email-smtp-server", "smtp.gmail.com");
+    }
+
+    public int getEmailPort(){
+        return obj.getInt("email-smtp-port", 465);
+    }
+
+    public String getEmailAccountID(){
+        return obj.getString("email-smtp-accountid", "");
+    }
+
+    public String getEmailUsername(){
+        return obj.getString("email-smtp-username", "");
+    }
+
+    public String getEmailPassword(){
+        return obj.getString("email-smtp-password", "");
     }
 
     public String getDiscordToken(){

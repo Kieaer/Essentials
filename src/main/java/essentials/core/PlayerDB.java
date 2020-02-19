@@ -1,6 +1,7 @@
 package essentials.core;
 
 import essentials.PluginData;
+import essentials.special.sendMail;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
@@ -491,7 +492,7 @@ public class PlayerDB{
     }
 
 	// 로그인 기능 사용시 계정 등록
-	public boolean register(Player player, String id, String pw) {
+	public boolean register(Player player, String id, String pw, String type, String... parameter) {
         // 비밀번호 보안 확인
         if(checkpw(player,id,pw)) {
             String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
@@ -503,29 +504,51 @@ public class PlayerDB{
                 locale = new Locale(array[0], array[1]);
             }
             if (!isduplicate(player)) {
-                if (createNewDatabase(
-                        player.name, // 이름
-                        player.uuid, // UUID
-                        locale.getDisplayCountry(Locale.US), // 국가명
-                        locale.toString(), // 국가 코드
-                        locale.getLanguage(), // 언어
-                        player.isAdmin, // 관리자 여부
-                        netServer.admins.getInfo(player.uuid).timesJoined, // 총 서버 입장횟수
-                        netServer.admins.getInfo(player.uuid).timesKicked, // 총 서버 강퇴횟수
-                        getTime(), // 최초 접속일
-                        getTime(), // 마지막 접속일
-                        true, // 서버 연결여부
-                        Long.MIN_VALUE, // Discord UDID
-                        id, // 계정 ID
-                        hashed, // 계정 비밀번호
-                        player) // 플레이어
-                ) {
-                    nlog("debug", player.name + " Player DB Created!");
-                    player.sendMessage(bundle(player, "player-name-changed", player.name));
-                    return true;
-                } else {
-                    nlog("debug", player.name + " Player DB create failed!");
-                    return false;
+                switch (type) {
+                    case "password":
+                        if (createNewDatabase(
+                                player.name, // 이름
+                                player.uuid, // UUID
+                                locale.getDisplayCountry(Locale.US), // 국가명
+                                locale.toString(), // 국가 코드
+                                locale.getLanguage(), // 언어
+                                player.isAdmin, // 관리자 여부
+                                netServer.admins.getInfo(player.uuid).timesJoined, // 총 서버 입장횟수
+                                netServer.admins.getInfo(player.uuid).timesKicked, // 총 서버 강퇴횟수
+                                getTime(), // 최초 접속일
+                                getTime(), // 마지막 접속일
+                                true, // 서버 연결여부
+                                Long.MIN_VALUE, // Discord UDID
+                                id, // 계정 ID
+                                hashed, // 계정 비밀번호
+                                player) // 플레이어
+                        ) {
+                            nlog("debug", player.name + " Player DB Created!");
+                            player.sendMessage(bundle(player, "player-name-changed", player.name));
+                            return true;
+                        } else {
+                            nlog("debug", player.name + " Player DB create failed!");
+                            return false;
+                        }
+                    case "email":
+                        char[] passwordTable =  { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+                                'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+                                'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+                                'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                                'w', 'x', 'y', 'z', '!', '@', '#', '$', '%', '^', '&', '*',
+                                '(', ')', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
+                        Random random = new Random(System.currentTimeMillis());
+                        int tablelength = passwordTable.length;
+                        StringBuilder buf = new StringBuilder();
+
+                        for(int i = 0; i < 7; i++) {
+                            buf.append(passwordTable[random.nextInt(tablelength)]);
+                        }
+
+                        String text = "Account validate code is "+buf.toString()+".";
+                        sendMail mail = new sendMail(config.getEmailServer(),config.getEmailPort(),config.getEmailAccountID(),config.getEmailPassword(),config.getEmailUsername(),player.name,parameter[0],"Register validate", text);
+                        mail.main();
+                        // TODO finish email
                 }
             } else {
                 player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
