@@ -2320,5 +2320,14 @@ public class Main extends Plugin {
             //Call.onConstructFinish(world.tile(player.tileX(),player.tileY()),Blocks.icerocks,0,(byte)0,Team.sharded,false);
             //Call.onWorldDataBegin();
         });*/
+        handler.<Player>register("test","test", (arg, player)->{
+            PlayerData data = PlayerData(player.uuid);
+            data.name = "testwrite";
+            PlayerDataSet(player.uuid,data);
+        });
+        handler.<Player>register("testa","testa", (arg, player)->{
+            PlayerData data = PlayerData(player.uuid);
+            player.sendMessage(data.name);
+        });
     }
 }

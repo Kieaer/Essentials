@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class testPlayerDB {
     public static ArrayList<PlayerDB.PlayerData> data = new ArrayList<>();
@@ -68,16 +67,17 @@ public class testPlayerDB {
 
     @Test
     public void testPlayerDBWrite() {
-        for (int a = 0; a < 30; a++) createData(a);
-        assert data != null;
+        createData(1);
+        assert data.size() != 0;
+
+        PlayerDB.PlayerData d = data.get(0);
+        d.name = "Random name";
     }
 
     @Test
-    public void testPlayerDBWriteRead(){
-        for (int a = 0; a < 30; a++) createData(a);
-        for (int a=0;a<20;a++){
-            PlayerDB.PlayerData result = data.get(ThreadLocalRandom.current().nextInt(0, 20));
-            assert result.udid == 0L;
-        }
+    public void testPlayerDBRead(){
+        assert data.size() != 0;
+        PlayerDB.PlayerData d = data.get(0);
+        System.out.println(d.name);
     }
 }
