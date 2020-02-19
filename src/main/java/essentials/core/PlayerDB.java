@@ -358,10 +358,10 @@ public class PlayerDB{
         // Write ban data
         try {
             PluginData.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid));
-            PlayerData player = PlayerData(uuid);
-            player.bantime = getTime();
-            player.bantimeset = bantimeset;
-            PlayerDataSet(uuid,player);
+            PlayerData target = PlayerData(uuid);
+            target.bantime = getTime();
+            target.bantimeset = bantimeset;
+            PlayerDataSet(target);
         } catch (Exception e) {
             printError(e);
         }
@@ -596,21 +596,21 @@ public class PlayerDB{
         }
         return result;
     }
-    public void load(Player target) {
+    public void load(Player player) {
         Thread thread = new Thread(() -> {
-            Players.add(getInfo(target.uuid));
-            PlayerData player = PlayerData(target.uuid);
+            Players.add(getInfo(player.uuid));
+            PlayerData target = PlayerData(player.uuid);
 
             // 새 기기로 UUID 적용
-            player.uuid = target.uuid;
-            player.connected = true;
-            player.lastdate = getTime();
-            player.connserver = hostip;
+            target.uuid = player.uuid;
+            target.connected = true;
+            target.lastdate = getTime();
+            target.connserver = hostip;
 
             // 이 계정이 밴을 당했을 때 강퇴처리
-            if (player.banned) {
-                netServer.admins.banPlayerID(player.uuid);
-                Call.onKick(target.con,"This account can't use.");
+            if (target.banned) {
+                netServer.admins.banPlayerID(target.uuid);
+                Call.onKick(player.con,"This account can't use.");
                 return;
             }
 
@@ -619,68 +619,68 @@ public class PlayerDB{
                 boolean match = false;
                 for (Player t : pvpteam) {
                     Team team = t.getTeam();
-                    if (player.uuid.equals(t.uuid)) {
+                    if (target.uuid.equals(t.uuid)) {
                         if (Vars.state.teams.get(team).cores.isEmpty()) {
                             break;
                         } else {
-                            target.setTeam(team);
+                            player.setTeam(team);
                             match = true;
                         }
                     }
                 }
                 if (!match) {
-                    target.setTeam(netServer.assignTeam(target, playerGroup.all()));
-                    pvpteam.add(target);
+                    player.setTeam(netServer.assignTeam(player, playerGroup.all()));
+                    pvpteam.add(player);
                 }
             } else {
-                target.setTeam(Team.sharded);
+                player.setTeam(Team.sharded);
             }
-            target.kill();
+            player.kill();
 
             // 입장 메세지 표시
-            String motd = getmotd(target);
+            String motd = getmotd(player);
             int count = motd.split("\r\n|\r|\n").length;
             if (count > 10) {
-                Call.onInfoMessage(target.con, motd);
+                Call.onInfoMessage(player.con, motd);
             } else {
-                target.sendMessage(motd);
+                player.sendMessage(motd);
             }
 
             // 고정닉 기능이 켜져있을 경우, 플레이어 닉네임 설정
-            if (config.isRealname() || config.getPasswordmethod().equals("discord")) target.name = player.name;
+            if (config.isRealname() || config.getPasswordmethod().equals("discord")) target.name = target.name;
 
             // 서버 입장시 경험치 획득
-            player.exp = player.exp+player.joincount;
+            target.exp = target.exp+target.joincount;
 
             // 컬러닉 기능 설정
-            if (player.colornick){
+            if (target.colornick){
                 if(config.isRealname()){
-                    new Thread(new ColorNick(target)).start();
+                    new Thread(new ColorNick(player)).start();
                 } else {
-                    player.colornick = false;
+                    target.colornick = false;
                 }
             }
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
-            if (permission.get(player.permission).asObject().getBoolean("admin", false)) {
+            if (permission.get(target.permission).asObject().getBoolean("admin", false)) {
                 target.isAdmin = true;
                 player.isAdmin = true;
             }
 
             // 플레이어 위치 정보가 없을경우, 위치 정보 가져오기
-            if (player.country.equals("invalid")) {
-                HashMap<String, String> list = geolocation(target);
-                player.country = list.get("country");
-                player.country_code = list.get("country_code");
-                player.language = list.get("languages");
+            if (target.country.equals("invalid")) {
+                HashMap<String, String> list = geolocation(player);
+                target.country = list.get("country");
+                target.country_code = list.get("country_code");
+                target.language = list.get("languages");
             }
 
             // 플레이어 접속 횟수 카운트
-            player.joincount = player.joincount++;
+            target.joincount = target.joincount++;
 
             // 데이터 저장
-            PlayerDataSet(target.uuid, player);
-            PlayerDataSave(player);
+            PlayerDataSet(target);
+            PlayerDataSave(target);
         });
         executorService.submit(thread);
     }
@@ -790,398 +790,6 @@ public class PlayerDB{
             this.error = false;
             this.isLogin = true;
         }
-
-        public int getId() {
-            return id;
-        }
-
-        public void setId(int id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getUuid() {
-            return uuid;
-        }
-
-        public void setUuid(String uuid) {
-            this.uuid = uuid;
-        }
-
-        public String getCountry() {
-            return country;
-        }
-
-        public void setCountry(String country) {
-            this.country = country;
-        }
-
-        public String getCountry_code() {
-            return country_code;
-        }
-
-        public void setCountry_code(String country_code) {
-            this.country_code = country_code;
-        }
-
-        public String getLanguage() {
-            return language;
-        }
-
-        public void setLanguage(String language) {
-            this.language = language;
-        }
-
-        public boolean isAdmin() {
-            return isAdmin;
-        }
-
-        public void setAdmin(boolean admin) {
-            isAdmin = admin;
-        }
-
-        public int getPlacecount() {
-            return placecount;
-        }
-
-        public void setPlacecount(int placecount) {
-            this.placecount = placecount;
-        }
-
-        public int getBreakcount() {
-            return breakcount;
-        }
-
-        public void setBreakcount(int breakcount) {
-            this.breakcount = breakcount;
-        }
-
-        public int getKillcount() {
-            return killcount;
-        }
-
-        public void setKillcount(int killcount) {
-            this.killcount = killcount;
-        }
-
-        public int getDeathcount() {
-            return deathcount;
-        }
-
-        public void setDeathcount(int deathcount) {
-            this.deathcount = deathcount;
-        }
-
-        public int getJoincount() {
-            return joincount;
-        }
-
-        public void setJoincount(int joincount) {
-            this.joincount = joincount;
-        }
-
-        public int getKickcount() {
-            return kickcount;
-        }
-
-        public void setKickcount(int kickcount) {
-            this.kickcount = kickcount;
-        }
-
-        public int getLevel() {
-            return level;
-        }
-
-        public void setLevel(int level) {
-            this.level = level;
-        }
-
-        public int getExp() {
-            return exp;
-        }
-
-        public void setExp(int exp) {
-            this.exp = exp;
-        }
-
-        public int getReqexp() {
-            return reqexp;
-        }
-
-        public void setReqexp(int reqexp) {
-            this.reqexp = reqexp;
-        }
-
-        public String getReqtotalexp() {
-            return reqtotalexp;
-        }
-
-        public void setReqtotalexp(String reqtotalexp) {
-            this.reqtotalexp = reqtotalexp;
-        }
-
-        public String getFirstdate() {
-            return firstdate;
-        }
-
-        public void setFirstdate(String firstdate) {
-            this.firstdate = firstdate;
-        }
-
-        public String getLastdate() {
-            return lastdate;
-        }
-
-        public void setLastdate(String lastdate) {
-            this.lastdate = lastdate;
-        }
-
-        public String getLastplacename() {
-            return lastplacename;
-        }
-
-        public void setLastplacename(String lastplacename) {
-            this.lastplacename = lastplacename;
-        }
-
-        public String getLastbreakname() {
-            return lastbreakname;
-        }
-
-        public void setLastbreakname(String lastbreakname) {
-            this.lastbreakname = lastbreakname;
-        }
-
-        public String getLastchat() {
-            return lastchat;
-        }
-
-        public void setLastchat(String lastchat) {
-            this.lastchat = lastchat;
-        }
-
-        public String getPlaytime() {
-            return playtime;
-        }
-
-        public void setPlaytime(String playtime) {
-            this.playtime = playtime;
-        }
-
-        public int getAttackclear() {
-            return attackclear;
-        }
-
-        public void setAttackclear(int attackclear) {
-            this.attackclear = attackclear;
-        }
-
-        public int getPvpwincount() {
-            return pvpwincount;
-        }
-
-        public void setPvpwincount(int pvpwincount) {
-            this.pvpwincount = pvpwincount;
-        }
-
-        public int getPvplosecount() {
-            return pvplosecount;
-        }
-
-        public void setPvplosecount(int pvplosecount) {
-            this.pvplosecount = pvplosecount;
-        }
-
-        public int getPvpbreakout() {
-            return pvpbreakout;
-        }
-
-        public void setPvpbreakout(int pvpbreakout) {
-            this.pvpbreakout = pvpbreakout;
-        }
-
-        public int getReactorcount() {
-            return reactorcount;
-        }
-
-        public void setReactorcount(int reactorcount) {
-            this.reactorcount = reactorcount;
-        }
-
-        public int getBantimeset() {
-            return bantimeset;
-        }
-
-        public void setBantimeset(int bantimeset) {
-            this.bantimeset = bantimeset;
-        }
-
-        public String getBantime() {
-            return bantime;
-        }
-
-        public void setBantime(String bantime) {
-            this.bantime = bantime;
-        }
-
-        public boolean isBanned() {
-            return banned;
-        }
-
-        public void setBanned(boolean banned) {
-            this.banned = banned;
-        }
-
-        public boolean isTranslate() {
-            return translate;
-        }
-
-        public void setTranslate(boolean translate) {
-            this.translate = translate;
-        }
-
-        public boolean isCrosschat() {
-            return crosschat;
-        }
-
-        public void setCrosschat(boolean crosschat) {
-            this.crosschat = crosschat;
-        }
-
-        public boolean isColornick() {
-            return colornick;
-        }
-
-        public void setColornick(boolean colornick) {
-            this.colornick = colornick;
-        }
-
-        public boolean isConnected() {
-            return connected;
-        }
-
-        public void setConnected(boolean connected) {
-            this.connected = connected;
-        }
-
-        public String getConnserver() {
-            return connserver;
-        }
-
-        public void setConnserver(String connserver) {
-            this.connserver = connserver;
-        }
-
-        public String getPermission() {
-            return permission;
-        }
-
-        public void setPermission(String permission) {
-            this.permission = permission;
-        }
-
-        public boolean isMute() {
-            return mute;
-        }
-
-        public void setMute(boolean mute) {
-            this.mute = mute;
-        }
-
-        public Long getUdid() {
-            return udid;
-        }
-
-        public void setUdid(Long udid) {
-            this.udid = udid;
-        }
-
-        public String getAccountid() {
-            return accountid;
-        }
-
-        public void setAccountid(String accountid) {
-            this.accountid = accountid;
-        }
-
-        public String getAccountpw() {
-            return accountpw;
-        }
-
-        public void setAccountpw(String accountpw) {
-            this.accountpw = accountpw;
-        }
-
-        public boolean isError() {
-            return error;
-        }
-
-        public void setError(boolean error) {
-            this.error = error;
-        }
-
-        public boolean isLogin() {
-            return isLogin;
-        }
-
-        public void setLogin(boolean login) {
-            isLogin = login;
-        }
-
-        public LocalTime getAfk() {
-            return afk;
-        }
-
-        public void setAfk(LocalTime afk) {
-            this.afk = afk;
-        }
-
-        public int getAfk_tilex() {
-            return afk_tilex;
-        }
-
-        public void setAfk_tilex(int afk_tilex) {
-            this.afk_tilex = afk_tilex;
-        }
-
-        public int getAfk_tiley() {
-            return afk_tiley;
-        }
-
-        public void setAfk_tiley(int afk_tiley) {
-            this.afk_tiley = afk_tiley;
-        }
-
-        public int getGrief_build_count() {
-            return grief_build_count;
-        }
-
-        public void setGrief_build_count(int grief_build_count) {
-            this.grief_build_count = grief_build_count;
-        }
-
-        public int getGrief_destory_count() {
-            return grief_destory_count;
-        }
-
-        public void setGrief_destory_count(int grief_destory_count) {
-            this.grief_destory_count = grief_destory_count;
-        }
-
-        public ArrayList<short[]> getGrief_tilelist() {
-            return grief_tilelist;
-        }
-
-        public void setGrief_tilelist(ArrayList<short[]> grief_tilelist) {
-            this.grief_tilelist = grief_tilelist;
-        }
     }
 
     public static PlayerData PlayerData(String uuid){
@@ -1198,10 +806,10 @@ public class PlayerDB{
         Players.remove(data);
     }
 
-    public static void PlayerDataSet(String uuid, PlayerData data){
+    public static void PlayerDataSet(PlayerData data){
         for(int a=0;a<Players.size();a++){
             PlayerData player = Players.get(a);
-            if (!player.error && player.uuid.equals(uuid)) {
+            if (!player.error && player.uuid.equals(data.uuid)) {
                 Players.set(a,data);
                 return;
             }

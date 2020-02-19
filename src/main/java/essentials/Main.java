@@ -223,7 +223,7 @@ public class Main extends Plugin {
                             } else if (!player.getTeam().name.equals(e.winner.name)) {
                                 target.pvplosecount++;
                             }
-                            PlayerDataSet(target.uuid,target);
+                            PlayerDataSet(target);
                         }
                     }
                     pvpteam.clear();
@@ -234,7 +234,7 @@ public class Main extends Plugin {
                     PlayerData target = PlayerData(player.uuid);
                     if (target.isLogin) {
                         target.attackclear++;
-                        PlayerDataSet(target.uuid,target);
+                        PlayerDataSet(target);
                     }
                 }
             }
@@ -564,7 +564,7 @@ public class Main extends Plugin {
                     }
                 }
 
-                PlayerDataSet(target.uuid,target);
+                PlayerDataSet(target);
             }
         });
 
@@ -623,7 +623,7 @@ public class Main extends Plugin {
                     target.grief_tilelist.clear();
                 }
 
-                PlayerDataSet(target.uuid,target);
+                PlayerDataSet(target);
             }
         });
 
@@ -704,7 +704,7 @@ public class Main extends Plugin {
                 PlayerData target = PlayerData(player.uuid);
                 if (!state.teams.get(player.getTeam()).cores.isEmpty()){
                     target.deathcount++;
-                    PlayerDataSet(player.uuid,target);
+                    PlayerDataSet(target);
                 }
             }
 
@@ -715,7 +715,7 @@ public class Main extends Plugin {
                     PlayerData target = PlayerData(player.uuid);
                     if (!state.teams.get(player.getTeam()).cores.isEmpty()){
                         target.killcount++;
-                        PlayerDataSet(player.uuid,target);
+                        PlayerDataSet(target);
                     }
                 }
             }
@@ -1288,15 +1288,15 @@ public class Main extends Plugin {
             if (other == null) {
                 log("warn","player-not-found");
             } else {
-                PlayerData data = PlayerData(other.uuid);
-                if(data.mute){
-                    data.mute = false;
-                    log("log","player-unmute",data.name);
+                PlayerData target = PlayerData(other.uuid);
+                if(target.mute){
+                    target.mute = false;
+                    log("log","player-unmute",target.name);
                 } else {
-                    data.mute = true;
-                    log("log","player-muted",data.name);
+                    target.mute = true;
+                    log("log","player-muted",target.name);
                 }
-                PlayerDataSet(data.uuid,data);
+                PlayerDataSet(target);
             }
         });
         handler.register("nick", "<name> <newname...>", "Set player nickname", (arg) -> {
@@ -1410,7 +1410,7 @@ public class Main extends Plugin {
                 target.crosschat = true;
                 player.sendMessage(bundle(player, "crosschat"));
             }
-            PlayerDataSet(player.uuid,target);
+            PlayerDataSet(target);
         });
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(!checkperm(player,"changepw")) return;
@@ -1438,7 +1438,7 @@ public class Main extends Plugin {
                 target.colornick = true;
                 player.sendMessage(bundle(player, "colornick"));
             }
-            PlayerDataSet(player.uuid,target);
+            PlayerDataSet(target);
         });
         handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
             if (!checkperm(player, "difficulty")) return;
@@ -2195,7 +2195,7 @@ public class Main extends Plugin {
                 target.translate = true;
                 player.sendMessage(bundle(player, "translate-disable"));
             }
-            PlayerDataSet(player.uuid,target);
+            PlayerDataSet(target);
         });
         handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
             if(!checkperm(player,"vote")) return;
@@ -2274,15 +2274,15 @@ public class Main extends Plugin {
             if (other == null) {
                 player.sendMessage(bundle(player, "player-not-found"));
             } else {
-                PlayerData data = PlayerData(other.uuid);
-                if(data.mute){
-                    data.mute = false;
-                    player.sendMessage(bundle("player-unmute",data.name));
+                PlayerData target = PlayerData(other.uuid);
+                if(target.mute){
+                    target.mute = false;
+                    player.sendMessage(bundle("player-unmute",target.name));
                 } else {
-                    data.mute = true;
-                    player.sendMessage(bundle("player-muted", data.name));
+                    target.mute = true;
+                    player.sendMessage(bundle("player-muted", target.name));
                 }
-                PlayerDataSet(data.uuid,data);
+                PlayerDataSet(target);
             }
         });
         handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
@@ -2299,35 +2299,6 @@ public class Main extends Plugin {
             }
 
             new Vote(player, arg[0], other);
-        });
-        /*handler.<Player>register("test", "<message> <width> <height> <duration> <align> <top> <left> <bottom> <right>", "test", (arg, player) -> {
-            Call.onInfoPopup(player.con,arg[0],Float.parseFloat(arg[1]),Float.parseFloat(arg[2]),Float.parseFloat(arg[3]),Integer.parseInt(arg[4]), Integer.parseInt(arg[5]), Integer.parseInt(arg[6]), Integer.parseInt(arg[7]), Integer.parseInt(arg[8]));
-        });*/
-        /*handler.<Player>register("test","testas",(arg, player)->{
-            //Call.setTile(world.tile(player.tileX(),player.tileY()),Blocks.icerocks,Team.sharded,0);
-            Thread t = new Thread(() -> {
-                for(int a=0;a<2000;a++) {
-                    Call.onConstructFinish(world.tile(player.tileX(),player.tileY()), Blocks.icerocks, 0, (byte) 0, Team.sharded, false);
-                    netServer.sendWorldData(player);
-                    try {
-                        sleep(100);
-                    } catch (InterruptedException e) {
-                        printError(e);
-                    }
-                }
-            });
-            t.start();
-            //Call.onConstructFinish(world.tile(player.tileX(),player.tileY()),Blocks.icerocks,0,(byte)0,Team.sharded,false);
-            //Call.onWorldDataBegin();
-        });*/
-        handler.<Player>register("test","test", (arg, player)->{
-            PlayerData data = PlayerData(player.uuid);
-            data.name = "testwrite";
-            PlayerDataSet(player.uuid,data);
-        });
-        handler.<Player>register("testa","testa", (arg, player)->{
-            PlayerData data = PlayerData(player.uuid);
-            player.sendMessage(data.name);
         });
     }
 }
