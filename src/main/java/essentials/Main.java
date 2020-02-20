@@ -61,6 +61,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static arc.util.Log.info;
 import static essentials.Global.*;
 import static essentials.PluginData.*;
 import static essentials.Threads.*;
@@ -1382,6 +1383,16 @@ public class Main extends Plugin {
             addtimeban(other.name, other.uuid, bantimeset);
             log("log","tempban", other.name, arg[1]);
             other.con.kick("Temp kicked");
+        });
+        handler.register("reloadmaps", "Reload all maps from disk.", arg -> {
+            int beforeMaps = maps.all().size;
+            maps.reload();
+            maplist = Vars.maps.all();
+            if(maps.all().size > beforeMaps){
+                info("&lc{0}&ly new map(s) found and reloaded.", maps.all().size - beforeMaps);
+            }else{
+                info("&lyMaps reloaded.");
+            }
         });
         handler.register("average","Show average players", arg -> {
             Integer sum = 0;
