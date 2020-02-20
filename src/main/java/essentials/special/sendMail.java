@@ -32,7 +32,7 @@ public class sendMail {
     public void main(){
         Mailer mailer = MailerBuilder
                 .withSMTPServer(smtp, port, email, password)
-                .withTransportStrategy(TransportStrategy.SMTP_TLS)
+                .withTransportStrategy(TransportStrategy.SMTPS)
                 .withSessionTimeout(10 * 1000)
                 .withDebugLogging(true)
                 .async()

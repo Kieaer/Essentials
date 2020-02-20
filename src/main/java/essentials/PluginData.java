@@ -25,6 +25,7 @@ public class PluginData {
     public static ArrayList<Tile> nukedata = new ArrayList<>();
     public static ArrayList<Tile> nukeposition = new ArrayList<>();
     public static ArrayList<Process> process = new ArrayList<>();
+    public static ArrayList<maildata> emailauth = new ArrayList<>();
     public static String ip = getip();
 
     // 종료시 저장되는 플러그인 데이터
@@ -80,6 +81,22 @@ public class PluginData {
         messagejump(Tile tile, String message){
             this.tile = tile;
             this.message = message;
+        }
+    }
+
+    public static class maildata {
+        public final String authkey;
+        public final String uuid;
+        public final String id;
+        public final String pw;
+        public final String email;
+
+        public maildata(String uuid, String authkey, String id, String pw, String email){
+            this.authkey = authkey;
+            this.uuid = uuid;
+            this.id = id;
+            this.pw = pw;
+            this.email = email;
         }
     }
 

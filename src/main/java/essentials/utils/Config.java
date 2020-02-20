@@ -340,7 +340,7 @@ public class Config {
     }
 
     public int getEmailPort(){
-        return obj.getInt("email-smtp-port", 465);
+        return obj.getInt("email-smtp-port", 587);
     }
 
     public String getEmailAccountID(){

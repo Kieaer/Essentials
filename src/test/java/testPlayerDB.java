@@ -1,4 +1,3 @@
-import essentials.core.PlayerDB;
 import org.junit.Test;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -7,8 +6,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import static essentials.core.PlayerDB.PlayerData;
+
 public class testPlayerDB {
-    public static ArrayList<PlayerDB.PlayerData> data = new ArrayList<>();
+    public static ArrayList<PlayerData> data = new ArrayList<>();
     Random rd = new Random();
 
     void createData(int a){
@@ -20,7 +21,7 @@ public class testPlayerDB {
         for(int b=0;b<20;b++) accountid.append((char) (rd.nextInt(26) + 97));
         for(int b=0;b<20;b++) accountpw.append((char) (rd.nextInt(26) + 97));
 
-        data.add(new PlayerDB.PlayerData(
+        data.add(new PlayerData(
                 a,
                 name.toString(), // name
                 "testuuid",
@@ -70,14 +71,14 @@ public class testPlayerDB {
         createData(1);
         assert data.size() != 0;
 
-        PlayerDB.PlayerData d = data.get(0);
+        PlayerData d = data.get(0);
         d.name = "Random name";
     }
 
     @Test
     public void testPlayerDBRead(){
         assert data.size() != 0;
-        PlayerDB.PlayerData d = data.get(0);
+        PlayerData d = data.get(0);
         System.out.println(d.name);
     }
 }

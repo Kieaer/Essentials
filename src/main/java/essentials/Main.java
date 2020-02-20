@@ -1543,6 +1543,22 @@ public class Main extends Plugin {
             });
             t.start();
         });
+        handler.<Player>register("email", "<key>", "Email Authentication", (arg, player) -> {
+            for(maildata data : emailauth){
+                if(data.uuid.equals(player.uuid)){
+                    if(data.authkey.equals(arg[0])){
+                        if(playerDB.register(player, data.id, data.pw, "emailauth", data.email)){
+                            playerDB.load(player);
+                            return;
+                        }
+                    } else {
+                        player.sendMessage("You have entered an incorrect authentication key.");
+                    }
+                } else {
+                    player.sendMessage("You didn't enter your email information when you registered.");
+                }
+            }
+        });
         handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
             if(!checkperm(player,"getpos")) return;
             player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
@@ -1795,9 +1811,8 @@ public class Main extends Plugin {
             case "email":
                 handler.<Player>register("register", "<accountid> <password> <email>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
-                        PlayerDB playerdb = new PlayerDB();
-                        if (playerdb.register(player, arg[0], arg[1], "email", arg[2])) {
-                            playerdb.load(player);
+                        if (playerDB.register(player, arg[0], arg[1], "email", arg[2])) {
+                            playerDB.load(player);
                             player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
                         } else {
                             player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");

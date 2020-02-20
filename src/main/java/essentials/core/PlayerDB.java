@@ -18,6 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
+import static essentials.PluginData.emailauth;
 import static essentials.Threads.ColorNick;
 import static essentials.utils.Config.executorService;
 import static essentials.utils.Permission.permission;
@@ -28,7 +29,7 @@ public class PlayerDB{
     public static Connection conn;
     public static ArrayList<Player> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
-    int DBVersion = 2;
+    int DBVersion = 3;
 
     public void run(){
         openconnect();
@@ -80,6 +81,7 @@ public class PlayerDB{
                         "permission TEXT,\n" +
                         "mute TEXT,\n" +
                         "udid TEXT,\n" +
+                        "email TEXT,\n" +
                         "accountid TEXT,\n" +
                         "accountpw TEXT\n" +
                         ");";
@@ -125,6 +127,7 @@ public class PlayerDB{
                             "`permission` TINYTEXT NOT NULL DEFAULT 'default',\n" +
                             "`mute` TINYTEXT NOT NULL,\n" +
                             "`udid` TEXT NOT NULL,\n" +
+                            "`email` TEXT NOT NULL,\n" +
                             "`accountid` TEXT NOT NULL,\n" +
                             "`accountpw` TEXT NOT NULL,\n" +
                             "PRIMARY KEY (`id`)\n" +
@@ -162,7 +165,7 @@ public class PlayerDB{
         }
     }
 
-	public static boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, boolean connected, Long udid, String accountid, String accountpw, Player player) {
+	public static boolean createNewDatabase(String name, String uuid, String country, String country_code, String language, Boolean isAdmin, int joincount, int kickcount, String firstdate, String lastdate, boolean connected, Long udid, String email, String accountid, String accountpw, Player player) {
         boolean result = false;
         try {
             if(uuid.equals("InactiveAAA=") || !isduplicate(uuid)){
@@ -278,6 +281,7 @@ public class PlayerDB{
                         rs.getString("permission"),
                         rs.getBoolean("mute"),
                         rs.getLong("udid"),
+                        rs.getString("email"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
                 );
@@ -519,6 +523,7 @@ public class PlayerDB{
                                 getTime(), // 마지막 접속일
                                 true, // 서버 연결여부
                                 Long.MIN_VALUE, // Discord UDID
+                                "none", // Email
                                 id, // 계정 ID
                                 hashed, // 계정 비밀번호
                                 player) // 플레이어
@@ -545,10 +550,40 @@ public class PlayerDB{
                             buf.append(passwordTable[random.nextInt(tablelength)]);
                         }
 
-                        String text = "Account validate code is "+buf.toString()+".";
-                        sendMail mail = new sendMail(config.getEmailServer(),config.getEmailPort(),config.getEmailAccountID(),config.getEmailPassword(),config.getEmailUsername(),player.name,parameter[0],"Register validate", text);
+                        String text = "인증 번호는 "+buf.toString()+" 입니다.\n서버 안에서 /email "+buf.toString()+" 명령어를 입력하여 계정 등록을 하세요.";
+                        sendMail mail = new sendMail(config.getEmailServer(),config.getEmailPort(),config.getEmailAccountID(),config.getEmailPassword(),config.getEmailUsername(),player.name,parameter[0],"서버 계정등록 확인", text);
                         mail.main();
-                        // TODO finish email
+
+                        player.sendMessage("Mail sented! Please check your mail!");
+                        player.sendMessage("Enter the /email command to enter your email verification number.");
+                        emailauth.add(new PluginData.maildata(player.uuid, buf.toString(), id, pw, parameter[0]));
+                        break;
+                    case "emailauth":
+                        if (createNewDatabase(
+                                player.name, // 이름
+                                player.uuid, // UUID
+                                locale.getDisplayCountry(Locale.US), // 국가명
+                                locale.toString(), // 국가 코드
+                                locale.getLanguage(), // 언어
+                                player.isAdmin, // 관리자 여부
+                                netServer.admins.getInfo(player.uuid).timesJoined, // 총 서버 입장횟수
+                                netServer.admins.getInfo(player.uuid).timesKicked, // 총 서버 강퇴횟수
+                                getTime(), // 최초 접속일
+                                getTime(), // 마지막 접속일
+                                true, // 서버 연결여부
+                                Long.MIN_VALUE, // Discord UDID
+                                parameter[0], // Email
+                                id, // 계정 ID
+                                hashed, // 계정 비밀번호
+                                player) // 플레이어
+                        ) {
+                            nlog("debug", player.name + " Player DB Created!");
+                            player.sendMessage(bundle(player, "player-name-changed", player.name));
+                            return true;
+                        } else {
+                            nlog("debug", player.name + " Player DB create failed!");
+                            return false;
+                        }
                 }
             } else {
                 player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
@@ -582,6 +617,7 @@ public class PlayerDB{
                     getTime(), // 마지막 접속일
                     true, // 서버 연결여부
                     0L, // Discord UDID
+                    "none", // Email
                     player.name, // 계정 ID
                     "blank", // 계정 PW
                     player // 플레이어
@@ -748,6 +784,7 @@ public class PlayerDB{
         public String permission;
         public boolean mute;
         public Long udid;
+        public String email;
         public String accountid;
         public String accountpw;
 
@@ -767,7 +804,7 @@ public class PlayerDB{
             this.isLogin = isLogin;
         }
 
-        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, Long udid, String accountid, String accountpw){
+        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, Long udid, String email, String accountid, String accountpw){
             this.id = id;
             this.name = name;
             this.uuid = uuid;
@@ -807,6 +844,7 @@ public class PlayerDB{
             this.permission = permission;
             this.mute = mute;
             this.udid = udid;
+            this.email = email;
             this.accountid = accountid;
             this.accountpw = accountpw;
 
@@ -946,7 +984,11 @@ public class PlayerDB{
                 conn.prepareStatement("ALTER table players ADD column IF NOT EXISTS mute TEXT AFTER permission").execute();
                 pstm = conn.prepareStatement("SELECT * FROM players");
                 rs = pstm.executeQuery();
+                boolean mute;
+                String email;
                 while (rs.next()) {
+                    mute = current_version >= 2 && rs.getBoolean("mute");
+                    email = current_version > 3 ? rs.getString("email") : "none";
                     buffer.add(new PlayerData(
                                     rs.getInt("id"),
                                     rs.getString("name"),
@@ -985,8 +1027,9 @@ public class PlayerDB{
                                     rs.getBoolean("connected"),
                                     rs.getString("connserver"),
                                     rs.getString("permission"),
-                                    false,
+                                    mute,
                                     rs.getLong("udid"),
+                                    email,
                                     rs.getString("accountid"),
                                     rs.getString("accountpw")
                             )
@@ -997,9 +1040,9 @@ public class PlayerDB{
                 createNewDataFile();
                 String sql;
                 if (config.isSqlite()) {
-                    sql = "INSERT INTO players ('id', 'name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players ('id', 'name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'email', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
-                    sql = "INSERT INTO players (id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players (id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, email, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 }
                 for (PlayerData data : buffer) {
                     PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -1042,8 +1085,9 @@ public class PlayerDB{
                     pstmt.setString(37, data.permission); // set permission
                     pstmt.setBoolean(38, data.mute); // mute
                     pstmt.setLong(39, data.udid); // UDID
-                    pstmt.setString(40, data.accountid);
-                    pstmt.setString(41, data.accountpw);
+                    pstmt.setString(40, data.email);
+                    pstmt.setString(41, data.accountid);
+                    pstmt.setString(42, data.accountpw);
                     pstmt.execute();
                     pstmt.close();
                 }
@@ -1051,11 +1095,15 @@ public class PlayerDB{
                 log("player","db-upgrade");
             }
             if(current_version < DBVersion) {
-                if (!config.isSqlite()) conn.prepareStatement("ALTER TABLE players CHANGE COLUMN uuid uuid TINYTEXT NULL DEFAULT NULL AFTER name;").execute();
-                conn.prepareStatement("UPDATE data SET dbversion=2").execute();
-                PreparedStatement reset = conn.prepareStatement("UPDATE players SET uuid = ?");
-                reset.setString(1,"none");
-                reset.execute();
+                if (!config.isSqlite()) {
+                    conn.prepareStatement("ALTER TABLE players CHANGE COLUMN uuid uuid TINYTEXT NULL DEFAULT NULL AFTER name;").execute();
+                }
+                conn.prepareStatement("UPDATE data SET dbversion="+DBVersion).execute();
+                if(current_version <= 3) {
+                    PreparedStatement reset = conn.prepareStatement("UPDATE players SET uuid = ?");
+                    reset.setString(1, "none");
+                    reset.execute();
+                }
                 log("player","db-upgrade");
             }
         }catch (SQLException e){

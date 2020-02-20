@@ -81,7 +81,7 @@ public class Discord extends ListenerAdapter {
                         return;
                     }
                     if(e.getMember() != null) {
-                    if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), id, pw, null)) {
+                    if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), "none", id, pw, null)) {
                             Role role = guild.getRolesByName(config.getDiscordRole(),false).get(0);
                             guild.addRoleToMember(e.getMember(), role).queue();
                         } else {

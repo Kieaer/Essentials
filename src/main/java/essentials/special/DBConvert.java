@@ -79,6 +79,7 @@ public class DBConvert {
                         rs.getString("permission"),
                         rs.getBoolean("mute"),
                         rs.getLong("udid"),
+                        rs.getString("email"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
                 ));
