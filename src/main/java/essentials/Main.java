@@ -125,10 +125,10 @@ public class Main extends Plugin {
         try {
             if (PluginConfig.getBoolean("unexception", false)) {
                 Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT id,lastdate FROM players");
+                ResultSet rs = stmt.executeQuery("SELECT uuid,lastdate FROM players");
                 while (rs.next()) {
                     if (isLoginold(rs.getString("lastdate"))) {
-                        writeData("UPDATE players SET connected = ?, connserver = ? WHERE id = ?", false, "none", rs.getInt("id"));
+                        writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", rs.getInt("uuid"));
                     }
                 }
             } else {
@@ -1448,6 +1448,91 @@ public class Main extends Plugin {
                 printError(e);
             }
         });
+        handler.<Player>register("chars", "<Text...>", "Make pixel texts", (arg, player) -> {
+            if(!checkperm(player,"chars")) return;
+            HashMap<String, int[]> letters = new HashMap<>();
+
+            letters.put("A", new int[]{0,1,1,1,1,1,0,1,0,0,1,0,1,0,0,0,1,1,1,1});
+            letters.put("B", new int[]{1,1,1,1,1,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0});
+            letters.put("C", new int[]{0,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1});
+            letters.put("D", new int[]{1,1,1,1,1,1,0,0,0,1,1,0,0,0,1,0,1,1,1,0});
+            letters.put("E", new int[]{1,1,1,1,1,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1});
+            letters.put("F", new int[]{1,1,1,1,1,1,0,1,0,0,1,0,1,0,0,1,0,1,0,0});
+            letters.put("G", new int[]{0,1,1,1,0,1,0,0,0,1,1,0,1,0,1,0,0,1,1,1});
+            letters.put("H", new int[]{1,1,1,1,1,0,0,1,0,0,0,0,1,0,0,1,1,1,1,1});
+            letters.put("I", new int[]{1,0,0,0,1,1,1,1,1,1,1,0,0,0,1});
+            letters.put("J", new int[]{1,0,0,1,0,1,0,0,0,1,1,1,1,1,0,1,0,0,0,0});
+            letters.put("K", new int[]{1,1,1,1,1,0,0,1,0,0,0,1,0,1,0,1,0,0,0,1});
+            letters.put("L", new int[]{1,1,1,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1});
+            letters.put("M", new int[]{1,1,1,1,1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,1,1,1,1});
+            letters.put("N", new int[]{1,1,1,1,1,0,1,0,0,0,0,0,1,0,0,1,1,1,1,1});
+            letters.put("O", new int[]{0,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1,0,1,1,1,0});
+            letters.put("P", new int[]{1,1,1,1,1,1,0,1,0,0,1,0,1,0,0,0,1,0,0,0});
+            letters.put("Q", new int[]{0,1,1,1,0,1,0,0,0,1,1,0,0,0,1,0,1,1,1,0,0,0,0,0,1});
+            letters.put("R", new int[]{1,1,1,1,1,1,0,1,0,0,1,0,1,0,0,0,1,0,1,1});
+            letters.put("S", new int[]{1,1,1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,1,1,1});
+            letters.put("T", new int[]{1,0,0,0,0,1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0});
+            letters.put("U", new int[]{1,1,1,1,0,0,0,0,0,1,0,0,0,0,1,1,1,1,1,0});
+            letters.put("V", new int[]{1,1,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,1,1,1,0,0});
+            letters.put("W", new int[]{1,1,1,1,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,0});
+            letters.put("X", new int[]{1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,1,0,1,0,1,0,0,0,1});
+            letters.put("Y", new int[]{1,1,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,1,0,0,1,1,0,0,0});
+            letters.put("Z", new int[]{1,0,0,1,1,1,0,1,0,1,1,1,0,0,1});
+
+            letters.put("!", new int[]{1,1,1,1,0,1});
+            letters.put("?", new int[]{0,1,0,0,0,0,1,0,0,0,0,0,1,0,1,1,0,1,0,1,0,0,0,0});
+
+            letters.put(" ", new int[]{0,0,0,0,0,0,0,0,0,0});
+
+            String[] texts = arg[0].split("");
+            Tile tile = world.tile(player.tileX(),player.tileY());
+
+            for (String text : texts) {
+                ArrayList<int[]> pos = new ArrayList<>();
+                int[] target = letters.get(text.toUpperCase());
+                int xv = 0;
+                int yv = 0;
+                switch (target.length) {
+                    case 20:
+                        xv = 5;
+                        yv = 4;
+                        break;
+                    case 15:
+                        xv = 5;
+                        yv = 3;
+                        break;
+                    case 18:
+                        xv = 6;
+                        yv = 3;
+                        break;
+                    case 25:
+                        xv = 5;
+                        yv = 5;
+                        break;
+                    case 6:
+                        xv = 6;
+                        yv = 1;
+                        break;
+                    case 10:
+                        xv = 5;
+                        yv = 2;
+                        break;
+                }
+                for(int y=0;y<yv;y++){
+                    for(int x=0;x<xv;x++){
+                        pos.add(new int[]{y,-x});
+                    }
+                }
+                for(int a=0;a<pos.size();a++){
+                    if(target[a] == 1) {
+                        Call.onConstructFinish(world.tile(tile.x+pos.get(a)[0], tile.y+pos.get(a)[1]), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                    } else {
+                        Call.onDeconstructFinish(world.tile(tile.x+pos.get(a)[0], tile.y+pos.get(a)[1]), Blocks.air, 0);
+                    }
+                }
+                tile = world.tile(tile.x + (xv+1), tile.y);
+            }
+        });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
             if (!checkperm(player, "color")) return;
             PlayerData target = PlayerData(player.uuid);
@@ -1615,7 +1700,6 @@ public class Main extends Plugin {
             if (lc.split("_").length > 1) {
                 String[] array = lc.split("_");
                 locale = new Locale(array[0], array[1]);
-                System.out.println(Arrays.toString(array));
             }
             String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
                     "[#2B60DE]====================================[]\n" +
@@ -2267,6 +2351,7 @@ public class Main extends Plugin {
                     player.sendMessage(bundle(player, "vote-list"));
                     return;
                 }
+                // TODO runtime exception
                 if(arg[1].equals("gamemode")){
                     player.sendMessage(bundle(player, "vote-list-gamemode"));
                     return;
