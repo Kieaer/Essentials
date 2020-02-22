@@ -6,20 +6,25 @@ import essentials.utils.Bundle;
 import essentials.utils.Config;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.core.Version;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import org.hjson.Stringify;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,19 +41,21 @@ import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.core.PlayerDB.conn;
 import static essentials.utils.Permission.permission;
-import static mindustry.Vars.playerGroup;
-import static mindustry.Vars.world;
+import static mindustry.Vars.*;
 
 public class Global {
     public static Config config = new Config();
     public static String plugin_version;
     public static String hostip = getip();
+    public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
 
     final static String tag = "[Essential] ";
     final static String servertag = "[EssentialServer] ";
     final static String clienttag = "[EssentialClient] ";
     final static String playertag = "[EssentialPlayer] ";
     final static String configtag = "[EssentialConfig] ";
+
+    public final static String[] intpos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
 
     // 로그
     public static void log(String type, String value, Object... parameter){
@@ -198,6 +205,40 @@ public class Global {
 
                 writelog("error", text);
                 nlog("err","Plugin internal error! - "+e.getMessage());
+                if(config.isCrashReport()){
+                    InetAddress address = InetAddress.getByName("mindustry.kr");
+                    Socket socket = new Socket("127.0.0.1", 6560);
+                    BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                    DataOutputStream os = new DataOutputStream(socket.getOutputStream());
+                    os.writeBytes(e.toString()+"\n");
+                    sb = new StringBuilder();
+                    sb.append(e.toString()).append("\n");
+                    for (StackTraceElement error : element) {
+                        sb.append("at ")
+                                .append(error.toString())
+                                .append("\n");
+                    }
+                    StringBuilder plugins = new StringBuilder();
+                    for(int a=0;a<mods.list().size;a++){
+                        plugins.append(mods.list().get(a).name).append(", ");
+                    }
+
+                    String logs = "플러그인 버전: " + plugin_version + "\n" +
+                            "서버 버전: "+ Version.build + "\n" +
+                            "OS: " + System.getProperty("os.name") + "\n" +
+                            "플러그인 목록: " + plugins.toString().substring(0,plugins.length()-2) + "\n" +
+                            "== 설정파일 ==\n" + JsonValue.readHjson(root.child("config.hjson").readString()).toString(Stringify.HJSON) + "\n" +
+                            "== Stacktrace ==\n" + sb.toString() + "\n!exit!\n";
+
+                    os.write(logs.getBytes(StandardCharsets.UTF_8));
+
+                    String data = is.readLine();
+                    if(data != null){
+                        nlog("log", "crash reported");
+                    } else {
+                        nlog("log", "receive failed");
+                    }
+                }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -288,13 +329,12 @@ public class Global {
     }
 
     public static String dbundle(String value){
-        Bundle bundle = new Bundle(Locale.getDefault());
+        Bundle bundle = new Bundle(locale);
         return bundle.getNormal(value);
     }
 
     // 숫자 카운트
     public static void setcount(Tile tile, int count){
-        String[] pos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
         int[] zero = {1,1,1,1,0,1,1,0,1,1,0,1,1,1,1};
         int[] one = {0,1,0,1,1,0,0,1,0,0,1,0,1,1,1};
         int[] two = {1,1,1,0,0,1,1,1,1,1,0,0,1,1,1};
@@ -309,7 +349,7 @@ public class Global {
         switch(count) {
             case 0:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -327,7 +367,7 @@ public class Global {
                 break;
             case 1:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -345,7 +385,7 @@ public class Global {
                 break;
             case 2:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -363,7 +403,7 @@ public class Global {
                 break;
             case 3:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -381,7 +421,7 @@ public class Global {
                 break;
             case 4:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -399,7 +439,7 @@ public class Global {
                 break;
             case 5:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -417,7 +457,7 @@ public class Global {
                 break;
             case 6:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -435,7 +475,7 @@ public class Global {
                 break;
             case 7:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -453,7 +493,7 @@ public class Global {
                 break;
             case 8:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -471,7 +511,7 @@ public class Global {
                 break;
             case 9:
                 for(int a=0;a<15;a++){
-                    String position = pos[a];
+                    String position = intpos[a];
                     String[] data = position.split(",");
                     int x = Integer.parseInt(data[0]);
                     int y = Integer.parseInt(data[1]);
@@ -502,7 +542,6 @@ public class Global {
 
     // No 글자 표시
     public static void setno(Tile tile, boolean duplicate){
-        String[] pos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
         int[] n = {1,1,1,1,0,1,1,0,1,1,0,1,1,0,1};
         int[] o = {1,1,1,1,0,1,1,0,1,1,0,1,1,1,1};
         if(duplicate){
@@ -515,7 +554,7 @@ public class Global {
 
         Tile target = world.tile(tile.x, tile.y);
         for(int a=0;a<15;a++) {
-            String position = pos[a];
+            String position = intpos[a];
             String[] data = position.split(",");
             int x = Integer.parseInt(data[0]);
             int y = Integer.parseInt(data[1]);
@@ -533,7 +572,7 @@ public class Global {
         target = world.tile(tile.x+4,tile.y);
 
         for(int a=0;a<15;a++) {
-            String position = pos[a];
+            String position = intpos[a];
             String[] data = position.split(",");
             int x = Integer.parseInt(data[0]);
             int y = Integer.parseInt(data[1]);
@@ -585,38 +624,40 @@ public class Global {
             JsonObject result = JsonValue.readJSON(json).asObject();
 
             if (result.get("reserved") != null) {
-                data.put("country", Locale.getDefault().getDisplayCountry(Locale.US));
-                data.put("country_code", Locale.getDefault().toString());
-                data.put("languages", Locale.getDefault().getLanguage());
+                System.out.println("RESERVED");
             } else {
-                Locale locale;
-                while(true){
-                    try {
-                        locale = new Locale(result.getString("country_code", null));
-                        ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
-                        RESOURCE_BUNDLE.getString("success");
-                        break;
-                    }catch (Exception e){
-                        String[] array = result.getString("languages", null).split(",");
-                        for(int a=0;a<array.length;a++){
-                            try{
-                                locale = new Locale(result.getString("country_code", null));
-                                ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
-                                RESOURCE_BUNDLE.getString("success");
-                                break;
-                            }catch (Exception ignored){}
-                        }
+                Locale loc = locale;
+                String lc = result.get("country_code").asString().split(",")[0];
+                if(lc.split("_").length == 2){
+                    String[] array = lc.split("_");
+                    loc = new Locale(array[0], array[1]);
+                }
+                try {
+                    ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
+                    RESOURCE_BUNDLE.getString("success");
+                }catch (Exception e){
+                    for(int a=0;a<result.get("country_code").asString().split(",").length;a++){
+                        try{
+                            lc = result.get("country_code").asString().split(",")[a];
+                            if(lc.split("_").length == 2){
+                                String[] array = lc.split("_");
+                                loc = new Locale(array[0], array[1]);
+                            }
+                            ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
+                            RESOURCE_BUNDLE.getString("success");
+                            break;
+                        }catch (Exception ignored){}
                     }
                 }
-                data.put("country", locale.getDisplayCountry(Locale.US));
-                data.put("country_code", locale.toString());
-                data.put("languages", locale.getLanguage());
             }
+            data.put("country", locale.getDisplayCountry(Locale.US));
+            data.put("country_code", locale.toString());
+            data.put("languages", locale.getLanguage());
         } catch (Exception e) {
             printError(e);
-            data.put("country", Locale.getDefault().getDisplayCountry(Locale.US));
-            data.put("country_code", Locale.getDefault().toString());
-            data.put("languages", Locale.getDefault().getLanguage());
+            data.put("country", locale.getDisplayCountry(Locale.US));
+            data.put("country_code", locale.toString());
+            data.put("languages", locale.getLanguage());
         }
 
         return data;
@@ -716,7 +757,7 @@ public class Global {
 
     public static boolean isduplicate(Player player){
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT id FROM players WHERE uuid = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT uuid FROM players WHERE uuid = ?");
             stmt.setString(1, player.uuid);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -732,7 +773,7 @@ public class Global {
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
-                nlog("debug", rs.getString("id"));
+                nlog("debug", rs.getString("name"));
                 return true;
             } else {
                 nlog("debug", "not duplicate this uuid");

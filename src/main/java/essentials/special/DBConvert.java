@@ -40,7 +40,6 @@ public class DBConvert {
 
             while (rs.next()) {
                 data.add(new PlayerData(
-                        rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("uuid"),
                         rs.getString("country"),
