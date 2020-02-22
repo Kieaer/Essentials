@@ -42,7 +42,6 @@ public class PlayerDB{
             String sql = null;
             if(config.isSqlite()){
                 sql = "CREATE TABLE IF NOT EXISTS players (\n" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
                         "name TEXT,\n" +
                         "uuid TEXT,\n" +
                         "country TEXT,\n" +
@@ -88,7 +87,6 @@ public class PlayerDB{
             } else {
                 if(!config.getDBid().isEmpty()){
                     sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
-                            "`id` INT(11) NOT NULL AUTO_INCREMENT,\n" +
                             "`name` TEXT NOT NULL,\n" +
                             "`uuid` TINYTEXT NOT NULL,\n" +
                             "`country` TEXT NOT NULL,\n" +
@@ -129,12 +127,10 @@ public class PlayerDB{
                             "`udid` TEXT NOT NULL,\n" +
                             "`email` TEXT NOT NULL,\n" +
                             "`accountid` TEXT NOT NULL,\n" +
-                            "`accountpw` TEXT NOT NULL,\n" +
-                            "PRIMARY KEY (`id`)\n" +
+                            "`accountpw` TEXT NOT NULL\n" +
                             ")\n" +
                             "COLLATE='utf8_general_ci'\n" +
                             "ENGINE=InnoDB\n" +
-                            "AUTO_INCREMENT=1\n" +
                             ";";
                 } else {
                     log("playererror","db-address-notset");
@@ -169,12 +165,14 @@ public class PlayerDB{
         boolean result = false;
         try {
             if(uuid.equals("InactiveAAA=") || !isduplicate(uuid)){
-                String sql;
-                if(config.isSqlite()){
-                    sql = "INSERT INTO 'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                } else {
-                    sql = "INSERT INTO players(name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, udid, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                }
+                /*String sql = "INSERT INTO players (" +
+                        "name = ?,uuid = ?,country = ?,country_code = ?,language = ?,isadmin = ?," +
+                        "placecount = ?,breakcount = ?,killcount = ?,deathcount = ?,joincount = ?,kickcount = ?,deathcount = ?,joincount = ?,kickcount = ?," +
+                        "level = ?,exp = ?,reqexp = ?,reqtotalexp = ?,firstdate = ?,lastdate = ?,lastplacename = ?,lastbreakname = ?,lastchat = ?,playtime = ?," +
+                        "attackclear = ?,pvpwincount = ?,pvplosecount = ?,pvpbreakout = ?,reactorcount = ?,bantimeset = ?,bantime = ?,banned = ?,translate = ?," +
+                        "crosschat = ?,colornick = ?,connected = ?,connserver = ?,permission = ?,mute = ?,udid = ?,email = ?,accountid = ?,accountpw = ?" +
+                        ")";*/
+                String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
@@ -212,9 +210,11 @@ public class PlayerDB{
                 pstmt.setBoolean(34, connected); // connected
                 pstmt.setString(35, getip()); // connected server ip
                 pstmt.setString(36, "default"); // set permission
-                pstmt.setLong(37, udid); // UDID
-                pstmt.setString(38, accountid);
-                pstmt.setString(39, accountpw);
+                pstmt.setBoolean(37, false); // mute
+                pstmt.setLong(38, udid); // UDID
+                pstmt.setString(39,"none"); // email
+                pstmt.setString(40, accountid);
+                pstmt.setString(41, accountpw);
                 pstmt.execute();
                 pstmt.close();
                 if(player != null) player.sendMessage(bundle(player, "player-id", player.name));
@@ -242,7 +242,6 @@ public class PlayerDB{
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
                 data = new PlayerData(
-                        rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("uuid"),
                         rs.getString("country"),
@@ -307,7 +306,6 @@ public class PlayerDB{
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
             while(rs.next()){
-                data.add("id", rs.getInt("id"));
                 data.add("name", rs.getString("name"));
                 data.add("uuid", rs.getString("uuid"));
                 data.add("country", rs.getString("country"));
@@ -804,8 +802,7 @@ public class PlayerDB{
             this.isLogin = isLogin;
         }
 
-        public PlayerData(int id, String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, Long udid, String email, String accountid, String accountpw){
-            this.id = id;
+        public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, Long udid, String email, String accountid, String accountpw){
             this.name = name;
             this.uuid = uuid;
             this.country = country;
@@ -982,6 +979,7 @@ public class PlayerDB{
             int current_version = rs.getInt("dbversion");
             if(current_version < DBVersion) {
                 conn.prepareStatement("ALTER table players ADD column IF NOT EXISTS mute TEXT AFTER permission").execute();
+                conn.prepareStatement("ALTER table players ADD column IF NOT EXISTS email TEXT AFTER udid").execute();
                 pstm = conn.prepareStatement("SELECT * FROM players");
                 rs = pstm.executeQuery();
                 boolean mute;
@@ -990,7 +988,6 @@ public class PlayerDB{
                     mute = current_version >= 2 && rs.getBoolean("mute");
                     email = current_version > 3 ? rs.getString("email") : "none";
                     buffer.add(new PlayerData(
-                                    rs.getInt("id"),
                                     rs.getString("name"),
                                     rs.getString("uuid"),
                                     rs.getString("country"),
@@ -1036,17 +1033,16 @@ public class PlayerDB{
                     );
                 }
                 rs.close();
-
+                conn.prepareStatement("DROP TABLE players").execute();
                 createNewDataFile();
                 String sql;
                 if (config.isSqlite()) {
-                    sql = "INSERT INTO players ('id', 'name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'email', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'email', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
-                    sql = "INSERT INTO players (id, name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, email, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    sql = "INSERT INTO players (name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, email, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 }
                 for (PlayerData data : buffer) {
                     PreparedStatement pstmt = conn.prepareStatement(sql);
-                    pstmt.setInt(1, data.id);
                     pstmt.setString(2, data.name);
                     pstmt.setString(3, data.uuid);
                     pstmt.setString(4, data.country);
