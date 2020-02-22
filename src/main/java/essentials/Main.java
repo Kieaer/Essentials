@@ -609,7 +609,9 @@ public class Main extends Plugin {
                 //int conveyor_count = 0;
                 for(short[] t : target.grief_tilelist){
                     Tile tile = world.tile(t[0],t[1]);
-                    if(tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) sorter_count++;
+                    if(tile.block() != null) {
+                        if (tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) sorter_count++;
+                    }
                     //if(tile.entity.block == Blocks.conveyor || tile.entity.block == Blocks.armoredConveyor || tile.entity.block == Blocks.titaniumConveyor) conveyor_count++;
                 }
                 if(sorter_count > 10){
@@ -1394,7 +1396,7 @@ public class Main extends Plugin {
                 info("&lyMaps reloaded.");
             }
         });
-        handler.register("average","Show average players", arg -> {
+/*        handler.register("average","Show average players", arg -> {
             Integer sum = 0;
             if(average == null) average = new ArrayList<>();
             if(!average.isEmpty()) {
@@ -1403,7 +1405,14 @@ public class Main extends Plugin {
                 }
                 System.out.println("Total server average players: "+sum.floatValue() / average.size()+" players");
             }
-        });
+        });*/
+        /*handler.register("testcrash", "Make crash", arg -> {
+            try{
+                throw new Exception();
+            }catch (Exception e){
+                printError(e);
+            }
+        });*/
     }
 
     @Override
