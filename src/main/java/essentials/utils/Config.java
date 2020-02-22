@@ -271,7 +271,11 @@ public class Config {
     }
 
     public JsonArray getBantrust(){
-        return obj.get("bantrust") != null ? obj.get("bantrust").asArray() : new JsonArray().add("127.0.0.1").asArray();
+        try{
+            return obj.get("bantrust") != null ? obj.get("bantrust").asArray() : new JsonArray().add("127.0.0.1").asArray();
+        }catch (UnsupportedOperationException e){
+            return new JsonArray().add("127.0.0.1").asArray();
+        }
     }
 
     public boolean isAntivpn(){
