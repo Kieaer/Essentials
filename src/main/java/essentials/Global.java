@@ -32,7 +32,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -616,15 +619,14 @@ public class Global {
     }
 
     // 플레이어 지역 위치 확인
-    public static HashMap<String, String> geolocation(Player player) {
+    public static Locale geolocation(Player player) {
         String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
-        HashMap <String, String> data = new HashMap<>();
         try {
             String json = Jsoup.connect("http://ipapi.co/"+ip+"/json").ignoreContentType(true).execute().body();
             JsonObject result = JsonValue.readJSON(json).asObject();
 
             if (result.get("reserved") != null) {
-                System.out.println("RESERVED");
+                return locale;
             } else {
                 Locale loc = locale;
                 String lc = result.get("country_code").asString().split(",")[0];
@@ -645,22 +647,17 @@ public class Global {
                             }
                             ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
                             RESOURCE_BUNDLE.getString("success");
-                            break;
+                            return loc;
                         }catch (Exception ignored){}
                     }
                 }
             }
-            data.put("country", locale.getDisplayCountry(Locale.US));
-            data.put("country_code", locale.toString());
-            data.put("languages", locale.getLanguage());
         } catch (Exception e) {
             printError(e);
-            data.put("country", locale.getDisplayCountry(Locale.US));
-            data.put("country_code", locale.toString());
-            data.put("languages", locale.getLanguage());
+            return locale;
         }
 
-        return data;
+        return locale;
     }
 
     public static String geolocation(String ip){

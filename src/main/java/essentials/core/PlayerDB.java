@@ -212,7 +212,7 @@ public class PlayerDB{
                 pstmt.setString(36, "default"); // set permission
                 pstmt.setBoolean(37, false); // mute
                 pstmt.setLong(38, udid); // UDID
-                pstmt.setString(39,"none"); // email
+                pstmt.setString(39, email); // email
                 pstmt.setString(40, accountid);
                 pstmt.setString(41, accountpw);
                 pstmt.execute();
@@ -233,12 +233,17 @@ public class PlayerDB{
 	}
 
 	// 메모리 사용 (빠름)
-	public static PlayerData getInfo(String uuid){
+	public static PlayerData getInfo(String type, String value){
         PlayerData data = new PlayerData(true,false);
         try {
-            String sql = "SELECT * FROM players WHERE uuid=?";
+            String sql;
+            if(type.equals("id")){
+                sql = "SELECT * FROM players WHERE accountid=?";
+            } else {
+                sql = "SELECT * FROM players WHERE uuid=?";
+            }
             PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1,uuid);
+            stmt.setString(1,value);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
                 data = new PlayerData(
@@ -285,7 +290,7 @@ public class PlayerDB{
                         rs.getString("accountpw")
                 );
             } else {
-                nlog("debug", uuid+" Data not found!");
+                nlog("debug", value+" Data not found!");
             }
             rs.close();
             stmt.close();
@@ -498,13 +503,7 @@ public class PlayerDB{
         // 비밀번호 보안 확인
         if(checkpw(player,id,pw)) {
             String hashed = BCrypt.hashpw(pw, BCrypt.gensalt(11));
-            HashMap<String, String> list = geolocation(player);
-            Locale locale = new Locale(list.get("country_code"));
-            String lc = list.get("country_code").split(",")[0];
-            if(lc.split("_").length == 2){
-                String[] array = lc.split("_");
-                locale = new Locale(array[0], array[1]);
-            }
+            Locale locale = geolocation(player);
             if (!isduplicate(player)) {
                 switch (type) {
                     case "password":
@@ -595,13 +594,7 @@ public class PlayerDB{
     // 비 로그인 기능 사용시 계정등록
     public boolean register(Player player) {
         if (!isduplicate(player)) { // 계정 중복 확인
-            HashMap<String, String> list = geolocation(player);
-            Locale locale = new Locale(list.get("country_code"));
-            String lc = list.get("country_code").split(",")[0];
-            if(lc.split("_").length == 2){
-                String[] array = lc.split("_");
-                locale = new Locale(array[0], array[1]);
-            }
+            Locale locale = geolocation(player);
             return createNewDatabase(
                     player.name, // 이름
                     player.uuid, // UUID
@@ -653,10 +646,16 @@ public class PlayerDB{
         }
         return result;
     }
-    public void load(Player player) {
+    public void load(Player player, String... parameter) {
         Thread thread = new Thread(() -> {
-            Players.add(getInfo(player.uuid));
-            PlayerData target = PlayerData(player.uuid);
+            PlayerData target;
+            if(config.getPasswordmethod().equals("discord")){
+                target = getInfo("id", parameter[0]);
+                Players.add(getInfo("id", parameter[0]));
+            } else {
+                target = PlayerData(player.uuid);
+                Players.add(getInfo("uuid", player.uuid));
+            }
 
             // 새 기기로 UUID 적용
             target.uuid = player.uuid;
@@ -726,18 +725,29 @@ public class PlayerDB{
 
             // 플레이어 위치 정보가 없을경우, 위치 정보 가져오기
             if (target.country.equals("invalid")) {
-                HashMap<String, String> list = geolocation(player);
-                target.country = list.get("country");
-                target.country_code = list.get("country_code");
-                target.language = list.get("languages");
+                Locale locale = geolocation(player);
+                target.country = locale.getDisplayCountry(Locale.US);
+                target.country_code = locale.toString();
+                target.language = locale.getLanguage();
             }
 
             // 플레이어 접속 횟수 카운트
             target.joincount = target.joincount++;
 
             // 데이터 저장
-            PlayerDataSet(target);
-            PlayerDataSave(target);
+            if(config.getPasswordmethod().equals("discord")) {
+                for (int a = 0; a < Players.size(); a++) {
+                    PlayerData p = Players.get(a);
+                    if (!p.error && p.accountid.equals(parameter[0])) {
+                        Players.set(a, target);
+                        return;
+                    }
+                }
+                PlayerDataSaveUUID(target, target.accountid);
+            } else {
+                PlayerDataSet(target);
+                PlayerDataSave(target);
+            }
         });
         executorService.submit(thread);
     }
@@ -917,6 +927,56 @@ public class PlayerDB{
             pstmt.setBoolean(37,data.mute); // mute
             pstmt.setLong(38, data.udid); // UDID
             pstmt.setString(39, data.uuid);
+            pstmt.execute();
+            pstmt.close();
+        } catch (Exception e) {
+            printError(e);
+        }
+    }
+
+    public static void PlayerDataSaveUUID(PlayerData data, String accountid) {
+        try {
+            String sql = "UPDATE players SET name=?,uuid=?,country=?,country_code=?,language=?,isadmin=?,placecount=?,breakcount=?,killcount=?,deathcount=?,joincount=?,kickcount=?,level=?,exp=?,reqexp=?,reqtotalexp=?,firstdate=?,lastdate=?,lastplacename=?,lastbreakname=?,lastchat=?,playtime=?,attackclear=?,pvpwincount=?,pvplosecount=?,pvpbreakout=?,reactorcount=?,bantimeset=?,bantime=?,banned=?,translate=?,crosschat=?,colornick=?,connected=?,connserver=?,permission=?,mute=?,udid=? WHERE accountid=?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, data.name);
+            pstmt.setString(2, data.uuid);
+            pstmt.setString(3, data.country);
+            pstmt.setString(4, data.country_code);
+            pstmt.setString(5, data.language);
+            pstmt.setBoolean(6, data.isAdmin);
+            pstmt.setInt(7, data.placecount); // placecount
+            pstmt.setInt(8, data.breakcount); // breakcount
+            pstmt.setInt(9, data.killcount); // killcount
+            pstmt.setInt(10, data.deathcount); // deathcount
+            pstmt.setInt(11, data.joincount);
+            pstmt.setInt(12, data.kickcount);
+            pstmt.setInt(13, data.level); // level
+            pstmt.setInt(14, data.exp); // exp
+            pstmt.setInt(15, data.reqexp); // reqexp
+            pstmt.setString(16, data.reqtotalexp); // reqtotalexp
+            pstmt.setString(17, data.firstdate);
+            pstmt.setString(18, data.lastdate);
+            pstmt.setString(19, data.lastplacename); // lastplacename
+            pstmt.setString(20, data.lastbreakname); // lastbreakname
+            pstmt.setString(21, data.lastchat); // lastchat
+            pstmt.setString(22, data.playtime); // playtime
+            pstmt.setInt(23, data.attackclear); // attackclear
+            pstmt.setInt(24, data.pvpwincount); // pvpwincount
+            pstmt.setInt(25, data.pvplosecount); // pvplosecount
+            pstmt.setInt(26, data.pvpbreakout); // pvpbreakcount
+            pstmt.setInt(27, data.reactorcount); // reactorcount
+            pstmt.setInt(28, data.bantimeset); // bantimeset
+            pstmt.setString(29, data.bantime); // bantime
+            pstmt.setBoolean(30, data.banned);
+            pstmt.setBoolean(31, data.translate); // translate
+            pstmt.setBoolean(32, data.crosschat); // crosschat
+            pstmt.setBoolean(33, data.colornick); // colornick
+            pstmt.setBoolean(34, data.connected); // connected
+            pstmt.setString(35, data.connserver); // connected server ip
+            pstmt.setString(36, data.permission); // set permission
+            pstmt.setBoolean(37,data.mute); // mute
+            pstmt.setLong(38, data.udid); // UDID
+            pstmt.setString(39, accountid);
             pstmt.execute();
             pstmt.close();
         } catch (Exception e) {

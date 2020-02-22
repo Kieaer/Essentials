@@ -65,6 +65,7 @@ import static arc.util.Log.info;
 import static essentials.Global.*;
 import static essentials.PluginData.*;
 import static essentials.Threads.*;
+import static essentials.core.Discord.jda;
 import static essentials.core.Log.writelog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
@@ -336,7 +337,7 @@ public class Main extends Plugin {
 
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name+" Player Join thread");
-                PlayerData player = getInfo(e.player.uuid);
+                PlayerData player = getInfo("uuid", e.player.uuid);
                 if (config.isLoginenable() && isNocore(e.player)) {
                     if(config.getPasswordmethod().equals("mixed")) {
                         if (!player.error) {
@@ -344,7 +345,7 @@ public class Main extends Plugin {
                                 new Thread(() -> Call.onConnect(e.player.con, hostip, 7060)).start();
                             } else {
                                 e.player.sendMessage(bundle(e.player, "autologin"));
-                                playerDB.load(e.player);
+                                playerDB.load(e.player, player.accountid);
                             }
                         } else {
                             if (playerDB.register(e.player)) {
@@ -356,7 +357,7 @@ public class Main extends Plugin {
                     } else if(config.getPasswordmethod().equals("discord")){
                         if (!player.error) {
                             e.player.sendMessage(bundle(e.player, "autologin"));
-                            playerDB.load(e.player);
+                            playerDB.load(e.player, player.accountid);
                         } else {
                             String message;
                             String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
@@ -451,7 +452,11 @@ public class Main extends Plugin {
                 player.connected = false;
                 player.connserver = "none";
                 if(state.rules.pvp && !state.gameOver) player.pvpbreakout++;
-                PlayerDataSave(player);
+                if(config.getPasswordmethod().equals("discord")){
+                    PlayerDataSaveUUID(player, player.accountid);
+                } else {
+                    PlayerDataSave(player);
+                }
             } else {
                 PlayerDataRemove(player);
             }
@@ -609,7 +614,7 @@ public class Main extends Plugin {
                 //int conveyor_count = 0;
                 for(short[] t : target.grief_tilelist){
                     Tile tile = world.tile(t[0],t[1]);
-                    if(tile.block() != null) {
+                    if(tile != null && tile.block() != null) {
                         if (tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) sorter_count++;
                     }
                     //if(tile.entity.block == Blocks.conveyor || tile.entity.block == Blocks.armoredConveyor || tile.entity.block == Blocks.titaniumConveyor) conveyor_count++;
@@ -692,6 +697,7 @@ public class Main extends Plugin {
 
                     target.grief_destory_count++;
                     if (target.grief_destory_count > 30) nlog("log", target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
+                    PlayerDataSet(target);
                 }
                 if(config.isDebug() && config.isAntigrief()){
                     log("log","antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
@@ -923,6 +929,7 @@ public class Main extends Plugin {
                 timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
                 if (isvoting) Vote.cancel(); // 투표 종료
                 jumpdata.interrupt(); // 다른 서버상태 확인 스레드 종료
+                jda.shutdownNow(); // Discord 서비스 종료
                 closeconnect(); // DB 연결 종료
                 if (config.isServerenable()) {
                     try {
@@ -1434,13 +1441,13 @@ public class Main extends Plugin {
         });
         handler.<Player>register("changepw", "<new_password>", "Change account password", (arg, player) -> {
             if(!checkperm(player,"changepw")) return;
-            if(checkpw(player, arg[0], arg[1])){
+            PlayerData p = PlayerData(player.uuid);
+            if(!checkpw(player, p.accountid, arg[1])){
                 player.sendMessage(bundle(player, "need-new-password"));
                 return;
             }
             try{
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
-                PlayerData p = PlayerData(player.uuid);
                 p.accountpw = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
                 PlayerDataSave(p);
                 player.sendMessage(bundle(player,"success"));
@@ -1514,8 +1521,8 @@ public class Main extends Plugin {
                         yv = 1;
                         break;
                     case 10:
-                        xv = 5;
-                        yv = 2;
+                        xv = 2;
+                        yv = 5;
                         break;
                 }
                 for(int y=0;y<yv;y++){
@@ -1775,12 +1782,12 @@ public class Main extends Plugin {
             if (config.isLoginenable()) {
                 if(!isLogin(player)) {
                     if (PlayerDB.login(player, arg[0], arg[1])) {
-                        playerDB.load(player);
-                        if (!isLogin(player)) {
-                            player.sendMessage("[green][EssentialPlayer][] Login successful!/로그인 성공!");
+                        if(config.getPasswordmethod().equals("discord")){
+                            playerDB.load(player, arg[0]);
                         } else {
-                            player.sendMessage(bundle(player, "login-success"));
+                            playerDB.load(player);
                         }
+                        player.sendMessage(bundle(player, "login-success"));
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
                     }

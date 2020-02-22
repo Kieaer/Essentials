@@ -20,7 +20,7 @@ import static essentials.core.PlayerDB.writeData;
 public class Discord extends ListenerAdapter {
     static Guild guild;
     static TextChannel channel;
-    static JDA jda;
+    public static JDA jda;
 
     static MessageReceivedEvent event;
 

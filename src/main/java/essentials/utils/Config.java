@@ -354,15 +354,15 @@ public class Config {
     }
 
     public String getEmailAccountID(){
-        return obj.getString("email-smtp-accountid", "");
+        return obj.getString("email-smtp-accountid", "none");
     }
 
     public String getEmailUsername(){
-        return obj.getString("email-smtp-username", "");
+        return obj.getString("email-smtp-username", "none");
     }
 
     public String getEmailPassword(){
-        return obj.getString("email-smtp-password", "");
+        return obj.getString("email-smtp-password", "none");
     }
 
     public String getDiscordToken(){
