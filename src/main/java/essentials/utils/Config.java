@@ -62,7 +62,13 @@ public class Config {
     }
 
     void update(){
-        int antirushtime = obj.getInt("antirushtime",600);
+        int antirushtime;
+        try{
+            antirushtime = obj.getInt("antirushtime",600);
+        } catch (UnsupportedOperationException e){
+            antirushtime = 600;
+        }
+
         if(obj.getInt("version",0) < config_version) log("config","config-updated");
 
         String text = "{\n"+
