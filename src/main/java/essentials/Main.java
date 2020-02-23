@@ -2329,54 +2329,55 @@ public class Main extends Plugin {
             }
             PlayerDataSet(target);
         });
-        handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
-            if(!checkperm(player,"vote")) return;
-            if(isvoting){
-                player.sendMessage(bundle(player, "vote-in-processing"));
-                return;
-            }
-            if(arg.length == 2) {
-                if(arg[0].equals("kick")) {
-                    Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-                    if (other == null) other = players.get(Integer.parseInt(arg[1]));
-                    if (other == null) {
-                        player.sendMessage(bundle(player, "player-not-found"));
+        if(config.isVoteEnable()) {
+            handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
+                if (!checkperm(player, "vote")) return;
+                if (isvoting) {
+                    player.sendMessage(bundle(player, "vote-in-processing"));
+                    return;
+                }
+                if (arg.length == 2) {
+                    if (arg[0].equals("kick")) {
+                        Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+                        if (other == null) other = players.get(Integer.parseInt(arg[1]));
+                        if (other == null) {
+                            player.sendMessage(bundle(player, "player-not-found"));
+                            return;
+                        }
+                        if (other.isAdmin) {
+                            player.sendMessage(bundle(player, "vote-target-admin"));
+                            return;
+                        }
+                        // 강퇴 투표
+                        new Vote(player, arg[0], other);
+                    } else if (arg[0].equals("map")) {
+                        // 맵 투표
+                        mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
+                        if (world == null) world = maplist.get(Integer.parseInt(arg[1]));
+                        if (world == null) {
+                            player.sendMessage(bundle(player, "vote-map-not-found"));
+                        } else {
+                            new Vote(player, arg[0], world);
+                        }
+                    }
+                } else {
+                    if (arg.length == 0) {
+                        player.sendMessage(bundle(player, "vote-list"));
                         return;
                     }
-                    if (other.isAdmin){
-                        player.sendMessage(bundle(player, "vote-target-admin"));
+                    if (arg[1].equals("gamemode")) {
+                        player.sendMessage(bundle(player, "vote-list-gamemode"));
                         return;
                     }
-                    // 강퇴 투표
-                    new Vote(player, arg[0], other);
-                } else if(arg[0].equals("map")){
-                    // 맵 투표
-                    mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
-                    if (world == null) world = maplist.get(Integer.parseInt(arg[1]));
-                    if (world == null) {
+                    if (arg[0].equals("map") || arg[0].equals("kick")) {
                         player.sendMessage(bundle(player, "vote-map-not-found"));
-                    } else {
-                        new Vote(player, arg[0], world);
+                        return;
                     }
+                    // 게임 오버, wave 넘어가기, 롤백
+                    new Vote(player, arg[0]);
                 }
-            } else {
-                if(arg.length == 0){
-                    player.sendMessage(bundle(player, "vote-list"));
-                    return;
-                }
-                // TODO runtime exception
-                if(arg[1].equals("gamemode")){
-                    player.sendMessage(bundle(player, "vote-list-gamemode"));
-                    return;
-                }
-                if(arg[0].equals("map") || arg[0].equals("kick")){
-                    player.sendMessage(bundle(player, "vote-map-not-found"));
-                    return;
-                }
-                // 게임 오버, wave 넘어가기, 롤백
-                new Vote(player, arg[0]);
-            }
-        });
+            });
+        }
         handler.<Player>register("weather","<day,eday,night,enight>","Change map light", (arg, player) ->{
             if(!checkperm(player,"weather")) return;
             // Command idea from Minecraft EssentialsX and Quezler's plugin!

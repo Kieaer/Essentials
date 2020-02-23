@@ -149,6 +149,9 @@ public class Config {
                 "  enable-antirush: " + isEnableantirush() + "\n" +
                 "  antirushtime: " + antirushtime + "\n" +
                 "\n" +
+                "  # "+nbundle("config-vote-description")+"\n" +
+                "  vote-enable: " + isVoteEnable() + "\n" +
+                "\n" +
                 "  # "+nbundle("config-logging-description")+"\n" +
                 "  logging: " + isLogging() + "\n" +
                 "\n" +
@@ -311,6 +314,10 @@ public class Config {
 
     public boolean isEnableantirush(){
         return obj.getBoolean("enable-antirush",false);
+    }
+
+    public boolean isVoteEnable(){
+        return obj.getBoolean("vote-enable", true);
     }
 
     public LocalTime getAntirushtime() {
