@@ -62,12 +62,12 @@ public class Client extends Thread{
                 if(data != null){
                     serverconn = true;
                     executorService.execute(new Thread(this));
-                    log("client","client-enabled");
+                    nlog(LogType.client,"client-enabled");
                 }
             } catch (UnknownHostException e) {
-                nlog("client","Invalid host!");
+                nlog(LogType.client,"Invalid host!");
             } catch (IOException e) {
-                log("client","remote-server-dead");
+                log(LogType.client,"remote-server-dead");
                 if(player != null) {
                     writeData("UPDATE players SET crosschat = ? WHERE uuid = ?",0, player.uuid);
                 }
@@ -94,7 +94,7 @@ public class Client extends Thread{
                         byte[] encrypted = encrypt(bandata.toString(),spec,cipher);
                         os.writeBytes(Base64.encode(encrypted));
                         os.flush();
-                        log("client","client-banlist-sented");
+                        log(LogType.client,"client-banlist-sented");
                     } catch (Exception e) {
                         printError(e);
                     }
@@ -106,7 +106,7 @@ public class Client extends Thread{
                         os.writeBytes(Base64.encode(encrypted)+"\n");
                         os.flush();
                         Call.sendMessage("[#357EC7][SC] " + msg);
-                        log("client","client-sent-message", config.getClienthost(), message);
+                        log(LogType.client,"client-sent-message", config.getClienthost(), message);
                     } catch (Exception e) {
                         printError(e);
                     }
@@ -154,7 +154,7 @@ public class Client extends Thread{
                     data = new String(decrypted);
                 }catch (Exception e){
                     printError(e);
-                    log("client","server-disconnected", config.getClienthost());
+                    log(LogType.client,"server-disconnected", config.getClienthost());
 
                     serverconn = false;
                     try {
@@ -181,7 +181,7 @@ public class Client extends Thread{
                     try{
                         JsonArray bandata = JsonValue.readJSON(data).asArray();
                         if(data.substring(data.length()-5).equals("unban")){
-                            log("client","server-request-unban");
+                            log(LogType.client,"server-request-unban");
                             for (int i = 0; i < bandata.size(); i++) {
                                 String[] array = bandata.get(i).asString().split("\\|", -1);
                                 if (array[0].length() == 12) {
@@ -193,7 +193,7 @@ public class Client extends Thread{
                                 if (array[0].equals("<unknown>")) {
                                     netServer.admins.unbanPlayerIP(array[1]);
                                 }
-                                log("client","unban-done", bandata.get(i).asString());
+                                log(LogType.client,"unban-done", bandata.get(i).asString());
                             }
                         } else {
                             for (int i = 0; i < bandata.size(); i++) {
@@ -208,16 +208,16 @@ public class Client extends Thread{
                                     netServer.admins.banPlayerIP(array[1]);
                                 }
                             }
-                            log("client","client-banlist-received");
+                            log(LogType.client,"client-banlist-received");
                         }
                     }catch (Exception e){
                         printError(e);
                     }
                 } else {
-                    nlog("warn","Unknown data! - "+data);
+                    nlog(LogType.warn,"Unknown data! - "+data);
                 }
             } catch (Exception e) {
-                log("client","server-disconnected", config.getClienthost());
+                log(LogType.client,"server-disconnected", config.getClienthost());
 
                 serverconn = false;
                 try {

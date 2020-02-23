@@ -38,7 +38,7 @@ import java.util.Random;
 import static essentials.Global.*;
 import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
-import static essentials.core.Log.writelog;
+import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.conn;
 import static essentials.core.PlayerDB.getRaw;
 import static mindustry.Vars.*;
@@ -56,7 +56,7 @@ public class Server implements Runnable {
             printError(e);
             return;
         }
-        log("server","server-enabled");
+        log(LogType.server,"server-enabled");
 
         while (!Thread.currentThread().isInterrupted()) {
             try {
@@ -107,12 +107,12 @@ public class Server implements Runnable {
                     if(value == null) return;
                     // 수신된 데이터가 Base64 가 아닐경우
                     if (value.length() != 24) {
-                        writelog("web", "Remote IP: " + remoteip);
+                        writeLog(LogType.web, "Remote IP: " + remoteip);
                         String headerLine;
                         while ((headerLine = in.readLine()).length() != 0) {
-                            writelog("web", headerLine);
+                            writeLog(LogType.web, headerLine);
                         }
-                        writelog("web", "========================");
+                        writeLog(LogType.web, "========================");
 
                         StringBuilder payload = new StringBuilder();
                         while (in.ready()) {
@@ -127,7 +127,7 @@ public class Server implements Runnable {
                             in.close();
                             socket.close();
                             list.remove(this);
-                            log("server","client-disconnected-http", remoteip);
+                            log(LogType.server,"client-disconnected-http", remoteip);
                             return;
                         } else {
                             httpserver(value, payload.toString());
@@ -153,7 +153,7 @@ public class Server implements Runnable {
                         in.close();
                         socket.close();
                         list.remove(this);
-                        log("server","client-disconnected", remoteip);
+                        log(LogType.server,"client-disconnected", remoteip);
                         return;
                     }
 
@@ -162,13 +162,13 @@ public class Server implements Runnable {
                         in.close();
                         socket.close();
                         list.remove(this);
-                        log("server","client-disconnected", remoteip);
+                        log(LogType.server,"client-disconnected", remoteip);
                         return;
                     }
 
                     if (data.matches("\\[(.*)]:.*")) {
                         String msg = data.replaceAll("\n", "");
-                        log("server","server-message-received", remoteip, msg);
+                        log(LogType.server,"server-message-received", remoteip, msg);
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player p = playerGroup.all().get(i);
                             if (p.isAdmin) {
@@ -188,20 +188,20 @@ public class Server implements Runnable {
                         int rnd = new Random().nextInt(msg.length);
                         os.writeBytes(Base64.encode(encrypt(msg[rnd],spec,cipher))+"\n");
                         os.flush();
-                        log("server","client-connected", remoteip);
+                        log(LogType.server,"client-connected", remoteip);
                     } else if (data.matches("exit")){
                         os.close();
                         in.close();
                         socket.close();
                         list.remove(this);
-                        log("server","client-disconnected", remoteip);
+                        log(LogType.server,"client-disconnected", remoteip);
                         this.interrupt();
                         return;
                     } else if (config.isBanshare()) {
                         try {
                             JsonArray bandata = JsonValue.readJSON(data).asArray();
                             if(data.substring(data.length()-5).equals("unban")){
-                                log("server","client-request-unban", remoteip);
+                                log(LogType.server,"client-request-unban", remoteip);
                                 for (int i = 0; i < bandata.size(); i++) {
                                     String[] array = bandata.get(i).asString().split("\\|", -1);
                                     if (array[0].length() == 12) {
@@ -213,7 +213,7 @@ public class Server implements Runnable {
                                     if (array[0].equals("<unknown>")) {
                                         netServer.admins.unbanPlayerIP(array[1]);
                                     }
-                                    log("server","unban-done", bandata.get(i).asString());
+                                    log(LogType.server,"unban-done", bandata.get(i).asString());
                                 }
 
                                 // send message to all clients
@@ -224,12 +224,12 @@ public class Server implements Runnable {
                                         if (ip.equals(remoteip)) {
                                             ser.os.writeBytes(Base64.encode(encrypt(data,ser.spec,ser.cipher))+"\n");
                                             ser.os.flush();
-                                            log("server","server-data-sented", remoteip);
+                                            log(LogType.server,"server-data-sented", remoteip);
                                         }
                                     }
                                 }
                             } else {
-                                log("server","client-request-banlist", remoteip);
+                                log(LogType.server,"client-request-banlist", remoteip);
                                 for (int i = 0; i < bandata.size(); i++) {
                                     String[] array = bandata.get(i).asString().split("\\|", -1);
                                     if (array[0].length() == 12) {
@@ -265,7 +265,7 @@ public class Server implements Runnable {
                                         if (ip.equals(remoteip)) {
                                             ser.os.writeBytes(Base64.encode(encrypt(data1.toString(),spec,cipher))+"\n");
                                             ser.os.flush();
-                                            log("server","server-data-sented", remoteip);
+                                            log(LogType.server,"server-data-sented", remoteip);
                                         }
                                     }
                                 }
@@ -308,10 +308,10 @@ public class Server implements Runnable {
                         Players.toArray();
                         extract();*/
                     } else {
-                        nlog("warn","Invalid data - " + data);
+                        nlog(LogType.warn,"Invalid data - " + data);
                     }
                 } catch (Exception e) {
-                    log("server","client-disconnected", remoteip);
+                    log(LogType.server,"client-disconnected", remoteip);
                     printError(e);
                     try {
                         os.close();
@@ -415,7 +415,7 @@ public class Server implements Runnable {
             ArrayList<String> lists = new ArrayList<>(Arrays.asList("placecount","breakcount","killcount","joincount","kickcount","exp","playtime","pvpwincount","reactorcount","attackclear"));
             JsonObject results = new JsonObject();
 
-            String language = new Locale(geolocation(remoteip)).getLanguage();
+            Locale language = geolocation(remoteip);
 
             String[] sql = new String[10];
             sql[0] = "SELECT * FROM players ORDER BY `placecount` DESC LIMIT 10";
@@ -660,7 +660,7 @@ public class Server implements Runnable {
                         bw.write("Server: Mindustry/Essentials 7.0\r\n");
                         bw.write("\r\n");
                         bw.write(doc.toString());
-                        nlog("warn",receive);
+                        nlog(LogType.warn,receive);
                     }
                 } else {
                     bw.write("HTTP/1.1 403 Forbidden\r\n");
@@ -677,7 +677,7 @@ public class Server implements Runnable {
                 in.close();
                 socket.close();
                 list.remove(this);
-                log("server","client-disconnected-http", remoteip);
+                log(LogType.server,"client-disconnected-http", remoteip);
             }catch (Exception e){
                 printError(e);
                 try{

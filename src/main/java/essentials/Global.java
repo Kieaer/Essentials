@@ -40,7 +40,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.root;
-import static essentials.core.Log.writelog;
+import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.core.PlayerDB.conn;
 import static essentials.utils.Permission.permission;
@@ -61,127 +61,75 @@ public class Global {
     public final static String[] intpos = {"0,4","1,4","2,4","0,3","1,3","2,3","0,2","1,2","2,2","0,1","1,1","2,1","0,0","1,0","2,0"};
 
     // 로그
-    public static void log(String type, String value, Object... parameter){
+    public enum LogType{
+        log, warn, err, debug, server, serverwarn, servererr, client, clientwarn, clienterr, config, player, playerwarn, playererr,
+        tap, withdraw, block, deposit, chat, griefer, web
+    }
+    public static void log(LogType type, String value, Object... parameter){
         switch(type){
-            case "log":
-                if(parameter.length == 0){
-                    Log.info(tag+nbundle(value));
-                } else {
-                    Log.info(tag+nbundle(value,parameter));
-                }
+            case log:
+                Log.info(parameter.length == 0 ? tag+nbundle(value) : tag+nbundle(value,parameter));
                 break;
-            case "warn":
-                if(parameter.length == 0){
-                    Log.warn(tag+nbundle(value));
-                } else {
-                    Log.warn(tag+nbundle(value,parameter));
-                }
+            case warn:
+                Log.warn(parameter.length == 0 ? tag+nbundle(value) : tag+nbundle(value,parameter));
                 break;
-            case "err":
-                if(parameter.length == 0){
-                    Log.err(tag+nbundle(value));
-                } else {
-                    Log.err(tag+nbundle(value,parameter));
-                }
+            case err:
+                Log.err(parameter.length == 0 ? tag+nbundle(value) : tag+nbundle(value,parameter));
                 break;
-            case "debug":
-                if(parameter.length == 0){
-                    Log.info("[DEBUG]"+tag+nbundle(value));
-                } else {
-                    Log.info("[DEBUG]"+tag+nbundle(value,parameter));
-                }
+            case debug:
+                Log.debug(parameter.length == 0 ? tag+nbundle(value) : tag+nbundle(value,parameter));
                 break;
-            case "server":
-                if(parameter.length == 0){
-                    Log.info(servertag+nbundle(value));
-                } else {
-                    Log.info(servertag+nbundle(value,parameter));
-                }
+            case server:
+                Log.info(parameter.length == 0 ? servertag+nbundle(value) : servertag+nbundle(value,parameter));
                 break;
-            case "serverwarn":
-                if(parameter.length == 0){
-                    Log.warn(servertag+nbundle(value));
-                } else {
-                    Log.warn(servertag+nbundle(value,parameter));
-                }
+            case serverwarn:
+                Log.warn(parameter.length == 0 ? servertag+nbundle(value) : servertag+nbundle(value,parameter));
                 break;
-            case "servererr":
-                if(parameter.length == 0){
-                    Log.err(servertag+nbundle(value));
-                } else {
-                    Log.err(servertag+nbundle(value,parameter));
-                }
+            case servererr:
+                Log.err(parameter.length == 0 ? servertag+nbundle(value) : servertag+nbundle(value,parameter));
                 break;
-            case "client":
-                if(parameter.length == 0){
-                    Log.info(clienttag+nbundle(value));
-                } else {
-                    Log.info(clienttag+nbundle(value,parameter));
-                }
+            case client:
+                Log.info(parameter.length == 0 ? clienttag+nbundle(value) : clienttag+nbundle(value,parameter));
                 break;
-            case "clientwarn":
-                if(parameter.length == 0){
-                    Log.warn(clienttag+nbundle(value));
-                } else {
-                    Log.warn(clienttag+nbundle(value,parameter));
-                }
+            case clientwarn:
+                Log.warn(parameter.length == 0 ? clienttag+nbundle(value) : clienttag+nbundle(value,parameter));
                 break;
-            case "clienterr":
-                if(parameter.length == 0){
-                    Log.err(clienttag+nbundle(value));
-                } else {
-                    Log.err(clienttag+nbundle(value,parameter));
-                }
+            case clienterr:
+                Log.err(parameter.length == 0 ? clienttag+nbundle(value) : clienttag+nbundle(value,parameter));
                 break;
-            case "config":
-                if(parameter.length == 0){
-                    Log.info(configtag+nbundle(value));
-                } else {
-                    Log.info(configtag+nbundle(value,parameter));
-                }
+            case config:
+                Log.info(parameter.length == 0 ? configtag+nbundle(value) : configtag+nbundle(value,parameter));
                 break;
-            case "player":
-                if(parameter.length == 0){
-                    Log.info(playertag+nbundle(value));
-                } else {
-                    Log.info(playertag+nbundle(value,parameter));
-                }
+            case player:
+                Log.info(parameter.length == 0 ? playertag+nbundle(value) : playertag+nbundle(value,parameter));
                 break;
-            case "playererror":
-                if(parameter.length == 0){
-                    Log.err(playertag+nbundle(value));
-                } else {
-                    Log.err(playertag+nbundle(value,parameter));
-                }
+            case playerwarn:
+                Log.warn(parameter.length == 0 ? playertag+nbundle(value) : playertag+nbundle(value,parameter));
                 break;
-            case "playerwarn":
-                if(parameter.length == 0){
-                    Log.warn(playertag+nbundle(value));
-                } else {
-                    Log.warn(playertag+nbundle(value,parameter));
-                }
+            case playererr:
+                Log.err(parameter.length == 0 ? playertag+nbundle(value) : playertag+nbundle(value,parameter));
                 break;
         }
     }
 
-    public static void nlog(String type, String value){
+    public static void nlog(LogType type, String value){
         switch(type){
-            case "log":
+            case log:
                 Log.info(value);
                 break;
-            case "warn":
+            case warn:
                 Log.warn(value);
                 break;
-            case "err":
+            case err:
                 Log.err(value);
                 break;
-            case "debug":
-                if(config.isDebug()) Log.info("[DEBUG] "+value);
+            case debug:
+                Log.debug(value);
                 break;
-            case "player":
+            case player:
                 Log.info(playertag+value);
                 break;
-            case "client":
+            case client:
                 Log.info(clienttag+value);
                 break;
         }
@@ -193,9 +141,6 @@ public class Global {
             StringBuilder sb = new StringBuilder();
             try {
                 sb.append(e.toString())
-                .append("\n")
-                .append("TIME: ")
-                .append(getTime())
                 .append("\n");
                 StackTraceElement[] element = e.getStackTrace();
                 for (StackTraceElement error : element) {
@@ -206,11 +151,11 @@ public class Global {
                 sb.append("=================================================\n");
                 String text = sb.toString();
 
-                writelog("error", text);
-                nlog("err","Plugin internal error! - "+e.getMessage());
+                writeLog(LogType.err, text);
+                nlog(LogType.err,"Plugin internal error! - "+e.getMessage());
                 if(config.isCrashReport()){
                     InetAddress address = InetAddress.getByName("mindustry.kr");
-                    Socket socket = new Socket("127.0.0.1", 6560);
+                    Socket socket = new Socket(address, 6560);
                     BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     DataOutputStream os = new DataOutputStream(socket.getOutputStream());
                     os.writeBytes(e.toString()+"\n");
@@ -237,9 +182,9 @@ public class Global {
 
                     String data = is.readLine();
                     if(data != null){
-                        nlog("log", "crash reported");
+                        nlog(LogType.log, "crash reported");
                     } else {
-                        nlog("log", "receive failed");
+                        nlog(LogType.log, "receive failed");
                     }
                 }
             } catch (Exception ex) {
@@ -256,84 +201,39 @@ public class Global {
     }
 
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
-    public static String bundle(Player player, String value, Object... parameter) {
-        PlayerData p = PlayerData(player.uuid);
-        if(p.isLogin){
-            Locale locale = new Locale(p.language);
+    public static String bundle(Object data, Object... parameter) {
+        Locale locale = null;
+        if(data instanceof Player){
+            locale = PlayerData(((Player) data).uuid).locale;
+        } else if (data instanceof Locale){
+            locale = (Locale) data;
+        } else if (data instanceof String){
+            locale = new Locale(config.getLanguage());
             Bundle bundle = new Bundle(locale);
-            return bundle.getBundle(value, parameter);
-        } else {
-            return "";
+            return parameter.length != 0 ? bundle.getBundle((String) data, parameter) : bundle.getBundle((String) data);
         }
-    }
-
-    public static String bundle(Player player, String value) {
-        PlayerData p = PlayerData(player.uuid);
-        if(p.isLogin){
-            Locale locale = new Locale(p.language);
-            Bundle bundle = new Bundle(locale);
-            return bundle.getBundle(value);
-        } else {
-            return "";
-        }
-    }
-
-    public static String bundle(String value, Object... paramter){
-        Locale locale = new Locale(config.getLanguage());
+        String value = (String) parameter[0];
+        parameter = removeElement(0,parameter);
         Bundle bundle = new Bundle(locale);
-        return bundle.getBundle(value, paramter);
-    }
-
-    public static String bundle(String value){
-        Locale locale = new Locale(config.getLanguage());
-        Bundle bundle = new Bundle(locale);
-        return bundle.getBundle(value);
+        return parameter.length != 0 ? bundle.getBundle(value, parameter) : bundle.getBundle(value);
     }
 
     // Bundle 파일에서 Essentials 문구 없이 출력
-    public static String nbundle(Player player, String value, Object... parameter) {
-        PlayerData p = PlayerData(player.uuid);
-        if(p.isLogin){
-            Locale locale = new Locale(p.language);
+    public static String nbundle(Object data, Object... parameter) {
+        Locale locale = null;
+        if(data instanceof Player){
+            locale = PlayerData(((Player) data).uuid).locale;
+        } else if (data instanceof Locale){
+            locale = (Locale) data;
+        } else if (data instanceof String){
+            locale = new Locale(config.getLanguage());
             Bundle bundle = new Bundle(locale);
-            return bundle.getNormal(value, parameter);
-        } else {
-            return "";
+            return parameter.length != 0 ? bundle.getNormal((String) data, parameter) : bundle.getNormal((String) data);
         }
-    }
-
-    public static String nbundle(Player player, String value) {
-        PlayerData p = PlayerData(player.uuid);
-        if(p.isLogin){
-            Locale locale = new Locale(p.language);
-            Bundle bundle = new Bundle(locale);
-            return bundle.getNormal(value);
-        } else {
-            return "";
-        }
-    }
-
-    public static String nbundle(String language, String value) {
-        Locale locale = new Locale(language);
+        String value = (String) parameter[0];
+        parameter = removeElement(0,parameter);
         Bundle bundle = new Bundle(locale);
-        return bundle.getNormal(value);
-    }
-
-    public static String nbundle(String value, Object... paramter){
-        Locale locale = new Locale(config.getLanguage());
-        Bundle bundle = new Bundle(locale);
-        return bundle.getNormal(value, paramter);
-    }
-
-    public static String nbundle(String value){
-        Locale locale = new Locale(config.getLanguage());
-        Bundle bundle = new Bundle(locale);
-        return bundle.getNormal(value);
-    }
-
-    public static String dbundle(String value){
-        Bundle bundle = new Bundle(locale);
-        return bundle.getNormal(value);
+        return parameter.length != 0 ? bundle.getNormal(value, parameter) : bundle.getNormal(value);
     }
 
     // 숫자 카운트
@@ -619,8 +519,8 @@ public class Global {
     }
 
     // 플레이어 지역 위치 확인
-    public static Locale geolocation(Player player) {
-        String ip = Vars.netServer.admins.getInfo(player.uuid).lastIP;
+    public static Locale geolocation(Object data) {
+        String ip = data instanceof Player ? Vars.netServer.admins.getInfo(player.uuid).lastIP : (String) data;
         try {
             String json = Jsoup.connect("http://ipapi.co/"+ip+"/json").ignoreContentType(true).execute().body();
             JsonObject result = JsonValue.readJSON(json).asObject();
@@ -658,17 +558,6 @@ public class Global {
         }
 
         return locale;
-    }
-
-    public static String geolocation(String ip){
-        try {
-            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(5*1000).execute().body();
-            JsonObject result = JsonValue.readJSON(json).asObject();
-            return result.getString("languages","en");
-        } catch (Exception e){
-            printError(e);
-            return "en";
-        }
     }
 
     // 로그인 유무 확인 (DB)
@@ -770,10 +659,10 @@ public class Global {
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
-                nlog("debug", rs.getString("name"));
+                log(LogType.debug, rs.getString("name"));
                 return true;
             } else {
-                nlog("debug", "not duplicate this uuid");
+                log(LogType.debug, "not duplicate this uuid");
                 return false;
             }
         }catch (SQLException e){
@@ -870,4 +759,17 @@ public class Global {
             printError(e);
         }
     }
+
+    public static Object[] removeElement(int index, Object[] array) {
+        Object[] newArray = new Object[array.length - 1];
+        for (int i = 0; i < array.length; i++) {
+            if (index > i) {
+                newArray[i] = array[i];
+            } else if(index < i) {
+                newArray[i - 1] = array[i];
+            }
+        }
+        return newArray;
+    }
+
 }

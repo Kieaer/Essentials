@@ -32,9 +32,9 @@ public class Discord extends ListenerAdapter {
             guild = jda.getGuildById(config.getDiscordGuild());
             if(guild != null){
                 channel = guild.getTextChannelsByName(config.getDiscordRoom(),true).get(0);
-                log("log","discord-enabled");
+                log(LogType.log,"discord-enabled");
             } else {
-                log("err","discord-error");
+                log(LogType.err,"discord-error");
             }
         }catch (Exception e){
             printError(e);

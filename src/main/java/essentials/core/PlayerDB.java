@@ -133,7 +133,7 @@ public class PlayerDB{
                             "ENGINE=InnoDB\n" +
                             ";";
                 } else {
-                    log("playererror","db-address-notset");
+                    log(LogType.playererr,"db-address-notset");
                 }
             }
             Statement stmt = conn.createStatement();
@@ -218,7 +218,7 @@ public class PlayerDB{
                 pstmt.execute();
                 pstmt.close();
                 if(player != null) player.sendMessage(bundle(player, "player-id", player.name));
-                log("player","player-db-created", name);
+                log(LogType.player,"player-db-created", name);
                 result = true;
             } else {
                 if(player != null){
@@ -290,7 +290,7 @@ public class PlayerDB{
                         rs.getString("accountpw")
                 );
             } else {
-                nlog("debug", value+" Data not found!");
+                log(LogType.debug, value+" Data not found!");
             }
             rs.close();
             stmt.close();
@@ -389,19 +389,19 @@ public class PlayerDB{
         try {
             if (config.isSqlite()) {
                 conn = DriverManager.getConnection(config.getDBurl());
-                log("player","db-type","SQLite");
+                log(LogType.player,"db-type","SQLite");
             } else {
                 if (!config.getDBid().isEmpty()) {
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                    log("player","db-type","MariaDB/MySQL/PostgreSQL");
+                    log(LogType.player,"db-type","MariaDB/MySQL/PostgreSQL");
                 } else {
                     conn = DriverManager.getConnection(config.getDBurl());
-                    log("player","db-type","Invalid");
+                    log(LogType.player,"db-type","Invalid");
                 }
             }
         } catch (SQLException e){
             printError(e);
-            nlog("warn","SQL ERROR!");
+            nlog(LogType.warn,"SQL ERROR!");
         }
     }
 
@@ -467,13 +467,13 @@ public class PlayerDB{
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
-            log("player","password-match-regex", player.name);
+            log(LogType.player,"password-match-regex", player.name);
             return false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
-            log("player","password-match-name", player.name);
+            log(LogType.player,"password-match-name", player.name);
             return false;
         } else if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -484,7 +484,7 @@ public class PlayerDB{
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
-            log("player","password-match-blank", player.name);
+            log(LogType.player,"password-match-blank", player.name);
             return false;
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
@@ -492,7 +492,7 @@ public class PlayerDB{
                     "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
-            log("player","password-match-invalid", player.name);
+            log(LogType.player,"password-match-invalid", player.name);
             return false;
         }
         return true;
@@ -525,11 +525,11 @@ public class PlayerDB{
                                 hashed, // 계정 비밀번호
                                 player) // 플레이어
                         ) {
-                            nlog("debug", player.name + " Player DB Created!");
+                            log(LogType.debug, player.name + " Player DB Created!");
                             player.sendMessage(bundle(player, "player-name-changed", player.name));
                             return true;
                         } else {
-                            nlog("debug", player.name + " Player DB create failed!");
+                            log(LogType.debug, player.name + " Player DB create failed!");
                             return false;
                         }
                     case "email":
@@ -574,18 +574,18 @@ public class PlayerDB{
                                 hashed, // 계정 비밀번호
                                 player) // 플레이어
                         ) {
-                            nlog("debug", player.name + " Player DB Created!");
+                            log(LogType.debug, player.name + " Player DB Created!");
                             player.sendMessage(bundle(player, "player-name-changed", player.name));
                             return true;
                         } else {
-                            nlog("debug", player.name + " Player DB create failed!");
+                            log(LogType.debug, player.name + " Player DB create failed!");
                             return false;
                         }
                 }
             } else {
                 player.sendMessage("[green][Essentials] [orange]This account id is already in use!\n" +
                         "[green][Essentials] [orange]이 계정명은 이미 사용중입니다!");
-                log("player", "password-already-accountid", id);
+                log(LogType.player, "password-already-accountid", id);
                 return false;
             }
         }
@@ -807,6 +807,8 @@ public class PlayerDB{
         public int grief_destory_count = 0; // 블럭 파괴 계산
         public ArrayList<short[]> grief_tilelist = new ArrayList<>(); // 건설한 블록 개수
 
+        public Locale locale;
+
         PlayerData(boolean error, boolean isLogin){
             this.error = error;
             this.isLogin = isLogin;
@@ -857,6 +859,12 @@ public class PlayerDB{
 
             this.error = false;
             this.isLogin = true;
+
+            String lc = country_code.split(",")[0];
+            if(lc.split("_").length == 2){
+                String[] array = lc.split("_");
+                this.locale = new Locale(array[0], array[1]);
+            }
         }
     }
 
@@ -1148,7 +1156,7 @@ public class PlayerDB{
                     pstmt.close();
                 }
                 current_version++;
-                log("player","db-upgrade");
+                log(LogType.player,"db-upgrade");
             }
             if(current_version < DBVersion) {
                 if (!config.isSqlite()) {
@@ -1160,7 +1168,7 @@ public class PlayerDB{
                     reset.setString(1, "none");
                     reset.execute();
                 }
-                log("player","db-upgrade");
+                log(LogType.player,"db-upgrade");
             }
         }catch (SQLException e){
             printError(e);

@@ -9,7 +9,7 @@ import org.hjson.JsonValue;
 import java.time.LocalDateTime;
 
 import static essentials.Global.config;
-import static essentials.Global.dbundle;
+import static essentials.Global.nbundle;
 import static essentials.PluginData.saveall;
 
 public class DataMigration {
@@ -17,7 +17,7 @@ public class DataMigration {
 
     public DataMigration(){
         if(root.child("config.yml").exists()) {
-            System.out.print("\r"+dbundle("data-migration"));
+            System.out.print("\r"+nbundle("data-migration"));
             String condata = root.child("config.yml").readString();
             condata = condata.replace("colornick update interval","cupdatei").replace("null","none");
             root.child("config.hjson").writeString("{\n"+condata+"\n}");
@@ -45,7 +45,7 @@ public class DataMigration {
                     root.child("data/data.json").delete();
                 }
             }
-            System.out.print("\r"+dbundle("data-migration")+" "+dbundle("success")+"\n");
+            System.out.print("\r"+nbundle("data-migration")+" "+nbundle("success")+"\n");
         }
     }
 

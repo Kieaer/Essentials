@@ -66,7 +66,7 @@ import static essentials.Global.*;
 import static essentials.PluginData.*;
 import static essentials.Threads.*;
 import static essentials.core.Discord.jda;
-import static essentials.core.Log.writelog;
+import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.*;
 import static essentials.net.Client.serverconn;
 import static essentials.utils.Config.*;
@@ -118,7 +118,7 @@ public class Main extends Plugin {
         // 클라이언트 연결 확인
         if (config.isClientenable()) {
             client = new Client();
-            log("client", "server-connecting");
+            log(LogType.client, "server-connecting");
             client.main(null, null, null);
         }
 
@@ -165,7 +165,7 @@ public class Main extends Plugin {
         Events.on(TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAlertaction() && config.isAlertaction()) {
                 allsendMessage("tap-config", e.player.name, e.tile.entity.block.name);
-                if(config.isDebug()) log("log","antigrief-build-config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                if(config.isDebug()) log(LogType.log,"antigrief-build-config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
             }
         });
 
@@ -181,7 +181,7 @@ public class Main extends Plugin {
 
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
-                            log("log", "player-jumped", e.player.name, data.ip);
+                            log(LogType.log, "player-jumped", e.player.name, data.ip);
                             PlayerData player = PlayerData(e.player.uuid);
                             player.connected = false;
                             player.connserver = "none";
@@ -196,12 +196,12 @@ public class Main extends Plugin {
         Events.on(WithdrawEvent.class, e->{
             if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.isAntigrief()) {
                 allsendMessage("log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
-                if (config.isDebug()) log("log","log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
-            }
-            if(e.tile.entity != null && e.tile.entity.block != null && e.player.name != null && config.isAntigrief() && state.rules.pvp){
-                if(e.item.flammability > 0.001f) {
-                    e.player.sendMessage(bundle(e.player, "flammable-disabled"));
-                    e.player.clearItem();
+                if (config.isDebug()) log(LogType.log,"log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+                if(state.rules.pvp){
+                    if(e.item.flammability > 0.001f) {
+                        e.player.sendMessage(bundle(e.player, "flammable-disabled"));
+                        e.player.clearItem();
+                    }
                 }
             }
         });
@@ -255,9 +255,9 @@ public class Main extends Plugin {
             for (String s : blacklist) {
                 if (e.player.name.matches(s)) {
                     try {
-                        String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
-                        Call.onKick(e.player.con, nbundle(language, "nickname-blacklisted-kick"));
-                        log("log", "nickname-blacklisted", e.player.name);
+                        Locale locale = geolocation(e.player);
+                        Call.onKick(e.player.con, nbundle(locale, "nickname-blacklisted-kick"));
+                        log(LogType.log, "nickname-blacklisted", e.player.name);
                     } catch (Exception ex) {
                         printError(ex);
                     }
@@ -274,11 +274,11 @@ public class Main extends Plugin {
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
                     player.con.kick("The nickname is too short!\n닉네임이 너무 짧습니다!");
-                    log("log","nickname-short");
+                    log(LogType.log,"nickname-short");
                 }
                 if(e.player.name.matches("^(?=.*\\\\d)(?=.*[~`!@#$%\\\\^&*()-])(?=.*[a-z])(?=.*[A-Z])$")){
                     e.player.con.kick("Server doesn't allow special characters.\n서버가 특수문자를 허용하지 않습니다.");
-                    log("log","nickname-special", player.name);
+                    log(LogType.log,"nickname-special", player.name);
                 }
             }*/
         });
@@ -304,7 +304,7 @@ public class Main extends Plugin {
                                     other.sendMessage(bundle(other, "detect-thorium"));
                                 }
 
-                                writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),data.name));
+                                writeLog(LogType.griefer,nbundle("griefer-detect-reactor-log", (Object) getTime(),data.name));
                                 Call.onTileDestroyed(data.tile);
                             } else {
                                 sleep(1950);
@@ -313,7 +313,7 @@ public class Main extends Plugin {
                                         Player other = playerGroup.all().get(a);
                                         other.sendMessage(bundle(other, "detect-thorium"));
                                     }
-                                    writelog("griefer",nbundle("griefer-detect-reactor-log",getTime(),data.name));
+                                    writeLog(LogType.griefer,nbundle("griefer-detect-reactor-log", (Object) getTime(),data.name));
                                     Call.onTileDestroyed(data.tile);
                                 }
                             }
@@ -360,7 +360,7 @@ public class Main extends Plugin {
                             playerDB.load(e.player, player.accountid);
                         } else {
                             String message;
-                            String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
+                            Locale language = geolocation(e.player);
                             if (config.getPasswordmethod().equals("discord")) {
                                 message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
                             } else {
@@ -374,7 +374,7 @@ public class Main extends Plugin {
                             playerDB.load(e.player);
                         } else {
                             String message;
-                            String language = geolocation(netServer.admins.getInfo(e.player.uuid).lastIP);
+                            Locale language = geolocation(e.player);
                             if (config.getPasswordmethod().equals("discord")) {
                                 message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
                             } else {
@@ -470,7 +470,7 @@ public class Main extends Plugin {
                 // 명령어인지 확인
                 if (!check.equals("/")) {
                     if (e.message.matches("(.*쌍[\\S\\s]{0,2}(년|놈).*)|(.*(씨|시)[\\S\\s]{0,2}(벌|빨|발|바).*)|(.*장[\\S\\s]{0,2}애.*)|(.*(병|븅)[\\S\\s]{0,2}(신|쉰|싄).*)|(.*(좆|존|좃)[\\S\\s]{0,2}(같|되|는|나).*)|(.*(개|게)[\\S\\s]{0,2}(같|갓|새|세|쉐).*)|(.*(걸|느)[\\S\\s]{0,2}(레|금).*)|(.*(꼬|꽂|고)[\\S\\s]{0,2}(추|츄).*)|(.*(니|너)[\\S\\s]{0,2}(어|엄|엠|애|m|M).*)|(.*(노)[\\S\\s]{0,1}(애|앰).*)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(ㅅㅂ|ㅄ|ㄷㅊ)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(.*s[\\S\\s]{0,1}e[\\S\\s]{0,1}x.*)")) {
-                        Call.onKick(e.player.con, nbundle(target.language, "kick-swear"));
+                        Call.onKick(e.player.con, nbundle(target.locale, "kick-swear"));
                     } else if (e.message.equals("y") && isvoting) {
                         // 투표가 진행중일때
                         if (Vote.list.contains(e.player.uuid)) {
@@ -606,7 +606,7 @@ public class Main extends Plugin {
                 }
 
                 if(config.isDebug() && config.isAntigrief()){
-                    log("log","antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                    log(LogType.log,"antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
 
                 // 필터 아트 감지
@@ -650,7 +650,7 @@ public class Main extends Plugin {
                         target.exp = target.exp + blockexp;
                     } catch (Exception ex) {
                         printError(ex);
-                        Call.onKick(((Player) e.builder).con, nbundle(target.language, "not-logged"));
+                        Call.onKick(((Player) e.builder).con, nbundle(target.locale, "not-logged"));
                     }
 
                     // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
@@ -679,7 +679,7 @@ public class Main extends Plugin {
                                     ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
                                 }
                             } else {
-                                log("err", "epg-block-not-valid", name);
+                                log(LogType.err, "epg-block-not-valid", name);
                             }
                         } catch (Exception ex) {
                             printError(ex);
@@ -696,11 +696,11 @@ public class Main extends Plugin {
                     }*/
 
                     target.grief_destory_count++;
-                    if (target.grief_destory_count > 30) nlog("log", target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
+                    if (target.grief_destory_count > 30) nlog(LogType.log, target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                     PlayerDataSet(target);
                 }
                 if(config.isDebug() && config.isAntigrief()){
-                    log("log","antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
+                    log(LogType.log,"antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
         });
@@ -832,7 +832,7 @@ public class Main extends Plugin {
             /*for(Tile tile : conveyor){
                 if(tile.block() != null) {
                     if (tile.rotation() != world.tile(tile.x, tile.y).rotation()) {
-                        nlog("log", "orignal: " + tile.rotation() + ", current: " + world.tile(tile.x, tile.y).rotation());
+                        nlog(LogType.log, "orignal: " + tile.rotation() + ", current: " + world.tile(tile.x, tile.y).rotation());
                         Call.onConstructFinish(world.tile(tile.x, tile.y), tile.entity.block, 0, tile.rotation(), Team.sharded, false);
                     }
                 }
@@ -929,7 +929,7 @@ public class Main extends Plugin {
                 timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
                 if (isvoting) Vote.cancel(); // 투표 종료
                 jumpdata.interrupt(); // 다른 서버상태 확인 스레드 종료
-                jda.shutdownNow(); // Discord 서비스 종료
+                if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
                 closeconnect(); // DB 연결 종료
                 if (config.isServerenable()) {
                     try {
@@ -944,26 +944,26 @@ public class Main extends Plugin {
                         Server.serverSocket.close();
                         server.interrupt();
 
-                        log("log", "server-thread-disabled");
+                        log(LogType.log, "server-thread-disabled");
                     } catch (Exception e) {
                         error = true;
                         printError(e);
-                        log("err", "server-thread-disable-error");
+                        log(LogType.err, "server-thread-disable-error");
                     }
                 }
 
                 // 클라이언트 종료
                 if (config.isClientenable() && serverconn) {
                     client.main("exit", null, null);
-                    log("log", "client-thread-disabled");
+                    log(LogType.log, "client-thread-disabled");
                 }
 
                 // 모든 이벤트 서버 종료
                 for (Process value : process) value.destroy();
                 if(!error){
-                    log("log", "thread-disabled");
+                    log(LogType.log, "thread-disabled");
                 } else {
-                    log("log","thread-not-dead");
+                    log(LogType.log,"thread-not-dead");
                 }
             }
         });
@@ -971,7 +971,7 @@ public class Main extends Plugin {
         Events.on(ServerLoadEvent.class, e-> {
             // 업데이트 확인
             if(config.isUpdate()) {
-                log("client","client-checking-version");
+                log(LogType.client,"client-checking-version");
                 try {
                     JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
 
@@ -985,11 +985,11 @@ public class Main extends Plugin {
                     DefaultArtifactVersion current = new DefaultArtifactVersion(plugin_version);
 
                     if (latest.compareTo(current) > 0) {
-                        log("client","version-new");
+                        log(LogType.client,"version-new");
                         net.dispose();
                         Thread t = new Thread(() -> {
                             try {
-                                nlog("log", nbundle("update-description", json.get("tag_name")));
+                                log(LogType.log, nbundle("update-description", json.get("tag_name")));
                                 System.out.println(json.getString("body","No description found."));
                                 System.out.println(nbundle("plugin-downloading-standby"));
                                 timer.cancel();
@@ -1027,9 +1027,9 @@ public class Main extends Plugin {
                         });
                         t.start();
                     } else if (latest.compareTo(current) == 0) {
-                        log("client","version-current");
+                        log(LogType.client,"version-current");
                     } else if (latest.compareTo(current) < 0) {
-                        log("client","version-devel");
+                        log(LogType.client,"version-devel");
                     }
                 } catch (Exception ex) {
                     printError(ex);
@@ -1050,7 +1050,7 @@ public class Main extends Plugin {
     @Override
     public void registerServerCommands(CommandHandler handler){
         handler.register("gendocs", "Generate Essentials README.md", (arg) -> {
-            log("log","readme-generating");
+            log(LogType.log,"readme-generating");
             // README.md 생성
             String header = "# Essentials\n" +
                     "Add more commands to the server.\n\n" +
@@ -1115,43 +1115,43 @@ public class Main extends Plugin {
                 }
             }
             root.child("README.md").writeString(tmp+serverdoc+tempbuild.toString()+gentime);
-            log("log","success");
+            log(LogType.log,"success");
         });
         handler.register("accountban","<ban/unban> <account_uuid>", "Ban player account", (arg) -> {
             if(arg[0].equals("ban")) {
                 if (arg[1].length() == 12) {
                     if(accountban(true, arg[1])){
-                        log("player","success");
+                        log(LogType.player,"success");
                     } else {
-                        log("playerwarn","failed");
+                        log(LogType.playerwarn,"failed");
                     }
                 } else {
-                    log("warn","wrong-command");
+                    log(LogType.warn,"wrong-command");
                 }
             } else if(arg[0].equals("unban")){
                 if (arg[1].length() == 12) {
                     if(accountban(false, arg[1])){
-                        log("player","success");
+                        log(LogType.player,"success");
                     } else {
-                        log("playerwarn","failed");
+                        log(LogType.playerwarn,"failed");
                     }
                 } else {
-                    log("warn","wrong-command");
+                    log(LogType.warn,"wrong-command");
                 }
             } else {
-                log("warn","wrong-command");
+                log(LogType.warn,"wrong-command");
             }
         });
         handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
             if(arg.length == 0) {
-                log("warn","no-parameter");
+                log(LogType.warn,"no-parameter");
                 return;
             }
-            log("log","use-setperm");
+            log(LogType.log,"use-setperm");
         });
         handler.register("allinfo", "<name>", "Show player information.", (arg) -> {
             if(arg.length == 0) {
-                log("warn","no-parameter");
+                log(LogType.warn,"no-parameter");
                 return;
             }
             Thread t = new Thread(() -> {
@@ -1159,7 +1159,7 @@ public class Main extends Plugin {
                     String sql = "SELECT * FROM players WHERE name='"+arg[0]+"'";
                     Statement stmt = conn.createStatement();
                     ResultSet rs = stmt.executeQuery(sql);
-                    nlog("log","Data line start.");
+                    nlog(LogType.log,"Data line start.");
                     while(rs.next()){
                         String datatext = "\nPlayer Information\n" +
                                 "========================================\n" +
@@ -1182,11 +1182,11 @@ public class Main extends Plugin {
                                 "PvP Lose: "+rs.getInt("pvplosecount")+"\n" +
                                 "PvP Surrender: "+rs.getInt("pvpbreakout")+"\n" +
                                 "Permission: "+rs.getString("permission");
-                        nlog("log",datatext);
+                        nlog(LogType.log,datatext);
                     }
                     rs.close();
                     stmt.close();
-                    nlog("log","Data line end.");
+                    nlog(LogType.log,"Data line end.");
                 }catch (Exception e){
                     printError(e);
                 }
@@ -1198,68 +1198,68 @@ public class Main extends Plugin {
                 if(config.isBanshare()){
                     client.main("bansync", null, null);
                 } else {
-                    log("warn","banshare-disabled");
+                    log(LogType.warn,"banshare-disabled");
                 }
             } else {
-                log("warn","banshare-server");
+                log(LogType.warn,"banshare-server");
             }
         });
         handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
             if(arg.length < 1) {
-                log("warn","no-parameter");
+                log(LogType.warn,"no-parameter");
                 return;
             }
             if (arg[0].equals("add")) {
                 blacklist.add(arg[1]);
-                log("log", "blacklist-add", arg[1]);
+                log(LogType.log, "blacklist-add", arg[1]);
             } else if (arg[0].equals("remove")) {
                 for (int i = 0; i < blacklist.size(); i++) {
                     if (blacklist.get(i).equals(arg[1])) {
                         blacklist.remove(i);
-                        log("log", "blacklist-remove", arg[1]);
+                        log(LogType.log, "blacklist-remove", arg[1]);
                         return;
                     }
                 }
             } else {
-                log("warn", "blacklist-invalid");
+                log(LogType.warn, "blacklist-invalid");
             }
         });
         handler.register("reset", "<zone/count/total>", "Clear a server-to-server jumping zone data.", arg -> {
             if(arg.length == 0) {
-                log("warn","no-parameter");
+                log(LogType.warn,"no-parameter");
                 return;
             }
             switch(arg[0]){
                 case "zone":
                     jumpzone.clear();
-                    log("log","jump-reset", "zone");
+                    log(LogType.log,"jump-reset", "zone");
                     break;
                 case "count":
                     jumpcount.clear();
-                    log("log","jump-reset", "count");
+                    log(LogType.log,"jump-reset", "count");
                     break;
                 case "total":
                     jumptotal.clear();
-                    log("log","jump-reset", "total");
+                    log(LogType.log,"jump-reset", "total");
                     break;
                 default:
-                    log("warn","Invalid option!");
+                    log(LogType.warn,"Invalid option!");
                     break;
             }
         });
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
-                log("client","server-connecting");
+                log(LogType.client,"server-connecting");
                 if(serverconn){
                     client.main("exit", null, null);
                 } else {
                     client.main(null, null, null);
                 }
             } else {
-                log("client","client-disabled");
+                log(LogType.client,"client-disabled");
             }
 
-            log("client","db-connecting");
+            log(LogType.client,"db-connecting");
             closeconnect();
             openconnect();
         });
@@ -1268,60 +1268,60 @@ public class Main extends Plugin {
                 if(data.getName().equals(arg[0])){
                     for(Player player : playerGroup) player.isAdmin = false;
                     writeData("UPDATE players SET permission = ?", arg[0]);
-                    log("log", "success");
+                    log(LogType.log, "success");
                     return;
                 }
             }
-            log("warn","perm-group-not-found");
+            log(LogType.warn,"perm-group-not-found");
         });
         handler.register("kickall", "Kick all players.",  arg -> {
             for(int a=0;a<playerGroup.size();a++){
                 Player others = playerGroup.all().get(a);
                 Call.onKick(others.con, "All kick players by administrator.");
             }
-            nlog("log","It's done.");
+            nlog(LogType.log,"It's done.");
         });
         handler.register("kill", "<username>", "Kill target player.", arg -> {
             if(arg.length == 0) {
-                log("warn","no-parameter");
+                log(LogType.warn,"no-parameter");
                 return;
             }
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
                 other.kill();
             } else {
-                log("warn","player-not-found");
+                log(LogType.warn,"player-not-found");
             }
         });
         handler.register("mute","<Player_name>", "Mute/unmute player", (arg, player) -> {
             Player other = Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if (other == null) {
-                log("warn","player-not-found");
+                log(LogType.warn,"player-not-found");
             } else {
                 PlayerData target = PlayerData(other.uuid);
                 if(target.mute){
                     target.mute = false;
-                    log("log","player-unmute",target.name);
+                    log(LogType.log,"player-unmute",target.name);
                 } else {
                     target.mute = true;
-                    log("log","player-muted",target.name);
+                    log(LogType.log,"player-muted",target.name);
                 }
                 PlayerDataSet(target);
             }
         });
         handler.register("nick", "<name> <newname...>", "Set player nickname", (arg) -> {
             if(arg.length < 1) {
-                log("warn","no-parameter");
+                log(LogType.warn,"no-parameter");
                 return;
             }
             try{
                 Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
                 player.name = arg[1];
                 PlayerData(player.uuid).name = arg[1];
-                log("log","player-nickname-change-to", arg[0], arg[1]);
+                log(LogType.log,"player-nickname-change-to", arg[0], arg[1]);
             }catch (Exception e){
                 printError(e);
-                log("warn","player-not-found");
+                log(LogType.warn,"player-not-found");
             }
         });
         handler.register("pvp", "<anticoal/timer> [time...]", "Set gamerule with PvP mode.", arg -> {
@@ -1337,12 +1337,12 @@ public class Main extends Plugin {
                 }
             }
             */
-            nlog("log","Currently not supported!");
+            nlog(LogType.log,"Currently not supported!");
         });
         handler.register("setperm", "<player_name> <group>", "Set player permission group", arg -> {
             Player player = playerGroup.find(p -> p.name.equals(arg[0]));
             if(player == null){
-                log("warn","player-not-found");
+                log(LogType.warn,"player-not-found");
                 return;
             }
             for (JsonObject.Member data : permission) {
@@ -1350,11 +1350,11 @@ public class Main extends Plugin {
                     PlayerData p = PlayerData(player.uuid);
                     p.permission = arg[1];
                     PlayerDataSave(p);
-                    log("log", "success");
+                    log(LogType.log, "success");
                     return;
                 }
             }
-            log("playererror","perm-group-not-found");
+            log(LogType.playererr,"perm-group-not-found");
         });
         handler.register("sync", "<player>", "Force sync request from the target player.", arg -> {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
@@ -1362,7 +1362,7 @@ public class Main extends Plugin {
                 Call.onWorldDataBegin(other.con);
                 netServer.sendWorldData(other);
             } else {
-                log("warn","player-not-found");
+                log(LogType.warn,"player-not-found");
             }
         });
         handler.register("team","[name]", "Change target player team.", (arg) -> {
@@ -1379,18 +1379,18 @@ public class Main extends Plugin {
                 }
                 other.kill();
             } else {
-                log("warn","player-not-found");
+                log(LogType.warn,"player-not-found");
             }
         });
         handler.register("tempban", "<player_name> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
             int bantimeset = Integer.parseInt(arg[1]);
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other == null){
-                log("warn","player-not-found");
+                log(LogType.warn,"player-not-found");
                 return;
             }
             addtimeban(other.name, other.uuid, bantimeset);
-            log("log","tempban", other.name, arg[1]);
+            log(LogType.log,"tempban", other.name, arg[1]);
             other.con.kick("Temp kicked");
         });
         handler.register("reloadmaps", "Reload all maps from disk.", arg -> {
@@ -1607,7 +1607,7 @@ public class Main extends Plugin {
                                 } catch (InterruptedException e) {
                                     printError(e);
                                 }
-                                log("log","event-host-opened", player.name, customport);
+                                log(LogType.log,"event-host-opened", player.name, customport);
 
                                 target.connected = false;
                                 target.connserver = "none";
@@ -1617,7 +1617,7 @@ public class Main extends Plugin {
                                 } else {
                                     Call.onConnect(player.con, hostip, customport);
                                 }
-                                nlog("log",hostip+":"+customport);
+                                nlog(LogType.log,hostip+":"+customport);
                             } else {
                                 player.sendMessage(bundle(player, "event-level"));
                             }
@@ -1632,7 +1632,7 @@ public class Main extends Plugin {
                                 val.connserver = "none";
                                 PlayerDataSave(val);
                                 Call.onConnect(player.con, hostip, data.port);
-                                nlog("log",hostip+":"+data.port);
+                                nlog(LogType.log,hostip+":"+data.port);
                                 break;
                             }
                         }

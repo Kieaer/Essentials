@@ -42,7 +42,7 @@ import static essentials.Global.*;
 import static essentials.Main.root;
 import static essentials.PluginData.*;
 import static essentials.core.Exp.exp;
-import static essentials.core.Log.writelog;
+import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.special.PingServer.pingServer;
 import static essentials.utils.Config.PluginConfig;
@@ -74,7 +74,7 @@ public class Threads extends TimerTask{
                 banned.remove(a);
                 PluginConfig.get("banned").asArray().remove(a);
                 netServer.admins.unbanPlayerID(banned.get(a).uuid);
-                nlog("log","[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + banned.get(a).name + "/" + banned.get(a).uuid + " player unbanned!");
+                nlog(LogType.log,"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + banned.get(a).name + "/" + banned.get(a).uuid + " player unbanned!");
                 break;
             }
         }
@@ -330,7 +330,7 @@ public class Threads extends TimerTask{
                     p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                 }
             }
-            nlog("log","Map rollbacked.");
+            nlog(LogType.log,"Map rollbacked.");
             Call.sendMessage("[green]Map rollbacked.");
         }
 
@@ -392,7 +392,7 @@ public class Threads extends TimerTask{
                     pb.inheritIO().redirectOutput(Core.settings.getDataDirectory().child("test.txt").file());
                     p = pb.start();
                     process.add(p);
-                    if(p.isAlive()) nlog("log","online");
+                    if(p.isAlive()) nlog(LogType.log,"online");
                     Process finalP = p;
                     TimerTask t = new TimerTask() {
                         @Override
@@ -667,7 +667,7 @@ public class Threads extends TimerTask{
                         allsendMessage("vote-kick-done", target.name);
                         PlayerDB.addtimeban(target.name, target.uuid, 4);
 
-                        writelog("player",nbundle("log-player-kick",target.name,require));
+                        writeLog(LogType.player,nbundle("log-player-kick",target.name,require));
 
                         target.getInfo().lastKicked = Time.millis() + (15 * 60)*1000;
                         playerGroup.all().each(p -> p.uuid != null && p.uuid.equals(target.uuid), p -> p.con.kick(Packets.KickReason.vote));
@@ -711,7 +711,7 @@ public class Threads extends TimerTask{
                                 p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                             }
                         }
-                        nlog("log","Map rollbacked.");
+                        nlog(LogType.log,"Map rollbacked.");
                         allsendMessage("vote-map-done");
                     } else {
                         allsendMessage("vote-map-fail");
@@ -841,7 +841,7 @@ public class Threads extends TimerTask{
                                         }
                                         if (size < 5) sleep(2000);
                                     } else {
-                                        nlog("debug", "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
+                                        log(LogType.debug, "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
                                         sleep(30000);
                                     }
                                 } catch (InterruptedException ignored) {

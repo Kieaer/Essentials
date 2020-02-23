@@ -54,8 +54,8 @@ public class Config {
             update();
 
             loadall();
-            log("config","config-language",new Locale(config.getLanguage()).getDisplayLanguage());
-            log("config","config-loaded");
+            log(LogType.config,"config-language",new Locale(config.getLanguage()).getDisplayLanguage());
+            log(LogType.config,"config-loaded");
         } catch (IOException e){
             printError(e);
         }
@@ -69,7 +69,7 @@ public class Config {
             antirushtime = 600;
         }
 
-        if(obj.getInt("version",0) < config_version) log("config","config-updated");
+        if(obj.getInt("version",0) < config_version) log(LogType.config,"config-updated");
 
         String text = "{\n"+
                 "  # "+nbundle("config-version-description")+"\n" +
@@ -483,7 +483,7 @@ public class Config {
         try {
             jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
         } catch (URISyntaxException e) {
-            nlog("warn","The plugin file or folder path is invalid. Please check your server path!");
+            nlog(LogType.warn,"The plugin file or folder path is invalid. Please check your server path!");
             net.dispose();
             Core.app.exit();
             return;
