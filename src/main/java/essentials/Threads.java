@@ -302,7 +302,7 @@ public class Threads extends TimerTask{
         private void save() {
             try {
                 Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
-                SaveIO.save(file);
+                if(state.is(GameState.State.playing)) SaveIO.save(file);
             } catch (Exception e) {
                 printError(e);
             }
