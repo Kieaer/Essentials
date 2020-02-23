@@ -208,7 +208,7 @@ public class Global {
         } else if (data instanceof Locale){
             locale = (Locale) data;
         } else if (data instanceof String){
-            locale = new Locale(config.getLanguage());
+            locale = config.getLanguage();
             Bundle bundle = new Bundle(locale);
             return parameter.length != 0 ? bundle.getBundle((String) data, parameter) : bundle.getBundle((String) data);
         }
@@ -226,7 +226,7 @@ public class Global {
         } else if (data instanceof Locale){
             locale = (Locale) data;
         } else if (data instanceof String){
-            locale = new Locale(config.getLanguage());
+            locale = config.getLanguage();
             Bundle bundle = new Bundle(locale);
             return parameter.length != 0 ? bundle.getNormal((String) data, parameter) : bundle.getNormal((String) data);
         }

@@ -32,7 +32,7 @@ public class Config {
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-    public static int config_version = 11;
+    public static int config_version = 12;
 
     public void main(){
         validfile();
@@ -54,7 +54,7 @@ public class Config {
             update();
 
             loadall();
-            log(LogType.config,"config-language",new Locale(config.getLanguage()).getDisplayLanguage());
+            log(LogType.config,"config-language",config.getLanguage().getDisplayLanguage(locale));
             log(LogType.config,"config-loaded");
         } catch (IOException e){
             printError(e);
@@ -62,6 +62,14 @@ public class Config {
     }
 
     void update(){
+        Locale loc = locale;
+        String lc = obj.getString("language", locale.toString());
+        if(lc.split("_").length == 2){
+            String[] array = lc.split("_");
+            loc = new Locale(array[0], array[1]);
+        }
+        locale = loc;
+
         int antirushtime;
         try{
             antirushtime = obj.getInt("antirushtime",600);
@@ -76,7 +84,7 @@ public class Config {
                 "  version: "+getVersion()+"\n" +
                 "\n" +
                 "  # "+nbundle("config-language-description")+"\n" +
-                "  language: "+getLanguage()+"\n" +
+                "  language: "+getLanguage().toString()+"\n" +
                 "\n" +
                 "  # "+nbundle("config-server/client-description")+"\n" +
                 "  # "+nbundle("config-server/client-child-description")+"\n" +
@@ -287,10 +295,17 @@ public class Config {
     }
 
     public int getVersion(){
-        return obj.getInt("version", config_version);
+        return config_version;
+        //return obj.getInt("version", config_version);
     }
-    public String getLanguage(){
-        return obj.getString("language","en");
+    public Locale getLanguage(){
+        Locale loc = locale;
+        String lc = obj.getString("language", locale.toString());
+        if(lc.split("_").length == 2){
+            String[] array = lc.split("_");
+            loc = new Locale(array[0], array[1]);
+        }
+        return loc;
     }
 
     public boolean isEnableantirush(){
