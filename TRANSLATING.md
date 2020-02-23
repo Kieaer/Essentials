@@ -2,8 +2,8 @@
 To translate this plugin, You need check the list of languages currently translated below.<br>
 [Show translated file path](https://github.com/Kieaer/Essentials/tree/master/src/main/resources/bundle)<br>
 
-Korean, English: 100%<br>
-Chinese, Russian: 30~40%
+Korean, English, Russian: 100%<br>
+Chinese: 30~40%
 
 If it's not on the list, you'll need to create a file.
 Download the [Bundle.properties](https://raw.githubusercontent.com/Kieaer/Essentials/master/src/main/resources/bundle/bundle_en.properties) file to the ``config/mods/Esentials`` folder.
