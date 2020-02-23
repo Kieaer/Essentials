@@ -1103,47 +1103,47 @@ public class PlayerDB{
                 }
                 for (PlayerData data : buffer) {
                     PreparedStatement pstmt = conn.prepareStatement(sql);
-                    pstmt.setString(2, data.name);
-                    pstmt.setString(3, data.uuid);
-                    pstmt.setString(4, data.country);
-                    pstmt.setString(5, data.country_code);
-                    pstmt.setString(6, data.language);
-                    pstmt.setBoolean(7, data.isAdmin);
-                    pstmt.setInt(8, data.placecount); // placecount
-                    pstmt.setInt(9, data.breakcount); // breakcount
-                    pstmt.setInt(10, data.killcount); // killcount
-                    pstmt.setInt(11, data.deathcount); // deathcount
-                    pstmt.setInt(12, data.joincount);
-                    pstmt.setInt(13, data.kickcount);
-                    pstmt.setInt(14, data.level); // level
-                    pstmt.setInt(15, data.exp); // exp
-                    pstmt.setInt(16, data.reqexp); // reqexp
-                    pstmt.setString(17, data.reqtotalexp); // reqtotalexp
-                    pstmt.setString(18, data.firstdate);
-                    pstmt.setString(19, data.lastdate);
-                    pstmt.setString(20, data.lastplacename); // lastplacename
-                    pstmt.setString(21, data.lastbreakname); // lastbreakname
-                    pstmt.setString(22, data.lastchat); // lastchat
-                    pstmt.setString(23, data.playtime); // playtime
-                    pstmt.setInt(24, data.attackclear); // attackclear
-                    pstmt.setInt(25, data.pvpwincount); // pvpwincount
-                    pstmt.setInt(26, data.pvplosecount); // pvplosecount
-                    pstmt.setInt(27, data.pvpbreakout); // pvpbreakcount
-                    pstmt.setInt(28, data.reactorcount); // reactorcount
-                    pstmt.setInt(29, data.bantimeset); // bantimeset
-                    pstmt.setString(30, data.bantime); // bantime
-                    pstmt.setBoolean(31, data.banned);
-                    pstmt.setBoolean(32, data.translate); // translate
-                    pstmt.setBoolean(33, data.crosschat); // crosschat
-                    pstmt.setBoolean(34, data.colornick); // colornick
-                    pstmt.setBoolean(35, data.connected); // connected
-                    pstmt.setString(36, data.connserver); // connected server ip
-                    pstmt.setString(37, data.permission); // set permission
-                    pstmt.setBoolean(38, data.mute); // mute
-                    pstmt.setLong(39, data.udid); // UDID
-                    pstmt.setString(40, data.email);
-                    pstmt.setString(41, data.accountid);
-                    pstmt.setString(42, data.accountpw);
+                    pstmt.setString(1, data.name);
+                    pstmt.setString(2, data.uuid);
+                    pstmt.setString(3, data.country);
+                    pstmt.setString(4, data.country_code);
+                    pstmt.setString(5, data.language);
+                    pstmt.setBoolean(6, data.isAdmin);
+                    pstmt.setInt(7, data.placecount); // placecount
+                    pstmt.setInt(8, data.breakcount); // breakcount
+                    pstmt.setInt(9, data.killcount); // killcount
+                    pstmt.setInt(10, data.deathcount); // deathcount
+                    pstmt.setInt(11, data.joincount);
+                    pstmt.setInt(12, data.kickcount);
+                    pstmt.setInt(13, data.level); // level
+                    pstmt.setInt(14, data.exp); // exp
+                    pstmt.setInt(15, data.reqexp); // reqexp
+                    pstmt.setString(16, data.reqtotalexp); // reqtotalexp
+                    pstmt.setString(17, data.firstdate);
+                    pstmt.setString(18, data.lastdate);
+                    pstmt.setString(19, data.lastplacename); // lastplacename
+                    pstmt.setString(20, data.lastbreakname); // lastbreakname
+                    pstmt.setString(21, data.lastchat); // lastchat
+                    pstmt.setString(22, data.playtime); // playtime
+                    pstmt.setInt(23, data.attackclear); // attackclear
+                    pstmt.setInt(24, data.pvpwincount); // pvpwincount
+                    pstmt.setInt(25, data.pvplosecount); // pvplosecount
+                    pstmt.setInt(26, data.pvpbreakout); // pvpbreakcount
+                    pstmt.setInt(27, data.reactorcount); // reactorcount
+                    pstmt.setInt(28, data.bantimeset); // bantimeset
+                    pstmt.setString(39, data.bantime); // bantime
+                    pstmt.setBoolean(30, data.banned);
+                    pstmt.setBoolean(31, data.translate); // translate
+                    pstmt.setBoolean(32, data.crosschat); // crosschat
+                    pstmt.setBoolean(33, data.colornick); // colornick
+                    pstmt.setBoolean(34, data.connected); // connected
+                    pstmt.setString(35, data.connserver); // connected server ip
+                    pstmt.setString(36, data.permission); // set permission
+                    pstmt.setBoolean(37, data.mute); // mute
+                    pstmt.setLong(38, data.udid); // UDID
+                    pstmt.setString(39, data.email);
+                    pstmt.setString(40, data.accountid);
+                    pstmt.setString(41, data.accountpw);
                     pstmt.execute();
                     pstmt.close();
                 }
