@@ -2,6 +2,7 @@ package essentials.utils;
 
 import arc.Core;
 import arc.files.Fi;
+import arc.util.ArcRuntimeException;
 import essentials.Global;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
@@ -41,7 +42,7 @@ public class Config {
 
             try {
                 data = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
-            }catch (ParseException ignored){
+            }catch (ParseException | ArcRuntimeException ignored){
                 data.add("servername", Core.settings.getString("servername"));
                 data.add("unexception",false);
                 data.add("sqlite",true);

@@ -490,9 +490,15 @@ public class Main extends Plugin {
                     } else {
                         if(!target.mute) {
                             if (permission.get(target.permission).asObject().get("prefix") != null) {
-                                Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, target.name)).replace("%2", e.message));
+                                String chat = config.getPasswordmethod().equals("discord")
+                                        ? permission.get(target.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, target.name))+"("+target.name+")".replace("%2", e.message)
+                                        : permission.get(target.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, target.name)).replace("%2", e.message);
+                                Call.sendMessage(chat);
                             } else {
-                                Call.sendMessage("[orange]" + colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message);
+                                String chat = config.getPasswordmethod().equals("discord")
+                                        ? "[orange]" + colorizeName(e.player.id, target.name) + "("+target.name+")[orange] :[white] " + e.message
+                                        : "[orange]" + colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message;
+                                Call.sendMessage(chat);
                             }
 
                             // 서버간 대화기능 작동
@@ -1730,17 +1736,17 @@ public class Main extends Plugin {
                     "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.pvpbreakout;
             Call.onInfoMessage(player.con, datatext);
         });
-        handler.<Player>register("jump", "<zone/count/total> [serverip] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {
+        handler.<Player>register("jump", "<zone/count/total> <touch> [serverip] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!checkperm(player, "jump")) return;
             switch (arg[0]){
                 case "zone":
-                    if(arg.length != 3){
+                    if(arg.length != 4){
                         player.sendMessage(bundle(player, "jump-incorrect"));
                         return;
                     }
                     int size;
                     try {
-                        size = Integer.parseInt(arg[2]);
+                        size = Integer.parseInt(arg[3]);
                     } catch (Exception ignored) {
                         player.sendMessage(bundle(player, "jump-not-int"));
                         return;
@@ -1749,11 +1755,11 @@ public class Main extends Plugin {
                     int tf = player.tileX() + size;
                     int ty = player.tileY() + size;
 
-                    jumpzone.add(new jumpzone(world.tile(player.tileX(), player.tileY()),world.tile(tf,ty),arg[1]));
+                    jumpzone.add(new jumpzone(world.tile(player.tileX(), player.tileY()),world.tile(tf,ty),Boolean.parseBoolean(arg[1]),arg[2]));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "count":
-                    jumpcount.add(new jumpcount(world.tile(player.tileX(),player.tileY()),arg[1],0,0));
+                    jumpcount.add(new jumpcount(world.tile(player.tileX(),player.tileY()),arg[2],0,0));
                     player.sendMessage(bundle(player, "jump-added"));
                     break;
                 case "total":
