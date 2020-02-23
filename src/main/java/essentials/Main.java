@@ -32,6 +32,7 @@ import mindustry.game.EventType.*;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
+import mindustry.net.Administration;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
@@ -304,7 +305,7 @@ public class Main extends Plugin {
                                     other.sendMessage(bundle(other, "detect-thorium"));
                                 }
 
-                                writeLog(LogType.griefer,nbundle("griefer-detect-reactor-log", (Object) getTime(),data.name));
+                                writeLog(LogType.griefer,nbundle("griefer-detect-reactor-log", getTime(),data.name));
                                 Call.onTileDestroyed(data.tile);
                             } else {
                                 sleep(1950);
@@ -313,7 +314,7 @@ public class Main extends Plugin {
                                         Player other = playerGroup.all().get(a);
                                         other.sendMessage(bundle(other, "detect-thorium"));
                                     }
-                                    writeLog(LogType.griefer,nbundle("griefer-detect-reactor-log", (Object) getTime(),data.name));
+                                    writeLog(LogType.griefer,nbundle("griefer-detect-reactor-log", getTime(),data.name));
                                     Call.onTileDestroyed(data.tile);
                                 }
                             }
@@ -622,7 +623,7 @@ public class Main extends Plugin {
                 if(sorter_count > 10){
                     for(short[] t : target.grief_tilelist){
                         Tile tile = world.tile(t[0],t[1]);
-                        if(tile.entity.block != null) {
+                        if(tile != null && tile.entity != null && tile.entity.block != null) {
                             if (tile.entity.block == Blocks.sorter || tile.entity.block == Blocks.invertedSorter) {
                                 Call.onDeconstructFinish(tile,Blocks.air,e.player.id);
                             }
@@ -924,6 +925,12 @@ public class Main extends Plugin {
                     boolean error = false;
 
                     PlayerDataSaveAll(); // 플레이어 데이터 저장
+                    if(config.getDebugCode().contains("jumptotal_count")){
+                        Administration.Config c = Administration.Config.desc;
+                        Administration.Config s = Administration.Config.name;
+                        c.set(oridesc);
+                        s.set(oriname);
+                    }
                     saveall(); // 플러그인 데이터 저장
                     executorService.shutdown(); // 스레드 종료
                     singleService.shutdown(); // 로그 스레드 종료

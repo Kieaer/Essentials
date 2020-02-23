@@ -166,6 +166,9 @@ public class Config {
                 "  loginenable: " + isLoginenable() + "\n" +
                 "  loginmethod: " + getPasswordmethod() + "\n" +
                 "  validconnect: " + isValidconnect() + "\n" +
+                "\n" +
+                "  # "+nbundle("config-email-description")+"\n" +
+                "  # "+nbundle("config-email-child-description")+"\n" +
                 "  email-smtp-server: " + getEmailServer() + "\n" +
                 "  email-smtp-port: " + getEmailPort() + "\n" +
                 "  email-smtp-accountid: " + getEmailAccountID() + "\n" +
@@ -189,6 +192,7 @@ public class Config {
                 "\n" +
                 "  # "+nbundle("config-debug-description")+"\n" +
                 "  debug: " + isDebug() + "\n" +
+                "  debugcode: " + getDebugCode() + "\n" +
                 "  crash-report: " + isCrashReport() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-savetime-description")+"\n" +
@@ -430,6 +434,10 @@ public class Config {
 
     public boolean isDebug(){
         return obj.getBoolean("debug",false);
+    }
+
+    public String getDebugCode(){
+        return obj.getString("debugcode","none");
     }
 
     public boolean isCrashReport(){

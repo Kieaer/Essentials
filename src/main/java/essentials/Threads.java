@@ -18,6 +18,7 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
+import mindustry.net.Administration;
 import mindustry.net.Packets;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
@@ -55,6 +56,9 @@ public class Threads extends TimerTask{
     public static LocalTime playtime = LocalTime.of(0,0,0);
     public static LocalTime uptime = LocalTime.of(0,0,0);
     public static boolean isvoting;
+
+    public static String oridesc = Administration.Config.desc.get().toString();
+    public static String oriname = Administration.Config.name.get().toString();
 
     @Override
     public void run() {
@@ -99,6 +103,15 @@ public class Threads extends TimerTask{
                     player.sendMessage(bundle("pvp-peacetime"));
                     Call.onPlayerDeath(player);
                 }
+            }
+
+            if(config.getDebugCode().contains("jumptotal_count")){
+                int result = 0;
+                for (jumpcount value : jumpcount) result = result + value.players;
+                Administration.Config c = Administration.Config.desc;
+                Administration.Config s = Administration.Config.name;
+                c.set(oridesc + "\n[green]Total [white]"+result+" Players\n[sky]POWERED BY Essentials 9.0.0");
+                s.set(oriname + "\n[#F32]Discord authentication enabled!");
             }
 
             // 모든 클라이언트 서버에 대한 인원 총합 카운트
