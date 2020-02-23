@@ -23,7 +23,7 @@ public class Bundle {
                     ? new PropertyResourceBundle(Files.newInputStream(Paths.get(root.child("bundle.properties").path())))
                     : ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
         }catch (Exception e){
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", new UTF8Control());
         }
     }
 
@@ -32,6 +32,7 @@ public class Bundle {
             return config.getPrefix()+RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
             nlog(Global.LogType.warn,"BUNDLE KEY NOT FOUND - " + key);
+            e.printStackTrace();
             return null;
         }
     }
@@ -41,6 +42,7 @@ public class Bundle {
             return config.getPrefix()+MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
             nlog(Global.LogType.warn,"BUNDLE KEY NOT FOUND - " + key);
+            e.printStackTrace();
             return null;
         }
     }
@@ -50,6 +52,7 @@ public class Bundle {
             return RESOURCE_BUNDLE.getString(key);
         } catch (MissingResourceException e) {
             nlog(Global.LogType.warn,"BUNDLE KEY NOT FOUND - " + key);
+            e.printStackTrace();
             return null;
         }
     }
@@ -59,6 +62,7 @@ public class Bundle {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
             nlog(Global.LogType.warn,"BUNDLE KEY NOT FOUND - " + key);
+            e.printStackTrace();
             return null;
         }
     }

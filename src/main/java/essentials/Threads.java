@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -276,7 +277,7 @@ public class Threads extends TimerTask{
                             String message;
                             String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
                             JsonObject result = JsonValue.readJSON(json).asObject();
-                            String language = result.getString("languages", "en");
+                            Locale language = TextToLocale(result.getString("languages", locale.toString()));
                             if (config.getPasswordmethod().equals("discord")) {
                                 message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
                             } else {
@@ -844,7 +845,7 @@ public class Threads extends TimerTask{
                                         }
                                         if (size < 5) sleep(2000);
                                     } else {
-                                        log(LogType.debug, "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
+                                        nlog(LogType.debug, "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
                                         sleep(30000);
                                     }
                                 } catch (InterruptedException ignored) {

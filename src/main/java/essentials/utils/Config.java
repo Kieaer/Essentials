@@ -63,13 +63,7 @@ public class Config {
     }
 
     void update(){
-        Locale loc = locale;
-        String lc = obj.getString("language", locale.toString());
-        if(lc.split("_").length == 2){
-            String[] array = lc.split("_");
-            loc = new Locale(array[0], array[1]);
-        }
-        locale = loc;
+        locale = TextToLocale(obj.getString("language", locale.toString()));
 
         int antirushtime;
         try{
@@ -303,13 +297,7 @@ public class Config {
         //return obj.getInt("version", config_version);
     }
     public Locale getLanguage(){
-        Locale loc = locale;
-        String lc = obj.getString("language", locale.toString());
-        if(lc.split("_").length == 2){
-            String[] array = lc.split("_");
-            loc = new Locale(array[0], array[1]);
-        }
-        return loc;
+        return TextToLocale(obj.getString("language", locale.toString()));
     }
 
     public boolean isEnableantirush(){

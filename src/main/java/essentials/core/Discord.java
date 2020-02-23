@@ -34,7 +34,7 @@ public class Discord extends ListenerAdapter {
                 channel = guild.getTextChannelsByName(config.getDiscordRoom(),true).get(0);
                 log(LogType.log,"discord-enabled");
             } else {
-                log(LogType.err,"discord-error");
+                log(LogType.error,"discord-error");
             }
         }catch (Exception e){
             printError(e);
@@ -72,6 +72,26 @@ public class Discord extends ListenerAdapter {
                 String id = data[0];
                 String pw = data[1];
                 String pw2 = data[2];
+
+                if (config.isStrictname()) {
+                    if (e.getAuthor().getName().length() > 32){
+                        send("Nickname too long!\n닉네임이 너무 깁니다!");
+                        return;
+                    }
+                    if (e.getAuthor().getName().matches(".*\\[.*].*")){
+                        send("Color tags can't be used for nicknames on this server.\n색상 태그는 서버에서 사용할 수 없습니다.");
+                        return;
+                    }
+                    if (e.getAuthor().getName().contains("　")){
+                        send("Don't use blank speical charactor nickname!\n닉네임에 공백을 넣지 마세요!");
+                        return;
+                    }
+                    if (e.getAuthor().getName().contains(" ")){
+                        send("Nicknames can't be used on this server!\n이 닉네임은 서버에서 사용할 수 없습니다!");
+                        return;
+                    }
+                }
+
                 if (checkpw(id, pw, pw2)) {
                     pw = BCrypt.hashpw(pw, BCrypt.gensalt(11));
                     if(isduplicateid(id) || isduplicatename(e.getAuthor().getName())) {
@@ -81,8 +101,8 @@ public class Discord extends ListenerAdapter {
                         return;
                     }
                     if(e.getMember() != null) {
-                    if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), "none", id, pw, null)) {
-                            Role role = guild.getRolesByName(config.getDiscordRole(),false).get(0);
+                        if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), "none", id, pw, null)) {
+                            Role role = guild.getRolesByName(config.getDiscordRole(), false).get(0);
                             guild.addRoleToMember(e.getMember(), role).queue();
                         } else {
                             send("Invalid user! Discord set role failed.");

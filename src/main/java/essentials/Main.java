@@ -129,7 +129,7 @@ public class Main extends Plugin {
                 ResultSet rs = stmt.executeQuery("SELECT uuid,lastdate FROM players");
                 while (rs.next()) {
                     if (isLoginold(rs.getString("lastdate"))) {
-                        writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", rs.getInt("uuid"));
+                        writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", rs.getString("uuid"));
                     }
                 }
             } else {
@@ -490,15 +490,9 @@ public class Main extends Plugin {
                     } else {
                         if(!target.mute) {
                             if (permission.get(target.permission).asObject().get("prefix") != null) {
-                                String chat = config.getPasswordmethod().equals("discord")
-                                        ? permission.get(target.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, target.name))+"("+target.name+")".replace("%2", e.message)
-                                        : permission.get(target.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, target.name)).replace("%2", e.message);
-                                Call.sendMessage(chat);
+                                Call.sendMessage(permission.get(target.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
                             } else {
-                                String chat = config.getPasswordmethod().equals("discord")
-                                        ? "[orange]" + colorizeName(e.player.id, target.name) + "("+target.name+")[orange] :[white] " + e.message
-                                        : "[orange]" + colorizeName(e.player.id, target.name) + "[orange] :[white] " + e.message;
-                                Call.sendMessage(chat);
+                                Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] :[white] " + e.message);
                             }
 
                             // 서버간 대화기능 작동
@@ -685,7 +679,7 @@ public class Main extends Plugin {
                                     ((Player) e.builder).sendMessage(nbundle(((Player) e.builder), "epg-block-require", name, blockreqlevel));
                                 }
                             } else {
-                                log(LogType.err, "epg-block-not-valid", name);
+                                log(LogType.error, "epg-block-not-valid", name);
                             }
                         } catch (Exception ex) {
                             printError(ex);
@@ -926,51 +920,53 @@ public class Main extends Plugin {
 
         Core.app.addListener(new ApplicationListener() {
             public void dispose() {
-                boolean error = false;
+                try {
+                    boolean error = false;
 
-                PlayerDataSaveAll(); // 플레이어 데이터 저장
-                saveall(); // 플러그인 데이터 저장
-                executorService.shutdown(); // 스레드 종료
-                singleService.shutdown(); // 로그 스레드 종료
-                timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
-                if (isvoting) Vote.cancel(); // 투표 종료
-                jumpdata.interrupt(); // 다른 서버상태 확인 스레드 종료
-                if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
-                closeconnect(); // DB 연결 종료
-                if (config.isServerenable()) {
-                    try {
-                        for (Server.Service ser : Server.list) {
-                            ser.interrupt();
-                            ser.os.close();
-                            ser.in.close();
-                            ser.socket.close();
-                            Server.list.remove(ser);
+                    PlayerDataSaveAll(); // 플레이어 데이터 저장
+                    saveall(); // 플러그인 데이터 저장
+                    executorService.shutdown(); // 스레드 종료
+                    singleService.shutdown(); // 로그 스레드 종료
+                    timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
+                    if (isvoting) Vote.cancel(); // 투표 종료
+                    jumpdata.interrupt(); // 다른 서버상태 확인 스레드 종료
+                    if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
+                    closeconnect(); // DB 연결 종료
+                    if (config.isServerenable()) {
+                        try {
+                            for (Server.Service ser : Server.list) {
+                                ser.interrupt();
+                                ser.os.close();
+                                ser.in.close();
+                                ser.socket.close();
+                                Server.list.remove(ser);
+                            }
+
+                            Server.serverSocket.close();
+                            server.interrupt();
+
+                            log(LogType.log, "server-thread-disabled");
+                        } catch (Exception e) {
+                            error = true;
+                            printError(e);
+                            log(LogType.error, "server-thread-disable-error");
                         }
-
-                        Server.serverSocket.close();
-                        server.interrupt();
-
-                        log(LogType.log, "server-thread-disabled");
-                    } catch (Exception e) {
-                        error = true;
-                        printError(e);
-                        log(LogType.err, "server-thread-disable-error");
                     }
-                }
 
-                // 클라이언트 종료
-                if (config.isClientenable() && serverconn) {
-                    client.main("exit", null, null);
-                    log(LogType.log, "client-thread-disabled");
-                }
+                    // 클라이언트 종료
+                    if (config.isClientenable() && serverconn) {
+                        client.main("exit", null, null);
+                        log(LogType.log, "client-thread-disabled");
+                    }
 
-                // 모든 이벤트 서버 종료
-                for (Process value : process) value.destroy();
-                if(!error){
-                    log(LogType.log, "thread-disabled");
-                } else {
-                    log(LogType.log,"thread-not-dead");
-                }
+                    // 모든 이벤트 서버 종료
+                    for (Process value : process) value.destroy();
+                    if (!error) {
+                        log(LogType.log, "thread-disabled");
+                    } else {
+                        log(LogType.log, "thread-not-dead");
+                    }
+                } catch (Exception ignored){}
             }
         });
 
@@ -1707,33 +1703,27 @@ public class Main extends Plugin {
         handler.<Player>register("info", "Show your information", (arg, player) -> {
             if (!checkperm(player, "info")) return;
             PlayerData db = PlayerData(player.uuid);
-            Locale locale = new Locale(db.country_code);
-            String lc = db.country_code;
-            if(db.country_code.contains(",")) lc = db.language.split(",")[0];
-            if (lc.split("_").length > 1) {
-                String[] array = lc.split("_");
-                locale = new Locale(array[0], array[1]);
-            }
+            Locale locale = db.locale;
             String datatext = "[#DEA82A]" + nbundle(player, "player-info") + "[]\n" +
                     "[#2B60DE]====================================[]\n" +
-                    "[green]" + nbundle(player, "player-name") + "[] : " + player.name + "[white]\n" +
-                    "[green]" + nbundle(player, "player-isMobile") + "[] : " + player.isMobile + "\n" +
-                    "[green]" + nbundle(player, "player-country") + "[] : " + locale.getDisplayCountry() + "\n" +
-                    "[green]" + nbundle(player, "player-placecount") + "[] : " + db.placecount + "\n" +
-                    "[green]" + nbundle(player, "player-breakcount") + "[] : " + db.breakcount + "\n" +
-                    "[green]" + nbundle(player, "player-killcount") + "[] : " + db.killcount + "\n" +
-                    "[green]" + nbundle(player, "player-deathcount") + "[] : " + db.deathcount + "\n" +
-                    "[green]" + nbundle(player, "player-joincount") + "[] : " + db.joincount + "\n" +
-                    "[green]" + nbundle(player, "player-kickcount") + "[] : " + db.kickcount + "\n" +
-                    "[green]" + nbundle(player, "player-level") + "[] : " + db.level + "\n" +
-                    "[green]" + nbundle(player, "player-reqtotalexp") + "[] : " + db.reqtotalexp + "\n" +
-                    "[green]" + nbundle(player, "player-firstdate") + "[] : " + db.firstdate + "\n" +
-                    "[green]" + nbundle(player, "player-lastdate") + "[] : " + db.lastdate + "\n" +
-                    "[green]" + nbundle(player, "player-playtime") + "[] : " + db.playtime + "\n" +
-                    "[green]" + nbundle(player, "player-attackclear") + "[] : " + db.attackclear + "\n" +
-                    "[green]" + nbundle(player, "player-pvpwincount") + "[] : " + db.pvpwincount + "\n" +
-                    "[green]" + nbundle(player, "player-pvplosecount") + "[] : " + db.pvplosecount + "\n" +
-                    "[green]" + nbundle(player, "player-pvpbreakout") + "[] : " + db.pvpbreakout;
+                    "[green]" + nbundle(locale, "player-name") + "[] : " + player.name + "[white]\n" +
+                    "[green]" + nbundle(locale, "player-isMobile") + "[] : " + player.isMobile + "\n" +
+                    "[green]" + nbundle(locale, "player-country") + "[] : " + locale.getDisplayCountry() + "\n" +
+                    "[green]" + nbundle(locale, "player-placecount") + "[] : " + db.placecount + "\n" +
+                    "[green]" + nbundle(locale, "player-breakcount") + "[] : " + db.breakcount + "\n" +
+                    "[green]" + nbundle(locale, "player-killcount") + "[] : " + db.killcount + "\n" +
+                    "[green]" + nbundle(locale, "player-deathcount") + "[] : " + db.deathcount + "\n" +
+                    "[green]" + nbundle(locale, "player-joincount") + "[] : " + db.joincount + "\n" +
+                    "[green]" + nbundle(locale, "player-kickcount") + "[] : " + db.kickcount + "\n" +
+                    "[green]" + nbundle(locale, "player-level") + "[] : " + db.level + "\n" +
+                    "[green]" + nbundle(locale, "player-reqtotalexp") + "[] : " + db.reqtotalexp + "\n" +
+                    "[green]" + nbundle(locale, "player-firstdate") + "[] : " + db.firstdate + "\n" +
+                    "[green]" + nbundle(locale, "player-lastdate") + "[] : " + db.lastdate + "\n" +
+                    "[green]" + nbundle(locale, "player-playtime") + "[] : " + db.playtime + "\n" +
+                    "[green]" + nbundle(locale, "player-attackclear") + "[] : " + db.attackclear + "\n" +
+                    "[green]" + nbundle(locale, "player-pvpwincount") + "[] : " + db.pvpwincount + "\n" +
+                    "[green]" + nbundle(locale, "player-pvplosecount") + "[] : " + db.pvplosecount + "\n" +
+                    "[green]" + nbundle(locale, "player-pvpbreakout") + "[] : " + db.pvpbreakout;
             Call.onInfoMessage(player.con, datatext);
         });
         handler.<Player>register("jump", "<zone/count/total> <touch> [serverip] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {

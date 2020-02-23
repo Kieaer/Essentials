@@ -62,7 +62,7 @@ public class Global {
 
     // 로그
     public enum LogType{
-        log, warn, err, debug, server, serverwarn, servererr, client, clientwarn, clienterr, config, player, playerwarn, playererr,
+        log, warn, error, debug, server, serverwarn, servererr, client, clientwarn, clienterr, config, player, playerwarn, playererr,
         tap, withdraw, block, deposit, chat, griefer, web
     }
     public static void log(LogType type, String value, Object... parameter){
@@ -73,7 +73,7 @@ public class Global {
             case warn:
                 Log.warn(parameter.length == 0 ? tag+nbundle(value) : tag+nbundle(value,parameter));
                 break;
-            case err:
+            case error:
                 Log.err(parameter.length == 0 ? tag+nbundle(value) : tag+nbundle(value,parameter));
                 break;
             case debug:
@@ -120,7 +120,7 @@ public class Global {
             case warn:
                 Log.warn(value);
                 break;
-            case err:
+            case error:
                 Log.err(value);
                 break;
             case debug:
@@ -151,8 +151,8 @@ public class Global {
                 sb.append("=================================================\n");
                 String text = sb.toString();
 
-                writeLog(LogType.err, text);
-                nlog(LogType.err,"Plugin internal error! - "+e.getMessage());
+                writeLog(LogType.error, text);
+                nlog(LogType.error,"Plugin internal error! - "+e.getMessage());
                 if(config.isCrashReport()){
                     InetAddress address = InetAddress.getByName("mindustry.kr");
                     Socket socket = new Socket(address, 6560);
@@ -520,7 +520,7 @@ public class Global {
 
     // 플레이어 지역 위치 확인
     public static Locale geolocation(Object data) {
-        String ip = data instanceof Player ? Vars.netServer.admins.getInfo(player.uuid).lastIP : (String) data;
+        String ip = data instanceof Player ? Vars.netServer.admins.getInfo(((Player)data).uuid).lastIP : (String) data;
         try {
             String json = Jsoup.connect("http://ipapi.co/"+ip+"/json").ignoreContentType(true).execute().body();
             JsonObject result = JsonValue.readJSON(json).asObject();
@@ -659,10 +659,10 @@ public class Global {
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
-                log(LogType.debug, rs.getString("name"));
+                nlog(LogType.debug, rs.getString("name"));
                 return true;
             } else {
-                log(LogType.debug, "not duplicate this uuid");
+                nlog(LogType.debug, "not duplicate this uuid");
                 return false;
             }
         }catch (SQLException e){
@@ -772,4 +772,14 @@ public class Global {
         return newArray;
     }
 
+    public static Locale TextToLocale(String data){
+        Locale locale = new Locale(data);
+        String lc = data;
+        if(data.contains(",")) lc = lc.split(",")[0];
+        if (lc.split("_").length > 1) {
+            String[] array = lc.split("_");
+            locale = new Locale(array[0], array[1]);
+        }
+        return locale;
+    }
 }

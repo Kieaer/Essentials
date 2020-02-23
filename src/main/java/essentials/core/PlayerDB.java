@@ -88,7 +88,7 @@ public class PlayerDB{
                 if(!config.getDBid().isEmpty()){
                     sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
                             "`name` TEXT NOT NULL,\n" +
-                            "`uuid` TINYTEXT NOT NULL,\n" +
+                            "`uuid` TEXT NOT NULL,\n" +
                             "`country` TEXT NOT NULL,\n" +
                             "`country_code` TEXT NOT NULL,\n" +
                             "`language` TEXT NOT NULL,\n" +
@@ -290,7 +290,7 @@ public class PlayerDB{
                         rs.getString("accountpw")
                 );
             } else {
-                log(LogType.debug, value+" Data not found!");
+                nlog(LogType.debug, value+" Data not found!");
             }
             rs.close();
             stmt.close();
@@ -525,11 +525,11 @@ public class PlayerDB{
                                 hashed, // 계정 비밀번호
                                 player) // 플레이어
                         ) {
-                            log(LogType.debug, player.name + " Player DB Created!");
+                            nlog(LogType.debug, player.name + " Player DB Created!");
                             player.sendMessage(bundle(player, "player-name-changed", player.name));
                             return true;
                         } else {
-                            log(LogType.debug, player.name + " Player DB create failed!");
+                            nlog(LogType.debug, player.name + " Player DB create failed!");
                             return false;
                         }
                     case "email":
@@ -574,11 +574,11 @@ public class PlayerDB{
                                 hashed, // 계정 비밀번호
                                 player) // 플레이어
                         ) {
-                            log(LogType.debug, player.name + " Player DB Created!");
+                            nlog(LogType.debug, player.name + " Player DB Created!");
                             player.sendMessage(bundle(player, "player-name-changed", player.name));
                             return true;
                         } else {
-                            log(LogType.debug, player.name + " Player DB create failed!");
+                            nlog(LogType.debug, player.name + " Player DB create failed!");
                             return false;
                         }
                 }
@@ -703,7 +703,7 @@ public class PlayerDB{
             }
 
             // 고정닉 기능이 켜져있을 경우, 플레이어 닉네임 설정
-            if (config.isRealname() || config.getPasswordmethod().equals("discord")) target.name = target.name;
+            if (config.isRealname() || config.getPasswordmethod().equals("discord")) player.name = target.name;
 
             // 서버 입장시 경험치 획득
             target.exp = target.exp+target.joincount;
@@ -711,6 +711,7 @@ public class PlayerDB{
             // 컬러닉 기능 설정
             if (target.colornick){
                 if(config.isRealname()){
+                    // TODO edit name tag from mindustry sources
                     new Thread(new ColorNick(player)).start();
                 } else {
                     target.colornick = false;
@@ -860,11 +861,7 @@ public class PlayerDB{
             this.error = false;
             this.isLogin = true;
 
-            String lc = country_code.split(",")[0];
-            if(lc.split("_").length == 2){
-                String[] array = lc.split("_");
-                this.locale = new Locale(array[0], array[1]);
-            }
+            this.locale = TextToLocale(country_code);
         }
     }
 

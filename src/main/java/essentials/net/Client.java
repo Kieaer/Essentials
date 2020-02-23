@@ -62,7 +62,7 @@ public class Client extends Thread{
                 if(data != null){
                     serverconn = true;
                     executorService.execute(new Thread(this));
-                    nlog(LogType.client,"client-enabled");
+                    log(LogType.client,"client-enabled");
                 }
             } catch (UnknownHostException e) {
                 nlog(LogType.client,"Invalid host!");
