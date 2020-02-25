@@ -33,7 +33,7 @@ public class Config {
 
     public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-    public static int config_version = 12;
+    int config_version = 12;
 
     public void main(){
         validfile();
