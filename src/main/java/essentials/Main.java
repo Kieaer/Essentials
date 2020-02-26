@@ -1338,7 +1338,6 @@ public class Main extends Plugin {
             } catch (Exception e) {
                 printError(e);
             }
-            System.out.println(config.getDebugCode());
 
             // 메세지 블럭에 의한 클라이언트 플레이어 카운트
             executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
