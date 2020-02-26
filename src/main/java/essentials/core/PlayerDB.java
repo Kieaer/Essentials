@@ -653,8 +653,8 @@ public class PlayerDB{
                 target = getInfo("id", parameter[0]);
                 Players.add(getInfo("id", parameter[0]));
             } else {
-                target = PlayerData(player.uuid);
-                Players.add(getInfo("uuid", player.uuid));
+                target = getInfo("uuid", player.uuid);
+                Players.add(target);
             }
 
             // 새 기기로 UUID 적용
