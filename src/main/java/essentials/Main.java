@@ -1070,7 +1070,19 @@ public class Main extends Plugin {
                     "RAM: 50MB<br>\n" +
                     "Disk: HDD capable of more than 5MB/s random read/write.\n\n" +
                     "## Installation\n\n" +
-                    "Put this plugin in the ``<server folder location>/config/mods`` folder.\n\n";
+                    "Put this plugin in the ``<server folder location>/config/mods`` folder.\n\n" +
+                    "## Essentials 9.0 Plans\n" +
+                    "[ ] Server\n" +
+                    "  [ ] Control server using Web server\n" +
+                    "[ ] PlayerDB\n" +
+                    "  [ ] DB Server without MySQL/MariaDB..\n" +
+                    "[ ] Internal\n" +
+                    "  [ ] Fix server can't shutdown\n" +
+                    "  [ ] Make ban reason\n" +
+                    "[ ] Anti-grief\n" +
+                    "  [ ] Make anti-filter art\n" +
+                    "  [ ] Make anti-fast build/break destroy\n" +
+                    "  [ ] Make detect custom client";
             String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String tmp;

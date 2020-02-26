@@ -21,19 +21,36 @@ Disk: HDD capable of more than 5MB/s random read/write.
 
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
-## Client commands
+## Essentials 9.0 Plans
+[ ] Server
+  [ ] Control server using Web server
+[ ] PlayerDB
+  [ ] DB Server without MySQL/MariaDB..
+[ ] Internal
+  [ ] Fix server can't shutdown
+  [ ] Make ban reason
+[ ] Anti-grief
+  [ ] Make anti-filter art
+  [ ] Make anti-fast build/break destroy
+  [ ] Make detect custom client## Client commands
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
+| cheat |  | Use cheat (development only) |
+| start |  | Start zone |
+| end |  | End zone |
+| finish | &lt;name&gt; | Finish zone |
 | ch |  | Send chat to another server. |
 | changepw | &lt;new_password&gt; | Change account password |
+| chars | &lt;Text...&gt; | Make pixel texts |
 | color |  | Enable color nickname |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
 | despawn |  | Kill all enemy units |
 | event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
+| email | &lt;key&gt; | Email Authentication |
 | getpos |  | Get your current position info |
 | info |  | Show your information |
-| jump | &lt;zone/count/total&gt; [serverip] [range] | Create a server-to-server jumping zone. |
+| jump | &lt;zone/count/total&gt; &lt;touch&gt; [serverip] [range] | Create a server-to-server jumping zone. |
 | kickall |  | Kick all players |
 | kill | &lt;player&gt; | Kill player. |
 | login | &lt;id&gt; &lt;password&gt; | Access your account |
@@ -67,6 +84,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
+| players |  | List all players currently in game. |
 | gendocs |  | Generate Essentials README.md |
 | accountban | &lt;ban/unban&gt; &lt;account_uuid&gt; | Ban player account |
 | allinfo | &lt;name&gt; | Show player information. |
@@ -74,6 +92,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | blacklist | &lt;add/remove&gt; &lt;nickname&gt; | Block special nickname. |
 | reset | &lt;zone/count/total&gt; | Clear a server-to-server jumping zone data. |
 | reconnect |  | Reconnect remote server (Essentials server only!) |
+| restart |  | Plugin restart |
 | unadminall | &lt;default_group_name&gt; | Remove all player admin status |
 | kickall |  | Kick all players. |
 | kill | &lt;username&gt; | Kill target player. |
@@ -84,6 +103,5 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | sync | &lt;player&gt; | Force sync request from the target player. |
 | team | [name] | Change target player team. |
 | tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
-| average |  | Show average players |
 
-README.md Generated time: 2020-02-10 23:11:29
+README.md Generated time: 2020-02-26 23:35:33
