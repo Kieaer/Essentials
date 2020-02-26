@@ -25,7 +25,7 @@ import static essentials.utils.Permission.permission;
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
-public class PlayerDB{
+public class PlayerDB {
     public static Connection conn;
     public static ArrayList<Player> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
@@ -217,7 +217,7 @@ public class PlayerDB{
                 pstmt.setString(41, accountpw);
                 pstmt.execute();
                 pstmt.close();
-                if(player != null) player.sendMessage(bundle(player, "player-id", player.name));
+                //if(player != null) player.sendMessage(bundle(new Locale(country, country_code), "player-id", player.name));
                 log(LogType.player,"player-db-created", name);
                 result = true;
             } else {
@@ -526,7 +526,7 @@ public class PlayerDB{
                                 player) // 플레이어
                         ) {
                             nlog(LogType.debug, player.name + " Player DB Created!");
-                            player.sendMessage(bundle(player, "player-name-changed", player.name));
+                            player.sendMessage(bundle(locale, "player-name-changed", player.name));
                             return true;
                         } else {
                             nlog(LogType.debug, player.name + " Player DB create failed!");
@@ -575,7 +575,7 @@ public class PlayerDB{
                                 player) // 플레이어
                         ) {
                             nlog(LogType.debug, player.name + " Player DB Created!");
-                            player.sendMessage(bundle(player, "player-name-changed", player.name));
+                            player.sendMessage(bundle(locale, "player-name-changed", player.name));
                             return true;
                         } else {
                             nlog(LogType.debug, player.name + " Player DB create failed!");
@@ -625,7 +625,7 @@ public class PlayerDB{
             ResultSet rs = pstm.executeQuery();
             if (rs.next()) {
                 if (rs.getBoolean("connected")) {
-                    player.con.kick(nbundle(player, "tried-connected-account"));
+                    player.con.kick(nbundle(PlayerData(player.uuid).locale, "tried-connected-account"));
                     result = false;
                 } else if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
                     if (rs.getBoolean("isadmin")) {
@@ -808,7 +808,7 @@ public class PlayerDB{
         public int grief_destory_count = 0; // 블럭 파괴 계산
         public ArrayList<short[]> grief_tilelist = new ArrayList<>(); // 건설한 블록 개수
 
-        public Locale locale;
+        public Locale locale = config.getLanguage();
 
         PlayerData(boolean error, boolean isLogin){
             this.error = error;

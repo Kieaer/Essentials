@@ -124,7 +124,7 @@ public class Global {
                 Log.err(value);
                 break;
             case debug:
-                Log.debug(value);
+                Log.info(value);
                 break;
             case player:
                 Log.info(playertag+value);
@@ -201,39 +201,29 @@ public class Global {
     }
 
     // Bundle 파일에서 Essentials 문구를 포함시켜 출력
-    public static String bundle(Object data, Object... parameter) {
-        Locale locale = null;
-        if(data instanceof Player){
-            locale = PlayerData(((Player) data).uuid).locale;
-        } else if (data instanceof Locale){
-            locale = (Locale) data;
-        } else if (data instanceof String){
-            locale = config.getLanguage();
-            Bundle bundle = new Bundle(locale);
-            return parameter.length != 0 ? bundle.getBundle((String) data, parameter) : bundle.getBundle((String) data);
-        }
-        String value = (String) parameter[0];
-        parameter = removeElement(0,parameter);
+    public static String bundle(Locale locale, String name, Object... parameter) {
+        if(locale == null) locale = config.getLanguage();
         Bundle bundle = new Bundle(locale);
-        return parameter.length != 0 ? bundle.getBundle(value, parameter) : bundle.getBundle(value);
+        return parameter.length != 0 ? bundle.getBundle(name, parameter) : bundle.getBundle(name);
+    }
+
+    public static String bundle(String name, Object... parameter) {
+        Locale locale = config.getLanguage();
+        Bundle bundle = new Bundle(locale);
+        return parameter.length != 0 ? bundle.getNormal(name, parameter) : bundle.getNormal(name);
     }
 
     // Bundle 파일에서 Essentials 문구 없이 출력
-    public static String nbundle(Object data, Object... parameter) {
-        Locale locale = null;
-        if(data instanceof Player){
-            locale = PlayerData(((Player) data).uuid).locale;
-        } else if (data instanceof Locale){
-            locale = (Locale) data;
-        } else if (data instanceof String){
-            locale = config.getLanguage();
-            Bundle bundle = new Bundle(locale);
-            return parameter.length != 0 ? bundle.getNormal((String) data, parameter) : bundle.getNormal((String) data);
-        }
-        String value = (String) parameter[0];
-        parameter = removeElement(0,parameter);
+    public static String nbundle(Locale locale, String name, Object... parameter) {
+        if(locale == null) locale = config.getLanguage();
         Bundle bundle = new Bundle(locale);
-        return parameter.length != 0 ? bundle.getNormal(value, parameter) : bundle.getNormal(value);
+        return parameter.length != 0 ? bundle.getNormal(name, parameter) : bundle.getNormal(name);
+    }
+
+    public static String nbundle(String name, Object... parameter) {
+        Locale locale = config.getLanguage();
+        Bundle bundle = new Bundle(locale);
+        return parameter.length != 0 ? bundle.getNormal(name, parameter) : bundle.getNormal(name);
     }
 
     // 숫자 카운트
@@ -496,7 +486,7 @@ public class Global {
         Thread t = new Thread(() -> {
             for (int i = 0; i < playerGroup.size(); i++) {
                 Player other = playerGroup.all().get(i);
-                other.sendMessage(bundle(other, name));
+                other.sendMessage(bundle(PlayerData(other.uuid).locale, name));
             }
         });
         t.start();
@@ -563,16 +553,6 @@ public class Global {
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
         return PlayerData(player.uuid).isLogin;
-    }
-
-    // 비 로그인 유저 확인 (코어)
-    public static boolean checklogin(Player player){
-        if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
-            player.sendMessage(bundle("not-login"));
-            return false;
-        } else {
-            return true;
-        }
     }
 
     // 권한 확인

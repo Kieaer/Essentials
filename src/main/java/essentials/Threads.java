@@ -740,7 +740,7 @@ public class Threads extends TimerTask{
 
         void command(){
             if(playerGroup.size() == 1){
-                player.sendMessage(bundle(player, "vote-min"));
+                player.sendMessage(bundle(PlayerData(player.uuid).locale, "vote-min"));
                 return;
             } else if(playerGroup.size() <= 3){
                 require = 2;
@@ -764,7 +764,7 @@ public class Threads extends TimerTask{
                             allsendMessage("vote-rollback");
                             break;
                         } else {
-                            player.sendMessage(bundle(player,"vote-rollback-disabled"));
+                            player.sendMessage(bundle(PlayerData(player.uuid).locale,"vote-rollback-disabled"));
                             return;
                         }
                     case "map":
