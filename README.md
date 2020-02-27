@@ -22,17 +22,19 @@ Disk: HDD capable of more than 5MB/s random read/write.
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 ## Essentials 9.0 Plans
-[ ] Server
-  [ ] Control server using Web server
-[ ] PlayerDB
-  [ ] DB Server without MySQL/MariaDB..
-[ ] Internal
-  [ ] Fix server can't shutdown
-  [ ] Make ban reason
-[ ] Anti-grief
-  [ ] Make anti-filter art
-  [ ] Make anti-fast build/break destroy
-  [ ] Make detect custom client## Client commands
+- [ ] Server
+  - [ ] Control server using Web server
+- [ ] PlayerDB
+  - [ ] DB Server without MySQL/MariaDB..
+- [ ] Internal
+  - [ ] Fix server can't shutdown
+  - [ ] Make ban reason
+- [ ] Anti-grief
+  - [ ] Make anti-filter art
+  - [ ] Make anti-fast build/break destroy
+  - [ ] Make detect custom client
+
+## Client commands
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
@@ -104,4 +106,4 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | team | [name] | Change target player team. |
 | tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
 
-README.md Generated time: 2020-02-26 23:35:33
+README.md Generated time: 2020-02-27 21:22:43
