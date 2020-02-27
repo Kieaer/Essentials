@@ -7,10 +7,9 @@ import essentials.core.PlayerDB.PlayerData;
 import java.sql.*;
 import java.util.ArrayList;
 
-import static essentials.Global.config;
 import static essentials.Global.nbundle;
+import static essentials.Main.config;
 import static essentials.core.PlayerDB.conn;
-import static essentials.utils.Config.PluginConfig;
 
 public class DBConvert {
     private ArrayList<PlayerData> data = new ArrayList<>();
@@ -18,7 +17,7 @@ public class DBConvert {
 
     public DBConvert(){
         if(config != null) {
-            if (!config.isSqlite() && PluginConfig.getBoolean("sqlite", true)) SQLite2DB();
+            if (!config.isSqlite() && config.PluginConfig.getBoolean("sqlite", true)) SQLite2DB();
         }
     }
 
@@ -138,7 +137,7 @@ public class DBConvert {
                 System.out.print("\r"+copy+" "+current+"/"+size);
             }
             prepared.close();
-            PluginConfig.add("sqlite", false);
+            config.PluginConfig.add("sqlite", false);
             System.out.print("\n"+end+"\n");
         } catch (Exception e) {
             e.printStackTrace();

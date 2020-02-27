@@ -11,8 +11,8 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
-import static essentials.Global.config;
 import static essentials.Global.nlog;
+import static essentials.Main.config;
 import static essentials.Main.root;
 
 public class Bundle {

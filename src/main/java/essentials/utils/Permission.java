@@ -7,7 +7,7 @@ import static essentials.Global.printError;
 import static essentials.Main.root;
 
 public class Permission {
-    public static JsonObject permission;
+    public JsonObject permission;
 
     public Permission(){
         if(root.child("permission.hjson").exists()) {

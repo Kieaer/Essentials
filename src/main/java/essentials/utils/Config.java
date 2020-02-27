@@ -22,40 +22,40 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static essentials.Global.*;
+import static essentials.Main.data;
 import static essentials.Main.root;
-import static essentials.PluginData.loadall;
 import static mindustry.Vars.net;
 
 public class Config {
     private JsonObject obj = new JsonObject();
     private Fi path = root.child("data/data.json");
-    public static JsonObject PluginConfig = new JsonObject();
+    public JsonObject PluginConfig = new JsonObject();
 
-    public static ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
-    public static ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
+    public ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
+    public ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
     int config_version = 12;
 
-    public void main(){
+    public Config(){
         validfile();
         try{
-            JsonObject data = new JsonObject();
+            JsonObject json = new JsonObject();
 
             try {
-                data = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
+                json = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
             }catch (ParseException | ArcRuntimeException ignored){
-                data.add("servername", Core.settings.getString("servername"));
-                data.add("unexception",false);
-                data.add("sqlite",true);
-                root.child("data/data.json").writeString(data.toString());
+                json.add("servername", Core.settings.getString("servername"));
+                json.add("unexception",false);
+                json.add("sqlite",true);
+                root.child("data/data.json").writeString(json.toString());
             }
 
-            PluginConfig = data;
+            PluginConfig = json;
 
             if(root.child("config.hjson").exists()) obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
             update();
 
-            loadall();
-            log(LogType.config,"config-language",config.getLanguage().getDisplayLanguage(locale));
+            data.loadall();
+            log(LogType.config,"config-language",this.getLanguage().getDisplayLanguage(locale));
             log(LogType.config,"config-loaded");
         } catch (IOException e){
             printError(e);

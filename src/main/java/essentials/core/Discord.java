@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
+import static essentials.Main.config;
 import static essentials.core.PlayerDB.writeData;
 
 public class Discord extends ListenerAdapter {
@@ -24,7 +25,7 @@ public class Discord extends ListenerAdapter {
 
     static MessageReceivedEvent event;
 
-    public void main(){
+    public void start(){
         try {
             jda = new JDABuilder(config.getDiscordToken()).build();
             jda.awaitReady();

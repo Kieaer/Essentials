@@ -18,10 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
-import static essentials.PluginData.emailauth;
+import static essentials.Main.*;
 import static essentials.Threads.ColorNick;
-import static essentials.utils.Config.executorService;
-import static essentials.utils.Permission.permission;
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
@@ -31,7 +29,7 @@ public class PlayerDB {
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
     int DBVersion = 3;
 
-    public void run(){
+    public PlayerDB(){
         openconnect();
         createNewDataFile();
         Upgrade();
@@ -365,7 +363,7 @@ public class PlayerDB {
 	public static void addtimeban(String name, String uuid, int bantimeset) {
         // Write ban data
         try {
-            PluginData.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid));
+            data.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid));
             PlayerData target = PlayerData(uuid);
             target.bantime = getTime();
             target.bantimeset = bantimeset;
@@ -445,7 +443,7 @@ public class PlayerDB {
                 }
             }
         });
-        executorService.submit(t);
+        config.executorService.submit(t);
 	}
 
 	public static boolean checkpw(Player player, String id, String pw){
@@ -553,7 +551,7 @@ public class PlayerDB {
 
                         player.sendMessage("Mail sented! Please check your mail!");
                         player.sendMessage("Enter the /email command to enter your email verification number.");
-                        emailauth.add(new PluginData.maildata(player.uuid, buf.toString(), id, pw, parameter[0]));
+                        data.emailauth.add(new PluginData.maildata(player.uuid, buf.toString(), id, pw, parameter[0]));
                         break;
                     case "emailauth":
                         if (createNewDatabase(
@@ -719,7 +717,7 @@ public class PlayerDB {
             }
 
             // 플레이어가 관리자 그룹에 있을경우 관리자모드 설정
-            if (permission.get(target.permission).asObject().getBoolean("admin", false)) {
+            if (perm.permission.get(target.permission).asObject().getBoolean("admin", false)) {
                 target.isAdmin = true;
                 player.isAdmin = true;
             }
@@ -750,7 +748,7 @@ public class PlayerDB {
                 PlayerDataSave(target);
             }
         });
-        executorService.submit(thread);
+        config.executorService.submit(thread);
     }
 
     public static class PlayerData {

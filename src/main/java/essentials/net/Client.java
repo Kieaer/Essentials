@@ -25,8 +25,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
+import static essentials.Main.config;
 import static essentials.core.PlayerDB.writeData;
-import static essentials.utils.Config.executorService;
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
@@ -61,7 +61,7 @@ public class Client extends Thread{
                 String data = is.readLine();
                 if(data != null){
                     serverconn = true;
-                    executorService.execute(new Thread(this));
+                    config.executorService.execute(new Thread(this));
                     log(LogType.client,"client-enabled");
                 }
             } catch (UnknownHostException e) {

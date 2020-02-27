@@ -7,6 +7,7 @@ import arc.files.Fi;
 import arc.struct.Array;
 import arc.util.Strings;
 import arc.util.Time;
+import essentials.PluginData.*;
 import essentials.core.PlayerDB;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -42,13 +43,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static essentials.Global.*;
-import static essentials.Main.root;
-import static essentials.PluginData.*;
-import static essentials.core.Exp.exp;
+import static essentials.Main.data;
+import static essentials.Main.*;
 import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.special.PingServer.pingServer;
-import static essentials.utils.Config.PluginConfig;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.onSetRules;
 
@@ -66,21 +65,21 @@ public class Threads extends TimerTask{
         uptime = uptime.plusSeconds(1);
 
         // 데이터 저장
-        JsonObject data = new JsonObject();
-        data.add("servername", Core.settings.getString("servername"));
-        root.child("data/data.json").writeString(data.toString());
+        JsonObject json = new JsonObject();
+        json.add("servername", Core.settings.getString("servername"));
+        root.child("data/data.json").writeString(json.toString());
 
         // 현재 서버 이름에다가 클라이언트 서버에 대한 인원 새기기
         // new changename().start();
 
         // 임시로 밴당한 유저 감시
-        for (int a = 0; a < banned.size(); a++) {
+        for (int a = 0; a < data.banned.size(); a++) {
             LocalDateTime time = LocalDateTime.now();
-            if (time.isAfter(banned.get(a).getTime())) {
-                banned.remove(a);
-                PluginConfig.get("banned").asArray().remove(a);
-                netServer.admins.unbanPlayerID(banned.get(a).uuid);
-                nlog(LogType.log,"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + banned.get(a).name + "/" + banned.get(a).uuid + " player unbanned!");
+            if (time.isAfter(data.banned.get(a).getTime())) {
+                data.banned.remove(a);
+                config.PluginConfig.get("banned").asArray().remove(a);
+                netServer.admins.unbanPlayerID(data.banned.get(a).uuid);
+                nlog(LogType.log,"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + data.banned.get(a).name + "/" + data.banned.get(a).uuid + " player unbanned!");
                 break;
             }
         }
@@ -107,7 +106,7 @@ public class Threads extends TimerTask{
 
             if(config.getDebugCode().contains("jumptotal_count")){
                 int result = 0;
-                for (jumpcount value : jumpcount) result = result + value.players;
+                for (jumpcount value : data.jumpcount) result = result + value.players;
                 Administration.Config c = Administration.Config.desc;
                 Administration.Config s = Administration.Config.name;
                 c.set(oridesc + "\n[green]Total [white]"+result+" Players\n[sky]POWERED BY Essentials 9.0.0");
@@ -115,17 +114,17 @@ public class Threads extends TimerTask{
             }
 
             // 모든 클라이언트 서버에 대한 인원 총합 카운트
-            for (int a = 0; a < jumptotal.size(); a++) {
+            for (int a = 0; a < data.jumptotal.size(); a++) {
                 int result = 0;
-                for (jumpcount value : jumpcount) result = result + value.players;
+                for (jumpcount value : data.jumpcount) result = result + value.players;
 
                 String str = String.valueOf(result);
                 int[] digits = new int[str.length()];
                 for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
-                Tile tile = jumptotal.get(a).getTile();
-                if (jumptotal.get(a).totalplayers != result) {
-                    if (jumptotal.get(a).numbersize != digits.length) {
+                Tile tile = data.jumptotal.get(a).getTile();
+                if (data.jumptotal.get(a).totalplayers != result) {
+                    if (data.jumptotal.get(a).numbersize != digits.length) {
                         for (int px = 0; px < 3; px++) {
                             for (int py = 0; py < 5; py++) {
                                 Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
@@ -137,19 +136,19 @@ public class Threads extends TimerTask{
                         tile = world.tile(tile.x + 4, tile.y);
                     }
                 } else {
-                    for (int l = 0; l < jumptotal.get(a).numbersize; l++) {
+                    for (int l = 0; l < data.jumptotal.get(a).numbersize; l++) {
                         setcount(tile, digits[l]);
                         tile = world.tile(tile.x + 4, tile.y);
                     }
                 }
-                jumptotal.set(a, new jumptotal(tile, result, digits.length));
+                data.jumptotal.set(a, new jumptotal(tile, result, digits.length));
             }
 
             // 플레이어 플탐 카운트 및 잠수확인
             if(playerGroup.size() > 0){
                 for(int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    PlayerData target = PlayerData(player.uuid);
+                    PlayerData target = playerDB.PlayerData(player.uuid);
                     boolean kick = false;
 
                     if (target.isLogin) {
@@ -169,7 +168,7 @@ public class Threads extends TimerTask{
                         target.afk_tilex = player.tileX();
                         target.afk_tiley = player.tileY();
 
-                        if (!state.rules.editor) exp(player);
+                        if (!state.rules.editor) exp.setExp(player);
                         if (kick) Call.onKick(player.con, "AFK");
                     }
                     if (target.grief_destory_count > 0) target.grief_destory_count--;
@@ -178,14 +177,14 @@ public class Threads extends TimerTask{
             }
 
             // 메세지 블럭 감시
-            for(int a=0;a<messagemonitor.size();a++) {
+            for(int a=0;a<data.messagemonitor.size();a++) {
                 String msg;
                 MessageBlock.MessageBlockEntity entity;
                 try {
-                    entity = (MessageBlock.MessageBlockEntity) messagemonitor.get(a).tile.entity;
+                    entity = (MessageBlock.MessageBlockEntity) data.messagemonitor.get(a).tile.entity;
                     msg = entity.message;
                 }catch (NullPointerException e){
-                    messagemonitor.remove(a);
+                    data.messagemonitor.remove(a);
                     return;
                 }
 
@@ -203,26 +202,26 @@ public class Threads extends TimerTask{
                     } else {
                         return;
                     }
-                    powerblock.add(new powerblock(entity.tile,target));
-                    messagemonitor.remove(a);
+                    data.powerblock.add(new powerblock(entity.tile,target));
+                    data.messagemonitor.remove(a);
                     break;
                 } else if (msg.contains("jump")) {
-                    messagejump.add(new messagejump(messagemonitor.get(a).tile,msg));
-                    messagemonitor.remove(a);
+                    data.messagejump.add(new messagejump(data.messagemonitor.get(a).tile,msg));
+                    data.messagemonitor.remove(a);
                     break;
                 } else if (msg.equals("scancore")) {
-                    scancore.add(messagemonitor.get(a).tile);
-                    messagemonitor.remove(a);
+                    data.scancore.add(data.messagemonitor.get(a).tile);
+                    data.messagemonitor.remove(a);
                     break;
                 }
             }
 
             // 서버 인원 확인
-            for (int i = 0; i < jumpcount.size(); i++) {
+            for (int i = 0; i < data.jumpcount.size(); i++) {
                 int i2 = i;
-                jumpcount value = jumpcount.get(i);
+                jumpcount value = data.jumpcount.get(i);
 
-                pingServer(jumpcount.get(i).serverip, result -> {
+                pingServer(data.jumpcount.get(i).serverip, result -> {
                     if (result.name != null) {
                         String str = String.valueOf(result.players);
                         int[] digits = new int[str.length()];
@@ -248,7 +247,7 @@ public class Threads extends TimerTask{
                             }
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                        jumpcount.set(i2,new jumpcount(value.getTile(),value.serverip,result.players,digits.length));
+                        data.jumpcount.set(i2,new jumpcount(value.getTile(),value.serverip,result.players,digits.length));
                     } else {
                         setno(value.getTile(), true);
                     }
@@ -256,7 +255,7 @@ public class Threads extends TimerTask{
             }
 
             // 서버간 이동 영역에 플레이어가 있는지 확인
-            for (jumpzone value : jumpzone) {
+            for (jumpzone value : data.jumpzone) {
                 if(!value.touch) {
                     for (int ix = 0; ix < playerGroup.size(); ix++) {
                         Player player = playerGroup.all().get(ix);
@@ -308,9 +307,9 @@ public class Threads extends TimerTask{
     static class changename extends Thread {
         @Override
         public void run(){
-            if(jumpcount.size() > 1){
+            if(data.jumpcount.size() > 1){
                 int result = 0;
-                for (jumpcount value : jumpcount) result = result + value.players;
+                for (jumpcount value : data.jumpcount) result = result + value.players;
                 Core.settings.put("servername", config.getServername()+", "+result+" players");
             }
         }
@@ -408,7 +407,7 @@ public class Threads extends TimerTask{
                     pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
                     pb.inheritIO().redirectOutput(Core.settings.getDataDirectory().child("test.txt").file());
                     p = pb.start();
-                    process.add(p);
+                    data.process.add(p);
                     if(p.isAlive()) nlog(LogType.log,"online");
                     Process finalP = p;
                     TimerTask t = new TimerTask() {
@@ -427,7 +426,7 @@ public class Threads extends TimerTask{
                                         }
 
                                         finalP.destroy();
-                                        process.remove(finalP);
+                                        data.process.remove(finalP);
                                         this.cancel();
                                     } catch (IOException e) {
                                         printError(e);
@@ -466,7 +465,7 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             Thread.currentThread().setName(player.name+" color nickname thread");
-            PlayerData db = PlayerData(player.uuid);
+            PlayerData db = playerDB.PlayerData(player.uuid);
             while (db.connected) {
                 String name = db.name.replaceAll("\\[(.*?)]", "");
                 try {
@@ -740,7 +739,7 @@ public class Threads extends TimerTask{
 
         void command(){
             if(playerGroup.size() == 1){
-                player.sendMessage(bundle(PlayerData(player.uuid).locale, "vote-min"));
+                player.sendMessage(bundle(playerDB.PlayerData(player.uuid).locale, "vote-min"));
                 return;
             } else if(playerGroup.size() <= 3){
                 require = 2;
@@ -764,7 +763,7 @@ public class Threads extends TimerTask{
                             allsendMessage("vote-rollback");
                             break;
                         } else {
-                            player.sendMessage(bundle(PlayerData(player.uuid).locale,"vote-rollback-disabled"));
+                            player.sendMessage(bundle(playerDB.PlayerData(player.uuid).locale,"vote-rollback-disabled"));
                             return;
                         }
                     case "map":
@@ -787,22 +786,22 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             while(true) {
-                for (int a = 0; a < messagejump.size(); a++) {
-                    if(messagejump.get(a).tile.entity.block != Blocks.message){
-                        messagejump.remove(a);
+                for (int a = 0; a < data.messagejump.size(); a++) {
+                    if(data.messagejump.get(a).tile.entity.block != Blocks.message){
+                        data.messagejump.remove(a);
                         break;
                     }
-                    Call.setMessageBlockText(null, messagejump.get(a).tile, "[green]Working...");
+                    Call.setMessageBlockText(null, data.messagejump.get(a).tile, "[green]Working...");
 
-                    String[] arr = messagejump.get(a).message.split(" ");
+                    String[] arr = data.messagejump.get(a).message.split(" ");
                     String ip = arr[1];
 
                     int fa = a;
                     pingServer(ip, result -> {
                         if (result.name != null){
-                            Call.setMessageBlockText(null, messagejump.get(fa).tile, "[green]"+result.players + " Players in this server.");
+                            Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[green]"+result.players + " Players in this server.");
                         } else {
-                            Call.setMessageBlockText(null, messagejump.get(fa).tile, "[scarlet]Server offline");
+                            Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[scarlet]Server offline");
                         }
                     });
                 }
@@ -824,9 +823,9 @@ public class Threads extends TimerTask{
         }
 
         public static void main(){
-            length = jumpzone.size();
+            length = data.jumpzone.size();
 
-            for (jumpzone data : jumpzone) {
+            for (jumpzone data : data.jumpzone) {
                 Thread t = new Thread(() -> {
                     while (true) {
                         String ip = data.ip;

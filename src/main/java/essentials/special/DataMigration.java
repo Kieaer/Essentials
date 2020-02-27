@@ -8,9 +8,9 @@ import org.hjson.JsonValue;
 
 import java.time.LocalDateTime;
 
-import static essentials.Global.config;
 import static essentials.Global.nbundle;
-import static essentials.PluginData.saveall;
+import static essentials.Main.config;
+import static essentials.Main.data;
 
 public class DataMigration {
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -30,16 +30,16 @@ public class DataMigration {
                 config.validfile();
             }
             if (root.child("data/data.json").exists()) {
-                String data = root.child("data/data.json").readString();
-                JsonObject value = JsonValue.readJSON(data).asObject();
+                String json = root.child("data/data.json").readString();
+                JsonObject value = JsonValue.readJSON(json).asObject();
                 if(value.get("banned") != null) {
                     JsonObject arrays = value.get("banned").asObject();
-                    saveall();
+                    data.saveall();
                     for (int a = 0; a < arrays.size(); a++) {
                         LocalDateTime date = LocalDateTime.parse(arrays.get("date").asString());
                         String name = arrays.get("name").asString();
                         String uuid = arrays.get("uuid").asString();
-                        PluginData.banned.add(new PluginData.banned(date, name, uuid));
+                        data.banned.add(new PluginData.banned(date, name, uuid));
                     }
                     // 서버간 이동 데이터들은 변환하지 않음
                     root.child("data/data.json").delete();

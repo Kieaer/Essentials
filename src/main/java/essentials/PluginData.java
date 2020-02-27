@@ -10,31 +10,31 @@ import java.util.Map;
 
 import static essentials.Global.getip;
 import static essentials.Global.printError;
+import static essentials.Main.config;
 import static essentials.Main.root;
-import static essentials.utils.Config.PluginConfig;
 import static mindustry.Vars.world;
 
 public class PluginData {
     // 일회성 플러그인 데이터
-    public static ArrayList<nukeblock> nukeblock = new ArrayList<>();
-    public static ArrayList<eventservers> eventservers = new ArrayList<>();
-    public static ArrayList<powerblock> powerblock = new ArrayList<>();
-    public static ArrayList<messagemonitor> messagemonitor = new ArrayList<>();
-    public static ArrayList<messagejump> messagejump = new ArrayList<>();
-    public static ArrayList<Tile> scancore = new ArrayList<>();
-    public static ArrayList<Tile> nukedata = new ArrayList<>();
-    public static ArrayList<Tile> nukeposition = new ArrayList<>();
-    public static ArrayList<Process> process = new ArrayList<>();
-    public static ArrayList<maildata> emailauth = new ArrayList<>();
-    public static String ip = getip();
+    public ArrayList<nukeblock> nukeblock = new ArrayList<>();
+    public ArrayList<eventservers> eventservers = new ArrayList<>();
+    public ArrayList<powerblock> powerblock = new ArrayList<>();
+    public ArrayList<messagemonitor> messagemonitor = new ArrayList<>();
+    public ArrayList<messagejump> messagejump = new ArrayList<>();
+    public ArrayList<Tile> scancore = new ArrayList<>();
+    public ArrayList<Tile> nukedata = new ArrayList<>();
+    public ArrayList<Tile> nukeposition = new ArrayList<>();
+    public ArrayList<Process> process = new ArrayList<>();
+    public ArrayList<maildata> emailauth = new ArrayList<>();
+    public String ip = getip();
 
     // 종료시 저장되는 플러그인 데이터
-    public static ArrayList<jumpzone> jumpzone = new ArrayList<>();
-    public static ArrayList<jumpcount> jumpcount = new ArrayList<>();
-    public static ArrayList<jumptotal> jumptotal = new ArrayList<>();
-    public static ArrayList<String> blacklist = new ArrayList<>();
-    public static ArrayList<banned> banned = new ArrayList<>();
-    public static ArrayList<Integer> average = new ArrayList<>();
+    public ArrayList<jumpzone> jumpzone = new ArrayList<>();
+    public ArrayList<jumpcount> jumpcount = new ArrayList<>();
+    public ArrayList<jumptotal> jumptotal = new ArrayList<>();
+    public ArrayList<String> blacklist = new ArrayList<>();
+    public ArrayList<banned> banned = new ArrayList<>();
+    public ArrayList<Integer> average = new ArrayList<>();
 
     public static class nukeblock{
         public final Tile tile;
@@ -180,7 +180,7 @@ public class PluginData {
         }
     }
 
-    public static void saveall(){
+    public void saveall(){
         Map<String, ArrayList<?>> map = new HashMap<>();
         map.put("jumpzone", jumpzone);
         map.put("jumpcount", jumpcount);
@@ -195,13 +195,13 @@ public class PluginData {
             oos.writeObject(map);
             oos.close();
 
-            root.child("data/data.json").writeString(PluginConfig.toString());
+            root.child("data/data.json").writeString(config.PluginConfig.toString());
         } catch (Exception e) {
             printError(e);
         }
     }
 
-    public static Map<String, ArrayList<?>> extract() {
+    public Map<String, ArrayList<?>> extract() {
         Map<String, ArrayList<?>> map = new HashMap<>();
         map.put("jumpzone", jumpzone);
         map.put("jumpcount", jumpcount);
@@ -213,7 +213,7 @@ public class PluginData {
     }
 
     @SuppressWarnings("unchecked") // 의도적인 작동임
-    public static void loadall(){
+    public void loadall(){
         if(!root.child("data/PluginData.object").exists()){
             Map<String, ArrayList<Object>> map = new HashMap<>();
             try {

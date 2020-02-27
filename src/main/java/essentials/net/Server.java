@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Random;
 
 import static essentials.Global.*;
+import static essentials.Main.config;
 import static essentials.Threads.playtime;
 import static essentials.Threads.uptime;
 import static essentials.core.Log.writeLog;

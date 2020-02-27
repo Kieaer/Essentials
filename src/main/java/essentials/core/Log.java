@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static essentials.Global.*;
+import static essentials.Main.config;
 import static essentials.Main.root;
-import static essentials.utils.Config.singleService;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Log{
@@ -83,6 +83,6 @@ public class Log{
 
             mainlog.writeString("["+getTime()+"]" + text + "\n", true);
         });
-        singleService.submit(t);
+        config.singleService.submit(t);
     }
 }

@@ -3,7 +3,6 @@ package essentials;
 import arc.util.Log;
 import essentials.special.UTF8Control;
 import essentials.utils.Bundle;
-import essentials.utils.Config;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.Version;
@@ -39,15 +38,12 @@ import java.util.ResourceBundle;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static essentials.Main.root;
+import static essentials.Main.*;
 import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.PlayerData;
-import static essentials.core.PlayerDB.conn;
-import static essentials.utils.Permission.permission;
 import static mindustry.Vars.*;
 
 public class Global {
-    public static Config config = new Config();
     public static String plugin_version;
     public static String hostip = getip();
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
@@ -425,7 +421,7 @@ public class Global {
 
     // 각 언어별 motd
     public static String getmotd(Player player){
-        PlayerData p = PlayerData(player.uuid);
+        PlayerData p = playerDB.PlayerData(player.uuid);
         if(root.child("motd/motd_"+p.language+".txt").exists()){
             return root.child("motd/motd_"+p.language+".txt").readString();
         } else {
@@ -552,16 +548,16 @@ public class Global {
 
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
-        return PlayerData(player.uuid).isLogin;
+        return playerDB.PlayerData(player.uuid).isLogin;
     }
 
     // 권한 확인
     public static boolean checkperm(Player player, String command){
         if(isLogin(player) && !isNocore(player)){
-            PlayerData p = PlayerData(player.uuid);
-            int size = permission.get(p.permission).asObject().get("permission").asArray().size();
+            PlayerData p = playerDB.PlayerData(player.uuid);
+            int size = perm.permission.get(p.permission).asObject().get("permission").asArray().size();
             for(int a=0;a<size;a++){
-                String permlevel = permission.get(p.permission).asObject().get("permission").asArray().get(a).asString();
+                String permlevel = perm.permission.get(p.permission).asObject().get("permission").asArray().get(a).asString();
                 if(permlevel.equals(command) || permlevel.equals("ALL")){
                     return true;
                 }
@@ -623,7 +619,7 @@ public class Global {
 
     public static boolean isduplicate(Player player){
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT uuid FROM players WHERE uuid = ?");
+            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT uuid FROM players WHERE uuid = ?");
             stmt.setString(1, player.uuid);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -635,7 +631,7 @@ public class Global {
 
     public static boolean isduplicate(String uuid){
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
+            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
@@ -653,7 +649,7 @@ public class Global {
 
     public static boolean isduplicateid(String id){
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
+            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
             stmt.setString(1, id);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -665,7 +661,7 @@ public class Global {
 
     public static boolean isduplicatename(String name){
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE name = ?");
+            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT * FROM players WHERE name = ?");
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
