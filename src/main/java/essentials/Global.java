@@ -1,6 +1,7 @@
 package essentials;
 
 import arc.util.Log;
+import essentials.core.PlayerDB;
 import essentials.special.UTF8Control;
 import essentials.utils.Bundle;
 import mindustry.Vars;
@@ -41,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import static essentials.Main.*;
 import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.PlayerData;
+import static essentials.core.PlayerDB.conn;
 import static mindustry.Vars.*;
 
 public class Global {
@@ -421,7 +423,7 @@ public class Global {
 
     // 각 언어별 motd
     public static String getmotd(Player player){
-        PlayerData p = playerDB.PlayerData(player.uuid);
+        PlayerData p = PlayerData(player.uuid);
         if(root.child("motd/motd_"+p.language+".txt").exists()){
             return root.child("motd/motd_"+p.language+".txt").readString();
         } else {
@@ -548,13 +550,13 @@ public class Global {
 
     // 로그인 유무 확인 (DB)
     public static boolean isLogin(Player player){
-        return playerDB.PlayerData(player.uuid).isLogin;
+        return PlayerData(player.uuid).isLogin;
     }
 
     // 권한 확인
     public static boolean checkperm(Player player, String command){
         if(isLogin(player) && !isNocore(player)){
-            PlayerData p = playerDB.PlayerData(player.uuid);
+            PlayerData p = PlayerData(player.uuid);
             int size = perm.permission.get(p.permission).asObject().get("permission").asArray().size();
             for(int a=0;a<size;a++){
                 String permlevel = perm.permission.get(p.permission).asObject().get("permission").asArray().get(a).asString();
@@ -619,7 +621,7 @@ public class Global {
 
     public static boolean isduplicate(Player player){
         try {
-            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT uuid FROM players WHERE uuid = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT uuid FROM players WHERE uuid = ?");
             stmt.setString(1, player.uuid);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -631,7 +633,7 @@ public class Global {
 
     public static boolean isduplicate(String uuid){
         try {
-            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE uuid = ?");
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
             if(rs.next()){
@@ -649,7 +651,7 @@ public class Global {
 
     public static boolean isduplicateid(String id){
         try {
-            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
             stmt.setString(1, id);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -661,7 +663,7 @@ public class Global {
 
     public static boolean isduplicatename(String name){
         try {
-            PreparedStatement stmt = playerDB.conn.prepareStatement("SELECT * FROM players WHERE name = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM players WHERE name = ?");
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
             return rs.next();

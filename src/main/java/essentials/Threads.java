@@ -148,7 +148,7 @@ public class Threads extends TimerTask{
             if(playerGroup.size() > 0){
                 for(int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    PlayerData target = playerDB.PlayerData(player.uuid);
+                    PlayerData target = PlayerData(player.uuid);
                     boolean kick = false;
 
                     if (target.isLogin) {
@@ -465,7 +465,7 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             Thread.currentThread().setName(player.name+" color nickname thread");
-            PlayerData db = playerDB.PlayerData(player.uuid);
+            PlayerData db = PlayerData(player.uuid);
             while (db.connected) {
                 String name = db.name.replaceAll("\\[(.*?)]", "");
                 try {
@@ -739,7 +739,7 @@ public class Threads extends TimerTask{
 
         void command(){
             if(playerGroup.size() == 1){
-                player.sendMessage(bundle(playerDB.PlayerData(player.uuid).locale, "vote-min"));
+                player.sendMessage(bundle(PlayerData(player.uuid).locale, "vote-min"));
                 return;
             } else if(playerGroup.size() <= 3){
                 require = 2;
@@ -763,7 +763,7 @@ public class Threads extends TimerTask{
                             allsendMessage("vote-rollback");
                             break;
                         } else {
-                            player.sendMessage(bundle(playerDB.PlayerData(player.uuid).locale,"vote-rollback-disabled"));
+                            player.sendMessage(bundle(PlayerData(player.uuid).locale,"vote-rollback-disabled"));
                             return;
                         }
                     case "map":
