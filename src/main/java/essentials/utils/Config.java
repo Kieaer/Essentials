@@ -1,7 +1,6 @@
 package essentials.utils;
 
 import arc.Core;
-import arc.files.Fi;
 import arc.util.ArcRuntimeException;
 import essentials.Global;
 import org.hjson.JsonArray;
@@ -28,14 +27,13 @@ import static mindustry.Vars.net;
 
 public class Config {
     private JsonObject obj = new JsonObject();
-    private Fi path = root.child("data/data.json");
     public JsonObject PluginConfig = new JsonObject();
 
     public ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
     int config_version = 12;
 
-    public Config(){
+    public void main(){
         validfile();
         try{
             JsonObject json = new JsonObject();

@@ -8,6 +8,7 @@ import arc.struct.Array;
 import arc.util.Strings;
 import arc.util.Time;
 import essentials.PluginData.*;
+import essentials.core.Exp;
 import essentials.core.PlayerDB;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -168,7 +169,7 @@ public class Threads extends TimerTask{
                         target.afk_tilex = player.tileX();
                         target.afk_tiley = player.tileY();
 
-                        if (!state.rules.editor) exp.setExp(player);
+                        if (!state.rules.editor) Exp.setExp(player);
                         if (kick) Call.onKick(player.con, "AFK");
                     }
                     if (target.grief_destory_count > 0) target.grief_destory_count--;

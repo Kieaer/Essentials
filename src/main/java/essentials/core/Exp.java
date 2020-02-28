@@ -11,7 +11,7 @@ public class Exp {
     private static double BASE_XP = config.getBasexp();
     private static double EXPONENT = config.getExponent();
 
-    public void setExp(Player player) {
+    public static void setExp(Player player) {
         PlayerData target = PlayerData(player.uuid);
 
         int currentlevel = target.level;
@@ -32,11 +32,11 @@ public class Exp {
         }
     }
 
-    double calcXpForLevel(int level) {
+    static double calcXpForLevel(int level) {
         return BASE_XP+(BASE_XP * Math.pow(level, EXPONENT));
     }
 
-    double calculateFullTargetXp(int level) {
+    static double calculateFullTargetXp(int level) {
         double requiredXP = 0;
         for (int i = 0; i <= level; i++) {
             requiredXP += calcXpForLevel(i);
@@ -44,7 +44,7 @@ public class Exp {
         return requiredXP;
     }
 
-    int calculateLevel(double xp) {
+    static int calculateLevel(double xp) {
         int level = 0;
         double maxXp = calcXpForLevel(0);
         do {

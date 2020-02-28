@@ -59,7 +59,7 @@ public class Server implements Runnable {
         }
         log(LogType.server,"server-enabled");
 
-        while (!Thread.currentThread().isInterrupted()) {
+        while (!serverSocket.isClosed()) {
             try {
                 Socket socket = serverSocket.accept();
                 Service service = new Service(socket);

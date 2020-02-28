@@ -1,7 +1,6 @@
 package essentials;
 
 import arc.util.Log;
-import essentials.core.PlayerDB;
 import essentials.special.UTF8Control;
 import essentials.utils.Bundle;
 import mindustry.Vars;

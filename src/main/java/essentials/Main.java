@@ -13,7 +13,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import essentials.Threads.login;
 import essentials.Threads.*;
 import essentials.core.Discord;
-import essentials.core.Exp;
 import essentials.core.Log;
 import essentials.core.PlayerDB;
 import essentials.net.Client;
@@ -62,7 +61,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -82,7 +80,6 @@ import static mindustry.core.NetClient.onSetRules;
 public class Main extends Plugin {
     // Classes
     public static Discord discord;
-    public static Exp exp;
     public static PlayerDB playerDB;
     public static Client client;
     public static Server server;
@@ -91,6 +88,7 @@ public class Main extends Plugin {
     public static Global global;
     public static PluginData data;
     public static Threads threads;
+    public ApplicationListener listener;
 
     Timer timer = new Timer(true);
     Array<mindustry.maps.Map> maplist = Vars.maps.all();
@@ -105,7 +103,7 @@ public class Main extends Plugin {
     boolean reactor_warn3 = false;
 
     public Main() {
-        // Server version check
+        // 서버 버전 확인
         if(Version.build != 104){
             System.out.println("Essentials "+plugin_version+" only works with mindustry build 104.");
             Core.app.dispose();
@@ -120,6 +118,9 @@ public class Main extends Plugin {
 
         // DB 형식 변환
         new DBConvert();
+
+        // 플러그인 데이터 불러오기
+        data = new PluginData();
 
         // 플러그인 설정 파일 불러오기
         config = new Config();
@@ -229,7 +230,7 @@ public class Main extends Plugin {
                 if (index == 1) {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
-                        PlayerData target = playerDB.PlayerData(player.uuid);
+                        PlayerData target = PlayerData(player.uuid);
                         if (target.isLogin) {
                             if (player.getTeam().name.equals(e.winner.name)) {
                                 target.pvpwincount++;
@@ -244,7 +245,7 @@ public class Main extends Plugin {
             } else if(state.rules.attackMode){
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    PlayerData target = playerDB.PlayerData(player.uuid);
+                    PlayerData target = PlayerData(player.uuid);
                     if (target.isLogin) {
                         target.attackclear++;
                         PlayerDataSet(target);
@@ -714,7 +715,7 @@ public class Main extends Plugin {
             // 뒤진(?) 유닛이 플레이어일때
             if (e.unit instanceof Player) {
                 Player player = (Player) e.unit;
-                PlayerData target = playerDB.PlayerData(player.uuid);
+                PlayerData target = PlayerData(player.uuid);
                 if (!state.teams.get(player.getTeam()).cores.isEmpty()){
                     target.deathcount++;
                     PlayerDataSet(target);
@@ -783,7 +784,8 @@ public class Main extends Plugin {
         }
 
         // 1초마다 실행되는 작업 시작
-        timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
+        threads = new Threads();
+        timer.scheduleAtFixedRate(threads, 1000, 1000);
 
         // 30초마다 실행되는 작업 시작
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -922,7 +924,8 @@ public class Main extends Plugin {
             }
         });
 
-        Core.app.addListener(new ApplicationListener() {
+        listener = new ApplicationListener() {
+            @Override
             public void dispose() {
                 try {
                     boolean error = false;
@@ -977,7 +980,9 @@ public class Main extends Plugin {
                     }
                 } catch (Exception ignored){}
             }
-        });
+        };
+
+        Core.app.addListener(listener);
 
         Events.on(ServerLoadEvent.class, e-> {
             // 업데이트 확인
@@ -1288,22 +1293,23 @@ public class Main extends Plugin {
         });
         handler.register("restart", "Plugin restart", arg -> {
             if(state.is(GameState.State.playing)) return;
-            PlayerDataSaveAll(); // 플레이어 데이터 저장
-            if (config.getDebugCode().contains("jumptotal_count")) {
-                Administration.Config c = Administration.Config.desc;
-                Administration.Config s = Administration.Config.name;
-                c.set(oridesc);
-                s.set(oriname);
-            }
-            data.saveall(); // 플러그인 데이터 저장
-            config.executorService.shutdown(); // 스레드 종료
-            config.singleService.shutdown(); // 로그 스레드 종료
-            timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
-            if (isvoting) Vote.cancel(); // 투표 종료
-            if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
-            closeconnect(); // DB 연결 종료
-            if (config.isServerenable()) {
-                try {
+            /* 플러그인 종료 */
+            try {
+                PlayerDataSaveAll(); // 플레이어 데이터 저장
+                if (config.getDebugCode().contains("jumptotal_count")) {
+                    Administration.Config c = Administration.Config.desc;
+                    Administration.Config s = Administration.Config.name;
+                    c.set(oridesc);
+                    s.set(oriname);
+                }
+                data.saveall(); // 플러그인 데이터 저장
+                config.executorService.shutdown(); // 스레드 종료
+                config.singleService.shutdown(); // 로그 스레드 종료
+                timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
+                if (isvoting) Vote.cancel(); // 투표 종료
+                if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
+                closeconnect(); // DB 연결 종료
+                if (config.isServerenable()) {
                     for (Server.Service ser : Server.list) {
                         ser.interrupt();
                         ser.os.close();
@@ -1311,73 +1317,34 @@ public class Main extends Plugin {
                         ser.socket.close();
                         Server.list.remove(ser);
                     }
-
                     Server.serverSocket.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
-            }
 
-            // 클라이언트 종료
-            if (config.isClientenable() && serverconn) {
-                client.main("exit", null, null);
-                log(LogType.log, "client-thread-disabled");
-            }
-
-            // 모든 이벤트 서버 종료
-            for (Process value : data.process) value.destroy();
-
-            // 설정 재시작
-            config = new Config();
-
-            // DB 연결
-            playerDB = new PlayerDB();
-
-            // 클라이언트 연결 확인
-            if (config.isClientenable()) {
-                client = new Client();
-                log(LogType.client, "server-connecting");
-                client.main(null, null, null);
-            }
-
-            // 모든 플레이어 연결 상태를 0으로 설정
-            try {
-                if (config.PluginConfig.getBoolean("unexception", false)) {
-                    Statement stmt = conn.createStatement();
-                    ResultSet rs = stmt.executeQuery("SELECT uuid,lastdate FROM players");
-                    while (rs.next()) {
-                        if (isLoginold(rs.getString("lastdate"))) {
-                            writeData("UPDATE players SET connected = ?, connserver = ? WHERE uuid = ?", false, "none", rs.getString("uuid"));
-                        }
-                    }
-                } else {
-                    config.PluginConfig.set("unexception", true);
+                // 클라이언트 종료
+                if (config.isClientenable() && serverconn) {
+                    client.main("exit", null, null);
+                    log(LogType.log, "client-thread-disabled");
                 }
-            } catch (Exception e) {
+
+                // 모든 이벤트 서버 종료
+                for (Process value : data.process) value.destroy();
+
+                Events.dispose();
+                Core.app.removeListener(listener);
+
+                /* 플러그인 시작 */
+                //mods.getMod(getClass()).main.init();
+                new Main();
+
+                if(config == null) throw new Exception("CONFIG");
+                if(playerDB == null) throw new Exception("PlayerDB");
+                if(perm == null) throw new Exception("PERMISSION");
+
+                Events.fire(new ServerLoadEvent());
+                log(LogType.log,"plugin-reloaded");
+            } catch (Exception e){
                 printError(e);
             }
-
-            // 메세지 블럭에 의한 클라이언트 플레이어 카운트
-            config.executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
-            config.singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
-
-            config.executorService.submit(new jumpdata());
-
-            // 코어 자원소모 감시 시작
-            // config.executorService.submit(new monitorresource());
-
-            // 서버간 이동 영역 표시
-            config.executorService.submit(new visualjump());
-
-            // 기록 시작
-            if (config.isLogging()) new Log();
-
-            // 서버기능 시작
-            Thread server = new Thread(new Server());
-            if (config.isServerenable()) server.start();
-
-            // 권한 기능 시작
-            perm = new Permission();
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
             for (JsonObject.Member data : perm.permission) {

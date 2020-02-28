@@ -83,6 +83,6 @@ public class Log{
 
             mainlog.writeString("["+getTime()+"]" + text + "\n", true);
         });
-        config.singleService.submit(t);
+        if(!config.singleService.isShutdown()) config.singleService.submit(t);
     }
 }
