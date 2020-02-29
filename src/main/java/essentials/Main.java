@@ -427,6 +427,7 @@ public class Main extends Plugin {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
                     onSetRules(state.rules);
+                    threads.PvPPeace = true;
                 }
 
                 // 플레이어 인원별 난이도 설정
@@ -1292,7 +1293,10 @@ public class Main extends Plugin {
             openconnect();
         });
         handler.register("restart", "Plugin restart", arg -> {
-            if(state.is(GameState.State.playing)) return;
+            if(state.is(GameState.State.playing)){
+
+                net.closeServer();
+            }
             /* 플러그인 종료 */
             try {
                 PlayerDataSaveAll(); // 플레이어 데이터 저장

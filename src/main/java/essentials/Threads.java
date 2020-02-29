@@ -60,6 +60,8 @@ public class Threads extends TimerTask{
     public static String oridesc = Administration.Config.desc.get().toString();
     public static String oriname = Administration.Config.name.get().toString();
 
+    boolean PvPPeace = true;
+
     @Override
     public void run() {
         // 서버 켜진시간 카운트
@@ -94,7 +96,7 @@ public class Threads extends TimerTask{
             playtime = playtime.plusSeconds(1);
 
             // PvP 평화시간 카운트
-            if (config.isEnableantirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime())) {
+            if (config.isEnableantirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime()) && PvPPeace) {
                 state.rules.playerDamageMultiplier = 0.66f;
                 state.rules.playerHealthMultiplier = 0.8f;
                 onSetRules(state.rules);
@@ -103,6 +105,7 @@ public class Threads extends TimerTask{
                     player.sendMessage(bundle("pvp-peacetime"));
                     Call.onPlayerDeath(player);
                 }
+                PvPPeace = false;
             }
 
             if(config.getDebugCode().contains("jumptotal_count")){
