@@ -939,8 +939,8 @@ public class Main extends Plugin {
                         s.set(oriname);
                     }
                     data.saveall(); // 플러그인 데이터 저장
-                    config.executorService.shutdown(); // 스레드 종료
-                    config.singleService.shutdown(); // 로그 스레드 종료
+                    config.executorService.shutdownNow(); // 스레드 종료
+                    config.singleService.shutdownNow(); // 로그 스레드 종료
                     timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
                     if (isvoting) Vote.cancel(); // 투표 종료
                     if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
@@ -1307,8 +1307,8 @@ public class Main extends Plugin {
                     s.set(oriname);
                 }
                 data.saveall(); // 플러그인 데이터 저장
-                config.executorService.shutdown(); // 스레드 종료
-                config.singleService.shutdown(); // 로그 스레드 종료
+                config.executorService.shutdownNow(); // 스레드 종료
+                config.singleService.shutdownNow(); // 로그 스레드 종료
                 timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
                 if (isvoting) Vote.cancel(); // 투표 종료
                 if (jda != null) jda.shutdownNow(); // Discord 서비스 종료

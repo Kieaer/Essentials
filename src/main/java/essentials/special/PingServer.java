@@ -21,9 +21,9 @@ public class PingServer {
             }
 
             DatagramSocket socket = new DatagramSocket();
-            socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(resultIP), port));
-
             socket.setSoTimeout(1000);
+
+            socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(resultIP), port));
 
             DatagramPacket packet = new DatagramPacket(new byte[256], 256);
 

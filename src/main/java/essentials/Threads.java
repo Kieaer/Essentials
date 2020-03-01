@@ -791,28 +791,30 @@ public class Threads extends TimerTask{
         public void run() {
             while(true) {
                 for (int a = 0; a < data.messagejump.size(); a++) {
-                    if(data.messagejump.get(a).tile.entity.block != Blocks.message){
-                        data.messagejump.remove(a);
-                        break;
-                    }
-                    Call.setMessageBlockText(null, data.messagejump.get(a).tile, "[green]Working...");
-
-                    String[] arr = data.messagejump.get(a).message.split(" ");
-                    String ip = arr[1];
-
-                    int fa = a;
-                    pingServer(ip, result -> {
-                        if (result.name != null){
-                            Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[green]"+result.players + " Players in this server.");
-                        } else {
-                            Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[scarlet]Server offline");
+                    if (state.is(GameState.State.playing)) {
+                        if (data.messagejump.get(a).tile.entity.block != Blocks.message) {
+                            data.messagejump.remove(a);
+                            break;
                         }
-                    });
+                        Call.setMessageBlockText(null, data.messagejump.get(a).tile, "[green]Working...");
+
+                        String[] arr = data.messagejump.get(a).message.split(" ");
+                        String ip = arr[1];
+
+                        int fa = a;
+                        pingServer(ip, result -> {
+                            if (result.name != null) {
+                                Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[green]" + result.players + " Players in this server.");
+                            } else {
+                                Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[scarlet]Server offline");
+                            }
+                        });
+                    }
                 }
                 try {
-                    sleep(2500);
-                } catch (InterruptedException e) {
-                    return;
+                    Thread.sleep(2500);
+                } catch (Exception e) {
+                    break;
                 }
             }
         }
