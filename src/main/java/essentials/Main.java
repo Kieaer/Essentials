@@ -102,11 +102,14 @@ public class Main extends Plugin {
     boolean reactor_warn2 = false;
     boolean reactor_warn3 = false;
 
-    public Main() {
+    public Main() throws IOException {
         // 서버 버전 확인
         if(Version.build != 104){
-            System.out.println("Essentials "+plugin_version+" only works with mindustry build 104.");
-            Core.app.dispose();
+            InputStream reader = getClass().getResourceAsStream("/plugin.json");
+            BufferedReader br = new BufferedReader(new InputStreamReader(reader));
+            plugin_version = JsonObject.readJSON(br).asObject().get("version").asString();
+            arc.util.Log.err("Essentials "+plugin_version+" plugin only works with mindustry build 104.");
+            System.exit(0);
             return;
         }
 
