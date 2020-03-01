@@ -24,7 +24,6 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Mechs;
 import mindustry.content.UnitTypes;
-import mindustry.core.GameState;
 import mindustry.core.Version;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
@@ -103,14 +102,18 @@ public class Main extends Plugin {
     boolean reactor_warn2 = false;
     boolean reactor_warn3 = false;
 
-    public Main() throws IOException {
+    public Main() {
         // 서버 버전 확인
         if(Version.build != 104){
-            InputStream reader = getClass().getResourceAsStream("/plugin.json");
-            BufferedReader br = new BufferedReader(new InputStreamReader(reader));
-            plugin_version = JsonObject.readJSON(br).asObject().get("version").asString();
-            arc.util.Log.err("Essentials "+plugin_version+" plugin only works with mindustry build 104.");
-            System.exit(0);
+            try {
+                InputStream reader = getClass().getResourceAsStream("/plugin.json");
+                BufferedReader br = new BufferedReader(new InputStreamReader(reader));
+                plugin_version = JsonObject.readJSON(br).asObject().get("version").asString();
+                arc.util.Log.err("Essentials "+plugin_version+" plugin only works with mindustry build 104.");
+                System.exit(0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return;
         }
 
@@ -1297,12 +1300,9 @@ public class Main extends Plugin {
             log(LogType.client,"db-connecting");
             closeconnect();
             openconnect();
+            log(LogType.log,"success");
         });
         handler.register("restart", "Plugin restart", arg -> {
-            if(state.is(GameState.State.playing)){
-                for(Player p : playerGroup) Call.onKick(p.con, "Server restart");
-                net.closeServer();
-            }
             /* 플러그인 종료 */
             try {
                 PlayerDataSaveAll(); // 플레이어 데이터 저장
@@ -1345,11 +1345,6 @@ public class Main extends Plugin {
                 /* 플러그인 시작 */
                 //mods.getMod(getClass()).main.init();
                 new Main();
-
-                if(config == null) throw new Exception("CONFIG");
-                if(playerDB == null) throw new Exception("PlayerDB");
-                if(perm == null) throw new Exception("PERMISSION");
-
                 Events.fire(new ServerLoadEvent());
                 log(LogType.log,"plugin-reloaded");
             } catch (Exception e){
@@ -1753,10 +1748,6 @@ public class Main extends Plugin {
                     player.sendMessage("You didn't enter your email information when you registered.");
                 }
             }
-        });
-        handler.<Player>register("getpos", "Get your current position info", (arg, player) -> {
-            if(!checkperm(player,"getpos")) return;
-            player.sendMessage("X: " + Math.round(player.x) + " Y: " + Math.round(player.y));
         });
         handler.<Player>register("help", "[page]", "Show command lists", (arg, player) -> {
             if(arg.length > 0 && !Strings.canParseInt(arg[0])){
