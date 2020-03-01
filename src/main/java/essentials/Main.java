@@ -1649,11 +1649,10 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(playerData.locale, "difficulty-not-found", arg[0]));
             }
         });
-        handler.<Player>register("despawn","Kill all enemy units", (arg, player) -> {
-            if (!checkperm(player, "despawn")) return;
-            for(int a=0;a<Team.all().length;a++){
-                unitGroup.all().each(Unit::kill);
-            }
+        handler.<Player>register("killall","Kill all enemy units", (arg, player) -> {
+            if (!checkperm(player, "killall")) return;
+            for(int a=0;a<Team.all().length;a++) unitGroup.all().each(Unit::kill);
+            player.sendMessage(bundle(PlayerData(player.uuid).locale,"success"));
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
             if(!checkperm(player,"event")) return;
