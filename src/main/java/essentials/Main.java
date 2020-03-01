@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
@@ -1188,9 +1189,11 @@ public class Main extends Plugin {
             }
             Thread t = new Thread(() -> {
                 try{
-                    String sql = "SELECT * FROM players WHERE name='"+arg[0]+"'";
-                    Statement stmt = conn.createStatement();
-                    ResultSet rs = stmt.executeQuery(sql);
+                    String sql = "SELECT * FROM players WHERE name=? OR accountid=?";
+                    PreparedStatement ptmt = conn.prepareStatement(sql);
+                    ptmt.setString(0,arg[0]);
+                    ptmt.setString(1,arg[0]);
+                    ResultSet rs = ptmt.executeQuery(sql);
                     nlog(LogType.log,"Data line start.");
                     while(rs.next()){
                         String datatext = "\nPlayer Information\n" +
@@ -1217,7 +1220,7 @@ public class Main extends Plugin {
                         nlog(LogType.log,datatext);
                     }
                     rs.close();
-                    stmt.close();
+                    ptmt.close();
                     nlog(LogType.log,"Data line end.");
                 }catch (Exception e){
                     printError(e);
