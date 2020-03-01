@@ -1346,6 +1346,10 @@ public class Main extends Plugin {
                 //mods.getMod(getClass()).main.init();
                 new Main();
                 Events.fire(new ServerLoadEvent());
+                for(Player p : playerGroup){
+                    player.sendMessage(bundle(PlayerData(p.uuid).locale,"plugin-restart"));
+                    Events.fire(new PlayerJoin(p));
+                }
                 log(LogType.log,"plugin-reloaded");
             } catch (Exception e){
                 printError(e);
@@ -1453,7 +1457,7 @@ public class Main extends Plugin {
                 log(LogType.warn,"player-not-found");
             }
         });
-        handler.register("team","[name]", "Change target player team.", (arg) -> {
+        handler.register("team","<name>", "Change target player team.", (arg) -> {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other != null){
                 int i = other.getTeam().id+1;
@@ -1790,7 +1794,6 @@ public class Main extends Plugin {
             String datatext = "[#DEA82A]" + nbundle(playerData.locale, "player-info") + "[]\n" +
                     "[#2B60DE]====================================[]\n" +
                     "[green]" + nbundle(locale, "player-name") + "[] : " + player.name + "[white]\n" +
-                    "[green]" + nbundle(locale, "player-isMobile") + "[] : " + player.isMobile + "\n" +
                     "[green]" + nbundle(locale, "player-country") + "[] : " + locale.getDisplayCountry() + "\n" +
                     "[green]" + nbundle(locale, "player-placecount") + "[] : " + playerData.placecount + "\n" +
                     "[green]" + nbundle(locale, "player-breakcount") + "[] : " + playerData.breakcount + "\n" +
