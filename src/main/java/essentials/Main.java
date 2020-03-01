@@ -1700,7 +1700,7 @@ public class Main extends Plugin {
                                 target.connected = false;
                                 target.connserver = "none";
                                 PlayerDataSave(target);
-                                if(target.country.equals("Local IP")){
+                                if(isLocal(netServer.admins.getInfo(player.uuid).lastIP)){
                                     Call.onConnect(player.con,"127.0.0.1",customport);
                                 } else {
                                     Call.onConnect(player.con, hostip, customport);

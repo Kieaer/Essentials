@@ -113,6 +113,8 @@ public class Threads extends TimerTask{
                 for (jumpcount value : data.jumpcount) result = result + value.players;
                 Administration.Config c = Administration.Config.desc;
                 Administration.Config s = Administration.Config.name;
+                oridesc = oridesc.replaceAll("\n\\[green]Total \\[white].*","");
+                oriname = oriname.replaceAll("\n\\[#F32]Discord authentication enabled","");
                 c.set(oridesc + "\n[green]Total [white]"+result+" Players\n[sky]POWERED BY Essentials 9.0.0");
                 s.set(oriname + "\n[#F32]Discord authentication enabled!");
             }

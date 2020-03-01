@@ -19,10 +19,7 @@ import org.jsoup.Jsoup;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -758,5 +755,15 @@ public class Global {
             locale = new Locale(array[0], array[1]);
         }
         return locale;
+    }
+
+    public static boolean isLocal(String ip) {
+        try {
+            InetAddress addr = InetAddress.getByName(ip);
+            if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) return true;
+            return NetworkInterface.getByInetAddress(addr) != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
