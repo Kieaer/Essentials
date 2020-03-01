@@ -1294,7 +1294,7 @@ public class Main extends Plugin {
         });
         handler.register("restart", "Plugin restart", arg -> {
             if(state.is(GameState.State.playing)){
-
+                for(Player p : playerGroup) Call.onKick(p.con, "Server restart");
                 net.closeServer();
             }
             /* 플러그인 종료 */

@@ -38,10 +38,6 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| cheat |  | Use cheat (development only) |
-| start |  | Start zone |
-| end |  | End zone |
-| finish | &lt;name&gt; | Finish zone |
 | ch |  | Send chat to another server. |
 | changepw | &lt;new_password&gt; | Change account password |
 | chars | &lt;Text...&gt; | Make pixel texts |
@@ -106,4 +102,4 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | team | [name] | Change target player team. |
 | tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
 
-README.md Generated time: 2020-02-27 21:22:43
+README.md Generated time: 2020-03-01 10:59:53
