@@ -633,7 +633,7 @@ public class Main extends Plugin {
                     }
                     //if(tile.entity.block == Blocks.conveyor || tile.entity.block == Blocks.armoredConveyor || tile.entity.block == Blocks.titaniumConveyor) conveyor_count++;
                 }
-                if(sorter_count > 10){
+                if(sorter_count > 20){
                     for(short[] t : target.grief_tilelist){
                         Tile tile = world.tile(t[0],t[1]);
                         if(tile != null && tile.entity != null && tile.entity.block != null) {
