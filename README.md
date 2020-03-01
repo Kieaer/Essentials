@@ -26,9 +26,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Control server using Web server
 - [ ] PlayerDB
   - [ ] DB Server without MySQL/MariaDB..
-- [ ] Internal
-  - [ ] Fix server can't shutdown
-  - [ ] Make ban reason
+- [x] Internal
+  - [x] Fix server can't shutdown
+  - [x] Make ban reason
 - [ ] Anti-grief
   - [ ] Make anti-filter art
   - [ ] Make anti-fast build/break destroy
@@ -43,10 +43,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | chars | &lt;Text...&gt; | Make pixel texts |
 | color |  | Enable color nickname |
 | difficulty | &lt;difficulty&gt; | Set server difficulty |
-| despawn |  | Kill all enemy units |
+| killall |  | Kill all enemy units |
 | event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
 | email | &lt;key&gt; | Email Authentication |
-| getpos |  | Get your current position info |
 | info |  | Show your information |
 | jump | &lt;zone/count/total&gt; &lt;touch&gt; [serverip] [range] | Create a server-to-server jumping zone. |
 | kickall |  | Kick all players |
@@ -67,7 +66,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | status |  | Show server status |
 | suicide |  | Kill yourself. |
 | team | [Team...] | Change team (PvP only) |
-| tempban | &lt;player&gt; &lt;time&gt; | Temporarily ban player. time unit: 1 hours |
+| tempban | &lt;player&gt; &lt;time&gt; &lt;reason&gt; | Temporarily ban player. time unit: 1 hours |
 | time |  | Show server time |
 | tp | &lt;player&gt; | Teleport to other players |
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
@@ -84,7 +83,6 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 |:---|:---|:--- |
 | players |  | List all players currently in game. |
 | gendocs |  | Generate Essentials README.md |
-| accountban | &lt;ban/unban&gt; &lt;account_uuid&gt; | Ban player account |
 | allinfo | &lt;name&gt; | Show player information. |
 | bansync |  | Ban list synchronization from main server. |
 | blacklist | &lt;add/remove&gt; &lt;nickname&gt; | Block special nickname. |
@@ -99,7 +97,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | pvp | &lt;anticoal/timer&gt; [time...] | Set gamerule with PvP mode. |
 | setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission group |
 | sync | &lt;player&gt; | Force sync request from the target player. |
-| team | [name] | Change target player team. |
-| tempban | &lt;player_name&gt; &lt;time...&gt; | Temporarily ban player. time unit: 1 hours. |
+| team | &lt;name&gt; | Change target player team. |
+| tempban | &lt;player_name&gt; &lt;time&gt; &lt;reason&gt; | Temporarily ban player. time unit: 1 hours. |
 
-README.md Generated time: 2020-03-01 10:59:53
+README.md Generated time: 2020-03-01 15:33:24

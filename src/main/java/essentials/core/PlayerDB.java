@@ -360,10 +360,10 @@ public class PlayerDB {
         return data;
     }
 
-	public static void addtimeban(String name, String uuid, int bantimeset) {
+	public static void addtimeban(String name, String uuid, int bantimeset, String reason) {
         // Write ban data
         try {
-            data.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid));
+            data.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid,reason));
             PlayerData target = PlayerData(uuid);
             target.bantime = getTime();
             target.bantimeset = bantimeset;
@@ -373,12 +373,26 @@ public class PlayerDB {
         }
     }
 
-    public static boolean accountban(boolean ban, String uuid){
-        if(ban){
-            PlayerData(uuid).banned = true;
-            return true;
+    public static boolean accountban(boolean ban, String uuid, String reason) {
+        PlayerData player = getInfo("id", uuid);
+        if (!player.error) {
+            if (ban) {
+                player.banned = true;
+                data.banned.add(new PluginData.banned(LocalDateTime.now().plusYears(1000),player.name,uuid,reason));
+                PlayerDataSet(player);
+                return true;
+            } else {
+                player.banned = false;
+                PlayerDataSet(player);
+                for(int a=0;a<data.banned.size();a++){
+                    if(data.banned.get(a).uuid.equals(uuid)){
+                        data.banned.remove(a);
+                        break;
+                    }
+                }
+                return false;
+            }
         } else {
-            PlayerData(uuid).banned = false;
             return false;
         }
     }

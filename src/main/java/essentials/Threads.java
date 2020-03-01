@@ -687,7 +687,7 @@ public class Threads extends TimerTask{
                 case "kick":
                     if (list.size() >= require) {
                         allsendMessage("vote-kick-done", target.name);
-                        PlayerDB.addtimeban(target.name, target.uuid, 4);
+                        PlayerDB.addtimeban(target.name, target.uuid, 4, "Voting");
 
                         writeLog(LogType.player,nbundle("log-player-kick",target.name,require));
 

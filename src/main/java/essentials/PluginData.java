@@ -168,11 +168,13 @@ public class PluginData {
         public final String time;
         public final String name;
         public final String uuid;
+        public final String reason;
 
-        public banned(LocalDateTime time, String name, String uuid){
+        public banned(LocalDateTime time, String name, String uuid, String reason){
             this.time = time.toString();
             this.name = name;
             this.uuid = uuid;
+            this.reason = reason;
         }
 
         public LocalDateTime getTime(){

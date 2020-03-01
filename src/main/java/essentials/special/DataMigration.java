@@ -39,7 +39,8 @@ public class DataMigration {
                         LocalDateTime date = LocalDateTime.parse(arrays.get("date").asString());
                         String name = arrays.get("name").asString();
                         String uuid = arrays.get("uuid").asString();
-                        data.banned.add(new PluginData.banned(date, name, uuid));
+                        String reason = arrays.get("reason").asString();
+                        data.banned.add(new PluginData.banned(date, name, uuid, reason));
                     }
                     // 서버간 이동 데이터들은 변환하지 않음
                     root.child("data/data.json").delete();

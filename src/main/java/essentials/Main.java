@@ -64,6 +64,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static arc.util.Log.err;
 import static arc.util.Log.info;
 import static essentials.Global.*;
 import static essentials.PluginData.*;
@@ -756,8 +757,6 @@ public class Main extends Plugin {
                         player.con.kick(Packets.KickReason.banned);
                     }
                 }
-
-                accountban(true, e.player.uuid);
             });
             config.executorService.submit(bansharing);
         });
@@ -1073,6 +1072,9 @@ public class Main extends Plugin {
 
     @Override
     public void registerServerCommands(CommandHandler handler){
+        handler.removeCommand("ban");
+        handler.removeCommand("unban");
+
         handler.register("gendocs", "Generate Essentials README.md", (arg) -> {
             log(LogType.log,"readme-generating");
             // README.md 생성
@@ -1097,9 +1099,9 @@ public class Main extends Plugin {
                     "  - [ ] Control server using Web server\n" +
                     "- [ ] PlayerDB\n" +
                     "  - [ ] DB Server without MySQL/MariaDB..\n" +
-                    "- [ ] Internal\n" +
-                    "  - [ ] Fix server can't shutdown\n" +
-                    "  - [ ] Make ban reason\n" +
+                    "- [x] Internal\n" +
+                    "  - [x] Fix server can't shutdown\n" +
+                    "  - [x] Make ban reason\n" +
                     "- [ ] Anti-grief\n" +
                     "  - [ ] Make anti-filter art\n" +
                     "  - [ ] Make anti-fast build/break destroy\n" +
@@ -1153,35 +1155,24 @@ public class Main extends Plugin {
             root.child("README.md").writeString(tmp+serverdoc+tempbuild.toString()+gentime);
             log(LogType.log,"success");
         });
-        handler.register("accountban","<ban/unban> <account_uuid>", "Ban player account", (arg) -> {
-            if(arg[0].equals("ban")) {
-                if (arg[1].length() == 12) {
-                    if(accountban(true, arg[1])){
-                        log(LogType.player,"success");
-                    } else {
-                        log(LogType.playerwarn,"failed");
-                    }
-                } else {
-                    log(LogType.warn,"wrong-command");
-                }
-            } else if(arg[0].equals("unban")){
-                if (arg[1].length() == 12) {
-                    if(accountban(false, arg[1])){
-                        log(LogType.player,"success");
-                    } else {
-                        log(LogType.playerwarn,"failed");
-                    }
-                } else {
-                    log(LogType.warn,"wrong-command");
-                }
-            } else {
-                log(LogType.warn,"wrong-command");
-            }
-        });
         handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
             if(arg.length == 0) {
                 log(LogType.warn,"no-parameter");
                 return;
+            }
+            Player player = playerGroup.find(p -> p.name.equals(arg[0]));
+            if(player == null){
+                log(LogType.warn,"player-not-found");
+                return;
+            }
+            for (JsonObject.Member data : perm.permission) {
+                if(data.getName().equals("new_admin")){
+                    PlayerData p = PlayerData(player.uuid);
+                    p.permission = "new_admin";
+                    PlayerDataSave(p);
+                    log(LogType.log, "success");
+                    break;
+                }
             }
             log(LogType.log,"use-setperm");
         });
@@ -1231,6 +1222,40 @@ public class Main extends Plugin {
             });
             config.executorService.execute(t);
         });
+        handler.register("ban", "<type-id/name/ip> <reason> <username/IP/ID...>", "Ban a person.", arg -> {
+            if(arg[0].equals("id")){
+                netServer.admins.banPlayerID(arg[2]);
+                if(accountban(true, arg[2], arg[1])){
+                    log(LogType.player,"success");
+                } else {
+                    log(LogType.playerwarn,"failed");
+                }
+            }else if(arg[0].equals("name")){
+                Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[2]));
+                if(target != null){
+                    netServer.admins.banPlayer(target.uuid);
+                    if(accountban(true, target.uuid, arg[1])){
+                        log(LogType.player,"success");
+                    } else {
+                        log(LogType.playerwarn,"failed");
+                    }
+                }else{
+                    err("No matches found.");
+                }
+            }else if(arg[0].equals("ip")){
+                netServer.admins.banPlayerIP(arg[2]);
+                info("Banned.");
+            }else{
+                log(LogType.warn,"wrong-command");
+            }
+
+            for(Player player : playerGroup.all()){
+                if(netServer.admins.isIDBanned(player.uuid)){
+                    allsendMessage("player-banned",player.name);
+                    player.con.kick(Packets.KickReason.banned);
+                }
+            }
+        });
         handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
             if(!config.isServerenable()){
                 if(config.isBanshare()){
@@ -1241,6 +1266,19 @@ public class Main extends Plugin {
             } else {
                 log(LogType.warn,"banshare-server");
             }
+        });
+        handler.register("banreason", "<name...>", "Show player ban reason", (arg) -> {
+            if(arg.length < 1) {
+                log(LogType.warn,"no-parameter");
+                return;
+            }
+            for(banned b : data.banned){
+                if(b.name.equals(arg[0])){
+                    log(LogType.player,"ban-reason");
+                    break;
+                }
+            }
+            log(LogType.log,"player-not-found");
         });
         handler.register("blacklist", "<add/remove> <nickname>", "Block special nickname.", arg -> {
             if(arg.length < 1) {
@@ -1353,6 +1391,15 @@ public class Main extends Plugin {
                 log(LogType.log,"plugin-reloaded");
             } catch (Exception e){
                 printError(e);
+            }
+        });
+        handler.register("unban", "<ip/ID>", "Completely unban a person by IP or ID.", arg -> {
+            if(netServer.admins.unbanPlayerID(arg[0])){
+                info("Unbanned player.", arg[0]);
+            } else if(netServer.admins.unbanPlayerIP(arg[0])) {
+                info("Unbanned player.", arg[0]);
+            } else {
+                err("That IP/ID is not banned!");
             }
         });
         handler.register("unadminall", "<default_group_name>", "Remove all player admin status", arg -> {
@@ -1474,14 +1521,14 @@ public class Main extends Plugin {
                 log(LogType.warn,"player-not-found");
             }
         });
-        handler.register("tempban", "<player_name> <time...>", "Temporarily ban player. time unit: 1 hours.", arg -> {
+        handler.register("tempban", "<player_name> <time> <reason>", "Temporarily ban player. time unit: 1 hours.", arg -> {
             int bantimeset = Integer.parseInt(arg[1]);
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if(other == null){
                 log(LogType.warn,"player-not-found");
                 return;
             }
-            addtimeban(other.name, other.uuid, bantimeset);
+            addtimeban(other.name, other.uuid, bantimeset, arg[2]);
             log(LogType.log,"tempban", other.name, arg[1]);
             other.con.kick("Temp kicked");
         });
@@ -1495,29 +1542,12 @@ public class Main extends Plugin {
                 info("&lyMaps reloaded.");
             }
         });
-/*        handler.register("average","Show average players", arg -> {
-            Integer sum = 0;
-            if(average == null) average = new ArrayList<>();
-            if(!average.isEmpty()) {
-                for (Integer mark : average) {
-                    sum += mark;
-                }
-                System.out.println("Total server average players: "+sum.floatValue() / average.size()+" players");
-            }
-        });*/
-        /*handler.register("testcrash", "Make crash", arg -> {
-            try{
-                throw new Exception();
-            }catch (Exception e){
-                printError(e);
-            }
-        });*/
     }
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
-        handler.removeCommand("vote");
-        handler.removeCommand("votekick");
+        handler.<Player>removeCommand("vote");
+        handler.<Player>removeCommand("votekick");
 
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if(!checkperm(player,"ch")) return;
@@ -2313,7 +2343,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle(playerData.locale, "command-only-pvp"));
             }
         });
-        handler.<Player>register("tempban", "<player> <time>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
+        handler.<Player>register("tempban", "<player> <time> <reason>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
             if (!checkperm(player, "tempban")) return;
             PlayerData playerData = PlayerData(player.uuid);
             Player other = null;
@@ -2325,7 +2355,7 @@ public class Main extends Plugin {
             }
             if (other != null) {
                 int bantimeset = Integer.parseInt(arg[1]);
-                PlayerDB.addtimeban(other.name, other.uuid, bantimeset);
+                PlayerDB.addtimeban(other.name, other.uuid, bantimeset, arg[2]);
                 other.con.kick("Temp kicked");
                 for (int a = 0; a < playerGroup.size(); a++) {
                     Player current = playerGroup.all().get(a);
