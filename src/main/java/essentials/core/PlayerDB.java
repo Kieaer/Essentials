@@ -683,6 +683,8 @@ public class PlayerDB {
             }
 
             // 플레이어 팀 설정
+
+            player.kill();
             if (Vars.state.rules.pvp) {
                 boolean match = false;
                 for (Player t : pvpteam) {
@@ -703,7 +705,6 @@ public class PlayerDB {
             } else {
                 player.setTeam(Team.sharded);
             }
-            player.kill();
 
             // 입장 메세지 표시
             String motd = getmotd(player);

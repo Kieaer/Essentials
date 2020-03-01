@@ -10,12 +10,16 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.annotation.Nonnull;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Main.config;
+import static essentials.core.PlayerDB.conn;
 import static essentials.core.PlayerDB.writeData;
 
 public class Discord extends ListenerAdapter {
@@ -102,6 +106,17 @@ public class Discord extends ListenerAdapter {
                         return;
                     }
                     if(e.getMember() != null) {
+                        try {
+                            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM players WHERE udid=?");
+                            pstmt.setLong(1, e.getMember().getIdLong());
+                            ResultSet rs = pstmt.executeQuery();
+                            if (rs.next()) {
+                                message = "This account is already in use or attempted to register an account with an invalid nickname!\n" +
+                                        "이 계정은 이미 사용중이거나 잘못된 닉네임으로 계정 등록을 시도했습니다!";
+                                send(message);
+                                return;
+                            }
+                        } catch (SQLException ignored){}
                         if (PlayerDB.createNewDatabase(e.getAuthor().getName(), "InactiveAAA=", "invalid", "invalid", "invalid", false, 0, 0, getTime(), getTime(), false, e.getMember().getIdLong(), "none", id, pw, null)) {
                             Role role = guild.getRolesByName(config.getDiscordRole(), false).get(0);
                             guild.addRoleToMember(e.getMember(), role).queue();

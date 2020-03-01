@@ -34,7 +34,7 @@ public class Config {
     int config_version = 12;
 
     public void main(){
-        validfile();
+        extract();
         try{
             JsonObject json = new JsonObject();
 
@@ -494,7 +494,7 @@ public class Config {
         return obj.getString("event-port","8000-8050");
     }
 
-    public void validfile(){
+    public void extract(){
         final String path = "configs";
         File jarFile;
         try {

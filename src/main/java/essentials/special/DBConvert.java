@@ -7,6 +7,7 @@ import essentials.core.PlayerDB.PlayerData;
 import java.sql.*;
 import java.util.ArrayList;
 
+import static essentials.Global.locale;
 import static essentials.Global.nbundle;
 import static essentials.Main.config;
 import static essentials.core.PlayerDB.conn;
@@ -23,10 +24,10 @@ public class DBConvert {
 
     public void SQLite2DB() {
         try {
-            String start = nbundle("db-transfer-start");
-            String progress = nbundle("db-transfer-progress");
-            String copy = nbundle("db-transfer-copy");
-            String end = nbundle("db-transfer-end");
+            String start = nbundle(locale,"db-transfer-start");
+            String progress = nbundle(locale,"db-transfer-progress");
+            String copy = nbundle(locale,"db-transfer-copy");
+            String end = nbundle(locale,"db-transfer-end");
 
             // SQLite 데이터 가져오기
             Connection con = DriverManager.getConnection("jdbc:sqlite:" + root.child("data/player.sqlite3"));

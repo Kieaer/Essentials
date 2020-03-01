@@ -38,10 +38,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import static essentials.Global.*;
 import static essentials.Main.data;
@@ -518,76 +515,49 @@ public class Threads extends TimerTask{
         }
     }
     static class monitorresource extends Thread {
-        Array<Integer> pre = new Array<>();
-        Array<Integer> cur = new Array<>();
-        Array<Item> name = new Array<>();
+        HashMap<String, Integer> pre = new HashMap<>();
 
         @Override
         public void run(){
             Thread.currentThread().setName("Resource monitoring thread");
-            while(Thread.currentThread().isInterrupted()) {
-                if(state.is(GameState.State.playing)) {
-                    for (Item item : content.items()) {
-                        if (item.type == ItemType.material) {
-                            pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
-                        }
-                    }
-
-                    for (Item item : content.items()) {
-                        if (item.type == ItemType.material) {
-                            name.add(item);
-                        }
-                    }
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ignored) {
-                    }
-
-                    int a = 0;
-                    for (Item item : content.items()) {
-                        if (item.type == ItemType.material) {
-                            int resource;
-                            if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                            if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                resource = state.teams.get(Team.sharded).cores.first().items.get(item);
-                            } else {
-                                return;
+            while(!Thread.currentThread().isInterrupted()) {
+                try {
+                    if (state.is(GameState.State.playing)) {
+                        pre.clear();
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                pre.put(item.name, state.teams.get(Team.sharded).cores.first().items.get(item));
                             }
-                            int temp = resource - pre.get(a);
-                            if (temp <= -55) {
-                                StringBuilder using = new StringBuilder();
-                                if(Vars.state.is(GameState.State.playing)) {
-                                    for (int b = 0; b < playerGroup.size(); b++) {
-                                        Player p = playerGroup.all().get(b);
-                                        if (p.buildRequest().block == null) return;
-                                        for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
-                                            Item ad = p.buildRequest().block.requirements[c].item;
-                                            if (ad == name.get(a)) {
-                                                using.append(p.name).append(", ");
+                        }
+
+                        Thread.sleep(1500);
+
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                if (state.teams.get(Team.sharded).cores.isEmpty()) return;
+                                if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                                    int cur = state.teams.get(Team.sharded).cores.first().items.get(item);
+                                    if((cur - pre.get(item.name)) <= -55) {
+                                        StringBuilder using = new StringBuilder();
+                                        for (Player p : playerGroup){
+                                            if (p.buildRequest().block != null){
+                                                for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
+                                                    if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {
+                                                        using.append(p.name).append(", ");
+                                                    }
+                                                }
                                             }
                                         }
+                                        allsendMessage("resource-fast-use", item.name, using.substring(0, using.length() - 2));
                                     }
-                                    allsendMessage("resource-fast", name.get(a).name);
-                                    allsendMessage("resource-fast-use", name.get(a).name, using.substring(0, using.length() - 2));
                                 }
                             }
-                            cur.add(a, state.teams.get(Team.sharded).cores.first().items.get(item));
-                            a++;
                         }
-                    }
-
-                    for (Item item : content.items()) {
-                        if (item.type == ItemType.material) {
-                            pre.add(state.teams.get(Team.sharded).cores.first().items.get(item));
-                        }
-                    }
-                } else {
-                    try {
+                    } else {
                         Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        return;
                     }
+                } catch (InterruptedException e){
+                    Thread.currentThread().interrupt();
                 }
             }
         }

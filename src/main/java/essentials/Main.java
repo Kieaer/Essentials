@@ -97,12 +97,6 @@ public class Main extends Plugin {
 
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
-    // Trigger variables
-    int tick = 0;
-    boolean reactor_warn1 = false;
-    boolean reactor_warn2 = false;
-    boolean reactor_warn3 = false;
-
     public Main() {
         // 서버 버전 확인
         if(Version.build != 104){
@@ -118,6 +112,10 @@ public class Main extends Plugin {
             return;
         }
 
+        // 플러그인 설정 파일 불러오기
+        config = new Config();
+        config.extract();
+
         // 예전 데이터 변환
         new DataMigration();
 
@@ -129,9 +127,6 @@ public class Main extends Plugin {
 
         // 플러그인 데이터 불러오기
         data = new PluginData();
-
-        // 플러그인 설정 파일 불러오기
-        config = new Config();
 
         // DB 연결
         playerDB = new PlayerDB();
@@ -164,7 +159,7 @@ public class Main extends Plugin {
         config.executorService.submit(new jumpdata());
 
         // 코어 자원소모 감시 시작
-        // config.executorService.submit(new monitorresource());
+        config.executorService.submit(new monitorresource());
 
         // 서버간 이동 영역 표시
         config.executorService.submit(new visualjump());
@@ -457,7 +452,7 @@ public class Main extends Plugin {
                     onSetRules(state.rules);
                 }
             });
-            t.start();
+            config.executorService.submit(t);
         });
 
         // 플레이어가 서버에서 탈주했을 때
@@ -710,6 +705,7 @@ public class Main extends Plugin {
                     }*/
 
                     target.grief_destory_count++;
+                    Call.sendMessage(String.valueOf(target.grief_destory_count));
                     if (target.grief_destory_count > 30) nlog(LogType.log, target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                     PlayerDataSet(target);
                 }
@@ -818,7 +814,11 @@ public class Main extends Plugin {
         if(config.isEnableRollback()) timer.scheduleAtFixedRate(new AutoRollback(), config.getSavetime() * 60000, config.getSavetime() * 60000);
 
         // 0.016초마다 실행 및 서버 종료시 실행할 작업
-        Events.on(Trigger.update.getClass(), e -> {
+        int[] tick = {0};
+        boolean[] reactor_warn1 = {false};
+        boolean[] reactor_warn2 = {false};
+        boolean[] reactor_warn3 = {false};
+        Events.on(Trigger.update, () -> {
             /*void setText(int orignal, int amount, Item item){
                 String color;
                 String data;
@@ -858,7 +858,7 @@ public class Main extends Plugin {
                 }
             }
 
-            if (tick == 30) {
+            if (tick[0] == 30) {
                 try {
                     // 메세지 블럭에다 전력량을 표시 (반드시 게임 시간과 똑같이 작동되어야만 함)
                     for (int i = 0; i < data.powerblock.size(); i++) {
@@ -885,13 +885,13 @@ public class Main extends Plugin {
                         Call.setMessageBlockText(null, data.powerblock.get(i).tile, text);
                     }
                     // 타이머 초기화
-                    tick = 0;
-                    reactor_warn1 = false;
-                    reactor_warn2 = false;
-                    reactor_warn3 = false;
+                    tick[0] = 0;
+                    reactor_warn1[0] = false;
+                    reactor_warn2[0] = false;
+                    reactor_warn3[0] = false;
                 } catch (Exception ignored) {}
             } else {
-                tick++;
+                tick[0]++;
             }
 
             // 핵 폭발감지
@@ -900,17 +900,17 @@ public class Main extends Plugin {
                     Tile target = data.nukedata.get(i);
                     try {
                         NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) target.entity;
-                        if (entity.heat >= 0.2f && entity.heat <= 0.39f && !reactor_warn1) {
+                        if (entity.heat >= 0.2f && entity.heat <= 0.39f && !reactor_warn1[0]) {
                             allsendMessage("thorium-overheat-green", Math.round(entity.heat * 100), target.x, target.y);
-                            reactor_warn1 = true;
+                            reactor_warn1[0] = true;
                         }
-                        if (entity.heat >= 0.4f && entity.heat <= 0.79f && !reactor_warn2) {
+                        if (entity.heat >= 0.4f && entity.heat <= 0.79f && !reactor_warn2[0]) {
                             allsendMessage("thorium-overheat-yellow", Math.round(entity.heat * 100), target.x, target.y);
-                            reactor_warn2 = true;
+                            reactor_warn2[0] = true;
                         }
-                        if (entity.heat >= 0.8f && entity.heat <= 0.95f && !reactor_warn3) {
+                        if (entity.heat >= 0.8f && entity.heat <= 0.95f && !reactor_warn3[0]) {
                             allsendMessage("thorium-overheat-red", Math.round(entity.heat * 100), target.x, target.y);
-                            reactor_warn3 = true;
+                            reactor_warn3[0] = true;
                         }
                         if (entity.heat >= 0.95f) {
                             for (int a = 0; a < playerGroup.size(); a++) {
