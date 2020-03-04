@@ -87,6 +87,12 @@ public class Server implements Runnable {
                 this.socket = socket;
                 ip = socket.getInetAddress().toString();
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+
+                // 키 값 읽기
+                authkey = in.readLine();
+                spec = new SecretKeySpec(Base64.decode(authkey), "AES");
+                cipher = Cipher.getInstance("AES");
+
                 os = new DataOutputStream(socket.getOutputStream());
             } catch (Exception e) {
                 if(e.getMessage().equals("socket closed")){
@@ -301,13 +307,6 @@ public class Server implements Runnable {
                             os.writeBytes(Base64.encode(encrypt("false",spec,cipher))+"\n");
                         }
                         os.flush();
-                    } else if(config.isDataSharing()) {
-                        // Plugin data sharing
-                        /*CipherOutputStream cipherOutputStream = new CipherOutputStream( new BufferedOutputStream( new FileOutputStream( fileName ) ), cipher );
-                        new ObjectOutputStream(socket.getOutputStream()).writeObject(Players);
-                        os.writeBytes(Base64.encode(encrypt(Players.,spec,cipher))+"\n");
-                        Players.toArray();
-                        extract();*/
                     } else {
                         nlog(LogType.warn,"Invalid data - " + data);
                     }

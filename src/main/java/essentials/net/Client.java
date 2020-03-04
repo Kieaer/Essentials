@@ -1,12 +1,11 @@
 package essentials.net;
 
-import arc.struct.Array;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
-import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.net.Administration;
+import mindustry.net.Administration.PlayerInfo;
 import org.hjson.JsonArray;
+import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
 import javax.crypto.Cipher;
@@ -26,7 +25,6 @@ import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Main.config;
-import static essentials.core.PlayerDB.writeData;
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
@@ -34,109 +32,176 @@ public class Client extends Thread{
     public static Socket socket;
     public static BufferedReader is;
     public static DataOutputStream os;
-    public static boolean serverconn;
+    public static boolean server_active;
 
     public static Cipher cipher;
     public static SecretKeySpec spec;
 
-    public void main(String option, Player player, String message){
-        if(!serverconn){
-            try {
-                InetAddress address = InetAddress.getByName(config.getClienthost());
-                socket = new Socket(address, config.getClientport());
-                KeyGenerator gen = KeyGenerator.getInstance("AES");
-                SecretKey key = gen.generateKey();
-                gen.init(256);
-                byte[] raw = key.getEncoded();
-                spec = new SecretKeySpec(raw,"AES");
-                cipher = Cipher.getInstance("AES");
-                is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-                os = new DataOutputStream(socket.getOutputStream());
-                byte[] encrypted = encrypt("ping",spec,cipher);
+    public enum Request{
+        bansync, chat, exit, unbanip, unbanid, datashare
+    }
 
-                os.writeBytes(Base64.encode(encrypted)+"\n");
-                os.writeBytes(Base64.encode(raw)+"\n");
-                os.flush();
+    public Client(){
+        try {
+            InetAddress address = InetAddress.getByName(config.getClienthost());
+            socket = new Socket(address, config.getClientport());
 
-                String data = is.readLine();
-                if(data != null){
-                    serverconn = true;
-                    config.executorService.execute(new Thread(this));
-                    log(LogType.client,"client-enabled");
-                }
-            } catch (UnknownHostException e) {
-                nlog(LogType.client,"Invalid host!");
-            } catch (IOException e) {
-                log(LogType.client,"remote-server-dead");
-                if(player != null) {
-                    writeData("UPDATE players SET crosschat = ? WHERE uuid = ?",0, player.uuid);
-                }
-            } catch (Exception e){
-                printError(e);
+            // 키 생성
+            KeyGenerator gen = KeyGenerator.getInstance("AES");
+            SecretKey key = gen.generateKey();
+            gen.init(256);
+            byte[] raw = key.getEncoded();
+
+            spec = new SecretKeySpec(raw, "AES");
+            cipher = Cipher.getInstance("AES");
+            is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            os = new DataOutputStream(socket.getOutputStream());
+
+            // 키값 보내기
+            os.writeBytes(Base64.encode(raw) + "\n");
+
+            // 데이터 전송
+            JsonObject json = new JsonObject();
+            json.add("type", "ping");
+
+            byte[] encrypted = encrypt(json.toString(), spec, cipher);
+
+            os.writeBytes(Base64.encode(encrypted) + "\n");
+            os.flush();
+
+            if(JsonValue.readJSON(is.readLine()).asObject().get("result") != null){
+                server_active = true;
+                config.executorService.execute(new Thread(this));
+                log(LogType.client, "client-enabled");
+            } else {
+                throw new Exception("Invalid request!");
             }
-        } else {
-            switch (option) {
-                case "bansync":
-                    try {
-                        Array<Administration.PlayerInfo> bans = Vars.netServer.admins.getBanned();
-                        Array<String> ipbans = netServer.admins.getBannedIPs();
-                        JsonArray bandata = new JsonArray();
-                        if (bans.size != 0) {
-                            for (Administration.PlayerInfo info : bans) {
-                                bandata.add(info.id + "|" + info.lastIP);
-                            }
-                        }
-                        if (ipbans.size != 0) {
-                            for (String string : ipbans) {
-                                bandata.add("<unknown>|" + string);
-                            }
-                        }
-                        byte[] encrypted = encrypt(bandata.toString(),spec,cipher);
-                        os.writeBytes(Base64.encode(encrypted));
-                        os.flush();
-                        log(LogType.client,"client-banlist-sented");
-                    } catch (Exception e) {
-                        printError(e);
-                    }
-                    break;
-                case "chat":
-                    try {
-                        String msg = "[" + player.name + "]: " + message;
-                        byte[] encrypted = encrypt(msg,spec,cipher);
-                        os.writeBytes(Base64.encode(encrypted)+"\n");
-                        os.flush();
-                        Call.sendMessage("[#357EC7][SC] " + msg);
-                        log(LogType.client,"client-sent-message", config.getClienthost(), message);
-                    } catch (Exception e) {
-                        printError(e);
-                    }
-                    break;
-                case "exit":
-                    try {
-                        byte[] encrypted = encrypt("exit",spec,cipher);
-                        os.writeBytes(Base64.encode(encrypted)+"\n");
-                        os.flush();
+        } catch (UnknownHostException e) {
+            nlog(LogType.client,"Invalid host!");
+        } catch (IOException e) {
+            log(LogType.client,"remote-server-dead");
+        } catch (Exception e){
+            printError(e);
+        }
+    }
 
-                        os.close();
-                        is.close();
-                        socket.close();
-                        serverconn = false;
-                        this.interrupt();
-                        return;
-                    } catch (Exception e) {
-                        printError(e);
+    public void request(Request request, Player player, String message) {
+        JsonObject data = new JsonObject();
+        switch (request) {
+            case bansync:
+                try {
+                    JsonArray ban = new JsonArray();
+                    JsonArray ipban = new JsonArray();
+                    JsonArray subban = new JsonArray();
+                    for(PlayerInfo info : netServer.admins.getBanned()){
+                        ban.add(info.id);
+                        for(String ipbans : info.ips){
+                            ipban.add(ipbans);
+                        }
                     }
-                    break;
-                case "unban":
-                    try {
-                        byte[] encrypted = encrypt("[\""+message + "\"]unban",spec,cipher);
-                        os.writeBytes(Base64.encode(encrypted)+"\n");
-                        os.flush();
-                    }catch (Exception e){
-                        printError(e);
+
+                    for(String ipbans : netServer.admins.getBannedIPs()){
+                        ipban.add(ipbans);
                     }
-                    break;
-            }
+
+                    for(String subbans : netServer.admins.getSubnetBans()){
+                        subban.add(subbans);
+                    }
+
+                    data.add("type","bansync");
+                    data.add("ban",ban);
+                    data.add("ipban",ipban);
+                    data.add("subban",subban);
+
+                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(Base64.encode(encrypted));
+                    os.flush();
+
+                    log(LogType.client, "client-banlist-sented");
+                } catch (Exception e) {
+                    printError(e);
+                }
+                break;
+            case chat:
+                try {
+                    data.add("type","chat");
+                    data.add("name",player.name);
+                    data.add("message",message);
+
+                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    os.flush();
+
+                    Call.sendMessage("[#357EC7][SC] " + "[" + player.name + "]: " + message);
+                    log(LogType.client, "client-sent-message", config.getClienthost(), message);
+                } catch (Exception e) {
+                    printError(e);
+                }
+                break;
+            case exit:
+                try {
+                    data.add("type","exit");
+
+                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    os.flush();
+
+                    os.close();
+                    is.close();
+                    socket.close();
+                    server_active = false;
+                    this.interrupt();
+                    return;
+                } catch (Exception e) {
+                    printError(e);
+                }
+                break;
+            case unbanip:
+                try {
+                    data.add("type","unbanip");
+
+                    boolean isip;
+                    try{
+                        isip = InetAddress.getByName(message).getHostAddress().equals(message);
+                    } catch (UnknownHostException ex){
+                        isip = false;
+                    }
+
+                    if(isip) data.add("ip",message);
+
+                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    os.flush();
+                } catch (Exception e) {
+                    printError(e);
+                }
+                break;
+            case unbanid:
+                try {
+                    data.add("type","unbanid");
+                    data.add("uuid",message);
+
+                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    os.flush();
+                } catch (Exception e) {
+                    printError(e);
+                }
+                break;
+            case datashare:
+                try {
+                    data.add("type","datashare");
+                    data.add("data","");
+                    byte[] encrypted = encrypt("datashare", spec, cipher);
+                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    os.flush();
+
+                    /*String data = is.readLine();
+                    if (data.equals())*/
+                } catch (Exception e) {
+                    printError(e);
+                }
+                break;
         }
     }
 
@@ -156,7 +221,7 @@ public class Client extends Thread{
                     printError(e);
                     log(LogType.client,"server-disconnected", config.getClienthost());
 
-                    serverconn = false;
+                    server_active = false;
                     try {
                         is.close();
                         os.close();
@@ -219,7 +284,7 @@ public class Client extends Thread{
             } catch (Exception e) {
                 log(LogType.client,"server-disconnected", config.getClienthost());
 
-                serverconn = false;
+                server_active = false;
                 try {
                     is.close();
                     os.close();

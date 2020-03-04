@@ -83,7 +83,6 @@ public class Config {
                 "  # "+nbundle("config-server/client-child-description")+"\n" +
                 "  server-enable: " + isServerenable() + "\n" +
                 "  server-port: " + getServerport() + "\n" +
-                "  data-sharing: " + isDataSharing() + "\n" +
                 "\n" +
                 "  client-enable: " + isClientenable() + "\n" +
                 "  client-port: " + getClientport() + "\n" +
@@ -157,6 +156,11 @@ public class Config {
                 "  dburl: " + getDBurl() + "\n" +
                 "  dbid: " + getDBid() + "\n" +
                 "  dbpw: " + getDBpw() + "\n" +
+                "\n" +
+                "  # "+nbundle("config-data-share-description")+"\n" +
+                "  data-server-url: " + getDataServerURL() + "\n" +
+                "  data-server-id: " + getDataServerID() + "\n" +
+                "  data-server-password: " + getDataServerPassword() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-login-description")+"\n" +
                 "  # "+nbundle("config-loginmethod-description")+"\n" +
@@ -234,8 +238,16 @@ public class Config {
         return obj.getInt("server-port",25000);
     }
 
-    public boolean isDataSharing(){
-        return obj.getBoolean("data-sharing",false);
+    public String getDataServerURL(){
+        return obj.getString("data-server-url","none");
+    }
+
+    public String getDataServerID(){
+        return obj.getString("data-server-id","none");
+    }
+
+    public String getDataServerPassword(){
+        return obj.getString("data-server-password","none");
     }
 
     public boolean isRealname(){

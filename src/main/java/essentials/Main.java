@@ -16,6 +16,7 @@ import essentials.core.Discord;
 import essentials.core.Log;
 import essentials.core.PlayerDB;
 import essentials.net.Client;
+import essentials.net.Client.Request;
 import essentials.net.Server;
 import essentials.special.*;
 import essentials.utils.Config;
@@ -72,7 +73,7 @@ import static essentials.Threads.*;
 import static essentials.core.Discord.jda;
 import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.*;
-import static essentials.net.Client.serverconn;
+import static essentials.net.Client.server_active;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
@@ -135,7 +136,7 @@ public class Main extends Plugin {
         if (config.isClientenable()) {
             log(LogType.client, "server-connecting");
             client = new Client();
-            client.main(null, null, null);
+            client.request(null, null, null);
         }
 
         // 모든 플레이어 연결 상태를 0으로 설정
@@ -508,7 +509,7 @@ public class Main extends Plugin {
                             // 서버간 대화기능 작동
                             if (playerData.crosschat) {
                                 if (config.isClientenable()) {
-                                    client.main("chat", e.player, e.message);
+                                    client.request(Request.chat, e.player, e.message);
                                 } else if (config.isServerenable()) {
                                     // 메세지를 모든 클라이언트에게 전송함
                                     String msg = "[" + e.player.name + "]: " + e.message;
@@ -744,7 +745,7 @@ public class Main extends Plugin {
         Events.on(PlayerBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
                 if (config.isBanshare() && config.isClientenable()) {
-                    client.main("bansync", null, null);
+                    client.request(Request.bansync, null, null);
                 }
 
                 for (Player player : playerGroup.all()) {
@@ -761,7 +762,7 @@ public class Main extends Plugin {
         Events.on(PlayerIpBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
                 if (config.isBanshare() && config.isClientenable()) {
-                    client.main("bansync", null, null);
+                    client.request(Request.bansync, null, null);
                 }
             });
            config.executorService.submit(bansharing);
@@ -769,15 +770,15 @@ public class Main extends Plugin {
 
         // 이건 밴 해제되었을 때 작동
         Events.on(PlayerUnbanEvent.class, e -> {
-            if(serverconn) {
-                client.main("unban", null, e.player.uuid + "|<unknown>");
+            if(server_active) {
+                client.request(Request.unbanid, null, e.player.uuid + "|<unknown>");
             }
         });
 
         // 이건 IP 밴이 해제되었을 때 작동
         Events.on(PlayerIpUnbanEvent.class, e -> {
-            if(serverconn) {
-                client.main("unban", null, "<unknown>|"+e.ip);
+            if(server_active) {
+                client.request(Request.unbanip, null, "<unknown>|"+e.ip);
             }
         });
 
@@ -973,8 +974,8 @@ public class Main extends Plugin {
                     }
 
                     // 클라이언트 종료
-                    if (config.isClientenable() && serverconn) {
-                        client.main("exit", null, null);
+                    if (config.isClientenable() && server_active) {
+                        client.request(Request.exit, null, null);
                         log(LogType.log, "client-thread-disabled");
                     }
 
@@ -1029,8 +1030,8 @@ public class Main extends Plugin {
                                         server.interrupt();
                                     } catch (Exception ignored) {}
                                 }
-                                if (config.isClientenable() && serverconn) {
-                                    client.main("exit", null, null);
+                                if (config.isClientenable() && server_active) {
+                                    client.request(Request.exit, null, null);
                                 }
                                 config.executorService.shutdown();
                                 closeconnect();
@@ -1259,7 +1260,7 @@ public class Main extends Plugin {
         handler.register("bansync", "Ban list synchronization from main server.", (arg) -> {
             if(!config.isServerenable()){
                 if(config.isBanshare()){
-                    client.main("bansync", null, null);
+                    client.request(Request.bansync, null, null);
                 } else {
                     log(LogType.warn,"banshare-disabled");
                 }
@@ -1326,10 +1327,10 @@ public class Main extends Plugin {
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
                 log(LogType.client,"server-connecting");
-                if(serverconn){
-                    client.main("exit", null, null);
+                if(server_active){
+                    client.request(Request.exit, null, null);
                 } else {
-                    client.main(null, null, null);
+                    client = new Client();
                 }
             } else {
                 log(LogType.client,"client-disabled");
@@ -1369,8 +1370,8 @@ public class Main extends Plugin {
                 }
 
                 // 클라이언트 종료
-                if (config.isClientenable() && serverconn) {
-                    client.main("exit", null, null);
+                if (config.isClientenable() && server_active) {
+                    client.request(Request.exit, null, null);
                     log(LogType.log, "client-thread-disabled");
                 }
 
@@ -1546,8 +1547,8 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
-        handler.<Player>removeCommand("vote");
-        handler.<Player>removeCommand("votekick");
+        handler.removeCommand("vote");
+        handler.removeCommand("votekick");
 
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if(!checkperm(player,"ch")) return;

@@ -38,6 +38,8 @@ public class DriverLoader implements Driver {
                         dr = "org.mariadb.jdbc.Driver";
                     } else if(f[a].name().contains("postgresql")){
                         dr = "org.postgresql.Driver";
+                    } else if(f[a].name().contains("h2")){
+                        dr = "org.h2.Driver";
                     }
                 }
                 Driver driver = (Driver) Class.forName(dr, true, classLoader).getDeclaredConstructor().newInstance();
@@ -59,6 +61,7 @@ public class DriverLoader implements Driver {
             urls.add(new URL("https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar")); // SQLite
             urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
             urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
+            urls.add(new URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar")); // H2
 
             System.out.println(nbundle(locale,"driver-downloading"));
 
