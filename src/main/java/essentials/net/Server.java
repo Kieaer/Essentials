@@ -1,7 +1,6 @@
 package essentials.net;
 
 import arc.Core;
-import arc.struct.Array;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.core.GameState;
 import mindustry.core.Version;
@@ -13,6 +12,7 @@ import mindustry.type.ItemType;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import org.hjson.ParseException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.mindrot.jbcrypt.BCrypt;
@@ -49,6 +49,10 @@ public class Server implements Runnable {
     public static ArrayList<Service> list = new ArrayList<>();
     private String remoteip;
 
+    enum Request{
+        ping, bansync, chat, exit, unbanip, unbanid, datashare, checkban
+    }
+
     @Override
     public void run() {
         try {
@@ -80,7 +84,6 @@ public class Server implements Runnable {
         public SecretKeySpec spec;
         public Cipher cipher;
         public String ip;
-        private String authkey;
 
         public Service(Socket socket) {
             try {
@@ -89,7 +92,36 @@ public class Server implements Runnable {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
                 // 키 값 읽기
-                authkey = in.readLine();
+                String authkey = in.readLine();
+                if(authkey.matches("GET /.* HTTP/.*")){
+                    writeLog(LogType.web, authkey);
+                    writeLog(LogType.web, "Remote IP: " + remoteip);
+                    String headerLine;
+                    while ((headerLine = in.readLine()).length() != 0) {
+                        writeLog(LogType.web, headerLine);
+                    }
+                    writeLog(LogType.web, "========================");
+                    StringBuilder payload = new StringBuilder();
+                    while (in.ready()) {
+                        payload.append((char) in.read());
+                    }
+
+                    if(authkey.matches("POST /rank HTTP/.*") && payload.toString().split("\\|\\|\\|").length != 2){
+                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+                        bw.write("Login failed!\n");
+                        bw.flush();
+                        bw.close();
+                        os.close();
+                        in.close();
+                        socket.close();
+                        list.remove(this);
+                        log(LogType.server,"client-disconnected-http", remoteip);
+                    } else {
+                        httpserver(authkey, payload.toString());
+                    }
+                    return;
+                }
+
                 spec = new SecretKeySpec(Base64.decode(authkey), "AES");
                 cipher = Cipher.getInstance("AES");
 
@@ -108,207 +140,125 @@ public class Server implements Runnable {
                 Thread.currentThread().setName(remoteip+" Client Thread");
                 try {
                     remoteip = socket.getInetAddress().toString().replace("/", "");
+                    String value = new String(decrypt(Base64.decode(in.readLine()), spec, cipher));
 
-                    String value = in.readLine();
-
-                    if(value == null) return;
-                    // 수신된 데이터가 Base64 가 아닐경우
-                    if (value.length() != 24) {
-                        writeLog(LogType.web, "Remote IP: " + remoteip);
-                        String headerLine;
-                        while ((headerLine = in.readLine()).length() != 0) {
-                            writeLog(LogType.web, headerLine);
-                        }
-                        writeLog(LogType.web, "========================");
-
-                        StringBuilder payload = new StringBuilder();
-                        while (in.ready()) {
-                            payload.append((char) in.read());
-                        }
-                        if(value.matches("POST /rank HTTP/.*") && payload.toString().split("\\|\\|\\|").length != 2){
-                            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-                            bw.write("Login failed!\n");
-                            bw.flush();
-                            bw.close();
-                            os.close();
-                            in.close();
-                            socket.close();
-                            list.remove(this);
-                            log(LogType.server,"client-disconnected-http", remoteip);
-                            return;
-                        } else {
-                            httpserver(value, payload.toString());
-                        }
-                        return;
-                    }
-
-                    if (authkey == null) {
-                        authkey = in.readLine();
-                        byte[] key = Base64.decode(authkey);
-                        spec = new SecretKeySpec(key, "AES");
-                        cipher = Cipher.getInstance("AES");
-                    }
-
-                    String data;
                     try{
-                        byte[] encrypted = Base64.decode(value);
-                        byte[] decrypted = decrypt(encrypted, spec, cipher);
-                        data = new String(decrypted);
-                    }catch (Exception e){
-                        printError(e);
-                        os.close();
-                        in.close();
-                        socket.close();
-                        list.remove(this);
-                        log(LogType.server,"client-disconnected", remoteip);
-                        return;
-                    }
-
-                    if (data.equals("")){
-                        os.close();
-                        in.close();
-                        socket.close();
-                        list.remove(this);
-                        log(LogType.server,"client-disconnected", remoteip);
-                        return;
-                    }
-
-                    if (data.matches("\\[(.*)]:.*")) {
-                        String msg = data.replaceAll("\n", "");
-                        log(LogType.server,"server-message-received", remoteip, msg);
-                        for (int i = 0; i < playerGroup.size(); i++) {
-                            Player p = playerGroup.all().get(i);
-                            if (p.isAdmin) {
-                                p.sendMessage("[#C77E36][" + remoteip + "][RC] " + data);
-                            } else {
-                                p.sendMessage("[#C77E36][RC] " + data);
-                            }
-                        }
-
-                        // send message to all clients
-                        for (Service ser : list) {
-                            ser.os.writeBytes(Base64.encode(encrypt(data,ser.spec,ser.cipher))+"\n");
-                            ser.os.flush();
-                        }
-                    } else if (data.matches("ping")) {
-                        String[] msg = {"Hi " + remoteip + "! Your connection is successful!", "Hello " + remoteip + "! I'm server!", "Welcome to the server " + remoteip + "!"};
-                        int rnd = new Random().nextInt(msg.length);
-                        os.writeBytes(Base64.encode(encrypt(msg[rnd],spec,cipher))+"\n");
-                        os.flush();
-                        log(LogType.server,"client-connected", remoteip);
-                    } else if (data.matches("exit")){
-                        os.close();
-                        in.close();
-                        socket.close();
-                        list.remove(this);
-                        log(LogType.server,"client-disconnected", remoteip);
-                        this.interrupt();
-                        return;
-                    } else if (config.isBanshare()) {
-                        try {
-                            JsonArray bandata = JsonValue.readJSON(data).asArray();
-                            if(data.substring(data.length()-5).equals("unban")){
-                                log(LogType.server,"client-request-unban", remoteip);
-                                for (int i = 0; i < bandata.size(); i++) {
-                                    String[] array = bandata.get(i).asString().split("\\|", -1);
-                                    if (array[0].length() == 12) {
-                                        netServer.admins.unbanPlayerID(array[0]);
-                                        if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                                            netServer.admins.unbanPlayerIP(array[1]);
-                                        }
-                                    }
-                                    if (array[0].equals("<unknown>")) {
-                                        netServer.admins.unbanPlayerIP(array[1]);
-                                    }
-                                    log(LogType.server,"unban-done", bandata.get(i).asString());
-                                }
-
-                                // send message to all clients
-                                for (Service ser : list) {
-                                    String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
-                                    for (int a = 0; a < config.getBantrust().size(); a++) {
-                                        String ip = config.getBantrust().get(a).asString();
-                                        if (ip.equals(remoteip)) {
-                                            ser.os.writeBytes(Base64.encode(encrypt(data,ser.spec,ser.cipher))+"\n");
-                                            ser.os.flush();
-                                            log(LogType.server,"server-data-sented", remoteip);
-                                        }
-                                    }
-                                }
-                            } else {
-                                log(LogType.server,"client-request-banlist", remoteip);
-                                for (int i = 0; i < bandata.size(); i++) {
-                                    String[] array = bandata.get(i).asString().split("\\|", -1);
-                                    if (array[0].length() == 12) {
-                                        netServer.admins.banPlayerID(array[0]);
-                                        if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                                            netServer.admins.banPlayerIP(array[1]);
-                                        }
-                                    }
-                                    if (array[0].equals("<unknown>")) {
-                                        netServer.admins.banPlayerIP(array[1]);
-                                    }
-                                }
-
-                                Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
-                                Array<String> ipbans = netServer.admins.getBannedIPs();
-                                JsonArray data1 = new JsonArray();
-                                if (bans.size != 0) {
-                                    for (Administration.PlayerInfo info : bans) {
-                                        data1.add(info.id + "|" + info.lastIP);
-                                    }
-                                }
-                                if (ipbans.size != 0) {
-                                    for (String string : ipbans) {
-                                        data1.add("<unknown>|" + string);
-                                    }
-                                }
-
-                                // send message to all clients
-                                for (Service ser : list) {
-                                    String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
-                                    for (int a = 0; a < config.getBantrust().size(); a++) {
-                                        String ip = config.getBantrust().get(a).asString();
-                                        if (ip.equals(remoteip)) {
-                                            ser.os.writeBytes(Base64.encode(encrypt(data1.toString(),spec,cipher))+"\n");
-                                            ser.os.flush();
-                                            log(LogType.server,"server-data-sented", remoteip);
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            printError(e);
-                        }
-                    } else if(data.contains("checkban")) {
-                        Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
-                        Array<String> ipbans = netServer.admins.getBannedIPs();
-                        String[] cda = data.replaceAll("checkban", "").split("/");
-
-                        boolean found = false;
-                        for(Administration.PlayerInfo info : bans){
-                            if (info.id.contains(cda[0])) {
-                                found = true;
+                        JsonObject answer = new JsonObject();
+                        JsonObject data = JsonValue.readJSON(value).asObject();
+                        Request type = Request.valueOf(data.get("type").asString());
+                        switch(type){
+                            case ping:
+                                String[] msg = {"Hi " + remoteip + "! Your connection is successful!", "Hello " + remoteip + "! I'm server!", "Welcome to the server " + remoteip + "!"};
+                                int rnd = new Random().nextInt(msg.length);
+                                answer.add("result",msg[rnd]);
+                                os.writeBytes(Base64.encode(encrypt(answer.toString(),spec,cipher))+"\n");
+                                os.flush();
+                                log(LogType.server,"client-connected", remoteip);
                                 break;
-                            }
-                        }
-                        if(!found){
-                            for(String string : ipbans){
-                                if(string.contains(cda[1])){
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
+                            case bansync:
+                                log(LogType.server,"client-request-banlist", remoteip);
 
-                        if(found){
-                            os.writeBytes(Base64.encode(encrypt("true",spec,cipher))+"\n");
-                        } else {
-                            os.writeBytes(Base64.encode(encrypt("false",spec,cipher))+"\n");
+                                // 적용
+                                JsonArray ban = data.get("ban").asArray();
+                                JsonArray ipban = data.get("ipban").asArray();
+                                JsonArray subban = data.get("subban").asArray();
+
+                                for (JsonValue b : ban){
+                                    netServer.admins.banPlayerID(b.asString());
+                                }
+
+                                for (JsonValue b : ipban){
+                                    netServer.admins.banPlayerIP(b.asString());
+                                }
+
+                                for (JsonValue b : subban){
+                                    netServer.admins.addSubnetBan(b.asString());
+                                }
+
+                                // 가져오기
+                                JsonArray bans = new JsonArray();
+                                JsonArray ipbans = new JsonArray();
+                                JsonArray subbans = new JsonArray();
+
+                                for (Administration.PlayerInfo b : netServer.admins.getBanned()){
+                                    bans.add(b.id);
+                                }
+
+                                for (String b : netServer.admins.getBannedIPs()){
+                                    ipbans.add(b);
+                                }
+
+                                for (String b : netServer.admins.getSubnetBans()){
+                                    subbans.add(b);
+                                }
+
+                                for (Service ser : list) {
+                                    String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
+                                    for (JsonValue b : config.getBantrust()){
+                                        if(b.asString().equals(remoteip)){
+                                            ser.os.writeBytes(Base64.encode(encrypt(answer.toString(),spec,cipher))+"\n");
+                                            ser.os.flush();
+                                            log(LogType.server,"server-data-sented", ser.socket.getInetAddress().toString());
+                                        }
+                                    }
+                                }
+                                break;
+                            case chat:
+                                String message = data.get("message").asString();
+                                for (Player p : playerGroup){
+                                    p.sendMessage(p.isAdmin ? "[#C77E36][" + remoteip + "][RC] " + message : "[#C77E36][RC] " + message);
+                                }
+
+                                for (Service ser : list) {
+                                    ser.os.writeBytes(Base64.encode(encrypt(value,ser.spec,ser.cipher))+"\n");
+                                    ser.os.flush();
+                                }
+
+                                log(LogType.server,"server-message-received", remoteip, message);
+                                break;
+                            case exit:
+                                os.close();
+                                in.close();
+                                socket.close();
+                                list.remove(this);
+                                log(LogType.server,"client-disconnected", remoteip);
+                                this.interrupt();
+                                return;
+                            case unbanip:
+                                netServer.admins.unbanPlayerIP(data.get("ip").asString());
+                                // TODO make success message
+                                break;
+                            case unbanid:
+                                netServer.admins.unbanPlayerID(data.get("uuid").asString());
+                                // TODO make success message
+                                break;
+                            case datashare:
+                                break;
+                            case checkban:
+                                boolean found = false;
+                                String target_uuid = data.get("target_uuid").asString();
+                                String target_ip = data.get("target_ip").asString();
+
+                                for(Administration.PlayerInfo info : netServer.admins.getBanned()){
+                                    if (info.id.equals(target_uuid)) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                for(String info : netServer.admins.getBannedIPs()){
+                                    if(info.equals(target_ip)){
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                answer.add("result", found ? "true" : "false");
+                                os.writeBytes(Base64.encode(encrypt(answer.toString(),spec,cipher))+"\n");
+                                os.flush();
+                                break;
                         }
-                        os.flush();
-                    } else {
-                        nlog(LogType.warn,"Invalid data - " + data);
+                    } catch (ParseException e){
+                        throw new Exception();
                     }
                 } catch (Exception e) {
                     log(LogType.server,"client-disconnected", remoteip);
