@@ -692,7 +692,7 @@ public class Global {
             bareDone.append(icon);
         }
         String bareRemain = bare.substring(remainProcent);
-        System.out.print("\r" + bareDone + bareRemain + " " + remainProcent * 5 + "%, ETA: "+etaHms);
+        System.out.print("\r"+humanReadableByteCount(remain, true)+"/"+humanReadableByteCount(total, true) + "\t" + bareDone + bareRemain + " " + remainProcent * 5 + "%, ETA: "+etaHms);
         if (remain == total) {
             System.out.print("\n");
         }
@@ -714,7 +714,7 @@ public class Global {
             URLConnection urlConnection = URL.openConnection();
             InputStream is = urlConnection.getInputStream();
             int size = urlConnection.getContentLength();
-            byte[] buf = new byte[512];
+            byte[] buf = new byte[256];
             int byteRead;
             int byteWritten = 0;
             long startTime = System.currentTimeMillis();
@@ -732,18 +732,6 @@ public class Global {
             if(error_message != null) System.out.println("\n"+error_message);
             printError(e);
         }
-    }
-
-    public static Object[] removeElement(int index, Object[] array) {
-        Object[] newArray = new Object[array.length - 1];
-        for (int i = 0; i < array.length; i++) {
-            if (index > i) {
-                newArray[i] = array[i];
-            } else if(index < i) {
-                newArray[i - 1] = array[i];
-            }
-        }
-        return newArray;
     }
 
     public static Locale TextToLocale(String data){
@@ -765,5 +753,21 @@ public class Global {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    // From: https://programming.guide/worlds-most-copied-so-snippet.html
+    public static strictfp String humanReadableByteCount(int bytes, boolean si) {
+        int unit = si ? 1000 : 1024;
+        long absBytes = Math.abs(bytes);
+        if (absBytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(absBytes) / Math.log(unit));
+        long th = (long) (Math.pow(unit, exp) * (unit - 0.05));
+        if (exp < 6 && absBytes >= th - ((th & 0xfff) == 0xd00 ? 52 : 0)) exp++;
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+        if (exp > 4) {
+            bytes /= unit;
+            exp -= 1;
+        }
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 }
