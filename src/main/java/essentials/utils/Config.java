@@ -43,7 +43,7 @@ public class Config {
             }catch (ParseException | ArcRuntimeException ignored){
                 json.add("servername", Core.settings.getString("servername"));
                 json.add("unexception",false);
-                json.add("sqlite",true);
+                json.add("internalDB",true);
                 root.child("data/data.json").writeString(json.toString());
             }
 
@@ -152,7 +152,7 @@ public class Config {
                 "  # "+nbundle("config-database-description")+"\n" +
                 "  # "+nbundle("config-database-child1-description")+"\n" +
                 "  # "+nbundle("config-database-child2-description")+"\n" +
-                "  sqlite: " + isSqlite() + "\n" +
+                "  isInternalDB: " + isInternalDB() + "\n" +
                 "  dburl: " + getDBurl() + "\n" +
                 "  dbid: " + getDBid() + "\n" +
                 "  dbpw: " + getDBpw() + "\n" +
@@ -354,8 +354,8 @@ public class Config {
         return obj.getInt("alarm-minimal-level",20);
     }
 
-    public boolean isSqlite(){
-        return obj.getBoolean("sqlite",true);
+    public boolean isInternalDB(){
+        return obj.getBoolean("internalDB",true);
     }
 
     public boolean isLoginenable(){
@@ -415,8 +415,8 @@ public class Config {
     }
 
     public String getDBurl(){
-        if(isSqlite()){
-            return "jdbc:sqlite:"+root.child("data/player.sqlite3");
+        if(isInternalDB()){
+            return "jdbc:h2:file:"+root.child("data/player").absolutePath()+"";
         } else {
             return obj.getString("dburl","none");
         }

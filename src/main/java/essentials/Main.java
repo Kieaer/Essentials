@@ -18,7 +18,10 @@ import essentials.core.PlayerDB;
 import essentials.net.Client;
 import essentials.net.Client.Request;
 import essentials.net.Server;
-import essentials.special.*;
+import essentials.special.DataMigration;
+import essentials.special.DriverLoader;
+import essentials.special.IpAddressMatcher;
+import essentials.special.StringUtils;
 import essentials.utils.Config;
 import essentials.utils.Permission;
 import mindustry.Vars;
@@ -113,21 +116,18 @@ public class Main extends Plugin {
             return;
         }
 
+        // 플러그인 데이터 불러오기
+        data = new PluginData();
+
         // 플러그인 설정 파일 불러오기
         config = new Config();
-        config.extract();
+        config.main();
 
         // 예전 데이터 변환
         new DataMigration();
 
         // DB 드라이버 다운로드
         new DriverLoader();
-
-        // DB 형식 변환
-        new DBConvert();
-
-        // 플러그인 데이터 불러오기
-        data = new PluginData();
 
         // DB 연결
         playerDB = new PlayerDB();

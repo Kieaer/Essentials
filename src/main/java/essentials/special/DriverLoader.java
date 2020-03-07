@@ -3,6 +3,7 @@ package essentials.special;
 import arc.Core;
 import arc.files.Fi;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.*;
@@ -18,22 +19,30 @@ public class DriverLoader implements Driver {
     private Driver driver;
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
+    List<URL> urls = new ArrayList<>();
+
     public DriverLoader(Driver driver) {
         if (driver == null) throw new IllegalArgumentException("Driver must not be null.");
         this.driver = driver;
     }
 
     public DriverLoader(){
+        try{
+            urls.add(new URL("https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar")); // SQLite
+            urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
+            urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
+            urls.add(new URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar")); // H2
+        } catch (MalformedURLException ignored) {}
         run();
     }
 
     public void run() {
         try {
             Fi[] f = root.child("Driver/").list();
-            for (int a=0;a<3;a++) {
+            for (int a=0;a<urls.size();a++) {
                 URLClassLoader classLoader = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
                 String dr = "org.sqlite.JDBC";
-                for(int b=0;b<3;b++){
+                for(int b=0;b<urls.size();b++){
                     if(f[a].name().contains("mariadb")){
                         dr = "org.mariadb.jdbc.Driver";
                     } else if(f[a].name().contains("postgresql")){
@@ -57,12 +66,6 @@ public class DriverLoader implements Driver {
 
     public void download() {
         try {
-            List<URL> urls = new ArrayList<>();
-            urls.add(new URL("https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar")); // SQLite
-            urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
-            urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
-            urls.add(new URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar")); // H2
-
             System.out.println(nbundle(locale,"driver-downloading"));
 
             for (URL value : urls) {
@@ -74,7 +77,6 @@ public class DriverLoader implements Driver {
                         filename + " Downloading...",
                         null, null);
             }
-            tried = true;
             run();
         } catch (Exception e) {
             e.printStackTrace();

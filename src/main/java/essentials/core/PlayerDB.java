@@ -6,8 +6,6 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
-import org.h2.jdbcx.JdbcDataSource;
-import org.h2.tools.Server;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -39,123 +37,64 @@ public class PlayerDB {
 
     public void createNewDataFile(){
         try {
-            String sql = null;
-            if(config.isSqlite()){
-                sql = "CREATE TABLE IF NOT EXISTS players (\n" +
-                        "name TEXT,\n" +
-                        "uuid TEXT,\n" +
-                        "country TEXT,\n" +
-                        "country_code TEXT,\n" +
-                        "language TEXT,\n" +
-                        "isadmin TEXT,\n" +
-                        "placecount INTEGER,\n" +
-                        "breakcount INTEGER,\n" +
-                        "killcount INTEGER,\n" +
-                        "deathcount INTEGER,\n" +
-                        "joincount INTEGER,\n" +
-                        "kickcount INTEGER,\n" +
-                        "level INTEGER,\n" +
-                        "exp INTEGER,\n" +
-                        "reqexp INTEGER,\n" +
-                        "reqtotalexp TEXT,\n" +
-                        "firstdate TEXT,\n" +
-                        "lastdate TEXT,\n" +
-                        "lastplacename TEXT,\n" +
-                        "lastbreakname TEXT,\n" +
-                        "lastchat TEXT,\n" +
-                        "playtime TEXT,\n" +
-                        "attackclear INTEGER,\n" +
-                        "pvpwincount INTEGER,\n" +
-                        "pvplosecount INTEGER,\n" +
-                        "pvpbreakout INTEGER,\n" +
-                        "reactorcount INTEGER,\n" +
-                        "bantimeset INTEGER,\n" +
-                        "bantime TEXT,\n" +
-                        "banned TEXT,\n" +
-                        "translate TEXT,\n" +
-                        "crosschat TEXT,\n" +
-                        "colornick TEXT,\n" +
-                        "connected TEXT,\n" +
-                        "connserver TEXT,\n" +
-                        "permission TEXT,\n" +
-                        "mute TEXT,\n" +
-                        "udid TEXT,\n" +
-                        "email TEXT,\n" +
-                        "accountid TEXT,\n" +
-                        "accountpw TEXT\n" +
-                        ");";
-            } else {
-                if(!config.getDBid().isEmpty()){
-                    sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
-                            "`name` TEXT NOT NULL,\n" +
-                            "`uuid` TEXT NOT NULL,\n" +
-                            "`country` TEXT NOT NULL,\n" +
-                            "`country_code` TEXT NOT NULL,\n" +
-                            "`language` TEXT NOT NULL,\n" +
-                            "`isadmin` TINYINT(4) NOT NULL,\n" +
-                            "`placecount` INT(11) NOT NULL,\n" +
-                            "`breakcount` INT(11) NOT NULL,\n" +
-                            "`killcount` INT(11) NOT NULL,\n" +
-                            "`deathcount` INT(11) NOT NULL,\n" +
-                            "`joincount` INT(11) NOT NULL,\n" +
-                            "`kickcount` INT(11) NOT NULL,\n" +
-                            "`level` INT(11) NOT NULL,\n" +
-                            "`exp` INT(11) NOT NULL,\n" +
-                            "`reqexp` INT(11) NOT NULL,\n" +
-                            "`reqtotalexp` TEXT NOT NULL,\n" +
-                            "`firstdate` TEXT NOT NULL,\n" +
-                            "`lastdate` TEXT NOT NULL,\n" +
-                            "`lastplacename` TEXT NOT NULL,\n" +
-                            "`lastbreakname` TEXT NOT NULL,\n" +
-                            "`lastchat` TEXT NOT NULL,\n" +
-                            "`playtime` TEXT NOT NULL,\n" +
-                            "`attackclear` INT(11) NOT NULL,\n" +
-                            "`pvpwincount` INT(11) NOT NULL,\n" +
-                            "`pvplosecount` INT(11) NOT NULL,\n" +
-                            "`pvpbreakout` INT(11) NOT NULL,\n" +
-                            "`reactorcount` INT(11) NOT NULL,\n" +
-                            "`bantimeset` INT(11) NOT NULL,\n" +
-                            "`bantime` TINYTEXT NOT NULL,\n" +
-                            "`banned` TINYINT(4) NOT NULL,\n" +
-                            "`translate` TINYINT(4) NOT NULL,\n" +
-                            "`crosschat` TINYINT(4) NOT NULL,\n" +
-                            "`colornick` TINYINT(4) NOT NULL,\n" +
-                            "`connected` TINYINT(4) NOT NULL,\n" +
-                            "`connserver` TINYTEXT NOT NULL DEFAULT 'none',\n" +
-                            "`permission` TINYTEXT NOT NULL DEFAULT 'default',\n" +
-                            "`mute` TINYTEXT NOT NULL,\n" +
-                            "`udid` TEXT NOT NULL,\n" +
-                            "`email` TEXT NOT NULL,\n" +
-                            "`accountid` TEXT NOT NULL,\n" +
-                            "`accountpw` TEXT NOT NULL\n" +
-                            ")\n" +
-                            "COLLATE='utf8_general_ci'\n" +
-                            "ENGINE=InnoDB\n" +
-                            ";";
-                } else {
-                    log(LogType.playererr,"db-address-notset");
-                }
-            }
+            String sql = "CREATE TABLE IF NOT EXISTS `players` (\n" +
+                    "`name` TEXT NOT NULL,\n" +
+                    "`uuid` TEXT NOT NULL,\n" +
+                    "`country` TEXT NOT NULL,\n" +
+                    "`country_code` TEXT NOT NULL,\n" +
+                    "`language` TEXT NOT NULL,\n" +
+                    "`isadmin` TINYINT(4) NOT NULL,\n" +
+                    "`placecount` INT(11) NOT NULL,\n" +
+                    "`breakcount` INT(11) NOT NULL,\n" +
+                    "`killcount` INT(11) NOT NULL,\n" +
+                    "`deathcount` INT(11) NOT NULL,\n" +
+                    "`joincount` INT(11) NOT NULL,\n" +
+                    "`kickcount` INT(11) NOT NULL,\n" +
+                    "`level` INT(11) NOT NULL,\n" +
+                    "`exp` INT(11) NOT NULL,\n" +
+                    "`reqexp` INT(11) NOT NULL,\n" +
+                    "`reqtotalexp` TEXT NOT NULL,\n" +
+                    "`firstdate` TEXT NOT NULL,\n" +
+                    "`lastdate` TEXT NOT NULL,\n" +
+                    "`lastplacename` TEXT NOT NULL,\n" +
+                    "`lastbreakname` TEXT NOT NULL,\n" +
+                    "`lastchat` TEXT NOT NULL,\n" +
+                    "`playtime` TEXT NOT NULL,\n" +
+                    "`attackclear` INT(11) NOT NULL,\n" +
+                    "`pvpwincount` INT(11) NOT NULL,\n" +
+                    "`pvplosecount` INT(11) NOT NULL,\n" +
+                    "`pvpbreakout` INT(11) NOT NULL,\n" +
+                    "`reactorcount` INT(11) NOT NULL,\n" +
+                    "`bantimeset` INT(11) NOT NULL,\n" +
+                    "`bantime` TINYTEXT NOT NULL,\n" +
+                    "`banned` TINYINT(4) NOT NULL,\n" +
+                    "`translate` TINYINT(4) NOT NULL,\n" +
+                    "`crosschat` TINYINT(4) NOT NULL,\n" +
+                    "`colornick` TINYINT(4) NOT NULL,\n" +
+                    "`connected` TINYINT(4) NOT NULL,\n" +
+                    "`connserver` TINYTEXT NOT NULL DEFAULT 'none',\n" +
+                    "`permission` TINYTEXT NOT NULL DEFAULT 'default',\n" +
+                    "`mute` TINYTEXT NOT NULL,\n" +
+                    "`udid` TEXT NOT NULL,\n" +
+                    "`email` TEXT NOT NULL,\n" +
+                    "`accountid` TEXT NOT NULL,\n" +
+                    "`accountpw` TEXT NOT NULL\n" +
+                    ")";
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
-            if(config.isSqlite()){
-                sql = "CREATE TABLE IF NOT EXISTS data (dbversion INTEGER);";
-            } else {
-                sql = "CREATE TABLE IF NOT EXISTS `data` (`dbversion` TINYINT(4) NOT NULL)" +
-                        "COLLATE='utf8_general_ci'\n" +
-                        "ENGINE=InnoDB;";
-            }
+
+            sql = "CREATE TABLE IF NOT EXISTS `data` (`dbversion` TINYINT(4) NOT NULL)";
             stmt.execute(sql);
             stmt.close();
+
             PreparedStatement ptmt = conn.prepareStatement("SELECT dbversion from data");
             ResultSet rs = ptmt.executeQuery();
-            ptmt.close();
             if(!rs.next()){
                 ptmt = conn.prepareStatement("INSERT INTO data (dbversion) VALUES (?);");
                 ptmt.setInt(1,DBVersion);
                 ptmt.execute();
-                ptmt.close();
             }
+            ptmt.close();
         } catch (Exception ex){
             printError(ex);
         }
@@ -401,9 +340,16 @@ public class PlayerDB {
 
     public static void openconnect() {
         try {
-            if (config.isSqlite()) {
-                conn = DriverManager.getConnection(config.getDBurl());
-                log(LogType.player,"db-type","SQLite");
+            if (config.isInternalDB()) {
+                conn = DriverManager.getConnection(config.getDBurl()+";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090", "", "");
+                /*if (!config.getDBid().isEmpty()) {
+                    conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
+                    log(LogType.player,"db-type","MariaDB/MySQL/PostgreSQL");
+                } else {
+                    conn = DriverManager.getConnection(config.getDBurl());
+                    log(LogType.player,"db-type","Invalid");
+                }*/
+                log(LogType.player,"db-type","internalDB");
             } else {
                 if (!config.getDBid().isEmpty()) {
                     conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
@@ -1116,7 +1062,7 @@ public class PlayerDB {
                 conn.prepareStatement("DROP TABLE players").execute();
                 createNewDataFile();
                 String sql;
-                if (config.isSqlite()) {
+                if (config.isInternalDB()) {
                     sql = "INSERT INTO players ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'email', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 } else {
                     sql = "INSERT INTO players (name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, email, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -1171,7 +1117,7 @@ public class PlayerDB {
                 log(LogType.player,"db-upgrade");
             }
             if(current_version < DBVersion) {
-                if (!config.isSqlite()) {
+                if (!config.isInternalDB()) {
                     conn.prepareStatement("ALTER TABLE players CHANGE COLUMN uuid uuid TINYTEXT NULL DEFAULT NULL AFTER name;").execute();
                 }
                 conn.prepareStatement("UPDATE data SET dbversion="+DBVersion).execute();

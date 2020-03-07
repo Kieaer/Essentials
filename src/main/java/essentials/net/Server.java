@@ -504,7 +504,7 @@ public class Server implements Runnable {
                                 ranking[11] = "SELECT uuid, pvpbreakout, RANK() over (ORDER BY pvpbreakout desc) valrank FROM players";
 
                                 String datatext;
-                                if (!config.isSqlite()) {
+                                if (!config.isInternalDB()) {
                                     Statement stmt = conn.createStatement();
                                     ArrayList<String> array = new ArrayList<>();
                                     for (String s : ranking) {
