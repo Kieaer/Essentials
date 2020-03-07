@@ -6,6 +6,7 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import org.h2.tools.Server;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -340,25 +341,10 @@ public class PlayerDB {
 
     public static void openconnect() {
         try {
-            if (config.isInternalDB()) {
-                conn = DriverManager.getConnection(config.getDBurl()+";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090", "", "");
-                /*if (!config.getDBid().isEmpty()) {
-                    conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                    log(LogType.player,"db-type","MariaDB/MySQL/PostgreSQL");
-                } else {
-                    conn = DriverManager.getConnection(config.getDBurl());
-                    log(LogType.player,"db-type","Invalid");
-                }*/
-                log(LogType.player,"db-type","internalDB");
-            } else {
-                if (!config.getDBid().isEmpty()) {
-                    conn = DriverManager.getConnection(config.getDBurl(), config.getDBid(), config.getDBpw());
-                    log(LogType.player,"db-type","MariaDB/MySQL/PostgreSQL");
-                } else {
-                    conn = DriverManager.getConnection(config.getDBurl());
-                    log(LogType.player,"db-type","Invalid");
-                }
-            }
+            //String url = config.isDBServer() ? config.getDBurl()+";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090" : config.getDBurl();
+            conn = DriverManager.getConnection(config.getDBurl(), "", "");
+            if(config.isDBServer()) Server.createTcpServer("-tcp", "-tcpPort", "9090", /*"-tcpSSL", */"-baseDir", root.child("data").absolutePath()).start(); // TODO finish H2 db server
+            log(LogType.player,"db-type","internalDB");
         } catch (SQLException e){
             printError(e);
             nlog(LogType.warn,"SQL ERROR!");
@@ -367,6 +353,7 @@ public class PlayerDB {
 
     public static void closeconnect(){
         try {
+            Server.shutdownTcpServer("tcp://localhost:9090/","",true, false);
             conn.close();
         } catch (Exception e) {
             printError(e);

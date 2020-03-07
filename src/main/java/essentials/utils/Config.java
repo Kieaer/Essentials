@@ -152,10 +152,9 @@ public class Config {
                 "  # "+nbundle("config-database-description")+"\n" +
                 "  # "+nbundle("config-database-child1-description")+"\n" +
                 "  # "+nbundle("config-database-child2-description")+"\n" +
-                "  isInternalDB: " + isInternalDB() + "\n" +
+                "  internalDB: " + isInternalDB() + "\n" +
+                "  enable-db-server: " + isDBServer() + "\n" +
                 "  dburl: " + getDBurl() + "\n" +
-                "  dbid: " + getDBid() + "\n" +
-                "  dbpw: " + getDBpw() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-data-share-description")+"\n" +
                 "  data-server-url: " + getDataServerURL() + "\n" +
@@ -358,6 +357,10 @@ public class Config {
         return obj.getBoolean("internalDB",true);
     }
 
+    public boolean isDBServer(){
+        return obj.getBoolean("enable-db-server",false);
+    }
+
     public boolean isLoginenable(){
         return obj.getBoolean("loginenable",false);
     }
@@ -416,18 +419,10 @@ public class Config {
 
     public String getDBurl(){
         if(isInternalDB()){
-            return "jdbc:h2:file:"+root.child("data/player").absolutePath()+"";
+            return "jdbc:h2:file:"+root.child("data/player").absolutePath();
         } else {
             return obj.getString("dburl","none");
         }
-    }
-
-    public String getDBid(){
-        return obj.getString("dbid","none");
-    }
-
-    public String getDBpw(){
-        return obj.getString("dbpw","none");
     }
 
     public boolean isEnableTranslate(){
