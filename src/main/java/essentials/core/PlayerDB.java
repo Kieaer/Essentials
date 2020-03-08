@@ -28,7 +28,8 @@ public class PlayerDB {
     public static Connection conn;
     public static ArrayList<Player> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
-    int DBVersion = 3;
+    static Server DBServer;
+    int DBVersion = 4;
 
     public PlayerDB(){
         openconnect();
@@ -112,7 +113,7 @@ public class PlayerDB {
                         "attackclear = ?,pvpwincount = ?,pvplosecount = ?,pvpbreakout = ?,reactorcount = ?,bantimeset = ?,bantime = ?,banned = ?,translate = ?," +
                         "crosschat = ?,colornick = ?,connected = ?,connserver = ?,permission = ?,mute = ?,udid = ?,email = ?,accountid = ?,accountpw = ?" +
                         ")";*/
-                String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, name);
                 pstmt.setString(2, uuid);
@@ -151,10 +152,11 @@ public class PlayerDB {
                 pstmt.setString(35, getip()); // connected server ip
                 pstmt.setString(36, "default"); // set permission
                 pstmt.setBoolean(37, false); // mute
-                pstmt.setLong(38, udid); // UDID
-                pstmt.setString(39, email); // email
-                pstmt.setString(40, accountid);
-                pstmt.setString(41, accountpw);
+                pstmt.setBoolean(38, true); // alert
+                pstmt.setLong(39, udid); // UDID
+                pstmt.setString(40, email); // email
+                pstmt.setString(41, accountid);
+                pstmt.setString(42, accountpw);
                 pstmt.execute();
                 pstmt.close();
                 //if(player != null) player.sendMessage(bundle(new Locale(country, country_code), "player-id", player.name));
@@ -224,6 +226,7 @@ public class PlayerDB {
                         rs.getString("connserver"),
                         rs.getString("permission"),
                         rs.getBoolean("mute"),
+                        rs.getBoolean("alert"),
                         rs.getLong("udid"),
                         rs.getString("email"),
                         rs.getString("accountid"),
@@ -343,7 +346,9 @@ public class PlayerDB {
         try {
             //String url = config.isDBServer() ? config.getDBurl()+";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090" : config.getDBurl();
             conn = DriverManager.getConnection(config.getDBurl(), "", "");
-            if(config.isDBServer()) Server.createTcpServer("-tcp", "-tcpPort", "9090", /*"-tcpSSL", */"-baseDir", root.child("data").absolutePath()).start(); // TODO finish H2 db server
+            if(config.isDBServer()){
+                DBServer = Server.createTcpServer("-tcp", "-tcpPort", "9090", /*"-tcpSSL", */"-baseDir", root.child("data/").absolutePath(), "-tcpPassword", config.getDBServerPassword()).start(); // TODO finish H2 db server
+            }
             log(LogType.player,"db-type","internalDB");
         } catch (SQLException e){
             printError(e);
@@ -353,7 +358,9 @@ public class PlayerDB {
 
     public static void closeconnect(){
         try {
-            Server.shutdownTcpServer("tcp://localhost:9090/","",true, false);
+            if(config.isDBServer()) {
+                DBServer.stop();
+            }
             conn.close();
         } catch (Exception e) {
             printError(e);
@@ -740,6 +747,7 @@ public class PlayerDB {
         public String connserver;
         public String permission;
         public boolean mute;
+        public boolean alert;
         public Long udid;
         public String email;
         public String accountid;
@@ -763,7 +771,7 @@ public class PlayerDB {
             this.isLogin = isLogin;
         }
 
-        public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, Long udid, String email, String accountid, String accountpw){
+        public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String email, String accountid, String accountpw){
             this.name = name;
             this.uuid = uuid;
             this.country = country;
@@ -801,6 +809,7 @@ public class PlayerDB {
             this.connserver = connserver;
             this.permission = permission;
             this.mute = mute;
+            this.alert = alert;
             this.udid = udid;
             this.email = email;
             this.accountid = accountid;
@@ -997,9 +1006,11 @@ public class PlayerDB {
                 rs = pstm.executeQuery();
                 boolean mute;
                 String email;
+                boolean alert;
                 while (rs.next()) {
                     mute = current_version >= 2 && rs.getBoolean("mute");
                     email = current_version > 3 ? rs.getString("email") : "none";
+                    alert = current_version <= 4 || rs.getBoolean("alert");
                     buffer.add(new PlayerData(
                                     rs.getString("name"),
                                     rs.getString("uuid"),
@@ -1038,6 +1049,7 @@ public class PlayerDB {
                                     rs.getString("connserver"),
                                     rs.getString("permission"),
                                     mute,
+                                    alert,
                                     rs.getLong("udid"),
                                     email,
                                     rs.getString("accountid"),

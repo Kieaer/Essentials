@@ -491,7 +491,8 @@ public class Global {
             for (int i = 0; i < playerGroup.size(); i++) {
                 Player other = playerGroup.all().get(i);
                 if(other == null) return;
-                other.sendMessage(bundle(PlayerData(other.uuid).locale, name, parameter));
+                PlayerData playerData = PlayerData(other.uuid);
+                if(playerData.alert) other.sendMessage(bundle(playerData.locale, name, parameter));
             }
         });
         t.start();

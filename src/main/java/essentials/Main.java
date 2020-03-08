@@ -1550,6 +1550,18 @@ public class Main extends Plugin {
         handler.removeCommand("vote");
         handler.removeCommand("votekick");
 
+        handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
+            if(!checkperm(player,"alert")) return;
+            PlayerData playerData = PlayerData(player.uuid);
+            if (playerData.alert){
+                playerData.alert = false;
+                player.sendMessage(bundle(playerData.locale, "alert-disable"));
+            } else {
+                playerData.alert = true;
+                player.sendMessage(bundle(playerData.locale, "alert"));
+            }
+            PlayerDataSet(playerData);
+        });
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if(!checkperm(player,"ch")) return;
             PlayerData playerData = PlayerData(player.uuid);

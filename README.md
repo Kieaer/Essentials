@@ -24,8 +24,8 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 ## Essentials 9.0 Plans
 - [ ] Server
   - [ ] Control server using Web server
-- [ ] PlayerDB
-  - [ ] DB Server without MySQL/MariaDB..
+- [x] PlayerDB
+  - [x] DB Server without MySQL/MariaDB..
 - [x] Internal
   - [x] Fix server can't shutdown
   - [x] Make ban reason

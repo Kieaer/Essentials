@@ -15,6 +15,7 @@ import java.net.URISyntaxException;
 import java.time.LocalTime;
 import java.util.Enumeration;
 import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
@@ -154,6 +155,7 @@ public class Config {
                 "  # "+nbundle("config-database-child2-description")+"\n" +
                 "  internalDB: " + isInternalDB() + "\n" +
                 "  enable-db-server: " + isDBServer() + "\n" +
+                "  db-server-password: " + getDBServerPassword() + "\n" +
                 "  dburl: " + getDBurl() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-data-share-description")+"\n" +
@@ -359,6 +361,27 @@ public class Config {
 
     public boolean isDBServer(){
         return obj.getBoolean("enable-db-server",false);
+    }
+
+    public String getDBServerPassword(){
+        StringBuilder temp = new StringBuilder();
+        Random rnd = new Random();
+        for (int i = 0; i < 12; i++) {
+            int rIndex = rnd.nextInt(3);
+            switch (rIndex) {
+                case 0:
+                    temp.append((char) (rnd.nextInt(26) + 97));
+                    break;
+                case 1:
+                    temp.append((char) (rnd.nextInt(26) + 65));
+                    break;
+                case 2:
+                    temp.append((rnd.nextInt(10)));
+                    break;
+            }
+        }
+
+        return obj.getString("db-server-password", temp.toString());
     }
 
     public boolean isLoginenable(){
