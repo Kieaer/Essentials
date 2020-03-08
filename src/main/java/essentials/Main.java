@@ -92,6 +92,8 @@ public class Main extends Plugin {
     public static Global global;
     public static PluginData data;
     public static Threads threads;
+
+    public DataMigration dataMigration = new DataMigration();
     public ApplicationListener listener;
 
     Timer timer = new Timer(true);
@@ -123,7 +125,7 @@ public class Main extends Plugin {
         config.main();
 
         // 예전 데이터 변환
-        new DataMigration();
+        dataMigration.ConvertFile();
 
         // DB 드라이버 다운로드
         new DriverLoader();
@@ -985,6 +987,8 @@ public class Main extends Plugin {
         Core.app.addListener(listener);
 
         Events.on(ServerLoadEvent.class, e-> {
+            // 예전 DB 변환
+            if(config.isOldDBMigration()) dataMigration.MigrateDB();
             // 업데이트 확인
             if(config.isUpdate()) {
                 log(LogType.client,"client-checking-version");
@@ -1178,9 +1182,9 @@ public class Main extends Plugin {
                 try{
                     String sql = "SELECT * FROM players WHERE name=? OR accountid=?";
                     PreparedStatement ptmt = conn.prepareStatement(sql);
-                    ptmt.setString(0,arg[0]);
                     ptmt.setString(1,arg[0]);
-                    ResultSet rs = ptmt.executeQuery(sql);
+                    ptmt.setString(2,arg[0]);
+                    ResultSet rs = ptmt.executeQuery();
                     nlog(LogType.log,"Data line start.");
                     while(rs.next()){
                         String datatext = "\nPlayer Information\n" +

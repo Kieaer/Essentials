@@ -350,8 +350,7 @@ public class PlayerDB {
 
     public static void openconnect() {
         try {
-            String url = config.isDBServer() ? config.getDBurl()+";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090" : config.getDBurl();
-            conn = DriverManager.getConnection(config.getDBurl(), "", "");
+            conn = DriverManager.getConnection(config.getDBurl(), "", config.getDBurl().contains("tcp") ? config.getDBServerPassword() : "");
             if(config.isDBServer()){
                 try{
                     DBClass = Class.forName("org.h2.tools.Server", true, H2URL);
@@ -1082,12 +1081,7 @@ public class PlayerDB {
                 rs.close();
                 conn.prepareStatement("DROP TABLE players").execute();
                 createNewDataFile();
-                String sql;
-                if (config.isInternalDB()) {
-                    sql = "INSERT INTO players ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'email', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                } else {
-                    sql = "INSERT INTO players (name, uuid, country, country_code, language, isadmin, placecount, breakcount, killcount, deathcount, joincount, kickcount, level, exp, reqexp, reqtotalexp, firstdate, lastdate, lastplacename, lastbreakname, lastchat, playtime, attackclear, pvpwincount, pvplosecount, pvpbreakout, reactorcount, bantimeset, bantime, banned, translate, crosschat, colornick, connected, connserver, permission, mute, udid, email, accountid, accountpw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                }
+                String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                 for (PlayerData data : buffer) {
                     PreparedStatement pstmt = conn.prepareStatement(sql);
                     pstmt.setString(1, data.name);
@@ -1127,10 +1121,11 @@ public class PlayerDB {
                     pstmt.setString(35, data.connserver); // connected server ip
                     pstmt.setString(36, data.permission); // set permission
                     pstmt.setBoolean(37, data.mute); // mute
-                    pstmt.setLong(38, data.udid); // UDID
-                    pstmt.setString(39, data.email);
-                    pstmt.setString(40, data.accountid);
-                    pstmt.setString(41, data.accountpw);
+                    pstmt.setBoolean(38, data.alert); // alert
+                    pstmt.setLong(39, data.udid); // UDID
+                    pstmt.setString(40, data.email);
+                    pstmt.setString(41, data.accountid);
+                    pstmt.setString(42, data.accountpw);
                     pstmt.execute();
                     pstmt.close();
                 }

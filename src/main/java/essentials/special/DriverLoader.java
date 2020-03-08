@@ -29,9 +29,9 @@ public class DriverLoader implements Driver {
 
     public DriverLoader(){
         try{
-            //urls.add(new URL("https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar")); // SQLite
-            //urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
-            //urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
+            urls.add(new URL("https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar")); // SQLite
+            urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
+            urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
             urls.add(new URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar")); // H2
         } catch (MalformedURLException ignored) {}
         run();
@@ -40,9 +40,10 @@ public class DriverLoader implements Driver {
     public void run() {
         try {
             Fi[] f = root.child("Driver/").list();
+
             for (int a=0;a<urls.size();a++) {
-                H2URL = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
-                /*String dr = "org.sqlite.JDBC";
+                URLClassLoader cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
+                String dr = "org.sqlite.JDBC";
                 for(int b=0;b<urls.size();b++){
                     if(f[a].name().contains("mariadb")){
                         dr = "org.mariadb.jdbc.Driver";
@@ -51,13 +52,14 @@ public class DriverLoader implements Driver {
                     } else if(f[a].name().contains("h2")){
                         dr = "org.h2.Driver";
                     }
-                }*/
-                String dr = "org.h2.Driver";
-                Driver driver = (Driver) Class.forName(dr, true, H2URL).getDeclaredConstructor().newInstance();
+                }
+                Driver driver = (Driver) Class.forName(dr, true, cla).getDeclaredConstructor().newInstance();
                 DriverManager.registerDriver(new DriverLoader(driver));
+                if(dr.contains("h2")) H2URL = cla;
             }
         } catch (Exception e) {
             if(!tried){
+                tried = true;
                 download();
             } else {
                 e.printStackTrace();

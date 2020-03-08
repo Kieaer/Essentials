@@ -32,7 +32,9 @@ public class Config {
 
     public ExecutorService executorService = Executors.newFixedThreadPool(6, new Global.threadname("Essentials Thread"));
     public ExecutorService singleService = Executors.newSingleThreadExecutor(new Global.threadname("Essentials single thread"));
+
     int config_version = 12;
+    public boolean getOldDBMigration = isOldDBMigration();
 
     public void main(){
         extract();
@@ -61,7 +63,7 @@ public class Config {
         }
     }
 
-    void update(){
+    public void update(){
         locale = TextToLocale(obj.getString("language", locale.toString()));
 
         int antirushtime;
@@ -157,6 +159,12 @@ public class Config {
                 "  enable-db-server: " + isDBServer() + "\n" +
                 "  db-server-password: " + getDBServerPassword() + "\n" +
                 "  dburl: " + getDBurl() + "\n" +
+                "\n" +
+                "  # "+nbundle("config-old-database-migration-description")+"\n" +
+                "  old-db-migration: " + getOldDBMigration + "\n" +
+                "  old-db-url: " + getOldDBURL() + "\n" +
+                "  old-db-id: " + getOldDBID() + "\n" +
+                "  old-db-pw: " + getOldDBPW() + "\n" +
                 "\n" +
                 "  # "+nbundle("config-data-share-description")+"\n" +
                 "  data-server-url: " + getDataServerURL() + "\n" +
@@ -442,10 +450,26 @@ public class Config {
 
     public String getDBurl(){
         if(isInternalDB()){
-            return "jdbc:h2:file:"+root.child("data/player").absolutePath();
+            return "jdbc:h2:file:./"+root.child("data/player").path();
         } else {
             return obj.getString("dburl","none");
         }
+    }
+
+    public boolean isOldDBMigration(){
+        return obj.getBoolean("old-db-migration", false);
+    }
+
+    public String getOldDBURL(){
+        return obj.getString("old-db-url","jdbc:sqlite:"+root.child("data/player.sqlite3"));
+    }
+
+    public String getOldDBID(){
+        return obj.getString("old-db-id","none");
+    }
+
+    public String getOldDBPW(){
+        return obj.getString("old-db-pw","none");
     }
 
     public boolean isEnableTranslate(){
