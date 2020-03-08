@@ -54,9 +54,6 @@ public class Threads extends TimerTask{
     public static LocalTime uptime = LocalTime.of(0,0,0);
     public static boolean isvoting;
 
-    public static String oridesc = Administration.Config.desc.get().toString();
-    public static String oriname = Administration.Config.name.get().toString();
-
     boolean PvPPeace = true;
 
     @Override
@@ -110,7 +107,7 @@ public class Threads extends TimerTask{
                 for (jumpcount value : data.jumpcount) result = result + value.players;
                 String name = "[#FFA]Lobby server [green]|[white] Anti griefing\n" +
                         "[#F32]Using Discord Authentication";
-                String desc = "[white]https://discord.gg/8rCwpHc\n" +
+                String desc = "[white]"+config.getDiscordLink()+"\n" +
                         "[green]Total [white]"+result+" Players\n" +
                         "[sky]POWERED BY Essentials 9.0.0";
                 Administration.Config c = Administration.Config.desc;
@@ -838,7 +835,7 @@ public class Threads extends TimerTask{
                                         }
                                         if (size < 5) sleep(2000);
                                     } else {
-                                        nlog(LogType.debug, "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
+                                        if(config.isDebug()) nlog(LogType.debug, "jump zone " + ip + " offline! After 30 seconds, try to connect again.");
                                         sleep(30000);
                                     }
                                 } catch (InterruptedException ignored) {

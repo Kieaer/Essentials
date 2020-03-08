@@ -50,9 +50,6 @@ dependencies{
 
     compile group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.3'
     compile group: 'org.simplejavamail', name: 'batch-module', version: '6.0.3'
-
-    compile group: 'com.h2database', name: 'h2', version: '1.4.200'
-
 }
 
 jar{

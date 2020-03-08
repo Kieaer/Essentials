@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
@@ -41,6 +42,7 @@ public class Client extends Thread{
     public Client(){
         try {
             InetAddress address = InetAddress.getByName(config.getClienthost());
+            socket.setSoTimeout(30000);
             socket = new Socket(address, config.getClientport());
 
             // 키 생성
@@ -77,8 +79,10 @@ public class Client extends Thread{
             }
         } catch (UnknownHostException e) {
             nlog(LogType.client,"Invalid host!");
-        } catch (IOException e) {
-            log(LogType.client,"remote-server-dead");
+        } catch (SocketException e) {
+            log(LogType.client, "remote-server-dead");
+        } catch (IOException e){
+            log(LogType.client, "remote-server-dead");
         } catch (Exception e){
             printError(e);
         }

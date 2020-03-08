@@ -17,6 +17,7 @@ import static essentials.Global.*;
 public class DriverLoader implements Driver {
     private boolean tried = false;
     private Driver driver;
+    public static URLClassLoader H2URL;
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     List<URL> urls = new ArrayList<>();
@@ -40,7 +41,7 @@ public class DriverLoader implements Driver {
         try {
             Fi[] f = root.child("Driver/").list();
             for (int a=0;a<urls.size();a++) {
-                URLClassLoader classLoader = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
+                H2URL = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
                 /*String dr = "org.sqlite.JDBC";
                 for(int b=0;b<urls.size();b++){
                     if(f[a].name().contains("mariadb")){
@@ -52,7 +53,7 @@ public class DriverLoader implements Driver {
                     }
                 }*/
                 String dr = "org.h2.Driver";
-                Driver driver = (Driver) Class.forName(dr, true, classLoader).getDeclaredConstructor().newInstance();
+                Driver driver = (Driver) Class.forName(dr, true, H2URL).getDeclaredConstructor().newInstance();
                 DriverManager.registerDriver(new DriverLoader(driver));
             }
         } catch (Exception e) {

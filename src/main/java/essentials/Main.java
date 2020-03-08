@@ -37,7 +37,6 @@ import mindustry.game.EventType.*;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
-import mindustry.net.Administration;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
@@ -938,12 +937,6 @@ public class Main extends Plugin {
                     boolean error = false;
 
                     PlayerDataSaveAll(); // 플레이어 데이터 저장
-                    if(config.getDebugCode().contains("jumptotal_count")){
-                        Administration.Config c = Administration.Config.desc;
-                        Administration.Config s = Administration.Config.name;
-                        c.set(oridesc);
-                        s.set(oriname);
-                    }
                     data.saveall(); // 플러그인 데이터 저장
                     config.executorService.shutdownNow(); // 스레드 종료
                     config.singleService.shutdownNow(); // 로그 스레드 종료
@@ -1344,12 +1337,6 @@ public class Main extends Plugin {
             /* 플러그인 종료 */
             try {
                 PlayerDataSaveAll(); // 플레이어 데이터 저장
-                if (config.getDebugCode().contains("jumptotal_count")) {
-                    Administration.Config c = Administration.Config.desc;
-                    Administration.Config s = Administration.Config.name;
-                    c.set(oridesc);
-                    s.set(oriname);
-                }
                 data.saveall(); // 플러그인 데이터 저장
                 config.executorService.shutdownNow(); // 스레드 종료
                 config.singleService.shutdownNow(); // 로그 스레드 종료

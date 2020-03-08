@@ -6,10 +6,10 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
-import org.h2.tools.Server;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import static essentials.Global.*;
 import static essentials.Main.*;
 import static essentials.Threads.ColorNick;
+import static essentials.special.DriverLoader.H2URL;
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 
@@ -30,8 +31,10 @@ public class PlayerDB {
     public static Connection conn;
     public static ArrayList<Player> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
-    static Server DBServer;
     int DBVersion = 4;
+
+    private static Object DBObject;
+    private static Class<?> DBClass;
 
     public PlayerDB(){
         openconnect();
@@ -347,10 +350,23 @@ public class PlayerDB {
 
     public static void openconnect() {
         try {
-            //String url = config.isDBServer() ? config.getDBurl()+";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090" : config.getDBurl();
+            String url = config.isDBServer() ? config.getDBurl()+";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090" : config.getDBurl();
             conn = DriverManager.getConnection(config.getDBurl(), "", "");
             if(config.isDBServer()){
-                DBServer = Server.createTcpServer("-tcp", "-tcpPort", "9090", /*"-tcpSSL", */"-baseDir", root.child("data/").absolutePath(), "-tcpPassword", config.getDBServerPassword()).start(); // TODO finish H2 db server
+                try{
+                    DBClass = Class.forName("org.h2.tools.Server", true, H2URL);
+                    DBObject = DBClass.getDeclaredConstructor().newInstance();
+                    String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", root.child("data/").absolutePath(), "-tcpPassword", config.getDBServerPassword()};
+                    Object[] parameters = new Object[]{arr};
+                    for (Method m : DBClass.getMethods()){
+                        if(m.getName().equals("createTcpServer")){
+                            m.invoke(DBObject, parameters);
+                            break;
+                        }
+                    }
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
             }
             log(LogType.player,"db-type","internalDB");
         } catch (SQLException e){
@@ -362,7 +378,12 @@ public class PlayerDB {
     public static void closeconnect(){
         try {
             if(config.isDBServer()) {
-                DBServer.stop();
+                for (Method m : DBClass.getMethods()){
+                    if(m.getName().equals("stop")){
+                        m.invoke(DBObject, (Object[]) null);
+                        break;
+                    }
+                }
             }
             conn.close();
         } catch (Exception e) {
