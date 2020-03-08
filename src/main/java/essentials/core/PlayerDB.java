@@ -350,16 +350,22 @@ public class PlayerDB {
 
     public static void openconnect() {
         try {
-            conn = DriverManager.getConnection(config.getDBurl(), "", config.getDBurl().contains("tcp") ? config.getDBServerPassword() : "");
+            conn = DriverManager.getConnection(config.getDBurl(), "", "");
             if(config.isDBServer()){
                 try{
                     DBClass = Class.forName("org.h2.tools.Server", true, H2URL);
                     DBObject = DBClass.getDeclaredConstructor().newInstance();
-                    String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", root.child("data/").absolutePath(), "-tcpPassword", config.getDBServerPassword()};
+                    String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", "./"+root.child("data").path(), "-tcpAllowOthers"};
+                    //String[] arr = {"-tcp -tcpPort 9090 -baseDir ./"+root.child("data/player").path()+" -tcpPassword "+config.getDBServerPassword()};
                     Object[] parameters = new Object[]{arr};
+                    Object current = null;
                     for (Method m : DBClass.getMethods()){
                         if(m.getName().equals("createTcpServer")){
-                            m.invoke(DBObject, parameters);
+                            current = m.invoke(DBObject, parameters);
+                            System.out.println("DB Server assigned");
+                        } else if(current != null && m.getName().equals("start")){
+                            m.invoke(current, (Object[]) null);
+                            System.out.println("DB Server enabled");
                             break;
                         }
                     }

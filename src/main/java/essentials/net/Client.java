@@ -42,8 +42,8 @@ public class Client extends Thread{
     public Client(){
         try {
             InetAddress address = InetAddress.getByName(config.getClienthost());
-            socket.setSoTimeout(30000);
             socket = new Socket(address, config.getClientport());
+            socket.setSoTimeout(20000);
 
             // 키 생성
             KeyGenerator gen = KeyGenerator.getInstance("AES");
@@ -58,6 +58,7 @@ public class Client extends Thread{
 
             // 키값 보내기
             os.writeBytes(Base64.encode(raw) + "\n");
+            os.flush();
 
             // 데이터 전송
             JsonObject json = new JsonObject();
