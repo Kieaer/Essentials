@@ -20,13 +20,10 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static essentials.Global.*;
 import static essentials.Main.config;
 import static mindustry.Vars.netServer;
-import static mindustry.Vars.playerGroup;
 
 public class Client extends Thread{
     public static Socket socket;
@@ -69,7 +66,9 @@ public class Client extends Thread{
             os.writeBytes(Base64.encode(encrypted) + "\n");
             os.flush();
 
-            if(JsonValue.readJSON(is.readLine()).asObject().get("result") != null){
+            String receive = new String(decrypt(Base64.decode(is.readLine()), spec, cipher));
+
+            if(JsonValue.readJSON(receive).asObject().get("result") != null){
                 server_active = true;
                 config.executorService.execute(new Thread(this));
                 log(LogType.client, "client-enabled");
@@ -132,7 +131,7 @@ public class Client extends Thread{
                     os.writeBytes(Base64.encode(encrypted) + "\n");
                     os.flush();
 
-                    Call.sendMessage("[#357EC7][SC] " + "[" + player.name + "]: " + message);
+                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
                     log(LogType.client, "client-sent-message", config.getClienthost(), message);
                 } catch (Exception e) {
                     printError(e);
@@ -212,11 +211,11 @@ public class Client extends Thread{
                 String received = is.readLine();
                 if (received == null || received.equals("")) return;
 
-                String data;
+                JsonObject data;
                 try{
                     byte[] encrypted = Base64.decode(received);
                     byte[] decrypted = decrypt(encrypted, spec, cipher);
-                    data = new String(decrypted);
+                    data = JsonValue.readJSON(new String(decrypted)).asObject();
                 }catch (Exception e){
                     printError(e);
                     log(LogType.client,"server-disconnected", config.getClienthost());
@@ -232,54 +231,52 @@ public class Client extends Thread{
                     return;
                 }
 
-                if(data.matches("\\[(.*)]:.*")){
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player player = playerGroup.all().get(i);
-                        Matcher m = Pattern.compile("\\[(.*?)]").matcher(player.name);
-                        if(m.find()){
-                            if(m.group(1).equals(player.name)){
-                                Call.sendMessage("[#C77E36][RC] "+data);
-                            }
+                Request type = Request.valueOf(data.get("type").asString());
+                switch (type){
+                    case bansync:
+                        // 적용
+                        JsonArray ban = data.get("ban").asArray();
+                        JsonArray ipban = data.get("ipban").asArray();
+                        JsonArray subban = data.get("subban").asArray();
+
+                        for (JsonValue b : ban){
+                            netServer.admins.banPlayerID(b.asString());
                         }
-                    }
-                } else if(config.isBanshare()){
-                    try{
-                        JsonArray bandata = JsonValue.readJSON(data).asArray();
-                        if(data.substring(data.length()-5).equals("unban")){
-                            log(LogType.client,"server-request-unban");
-                            for (int i = 0; i < bandata.size(); i++) {
-                                String[] array = bandata.get(i).asString().split("\\|", -1);
-                                if (array[0].length() == 12) {
-                                    netServer.admins.unbanPlayerID(array[0]);
-                                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                                        netServer.admins.unbanPlayerIP(array[1]);
-                                    }
-                                }
-                                if (array[0].equals("<unknown>")) {
-                                    netServer.admins.unbanPlayerIP(array[1]);
-                                }
-                                log(LogType.client,"unban-done", bandata.get(i).asString());
-                            }
-                        } else {
-                            for (int i = 0; i < bandata.size(); i++) {
-                                String[] array = bandata.get(i).asString().split("\\|", -1);
-                                if (array[0].length() == 12) {
-                                    netServer.admins.banPlayerID(array[0]);
-                                    if (!array[1].equals("<unknown>") && array[1].length() <= 15) {
-                                        netServer.admins.banPlayerIP(array[1]);
-                                    }
-                                }
-                                if (array[0].equals("<unknown>")) {
-                                    netServer.admins.banPlayerIP(array[1]);
-                                }
-                            }
-                            log(LogType.client,"client-banlist-received");
+
+                        for (JsonValue b : ipban){
+                            netServer.admins.banPlayerIP(b.asString());
                         }
-                    }catch (Exception e){
-                        printError(e);
-                    }
-                } else {
-                    nlog(LogType.warn,"Unknown data! - "+data);
+
+                        for (JsonValue b : subban){
+                            netServer.admins.addSubnetBan(b.asString());
+                        }
+                        break;
+                    case chat:
+                        String name = data.get("name").asString();
+                        String message = data.get("message").asString();
+                        Call.sendMessage("[#C77E36][RC] [orange]"+name+" [orange]:[white] "+message);
+                        break;
+                    case exit:
+                        server_active = false;
+                        try {
+                            is.close();
+                            os.close();
+                            socket.close();
+                        } catch (IOException ex) {
+                            printError(ex);
+                        }
+                        return;
+                    case unbanip:
+                        netServer.admins.unbanPlayerIP(data.get("ip").asString());
+                        // TODO make success message
+                        break;
+                    case unbanid:
+                        netServer.admins.unbanPlayerID(data.get("uuid").asString());
+                        // TODO make success message
+                        break;
+                    case datashare:
+                        // TODO make datashare
+                        break;
                 }
             } catch (Exception e) {
                 log(LogType.client,"server-disconnected", config.getClienthost());

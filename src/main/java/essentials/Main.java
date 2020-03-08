@@ -136,7 +136,6 @@ public class Main extends Plugin {
         if (config.isClientenable()) {
             log(LogType.client, "server-connecting");
             client = new Client();
-            client.request(null, null, null);
         }
 
         // 모든 플레이어 연결 상태를 0으로 설정
@@ -501,9 +500,9 @@ public class Main extends Plugin {
                     } else {
                         if(!playerData.mute) {
                             if (perm.permission.get(playerData.permission).asObject().get("prefix") != null) {
-                                Call.sendMessage(perm.permission.get(playerData.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
+                                if(!playerData.crosschat) Call.sendMessage(perm.permission.get(playerData.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
                             } else {
-                                Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] :[white] " + e.message);
+                                if(!playerData.crosschat) Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] :[white] " + e.message);
                             }
 
                             // 서버간 대화기능 작동

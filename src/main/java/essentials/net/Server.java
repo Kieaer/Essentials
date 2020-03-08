@@ -210,8 +210,10 @@ public class Server implements Runnable {
                                 }
 
                                 for (Service ser : list) {
-                                    ser.os.writeBytes(Base64.encode(encrypt(value,ser.spec,ser.cipher))+"\n");
-                                    ser.os.flush();
+                                    if(ser.spec != spec){
+                                        ser.os.writeBytes(Base64.encode(encrypt(value,ser.spec,ser.cipher))+"\n");
+                                        ser.os.flush();
+                                    }
                                 }
 
                                 log(LogType.server,"server-message-received", remoteip, message);
@@ -233,6 +235,7 @@ public class Server implements Runnable {
                                 // TODO make success message
                                 break;
                             case datashare:
+                                // TODO make datashare
                                 break;
                             case checkban:
                                 boolean found = false;
@@ -262,7 +265,7 @@ public class Server implements Runnable {
                     }
                 } catch (Exception e) {
                     log(LogType.server,"client-disconnected", remoteip);
-                    printError(e);
+                    if(!e.getMessage().equals("Connection reset")) printError(e);
                     try {
                         os.close();
                         in.close();

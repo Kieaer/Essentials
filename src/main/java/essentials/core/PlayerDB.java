@@ -79,6 +79,7 @@ public class PlayerDB {
                     "`connserver` TINYTEXT NOT NULL DEFAULT 'none',\n" +
                     "`permission` TINYTEXT NOT NULL DEFAULT 'default',\n" +
                     "`mute` TINYTEXT NOT NULL,\n" +
+                    "`alert` TINYTEXT NOT NULL,\n" +
                     "`udid` TEXT NOT NULL,\n" +
                     "`email` TEXT NOT NULL,\n" +
                     "`accountid` TEXT NOT NULL,\n" +

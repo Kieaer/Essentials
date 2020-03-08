@@ -108,14 +108,15 @@ public class Threads extends TimerTask{
             if(config.getDebugCode().contains("jumptotal_count")){
                 int result = 0;
                 for (jumpcount value : data.jumpcount) result = result + value.players;
-                String name = "[orange]Lobby server | Anti griefing";
-                String desc = "";
+                String name = "[#FFA]Lobby server [green]|[white] Anti griefing\n" +
+                        "[#F32]Using Discord Authentication";
+                String desc = "[white]https://discord.gg/8rCwpHc\n" +
+                        "[green]Total [white]"+result+" Players\n" +
+                        "[sky]POWERED BY Essentials 9.0.0";
                 Administration.Config c = Administration.Config.desc;
                 Administration.Config s = Administration.Config.name;
-                oridesc = oridesc.replaceAll("\n\\[green]Total \\[white].*","");
-                oriname = oriname.replaceAll("\n\\[#F32]Discord authentication enabled","");
-                c.set(oridesc + "\n[green]Total [white]"+result+" Players\n[sky]POWERED BY Essentials 9.0.0");
-                s.set(oriname + "\n[#F32]Discord authentication enabled!");
+                c.set(desc);
+                s.set(name);
             }
 
             // 모든 클라이언트 서버에 대한 인원 총합 카운트
