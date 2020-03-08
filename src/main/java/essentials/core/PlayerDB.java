@@ -13,8 +13,10 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.*;
+import java.util.Locale;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -948,9 +950,7 @@ public class PlayerDB {
 
     public static void PlayerDataSaveAll(){
         // java.util.ConcurrentModificationException
-        Iterator<PlayerData> iter = Players.iterator();
-        while (iter.hasNext()) {
-            PlayerData player = iter.next();
+        for (PlayerData player : Players) {
             /*System.out.println("name: "+player.name);
             System.out.println("uuid: "+player.uuid);
             System.out.println("country: "+player.country);
@@ -988,7 +988,7 @@ public class PlayerDB {
             System.out.println("permission: "+player.permission);
             System.out.println("udid: "+player.udid);
             System.out.println("uuid: "+player.uuid);*/
-            PlayerDataSave(player);
+            if(player != null) PlayerDataSave(player);
         }
     }
 

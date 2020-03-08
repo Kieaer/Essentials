@@ -108,6 +108,8 @@ public class Threads extends TimerTask{
             if(config.getDebugCode().contains("jumptotal_count")){
                 int result = 0;
                 for (jumpcount value : data.jumpcount) result = result + value.players;
+                String name = "[orange]Lobby server | Anti griefing";
+                String desc = "";
                 Administration.Config c = Administration.Config.desc;
                 Administration.Config s = Administration.Config.name;
                 oridesc = oridesc.replaceAll("\n\\[green]Total \\[white].*","");
