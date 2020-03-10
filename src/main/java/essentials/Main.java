@@ -1322,16 +1322,10 @@ public class Main extends Plugin {
         });
         handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
+                if(server_active) client.request(Request.exit, null, null);
                 log(LogType.client,"server-connecting");
-                if(server_active){
-                    client.request(Request.exit, null, null);
-                } else {
-                    client = new Client();
-                }
-            } else {
-                log(LogType.client,"client-disabled");
+                client = new Client();
             }
-
             log(LogType.client,"db-connecting");
             closeconnect();
             openconnect();

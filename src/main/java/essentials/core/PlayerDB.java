@@ -358,14 +358,17 @@ public class PlayerDB {
                     String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", "./"+root.child("data").path(), "-tcpAllowOthers"};
                     //String[] arr = {"-tcp -tcpPort 9090 -baseDir ./"+root.child("data/player").path()+" -tcpPassword "+config.getDBServerPassword()};
                     Object[] parameters = new Object[]{arr};
-                    Object current = null;
                     for (Method m : DBClass.getMethods()){
                         if(m.getName().equals("createTcpServer")){
-                            current = m.invoke(DBObject, parameters);
+                            Object current = m.invoke(DBObject, parameters);
                             System.out.println("DB Server assigned");
-                        } else if(current != null && m.getName().equals("start")){
-                            m.invoke(current, (Object[]) null);
-                            System.out.println("DB Server enabled");
+                            for (Method o : DBClass.getMethods()) {
+                                if (o.getName().equals("start")) {
+                                    o.invoke(current, (Object[]) null);
+                                    System.out.println("DB Server started");
+                                    break;
+                                }
+                            }
                             break;
                         }
                     }

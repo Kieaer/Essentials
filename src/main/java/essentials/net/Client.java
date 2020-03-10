@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
@@ -80,9 +79,7 @@ public class Client extends Thread{
             }
         } catch (UnknownHostException e) {
             nlog(LogType.client,"Invalid host!");
-        } catch (SocketException e) {
-            log(LogType.client, "remote-server-dead");
-        } catch (IOException e){
+        } catch (IOException e) {
             log(LogType.client, "remote-server-dead");
         } catch (Exception e){
             printError(e);
@@ -118,7 +115,7 @@ public class Client extends Thread{
                     data.add("subban",subban);
 
                     byte[] encrypted = encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(Base64.encode(encrypted));
+                    os.writeBytes(Base64.encode(encrypted)+"\n");
                     os.flush();
 
                     log(LogType.client, "client-banlist-sented");
@@ -213,14 +210,9 @@ public class Client extends Thread{
     public void run(){
         while(!Thread.currentThread().isInterrupted()){
             try{
-                String received = is.readLine();
-                if (received == null || received.equals("")) return;
-
                 JsonObject data;
                 try{
-                    byte[] encrypted = Base64.decode(received);
-                    byte[] decrypted = decrypt(encrypted, spec, cipher);
-                    data = JsonValue.readJSON(new String(decrypted)).asObject();
+                    data = JsonValue.readJSON(new String(decrypt(Base64.decode(is.readLine()), spec, cipher))).asObject();
                 }catch (Exception e){
                     printError(e);
                     log(LogType.client,"server-disconnected", config.getClienthost());
@@ -255,6 +247,8 @@ public class Client extends Thread{
                         for (JsonValue b : subban){
                             netServer.admins.addSubnetBan(b.asString());
                         }
+
+                        System.out.println("DONE");
                         break;
                     case chat:
                         String name = data.get("name").asString();

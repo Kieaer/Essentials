@@ -192,11 +192,16 @@ public class Server implements Runnable {
                                     subbans.add(b);
                                 }
 
+                                answer.add("type","bansync");
+                                answer.add("ban",ban);
+                                answer.add("ipban",ipban);
+                                answer.add("subban",subban);
+
                                 for (Service ser : list) {
                                     String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
                                     for (JsonValue b : config.getBantrust()){
                                         if(b.asString().equals(remoteip)){
-                                            ser.os.writeBytes(Base64.encode(encrypt(answer.toString(),spec,cipher))+"\n");
+                                            ser.os.writeBytes(Base64.encode(encrypt(answer.toString(),ser.spec,ser.cipher))+"\n");
                                             ser.os.flush();
                                             log(LogType.server,"server-data-sented", ser.socket.getInetAddress().toString());
                                         }
