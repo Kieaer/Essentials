@@ -228,7 +228,7 @@ public class Server implements Runnable {
                                 in.close();
                                 socket.close();
                                 list.remove(this);
-                                log(LogType.server, "client-disconnected", remoteip);
+                                log(LogType.server, "client-disconnected", remoteip, nbundle(locale, "client-disconnected-reason-exit"));
                                 this.interrupt();
                                 return;
                             case unbanip:
@@ -268,19 +268,8 @@ public class Server implements Runnable {
                     } catch (ParseException e) {
                         throw new Exception();
                     }
-                } catch (SocketException e) {
-                    try {
-                        os.close();
-                        in.close();
-                        socket.close();
-                        list.remove(this);
-                    } catch (IOException ex) {
-                        printError(ex);
-                    }
-                    return;
                 } catch (Exception e) {
-                    log(LogType.server,"client-disconnected", remoteip);
-                    if(!e.getMessage().equals("Connection reset")) printError(e);
+                    log(LogType.server,"client-disconnected", remoteip, nbundle(locale, "client-disconnected-reason-error"));
                     try {
                         os.close();
                         in.close();

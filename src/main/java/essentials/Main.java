@@ -1324,7 +1324,7 @@ public class Main extends Plugin {
                     break;
             }
         });
-        handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
+        /*handler.register("reconnect", "Reconnect remote server (Essentials server only!)", arg -> {
             if(config.isClientenable()){
                 if(server_active) client.request(Request.exit, null, null);
                 log(LogType.client,"server-connecting");
@@ -1334,7 +1334,7 @@ public class Main extends Plugin {
             closeconnect();
             openconnect();
             log(LogType.log,"success");
-        });
+        });*/
         handler.register("restart", "Plugin restart", arg -> {
             /* 플러그인 종료 */
             try {
