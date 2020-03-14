@@ -3,6 +3,7 @@ package essentials.utils;
 import arc.Core;
 import arc.util.ArcRuntimeException;
 import essentials.Global;
+import essentials.special.UTF8Control;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -13,9 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.time.LocalTime;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
@@ -56,7 +55,14 @@ public class Config {
             update();
 
             data.loadall();
-            log(LogType.config,"config-language",this.getLanguage().getDisplayLanguage(locale));
+
+            try{
+                ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control()).getString("config-language");
+            } catch (MissingResourceException e){
+                locale = new Locale("en","US");
+            }
+
+            log(LogType.config,"config-language", locale.getDisplayLanguage());
             log(LogType.config,"config-loaded");
         } catch (IOException e){
             printError(e);

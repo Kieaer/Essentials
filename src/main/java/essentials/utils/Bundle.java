@@ -22,8 +22,8 @@ public class Bundle {
             RESOURCE_BUNDLE = root.child("bundle.properties").exists()
                     ? new PropertyResourceBundle(Files.newInputStream(Paths.get(root.child("bundle.properties").path())))
                     : ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
-        }catch (Exception e){
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", new UTF8Control());
+        } catch (Exception e){
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", new Locale("en","US"), new UTF8Control());
         }
     }
 

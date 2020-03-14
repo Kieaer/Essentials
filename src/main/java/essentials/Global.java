@@ -215,7 +215,7 @@ public class Global {
     }
 
     public static String nbundle(String name, Object... parameter) {
-        Locale locale = config.getLanguage();
+        if(locale == null) locale = config.getLanguage();
         Bundle bundle = new Bundle(locale);
         return parameter.length != 0 ? bundle.getNormal(name, parameter) : bundle.getNormal(name);
     }

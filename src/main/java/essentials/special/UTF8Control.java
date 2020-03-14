@@ -12,6 +12,12 @@ import java.util.ResourceBundle;
 
 // Source from https://stackoverflow.com/questions/4659929/how-to-use-utf-8-in-resource-properties-with-resourcebundle
 public class UTF8Control extends ResourceBundle.Control {
+    @Override
+    public Locale getFallbackLocale(String aBaseName, Locale aLocale) {
+        if( aBaseName == null || aLocale == null ) throw new NullPointerException();
+        return null;
+    }
+
     public ResourceBundle newBundle
             (String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
             throws IOException
