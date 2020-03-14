@@ -16,33 +16,31 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 import static essentials.Global.*;
-import static essentials.Main.config;
+import static essentials.Main.*;
 import static mindustry.Vars.netServer;
 
 public class Client extends Thread{
-    public static Socket socket;
-    public static BufferedReader is;
-    public static DataOutputStream os;
-    public static boolean server_active;
+    public Socket socket;
+    public BufferedReader is;
+    public DataOutputStream os;
 
-    public static Cipher cipher;
-    public static SecretKeySpec spec;
+    public Cipher cipher;
+    public SecretKeySpec spec;
 
     public enum Request{
         bansync, chat, exit, unbanip, unbanid, datashare
     }
 
-    public Client(){
+    public void wakeup(){
         try {
             InetAddress address = InetAddress.getByName(config.getClienthost());
             socket = new Socket(address, config.getClientport());
-            socket.setSoTimeout(20000);
+            socket.setSoTimeout(disconnected ? 2000 : 0);
 
             // 키 생성
             KeyGenerator gen = KeyGenerator.getInstance("AES");
@@ -73,14 +71,25 @@ public class Client extends Thread{
             if(JsonValue.readJSON(receive).asObject().get("result") != null){
                 server_active = true;
                 config.executorService.execute(new Thread(this));
-                log(LogType.client, "client-enabled");
+                nlog(LogType.client, JsonValue.readJSON(receive).asObject().get("result").asString());
+                log(LogType.client, disconnected ? "client-reconnect" : "client-enabled", socket.getInetAddress().toString().replace("/", ""));
+                disconnected = false;
             } else {
-                throw new Exception("Invalid request!");
+                throw new SocketException("Invalid request!");
             }
         } catch (UnknownHostException e) {
-            nlog(LogType.client,"Invalid host!");
-        } catch (IOException e) {
-            log(LogType.client, "remote-server-dead");
+            nlog(LogType.client, "Invalid host!");
+        } catch (SocketTimeoutException | SocketException e) {
+            if(disconnected){
+                try {
+                    TimeUnit.SECONDS.sleep(5);
+                    client.wakeup();
+                } catch (InterruptedException ex) {
+                    this.interrupt();
+                }
+            } else {
+                log(LogType.client, "remote-server-dead");
+            }
         } catch (Exception e){
             printError(e);
         }
@@ -208,14 +217,26 @@ public class Client extends Thread{
 
     @Override
     public void run(){
+        disconnected = false;
+        try {
+            socket.setSoTimeout(0);
+        } catch (SocketException e) {
+            printError(e);
+        }
+
         while(!Thread.currentThread().isInterrupted()){
-            try{
+            try {
                 JsonObject data;
-                try{
+                try {
                     data = JsonValue.readJSON(new String(decrypt(Base64.decode(is.readLine()), spec, cipher))).asObject();
-                }catch (Exception e){
-                    printError(e);
-                    log(LogType.client,"server-disconnected", config.getClienthost());
+                } catch (IllegalArgumentException | SocketException e) {
+                    disconnected = true;
+                    log(LogType.client, "server-disconnected", config.getClienthost());
+                    if(!Thread.currentThread().isInterrupted()) client.wakeup();
+                    return;
+                } catch (Exception e) {
+                    if (!e.getMessage().equals("Socket closed")) printError(e);
+                    log(LogType.client, "server-disconnected", config.getClienthost());
 
                     server_active = false;
                     try {
@@ -229,22 +250,22 @@ public class Client extends Thread{
                 }
 
                 Request type = Request.valueOf(data.get("type").asString());
-                switch (type){
+                switch (type) {
                     case bansync:
                         // 적용
                         JsonArray ban = data.get("ban").asArray();
                         JsonArray ipban = data.get("ipban").asArray();
                         JsonArray subban = data.get("subban").asArray();
 
-                        for (JsonValue b : ban){
+                        for (JsonValue b : ban) {
                             netServer.admins.banPlayerID(b.asString());
                         }
 
-                        for (JsonValue b : ipban){
+                        for (JsonValue b : ipban) {
                             netServer.admins.banPlayerIP(b.asString());
                         }
 
-                        for (JsonValue b : subban){
+                        for (JsonValue b : subban) {
                             netServer.admins.addSubnetBan(b.asString());
                         }
 
@@ -253,7 +274,7 @@ public class Client extends Thread{
                     case chat:
                         String name = data.get("name").asString();
                         String message = data.get("message").asString();
-                        Call.sendMessage("[#C77E36][RC] [orange]"+name+" [orange]:[white] "+message);
+                        Call.sendMessage("[#C77E36][RC] [orange]" + name + " [orange]:[white] " + message);
                         break;
                     case exit:
                         server_active = false;

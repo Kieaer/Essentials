@@ -35,6 +35,7 @@ public class PlayerDB {
 
     private static Object DBObject;
     private static Class<?> DBClass;
+    private static Object DBNext;
 
     public PlayerDB(){
         openconnect();
@@ -360,11 +361,11 @@ public class PlayerDB {
                     Object[] parameters = new Object[]{arr};
                     for (Method m : DBClass.getMethods()){
                         if(m.getName().equals("createTcpServer")){
-                            Object current = m.invoke(DBObject, parameters);
+                            DBNext = m.invoke(DBObject, parameters);
                             System.out.println("DB Server assigned");
                             for (Method o : DBClass.getMethods()) {
                                 if (o.getName().equals("start")) {
-                                    o.invoke(current, (Object[]) null);
+                                    o.invoke(DBNext, (Object[]) null);
                                     System.out.println("DB Server started");
                                     break;
                                 }
@@ -388,7 +389,7 @@ public class PlayerDB {
             if(config.isDBServer()) {
                 for (Method m : DBClass.getMethods()){
                     if(m.getName().equals("stop")){
-                        m.invoke(DBObject, (Object[]) null);
+                        m.invoke(DBNext, (Object[]) null);
                         break;
                     }
                 }

@@ -75,7 +75,6 @@ import static essentials.Threads.*;
 import static essentials.core.Discord.jda;
 import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.*;
-import static essentials.net.Client.server_active;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
@@ -99,6 +98,9 @@ public class Main extends Plugin {
     Timer timer = new Timer(true);
     Array<mindustry.maps.Map> maplist = Vars.maps.all();
     Array<Player> players = new Array<>();
+
+    public static boolean disconnected = false; // Client connect status
+    public static boolean server_active = false;
 
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
@@ -137,6 +139,7 @@ public class Main extends Plugin {
         if (config.isClientenable()) {
             log(LogType.client, "server-connecting");
             client = new Client();
+            client.wakeup();
         }
 
         // 모든 플레이어 연결 상태를 0으로 설정
@@ -948,12 +951,13 @@ public class Main extends Plugin {
                     closeconnect(); // DB 연결 종료
                     if (config.isServerenable()) {
                         try {
-                            for (Server.Service ser : Server.list) {
-                                ser.interrupt();
+                            Iterator<Server.Service> servers = Server.list.iterator();
+                            while(servers.hasNext()){
+                                Server.Service ser = servers.next();
                                 ser.os.close();
                                 ser.in.close();
                                 ser.socket.close();
-                                Server.list.remove(ser);
+                                servers.remove();
                             }
 
                             Server.serverSocket.close();
@@ -1324,7 +1328,7 @@ public class Main extends Plugin {
             if(config.isClientenable()){
                 if(server_active) client.request(Request.exit, null, null);
                 log(LogType.client,"server-connecting");
-                client = new Client();
+                client.wakeup();
             }
             log(LogType.client,"db-connecting");
             closeconnect();

@@ -142,36 +142,36 @@ public class Server implements Runnable {
                     remoteip = socket.getInetAddress().toString().replace("/", "");
                     String value = new String(decrypt(Base64.decode(in.readLine()), spec, cipher));
 
-                    try{
+                    try {
                         JsonObject answer = new JsonObject();
                         JsonObject data = JsonValue.readJSON(value).asObject();
                         Request type = Request.valueOf(data.get("type").asString());
-                        switch(type){
+                        switch (type) {
                             case ping:
                                 String[] msg = {"Hi " + remoteip + "! Your connection is successful!", "Hello " + remoteip + "! I'm server!", "Welcome to the server " + remoteip + "!"};
                                 int rnd = new Random().nextInt(msg.length);
-                                answer.add("result",msg[rnd]);
-                                os.writeBytes(Base64.encode(encrypt(answer.toString(),spec,cipher))+"\n");
+                                answer.add("result", msg[rnd]);
+                                os.writeBytes(Base64.encode(encrypt(answer.toString(), spec, cipher)) + "\n");
                                 os.flush();
-                                log(LogType.server,"client-connected", remoteip);
+                                log(LogType.server, "client-connected", remoteip);
                                 break;
                             case bansync:
-                                log(LogType.server,"client-request-banlist", remoteip);
+                                log(LogType.server, "client-request-banlist", remoteip);
 
                                 // 적용
                                 JsonArray ban = data.get("ban").asArray();
                                 JsonArray ipban = data.get("ipban").asArray();
                                 JsonArray subban = data.get("subban").asArray();
 
-                                for (JsonValue b : ban){
+                                for (JsonValue b : ban) {
                                     netServer.admins.banPlayerID(b.asString());
                                 }
 
-                                for (JsonValue b : ipban){
+                                for (JsonValue b : ipban) {
                                     netServer.admins.banPlayerIP(b.asString());
                                 }
 
-                                for (JsonValue b : subban){
+                                for (JsonValue b : subban) {
                                     netServer.admins.addSubnetBan(b.asString());
                                 }
 
@@ -180,55 +180,55 @@ public class Server implements Runnable {
                                 JsonArray ipbans = new JsonArray();
                                 JsonArray subbans = new JsonArray();
 
-                                for (Administration.PlayerInfo b : netServer.admins.getBanned()){
+                                for (Administration.PlayerInfo b : netServer.admins.getBanned()) {
                                     bans.add(b.id);
                                 }
 
-                                for (String b : netServer.admins.getBannedIPs()){
+                                for (String b : netServer.admins.getBannedIPs()) {
                                     ipbans.add(b);
                                 }
 
-                                for (String b : netServer.admins.getSubnetBans()){
+                                for (String b : netServer.admins.getSubnetBans()) {
                                     subbans.add(b);
                                 }
 
-                                answer.add("type","bansync");
-                                answer.add("ban",ban);
-                                answer.add("ipban",ipban);
-                                answer.add("subban",subban);
+                                answer.add("type", "bansync");
+                                answer.add("ban", ban);
+                                answer.add("ipban", ipban);
+                                answer.add("subban", subban);
 
                                 for (Service ser : list) {
                                     String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
-                                    for (JsonValue b : config.getBantrust()){
-                                        if(b.asString().equals(remoteip)){
-                                            ser.os.writeBytes(Base64.encode(encrypt(answer.toString(),ser.spec,ser.cipher))+"\n");
+                                    for (JsonValue b : config.getBantrust()) {
+                                        if (b.asString().equals(remoteip)) {
+                                            ser.os.writeBytes(Base64.encode(encrypt(answer.toString(), ser.spec, ser.cipher)) + "\n");
                                             ser.os.flush();
-                                            log(LogType.server,"server-data-sented", ser.socket.getInetAddress().toString());
+                                            log(LogType.server, "server-data-sented", ser.socket.getInetAddress().toString());
                                         }
                                     }
                                 }
                                 break;
                             case chat:
                                 String message = data.get("message").asString();
-                                for (Player p : playerGroup){
+                                for (Player p : playerGroup) {
                                     p.sendMessage(p.isAdmin ? "[#C77E36][" + remoteip + "][RC] " + message : "[#C77E36][RC] " + message);
                                 }
 
                                 for (Service ser : list) {
-                                    if(ser.spec != spec){
-                                        ser.os.writeBytes(Base64.encode(encrypt(value,ser.spec,ser.cipher))+"\n");
+                                    if (ser.spec != spec) {
+                                        ser.os.writeBytes(Base64.encode(encrypt(value, ser.spec, ser.cipher)) + "\n");
                                         ser.os.flush();
                                     }
                                 }
 
-                                log(LogType.server,"server-message-received", remoteip, message);
+                                log(LogType.server, "server-message-received", remoteip, message);
                                 break;
                             case exit:
                                 os.close();
                                 in.close();
                                 socket.close();
                                 list.remove(this);
-                                log(LogType.server,"client-disconnected", remoteip);
+                                log(LogType.server, "client-disconnected", remoteip);
                                 this.interrupt();
                                 return;
                             case unbanip:
@@ -247,27 +247,37 @@ public class Server implements Runnable {
                                 String target_uuid = data.get("target_uuid").asString();
                                 String target_ip = data.get("target_ip").asString();
 
-                                for(Administration.PlayerInfo info : netServer.admins.getBanned()){
+                                for (Administration.PlayerInfo info : netServer.admins.getBanned()) {
                                     if (info.id.equals(target_uuid)) {
                                         found = true;
                                         break;
                                     }
                                 }
 
-                                for(String info : netServer.admins.getBannedIPs()){
-                                    if(info.equals(target_ip)){
+                                for (String info : netServer.admins.getBannedIPs()) {
+                                    if (info.equals(target_ip)) {
                                         found = true;
                                         break;
                                     }
                                 }
                                 answer.add("result", found ? "true" : "false");
-                                os.writeBytes(Base64.encode(encrypt(answer.toString(),spec,cipher))+"\n");
+                                os.writeBytes(Base64.encode(encrypt(answer.toString(), spec, cipher)) + "\n");
                                 os.flush();
                                 break;
                         }
-                    } catch (ParseException e){
+                    } catch (ParseException e) {
                         throw new Exception();
                     }
+                } catch (SocketException e) {
+                    try {
+                        os.close();
+                        in.close();
+                        socket.close();
+                        list.remove(this);
+                    } catch (IOException ex) {
+                        printError(ex);
+                    }
+                    return;
                 } catch (Exception e) {
                     log(LogType.server,"client-disconnected", remoteip);
                     if(!e.getMessage().equals("Connection reset")) printError(e);

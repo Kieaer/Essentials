@@ -34,6 +34,7 @@ import org.jsoup.Jsoup;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -299,7 +300,9 @@ public class Threads extends TimerTask{
                                 message = nbundle(language, "login-require-password");
                             }
                             player.sendMessage(message);
-                        }catch (Exception e){
+                        } catch (UnknownHostException e){
+                            Call.onKick(player.con,nbundle(Locale.ENGLISH,"plugin-error-kick"));
+                        } catch (Exception e){
                             printError(e);
                         }
                     }
