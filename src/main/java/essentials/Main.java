@@ -709,8 +709,8 @@ public class Main extends Plugin {
                     }*/
 
                     target.grief_destory_count++;
-                    Call.sendMessage(String.valueOf(target.grief_destory_count));
-                    if (target.grief_destory_count > 30) nlog(LogType.log, target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
+                    // Call.sendMessage(String.valueOf(target.grief_destory_count));
+                    // if (target.grief_destory_count > 30) nlog(LogType.log, target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                     PlayerDataSet(target);
                 }
                 if(config.isDebug() && config.isAntigrief()){
