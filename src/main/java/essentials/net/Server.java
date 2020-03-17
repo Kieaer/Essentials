@@ -90,6 +90,7 @@ public class Server implements Runnable {
                 this.socket = socket;
                 ip = socket.getInetAddress().toString();
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                os = new DataOutputStream(socket.getOutputStream());
 
                 // 키 값 읽기
                 String authkey = in.readLine();
@@ -124,8 +125,6 @@ public class Server implements Runnable {
 
                 spec = new SecretKeySpec(Base64.decode(authkey), "AES");
                 cipher = Cipher.getInstance("AES");
-
-                os = new DataOutputStream(socket.getOutputStream());
             } catch (Exception e) {
                 if(e.getMessage().equals("socket closed")){
                     return;
