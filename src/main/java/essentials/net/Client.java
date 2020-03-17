@@ -32,6 +32,8 @@ public class Client extends Thread{
     public Cipher cipher;
     public SecretKeySpec spec;
 
+    private boolean disconnected = false;
+
     public enum Request{
         bansync, chat, exit, unbanip, unbanid, datashare
     }

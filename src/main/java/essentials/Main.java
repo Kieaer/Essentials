@@ -91,6 +91,7 @@ public class Main extends Plugin {
     public static Global global;
     public static PluginData data;
     public static Threads threads;
+    public Vote vote;
 
     public DataMigration dataMigration = new DataMigration();
     public ApplicationListener listener;
@@ -99,7 +100,6 @@ public class Main extends Plugin {
     Array<mindustry.maps.Map> maplist = Vars.maps.all();
     Array<Player> players = new Array<>();
 
-    public static boolean disconnected = false; // Client connect status
     public static boolean server_active = false;
 
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -263,7 +263,7 @@ public class Main extends Plugin {
 
         // 맵이 불러와졌을 때
         Events.on(WorldLoadEvent.class, e -> {
-            playtime = LocalTime.of(0,0,0);
+            threads.playtime = LocalTime.of(0,0,0);
 
             // 전력 노드 정보 초기화
             data.powerblock.clear();
@@ -430,7 +430,7 @@ public class Main extends Plugin {
                 }
 
                 // PvP 평화시간 설정
-                if (config.isEnableantirush() && state.rules.pvp && playtime.isBefore(config.getAntirushtime())) {
+                if (config.isEnableantirush() && state.rules.pvp && threads.playtime.isBefore(config.getAntirushtime())) {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
                     onSetRules(state.rules);
@@ -1106,7 +1106,32 @@ public class Main extends Plugin {
                     "- [ ] Anti-grief\n" +
                     "  - [ ] Make anti-filter art\n" +
                     "  - [ ] Make anti-fast build/break destroy\n" +
-                    "  - [ ] Make detect custom client\n\n";
+                    "  - [ ] Make detect custom client\n" +
+                    "- [ ] Soruce code rebuild\n" +
+                    "  - [ ] core\n" +
+                    "    - [ ] Discord\n" +
+                    "    - [ ] PlayerDB\n" +
+                    "  - [ ] net\n" +
+                    "    - [ ] Client\n" +
+                    "    - [ ] Server\n" +
+                    "  - [ ] special\n" +
+                    "    - [ ] DataMigration\n" +
+                    "    - [ ] DriverLoader\n" +
+                    "  - [ ] utils\n" +
+                    "    - [ ] Bundle\n" +
+                    "    - [ ] Config\n" +
+                    "  - [ ] Global\n" +
+                    "  - [ ] Main\n" +
+                    "  - [ ] Threads\n" +
+                    "    - [ ] login\n" +
+                    "    - [ ] changename\n" +
+                    "    - [ ] AutoRollback\n" +
+                    "    - [ ] eventserver\n" +
+                    "    - [ ] ColorNick\n" +
+                    "    - [ ] monitorresource\n" +
+                    "    - [ ] Vote\n" +
+                    "    - [ ] jumpdata\n" +
+                    "    - [ ] visualjump\n\n";
             String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String tmp;
@@ -1370,7 +1395,7 @@ public class Main extends Plugin {
                 Core.app.removeListener(listener);
 
                 /* 플러그인 시작 */
-                //mods.getMod(getClass()).main.init();
+                //mods.getMod(Main.class).main.getClass().getMethods().length
                 new Main();
                 Events.fire(new ServerLoadEvent());
                 for(Player p : playerGroup){
@@ -2317,7 +2342,7 @@ public class Main extends Plugin {
                 ipb++;
             }
             int bancount = idb + ipb;
-            player.sendMessage(nbundle(playerData.locale, "server-status-banstat", fps, Vars.playerGroup.size(), bancount, idb, ipb, Threads.playtime, Threads.uptime, plugin_version));
+            player.sendMessage(nbundle(playerData.locale, "server-status-banstat", fps, Vars.playerGroup.size(), bancount, idb, ipb, threads.playtime, threads.uptime, plugin_version));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if(!checkperm(player,"suicide")) return;

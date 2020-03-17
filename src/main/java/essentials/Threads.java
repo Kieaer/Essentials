@@ -51,8 +51,8 @@ import static mindustry.Vars.*;
 import static mindustry.core.NetClient.onSetRules;
 
 public class Threads extends TimerTask{
-    public static LocalTime playtime = LocalTime.of(0,0,0);
-    public static LocalTime uptime = LocalTime.of(0,0,0);
+    public LocalTime playtime = LocalTime.of(0,0,0);
+    public LocalTime uptime = LocalTime.of(0,0,0);
     public static boolean isvoting;
 
     boolean PvPPeace = true;
@@ -565,18 +565,19 @@ public class Threads extends TimerTask{
             }
         }
     }
+
     public static class Vote{
-        private static Player player;
-        private static Player target;
-        private static Map map;
-        private static String type;
-        private static Timer votetimer = new Timer();
-        private static Timer bundletimer = new Timer();
+        public static Player player;
+        public static Player target;
+        public static Map map;
+        public static String type;
+        public static Timer votetimer = new Timer();
+        public static Timer bundletimer = new Timer();
 
         private static int time = 0;
         private static int bundletime = 0;
 
-        static ArrayList<String> list = new ArrayList<>();
+        public static ArrayList<String> list = new ArrayList<>();
         static int require;
 
         Vote(Player player, String type, Player target){
