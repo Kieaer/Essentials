@@ -33,11 +33,37 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Make anti-filter art
   - [ ] Make anti-fast build/break destroy
   - [ ] Make detect custom client
+- [ ] Soruce code rebuild
+  - [ ] core
+    - [ ] Discord
+    - [ ] PlayerDB
+  - [ ] net
+    - [ ] Client
+    - [ ] Server
+  - [ ] special
+    - [ ] DataMigration
+    - [ ] DriverLoader
+  - [ ] utils
+    - [ ] Bundle
+    - [ ] Config
+  - [ ] Global
+  - [ ] Main
+  - [ ] Threads
+    - [ ] login
+    - [ ] changename
+    - [ ] AutoRollback
+    - [ ] eventserver
+    - [ ] ColorNick
+    - [ ] monitorresource
+    - [ ] Vote
+    - [ ] jumpdata
+    - [ ] visualjump
 
 ## Client commands
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
+| alert |  | Turn on/off alerts |
 | ch |  | Send chat to another server. |
 | changepw | &lt;new_password&gt; | Change account password |
 | chars | &lt;Text...&gt; | Make pixel texts |
@@ -81,13 +107,14 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
+| pardon | &lt;ID&gt; | Pardons a votekicked player by ID and allows them to join again. |
 | players |  | List all players currently in game. |
 | gendocs |  | Generate Essentials README.md |
 | allinfo | &lt;name&gt; | Show player information. |
 | bansync |  | Ban list synchronization from main server. |
+| banreason | &lt;name...&gt; | Show player ban reason |
 | blacklist | &lt;add/remove&gt; &lt;nickname&gt; | Block special nickname. |
 | reset | &lt;zone/count/total&gt; | Clear a server-to-server jumping zone data. |
-| reconnect |  | Reconnect remote server (Essentials server only!) |
 | restart |  | Plugin restart |
 | unadminall | &lt;default_group_name&gt; | Remove all player admin status |
 | kickall |  | Kick all players. |
@@ -100,4 +127,4 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | team | &lt;name&gt; | Change target player team. |
 | tempban | &lt;player_name&gt; &lt;time&gt; &lt;reason&gt; | Temporarily ban player. time unit: 1 hours. |
 
-README.md Generated time: 2020-03-01 15:33:24
+README.md Generated time: 2020-03-17 21:28:09

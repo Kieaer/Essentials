@@ -1098,8 +1098,8 @@ public class Main extends Plugin {
                     "## Essentials 9.0 Plans\n" +
                     "- [ ] Server\n" +
                     "  - [ ] Control server using Web server\n" +
-                    "- [ ] PlayerDB\n" +
-                    "  - [ ] DB Server without MySQL/MariaDB..\n" +
+                    "- [x] PlayerDB\n" +
+                    "  - [x] DB Server without MySQL/MariaDB..\n" +
                     "- [x] Internal\n" +
                     "  - [x] Fix server can't shutdown\n" +
                     "  - [x] Make ban reason\n" +
