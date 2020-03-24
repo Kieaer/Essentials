@@ -3,21 +3,26 @@ package remake;
 import arc.Core;
 import arc.files.Fi;
 import arc.util.CommandHandler;
-import essentials.Global;
 import essentials.special.StringUtils;
+import mindustry.entities.type.Player;
 import mindustry.plugin.Plugin;
+import org.hjson.JsonObject;
+import remake.feature.Permission;
+import remake.internal.Log;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
-import static essentials.Global.log;
 import static mindustry.Vars.netServer;
+import static mindustry.Vars.playerGroup;
 
 public class Main extends Plugin {
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
+    public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
 
     public Main(){
 
@@ -33,17 +38,15 @@ public class Main extends Plugin {
                     "shuffle","nextmap","kick","ban","bans","unban","admin","unadmin",
                     "admins","runwave","load","save","saves","gameover","info","search", "gc"
             ));
-
             List<String> clientcommands = new ArrayList<>(Arrays.asList(
                     "help","t","sync"
             ));
-
             String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
-
             String gentime = "\nREADME.md Generated time: "+ DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
 
-            log(Global.LogType.log,"readme-generating");
+            Log.info("readme-generating");
+
             String header = "# Essentials\n" +
                     "Add more commands to the server.\n\n" +
                     "I'm getting a lot of suggestions.<br>\n" +
@@ -117,7 +120,31 @@ public class Main extends Plugin {
             }
 
             root.child("README.md").writeString(tmp+serverdoc+tempbuild.toString()+gentime);
-            log(Global.LogType.log,"success");
+
+            Log.info("success");
+        });
+        handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
+            if(arg.length != 0) {
+                Permission perm = new Permission();
+                Player player = playerGroup.find(p -> p.name.equals(arg[0]));
+
+                if(player == null){
+                    Log.warn("player-not-found");
+                } else {
+                    for (JsonObject.Member data : perm.permission) {
+                        if (data.getName().equals("new_admin")) {
+                            //PlayerDB.PlayerData p = PlayerData(player.uuid);
+                            //p.permission = "new_admin";
+                            //PlayerDataSave(p);
+                            Log.info("success");
+                            break;
+                        }
+                    }
+                    Log.warn("use-setperm");
+                }
+            } else {
+                Log.warn("no-parameter");
+            }
         });
     }
 
