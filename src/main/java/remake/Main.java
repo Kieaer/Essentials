@@ -4,46 +4,89 @@ import arc.Core;
 import arc.files.Fi;
 import arc.util.CommandHandler;
 import essentials.special.StringUtils;
+import mindustry.core.Version;
 import mindustry.entities.type.Player;
 import mindustry.plugin.Plugin;
 import org.hjson.JsonObject;
+import remake.core.plugin.Config;
 import remake.feature.Permission;
+import remake.internal.CrashReport;
 import remake.internal.Log;
+import remake.internal.thread.Threads;
+import remake.internal.thread.TickTrigger;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
+import static remake.Vars.build_version;
 
 public class Main extends Plugin {
     public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
+    public static Config config;
+    public static Timer mainThread = new Timer(true);
 
-    public Main(){
+    public Main() throws Exception {
+        // 서버 버전 확인
+        if (Version.build != build_version) {
+            InputStream reader = getClass().getResourceAsStream("/plugin.json");
+            BufferedReader br = new BufferedReader(new InputStreamReader(reader));
+            throw new Exception("Essentials " + JsonObject.readJSON(br).asObject().get("version").asString() + " plugin only works with mindustry build 104.");
+        }
 
+        // 파일 압축해제
+        if (!root.exists()) {
+            try {
+                final String path = "configs";
+                final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()));
+                final Enumeration<JarEntry> entries = jar.entries();
+
+                while (entries.hasMoreElements()) {
+                    final String name = entries.nextElement().getName();
+                    if (name.startsWith(path + "/")) {
+                        InputStream reader = getClass().getResourceAsStream("/" + name);
+                        root.child(name).write(reader, false);
+                    }
+                }
+                jar.close();
+            } catch (Exception e) {
+                new CrashReport(e);
+            }
+        }
+
+        // 설정 불러오기
+        config = new Config();
+
+        // 스레드 시작
+        new TickTrigger();
+        mainThread.scheduleAtFixedRate(new Threads(), 1000, 1000);
     }
 
     @Override
     public void registerServerCommands(CommandHandler handler) {
         handler.register("gendocs", "Generate Essentials README.md", (arg) -> {
             List<String> servercommands = new ArrayList<>(Arrays.asList(
-                    "help","version","exit","stop","host","maps","reloadmaps","status",
-                    "mods","mod","js","say","difficulty","rules","fillitems","playerlimit",
-                    "config","subnet-ban","whitelisted","whitelist-add","whitelist-remove",
-                    "shuffle","nextmap","kick","ban","bans","unban","admin","unadmin",
-                    "admins","runwave","load","save","saves","gameover","info","search", "gc"
+                    "help", "version", "exit", "stop", "host", "maps", "reloadmaps", "status",
+                    "mods", "mod", "js", "say", "difficulty", "rules", "fillitems", "playerlimit",
+                    "config", "subnet-ban", "whitelisted", "whitelist-add", "whitelist-remove",
+                    "shuffle", "nextmap", "kick", "ban", "bans", "unban", "admin", "unadmin",
+                    "admins", "runwave", "load", "save", "saves", "gameover", "info", "search", "gc"
             ));
             List<String> clientcommands = new ArrayList<>(Arrays.asList(
-                    "help","t","sync"
+                    "help", "t", "sync"
             ));
             String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
-            String gentime = "\nREADME.md Generated time: "+ DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
+            String gentime = "\nREADME.md Generated time: " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
 
             Log.info("readme-generating");
 
@@ -102,33 +145,33 @@ public class Main extends Plugin {
                     "    - [ ] visualjump\n\n";
 
             StringBuilder tempbuild = new StringBuilder();
-            for(CommandHandler.Command command : netServer.clientCommands.getCommandList()){
-                if(!clientcommands.contains(command.text)){
-                    String temp = "| "+command.text+" | "+ StringUtils.encodeHtml(command.paramText)+" | "+command.description+" |\n";
+            for (CommandHandler.Command command : netServer.clientCommands.getCommandList()) {
+                if (!clientcommands.contains(command.text)) {
+                    String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
                     tempbuild.append(temp);
                 }
             }
 
-            String tmp = header+clientdoc+tempbuild.toString()+"\n";
+            String tmp = header + clientdoc + tempbuild.toString() + "\n";
             tempbuild = new StringBuilder();
 
-            for(CommandHandler.Command command : handler.getCommandList()){
-                if(!servercommands.contains(command.text)){
-                    String temp = "| "+command.text+" | "+ StringUtils.encodeHtml(command.paramText)+" | "+command.description+" |\n";
+            for (CommandHandler.Command command : handler.getCommandList()) {
+                if (!servercommands.contains(command.text)) {
+                    String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
                     tempbuild.append(temp);
                 }
             }
 
-            root.child("README.md").writeString(tmp+serverdoc+tempbuild.toString()+gentime);
+            root.child("README.md").writeString(tmp + serverdoc + tempbuild.toString() + gentime);
 
             Log.info("success");
         });
-        handler.register("admin", "<name>","Set admin status to player.", (arg) -> {
-            if(arg.length != 0) {
+        handler.register("admin", "<name>", "Set admin status to player.", (arg) -> {
+            if (arg.length != 0) {
                 Permission perm = new Permission();
                 Player player = playerGroup.find(p -> p.name.equals(arg[0]));
 
-                if(player == null){
+                if (player == null) {
                     Log.warn("player-not-found");
                 } else {
                     for (JsonObject.Member data : perm.permission) {

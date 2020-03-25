@@ -221,12 +221,12 @@ public class PluginData {
             try {
                 FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
-                map.put("jumpzone",new ArrayList<>());
-                map.put("jumpcount",new ArrayList<>());
-                map.put("jumptotal",new ArrayList<>());
-                map.put("blacklist",new ArrayList<>());
-                map.put("banned",new ArrayList<>());
-                map.put("average",new ArrayList<>());
+                map.put("jumpzone", new ArrayList<>());
+                map.put("jumpcount", new ArrayList<>());
+                map.put("jumptotal", new ArrayList<>());
+                map.put("blacklist", new ArrayList<>());
+                map.put("banned", new ArrayList<>());
+                map.put("average", new ArrayList<>());
                 oos.writeObject(map);
                 oos.close();
             } catch (Exception e) {

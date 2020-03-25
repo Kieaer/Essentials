@@ -1,5 +1,5 @@
 package remake.network;
 
-public class Client{
+public class Client {
 
 }

@@ -1,5 +1,5 @@
 package remake.network;
 
-public class Server{
+public class Server {
 
 }

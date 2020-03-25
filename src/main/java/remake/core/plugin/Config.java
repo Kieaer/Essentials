@@ -1,4 +1,4 @@
-package remake.core;
+package remake.core.plugin;
 
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
@@ -82,7 +82,7 @@ public class Config {
     public final String prefix;
     public final String eventport;
 
-    public Config(){
+    public Config() {
         JsonObject obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
         version = obj.get("version").asInt();
         language = new Locale(obj.get("language").asString());
