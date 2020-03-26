@@ -2,14 +2,12 @@ package remake.external;
 
 import arc.Core;
 import arc.files.Fi;
-import remake.internal.CrashReport;
 import remake.internal.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
@@ -19,6 +17,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+
+import static remake.Vars.DBURL;
 
 public class DriverLoader implements Driver {
     public static URLClassLoader H2URL;
@@ -32,38 +32,57 @@ public class DriverLoader implements Driver {
         this.driver = driver;
     }
 
-    public DriverLoader() {
+    public DriverLoader() throws Exception {
+        // Ugly source :worried:
+        for (String url : DBURL) urls.add(new URL(url));
+
         try {
-            urls.add(new URL("https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar")); // SQLite
-            urls.add(new URL("https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.5.3/mariadb-java-client-2.5.3.jar")); // MariaDB + MySQL
-            urls.add(new URL("https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.9/postgresql-42.2.9.jar")); // postgreSQL
-            urls.add(new URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar")); // H2
-        } catch (MalformedURLException ignored) {
+            Fi[] f = root.child("Driver/").list();
+
+            for (int a = 0; a < urls.size(); a++) {
+                URLClassLoader cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
+                String dr = "org.sqlite.JDBC";
+                for (int b = 0; b < urls.size(); b++) {
+                    if (f[a].name().contains("mariadb")) {
+                        dr = "org.mariadb.jdbc.Driver";
+                    } else if (f[a].name().contains("postgresql")) {
+                        dr = "org.postgresql.Driver";
+                    } else if (f[a].name().contains("h2")) {
+                        dr = "org.h2.Driver";
+                    }
+                }
+                Driver driver = (Driver) Class.forName(dr, true, cla).getDeclaredConstructor().newInstance();
+                DriverManager.registerDriver(new DriverLoader(driver));
+                if (dr.contains("h2")) H2URL = cla;
+            }
+        } catch (Exception e) {
+            if (!tried) {
+                tried = true;
+                download();
+            } else {
+                e.printStackTrace();
+                Core.app.exit();
+            }
         }
-        run();
     }
 
-    public static void URLDownload(URL URL, File savepath) {
-        try {
-            BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath));
-            URLConnection urlConnection = URL.openConnection();
-            InputStream is = urlConnection.getInputStream();
-            int size = urlConnection.getContentLength();
-            byte[] buf = new byte[256];
-            int byteRead;
-            int byteWritten = 0;
-            long startTime = System.currentTimeMillis();
-            while ((byteRead = is.read(buf)) != -1) {
-                outputStream.write(buf, 0, byteRead);
-                byteWritten += byteRead;
+    public static void URLDownload(URL URL, File savepath) throws Exception {
+        BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath));
+        URLConnection urlConnection = URL.openConnection();
+        InputStream is = urlConnection.getInputStream();
+        int size = urlConnection.getContentLength();
+        byte[] buf = new byte[256];
+        int byteRead;
+        int byteWritten = 0;
+        long startTime = System.currentTimeMillis();
+        while ((byteRead = is.read(buf)) != -1) {
+            outputStream.write(buf, 0, byteRead);
+            byteWritten += byteRead;
 
-                printProgress(startTime, size, byteWritten);
-            }
-            is.close();
-            outputStream.close();
-        } catch (Exception e) {
-            new CrashReport(e);
+            printProgress(startTime, size, byteWritten);
         }
+        is.close();
+        outputStream.close();
     }
 
     public static void printProgress(long startTime, int total, int remain) {
@@ -112,52 +131,17 @@ public class DriverLoader implements Driver {
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 
-    public void run() {
-        try {
-            Fi[] f = root.child("Driver/").list();
+    public void download() throws Exception {
+        Log.info("driver-downloading");
 
-            for (int a = 0; a < urls.size(); a++) {
-                URLClassLoader cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
-                String dr = "org.sqlite.JDBC";
-                for (int b = 0; b < urls.size(); b++) {
-                    if (f[a].name().contains("mariadb")) {
-                        dr = "org.mariadb.jdbc.Driver";
-                    } else if (f[a].name().contains("postgresql")) {
-                        dr = "org.postgresql.Driver";
-                    } else if (f[a].name().contains("h2")) {
-                        dr = "org.h2.Driver";
-                    }
-                }
-                Driver driver = (Driver) Class.forName(dr, true, cla).getDeclaredConstructor().newInstance();
-                DriverManager.registerDriver(new DriverLoader(driver));
-                if (dr.contains("h2")) H2URL = cla;
-            }
-        } catch (Exception e) {
-            if (!tried) {
-                tried = true;
-                download();
-            } else {
-                e.printStackTrace();
-                Core.app.exit();
-            }
+        for (URL value : urls) {
+            String url = value.toString();
+            String filename = url.substring(url.lastIndexOf('/') + 1);
+            root.child("Driver/" + filename).writeString("");
+            Log.info(filename + "Downloading...");
+            URLDownload(value, root.child("Driver/" + filename).file());
         }
-    }
-
-    public void download() {
-        try {
-            Log.info("driver-downloading");
-
-            for (URL value : urls) {
-                String url = value.toString();
-                String filename = url.substring(url.lastIndexOf('/') + 1);
-                root.child("Driver/" + filename).writeString("");
-                Log.info(filename + "Downloading...");
-                URLDownload(value, root.child("Driver/" + filename).file());
-            }
-            run();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        new DriverLoader();
     }
 
     public Connection connect(String url, Properties info) throws SQLException {

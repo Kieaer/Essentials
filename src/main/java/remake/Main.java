@@ -1,19 +1,27 @@
 package remake;
 
+import arc.ApplicationListener;
 import arc.Core;
 import arc.files.Fi;
 import arc.util.CommandHandler;
-import essentials.special.StringUtils;
 import mindustry.core.Version;
 import mindustry.entities.type.Player;
 import mindustry.plugin.Plugin;
 import org.hjson.JsonObject;
+import remake.core.player.Database;
 import remake.core.plugin.Config;
+import remake.external.DriverLoader;
+import remake.external.StringUtils;
+import remake.external.Tools;
+import remake.feature.ActivityLog;
 import remake.feature.Permission;
 import remake.internal.CrashReport;
+import remake.internal.Event;
 import remake.internal.Log;
 import remake.internal.thread.Threads;
 import remake.internal.thread.TickTrigger;
+import remake.network.Client;
+import remake.network.Server;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,6 +30,10 @@ import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -30,10 +42,15 @@ import static mindustry.Vars.playerGroup;
 import static remake.Vars.build_version;
 
 public class Main extends Plugin {
-    public static Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
+    public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
+    public static final Timer timer = new Timer(true);
+    public static final ExecutorService mainThread = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 2, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    public static final Tools tool = new Tools();
+    public final ApplicationListener listener;
+
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
     public static Config config;
-    public static Timer mainThread = new Timer(true);
+    public static Permission perm;
 
     public Main() throws Exception {
         // 서버 버전 확인
@@ -42,6 +59,7 @@ public class Main extends Plugin {
             BufferedReader br = new BufferedReader(new InputStreamReader(reader));
             throw new Exception("Essentials " + JsonObject.readJSON(br).asObject().get("version").asString() + " plugin only works with mindustry build 104.");
         }
+
 
         // 파일 압축해제
         if (!root.exists()) {
@@ -68,7 +86,85 @@ public class Main extends Plugin {
 
         // 스레드 시작
         new TickTrigger();
-        mainThread.scheduleAtFixedRate(new Threads(), 1000, 1000);
+        timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
+        // mainThread.submit();
+
+        // DB 드라이버 로딩
+        new DriverLoader();
+
+        // DB 연결
+        Database db = new Database();
+        db.connect();
+        db.create();
+        if (config.DBServer) db.server_start();
+
+        // Client 연결
+        if (config.clientenable) new Client();
+
+        // Server 시작
+        if (config.serverenable) new Server();
+
+        // 기록 시작
+        if (config.logging) new ActivityLog();
+
+        // 권한 기능 시작
+        perm = new Permission();
+
+        // 이벤트 시작
+        new Event();
+
+        // 서버 종료 이벤트 설정
+        this.listener = new ApplicationListener() {
+            @Override
+            public void dispose() {
+                boolean error = false;
+
+                PlayerDataSaveAll(); // 플레이어 데이터 저장
+                data.saveall(); // 플러그인 데이터 저장
+                config.executorService.shutdownNow(); // 스레드 종료
+                config.singleService.shutdownNow(); // 로그 스레드 종료
+                timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
+                if (isvoting) essentials.Threads.Vote.cancel(); // 투표 종료
+                if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
+                closeconnect(); // DB 연결 종료
+                if (config.isServerenable()) {
+                    try {
+                        Iterator<essentials.net.Server.Service> servers = essentials.net.Server.list.iterator();
+                        while (servers.hasNext()) {
+                            essentials.net.Server.Service ser = servers.next();
+                            ser.os.close();
+                            ser.in.close();
+                            ser.socket.close();
+                            servers.remove();
+                        }
+
+                        essentials.net.Server.serverSocket.close();
+                        server.interrupt();
+
+                        log(Global.LogType.log, "server-thread-disabled");
+                    } catch (Exception e) {
+                        error = true;
+                        printError(e);
+                        log(Global.LogType.error, "server-thread-disable-error");
+                    }
+                }
+
+                // 클라이언트 종료
+                if (config.isClientenable() && server_active) {
+                    client.request(essentials.net.Client.Request.exit, null, null);
+                    log(Global.LogType.log, "client-thread-disabled");
+                }
+
+                // 모든 이벤트 서버 종료
+                for (Process value : data.process) value.destroy();
+                if (!error) {
+                    log(Global.LogType.log, "thread-disabled");
+                } else {
+                    log(Global.LogType.log, "thread-not-dead");
+                }
+            }
+        };
+        Core.app.addListener(listener);
     }
 
     @Override

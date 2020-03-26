@@ -22,7 +22,7 @@ public class Login extends TimerTask {
     public void run() {
         Thread.currentThread().setName("Login alert thread");
         if (playerGroup.size() > 0) {
-            for(int i = 0; i < playerGroup.size(); i++) {
+            for (int i = 0; i < playerGroup.size(); i++) {
                 Player player = playerGroup.all().get(i);
                 if (Vars.state.teams.get(player.getTeam()).cores.isEmpty()) {
                     try {
@@ -36,10 +36,10 @@ public class Login extends TimerTask {
                             message = nbundle(language, "login-require-password");
                         }
                         player.sendMessage(message);
-                    } catch (UnknownHostException e){
+                    } catch (UnknownHostException e) {
                         Bundle bundle = new Bundle();
-                        Call.onKick(player.con,bundle.get("plugin-error-kick"));
-                    } catch (Exception e){
+                        Call.onKick(player.con, bundle.get("plugin-error-kick"));
+                    } catch (Exception e) {
                         new CrashReport(e);
                     }
                 }

@@ -4,7 +4,7 @@ import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import remake.internal.CrashReport;
 
-import static essentials.Main.root;
+import static remake.Main.root;
 
 public class Permission {
     public JsonObject permission;

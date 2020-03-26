@@ -10,8 +10,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import static essentials.Main.config;
-import static essentials.Main.root;
+import static remake.Main.config;
+import static remake.Main.root;
 
 public class Database {
     Class<?> cl = null;
@@ -70,13 +70,13 @@ public class Database {
         ptmt.execute();
 
         ptmt = conn.prepareStatement(ver);
-        ptmt.setInt(1, Vars.DBVersion);
+        ptmt.setInt(1, Vars.db_version);
         ptmt.execute();
         ptmt.close();
     }
 
     public void connect() throws SQLException {
-        conn = DriverManager.getConnection(config.getDBurl(), "", "");
+        conn = DriverManager.getConnection(config.DBurl, "", "");
     }
 
     public void disconnect() throws SQLException {

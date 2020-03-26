@@ -14,7 +14,7 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 import org.hjson.JsonObject;
 import remake.core.plugin.Config;
-import remake.core.plugin.Data;
+import remake.core.plugin.PluginData;
 import remake.internal.Log;
 
 import java.time.LocalDateTime;
@@ -35,7 +35,7 @@ public class TickTrigger {
     public TickTrigger() {
         Events.on(EventType.Trigger.update, new Runnable() {
             int tick = 0;
-            Data data = new Data();
+            PluginData pluginData = new PluginData();
 
             @Override
             public void run() {
@@ -60,12 +60,12 @@ public class TickTrigger {
                 // new changename().start();
 
                 // 임시로 밴당한 유저 감시
-                for (int a = 0; a < data.banned.size(); a++) {
+                for (int a = 0; a < pluginData.banned.size(); a++) {
                     LocalDateTime time = LocalDateTime.now();
-                    if (time.isAfter(data.banned.get(a).getTime())) {
-                        data.banned.remove(a);
-                        netServer.admins.unbanPlayerID(data.banned.get(a).uuid);
-                        Log.info("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + data.banned.get(a).name + "/" + data.banned.get(a).uuid + " player unbanned!");
+                    if (time.isAfter(pluginData.banned.get(a).getTime())) {
+                        pluginData.banned.remove(a);
+                        netServer.admins.unbanPlayerID(pluginData.banned.get(a).uuid);
+                        Log.info("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + pluginData.banned.get(a).name + "/" + pluginData.banned.get(a).uuid + " player unbanned!");
                         break;
                     }
                 }
@@ -106,17 +106,17 @@ public class TickTrigger {
                     }*/
 
                     // 모든 클라이언트 서버에 대한 인원 총합 카운트
-                    for (int a = 0; a < data.jumptotal.size(); a++) {
+                    for (int a = 0; a < pluginData.jumptotal.size(); a++) {
                         int result = 0;
-                        for (Data.jumpcount value : data.jumpcount) result = result + value.players;
+                        for (PluginData.jumpcount value : pluginData.jumpcount) result = result + value.players;
 
                         String str = String.valueOf(result);
                         int[] digits = new int[str.length()];
                         for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
-                        Tile tile = data.jumptotal.get(a).getTile();
-                        if (data.jumptotal.get(a).totalplayers != result) {
-                            if (data.jumptotal.get(a).numbersize != digits.length) {
+                        Tile tile = pluginData.jumptotal.get(a).getTile();
+                        if (pluginData.jumptotal.get(a).totalplayers != result) {
+                            if (pluginData.jumptotal.get(a).numbersize != digits.length) {
                                 for (int px = 0; px < 3; px++) {
                                     for (int py = 0; py < 5; py++) {
                                         Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
@@ -128,12 +128,12 @@ public class TickTrigger {
                                 tile = world.tile(tile.x + 4, tile.y);
                             }
                         } else {
-                            for (int l = 0; l < data.jumptotal.get(a).numbersize; l++) {
+                            for (int l = 0; l < pluginData.jumptotal.get(a).numbersize; l++) {
                                 setcount(tile, digits[l]);
                                 tile = world.tile(tile.x + 4, tile.y);
                             }
                         }
-                        data.jumptotal.set(a, new Data.jumptotal(tile, result, digits.length));
+                        pluginData.jumptotal.set(a, new PluginData.jumptotal(tile, result, digits.length));
                     }
 
                     // 플레이어 플탐 카운트 및 잠수확인
@@ -169,14 +169,14 @@ public class TickTrigger {
                     }
 
                     // 메세지 블럭 감시
-                    for (int a = 0; a < data.messagemonitor.size(); a++) {
+                    for (int a = 0; a < pluginData.messagemonitor.size(); a++) {
                         String msg;
                         MessageBlock.MessageBlockEntity entity;
                         try {
-                            entity = (MessageBlock.MessageBlockEntity) data.messagemonitor.get(a).tile.entity;
+                            entity = (MessageBlock.MessageBlockEntity) pluginData.messagemonitor.get(a).tile.entity;
                             msg = entity.message;
                         } catch (NullPointerException e) {
-                            data.messagemonitor.remove(a);
+                            pluginData.messagemonitor.remove(a);
                             return;
                         }
 
@@ -194,26 +194,26 @@ public class TickTrigger {
                             } else {
                                 return;
                             }
-                            data.powerblock.add(new Data.powerblock(entity.tile, target));
-                            data.messagemonitor.remove(a);
+                            pluginData.powerblock.add(new PluginData.powerblock(entity.tile, target));
+                            pluginData.messagemonitor.remove(a);
                             break;
                         } else if (msg.contains("jump")) {
-                            data.messagejump.add(new Data.messagejump(data.messagemonitor.get(a).tile, msg));
-                            data.messagemonitor.remove(a);
+                            pluginData.messagejump.add(new PluginData.messagejump(pluginData.messagemonitor.get(a).tile, msg));
+                            pluginData.messagemonitor.remove(a);
                             break;
                         } else if (msg.equals("scancore")) {
-                            data.scancore.add(data.messagemonitor.get(a).tile);
-                            data.messagemonitor.remove(a);
+                            pluginData.scancore.add(pluginData.messagemonitor.get(a).tile);
+                            pluginData.messagemonitor.remove(a);
                             break;
                         }
                     }
 
                     // 서버 인원 확인
-                    for (int i = 0; i < data.jumpcount.size(); i++) {
+                    for (int i = 0; i < pluginData.jumpcount.size(); i++) {
                         int i2 = i;
-                        Data.jumpcount value = data.jumpcount.get(i);
+                        PluginData.jumpcount value = pluginData.jumpcount.get(i);
 
-                        pingServer(data.jumpcount.get(i).serverip, result -> {
+                        pingServer(pluginData.jumpcount.get(i).serverip, result -> {
                             if (result.name != null) {
                                 String str = String.valueOf(result.players);
                                 int[] digits = new int[str.length()];
@@ -239,7 +239,7 @@ public class TickTrigger {
                                     }
                                 }
                                 // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                data.jumpcount.set(i2, new Data.jumpcount(value.getTile(), value.serverip, result.players, digits.length));
+                                pluginData.jumpcount.set(i2, new PluginData.jumpcount(value.getTile(), value.serverip, result.players, digits.length));
                             } else {
                                 setno(value.getTile(), true);
                             }
@@ -247,7 +247,7 @@ public class TickTrigger {
                     }
 
                     // 서버간 이동 영역에 플레이어가 있는지 확인
-                    for (Data.jumpzone value : data.jumpzone) {
+                    for (PluginData.jumpzone value : pluginData.jumpzone) {
                         if (!value.touch) {
                             for (int ix = 0; ix < playerGroup.size(); ix++) {
                                 Player player = playerGroup.all().get(ix);

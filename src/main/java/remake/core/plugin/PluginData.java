@@ -13,7 +13,7 @@ import static essentials.Main.config;
 import static essentials.Main.root;
 import static mindustry.Vars.world;
 
-public class Data {
+public class PluginData {
     // 일회성 플러그인 데이터
     public ArrayList<nukeblock> nukeblock = new ArrayList<>();
     public ArrayList<eventservers> eventservers = new ArrayList<>();
