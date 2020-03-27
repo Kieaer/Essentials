@@ -59,7 +59,7 @@ public class Config {
     public final String emailUsername;
     public final String emailPassword;
     public final String discordtoken;
-    public final Float discordguild;
+    public final Long discordguild;
     public final String discordroom;
     public final String discordlink;
     public final String discordrole;
@@ -132,7 +132,7 @@ public class Config {
         emailUsername = obj.getString("emailUsername", "none");
         emailPassword = obj.getString("emailPassword", "none");
         discordtoken = obj.getString("discordtoken", "none");
-        discordguild = obj.getFloat("discordguild", 0L);
+        discordguild = obj.getLong("discordguild", 0L);
         discordroom = obj.getString("discordroom", "none");
         discordlink = obj.getString("discordlink", "none");
         discordrole = obj.getString("discordrole", "none");

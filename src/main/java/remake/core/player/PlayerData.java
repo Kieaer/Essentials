@@ -64,7 +64,7 @@ public class PlayerData {
 
     public Locale locale = config.language;
 
-    PlayerData(boolean error) {
+    public PlayerData(boolean error) {
         this.error = error;
     }
 

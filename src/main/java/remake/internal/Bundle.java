@@ -1,6 +1,6 @@
 package remake.internal;
 
-import essentials.special.UTF8Control;
+import remake.external.UTF8Control;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

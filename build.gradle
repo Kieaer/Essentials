@@ -2,7 +2,7 @@ apply plugin: 'java-library'
 
 version '8.0'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = 11
 
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'

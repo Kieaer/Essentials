@@ -1,6 +1,12 @@
 package remake.external;
 
+import mindustry.entities.type.Player;
+import remake.internal.Bundle;
+
 import java.util.Locale;
+
+import static mindustry.Vars.playerGroup;
+import static remake.Main.playerDB;
 
 public class Tools {
     public Locale TextToLocale(String data) {
@@ -12,5 +18,9 @@ public class Tools {
             locale = new Locale(array[0], array[1]);
         }
         return locale;
+    }
+
+    public void sendMessageAll(String value, Object... parameter) {
+        for (Player p : playerGroup.all()) p.sendMessage(new Bundle(playerDB.get(p.uuid).locale).get(value, parameter));
     }
 }

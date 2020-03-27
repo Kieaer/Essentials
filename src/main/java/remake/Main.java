@@ -9,11 +9,14 @@ import mindustry.entities.type.Player;
 import mindustry.plugin.Plugin;
 import org.hjson.JsonObject;
 import remake.core.player.Database;
+import remake.core.player.PlayerDB;
 import remake.core.plugin.Config;
+import remake.core.plugin.PluginData;
 import remake.external.DriverLoader;
 import remake.external.StringUtils;
 import remake.external.Tools;
 import remake.feature.ActivityLog;
+import remake.feature.Discord;
 import remake.feature.Permission;
 import remake.internal.CrashReport;
 import remake.internal.Event;
@@ -45,12 +48,20 @@ public class Main extends Plugin {
     public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
     public static final Timer timer = new Timer(true);
     public static final ExecutorService mainThread = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 2, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+
     public static final Tools tool = new Tools();
+    public static final PlayerDB playerDB = new PlayerDB();
+    public static final Database database = new Database();
+    public static final PluginData pluginData = new PluginData();
+    public static final Server server = new Server();
+    public static final Client client = new Client();
+
     public final ApplicationListener listener;
 
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
     public static Config config;
     public static Permission perm;
+    public static Discord discord = null;
 
     public Main() throws Exception {
         // 서버 버전 확인
@@ -93,10 +104,9 @@ public class Main extends Plugin {
         new DriverLoader();
 
         // DB 연결
-        Database db = new Database();
-        db.connect();
-        db.create();
-        if (config.DBServer) db.server_start();
+        database.connect();
+        database.create();
+        if (config.DBServer) database.server_start();
 
         // Client 연결
         if (config.clientenable) new Client();
@@ -117,54 +127,62 @@ public class Main extends Plugin {
         this.listener = new ApplicationListener() {
             @Override
             public void dispose() {
-                boolean error = false;
+                try {
+                    boolean error = false;
 
-                PlayerDataSaveAll(); // 플레이어 데이터 저장
-                data.saveall(); // 플러그인 데이터 저장
-                config.executorService.shutdownNow(); // 스레드 종료
-                config.singleService.shutdownNow(); // 로그 스레드 종료
-                timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
-                if (isvoting) essentials.Threads.Vote.cancel(); // 투표 종료
-                if (jda != null) jda.shutdownNow(); // Discord 서비스 종료
-                closeconnect(); // DB 연결 종료
-                if (config.isServerenable()) {
-                    try {
-                        Iterator<essentials.net.Server.Service> servers = essentials.net.Server.list.iterator();
-                        while (servers.hasNext()) {
-                            essentials.net.Server.Service ser = servers.next();
-                            ser.os.close();
-                            ser.in.close();
-                            ser.socket.close();
-                            servers.remove();
+                    playerDB.saveAll(); // 플레이어 데이터 저장
+                    pluginData.saveall(); // 플러그인 데이터 저장
+                    mainThread.shutdownNow(); // 스레드 종료
+                    // config.singleService.shutdownNow(); // 로그 스레드 종료
+                    timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
+                    if (isvoting) essentials.Threads.Vote.cancel(); // 투표 종료
+                    discord.shutdownNow(); // Discord 서비스 종료
+                    database.dispose(); // DB 연결 종료
+
+                    if (config.serverenable) {
+                        try {
+                            Iterator<essentials.net.Server.Service> servers = essentials.net.Server.list.iterator();
+                            while (servers.hasNext()) {
+                                essentials.net.Server.Service ser = servers.next();
+                                ser.os.close();
+                                ser.in.close();
+                                ser.socket.close();
+                                servers.remove();
+                            }
+
+                            essentials.net.Server.serverSocket.close();
+                            server.interrupt();
+
+                            Log.info("server-thread-disabled");
+                        } catch (Exception e) {
+                            error = true;
+                            printError(e);
+                            Log.err("server-thread-disable-error");
                         }
-
-                        essentials.net.Server.serverSocket.close();
-                        server.interrupt();
-
-                        log(Global.LogType.log, "server-thread-disabled");
-                    } catch (Exception e) {
-                        error = true;
-                        printError(e);
-                        log(Global.LogType.error, "server-thread-disable-error");
                     }
-                }
 
-                // 클라이언트 종료
-                if (config.isClientenable() && server_active) {
-                    client.request(essentials.net.Client.Request.exit, null, null);
-                    log(Global.LogType.log, "client-thread-disabled");
-                }
+                    // 클라이언트 종료
+                    if (config.clientenable && server_active) {
+                        client.request(essentials.net.Client.Request.exit, null, null);
+                        Log.info("client-thread-disabled");
+                    }
 
-                // 모든 이벤트 서버 종료
-                for (Process value : data.process) value.destroy();
-                if (!error) {
-                    log(Global.LogType.log, "thread-disabled");
-                } else {
-                    log(Global.LogType.log, "thread-not-dead");
+                    // 모든 이벤트 서버 종료
+                    for (Process value : data.process) value.destroy();
+                    if (!error) {
+                        Log.info("thread-disabled");
+                    } else {
+                        Log.warn("thread-not-dead");
+                    }
+                } catch (Exception e){
+                    new CrashReport(e);
                 }
             }
         };
         Core.app.addListener(listener);
+
+        // Discord 서비스 시작
+        discord = new Discord();
     }
 
     @Override
