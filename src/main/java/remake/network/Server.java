@@ -44,8 +44,8 @@ import static remake.Vars.*;
 import static remake.external.Tools.*;
 
 public class Server implements Runnable {
-    ServerSocket serverSocket;
-    ArrayList<service> list = new ArrayList<>();
+    public ArrayList<service> list = new ArrayList<>();
+    public ServerSocket serverSocket;
     Bundle bundle = new Bundle();
 
     enum Request {

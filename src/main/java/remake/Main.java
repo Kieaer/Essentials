@@ -24,6 +24,7 @@ import remake.internal.Event;
 import remake.internal.Log;
 import remake.internal.thread.Threads;
 import remake.internal.thread.TickTrigger;
+import remake.network.Client;
 import remake.network.Server;
 
 import java.io.BufferedReader;
@@ -54,7 +55,7 @@ public class Main extends Plugin {
     public static final Database database = new Database();
     public static final PluginData pluginData = new PluginData();
     public static final Server server = new Server();
-    public static final remake.network.Client client = new remake.network.Client();
+    public static final Client client = new Client();
     public static final Vote vote = new Vote();
 
     public final ApplicationListener listener;
@@ -63,6 +64,7 @@ public class Main extends Plugin {
     public static Config config;
     public static Permission perm;
     public static Discord discord = null;
+    public static ArrayList<EventServer> eventServer = new ArrayList<>();
 
     public Main() throws Exception {
         // 서버 버전 확인
@@ -151,25 +153,23 @@ public class Main extends Plugin {
                                 servers.remove();
                             }
 
-                            essentials.net.Server.serverSocket.close();
-                            server.interrupt();
-
+                            server.serverSocket.close();
                             Log.info("server-thread-disabled");
                         } catch (Exception e) {
                             error = true;
-                            printError(e);
                             Log.err("server-thread-disable-error");
+                            new CrashReport(e);
                         }
                     }
 
                     // 클라이언트 종료
-                    if (config.clientenable && server_active) {
-                        client.request(essentials.net.Client.Request.exit, null, null);
+                    if (config.clientenable && client.activated) {
+                        client.request(Client.Request.exit, null, null);
                         Log.info("client-thread-disabled");
                     }
 
                     // 모든 이벤트 서버 종료
-                    for (Process value : data.process) value.destroy();
+                    for (Process value : eventServer.process) value.destroy();
                     if (!error) {
                         Log.info("thread-disabled");
                     } else {
