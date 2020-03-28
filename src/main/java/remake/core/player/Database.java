@@ -15,8 +15,8 @@ import static remake.Main.root;
 
 public class Database {
     Class<?> cl = null;
-    Object service;
-    Connection conn;
+    public Object service;
+    public Connection conn;
 
     public void create() throws SQLException {
         String data = "CREATE TABLE IF NOT EXISTS players (" +

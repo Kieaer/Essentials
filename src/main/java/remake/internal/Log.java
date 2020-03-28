@@ -10,15 +10,14 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static essentials.Global.getTime;
-import static essentials.Global.nbundle;
-import static essentials.Main.root;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static remake.Main.root;
+import static remake.Main.tool;
 
 public class Log {
     final static arc.util.Log.DefaultLogHandler handler = new arc.util.Log.DefaultLogHandler();
 
-    public static enum LogType {
+    public enum LogType {
         log, warn, error, debug, server, serverwarn, servererr, client, clientwarn, clienterr, config, player, playerwarn, playererr,
         tap, withdraw, block, deposit, chat, griefer, web
     }
@@ -50,6 +49,33 @@ public class Log {
         }
     }
 
+    public static void server(String value, Object... parameter) {
+        String result = new Bundle().get(value);
+        if (result != null) {
+            handler.log(arc.util.Log.LogLevel.info, "[EssentialServer] " + MessageFormat.format(result, parameter));
+        } else {
+            handler.log(arc.util.Log.LogLevel.info, "[EssentialServer] " + value);
+        }
+    }
+
+    public static void client(String value, Object... parameter) {
+        String result = new Bundle().get(value);
+        if (result != null) {
+            handler.log(arc.util.Log.LogLevel.info, "[EssentialClient] " + MessageFormat.format(result, parameter));
+        } else {
+            handler.log(arc.util.Log.LogLevel.info, "[EssentialClient] " + value);
+        }
+    }
+
+    public static void player(String value, Object... parameter) {
+        String result = new Bundle().get(value);
+        if (result != null) {
+            handler.log(arc.util.Log.LogLevel.info, "[EssentialPlayer] " + MessageFormat.format(result, parameter));
+        } else {
+            handler.log(arc.util.Log.LogLevel.info, "[EssentialPlayer] " + value);
+        }
+    }
+
     public static void write(LogType type, String value) {
         String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now());
         Path newlog = Paths.get(root.child("log/" + type + ".log").path());
@@ -58,7 +84,7 @@ public class Log {
         Fi logfolder = root.child("log");
 
         if (mainlog != null && mainlog.length() > 1024 * 256) {
-            mainlog.writeString(nbundle("log-file-end", date), true);
+            mainlog.writeString(new Bundle().get("log-file-end", date), true);
             try {
                 Files.move(newlog, oldlog, REPLACE_EXISTING);
             } catch (IOException e) {
@@ -67,10 +93,7 @@ public class Log {
             mainlog = null;
         }
 
-        if (mainlog == null) {
-            mainlog = logfolder.child(type + ".log");
-        }
-
-        mainlog.writeString("[" + getTime() + "]" + value + "\n", true);
+        if (mainlog == null) mainlog = logfolder.child(type + ".log");
+        mainlog.writeString("[" + tool.getTime() + "]" + value + "\n", true);
     }
 }

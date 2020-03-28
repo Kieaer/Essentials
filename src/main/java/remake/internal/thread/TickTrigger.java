@@ -15,6 +15,7 @@ import mindustry.world.blocks.logic.MessageBlock;
 import org.hjson.JsonObject;
 import remake.core.plugin.Config;
 import remake.core.plugin.PluginData;
+import remake.internal.Bundle;
 import remake.internal.Log;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ import static essentials.core.PlayerDB.PlayerData;
 import static essentials.special.PingServer.pingServer;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.onSetRules;
+import static remake.Main.playerDB;
 import static remake.Main.root;
 import static remake.Vars.*;
 
@@ -83,10 +85,9 @@ public class TickTrigger {
                         state.rules.playerDamageMultiplier = 0.66f;
                         state.rules.playerHealthMultiplier = 0.8f;
                         onSetRules(state.rules);
-                        for (int i = 0; i < playerGroup.size(); i++) {
-                            Player player = playerGroup.all().get(i);
-                            player.sendMessage(bundle("pvp-peacetime"));
-                            Call.onPlayerDeath(player);
+                        for (Player p : playerGroup.all()) {
+                            player.sendMessage(new Bundle(playerDB.get(p.uuid).locale).get("pvp-peacetime"));
+                            player.kill();
                         }
                         PvPPeace = false;
                     }

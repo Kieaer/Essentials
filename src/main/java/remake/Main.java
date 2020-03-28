@@ -18,12 +18,12 @@ import remake.external.Tools;
 import remake.feature.ActivityLog;
 import remake.feature.Discord;
 import remake.feature.Permission;
+import remake.feature.Vote;
 import remake.internal.CrashReport;
 import remake.internal.Event;
 import remake.internal.Log;
 import remake.internal.thread.Threads;
 import remake.internal.thread.TickTrigger;
-import remake.network.Client;
 import remake.network.Server;
 
 import java.io.BufferedReader;
@@ -54,7 +54,8 @@ public class Main extends Plugin {
     public static final Database database = new Database();
     public static final PluginData pluginData = new PluginData();
     public static final Server server = new Server();
-    public static final Client client = new Client();
+    public static final remake.network.Client client = new remake.network.Client();
+    public static final Vote vote = new Vote();
 
     public final ApplicationListener listener;
 
@@ -109,7 +110,7 @@ public class Main extends Plugin {
         if (config.DBServer) database.server_start();
 
         // Client 연결
-        if (config.clientenable) new Client();
+        if (config.clientenable) new remake.network.Client();
 
         // Server 시작
         if (config.serverenable) new Server();
@@ -135,15 +136,15 @@ public class Main extends Plugin {
                     mainThread.shutdownNow(); // 스레드 종료
                     // config.singleService.shutdownNow(); // 로그 스레드 종료
                     timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
-                    if (isvoting) essentials.Threads.Vote.cancel(); // 투표 종료
+                    if (vote.status()) vote.interrupt(); // 투표 종료
                     discord.shutdownNow(); // Discord 서비스 종료
                     database.dispose(); // DB 연결 종료
 
                     if (config.serverenable) {
                         try {
-                            Iterator<essentials.net.Server.Service> servers = essentials.net.Server.list.iterator();
+                            Iterator<Server.service> servers = server.list.iterator();
                             while (servers.hasNext()) {
-                                essentials.net.Server.Service ser = servers.next();
+                                Server.service ser = servers.next();
                                 ser.os.close();
                                 ser.in.close();
                                 ser.socket.close();
