@@ -92,7 +92,7 @@ public class Event {
                 if (index == 1) {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
-                        PlayerData target = PlayerData(player.uuid);
+                        PlayerData target = playerDB.get(player.uuid);
                         if (target.isLogin) {
                             if (player.getTeam().name.equals(e.winner.name)) {
                                 target.pvpwincount++;
@@ -107,7 +107,7 @@ public class Event {
             } else if (state.rules.attackMode) {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    PlayerData target = PlayerData(player.uuid);
+                    PlayerData target = playerDB.get(player.uuid);
                     if (target.isLogin) {
                         target.attackclear++;
                         PlayerDataSet(target);
@@ -444,7 +444,7 @@ public class Event {
                     }
                 }
 
-                PlayerDataSet(playerData);
+
             }
         });
 
@@ -585,7 +585,7 @@ public class Event {
             // 뒤진(?) 유닛이 플레이어일때
             if (e.unit instanceof Player) {
                 Player player = (Player) e.unit;
-                PlayerData target = PlayerData(player.uuid);
+                PlayerData target = playerDB.get(player.uuid);
                 if (!state.teams.get(player.getTeam()).cores.isEmpty()) {
                     target.deathcount++;
                     PlayerDataSet(target);
@@ -596,7 +596,7 @@ public class Event {
             if (playerGroup != null && playerGroup.size() > 0) {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
-                    PlayerData target = PlayerData(player.uuid);
+                    PlayerData target = playerDB.get(player.uuid);
                     if (!state.teams.get(player.getTeam()).cores.isEmpty()) {
                         target.killcount++;
                         PlayerDataSet(target);
@@ -613,7 +613,7 @@ public class Event {
                 }
 
                 for (Player player : playerGroup.all()) {
-                    player.sendMessage(bundle(PlayerData(player.uuid).locale, "player-banned", e.player.name));
+                    player.sendMessage(bundle(playerDB.get(player.uuid).locale, "player-banned", e.player.name));
                     if (netServer.admins.isIDBanned(player.uuid)) {
                         player.con.kick(Packets.KickReason.banned);
                     }

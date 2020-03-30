@@ -1,9 +1,12 @@
 package remake.feature;
 
+import mindustry.entities.type.Player;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import remake.core.player.PlayerData;
 import remake.internal.CrashReport;
 
+import static remake.Main.playerDB;
 import static remake.Main.root;
 
 public class Permission {
@@ -30,5 +33,20 @@ public class Permission {
                 new CrashReport(e);
             }
         }
+    }
+
+    public boolean check(Player player, String command) {
+        PlayerData p = playerDB.get(player.uuid);
+
+        if (!p.error) {
+            int size = permission.get(p.permission).asObject().get("permission").asArray().size();
+            for (int a = 0; a < size; a++) {
+                String permlevel = permission.get(p.permission).asObject().get("permission").asArray().get(a).asString();
+                if (permlevel.equals(command) || permlevel.equals("ALL")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

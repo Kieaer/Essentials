@@ -1,6 +1,7 @@
 package remake;
 
 import remake.core.player.PlayerData;
+import remake.external.Tools;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -25,4 +26,5 @@ public class Vars {
     );
 
     public static boolean PvPPeace = false;
+    public static String serverIP = Tools.getHostIP();
 }

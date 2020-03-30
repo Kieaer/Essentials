@@ -141,7 +141,7 @@ public class TickTrigger {
                     if (playerGroup.size() > 0) {
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player player = playerGroup.all().get(i);
-                            PlayerDB.PlayerData target = PlayerData(player.uuid);
+                            PlayerDB.PlayerData target = playerDB.get(player.uuid);
                             boolean kick = false;
 
                             if (target.isLogin) {
