@@ -11,8 +11,9 @@ import javax.security.auth.login.LoginException;
 import static remake.Main.config;
 
 public class Discord {
-    private JDA jda;
-    public Discord() throws InterruptedException {
+    public JDA jda = null;
+
+    public void start() throws InterruptedException {
         try {
             jda = new JDABuilder(config.discordtoken).build();
             jda.awaitReady();
@@ -30,6 +31,6 @@ public class Discord {
     }
 
     public void shutdownNow(){
-        jda.shutdownNow();
+        if (jda != null) jda.shutdownNow();
     }
 }

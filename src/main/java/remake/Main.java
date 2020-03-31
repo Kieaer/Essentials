@@ -75,13 +75,14 @@ public class Main extends Plugin {
     public static final Client client = new Client();
     public static final Vote vote = new Vote();
     public static final PlayerCore playerCore = new PlayerCore();
+    public static final ColorNick colornick = new ColorNick();
+    public static final Permission perm = new Permission();
+    public static final Discord discord = new Discord();
 
     public final ApplicationListener listener;
 
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
     public static Config config;
-    public static Permission perm;
-    public static Discord discord = null;
     public static ArrayList<EventServer> eventServer = new ArrayList<>();
 
     public Main() throws Exception {
@@ -119,7 +120,7 @@ public class Main extends Plugin {
         // 스레드 시작
         new TickTrigger();
         timer.scheduleAtFixedRate(new Threads(), 1000, 1000);
-        // mainThread.submit();
+        mainThread.submit(colornick);
 
         // DB 드라이버 로딩
         new DriverLoader();
@@ -137,9 +138,6 @@ public class Main extends Plugin {
 
         // 기록 시작
         if (config.logging) new ActivityLog();
-
-        // 권한 기능 시작
-        perm = new Permission();
 
         // 이벤트 시작
         new Event();
@@ -201,7 +199,7 @@ public class Main extends Plugin {
         Core.app.addListener(listener);
 
         // Discord 서비스 시작
-        discord = new Discord();
+        discord.start();
 
         // 채팅 포맷 변경
         netServer.admins.addChatFilter((player, text) -> null);

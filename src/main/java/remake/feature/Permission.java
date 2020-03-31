@@ -5,6 +5,7 @@ import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import remake.core.player.PlayerData;
 import remake.internal.CrashReport;
+import remake.internal.Log;
 
 import static remake.Main.playerDB;
 import static remake.Main.root;
@@ -13,6 +14,10 @@ public class Permission {
     public JsonObject permission;
 
     public Permission() {
+        reload();
+    }
+
+    public void reload() {
         if (root.child("permission.hjson").exists()) {
             try {
                 permission = JsonValue.readHjson(root.child("permission.hjson").reader()).asObject();
@@ -32,6 +37,8 @@ public class Permission {
             } catch (Exception e) {
                 new CrashReport(e);
             }
+        } else {
+            Log.warn("file-not-found");
         }
     }
 
@@ -48,5 +55,10 @@ public class Permission {
             }
         }
         return false;
+    }
+
+    public boolean isAdmin(Player player) {
+        PlayerData p = playerDB.get(player.uuid);
+        return permission.get(p.permission).asObject().getBoolean("admin", false);
     }
 }
