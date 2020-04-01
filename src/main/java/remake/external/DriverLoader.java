@@ -18,7 +18,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static remake.Vars.DBURL;
+import static remake.PluginVars.DBURL;
 
 public class DriverLoader implements Driver {
     public static URLClassLoader H2URL;

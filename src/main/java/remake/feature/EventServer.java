@@ -2,10 +2,12 @@ package remake.feature;
 
 import arc.ApplicationListener;
 import arc.Core;
+import mindustry.game.Gamemode;
 import org.codehaus.plexus.util.FileUtils;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
+import remake.external.PingHost;
 import remake.internal.CrashReport;
 import remake.internal.Log;
 
@@ -24,23 +26,24 @@ import static remake.Main.root;
 public class EventServer {
     public List<Thread> servers = new ArrayList<>();
 
-    public void create(String roomname, String map, String gamemode, int port) throws Exception {
+    public boolean create(String roomname, String map, String gamemode, int port) throws Exception {
         JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
         String url = json.get("assets").asObject().get("0").asObject().get("browser_download_url").asString();
         FileUtils.copyURLToFile(new URL(url), new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar"));
-        Service service = new Service(roomname, map, gamemode, port);
+        EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
         service.start();
         Thread.sleep(5000);
+        return true;
     }
 
-    public static class Service extends Thread {
-        String roomname;
-        String map;
-        String gamemode;
-        int port;
-        int disablecount;
+    public static class EventService extends Thread {
+        public String roomname;
+        public String map;
+        public Gamemode gamemode;
+        public int port;
+        public int disablecount;
 
-        Service(String roomname, String map, String gamemode, int port) {
+        EventService(String roomname, String map, Gamemode gamemode, int port) {
             this.gamemode = gamemode;
             this.map = map;
             this.roomname = roomname;
@@ -67,7 +70,7 @@ public class EventServer {
                 TimerTask t = new TimerTask() {
                     @Override
                     public void run() {
-                        pingServer("localhost", result -> {
+                        new PingHost("localhost", port, result -> {
                             if (disablecount > 300) {
                                 try {
                                     JsonObject settings = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();

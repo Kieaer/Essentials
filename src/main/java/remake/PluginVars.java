@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Vars {
+public class PluginVars {
     public static int db_version = 5;
     public static int build_version = 104;
     public static int config_version = 13;

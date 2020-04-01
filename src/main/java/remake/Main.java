@@ -19,13 +19,13 @@ import mindustry.game.Difficulty;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
+import mindustry.maps.Map;
 import mindustry.net.Administration;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
-import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 import remake.core.player.Database;
@@ -60,7 +60,9 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 import static mindustry.Vars.*;
-import static remake.Vars.build_version;
+import static remake.PluginVars.build_version;
+import static remake.PluginVars.serverIP;
+import static remake.external.Tools.getHostIP;
 
 public class Main extends Plugin {
     public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -78,12 +80,13 @@ public class Main extends Plugin {
     public static final ColorNick colornick = new ColorNick();
     public static final Permission perm = new Permission();
     public static final Discord discord = new Discord();
+    public static final EventServer eventServer = new EventServer();
 
     public final ApplicationListener listener;
 
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
     public static Config config;
-    public static ArrayList<EventServer> eventServer = new ArrayList<>();
+    public static ArrayList<EventServer.EventService> eventServers = new ArrayList<>();
 
     public Main() throws Exception {
         // 서버 버전 확인
@@ -335,22 +338,23 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.alert) {
-                playerData.alert = false;
+                playerData.alert(false);
                 player.sendMessage(new Bundle(playerData.locale).get("alert-disable"));
             } else {
-                playerData.alert = true;
+                playerData.alert(true);
                 player.sendMessage(new Bundle(playerData.locale).get("alert"));
             }
+
         });
         handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
             if (!perm.check(player, "ch")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.crosschat) {
-                playerData.crosschat = false;
+                playerData.crosschat(false);
                 player.sendMessage(new Bundle(playerData.locale).get("crosschat-disable"));
             } else {
-                playerData.crosschat = true;
+                playerData.crosschat(true);
                 player.sendMessage(new Bundle(playerData.locale).get("crosschat"));
             }
         });
@@ -372,97 +376,16 @@ public class Main extends Plugin {
         });
         handler.<Player>register("chars", "<Text...>", "Make pixel texts", (arg, player) -> {
             if (!perm.check(player, "chars")) return;
-            HashMap<String, int[]> letters = new HashMap<>();
-
-            letters.put("A", new int[]{0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1});
-            letters.put("B", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0});
-            letters.put("C", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1});
-            letters.put("D", new int[]{1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0});
-            letters.put("E", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1});
-            letters.put("F", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0});
-            letters.put("G", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1});
-            letters.put("H", new int[]{1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1});
-            letters.put("I", new int[]{1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1});
-            letters.put("J", new int[]{1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0});
-            letters.put("K", new int[]{1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1});
-            letters.put("L", new int[]{1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1});
-            letters.put("M", new int[]{1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1});
-            letters.put("N", new int[]{1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1});
-            letters.put("O", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0});
-            letters.put("P", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0});
-            letters.put("Q", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1});
-            letters.put("R", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1});
-            letters.put("S", new int[]{1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1});
-            letters.put("T", new int[]{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0});
-            letters.put("U", new int[]{1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0});
-            letters.put("V", new int[]{1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0});
-            letters.put("W", new int[]{1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0});
-            letters.put("X", new int[]{1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1});
-            letters.put("Y", new int[]{1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0});
-            letters.put("Z", new int[]{1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1});
-
-            letters.put("!", new int[]{1, 1, 1, 1, 0, 1});
-            letters.put("?", new int[]{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0});
-
-            letters.put(" ", new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
-
-            String[] texts = arg[0].split("");
-            Tile tile = world.tile(player.tileX(), player.tileY());
-
-            for (String text : texts) {
-                ArrayList<int[]> pos = new ArrayList<>();
-                int[] target = letters.get(text.toUpperCase());
-                int xv = 0;
-                int yv = 0;
-                switch (target.length) {
-                    case 20:
-                        xv = 5;
-                        yv = 4;
-                        break;
-                    case 15:
-                        xv = 5;
-                        yv = 3;
-                        break;
-                    case 18:
-                        xv = 6;
-                        yv = 3;
-                        break;
-                    case 25:
-                        xv = 5;
-                        yv = 5;
-                        break;
-                    case 6:
-                        xv = 6;
-                        yv = 1;
-                        break;
-                    case 10:
-                        xv = 2;
-                        yv = 5;
-                        break;
-                }
-                for (int y = 0; y < yv; y++) {
-                    for (int x = 0; x < xv; x++) {
-                        pos.add(new int[]{y, -x});
-                    }
-                }
-                for (int a = 0; a < pos.size(); a++) {
-                    if (target[a] == 1) {
-                        Call.onConstructFinish(world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                    } else {
-                        Call.onDeconstructFinish(world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]), Blocks.air, 0);
-                    }
-                }
-                tile = world.tile(tile.x + (xv + 1), tile.y);
-            }
+            tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[1]);
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
             if (!perm.check(player, "color")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.colornick) {
-                playerData.colornick = false;
+                playerData.colornick(false);
                 player.sendMessage(new Bundle(playerData.locale).get("colornick-disable"));
             } else {
-                playerData.colornick = true;
+                playerData.colornick(true);
                 player.sendMessage(new Bundle(playerData.locale).get("colornick"));
             }
 
@@ -485,87 +408,60 @@ public class Main extends Plugin {
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
             if (!perm.check(player, "event")) return;
             PlayerData playerData = playerDB.get(player.uuid);
-            Thread t = new Thread(() -> {
-                switch (arg[0]) {
-                    case "host":
-                        Thread work = new Thread(() -> {
-                            PlayerData target = playerDB.get(player.uuid);
-                            if (target.level > 20 || player.isAdmin) {
-                                if (arg.length == 2) {
-                                    player.sendMessage(new Bundle(playerData.locale).get("event-host-no-mapname"));
-                                    return;
-                                }
-                                if (arg.length == 3) {
-                                    player.sendMessage(new Bundle(playerData.locale).get("event-host-no-gamemode"));
-                                    return;
-                                }
-                                player.sendMessage(new Bundle(playerData.locale).get("event-making"));
-
-                                String[] range = config.eventport.split("-");
-                                int firstport = Integer.parseInt(range[0]);
-                                int lastport = Integer.parseInt(range[1]);
-                                int customport = ThreadLocalRandom.current().nextInt(firstport, lastport + 1);
-
-                                pluginData.eventservers.add(new PluginData.eventservers(arg[1], customport));
-
-                                Threads.eventserver es = new Threads.eventserver(arg[1], arg[2], arg[3], customport);
-                                es.roomname = arg[1];
-                                es.map = arg[2];
-                                if (arg[3].equals("wave")) {
-                                    es.gamemode = "wave";
-                                } else {
-                                    es.gamemode = arg[3];
-                                }
-                                es.customport = customport;
-                                es.start();
-                                try {
-                                    es.join();
-                                } catch (InterruptedException e) {
-                                    printError(e);
-                                }
-                                Log.info("event-host-opened", player.name, customport);
-
-                                target.connected = false;
-                                target.connserver = "none";
-                                if (isLocal(netServer.admins.getInfo(player.uuid).lastIP)) {
-                                    Call.onConnect(player.con, "127.0.0.1", customport);
-                                } else {
-                                    Call.onConnect(player.con, hostip, customport);
-                                }
-                                Log.info(hostip + ":" + customport);
-                            } else {
-                                player.sendMessage(new Bundle(playerData.locale).get("event-level"));
-                            }
-                        });
-                        work.start();
-                        break;
-                    case "join":
-                        for (PluginData.eventservers server : data.eventservers) {
-                            if (server.roomname.equals(arg[1])) {
-                                PlayerData val = playerDB.get(player.uuid);
-                                val.connected = false;
-                                val.connserver = "none";
-                                PlayerDataSave(val);
-                                Call.onConnect(player.con, hostip, server.port);
-                                Log.info(hostip + ":" + server.port);
-                                break;
-                            }
+            switch (arg[0]) {
+                case "host":
+                    if (playerData.level > 20 || player.isAdmin) {
+                        if (arg.length == 2) {
+                            player.sendMessage(new Bundle(playerData.locale).get("event-host-no-mapname"));
+                            return;
                         }
-                        break;
-                    default:
-                        player.sendMessage(new Bundle(playerData.locale).get("wrong-command"));
-                        break;
-                }
-            });
-            t.start();
+                        if (arg.length == 3) {
+                            player.sendMessage(new Bundle(playerData.locale).get("event-host-no-gamemode"));
+                            return;
+                        }
+                        player.sendMessage(new Bundle(playerData.locale).get("event-making"));
+
+                        String[] range = config.eventport.split("-");
+                        int firstport = Integer.parseInt(range[0]);
+                        int lastport = Integer.parseInt(range[1]);
+                        int customport = ThreadLocalRandom.current().nextInt(firstport, lastport + 1);
+
+                        pluginData.eventservers.add(new PluginData.eventservers(arg[1], customport));
+
+                        if (eventServer.create(arg[1], arg[2], arg[3], customport)) {
+                            Log.info("event-host-opened", player.name, customport);
+                            playerData.connected(false);
+                            playerData.connserver("none");
+                            Call.onConnect(player.con, getHostIP(), customport);
+                            Log.info("Player " + playerData.name + " joined to " + customport + " port");
+                        }
+                    } else {
+                        player.sendMessage(new Bundle(playerData.locale).get("event-level"));
+                    }
+                    break;
+                case "join":
+                    for (EventServer.EventService server : eventServers) {
+                        if (server.roomname.equals(arg[1])) {
+                            PlayerData val = playerDB.get(player.uuid);
+                            val.connected(false);
+                            val.connserver("none");
+                            Call.onConnect(player.con, serverIP, server.port);
+                            Log.info(serverIP + ":" + server.port);
+                            break;
+                        }
+                    }
+                    break;
+                default:
+                    player.sendMessage(new Bundle(playerData.locale).get("wrong-command"));
+                    break;
+            }
         });
         handler.<Player>register("email", "<key>", "Email Authentication", (arg, player) -> {
             for (PluginData.maildata data : pluginData.emailauth) {
                 if (data.uuid.equals(player.uuid)) {
                     if (data.authkey.equals(arg[0])) {
-                        if (playerDB.register(player, data.id, data.pw, "emailauth", data.email)) {
-                            playerDB.load(player);
-                            return;
+                        if (playerDB.register(player, data.id, data.pw, tool.getGeo(player).toString(), true, serverIP, "default", 0L, data.email, data.id, data.pw)) {
+                            playerCore.load(player);
                         }
                     } else {
                         player.sendMessage("You have entered an incorrect authentication key.");
@@ -634,7 +530,7 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player-pvpbreakout") + "[] : " + playerData.pvpbreakout;
             Call.onInfoMessage(player.con, datatext);
         });
-        handler.<Player>register("jump", "<zone/count/total> <touch> [serverip] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {
+        handler.<Player>register("jump", "<zone/count/total> <touch> [ip] [port] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!perm.check(player, "jump")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             switch (arg[0]) {
@@ -658,7 +554,7 @@ public class Main extends Plugin {
                     player.sendMessage(new Bundle(playerData.locale).get("jump-added"));
                     break;
                 case "count":
-                    pluginData.jumpcount.add(new PluginData.jumpcount(world.tile(player.tileX(), player.tileY()), arg[2], 0, 0));
+                    pluginData.jumpcount.add(new PluginData.jumpcount(world.tile(player.tileX(), player.tileY()), arg[2], Integer.parseInt(arg[3]), 0, 0));
                     player.sendMessage(new Bundle(playerData.locale).get("jump-added"));
                     break;
                 case "total":
@@ -672,11 +568,11 @@ public class Main extends Plugin {
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
             if (!perm.check(player, "kickall")) return;
-            mindustry.Vars.netServer.kickAll(Packets.KickReason.kick);
+            netServer.kickAll(Packets.KickReason.kick);
         });
         handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
             if (!perm.check(player, "kill")) return;
-            Player other = mindustry.Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+            Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if (other == null) {
                 player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("player-not-found"));
                 return;
@@ -687,11 +583,11 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             if (config.loginenable) {
                 if (playerData.error) {
-                    if (PlayerDB.login(player, arg[0], arg[1])) {
+                    if (playerCore.login(player, arg[0], arg[1])) {
                         if (config.passwordmethod.equals("discord")) {
-                            playerDB.load(player, arg[0]);
+                            playerCore.load(player, arg[0]);
                         } else {
-                            playerDB.load(player);
+                            playerCore.load(player);
                         }
                         player.sendMessage(new Bundle(playerData.locale).get("login-success"));
                     } else {
@@ -699,7 +595,7 @@ public class Main extends Plugin {
                     }
                 } else {
                     if (config.passwordmethod.equals("mixed")) {
-                        if (PlayerDB.login(player, arg[0], arg[1])) Call.onConnect(player.con, hostip, 7060);
+                        if (playerCore.login(player, arg[0], arg[1])) Call.onConnect(player.con, serverIP, 7060);
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
                     }
@@ -724,6 +620,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("maps", "[page]", "Show server maps", (arg, player) -> {
             if (!perm.check(player, "maps")) return;
+            Array<Map> maplist = maps.all();
             StringBuilder build = new StringBuilder();
             int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
             int pages = Mathf.ceil((float) maplist.size / 6);
@@ -746,7 +643,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
             if (!perm.check(player, "motd")) return;
-            String motd = getmotd(player);
+            String motd = tool.getMotd(playerDB.get(player.uuid).locale);
             int count = motd.split("\r\n|\r|\n").length;
             if (count > 10) {
                 Call.onInfoMessage(player.con, motd);
@@ -758,7 +655,7 @@ public class Main extends Plugin {
             if (!perm.check(player, "players")) return;
             StringBuilder build = new StringBuilder();
             int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
-            int pages = Mathf.ceil((float) players.size / 6);
+            int pages = Mathf.ceil((float) playerGroup.size() / 6);
 
             page--;
             if (page > pages || page < 0) {
@@ -767,29 +664,30 @@ public class Main extends Plugin {
             }
 
             build.append("[green]==[white] Players list page ").append(page).append("/").append(pages).append(" [green]==[white]\n");
-            for (int a = 6 * page; a < Math.min(6 * (page + 1), players.size); a++) {
-                build.append("[gray]").append(a).append("[] ").append(players.get(a).name).append("\n");
+            for (int a = 6 * page; a < Math.min(6 * (page + 1), playerGroup.size()); a++) {
+                build.append("[gray]").append(a).append("[] ").append(playerGroup.all().get(a).name).append("\n");
             }
             player.sendMessage(build.toString());
         });
         handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
             if (!perm.check(player, "save")) return;
-            Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
+            Fi file = saveDirectory.child(config.slotnumber + "." + saveExtension);
             SaveIO.save(file);
-            player.sendMessage(bundle(playerDB.get(player.uuid).locale, "mapsaved"));
+            player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("mapsaved"));
         });
         handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server jumping zone data.", (arg, player) -> {
             if (!perm.check(player, "reset")) return;
             PlayerData playerData = playerDB.get(player.uuid);
+            Bundle bundle = new Bundle(playerData.locale);
             switch (arg[0]) {
                 case "zone":
-                    for (int a = 0; a < data.jumpzone.size(); a++) {
+                    for (int a = 0; a < pluginData.jumpzone.size(); a++) {
                         if (arg.length != 2) {
-                            player.sendMessage(bundle(playerData.locale, "no-parameter"));
+                            player.sendMessage(bundle.get("no-parameter"));
                             return;
                         }
-                        if (arg[1].equals(data.jumpzone.get(a).ip)) {
-                            data.jumpzone.remove(a);
+                        if (arg[1].equals(pluginData.jumpzone.get(a).ip)) {
+                            pluginData.jumpzone.remove(a);
                             for (Thread value : visualjump.thread) {
                                 value.interrupt();
                             }
@@ -849,13 +747,13 @@ public class Main extends Plugin {
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
                     if (config.isLoginenable()) {
                         if (playerDB.register(player, arg[0], arg[1], "password")) {
-                            if (mindustry.Vars.state.rules.pvp) {
+                            if (state.rules.pvp) {
                                 int index = player.getTeam().id + 1;
                                 while (index != player.getTeam().id) {
                                     if (index >= Team.all().length) {
                                         index = 0;
                                     }
-                                    if (!mindustry.Vars.state.teams.get(Team.all()[index]).cores.isEmpty()) {
+                                    if (!state.teams.get(Team.all()[index]).cores.isEmpty()) {
                                         player.setTeam(Team.all()[index]);
                                         break;
                                     }
@@ -1099,17 +997,17 @@ public class Main extends Plugin {
             int idb = 0;
             int ipb = 0;
 
-            Array<Administration.PlayerInfo> bans = mindustry.Vars.netServer.admins.getBanned();
+            Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
             for (Administration.PlayerInfo ignored : bans) {
                 idb++;
             }
 
-            Array<String> ipbans = mindustry.Vars.netServer.admins.getBannedIPs();
+            Array<String> ipbans = netServer.admins.getBannedIPs();
             for (String ignored : ipbans) {
                 ipb++;
             }
             int bancount = idb + ipb;
-            player.sendMessage(nnew Bundle(playerData.locale).get("server-status-banstat", fps, mindustry.Vars.playerGroup.size(), bancount, idb, ipb, threads.playtime, threads.uptime, plugin_version));
+            player.sendMessage(nnew Bundle(playerData.locale).get("server-status-banstat", fps, playerGroup.size(), bancount, idb, ipb, threads.playtime, threads.uptime, plugin_version));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if (!perm.check(player, "suicide")) return;
@@ -1121,11 +1019,11 @@ public class Main extends Plugin {
         handler.<Player>register("team", "[Team...]", "Change team (PvP only)", (arg, player) -> {
             if (!perm.check(player, "team")) return;
             PlayerData playerData = playerDB.get(player.uuid);
-            if (mindustry.Vars.state.rules.pvp) {
+            if (state.rules.pvp) {
                 int i = player.getTeam().id + 1;
                 while (i != player.getTeam().id) {
                     if (i >= Team.all().length) i = 0;
-                    if (!mindustry.Vars.state.teams.get(Team.all()[i]).cores.isEmpty()) {
+                    if (!state.teams.get(Team.all()[i]).cores.isEmpty()) {
                         player.setTeam(Team.all()[i]);
                         break;
                     }
@@ -1249,7 +1147,7 @@ public class Main extends Plugin {
                 }
                 if (arg.length == 2) {
                     if (arg[0].equals("kick")) {
-                        Player other = mindustry.Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+                        Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
                         if (other == null) other = players.get(Integer.parseInt(arg[1]));
                         if (other == null) {
                             player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
@@ -1263,7 +1161,7 @@ public class Main extends Plugin {
                         new Vote(player, arg[0], other);
                     } else if (arg[0].equals("map")) {
                         // 맵 투표
-                        mindustry.maps.Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
+                        Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
                         if (world == null) world = maplist.get(Integer.parseInt(arg[1]));
                         if (world == null) {
                             player.sendMessage(new Bundle(playerData.locale).get("vote-map-not-found"));
@@ -1315,7 +1213,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("mute", "<Player_name>", "Mute/unmute player", (arg, player) -> {
             if (!perm.check(player, "mute")) return;
-            Player other = mindustry.Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+            Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             PlayerData playerData = playerDB.get(player.uuid);
             if (other == null) {
                 player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
@@ -1333,7 +1231,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
             if (!perm.check(player, "votekick")) return;
-            Player other = mindustry.Vars.playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+            Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
             PlayerData playerData = playerDB.get(player.uuid);
             if (other == null) other = players.get(Integer.parseInt(arg[1]));
             if (other == null) {

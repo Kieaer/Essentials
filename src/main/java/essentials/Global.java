@@ -234,186 +234,186 @@ public class Global {
         int[] nine = {1,1,1,1,0,1,1,1,1,0,0,1,1,1,1};
 
         switch(count) {
-            case 0:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(zero[a] == 1) {
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(zero[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
-                        }
-                    }
-                }
-                break;
-            case 1:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(one[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(one[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                case 0:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(zero[a] == 1) {
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(zero[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
                         }
                     }
-                }
-                break;
-            case 2:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(two[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(two[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
-                        }
-                    }
-                }
-                break;
-            case 3:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(three[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(three[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                    break;
+                case 1:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(one[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(one[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
                         }
                     }
-                }
-                break;
-            case 4:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(four[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(four[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
-                        }
-                    }
-                }
-                break;
-            case 5:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(five[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(five[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                    break;
+                case 2:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(two[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(two[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
                         }
                     }
-                }
-                break;
-            case 6:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(six[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(six[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
-                        }
-                    }
-                }
-                break;
-            case 7:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(seven[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(seven[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                    break;
+                case 3:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(three[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(three[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
                         }
                     }
-                }
-                break;
-            case 8:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(eight[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(eight[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
-                        }
-                    }
-                }
-                break;
-            case 9:
-                for(int a=0;a<15;a++){
-                    String position = intpos[a];
-                    String[] data = position.split(",");
-                    int x = Integer.parseInt(data[0]);
-                    int y = Integer.parseInt(data[1]);
-                    Tile target = world.tile(tile.x, tile.y);
-                    if(nine[a] == 1){
-                        if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
-                            Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
-                        }
-                    } else if(nine[a] == 0){
-                        if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
-                            Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                    break;
+                case 4:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(four[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(four[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
                         }
                     }
-                }
-                break;
+                    break;
+                case 5:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(five[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(five[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
+                        }
+                    }
+                    break;
+                case 6:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(six[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(six[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
+                        }
+                    }
+                    break;
+                case 7:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(seven[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(seven[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
+                        }
+                    }
+                    break;
+                case 8:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(eight[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(eight[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
+                        }
+                    }
+                    break;
+                case 9:
+                    for(int a=0;a<15;a++){
+                        String position = intpos[a];
+                        String[] data = position.split(",");
+                        int x = Integer.parseInt(data[0]);
+                        int y = Integer.parseInt(data[1]);
+                        Tile target = world.tile(tile.x, tile.y);
+                        if(nine[a] == 1){
+                            if(world.tile(target.x+x, target.y+y).block() != Blocks.plastaniumWall){
+                                Call.onConstructFinish(world.tile(target.x+x, target.y+y), Blocks.plastaniumWall, 0, (byte) 0, Team.sharded, true);
+                            }
+                        } else if(nine[a] == 0){
+                            if(world.tile(target.x+x, target.y+y).block() == Blocks.plastaniumWall){
+                                Call.onDeconstructFinish(world.tile(target.x+x,target.y+y), Blocks.air, 0);
+                            }
+                        }
+                    }
+                    break;
         }
     }
 

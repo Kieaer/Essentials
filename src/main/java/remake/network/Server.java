@@ -40,8 +40,7 @@ import java.util.Random;
 
 import static mindustry.Vars.*;
 import static remake.Main.*;
-import static remake.Vars.*;
-import static remake.external.Tools.*;
+import static remake.PluginVars.*;
 
 public class Server implements Runnable {
     public ArrayList<service> list = new ArrayList<>();

@@ -8,20 +8,23 @@ import mindustry.net.Packets;
 import remake.external.Tools;
 import remake.internal.CrashReport;
 
+import javax.annotation.Nullable;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 import static mindustry.Vars.netServer;
 import static mindustry.Vars.playerGroup;
 import static remake.Main.*;
-import static remake.Vars.serverIP;
+import static remake.PluginVars.serverIP;
 
 public class PlayerCore {
-    public static ArrayList<Player> pvpTeam = new ArrayList<>();
+    public ArrayList<Player> pvpTeam = new ArrayList<>();
 
-    public boolean load(Player player) {
+    public boolean load(Player player, @Nullable String... AccountID) {
         try {
-            PlayerData playerData = playerDB.load(player.uuid);
+            PlayerData playerData = playerDB.load(player.uuid, AccountID);
             if (playerData.error) {
                 new CrashReport(new Exception("DATA NOT FOUND"));
                 return false;
@@ -129,5 +132,19 @@ public class PlayerCore {
                 accountid,
                 accountpw
         );
+    }
+
+    public boolean isLocal(Player player) {
+        try {
+            InetAddress addr = InetAddress.getByName(netServer.admins.getInfo(player.uuid).lastIP);
+            if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) return true;
+            return NetworkInterface.getByInetAddress(addr) != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean login(Player player, String id, String pw) {
+
     }
 }

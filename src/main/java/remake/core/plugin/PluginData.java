@@ -8,10 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static essentials.Global.getip;
-import static essentials.Main.config;
-import static essentials.Main.root;
 import static mindustry.Vars.world;
+import static remake.Main.root;
 
 public class PluginData {
     // 일회성 플러그인 데이터
@@ -25,7 +23,6 @@ public class PluginData {
     public ArrayList<Tile> nukeposition = new ArrayList<>();
     public ArrayList<Process> process = new ArrayList<>();
     public ArrayList<maildata> emailauth = new ArrayList<>();
-    public String ip = getip();
 
     // 종료시 저장되는 플러그인 데이터
     public ArrayList<jumpzone> jumpzone = new ArrayList<>();
@@ -46,8 +43,6 @@ public class PluginData {
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(map);
         oos.close();
-
-        root.child("data/data.json").writeString(config.PluginConfig.toString());
     }
 
     @SuppressWarnings("unchecked") // 의도적인 작동임
@@ -169,14 +164,16 @@ public class PluginData {
     public static class jumpcount implements Serializable {
         public final int x;
         public final int y;
-        public final String serverip;
+        public final String ip;
+        public final int port;
         public int players;
         public int numbersize;
 
-        public jumpcount(Tile tile, String serverip, int players, int numbersize) {
+        public jumpcount(Tile tile, String ip, int port, int players, int numbersize) {
             this.x = tile.x;
             this.y = tile.y;
-            this.serverip = serverip;
+            this.ip = ip;
+            this.port = port;
             this.players = players;
             this.numbersize = numbersize;
         }

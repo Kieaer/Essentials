@@ -3,8 +3,6 @@ package remake.internal.thread;
 import arc.Core;
 import arc.Events;
 import arc.util.Strings;
-import essentials.core.Exp;
-import essentials.core.PlayerDB;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
 import mindustry.entities.type.Player;
@@ -13,8 +11,11 @@ import mindustry.gen.Call;
 import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 import org.hjson.JsonObject;
+import remake.core.player.PlayerData;
 import remake.core.plugin.Config;
 import remake.core.plugin.PluginData;
+import remake.external.PingHost;
+import remake.feature.Exp;
 import remake.internal.Bundle;
 import remake.internal.Log;
 
@@ -22,14 +23,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-import static essentials.Global.*;
-import static essentials.core.PlayerDB.PlayerData;
-import static essentials.special.PingServer.pingServer;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.onSetRules;
-import static remake.Main.playerDB;
-import static remake.Main.root;
-import static remake.Vars.*;
+import static remake.Main.*;
+import static remake.PluginVars.*;
 
 public class TickTrigger {
     Config config = new Config();
@@ -124,16 +121,9 @@ public class TickTrigger {
                                     }
                                 }
                             }
-                            for (int digit : digits) {
-                                setcount(tile, digit);
-                                tile = world.tile(tile.x + 4, tile.y);
-                            }
-                        } else {
-                            for (int l = 0; l < pluginData.jumptotal.get(a).numbersize; l++) {
-                                setcount(tile, digits[l]);
-                                tile = world.tile(tile.x + 4, tile.y);
-                            }
                         }
+                        tool.setTileText(tile, Blocks.copperWall, String.valueOf(result));
+
                         pluginData.jumptotal.set(a, new PluginData.jumptotal(tile, result, digits.length));
                     }
 
@@ -141,7 +131,7 @@ public class TickTrigger {
                     if (playerGroup.size() > 0) {
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player player = playerGroup.all().get(i);
-                            PlayerDB.PlayerData target = playerDB.get(player.uuid);
+                            PlayerData target = playerDB.get(player.uuid);
                             boolean kick = false;
 
                             if (target.isLogin) {
@@ -161,7 +151,7 @@ public class TickTrigger {
                                 target.afk_tilex = player.tileX();
                                 target.afk_tiley = player.tileY();
 
-                                if (!state.rules.editor) Exp.setExp(player);
+                                if (!state.rules.editor) new Exp(player);
                                 if (kick) Call.onKick(player.con, "AFK");
                             }
                             if (target.grief_destory_count > 0) target.grief_destory_count--;
@@ -214,7 +204,7 @@ public class TickTrigger {
                         int i2 = i;
                         PluginData.jumpcount value = pluginData.jumpcount.get(i);
 
-                        pingServer(pluginData.jumpcount.get(i).serverip, result -> {
+                        new PingHost(value.ip, value.port, result -> {
                             if (result.name != null) {
                                 String str = String.valueOf(result.players);
                                 int[] digits = new int[str.length()];
@@ -229,20 +219,12 @@ public class TickTrigger {
                                             }
                                         }
                                     }
-                                    for (int digit : digits) {
-                                        setcount(tile, digit);
-                                        tile = world.tile(tile.x + 4, tile.y);
-                                    }
-                                } else {
-                                    for (int l = 0; l < value.numbersize; l++) {
-                                        setcount(tile, digits[l]);
-                                        tile = world.tile(value.getTile().x + 4, value.getTile().y);
-                                    }
                                 }
+                                tool.setTileText(tile, Blocks.copperWall, str);
                                 // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                pluginData.jumpcount.set(i2, new PluginData.jumpcount(value.getTile(), value.serverip, result.players, digits.length));
+                                pluginData.jumpcount.set(i2, new PluginData.jumpcount(value.getTile(), value.ip, value.port, result.players, digits.length));
                             } else {
-                                setno(value.getTile(), true);
+                                tool.setTileText(value.getTile(), Blocks.copperWall, "no");
                             }
                         });
                     }

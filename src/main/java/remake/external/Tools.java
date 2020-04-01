@@ -2,6 +2,9 @@ package remake.external;
 
 import mindustry.Vars;
 import mindustry.entities.type.Player;
+import mindustry.game.Team;
+import mindustry.world.Block;
+import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
@@ -16,12 +19,15 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static mindustry.Vars.playerGroup;
+import static mindustry.Vars.world;
 import static remake.Main.*;
 
 public class Tools {
@@ -94,7 +100,7 @@ public class Tools {
         return locale;
     }
 
-    public static String getHostIP() {
+    public String getHostIP() {
         try {
             URL whatismyip = new URL("http://checkip.amazonaws.com");
             BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
@@ -104,7 +110,7 @@ public class Tools {
         }
     }
 
-    public static String getMotd(Locale loc) {
+    public String getMotd(Locale loc) {
         if (root.child("motd/motd_" + loc.toString() + ".txt").exists()) {
             return root.child("motd/motd_" + loc.toString() + ".txt").readString();
         } else {
@@ -160,5 +166,103 @@ public class Tools {
             return false;
         }
         return true;
+    }
+
+    public void setTileText(Tile tile, Block block, String text) {
+        HashMap<String, int[]> letters = new HashMap<>();
+        letters.put("A", new int[]{0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1});
+        letters.put("B", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0});
+        letters.put("C", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1});
+        letters.put("D", new int[]{1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0});
+        letters.put("E", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1});
+        letters.put("F", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0});
+        letters.put("G", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1});
+        letters.put("H", new int[]{1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1});
+        letters.put("I", new int[]{1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1});
+        letters.put("J", new int[]{1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0});
+        letters.put("K", new int[]{1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1});
+        letters.put("L", new int[]{1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1});
+        letters.put("M", new int[]{1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1});
+        letters.put("N", new int[]{1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1});
+        letters.put("O", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0});
+        letters.put("P", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0});
+        letters.put("Q", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1});
+        letters.put("R", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1});
+        letters.put("S", new int[]{1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1});
+        letters.put("T", new int[]{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0});
+        letters.put("U", new int[]{1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0});
+        letters.put("V", new int[]{1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0});
+        letters.put("W", new int[]{1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0});
+        letters.put("X", new int[]{1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1});
+        letters.put("Y", new int[]{1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0});
+        letters.put("Z", new int[]{1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1});
+
+        letters.put("0", new int[]{1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1});
+        letters.put("1", new int[]{0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1});
+        letters.put("2", new int[]{1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1});
+        letters.put("3", new int[]{1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1});
+        letters.put("4", new int[]{1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1});
+        letters.put("5", new int[]{1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1});
+        letters.put("6", new int[]{1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1});
+        letters.put("7", new int[]{1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1});
+        letters.put("8", new int[]{1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1});
+        letters.put("9", new int[]{1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1});
+
+        letters.put("!", new int[]{1, 1, 1, 1, 0, 1});
+        letters.put("?", new int[]{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0});
+
+        letters.put(" ", new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+        String[] texts = text.split("");
+
+        for (String txt : texts) {
+            ArrayList<int[]> pos = new ArrayList<>();
+            int[] target = letters.get(txt.toUpperCase());
+            int xv = 0;
+            int yv = 0;
+            switch (target.length) {
+                case 20:
+                    xv = 5;
+                    yv = 4;
+                    break;
+                case 15:
+                    xv = 5;
+                    yv = 3;
+                    break;
+                case 18:
+                    xv = 6;
+                    yv = 3;
+                    break;
+                case 25:
+                    xv = 5;
+                    yv = 5;
+                    break;
+                case 6:
+                    xv = 6;
+                    yv = 1;
+                    break;
+                case 10:
+                    xv = 2;
+                    yv = 5;
+                    break;
+            }
+
+            for (int y = 0; y < yv; y++) {
+                for (int x = 0; x < xv; x++) {
+                    pos.add(new int[]{y, -x});
+                }
+            }
+
+            for (int a = 0; a < pos.size(); a++) {
+                Tile target_tile = world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]);
+                if (target[a] == 1) {
+                    target_tile.set(block, Team.sharded, 0);
+                } else {
+                    target_tile.remove();
+                }
+            }
+
+            tile = world.tile(tile.x + (xv + 1), tile.y);
+        }
     }
 }

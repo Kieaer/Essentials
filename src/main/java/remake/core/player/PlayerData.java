@@ -115,4 +115,208 @@ public class PlayerData {
         this.error = false;
         this.locale = tool.TextToLocale(country_code);
     }
+
+    public void name(String name) {
+        this.name = name;
+    }
+
+    public void uuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void country(String country) {
+        this.country = country;
+    }
+
+    public void country_code(String country_code) {
+        this.country_code = country_code;
+    }
+
+    public void language(String language) {
+        this.language = language;
+    }
+
+    public void admin(boolean admin) {
+        isAdmin = admin;
+    }
+
+    public void placecount(int placecount) {
+        this.placecount = placecount;
+    }
+
+    public void breakcount(int breakcount) {
+        this.breakcount = breakcount;
+    }
+
+    public void killcount(int killcount) {
+        this.killcount = killcount;
+    }
+
+    public void deathcount(int deathcount) {
+        this.deathcount = deathcount;
+    }
+
+    public void joincount(int joincount) {
+        this.joincount = joincount;
+    }
+
+    public void kickcount(int kickcount) {
+        this.kickcount = kickcount;
+    }
+
+    public void level(int level) {
+        this.level = level;
+    }
+
+    public void exp(int exp) {
+        this.exp = exp;
+    }
+
+    public void reqexp(int reqexp) {
+        this.reqexp = reqexp;
+    }
+
+    public void reqtotalexp(String reqtotalexp) {
+        this.reqtotalexp = reqtotalexp;
+    }
+
+    public void firstdate(String firstdate) {
+        this.firstdate = firstdate;
+    }
+
+    public void lastdate(String lastdate) {
+        this.lastdate = lastdate;
+    }
+
+    public void lastplacename(String lastplacename) {
+        this.lastplacename = lastplacename;
+    }
+
+    public void lastbreakname(String lastbreakname) {
+        this.lastbreakname = lastbreakname;
+    }
+
+    public void lastchat(String lastchat) {
+        this.lastchat = lastchat;
+    }
+
+    public void playtime(String playtime) {
+        this.playtime = playtime;
+    }
+
+    public void attackclear(int attackclear) {
+        this.attackclear = attackclear;
+    }
+
+    public void pvpwincount(int pvpwincount) {
+        this.pvpwincount = pvpwincount;
+    }
+
+    public void pvplosecount(int pvplosecount) {
+        this.pvplosecount = pvplosecount;
+    }
+
+    public void pvpbreakout(int pvpbreakout) {
+        this.pvpbreakout = pvpbreakout;
+    }
+
+    public void reactorcount(int reactorcount) {
+        this.reactorcount = reactorcount;
+    }
+
+    public void bantimeset(int bantimeset) {
+        this.bantimeset = bantimeset;
+    }
+
+    public void bantime(String bantime) {
+        this.bantime = bantime;
+    }
+
+    public void banned(boolean banned) {
+        this.banned = banned;
+    }
+
+    public void translate(boolean translate) {
+        this.translate = translate;
+    }
+
+    public void crosschat(boolean crosschat) {
+        this.crosschat = crosschat;
+    }
+
+    public void colornick(boolean colornick) {
+        this.colornick = colornick;
+    }
+
+    public void connected(boolean connected) {
+        this.connected = connected;
+    }
+
+    public void connserver(String connserver) {
+        this.connserver = connserver;
+    }
+
+    public void permission(String permission) {
+        this.permission = permission;
+    }
+
+    public void mute(boolean mute) {
+        this.mute = mute;
+    }
+
+    public void alert(boolean alert) {
+        this.alert = alert;
+    }
+
+    public void udid(Long udid) {
+        this.udid = udid;
+    }
+
+    public void email(String email) {
+        this.email = email;
+    }
+
+    public void accountid(String accountid) {
+        this.accountid = accountid;
+    }
+
+    public void accountpw(String accountpw) {
+        this.accountpw = accountpw;
+    }
+
+    public void error(boolean error) {
+        this.error = error;
+    }
+
+    public void login(boolean login) {
+        isLogin = login;
+    }
+
+    public void afk(LocalTime afk) {
+        this.afk = afk;
+    }
+
+    public void afk_tilex(int afk_tilex) {
+        this.afk_tilex = afk_tilex;
+    }
+
+    public void afk_tiley(int afk_tiley) {
+        this.afk_tiley = afk_tiley;
+    }
+
+    public void grief_build_count(int grief_build_count) {
+        this.grief_build_count = grief_build_count;
+    }
+
+    public void grief_destory_count(int grief_destory_count) {
+        this.grief_destory_count = grief_destory_count;
+    }
+
+    public void grief_tilelist(ArrayList<short[]> grief_tilelist) {
+        this.grief_tilelist = grief_tilelist;
+    }
+
+    public void locale(Locale locale) {
+        this.locale = locale;
+    }
 }

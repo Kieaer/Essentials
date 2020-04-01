@@ -1,6 +1,6 @@
 package remake.core.player;
 
-import remake.Vars;
+import remake.PluginVars;
 import remake.internal.CrashReport;
 
 import java.net.URL;
@@ -70,7 +70,7 @@ public class Database {
         ptmt.execute();
 
         ptmt = conn.prepareStatement(ver);
-        ptmt.setInt(1, Vars.db_version);
+        ptmt.setInt(1, PluginVars.db_version);
         ptmt.execute();
         ptmt.close();
     }

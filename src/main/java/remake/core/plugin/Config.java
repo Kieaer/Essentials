@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import static remake.Main.root;
-import static remake.Vars.config_version;
+import static remake.PluginVars.config_version;
 
 public class Config {
     public final int version;

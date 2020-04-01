@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 import static remake.Main.database;
 import static remake.Main.playerCore;
-import static remake.Vars.playerData;
+import static remake.PluginVars.playerData;
 
 public class PlayerDB {
     public PlayerData get(String uuid) {
