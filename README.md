@@ -33,7 +33,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Make anti-filter art
   - [ ] Make anti-fast build/break destroy
   - [ ] Make detect custom client
-- [ ] Soruce code rebuild
+- [ ] Soruce code rebuild (working [remake branch](https://github.com/Kieaer/Essentials/tree/remake))
   - [ ] core
     - [ ] Discord
     - [ ] PlayerDB
