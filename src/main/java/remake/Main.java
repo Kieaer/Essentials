@@ -62,7 +62,6 @@ import java.util.stream.Collectors;
 import static mindustry.Vars.*;
 import static remake.PluginVars.build_version;
 import static remake.PluginVars.serverIP;
-import static remake.external.Tools.getHostIP;
 
 public class Main extends Plugin {
     public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -432,7 +431,7 @@ public class Main extends Plugin {
                             Log.info("event-host-opened", player.name, customport);
                             playerData.connected(false);
                             playerData.connserver("none");
-                            Call.onConnect(player.con, getHostIP(), customport);
+                            Call.onConnect(player.con, serverIP, customport);
                             Log.info("Player " + playerData.name + " joined to " + customport + " port");
                         }
                     } else {
@@ -700,21 +699,21 @@ public class Main extends Plugin {
                     break;
                 case "count":
                     data.jumpcount.clear();
-                    player.sendMessage(bundle(playerData.locale, "jump-reset", "count"));
+                    player.sendMessage(bundle.get("jump-reset", "count"));
                     break;
                 case "total":
                     data.jumptotal.clear();
-                    player.sendMessage(bundle(playerData.locale, "jump-reset", "total"));
+                    player.sendMessage(bundle.get("jump-reset", "total"));
                     break;
                 default:
-                    player.sendMessage(bundle(playerData.locale, "command-invalid"));
+                    player.sendMessage(bundle.get("command-invalid"));
                     break;
             }
         });
-        switch (config.getPasswordmethod()) {
+        switch (config.passwordmethod) {
             case "email":
                 handler.<Player>register("register", "<accountid> <password> <email>", "Register account", (arg, player) -> {
-                    if (config.isLoginenable()) {
+                    if (config.loginenable) {
                         if (playerDB.register(player, arg[0], arg[1], "email", arg[2])) {
                             playerDB.load(player);
                             player.sendMessage("[green][Essentials] [white]Register success!/계정 등록 성공!");
@@ -745,18 +744,19 @@ public class Main extends Plugin {
                 break;*/
             case "password":
                 handler.<Player>register("register", "<accountid> <password>", "Register account", (arg, player) -> {
-                    if (config.isLoginenable()) {
-                        if (playerDB.register(player, arg[0], arg[1], "password")) {
-                            if (state.rules.pvp) {
-                                int index = player.getTeam().id + 1;
-                                while (index != player.getTeam().id) {
-                                    if (index >= Team.all().length) {
-                                        index = 0;
-                                    }
-                                    if (!state.teams.get(Team.all()[index]).cores.isEmpty()) {
-                                        player.setTeam(Team.all()[index]);
-                                        break;
-                                    }
+                            if (config.loginenable) {
+                                if (playerDB.register(player, arg[0], arg[1], tool.getGeo(player).toString(), true, serverIP, "default", 0L, "none", arg[0], arg[1])) {
+                                    if (playerDB.register(player, arg[0], arg[1], "password")) {
+                                        if (state.rules.pvp) {
+                                            int index = player.getTeam().id + 1;
+                                            while (index != player.getTeam().id) {
+                                                if (index >= Team.all().length) {
+                                                    index = 0;
+                                                }
+                                                if (!state.teams.get(Team.all()[index]).cores.isEmpty()) {
+                                                    player.setTeam(Team.all()[index]);
+                                                    break;
+                                                }
                                     index++;
                                 }
                             } else {
