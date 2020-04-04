@@ -1,6 +1,5 @@
 package remake.network;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.net.Administration.PlayerInfo;
@@ -20,13 +19,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 import static mindustry.Vars.netServer;
-import static remake.Main.config;
-import static remake.Main.mainThread;
-import static remake.external.Tools.decrypt;
-import static remake.external.Tools.encrypt;
+import static remake.Main.*;
 
 public class Client extends Thread {
     public Socket socket;
@@ -38,6 +35,9 @@ public class Client extends Thread {
 
     public boolean activated = false;
     private boolean disconnected = false;
+
+    Base64.Encoder encoder = Base64.getEncoder();
+    Base64.Decoder decoder = Base64.getDecoder();
 
     public enum Request {
         bansync, chat, exit, unbanip, unbanid, datashare
@@ -61,19 +61,19 @@ public class Client extends Thread {
             os = new DataOutputStream(socket.getOutputStream());
 
             // 키값 보내기
-            os.writeBytes(Base64.encode(raw) + "\n");
+            os.writeBytes(encoder.encodeToString(raw) + "\n");
             os.flush();
 
             // 데이터 전송
             JsonObject json = new JsonObject();
             json.add("type", "ping");
 
-            byte[] encrypted = encrypt(json.toString(), spec, cipher);
+            byte[] encrypted = tool.encrypt(json.toString(), spec, cipher);
 
-            os.writeBytes(Base64.encode(encrypted) + "\n");
+            os.writeBytes(encoder.encodeToString(encrypted) + "\n");
             os.flush();
 
-            String receive = new String(decrypt(Base64.decode(is.readLine()), spec, cipher));
+            String receive = new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher));
 
             if (JsonValue.readJSON(receive).asObject().get("result") != null) {
                 activated = true;
@@ -130,8 +130,8 @@ public class Client extends Thread {
                     data.add("ipban", ipban);
                     data.add("subban", subban);
 
-                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
                     Log.client("client-banlist-sented");
@@ -145,8 +145,8 @@ public class Client extends Thread {
                     data.add("name", player.name);
                     data.add("message", message);
 
-                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
@@ -159,8 +159,8 @@ public class Client extends Thread {
                 try {
                     data.add("type", "exit");
 
-                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
                     os.close();
@@ -186,8 +186,8 @@ public class Client extends Thread {
 
                     if (isip) data.add("ip", message);
 
-                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
                 } catch (Exception e) {
                     new CrashReport(e);
@@ -198,8 +198,8 @@ public class Client extends Thread {
                     data.add("type", "unbanid");
                     data.add("uuid", message);
 
-                    byte[] encrypted = encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
+                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
                 } catch (Exception e) {
                     new CrashReport(e);
@@ -209,8 +209,8 @@ public class Client extends Thread {
                 try {
                     data.add("type", "datashare");
                     data.add("data", "");
-                    byte[] encrypted = encrypt("datashare", spec, cipher);
-                    os.writeBytes(Base64.encode(encrypted) + "\n");
+                    byte[] encrypted = tool.encrypt("datashare", spec, cipher);
+                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
                     /*String data = is.readLine();
@@ -235,7 +235,7 @@ public class Client extends Thread {
             try {
                 JsonObject data;
                 try {
-                    data = JsonValue.readJSON(new String(decrypt(Base64.decode(is.readLine()), spec, cipher))).asObject();
+                    data = JsonValue.readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
                     Log.client("server-disconnected", config.clienthost);

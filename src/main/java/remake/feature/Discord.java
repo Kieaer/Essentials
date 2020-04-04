@@ -13,7 +13,7 @@ import static remake.Main.config;
 public class Discord {
     public JDA jda = null;
 
-    public void start() throws InterruptedException {
+    public void start() {
         try {
             jda = new JDABuilder(config.discordtoken).build();
             jda.awaitReady();
@@ -27,6 +27,7 @@ public class Discord {
             }
         } catch (LoginException e) {
             Log.err("Discord login failed!");
+        } catch (InterruptedException ignored) {
         }
     }
 

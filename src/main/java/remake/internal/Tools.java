@@ -1,4 +1,4 @@
-package remake.external;
+package remake.internal;
 
 import mindustry.Vars;
 import mindustry.entities.type.Player;
@@ -8,9 +8,7 @@ import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
-import remake.internal.Bundle;
-import remake.internal.CrashReport;
-import remake.internal.Log;
+import remake.external.UTF8Control;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -47,7 +45,7 @@ public class Tools {
     }
 
     public String getTime() {
-        return DateTimeFormatter.ofPattern("yy-MM-dd HH:mm.ss").format(LocalDateTime.now());
+        return DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss").format(LocalDateTime.now());
     }
 
     public byte[] encrypt(String data, SecretKeySpec spec, Cipher cipher) throws Exception {
@@ -63,7 +61,7 @@ public class Tools {
     public Locale getGeo(Object data) {
         String ip = data instanceof Player ? Vars.netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
         try {
-            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).execute().body();
+            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(3000).execute().body();
             JsonObject result = JsonValue.readJSON(json).asObject();
 
             if (result.get("reserved") != null) {

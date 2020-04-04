@@ -35,7 +35,7 @@ public class PlayerData {
     public int pvplosecount;
     public int pvpbreakout;
     public int reactorcount;
-    public int bantimeset;
+    public String bantimeset;
     public String bantime;
     public boolean banned;
     public boolean translate;
@@ -68,7 +68,7 @@ public class PlayerData {
         this.error = error;
     }
 
-    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, int bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String email, String accountid, String accountpw) {
+    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String email, String accountid, String accountpw) {
         this.name = name;
         this.uuid = uuid;
         this.country = country;
@@ -224,7 +224,7 @@ public class PlayerData {
         this.reactorcount = reactorcount;
     }
 
-    public void bantimeset(int bantimeset) {
+    public void bantimeset(String bantimeset) {
         this.bantimeset = bantimeset;
     }
 

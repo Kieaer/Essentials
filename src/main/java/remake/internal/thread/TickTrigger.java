@@ -12,7 +12,6 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 import org.hjson.JsonObject;
 import remake.core.player.PlayerData;
-import remake.core.plugin.Config;
 import remake.core.plugin.PluginData;
 import remake.external.PingHost;
 import remake.feature.Exp;
@@ -29,8 +28,6 @@ import static remake.Main.*;
 import static remake.PluginVars.*;
 
 public class TickTrigger {
-    Config config = new Config();
-
     public TickTrigger() {
         Events.on(EventType.Trigger.update, new Runnable() {
             int tick = 0;
@@ -94,7 +91,7 @@ public class TickTrigger {
                         for (PluginData.jumpcount value : data.jumpcount) result = result + value.players;
                         String name = "[#FFA]Lobby server [green]|[white] Anti griefing\n" +
                                 "[#F32]Using Discord Authentication";
-                        String desc = "[white]"+config.getDiscordLink()+"\n" +
+                        String desc = "[white]"+config.discordlink+"\n" +
                                 "[green]Total [white]"+result+" Players\n" +
                                 "[sky]POWERED BY Essentials 9.0.0";
                         Administration.Config c = Administration.Config.desc;
@@ -139,7 +136,7 @@ public class TickTrigger {
                                 target.exp = target.exp + (int) (Math.random() * 5);
 
                                 // 잠수 및 플레이 시간 계산
-                                target.playtime = LocalTime.parse(target.playtime, DateTimeFormatter.ofPattern("HH:mm.ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm.ss"));
+                                target.playtime = LocalTime.parse(target.playtime, DateTimeFormatter.ofPattern("HH:mm:ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
                                 if (target.afk_tilex == player.tileX() && target.afk_tiley == player.tileY()) {
                                     target.afk = target.afk.plusSeconds(1);
                                     if (target.afk == LocalTime.of(0, 5, 0)) {

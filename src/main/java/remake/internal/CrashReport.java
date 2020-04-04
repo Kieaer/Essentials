@@ -12,15 +12,15 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.Global.plugin_version;
 import static mindustry.Vars.mods;
 import static remake.Main.root;
+import static remake.PluginVars.plugin_version;
 
 public class CrashReport {
     Config config = new Config();
 
     public CrashReport(Throwable e) {
-        if (!config.debug) {
+        if (config.debug) {
             StringBuilder sb = new StringBuilder();
             sb.append(e.toString()).append("\n");
             StackTraceElement[] element = e.getStackTrace();
@@ -48,7 +48,7 @@ public class CrashReport {
                     String logs = "플러그인 버전: " + plugin_version + "\n" +
                             "서버 버전: " + Version.build + "\n" +
                             "OS: " + System.getProperty("os.name") + "\n" +
-                            "플러그인 목록: " + plugins.toString().substring(0, plugins.length() - 2) + "\n" +
+                            "플러그인 목록: " + plugins.toString() + "\n" +
                             "== 설정파일 ==\n" + JsonValue.readHjson(root.child("config.hjson").readString()).toString(Stringify.HJSON) + "\n" +
                             "== Stacktrace ==\n" + sb.toString() + "\n!exit!\n";
 

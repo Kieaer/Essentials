@@ -2,6 +2,7 @@ package remake.external;
 
 import arc.Core;
 import arc.files.Fi;
+import remake.internal.CrashReport;
 import remake.internal.Log;
 
 import java.io.BufferedOutputStream;
@@ -32,11 +33,10 @@ public class DriverLoader implements Driver {
         this.driver = driver;
     }
 
-    public DriverLoader() throws Exception {
+    public DriverLoader() {
         // Ugly source :worried:
-        for (String url : DBURL) urls.add(new URL(url));
-
         try {
+            for (String url : DBURL) urls.add(new URL(url));
             Fi[] f = root.child("Driver/").list();
 
             for (int a = 0; a < urls.size(); a++) {
@@ -66,23 +66,27 @@ public class DriverLoader implements Driver {
         }
     }
 
-    public static void URLDownload(URL URL, File savepath) throws Exception {
-        BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath));
-        URLConnection urlConnection = URL.openConnection();
-        InputStream is = urlConnection.getInputStream();
-        int size = urlConnection.getContentLength();
-        byte[] buf = new byte[256];
-        int byteRead;
-        int byteWritten = 0;
-        long startTime = System.currentTimeMillis();
-        while ((byteRead = is.read(buf)) != -1) {
-            outputStream.write(buf, 0, byteRead);
-            byteWritten += byteRead;
+    public static void URLDownload(URL URL, File savepath) {
+        try {
+            BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath));
+            URLConnection urlConnection = URL.openConnection();
+            InputStream is = urlConnection.getInputStream();
+            int size = urlConnection.getContentLength();
+            byte[] buf = new byte[256];
+            int byteRead;
+            int byteWritten = 0;
+            long startTime = System.currentTimeMillis();
+            while ((byteRead = is.read(buf)) != -1) {
+                outputStream.write(buf, 0, byteRead);
+                byteWritten += byteRead;
 
-            printProgress(startTime, size, byteWritten);
+                printProgress(startTime, size, byteWritten);
+            }
+            is.close();
+            outputStream.close();
+        } catch (Exception e) {
+            new CrashReport(e);
         }
-        is.close();
-        outputStream.close();
     }
 
     public static void printProgress(long startTime, int total, int remain) {
@@ -131,14 +135,14 @@ public class DriverLoader implements Driver {
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 
-    public void download() throws Exception {
+    public void download() {
         Log.info("driver-downloading");
 
         for (URL value : urls) {
             String url = value.toString();
             String filename = url.substring(url.lastIndexOf('/') + 1);
             root.child("Driver/" + filename).writeString("");
-            Log.info(filename + "Downloading...");
+            Log.info(filename + " Downloading...");
             URLDownload(value, root.child("Driver/" + filename).file());
         }
         new DriverLoader();

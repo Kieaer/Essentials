@@ -3,12 +3,14 @@ package remake.core.plugin;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import remake.internal.Bundle;
+import remake.internal.Log;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import static remake.Main.root;
+import static remake.Main.*;
 import static remake.PluginVars.config_version;
 
 public class Config {
@@ -83,8 +85,14 @@ public class Config {
     public final String prefix;
     public final String eventport;
 
+    JsonObject obj;
+
     public Config() {
-        JsonObject obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
+        try {
+            obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
+        } catch (RuntimeException e) {
+            obj = new JsonObject();
+        }
         version = obj.getInt("version", config_version);
         language = new Locale(obj.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")));
         serverenable = obj.getBoolean("serverenable", false);
@@ -105,11 +113,11 @@ public class Config {
         levelupalarm = obj.getBoolean("levelupalarm", false);
         alarmlevel = obj.getInt("alarmlevel", 20);
         banshare = obj.getBoolean("banshare", false);
-        bantrust = JsonValue.readJSON(obj.getString("bantrust", "[\"127.0.0.1\"]")).asArray();
+        bantrust = obj.get("bantrust") == null ? JsonArray.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : obj.get("bantrust").asArray();
         query = obj.getBoolean("query", false);
         antivpn = obj.getBoolean("antivpn", false);
         antirush = obj.getBoolean("antirush", false);
-        antirushtime = LocalTime.parse(obj.getString("antirushtime", "600"), DateTimeFormatter.ofPattern("ss"));
+        antirushtime = LocalTime.parse(obj.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
         voteenable = obj.getBoolean("voteenable", true);
         logging = obj.getBoolean("logging", true);
         update = obj.getBoolean("update", true);
@@ -143,7 +151,7 @@ public class Config {
         debug = obj.getBoolean("debug", false);
         debugcode = obj.getString("debugcode", "none");
         crashreport = obj.getBoolean("crashreport", true);
-        savetime = LocalTime.parse(obj.getString("savetime", "10"), DateTimeFormatter.ofPattern("mm"));
+        savetime = LocalTime.parse(obj.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
         rollback = obj.getBoolean("rollback", false);
         slotnumber = obj.getInt("slotnumber", 1000);
         autodifficulty = obj.getBoolean("autodifficulty", false);
@@ -155,5 +163,172 @@ public class Config {
         spawnlimit = obj.getInt("spawnlimit", 500);
         prefix = obj.getString("prefix", "[green][Essentials] []");
         eventport = obj.getString("eventport", "8000-8050");
+
+        update();
+    }
+
+    public void update() {
+        locale = tool.TextToLocale(obj.getString("language", locale.toString()));
+        Bundle bundle = new Bundle(locale);
+
+        if (obj.getInt("version", 0) < config_version) Log.info("config-updated");
+
+        String text = "{\n" +
+                "  # " + bundle.get("config-version-description") + "\n" +
+                "  version: " + version + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-language-description") + "\n" +
+                "  language: " + language.toString() + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-server/client-description") + "\n" +
+                "  # " + bundle.get("config-server/client-child-description") + "\n" +
+                "  server-enable: " + serverenable + "\n" +
+                "  server-port: " + serverport + "\n" +
+                "\n" +
+                "  client-enable: " + clientenable + "\n" +
+                "  client-port: " + clientport + "\n" +
+                "  client-host: " + clienthost + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-realname-description") + "\n" +
+                "  # " + bundle.get("config-realname-child-description") + "\n" +
+                "  # " + bundle.get("config-realname-strict-description") + "\n" +
+                "  realname: " + realname + "\n" +
+                "  strict-name: " + strictname + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-colornick-description") + "\n" +
+                "  cupdatei: " + cupdatei + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-detectreactor-description") + "\n" +
+                "  detectreactor: " + detectreactor + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-scanresource-description") + "\n" +
+                "  scanresource: " + scanresource + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-antigrief-description") + "\n" +
+                "  # " + bundle.get("config-antigrief-alert-description") + "\n" +
+                "  antigrief: " + antigrief + "\n" +
+                "  alert-action: " + alertaction + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-exp-description") + "\n" +
+                "  # " + bundle.get("config-exp-explimit-description") + "\n" +
+                "  # " + bundle.get("config-exp-basexp-description") + "\n" +
+                "  # " + bundle.get("config-exp-exponent-description") + "\n" +
+                "  # " + bundle.get("config-exp-levelupalarm-description") + "\n" +
+                "  # " + bundle.get("config-exp-minimal-level-description") + "\n" +
+                "  explimit: " + explimit + "\n" +
+                "  basexp: " + basexp + "\n" +
+                "  exponent: " + exponent + "\n" +
+                "  levelupalarm: " + levelupalarm + "\n" +
+                "  alarm-minimal-level: " + alarmlevel + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-banshare-description") + "\n" +
+                "  # " + bundle.get("config-banshare-child-description") + "\n" +
+                "  banshare: " + banshare + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-bantrust-description") + "\n" +
+                "  # " + bundle.get("config-bantrust-child-description") + "\n" +
+                "  bantrust: " + bantrust + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-query-description") + "\n" +
+                "  # " + bundle.get("config-query-child-description") + "\n" +
+                "  query: " + query + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-antivpn-description") + "\n" +
+                "  antivpn: " + antivpn + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-enableantirush-description") + "\n" +
+                "  # " + bundle.get("config-antirushtime-description") + "\n" +
+                "  enable-antirush: " + antirush + "\n" +
+                "  antirushtime: " + antirushtime.toString() + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-vote-description") + "\n" +
+                "  vote-enable: " + voteenable + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-logging-description") + "\n" +
+                "  logging: " + logging + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-update-description") + "\n" +
+                "  update: " + update + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-database-description") + "\n" +
+                "  # " + bundle.get("config-database-child1-description") + "\n" +
+                "  # " + bundle.get("config-database-child2-description") + "\n" +
+                "  internalDB: " + internalDB + "\n" +
+                "  enable-db-server: " + DBServer + "\n" +
+                "  dburl: " + DBurl + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-old-database-migration-description") + "\n" +
+                "  old-db-migration: " + OldDBMigration + "\n" +
+                "  old-db-url: " + OldDBurl + "\n" +
+                "  old-db-id: " + OldDBID + "\n" +
+                "  old-db-pw: " + OldDBPW + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-data-share-description") + "\n" +
+                "  data-server-url: " + dataserverurl + "\n" +
+                "  data-server-id: " + dataserverid + "\n" +
+                "  data-server-password: " + dataserverpw + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-login-description") + "\n" +
+                "  # " + bundle.get("config-loginmethod-description") + "\n" +
+                "  # " + bundle.get("config-validconnect-description") + "\n" +
+                "  loginenable: " + loginenable + "\n" +
+                "  loginmethod: " + passwordmethod + "\n" +
+                "  validconnect: " + validconnect + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-email-description") + "\n" +
+                "  # " + bundle.get("config-email-child-description") + "\n" +
+                "  email-smtp-server: " + emailserver + "\n" +
+                "  email-smtp-port: " + emailport + "\n" +
+                "  email-smtp-accountid: " + emailAccountID + "\n" +
+                "  email-smtp-username: " + emailUsername + "\n" +
+                "  email-smtp-password: " + emailPassword + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-discord-description") + "\n" +
+                "  # " + bundle.get("config-discord-role-description") + "\n" +
+                "  discord-token: " + discordtoken + "\n" +
+                "  discord-guild: " + discordguild + "\n" +
+                "  discord-room: " + discordroom + "\n" +
+                "  discord-link: " + discordlink + "\n" +
+                "  discord-register-role: " + discordrole + "\n" +
+                "  discord-command-prefix: " + discordprefix + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-papago-description") + "\n" +
+                "  # " + bundle.get("config-papago-child-description") + "\n" +
+                "  enable-translate: " + translate + "\n" +
+                "  clientId: " + translateid + "\n" +
+                "  clientSecret: " + translatepw + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-debug-description") + "\n" +
+                "  debug: " + debug + "\n" +
+                "  debugcode: " + debugcode + "\n" +
+                "  crash-report: " + crashreport + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-savetime-description") + "\n" +
+                "  savetime: " + savetime.toString() + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-slotnumber-description") + "\n" +
+                "  enable-rollback: " + rollback + "\n" +
+                "  slotnumber: " + slotnumber + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-auto-difficulty-description") + "\n" +
+                "  auto-difficulty: " + autodifficulty + "\n" +
+                "  easy: " + difficultyEasy + "\n" +
+                "  normal: " + difficultyNormal + "\n" +
+                "  hard: " + difficultyHard + "\n" +
+                "  insane: " + difficultyInsane + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-border-description") + "\n" +
+                "  border: " + border + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-spawnlimit-description") + "\n" +
+                "  spawnlimit: " + spawnlimit + "\n" +
+                "\n" +
+                "  # " + bundle.get("config-prefix-description") + "\n" +
+                "  prefix: \"" + prefix + "\"\n" +
+                "\n" +
+                "  # " + bundle.get("config-event-port-description") + "\n" +
+                "  event-port: " + eventport + "\n" +
+                "}";
+        root.child("config.hjson").writeString(text);
     }
 }

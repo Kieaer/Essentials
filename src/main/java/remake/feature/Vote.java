@@ -2,18 +2,26 @@ package remake.feature;
 
 import mindustry.entities.type.Player;
 
-import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Vote {
     Player target;
     String reason;
-    boolean status = false;
+    List<String> voted = new ArrayList<>();
 
-    enum Type {
-        map, gameover, skipwave, gamemode, custom
+    boolean status = false;
+    int require;
+
+    public int getRequire() {
+        return require;
     }
 
-    public void start(Type type, @Nullable Player target) {
+    public enum VoteType {
+        map, gameover, skipwave, gamemode, custom, kick
+    }
+
+    public void start(VoteType type, Player player, Object... parameters) {
 
     }
 
@@ -31,6 +39,10 @@ public class Vote {
 
     public void get() {
 
+    }
+
+    public List<String> getVoted() {
+        return voted;
     }
 
     public void set() {

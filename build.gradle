@@ -15,7 +15,7 @@ repositories{
 }
 
 ext{
-    targetversion = 'v104'
+    targetversion = 'v104.6'
 }
 
 test{

@@ -5,10 +5,7 @@ import remake.internal.CrashReport;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 import static remake.Main.config;
 import static remake.Main.root;
@@ -70,9 +67,17 @@ public class Database {
         ptmt.execute();
 
         ptmt = conn.prepareStatement(ver);
-        ptmt.setInt(1, PluginVars.db_version);
         ptmt.execute();
         ptmt.close();
+
+        ptmt = conn.prepareStatement("SELECT * from data");
+        ResultSet rs = ptmt.executeQuery();
+        if (!rs.next()) {
+            ptmt = conn.prepareStatement("INSERT INTO data VALUES(?)");
+            ptmt.setInt(1, PluginVars.db_version);
+            ptmt.execute();
+            ptmt.close();
+        }
     }
 
     public void connect() throws SQLException {
@@ -83,16 +88,20 @@ public class Database {
         conn.close();
     }
 
-    public void server_start() throws Exception {
-        URLClassLoader cla = new URLClassLoader(new URL[]{root.child("Driver/h2-1.4.200.jar").file().toURI().toURL()}, this.getClass().getClassLoader());
-        cl = Class.forName("org.h2.tools.Server", true, cla);
-        Object obj = cl.getDeclaredConstructor().newInstance();
+    public void server_start() {
+        try {
+            URLClassLoader cla = new URLClassLoader(new URL[]{root.child("Driver/h2-1.4.200.jar").file().toURI().toURL()}, this.getClass().getClassLoader());
+            cl = Class.forName("org.h2.tools.Server", true, cla);
+            Object obj = cl.getDeclaredConstructor().newInstance();
 
-        String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", "./" + root.child("data").path(), "-tcpAllowOthers"};
-        Object[] parameter = new Object[]{arr};
+            String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", "./" + root.child("data").path(), "-tcpAllowOthers"};
+            Object[] parameter = new Object[]{arr};
 
-        service = cl.getMethod("createTcpServer").invoke(obj, parameter);
-        cl.getMethod("start").invoke(service, (Object[]) null);
+            service = cl.getMethod("createTcpServer").invoke(obj, parameter);
+            cl.getMethod("start").invoke(service, (Object[]) null);
+        } catch (Exception e) {
+            new CrashReport(e);
+        }
     }
 
     public void server_stop() throws Exception {

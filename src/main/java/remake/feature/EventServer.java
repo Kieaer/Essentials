@@ -24,16 +24,21 @@ import static remake.Main.pluginData;
 import static remake.Main.root;
 
 public class EventServer {
-    public List<Thread> servers = new ArrayList<>();
+    public List<Process> servers = new ArrayList<>();
 
-    public boolean create(String roomname, String map, String gamemode, int port) throws Exception {
-        JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
-        String url = json.get("assets").asObject().get("0").asObject().get("browser_download_url").asString();
-        FileUtils.copyURLToFile(new URL(url), new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar"));
-        EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
-        service.start();
-        Thread.sleep(5000);
-        return true;
+    public boolean create(String roomname, String map, String gamemode, int port) {
+        try {
+            JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
+            String url = json.get("assets").asObject().get("0").asObject().get("browser_download_url").asString();
+            FileUtils.copyURLToFile(new URL(url), new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar"));
+            EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
+            service.start();
+            Thread.sleep(5000);
+            return true;
+        } catch (Exception e) {
+            new CrashReport(e);
+            return false;
+        }
     }
 
     public static class EventService extends Thread {

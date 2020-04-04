@@ -13,9 +13,8 @@ import java.net.UnknownHostException;
 import java.util.Locale;
 import java.util.TimerTask;
 
-import static essentials.Global.*;
-import static essentials.Main.config;
 import static mindustry.Vars.playerGroup;
+import static remake.Main.*;
 
 public class Login extends TimerTask {
     @Override
@@ -29,11 +28,11 @@ public class Login extends TimerTask {
                         String message;
                         String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(player.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
                         JsonObject result = JsonValue.readJSON(json).asObject();
-                        Locale language = TextToLocale(result.getString("languages", locale.toString()));
-                        if (config.getPasswordmethod().equals("discord")) {
-                            message = nbundle(language, "login-require-discord") + "\n" + config.getDiscordLink();
+                        Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
+                        if (config.passwordmethod.equals("discord")) {
+                            message = new Bundle(language).get("login-require-discord") + "\n" + config.discordlink;
                         } else {
-                            message = nbundle(language, "login-require-password");
+                            message = new Bundle(language).get("login-require-password");
                         }
                         player.sendMessage(message);
                     } catch (UnknownHostException e) {

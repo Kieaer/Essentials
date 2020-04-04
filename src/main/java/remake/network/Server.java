@@ -1,7 +1,6 @@
 package remake.network;
 
 import arc.Core;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import mindustry.core.GameState;
 import mindustry.core.Version;
 import mindustry.entities.type.Player;
@@ -33,10 +32,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 
 import static mindustry.Vars.*;
 import static remake.Main.*;
@@ -45,10 +41,23 @@ import static remake.PluginVars.*;
 public class Server implements Runnable {
     public ArrayList<service> list = new ArrayList<>();
     public ServerSocket serverSocket;
+
     Bundle bundle = new Bundle();
+    Base64.Encoder encoder = Base64.getEncoder();
+    Base64.Decoder decoder = Base64.getDecoder();
 
     enum Request {
         ping, bansync, chat, exit, unbanip, unbanid, datashare, checkban
+    }
+
+    public boolean stop() {
+        try {
+            serverSocket.close();
+            return true;
+        } catch (IOException e) {
+            new CrashReport(e);
+            return false;
+        }
     }
 
     @Override
@@ -113,7 +122,7 @@ public class Server implements Runnable {
                     return;
                 }
 
-                spec = new SecretKeySpec(Base64.decode(authkey), "AES");
+                spec = new SecretKeySpec(decoder.decode(authkey), "AES");
                 cipher = Cipher.getInstance("AES");
             } catch (SocketException ignored) {
             } catch (Exception e) {
@@ -127,7 +136,7 @@ public class Server implements Runnable {
                 while (!Thread.currentThread().isInterrupted()) {
                     Thread.currentThread().setName(ip + " Client Thread");
                     ip = socket.getInetAddress().toString().replace("/", "");
-                    String value = new String(decrypt(Base64.decode(in.readLine()), spec, cipher));
+                    String value = new String(tool.decrypt(decoder.decode(in.readLine()), spec, cipher));
                     JsonObject answer = new JsonObject();
                     JsonObject data = JsonValue.readJSON(value).asObject();
                     Request type = Request.valueOf(data.get("type").asString());
@@ -136,7 +145,7 @@ public class Server implements Runnable {
                             String[] msg = {"Hi " + ip + "! Your connection is successful!", "Hello " + ip + "! I'm server!", "Welcome to the server " + ip + "!"};
                             int rnd = new Random().nextInt(msg.length);
                             answer.add("result", msg[rnd]);
-                            os.writeBytes(Base64.encode(encrypt(answer.toString(), spec, cipher)) + "\n");
+                            os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), spec, cipher)) + "\n");
                             os.flush();
                             Log.server("client-connected", ip);
                             break;
@@ -186,7 +195,7 @@ public class Server implements Runnable {
                                 String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
                                 for (JsonValue b : config.bantrust) {
                                     if (b.asString().equals(remoteip)) {
-                                        ser.os.writeBytes(Base64.encode(encrypt(answer.toString(), ser.spec, ser.cipher)) + "\n");
+                                        ser.os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), ser.spec, ser.cipher)) + "\n");
                                         ser.os.flush();
                                         Log.server("server-data-sented", ser.socket.getInetAddress().toString());
                                     }
@@ -201,7 +210,7 @@ public class Server implements Runnable {
 
                             for (service ser : list) {
                                 if (ser.spec != spec) {
-                                    ser.os.writeBytes(Base64.encode(encrypt(value, ser.spec, ser.cipher)) + "\n");
+                                    ser.os.writeBytes(encoder.encodeToString(tool.encrypt(value, ser.spec, ser.cipher)) + "\n");
                                     ser.os.flush();
                                 }
                             }
@@ -246,7 +255,7 @@ public class Server implements Runnable {
                                 }
                             }
                             answer.add("result", found ? "true" : "false");
-                            os.writeBytes(Base64.encode(encrypt(answer.toString(), spec, cipher)) + "\n");
+                            os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), spec, cipher)) + "\n");
                             os.flush();
                             break;
                     }
@@ -345,7 +354,7 @@ public class Server implements Runnable {
             ArrayList<String> lists = new ArrayList<>(Arrays.asList("placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount", "attackclear"));
             JsonObject results = new JsonObject();
 
-            Locale language = getGeo(ip);
+            Locale language = tool.getGeo(ip);
 
             String[] sql = new String[10];
             sql[0] = "SELECT * FROM players ORDER BY `placecount` DESC LIMIT 10";
@@ -428,7 +437,7 @@ public class Server implements Runnable {
 
         private void httpserver(String receive, String payload) throws Exception {
             LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a hh:mm.ss", Locale.ENGLISH);
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss", Locale.ENGLISH);
             String time = now.format(dateTimeFormatter);
 
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
@@ -572,9 +581,9 @@ public class Server implements Runnable {
                     byte[] fileArray = byteOutStream.toByteArray();
                     String changeString;
                     if (rand == 0) {
-                        changeString = "data:image/gif;base64," + Base64.encode(fileArray);
+                        changeString = "data:image/gif;base64," + encoder.encodeToString(fileArray);
                     } else {
-                        changeString = "data:image/webp;base64," + Base64.encode(fileArray);
+                        changeString = "data:image/webp;base64," + encoder.encodeToString(fileArray);
                     }
                     Document doc = Jsoup.parse(result.toString());
                     doc.getElementById("box").append("<img src=" + changeString + " alt=\"\">");
