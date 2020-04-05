@@ -38,6 +38,7 @@
   }
   default: {
     permission: [
+      alert
       ch
       changepw
       event
