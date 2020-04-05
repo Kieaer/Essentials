@@ -1,4 +1,4 @@
-package essentials.special;
+package essentials.external;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,14 +14,13 @@ import java.util.ResourceBundle;
 public class UTF8Control extends ResourceBundle.Control {
     @Override
     public Locale getFallbackLocale(String aBaseName, Locale aLocale) {
-        if( aBaseName == null || aLocale == null ) throw new NullPointerException();
+        if (aBaseName == null || aLocale == null) throw new NullPointerException();
         return null;
     }
 
     public ResourceBundle newBundle
             (String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
-            throws IOException
-    {
+            throws IOException {
         // The below is a copy of the default implementation.
         String bundleName = toBundleName(baseName, locale);
         String resourceName = toResourceName(bundleName, "properties");

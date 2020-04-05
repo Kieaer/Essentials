@@ -1,6 +1,5 @@
-package essentials.special;
+package essentials.external;
 
-import arc.util.Strings;
 import mindustry.net.Host;
 import mindustry.net.NetworkIO;
 
@@ -10,20 +9,14 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
-public class PingServer {
-    public static void pingServer(String ip, Consumer<Host> listener) {
+public class PingHost {
+    // source from https://github.com/Anuken/CoreBot/blob/master/src/corebot/Net.java#L57-L84
+    public PingHost(String ip, int port, Consumer<Host> listener) {
         try {
-            String resultIP = ip;
-            int port = 6567;
-            if(ip.contains(":") && Strings.canParsePostiveInt(ip.split(":")[1])){
-                resultIP = ip.split(":")[0];
-                port = Strings.parseInt(ip.split(":")[1]);
-            }
-
             DatagramSocket socket = new DatagramSocket();
-            socket.setSoTimeout(1000);
+            socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(ip), port));
 
-            socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(resultIP), port));
+            socket.setSoTimeout(1000);
 
             DatagramPacket packet = new DatagramPacket(new byte[256], 256);
 
@@ -31,7 +24,7 @@ public class PingServer {
             socket.receive(packet);
 
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
-            listener.accept(readServerData(buffer, ip, System.currentTimeMillis() - start));
+            listener.accept(readServerData(ip, buffer, System.currentTimeMillis() - start));
             socket.disconnect();
             socket.close();
         } catch (Exception e) {
@@ -39,9 +32,9 @@ public class PingServer {
         }
     }
 
-    private static Host readServerData(ByteBuffer buffer, String ip, long ping){
+    public Host readServerData(String ip, ByteBuffer buffer, long ping) {
         Host host = NetworkIO.readServerData(ip, buffer);
-        host.ping = (int)ping;
+        host.ping = (int) ping;
         return host;
     }
 }

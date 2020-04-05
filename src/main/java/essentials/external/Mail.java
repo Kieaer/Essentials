@@ -1,12 +1,14 @@
-package essentials.special;
+package essentials.external;
 
+import essentials.internal.CrashReport;
 import org.simplejavamail.api.email.Email;
+import org.simplejavamail.api.mailer.AsyncResponse;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.mailer.MailerBuilder;
 
-public class sendMail {
+public class Mail {
     String smtp;
     int port;
     String email;
@@ -17,7 +19,9 @@ public class sendMail {
     String subject;
     String text;
 
-    public sendMail(String smtp, int port, String email, String password, String sender, String targetname, String targetmail, String subject, String text){
+    boolean result;
+
+    public Mail(String smtp, int port, String email, String password, String sender, String targetname, String targetmail, String subject, String text) {
         this.smtp = smtp;
         this.port = port;
         this.email = email;
@@ -29,7 +33,8 @@ public class sendMail {
         this.text = text;
     }
 
-    public void main(){
+    public boolean send() {
+        // http://www.simplejavamail.org/features.html#navigation
         Mailer mailer = MailerBuilder
                 .withSMTPServer(smtp, port, email, password)
                 .withTransportStrategy(TransportStrategy.SMTPS)
@@ -45,6 +50,18 @@ public class sendMail {
                 .withPlainText(text)
                 .buildEmail();
 
-        mailer.sendMail(mail);
+        AsyncResponse response = mailer.sendMail(mail, true);
+
+        if (response != null) {
+            response.onSuccess(() -> result = true);
+            response.onException((e) -> {
+                new CrashReport(e);
+                result = false;
+            });
+        } else {
+            result = false;
+        }
+
+        return result;
     }
 }

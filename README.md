@@ -35,29 +35,29 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
   - [ ] Make detect custom client
 - [ ] Soruce code rebuild (working [remake branch](https://github.com/Kieaer/Essentials/tree/remake))
   - [ ] core
-    - [ ] Discord
-    - [ ] PlayerDB
-  - [ ] net
-    - [ ] Client
-    - [ ] Server
+    - [x] Discord
+    - [x] PlayerDB
+  - [x] net
+    - [x] Client
+    - [x] Server
   - [ ] special
     - [ ] DataMigration
-    - [ ] DriverLoader
-  - [ ] utils
-    - [ ] Bundle
-    - [ ] Config
-  - [ ] Global
+    - [x] DriverLoader
+  - [x] utils
+    - [x] Bundle
+    - [x] Config
+  - [x] Global
   - [ ] Main
-  - [ ] Threads
-    - [ ] login
-    - [ ] changename
-    - [ ] AutoRollback
-    - [ ] eventserver
-    - [ ] ColorNick
-    - [ ] monitorresource
-    - [ ] Vote
-    - [ ] jumpdata
-    - [ ] visualjump
+  - [x] Threads
+    - [x] login
+    - [x] changename
+    - [x] AutoRollback
+    - [x] eventserver
+    - [x] ColorNick
+    - [x] monitorresource
+    - [x] Vote
+    - [x] jumpdata
+    - [x] visualjump
 
 ## Client commands
 

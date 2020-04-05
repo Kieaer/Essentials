@@ -1,4 +1,4 @@
-package essentials.special;
+package essentials.external;
 
 import java.util.HashMap;
 
@@ -267,7 +267,8 @@ public class StringUtils {
         htmlEncodeChars.put('\u2666', "&diams;");
     }
 
-    private StringUtils(){}
+    private StringUtils() {
+    }
 
     public static String encodeHtml(String source) {
         return encode(source, htmlEncodeChars);
@@ -277,10 +278,10 @@ public class StringUtils {
         if (null == source) return null;
         if (null == encodingTable) return source;
 
-        StringBuffer    encoded_string = null;
-        char[]          string_to_encode_array = source.toCharArray();
-        int             last_match = -1;
-        int             difference = 0;
+        StringBuffer encoded_string = null;
+        char[] string_to_encode_array = source.toCharArray();
+        int last_match = -1;
+        int difference = 0;
 
         for (int i = 0; i < string_to_encode_array.length; i++) {
             char char_to_encode = string_to_encode_array[i];
