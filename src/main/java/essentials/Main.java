@@ -43,6 +43,7 @@ import mindustry.plugin.Plugin;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
+import mindustry.world.blocks.units.MechPad;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -226,6 +227,14 @@ public class Main extends Plugin {
     public void init() {
         // 채팅 포맷 변경
         netServer.admins.addChatFilter((player, text) -> null);
+
+        // 비 로그인 유저 통제
+        netServer.admins.addActionFilter(action -> {
+            PlayerData playerData = playerDB.get(action.player.uuid);
+            return playerData.isLogin &&
+                    action.type == Administration.ActionType.tapTile &&
+                    action.tile.block() instanceof MechPad;
+        });
     }
 
     @Override

@@ -1,40 +1,28 @@
 package essentials.core.player;
 
 import essentials.internal.CrashReport;
-import mindustry.Vars;
 import mindustry.entities.type.Player;
-import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.net.Packets;
 
-import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
-import java.util.ArrayList;
 
 import static essentials.Main.*;
 import static essentials.PluginVars.serverIP;
 import static mindustry.Vars.netServer;
-import static mindustry.Vars.playerGroup;
 
 public class PlayerCore {
-    public ArrayList<Player> pvpTeam = new ArrayList<>();
-
-    public boolean load(Player player, @Nullable String... AccountID) {
-        PlayerData playerData = playerDB.load(player.uuid);
+    public boolean load(Player player, String... AccountID) {
+        PlayerData playerData = playerDB.load(AccountID.length > 0 ? player.uuid : player.uuid, AccountID);
         if (playerData.error) {
             new CrashReport(new Exception("DATA NOT FOUND"));
             return false;
         }
-
-        playerData.uuid(player.uuid);
-        playerData.connected(true);
-        playerData.lastdate(tool.getTime());
-        playerData.connserver(serverIP);
 
         if (playerData.banned) {
             netServer.admins.banPlayerID(player.uuid);
@@ -51,37 +39,16 @@ public class PlayerCore {
         }
 
         if (config.realname || config.passwordmethod.equals("discord")) player.name = playerData.name;
-
-        playerData.exp(playerData.exp + playerData.joincount);
-
         if (playerData.colornick) colornick.targets.add(player);
 
-        if (perm.isAdmin(player)) player.isAdmin = true;
+        player.isAdmin = perm.isAdmin(player);
 
+        playerData.uuid(player.uuid);
+        playerData.connected(true);
+        playerData.lastdate(tool.getTime());
+        playerData.connserver(serverIP);
+        playerData.exp(playerData.exp + playerData.joincount);
         playerData.joincount(playerData.joincount++);
-
-        player.kill();
-        if (Vars.state.rules.pvp) {
-            boolean match = false;
-            for (Player t : pvpTeam) {
-                Team team = t.getTeam();
-                if (playerData.uuid.equals(t.uuid)) {
-                    if (Vars.state.teams.get(team).cores.isEmpty()) {
-                        break;
-                    } else {
-                        player.setTeam(team);
-                        match = true;
-                    }
-                }
-            }
-            if (!match) {
-                player.setTeam(netServer.assignTeam(player, playerGroup.all()));
-                pvpTeam.add(player);
-            }
-        } else {
-            player.setTeam(Team.sharded);
-        }
-
         playerData.login(true);
         return true;
     }

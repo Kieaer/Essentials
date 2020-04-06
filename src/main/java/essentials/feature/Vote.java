@@ -2,6 +2,7 @@ package essentials.feature;
 
 import arc.Events;
 import arc.util.Time;
+import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
 import essentials.internal.Log;
 import mindustry.Vars;
@@ -48,7 +49,7 @@ public class Vote {
         @Override
         public void run() {
             time++;
-            if (time >= 60) cancel();
+            if (time >= 60) success();
         }
     };
 
@@ -216,6 +217,13 @@ public class Vote {
 
     public void set(String uuid) {
         voted.add(uuid);
+
+        for (Player others : playerGroup.all()) {
+            PlayerData p = playerDB.get(others.uuid);
+            if (!p.error)
+                others.sendMessage(new Bundle(p.locale).get("vote-current", voted.size(), vote.getRequire() - voted.size()));
+        }
+
         if (voted.size() >= require) {
             timer.cancel();
             success();

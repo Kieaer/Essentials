@@ -210,20 +210,18 @@ public class Event {
         Events.on(EventType.PlayerJoin.class, e -> {
             players.add(e.player);
             e.player.isAdmin = false;
-
-            e.player.kill();
-            e.player.setTeam(Team.derelict);
-
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name + " Player Join thread");
                 PlayerData playerData = playerDB.load(e.player.uuid);
+                Bundle bundle = new Bundle(playerData.locale);
+
                 if (config.loginenable) {
                     if (config.passwordmethod.equals("mixed")) {
                         if (!playerData.error) {
                             if (playerData.udid != 0L) {
                                 new Thread(() -> Call.onConnect(e.player.con, serverIP, 7060)).start();
                             } else {
-                                e.player.sendMessage(new Bundle(playerData.locale).get("autologin"));
+                                e.player.sendMessage(bundle.get("autologin"));
                                 playerCore.load(e.player);
                             }
                         } else {
@@ -236,7 +234,7 @@ public class Event {
                         }
                     } else if (config.passwordmethod.equals("discord")) {
                         if (!playerData.error) {
-                            e.player.sendMessage(new Bundle(playerData.locale).get("autologin"));
+                            e.player.sendMessage(bundle.get("autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
@@ -250,7 +248,7 @@ public class Event {
                         }
                     } else {
                         if (!playerData.error) {
-                            e.player.sendMessage(new Bundle(playerData.locale).get("autologin"));
+                            e.player.sendMessage(bundle.get("autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
@@ -266,7 +264,7 @@ public class Event {
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
                     if (!playerData.error) {
-                        e.player.sendMessage(new Bundle(playerData.locale).get("autologin"));
+                        e.player.sendMessage(bundle.get("autologin"));
                         playerCore.load(e.player);
                     } else {
                         Locale lc = tool.getGeo(e.player);
@@ -342,29 +340,18 @@ public class Event {
         // 플레이어가 수다떨었을 때
         Events.on(EventType.PlayerChatEvent.class, e -> {
             PlayerData playerData = playerDB.get(e.player.uuid);
+            Bundle bundle = new Bundle(playerData.locale);
 
             if (!playerData.error) {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
                 if (!check.equals("/")) {
-                    if (e.message.matches("(.*쌍[\\S\\s]{0,2}(년|놈).*)|(.*(씨|시)[\\S\\s]{0,2}(벌|빨|발|바).*)|(.*장[\\S\\s]{0,2}애.*)|(.*(병|븅)[\\S\\s]{0,2}(신|쉰|싄).*)|(.*(좆|존|좃)[\\S\\s]{0,2}(같|되|는|나).*)|(.*(개|게)[\\S\\s]{0,2}(같|갓|새|세|쉐).*)|(.*(걸|느)[\\S\\s]{0,2}(레|금).*)|(.*(꼬|꽂|고)[\\S\\s]{0,2}(추|츄).*)|(.*(니|너)[\\S\\s]{0,2}(어|엄|엠|애|m|M).*)|(.*(노)[\\S\\s]{0,1}(애|앰).*)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(ㅅㅂ|ㅄ|ㄷㅊ)|(.*(섹|쎅)[\\S\\s]{0,2}(스|s|쓰).*)|(.*s[\\S\\s]{0,1}e[\\S\\s]{0,1}x.*)")) {
-                        Call.onKick(e.player.con, new Bundle(playerData.locale).get("kick-swear"));
-                    } else if (e.message.equals("y") && vote.status()) {
+                    if (e.message.equals("y") && vote.status()) {
                         // 투표가 진행중일때
                         if (vote.getVoted().contains(e.player.uuid)) {
-                            e.player.sendMessage(new Bundle(playerData.locale).get("vote-already"));
+                            e.player.sendMessage(bundle.get("vote-already"));
                         } else {
-                            vote.getVoted().add(e.player.uuid);
-                            int current = vote.getVoted().size();
-                            if (vote.getRequire() - current <= 0) {
-                                vote.success();
-                                return;
-                            }
-                            for (Player others : playerGroup.all()) {
-                                PlayerData p = playerDB.get(others.uuid);
-                                if (!p.error)
-                                    others.sendMessage(new Bundle(p.locale).get("vote-current", current, vote.getRequire() - current));
-                            }
+                            vote.set(e.player.uuid);
                         }
                     } else {
                         if (!playerData.mute) {
@@ -392,8 +379,8 @@ public class Event {
                                         ex.printStackTrace();
                                     }
                                 } else {
-                                    e.player.sendMessage(new Bundle(playerData.locale).get("no-any-network"));
-                                    playerData.crosschat = false;
+                                    e.player.sendMessage(bundle.get("no-any-network"));
+                                    playerData.crosschat(false);
                                 }
                             }
                         }
@@ -402,7 +389,7 @@ public class Event {
                 }
 
                 // 마지막 대화 데이터를 DB에 저장함
-                playerData.lastchat = e.message;
+                playerData.lastchat(e.message);
 
                 // 번역
                 if (config.translate) {
