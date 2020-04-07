@@ -110,8 +110,8 @@ public class Tools {
     }
 
     public String getMotd(Locale loc) {
-        if (root.child("motd/motd_" + loc.toString() + ".txt").exists()) {
-            return root.child("motd/motd_" + loc.toString() + ".txt").readString();
+        if (root.child("motd/" + loc.toString() + ".txt").exists()) {
+            return root.child("motd/" + loc.toString() + ".txt").readString();
         } else {
             Fi file = root.child("motd/motd_" + locale.toString() + ".txt");
             return file.exists() ? file.readString() : "Welcome to the server!";

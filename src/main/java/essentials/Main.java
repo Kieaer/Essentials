@@ -47,10 +47,8 @@ import mindustry.world.blocks.units.MechPad;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -108,26 +106,24 @@ public class Main extends Plugin {
         // 파일 압축해제
         try {
             final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()));
-            final Enumeration<JarEntry> entries = jar.entries();
-            final String path = "configs";
-            while (entries.hasMoreElements()) {
-                String name = entries.nextElement().getName();
-                if (name.startsWith(path + "/")) {
-                    if (!name.equals(path + "/")) {
-                        if (!root.child("" + name.replaceFirst("configs/", "")).exists()) {
-                            if (!name.contains(".")) {
-                                root.child("" + name.replaceFirst("configs/", "")).mkdirs();
-                                continue;
-                            }
-                            InputStream reader = getClass().getResourceAsStream("/" + name);
-                            root.child("" + name.replaceFirst("configs/", "")).write(reader, false);
-                        }
+            final Enumeration<JarEntry> enumEntries = jar.entries();
+            while (enumEntries.hasMoreElements()) {
+                JarEntry file = enumEntries.nextElement();
+                String renamed = file.getName().replace("configs/", "");
+                if (file.getName().startsWith("configs") && !root.child(renamed).exists()) {
+                    if (file.isDirectory()) {
+                        root.child(renamed).file().mkdir();
+                        continue;
                     }
+                    InputStream is = jar.getInputStream(file);
+                    root.child(renamed).write(is, false);
+                    is.close();
                 }
             }
             jar.close();
-        } catch (Exception e) {
+        } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
+            System.exit(0);
         }
 
         // 설정 불러오기
