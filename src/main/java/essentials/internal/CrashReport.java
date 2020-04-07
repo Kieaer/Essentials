@@ -29,7 +29,7 @@ public class CrashReport {
             String text = sb.toString();
 
             Log.write(Log.LogType.error, text);
-            Log.info("Plugin internal error! - " + e.getMessage());
+            Log.err("Plugin internal error! - " + e.getMessage());
             if (config.crashreport) {
                 try {
                     InetAddress address = InetAddress.getByName("mindustry.kr");
@@ -47,9 +47,9 @@ public class CrashReport {
                         plugins.append(Vars.mods.list().get(a).name).append(", ");
 
                     String logs = "플러그인 버전: " + plugin_version + "\n" +
-                            "서버 버전: " + Version.build + "\n" +
+                            "서버 버전: " + Version.build + "." + Version.revision + " " + Version.modifier + "\n" +
                             "OS: " + System.getProperty("os.name") + "\n" +
-                            "플러그인 목록: " + plugins.toString() + "\n" +
+                            "플러그인 목록: " + plugins.toString().substring(0, plugins.length() - 2) + "\n" +
                             "== 설정파일 ==\n" + JsonValue.readHjson(root.child("config.hjson").readString()).toString(Stringify.HJSON) + "\n" +
                             "== Stacktrace ==\n" + sb.toString() + "\n!exit!\n";
 
