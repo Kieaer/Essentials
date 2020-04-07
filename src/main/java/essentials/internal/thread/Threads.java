@@ -65,6 +65,8 @@ public class Threads implements Runnable {
                     }
                 }
                 TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 for (Player p : playerGroup.all())
                     Call.onKick(p.con, new Bundle(Locale.ENGLISH).get("plugin-error-kick"));

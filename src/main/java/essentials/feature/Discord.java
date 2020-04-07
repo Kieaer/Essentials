@@ -11,7 +11,7 @@ import javax.security.auth.login.LoginException;
 import static essentials.Main.config;
 
 public class Discord {
-    public JDA jda = null;
+    public JDA jda;
 
     public void start() {
         try {

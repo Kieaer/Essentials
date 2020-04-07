@@ -214,9 +214,6 @@ public class Main extends Plugin {
             }
         };
         Core.app.addListener(listener);
-
-        // Discord 서비스 시작
-        discord.start();
     }
 
     @Override
