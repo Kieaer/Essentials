@@ -36,15 +36,6 @@ public class Vote {
     int require;
     int time = 0;
     int message_time = 0;
-
-    public enum VoteType {
-        gameover, skipwave, kick, rollback, map
-    }
-
-    public int getRequire() {
-        return require;
-    }
-
     TimerTask counting = new TimerTask() {
         @Override
         public void run() {
@@ -52,7 +43,6 @@ public class Vote {
             if (time >= 60) success();
         }
     };
-
     TimerTask alert = new TimerTask() {
         @Override
         public void run() {
@@ -67,6 +57,10 @@ public class Vote {
             }
         }
     };
+
+    public int getRequire() {
+        return require;
+    }
 
     public void start(Player player, Player target, String reason) {
         this.player = player;
@@ -217,7 +211,6 @@ public class Vote {
 
     public void set(String uuid) {
         voted.add(uuid);
-
         for (Player others : playerGroup.all()) {
             PlayerData p = playerDB.get(others.uuid);
             if (!p.error)
@@ -228,5 +221,9 @@ public class Vote {
             timer.cancel();
             success();
         }
+    }
+
+    public enum VoteType {
+        gameover, skipwave, kick, rollback, map
     }
 }

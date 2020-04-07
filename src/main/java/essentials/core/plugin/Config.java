@@ -14,76 +14,76 @@ import static essentials.Main.*;
 import static essentials.PluginVars.config_version;
 
 public class Config {
-    public final int version;
-    public final Locale language;
-    public final boolean serverenable;
-    public final int serverport;
-    public final boolean clientenable;
-    public final int clientport;
-    public final String clienthost;
-    public final boolean realname;
-    public final boolean strictname;
-    public final int cupdatei;
-    public final boolean detectreactor;
-    public final boolean scanresource;
-    public final boolean antigrief;
-    public final boolean alertaction;
-    public final boolean explimit;
-    public final double basexp;
-    public final double exponent;
-    public final boolean levelupalarm;
-    public final int alarmlevel;
-    public final boolean banshare;
-    public final JsonArray bantrust;
-    public final boolean query;
-    public final boolean antivpn;
-    public final boolean antirush;
-    public final LocalTime antirushtime;
-    public final boolean voteenable;
-    public final boolean logging;
-    public final boolean update;
-    public final boolean internalDB;
-    public final boolean DBServer;
-    public final String DBurl;
-    public final boolean OldDBMigration;
-    public final String OldDBurl;
-    public final String OldDBID;
-    public final String OldDBPW;
-    public final String dataserverurl;
-    public final String dataserverid;
-    public final String dataserverpw;
-    public final boolean loginenable;
-    public final String passwordmethod;
-    public final boolean validconnect;
-    public final String emailserver;
-    public final int emailport;
-    public final String emailAccountID;
-    public final String emailUsername;
-    public final String emailPassword;
-    public final String discordtoken;
-    public final Long discordguild;
-    public final String discordroom;
-    public final String discordlink;
-    public final String discordrole;
-    public final String discordprefix;
-    public final boolean translate;
-    public final String translateid;
-    public final String translatepw;
-    public final boolean debug;
-    public final String debugcode;
-    public final boolean crashreport;
-    public final LocalTime savetime;
-    public final boolean rollback;
-    public final int slotnumber;
-    public final boolean autodifficulty;
-    public final int difficultyEasy;
-    public final int difficultyNormal;
-    public final int difficultyHard;
-    public final int difficultyInsane;
-    public final boolean border;
-    public final int spawnlimit;
-    public final String prefix;
-    public final String eventport;
+    public int version;
+    public Locale language;
+    public boolean serverenable;
+    public int serverport;
+    public boolean clientenable;
+    public int clientport;
+    public String clienthost;
+    public boolean realname;
+    public boolean strictname;
+    public int cupdatei;
+    public boolean detectreactor;
+    public boolean scanresource;
+    public boolean antigrief;
+    public boolean alertaction;
+    public boolean explimit;
+    public double basexp;
+    public double exponent;
+    public boolean levelupalarm;
+    public int alarmlevel;
+    public boolean banshare;
+    public JsonArray bantrust;
+    public boolean query;
+    public boolean antivpn;
+    public boolean antirush;
+    public LocalTime antirushtime;
+    public boolean voteenable;
+    public boolean logging;
+    public boolean update;
+    public boolean internalDB;
+    public boolean DBServer;
+    public String DBurl;
+    public boolean OldDBMigration;
+    public String OldDBurl;
+    public String OldDBID;
+    public String OldDBPW;
+    public String dataserverurl;
+    public String dataserverid;
+    public String dataserverpw;
+    public boolean loginenable;
+    public String passwordmethod;
+    public boolean validconnect;
+    public String emailserver;
+    public int emailport;
+    public String emailAccountID;
+    public String emailUsername;
+    public String emailPassword;
+    public String discordtoken;
+    public Long discordguild;
+    public String discordroom;
+    public String discordlink;
+    public String discordrole;
+    public String discordprefix;
+    public boolean translate;
+    public String translateid;
+    public String translatepw;
+    public boolean debug;
+    public String debugcode;
+    public boolean crashreport;
+    public LocalTime savetime;
+    public boolean rollback;
+    public int slotnumber;
+    public boolean autodifficulty;
+    public int difficultyEasy;
+    public int difficultyNormal;
+    public int difficultyHard;
+    public int difficultyInsane;
+    public boolean border;
+    public int spawnlimit;
+    public String prefix;
+    public String eventport;
 
     JsonObject obj;
 
@@ -165,6 +165,286 @@ public class Config {
         eventport = obj.getString("eventport", "8000-8050");
 
         update();
+    }
+
+    public void version(int version) {
+        this.version = version;
+    }
+
+    public void language(Locale language) {
+        this.language = language;
+    }
+
+    public void serverenable(boolean serverenable) {
+        this.serverenable = serverenable;
+    }
+
+    public void serverport(int serverport) {
+        this.serverport = serverport;
+    }
+
+    public void clientenable(boolean clientenable) {
+        this.clientenable = clientenable;
+    }
+
+    public void clientport(int clientport) {
+        this.clientport = clientport;
+    }
+
+    public void clienthost(String clienthost) {
+        this.clienthost = clienthost;
+    }
+
+    public void realname(boolean realname) {
+        this.realname = realname;
+    }
+
+    public void strictname(boolean strictname) {
+        this.strictname = strictname;
+    }
+
+    public void cupdatei(int cupdatei) {
+        this.cupdatei = cupdatei;
+    }
+
+    public void detectreactor(boolean detectreactor) {
+        this.detectreactor = detectreactor;
+    }
+
+    public void scanresource(boolean scanresource) {
+        this.scanresource = scanresource;
+    }
+
+    public void antigrief(boolean antigrief) {
+        this.antigrief = antigrief;
+    }
+
+    public void alertaction(boolean alertaction) {
+        this.alertaction = alertaction;
+    }
+
+    public void explimit(boolean explimit) {
+        this.explimit = explimit;
+    }
+
+    public void basexp(double basexp) {
+        this.basexp = basexp;
+    }
+
+    public void exponent(double exponent) {
+        this.exponent = exponent;
+    }
+
+    public void levelupalarm(boolean levelupalarm) {
+        this.levelupalarm = levelupalarm;
+    }
+
+    public void alarmlevel(int alarmlevel) {
+        this.alarmlevel = alarmlevel;
+    }
+
+    public void banshare(boolean banshare) {
+        this.banshare = banshare;
+    }
+
+    public void bantrust(JsonArray bantrust) {
+        this.bantrust = bantrust;
+    }
+
+    public void query(boolean query) {
+        this.query = query;
+    }
+
+    public void antivpn(boolean antivpn) {
+        this.antivpn = antivpn;
+    }
+
+    public void antirush(boolean antirush) {
+        this.antirush = antirush;
+    }
+
+    public void antirushtime(LocalTime antirushtime) {
+        this.antirushtime = antirushtime;
+    }
+
+    public void voteenable(boolean voteenable) {
+        this.voteenable = voteenable;
+    }
+
+    public void logging(boolean logging) {
+        this.logging = logging;
+    }
+
+    public void update(boolean update) {
+        this.update = update;
+    }
+
+    public void internalDB(boolean internalDB) {
+        this.internalDB = internalDB;
+    }
+
+    public void dBServer(boolean DBServer) {
+        this.DBServer = DBServer;
+    }
+
+    public void dBurl(String DBurl) {
+        this.DBurl = DBurl;
+    }
+
+    public void oldDBMigration(boolean oldDBMigration) {
+        OldDBMigration = oldDBMigration;
+    }
+
+    public void oldDBurl(String oldDBurl) {
+        OldDBurl = oldDBurl;
+    }
+
+    public void oldDBID(String oldDBID) {
+        OldDBID = oldDBID;
+    }
+
+    public void oldDBPW(String oldDBPW) {
+        OldDBPW = oldDBPW;
+    }
+
+    public void dataserverurl(String dataserverurl) {
+        this.dataserverurl = dataserverurl;
+    }
+
+    public void dataserverid(String dataserverid) {
+        this.dataserverid = dataserverid;
+    }
+
+    public void dataserverpw(String dataserverpw) {
+        this.dataserverpw = dataserverpw;
+    }
+
+    public void loginenable(boolean loginenable) {
+        this.loginenable = loginenable;
+    }
+
+    public void passwordmethod(String passwordmethod) {
+        this.passwordmethod = passwordmethod;
+    }
+
+    public void validconnect(boolean validconnect) {
+        this.validconnect = validconnect;
+    }
+
+    public void emailserver(String emailserver) {
+        this.emailserver = emailserver;
+    }
+
+    public void emailport(int emailport) {
+        this.emailport = emailport;
+    }
+
+    public void emailAccountID(String emailAccountID) {
+        this.emailAccountID = emailAccountID;
+    }
+
+    public void emailUsername(String emailUsername) {
+        this.emailUsername = emailUsername;
+    }
+
+    public void emailPassword(String emailPassword) {
+        this.emailPassword = emailPassword;
+    }
+
+    public void discordtoken(String discordtoken) {
+        this.discordtoken = discordtoken;
+    }
+
+    public void discordguild(Long discordguild) {
+        this.discordguild = discordguild;
+    }
+
+    public void discordroom(String discordroom) {
+        this.discordroom = discordroom;
+    }
+
+    public void discordlink(String discordlink) {
+        this.discordlink = discordlink;
+    }
+
+    public void discordrole(String discordrole) {
+        this.discordrole = discordrole;
+    }
+
+    public void discordprefix(String discordprefix) {
+        this.discordprefix = discordprefix;
+    }
+
+    public void translate(boolean translate) {
+        this.translate = translate;
+    }
+
+    public void translateid(String translateid) {
+        this.translateid = translateid;
+    }
+
+    public void translatepw(String translatepw) {
+        this.translatepw = translatepw;
+    }
+
+    public void debug(boolean debug) {
+        this.debug = debug;
+    }
+
+    public void debugcode(String debugcode) {
+        this.debugcode = debugcode;
+    }
+
+    public void crashreport(boolean crashreport) {
+        this.crashreport = crashreport;
+    }
+
+    public void savetime(LocalTime savetime) {
+        this.savetime = savetime;
+    }
+
+    public void rollback(boolean rollback) {
+        this.rollback = rollback;
+    }
+
+    public void slotnumber(int slotnumber) {
+        this.slotnumber = slotnumber;
+    }
+
+    public void autodifficulty(boolean autodifficulty) {
+        this.autodifficulty = autodifficulty;
+    }
+
+    public void difficultyEasy(int difficultyEasy) {
+        this.difficultyEasy = difficultyEasy;
+    }
+
+    public void difficultyNormal(int difficultyNormal) {
+        this.difficultyNormal = difficultyNormal;
+    }
+
+    public void difficultyHard(int difficultyHard) {
+        this.difficultyHard = difficultyHard;
+    }
+
+    public void difficultyInsane(int difficultyInsane) {
+        this.difficultyInsane = difficultyInsane;
+    }
+
+    public void border(boolean border) {
+        this.border = border;
+    }
+
+    public void spawnlimit(int spawnlimit) {
+        this.spawnlimit = spawnlimit;
+    }
+
+    public void prefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public void eventport(String eventport) {
+        this.eventport = eventport;
     }
 
     public void update() {
