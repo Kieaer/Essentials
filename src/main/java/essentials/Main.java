@@ -432,10 +432,10 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.alert) {
                 playerData.alert(false);
-                player.sendMessage(new Bundle(playerData.locale).get("alert-disable"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("alert-disable"));
             } else {
                 playerData.alert(true);
-                player.sendMessage(new Bundle(playerData.locale).get("alert"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("alert"));
             }
 
         });
@@ -445,10 +445,10 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.crosschat) {
                 playerData.crosschat(false);
-                player.sendMessage(new Bundle(playerData.locale).get("crosschat-disable"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("crosschat-disable"));
             } else {
                 playerData.crosschat(true);
-                player.sendMessage(new Bundle(playerData.locale).get("crosschat"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("crosschat"));
             }
         });
         handler.<Player>register("changepw", "<new_password> <new_password_repeat>", "Change account password", (arg, player) -> {
@@ -456,13 +456,13 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             if (!tool.checkPassword(player, playerData.accountid, arg[1], arg[2])) {
-                player.sendMessage(new Bundle(playerData.locale).get("need-new-password"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("need-new-password"));
                 return;
             }
             try {
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
                 playerData.accountpw = BCrypt.hashpw(arg[0], BCrypt.gensalt(11));
-                player.sendMessage(new Bundle(playerData.locale).get("success"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("success"));
             } catch (ClassNotFoundException e) {
                 new CrashReport(e);
             }
@@ -476,10 +476,10 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.colornick) {
                 playerData.colornick(false);
-                player.sendMessage(new Bundle(playerData.locale).get("colornick-disable"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("colornick-disable"));
             } else {
                 playerData.colornick(true);
-                player.sendMessage(new Bundle(playerData.locale).get("colornick"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("colornick"));
             }
 
         });
@@ -488,15 +488,15 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             try {
                 Difficulty.valueOf(arg[0]);
-                player.sendMessage(new Bundle(playerData.locale).get("difficulty-set", arg[0]));
+                player.sendMessage(new Bundle(playerData.locale).prefix("difficulty-set", arg[0]));
             } catch (IllegalArgumentException e) {
-                player.sendMessage(new Bundle(playerData.locale).get("difficulty-not-found", arg[0]));
+                player.sendMessage(new Bundle(playerData.locale).prefix("difficulty-not-found", arg[0]));
             }
         });
         handler.<Player>register("killall", "Kill all enemy units", (arg, player) -> {
             if (!perm.check(player, "killall")) return;
             for (int a = 0; a < Team.all().length; a++) unitGroup.all().each(Unit::kill);
-            player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("success"));
+            player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).prefix("success"));
         });
         handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
             if (!perm.check(player, "event")) return;
@@ -505,14 +505,14 @@ public class Main extends Plugin {
                 case "host":
                     if (playerData.level > 20 || player.isAdmin) {
                         if (arg.length == 2) {
-                            player.sendMessage(new Bundle(playerData.locale).get("event-host-no-mapname"));
+                            player.sendMessage(new Bundle(playerData.locale).prefix("event-host-no-mapname"));
                             return;
                         }
                         if (arg.length == 3) {
-                            player.sendMessage(new Bundle(playerData.locale).get("event-host-no-gamemode"));
+                            player.sendMessage(new Bundle(playerData.locale).prefix("event-host-no-gamemode"));
                             return;
                         }
-                        player.sendMessage(new Bundle(playerData.locale).get("event-making"));
+                        player.sendMessage(new Bundle(playerData.locale).prefix("event-making"));
 
                         String[] range = config.eventport.split("-");
                         int firstport = Integer.parseInt(range[0]);
@@ -531,7 +531,7 @@ public class Main extends Plugin {
                             Log.info("Player " + playerData.name + " joined to " + customport + " port");
                         }
                     } else {
-                        player.sendMessage(new Bundle(playerData.locale).get("event-level"));
+                        player.sendMessage(new Bundle(playerData.locale).prefix("event-level"));
                     }
                     break;
                 case "join":
@@ -547,7 +547,7 @@ public class Main extends Plugin {
                     }
                     break;
                 default:
-                    player.sendMessage(new Bundle(playerData.locale).get("wrong-command"));
+                    player.sendMessage(new Bundle(playerData.locale).prefix("wrong-command"));
                     break;
             }
         });
@@ -568,7 +568,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("help", "[page]", "Show command lists", (arg, player) -> {
             if (arg.length > 0 && !Strings.canParseInt(arg[0])) {
-                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("page-number"));
+                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).prefix("page-number"));
                 return;
             }
 
@@ -633,14 +633,14 @@ public class Main extends Plugin {
             switch (arg[0]) {
                 case "zone":
                     if (arg.length != 4) {
-                        player.sendMessage(bundle.get("jump-incorrect"));
+                        player.sendMessage(bundle.prefix("jump-incorrect"));
                         return;
                     }
                     int size;
                     try {
                         size = Integer.parseInt(arg[3]);
                     } catch (Exception ignored) {
-                        player.sendMessage(bundle.get("jump-not-int"));
+                        player.sendMessage(bundle.prefix("jump-not-int"));
                         return;
                     }
 
@@ -648,19 +648,19 @@ public class Main extends Plugin {
                     int ty = player.tileY() + size;
 
                     pluginData.jumpzone.add(new PluginData.jumpzone(world.tile(player.tileX(), player.tileY()), world.tile(tf, ty), Boolean.parseBoolean(arg[1]), arg[2], Integer.parseInt(arg[3])));
-                    player.sendMessage(bundle.get("jump-added"));
+                    player.sendMessage(bundle.prefix("jump-added"));
                     break;
                 case "count":
                     pluginData.jumpcount.add(new PluginData.jumpcount(world.tile(player.tileX(), player.tileY()), arg[2], Integer.parseInt(arg[3]), 0, 0));
-                    player.sendMessage(bundle.get("jump-added"));
+                    player.sendMessage(bundle.prefix("jump-added"));
                     break;
                 case "total":
                     // tilex, tiley, total players, number length
                     pluginData.jumptotal.add(new PluginData.jumptotal(world.tile(player.tileX(), player.tileY()), 0, 0));
-                    player.sendMessage(bundle.get("jump-added"));
+                    player.sendMessage(bundle.prefix("jump-added"));
                     break;
                 default:
-                    player.sendMessage(bundle.get("command-invalid"));
+                    player.sendMessage(bundle.prefix("command-invalid"));
             }
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
@@ -671,7 +671,7 @@ public class Main extends Plugin {
             if (!perm.check(player, "kill")) return;
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if (other == null) {
-                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("player-not-found"));
+                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).prefix("player-not-found"));
                 return;
             }
             Player.onPlayerDeath(other);
@@ -686,7 +686,7 @@ public class Main extends Plugin {
                         } else {
                             playerCore.load(player);
                         }
-                        player.sendMessage(new Bundle(playerData.locale).get("login-success"));
+                        player.sendMessage(new Bundle(playerData.locale).prefix("login-success"));
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
                     }
@@ -698,7 +698,7 @@ public class Main extends Plugin {
                     }
                 }
             } else {
-                player.sendMessage(new Bundle(playerData.locale).get("login-not-use"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("login-not-use"));
             }
         });
         handler.<Player>register("logout", "Log-out of your account.", (arg, player) -> {
@@ -712,7 +712,7 @@ public class Main extends Plugin {
                 playerData.uuid("Logout");
                 Call.onKick(player.con, bundle.get("logout"));
             } else {
-                player.sendMessage(bundle.get("login-not-use"));
+                player.sendMessage(bundle.prefix("login-not-use"));
             }
         });
         handler.<Player>register("maps", "[page]", "Show server maps", (arg, player) -> {
@@ -770,7 +770,7 @@ public class Main extends Plugin {
             if (!perm.check(player, "save")) return;
             Fi file = saveDirectory.child(config.slotnumber + "." + saveExtension);
             SaveIO.save(file);
-            player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("mapsaved"));
+            player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).prefix("mapsaved"));
         });
         handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server jumping zone data.", (arg, player) -> {
             if (!perm.check(player, "reset")) return;
@@ -780,7 +780,7 @@ public class Main extends Plugin {
                 case "zone":
                     for (int a = 0; a < pluginData.jumpzone.size(); a++) {
                         if (arg.length != 2) {
-                            player.sendMessage(bundle.get("no-parameter"));
+                            player.sendMessage(bundle.prefix("no-parameter"));
                             return;
                         }
                         if (arg[1].equals(pluginData.jumpzone.get(a).ip)) {
@@ -790,21 +790,21 @@ public class Main extends Plugin {
                             }
                             jumpBorder.thread.clear();
                             jumpBorder.main();
-                            player.sendMessage(bundle.get("success"));
+                            player.sendMessage(bundle.prefix("success"));
                             break;
                         }
                     }
                     break;
                 case "count":
                     pluginData.jumpcount.clear();
-                    player.sendMessage(bundle.get("jump-reset", "count"));
+                    player.sendMessage(bundle.prefix("jump-reset", "count"));
                     break;
                 case "total":
                     pluginData.jumptotal.clear();
-                    player.sendMessage(bundle.get("jump-reset", "total"));
+                    player.sendMessage(bundle.prefix("jump-reset", "total"));
                     break;
                 default:
-                    player.sendMessage(bundle.get("command-invalid"));
+                    player.sendMessage(bundle.prefix("command-invalid"));
                     break;
             }
         });
@@ -831,7 +831,7 @@ public class Main extends Plugin {
                         break;
                 }
             } else {
-                player.sendMessage(new Bundle(playerDB.get(player.uuid) == null ? playerDB.get(player.uuid).locale : locale).get("login-not-use"));
+                player.sendMessage(new Bundle(playerDB.get(player.uuid) == null ? playerDB.get(player.uuid).locale : locale).prefix("login-not-use"));
             }
         });
         handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
@@ -885,18 +885,18 @@ public class Main extends Plugin {
                     targetunit = UnitTypes.eradicator;
                     break;
                 default:
-                    player.sendMessage(new Bundle(playerData.locale).get("mob-not-found"));
+                    player.sendMessage(new Bundle(playerData.locale).prefix("mob-not-found"));
                     return;
             }
             int count;
             try {
                 count = Integer.parseInt(arg[1]);
             } catch (NumberFormatException e) {
-                player.sendMessage(new Bundle(playerData.locale).get("mob-spawn-not-number"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("mob-spawn-not-number"));
                 return;
             }
             if (config.spawnlimit == count) {
-                player.sendMessage(new Bundle(playerData.locale).get("spawn-limit"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("spawn-limit"));
                 return;
             }
             Team targetteam = null;
@@ -921,7 +921,7 @@ public class Main extends Plugin {
                         targetteam = Team.purple;
                         break;
                     default:
-                        player.sendMessage(new Bundle(playerData.locale).get("team-not-found"));
+                        player.sendMessage(new Bundle(playerData.locale).prefix("team-not-found"));
                         return;
                 }
             }
@@ -929,7 +929,7 @@ public class Main extends Plugin {
             if (arg.length >= 4) {
                 Player target = playerGroup.find(p -> p.name.equals(arg[3]));
                 if (target == null) {
-                    player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                    player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
                     return;
                 } else {
                     targetplayer = target;
@@ -962,19 +962,19 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             Player target = playerGroup.find(p -> p.name.equals(arg[0]));
             if (target == null) {
-                player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
                 return;
             }
             for (JsonObject.Member perm : perm.permission) {
                 if (perm.getName().equals(arg[0])) {
                     PlayerData val = playerDB.get(target.uuid);
                     val.permission(arg[1]);
-                    player.sendMessage(new Bundle(playerData.locale).get("success"));
-                    target.sendMessage(new Bundle(playerData.locale).get("perm-changed"));
+                    player.sendMessage(new Bundle(playerData.locale).prefix("success"));
+                    target.sendMessage(new Bundle(playerData.locale).prefix("perm-changed"));
                     return;
                 }
             }
-            player.sendMessage(new Bundle(playerData.locale).get("perm-group-not-found"));
+            player.sendMessage(new Bundle(playerData.locale).prefix("perm-group-not-found"));
         });
         handler.<Player>register("spawn-core", "<smail/normal/big>", "Make new core", (arg, player) -> {
             if (!perm.check(player, "spawn-core")) return;
@@ -1026,17 +1026,17 @@ public class Main extends Plugin {
             } else {
                 Player target = playerGroup.find(p -> p.name.equals(arg[1]));
                 if (target == null) {
-                    player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                    player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
                     return;
                 }
                 target.mech = mech;
             }
-            player.sendMessage(new Bundle(playerData.locale).get("success"));
+            player.sendMessage(new Bundle(playerData.locale).prefix("success"));
         });
         handler.<Player>register("status", "Show server status", (arg, player) -> {
             if (!perm.check(player, "status")) return;
             PlayerData playerData = playerDB.get(player.uuid);
-            player.sendMessage(new Bundle(playerData.locale).get("server-status"));
+            player.sendMessage(new Bundle(playerData.locale).prefix("server-status"));
             player.sendMessage("[#2B60DE]========================================[]");
             float fps = Math.round((int) 60f / Time.delta());
             int idb = 0;
@@ -1052,7 +1052,7 @@ public class Main extends Plugin {
                 ipb++;
             }
             int bancount = idb + ipb;
-            player.sendMessage(new Bundle(playerData.locale).get("server-status-banstat", fps, playerGroup.size(), bancount, idb, ipb, playtime, uptime, plugin_version));
+            player.sendMessage(new Bundle(playerData.locale).prefix("server-status-banstat", fps, playerGroup.size(), bancount, idb, ipb, playtime, uptime, plugin_version));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if (!perm.check(player, "suicide")) return;
@@ -1076,7 +1076,7 @@ public class Main extends Plugin {
                 }
                 Call.onPlayerDeath(player);
             } else {
-                player.sendMessage(new Bundle(playerData.locale).get("command-only-pvp"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("command-only-pvp"));
             }
         });
         handler.<Player>register("tempban", "<player> <time> <reason>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
@@ -1096,10 +1096,10 @@ public class Main extends Plugin {
                 for (int a = 0; a < playerGroup.size(); a++) {
                     Player current = playerGroup.all().get(a);
                     PlayerData target = playerDB.get(current.uuid);
-                    current.sendMessage(new Bundle(target.locale).get("ban-temp", other.name, player.name));
+                    current.sendMessage(new Bundle(target.locale).prefix("ban-temp", other.name, player.name));
                 }
             } else {
-                player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
             }
         });
         handler.<Player>register("time", "Show server time", (arg, player) -> {
@@ -1108,13 +1108,13 @@ public class Main extends Plugin {
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a HH:mm:ss");
             String nowString = now.format(dateTimeFormatter);
-            player.sendMessage(new Bundle(playerData.locale).get("servertime", nowString));
+            player.sendMessage(new Bundle(playerData.locale).prefix("servertime", nowString));
         });
         handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
             if (!perm.check(player, "tp")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             if (player.isMobile) {
-                player.sendMessage(new Bundle(playerData.locale).get("tp-not-support"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("tp-not-support"));
                 return;
             }
             Player other = null;
@@ -1125,7 +1125,7 @@ public class Main extends Plugin {
                 }
             }
             if (other == null) {
-                player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
                 return;
             }
             player.setNet(other.getX(), other.getY());
@@ -1147,13 +1147,13 @@ public class Main extends Plugin {
             }
 
             if (other1 == null || other2 == null) {
-                player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
                 return;
             }
             if (!other1.isMobile || !other2.isMobile) {
                 other1.setNet(other2.x, other2.y);
             } else {
-                player.sendMessage(new Bundle(playerData.locale).get("tp-ismobile"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("tp-ismobile"));
             }
         });
         handler.<Player>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
@@ -1165,7 +1165,7 @@ public class Main extends Plugin {
                 x = Integer.parseInt(arg[0]);
                 y = Integer.parseInt(arg[1]);
             } catch (Exception ignored) {
-                player.sendMessage(new Bundle(playerData.locale).get("tp-not-int"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("tp-not-int"));
                 return;
             }
             player.setNet(x, y);
@@ -1175,10 +1175,10 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.translate) {
                 playerData.translate = false;
-                player.sendMessage(new Bundle(playerData.locale).get("translate"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("translate"));
             } else {
                 playerData.translate = true;
-                player.sendMessage(new Bundle(playerData.locale).get("translate-disable"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("translate-disable"));
             }
 
         });
@@ -1189,7 +1189,7 @@ public class Main extends Plugin {
                 Bundle bundle = new Bundle(playerData.locale);
 
                 if (vote.status()) {
-                    player.sendMessage(bundle.get("vote-in-processing"));
+                    player.sendMessage(bundle.prefix("vote-in-processing"));
                     return;
                 }
 
@@ -1198,12 +1198,12 @@ public class Main extends Plugin {
                         Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
                         if (target == null) target = players.get(Integer.parseInt(arg[1]));
                         if (target == null) {
-                            player.sendMessage(bundle.get("player-not-found"));
+                            player.sendMessage(bundle.prefix("player-not-found"));
                             return;
                         }
 
                         if (target.isAdmin) {
-                            player.sendMessage(bundle.get("vote-target-admin"));
+                            player.sendMessage(bundle.prefix("vote-target-admin"));
                             return;
                         }
 
@@ -1214,7 +1214,7 @@ public class Main extends Plugin {
                         Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
                         if (world == null) world = Vars.maps.all().get(Integer.parseInt(arg[1]));
                         if (world == null) {
-                            player.sendMessage(bundle.get("vote-map-not-found"));
+                            player.sendMessage(bundle.prefix("vote-map-not-found"));
                         } else {
                             vote.start(Vote.VoteType.map, player, world);
                         }
@@ -1222,16 +1222,16 @@ public class Main extends Plugin {
                 } else if (arg.length == 1) {
                     switch (arg[0]) {
                         case "gamemode":
-                            player.sendMessage(bundle.get("vote-list-gamemode"));
+                            player.sendMessage(bundle.prefix("vote-list-gamemode"));
                             break;
                         case "map":
-                            player.sendMessage(bundle.get("vote-map-not-found"));
+                            player.sendMessage(bundle.prefix("vote-map-not-found"));
                             break;
                         case "kick":
-                            player.sendMessage(bundle.get("vote-kick-parameter"));
+                            player.sendMessage(bundle.prefix("vote-kick-parameter"));
                             break;
                         default:
-                            player.sendMessage(bundle.get("vote-list"));
+                            player.sendMessage(bundle.prefix("vote-list"));
                             break;
                     }
                 } else if (arg[0].equals("gameover")) {
@@ -1270,16 +1270,16 @@ public class Main extends Plugin {
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             PlayerData playerData = playerDB.get(player.uuid);
             if (other == null) {
-                player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
             } else {
                 PlayerData target = playerDB.get(other.uuid);
                 Bundle bundle = new Bundle(target.locale);
                 if (target.mute) {
                     target.mute(false);
-                    player.sendMessage(bundle.get("player-unmute", target.name));
+                    player.sendMessage(bundle.prefix("player-unmute", target.name));
                 } else {
                     target.mute(true);
-                    player.sendMessage(bundle.get("player-muted", target.name));
+                    player.sendMessage(bundle.prefix("player-muted", target.name));
                 }
             }
         });
@@ -1289,11 +1289,11 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             if (other == null) other = players.get(Integer.parseInt(arg[1]));
             if (other == null) {
-                player.sendMessage(new Bundle(playerData.locale).get("player-not-found"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("player-not-found"));
                 return;
             }
             if (other.isAdmin) {
-                player.sendMessage(new Bundle(playerData.locale).get("vote-target-admin"));
+                player.sendMessage(new Bundle(playerData.locale).prefix("vote-target-admin"));
                 return;
             }
 

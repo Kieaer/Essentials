@@ -10,8 +10,7 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
-import static essentials.Main.locale;
-import static essentials.Main.root;
+import static essentials.Main.*;
 
 public class Bundle {
     ResourceBundle RESOURCE_BUNDLE;
@@ -39,6 +38,14 @@ public class Bundle {
     public String get(String key, Object... params) {
         try {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
+        } catch (MissingResourceException e) {
+            return null;
+        }
+    }
+
+    public String prefix(String key, Object... params) {
+        try {
+            return MessageFormat.format(config.prefix + RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
             return null;
         }
