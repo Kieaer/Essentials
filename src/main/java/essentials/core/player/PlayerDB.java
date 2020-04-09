@@ -25,6 +25,15 @@ public class PlayerDB {
         return new PlayerData(true);
     }
 
+    public void remove(String uuid) {
+        for (PlayerData p : playerData) {
+            if (p.uuid.equals(uuid)) {
+                playerData.remove(p);
+                break;
+            }
+        }
+    }
+
     // TODO more simple source
     public PlayerData load(String uuid, String... AccountID) {
         try {

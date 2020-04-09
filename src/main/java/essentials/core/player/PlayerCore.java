@@ -18,6 +18,7 @@ import static mindustry.Vars.netServer;
 
 public class PlayerCore {
     public boolean load(Player player, String... AccountID) {
+        playerDB.remove(player.uuid);
         PlayerData playerData = playerDB.load(AccountID.length > 0 ? player.uuid : player.uuid, AccountID);
         if (playerData.error) {
             new CrashReport(new Exception("DATA NOT FOUND"));
