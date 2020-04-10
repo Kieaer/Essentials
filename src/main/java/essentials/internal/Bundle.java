@@ -39,7 +39,9 @@ public class Bundle {
         try {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            return null;
+            ResourceBundle bundle = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
+            new CrashReport(e);
+            return MessageFormat.format(bundle.getString(key), params);
         }
     }
 
@@ -47,7 +49,9 @@ public class Bundle {
         try {
             return MessageFormat.format(config.prefix + RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            return null;
+            ResourceBundle bundle = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
+            new CrashReport(e);
+            return MessageFormat.format(bundle.getString(key), params);
         }
     }
 }

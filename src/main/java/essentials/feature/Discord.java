@@ -14,6 +14,7 @@ public class Discord {
     public JDA jda;
 
     public void start() {
+        // TODO discord 방식 변경
         try {
             jda = new JDABuilder(config.discordtoken).build();
             jda.awaitReady();

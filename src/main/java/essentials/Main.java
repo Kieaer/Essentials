@@ -1140,7 +1140,7 @@ public class Main extends Plugin {
             player.sendMessage(new Bundle(playerData.locale).prefix(playerData.translate ? "translate" : "translate-disable", player.name));
 
         });
-        if (config.voteenable) {
+        if (config.vote) {
             handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
                 if (!perm.check(player, "vote")) return;
                 PlayerData playerData = playerDB.get(player.uuid);

@@ -30,7 +30,8 @@ dependencies{
     //compileOnly files("C:\\Users\\cloud\\Desktop\\Mindustry-master\\core\\build\\libs\\core-release.jar")
 
     // json
-    compile group: 'org.hjson', name: 'hjson', version: '3.0.0'
+    //compile group: 'org.hjson', name: 'hjson', version: '3.0.0'
+    compile 'com.github.PersonTheCat:hjson-java:master'
 
     // version check
     compile group: 'org.apache.maven', name: 'maven-artifact', version: '3.0.3'

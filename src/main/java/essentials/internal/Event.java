@@ -18,7 +18,6 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.net.Packets;
 import mindustry.world.Tile;
-import mindustry.world.blocks.power.NuclearReactor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -38,7 +37,6 @@ import java.util.Locale;
 import static essentials.Main.*;
 import static essentials.PluginVars.*;
 import static essentials.external.DriverLoader.URLDownload;
-import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
 import static mindustry.core.NetClient.onSetRules;
@@ -172,35 +170,6 @@ public class Event {
             if (e.player.item().amount > e.player.mech.itemCapacity) {
                 player.con.kick("Invalid request!");
                 return;
-            }
-
-            // 만약 그 특정블록이 토륨 원자로이며, 맵 설정에서 원자로 폭발이 비활성화 되었을 경우
-            if (e.tile.block() == Blocks.thoriumReactor && config.detectreactor && !state.rules.reactorExplosions) {
-                pluginData.nukeblock.add(new PluginData.nukeblock(e.tile, e.player.name));
-                Thread t = new Thread(() -> {
-                    try {
-                        for (PluginData.nukeblock data : pluginData.nukeblock) {
-                            NuclearReactor.NuclearReactorEntity entity = (NuclearReactor.NuclearReactorEntity) data.tile.entity;
-                            if (entity.heat >= 0.01) {
-                                sleep(50);
-                                tool.sendMessageAll("detect-thorium");
-
-                                Log.write(Log.LogType.griefer, new Bundle().get("griefer-detect-reactor-log", tool.getTime(), data.name));
-                                Call.onTileDestroyed(data.tile);
-                            } else {
-                                sleep(1950);
-                                if (entity.heat >= 0.01) {
-                                    tool.sendMessageAll("detect-thorium");
-                                    Log.write(Log.LogType.griefer, new Bundle().get("griefer-detect-reactor-log", tool.getTime(), data.name));
-                                    Call.onTileDestroyed(data.tile);
-                                }
-                            }
-                        }
-                    } catch (Exception ex) {
-                        new CrashReport(ex);
-                    }
-                });
-                t.start();
             }
             if (config.alertaction)
                 tool.sendMessageAll("depositevent", e.player.name, e.player.item().item.name, e.tile.block().name);
