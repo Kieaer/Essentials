@@ -47,10 +47,6 @@ dependencies{
         exclude module: 'opus-java'
     }
     compile 'org.slf4j:slf4j-nop:1.7.25'
-
-
-    compile group: 'org.simplejavamail', name: 'simple-java-mail', version: '6.0.3'
-    compile group: 'org.simplejavamail', name: 'batch-module', version: '6.0.3'
 }
 
 jar{

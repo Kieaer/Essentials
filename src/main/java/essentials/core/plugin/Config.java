@@ -2,7 +2,10 @@ package essentials.core.plugin;
 
 import essentials.internal.Bundle;
 import essentials.internal.Log;
-import org.hjson.*;
+import org.hjson.JsonArray;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
+import org.hjson.Stringify;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -52,17 +55,8 @@ public class Config {
     public boolean loginenable;
     public String passwordmethod;
     public boolean validconnect;
-    public String emailserver;
-    public int emailport;
-    public String emailAccountID;
-    public String emailUsername;
-    public String emailPassword;
     public String discordtoken;
-    public Long discordguild;
-    public String discordroom;
     public String discordlink;
-    public String discordrole;
-    public String discordprefix;
     public boolean translate;
     public String translateid;
     public String translatepw;
@@ -96,10 +90,8 @@ public class Config {
         JsonObject discord;
         try {
             obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
-            JsonObject as = new JsonObject();
-            as.add("test", "testas", "this comment");
-            System.out.println(as.toString());
         } catch (RuntimeException e) {
+            e.printStackTrace();
             JsonObject empty = new JsonObject();
             obj = new JsonObject();
             obj.add("settings", new JsonObject().add("database", empty));
@@ -179,22 +171,13 @@ public class Config {
         translatepw = tr.getString("translatepw", "none");
 
         auth = obj.get("auth").asObject();
-        loginenable = obj.getBoolean("loginenable", false);
-        passwordmethod = auth.getString("passwordmethod", "password");
+        loginenable = auth.getBoolean("loginenable", false);
+        passwordmethod = auth.getString("loginmethod", "password");
         validconnect = auth.getBoolean("validconnect", false);
-        emailserver = auth.getString("emailserver", "smtp.gmail.com");
-        emailport = auth.getInt("emailport", 587);
-        emailAccountID = auth.getString("emailAccountID", "none");
-        emailUsername = auth.getString("emailUsername", "none");
-        emailPassword = auth.getString("emailPassword", "none");
 
         discord = auth.get("discord").asObject();
-        discordtoken = discord.getString("discordtoken", "none");
-        discordguild = discord.getLong("discordguild", 0L);
-        discordroom = discord.getString("discordroom", "none");
-        discordlink = discord.getString("discordlink", "none");
-        discordrole = discord.getString("discordrole", "none");
-        discordprefix = discord.getString("discordprefix", "none");
+        discordtoken = discord.getString("token", "none");
+        discordlink = discord.getString("link", "none");
 
         update();
     }
@@ -359,48 +342,12 @@ public class Config {
         this.validconnect = validconnect;
     }
 
-    public void emailserver(String emailserver) {
-        this.emailserver = emailserver;
-    }
-
-    public void emailport(int emailport) {
-        this.emailport = emailport;
-    }
-
-    public void emailAccountID(String emailAccountID) {
-        this.emailAccountID = emailAccountID;
-    }
-
-    public void emailUsername(String emailUsername) {
-        this.emailUsername = emailUsername;
-    }
-
-    public void emailPassword(String emailPassword) {
-        this.emailPassword = emailPassword;
-    }
-
     public void discordtoken(String discordtoken) {
         this.discordtoken = discordtoken;
     }
 
-    public void discordguild(Long discordguild) {
-        this.discordguild = discordguild;
-    }
-
-    public void discordroom(String discordroom) {
-        this.discordroom = discordroom;
-    }
-
     public void discordlink(String discordlink) {
         this.discordlink = discordlink;
-    }
-
-    public void discordrole(String discordrole) {
-        this.discordrole = discordrole;
-    }
-
-    public void discordprefix(String discordprefix) {
-        this.discordprefix = discordprefix;
     }
 
     public void translate(boolean translate) {
@@ -479,6 +426,13 @@ public class Config {
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
         Bundle bundle = new Bundle(locale);
 
+        if (!debugas) {
+            try {
+                throw new Exception();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         if (obj.getInt("version", 0) < config_version) Log.info("config-updated");
 
         JsonObject config = new JsonObject();
@@ -492,8 +446,7 @@ public class Config {
         JsonObject discord = new JsonObject();
         JsonObject tr = new JsonObject();
 
-        config.setFullComment(CommentType.BOL, bundle.get("config-description"));
-        config.add("settings", settings);
+        config.add("settings", settings, bundle.get("config-description"));
         config.add("network", network);
         config.add("antigrief", anti);
         config.add("features", features);
@@ -582,22 +535,12 @@ public class Config {
         auth.add("loginenable", loginenable, bundle.get("config-login-description"));
         auth.add("loginmethod", passwordmethod, bundle.get("config-loginmethod-description"));
         auth.add("validconnect", validconnect, bundle.get("config-validconnect-description"));
-        //auth.setLineLength(1);
-        auth.add("email-smtp-server", emailserver, bundle.get("config-email-description"));
-        auth.add("email-smtp-port", emailport);
-        auth.add("email-smtp-accountid", emailAccountID);
-        auth.add("email-smtp-username", emailUsername);
-        auth.add("email-smtp-password", emailPassword);
 
         // Discord 설정 (auth 상속)
         //auth.setLineLength(1);
         auth.add("discord", discord, bundle.get("config-discord-description"));
-        discord.add("discord-token", discordtoken);
-        discord.add("discord-guild", discordguild);
-        discord.add("discord-room", discordroom);
-        discord.add("discord-link", discordlink);
-        discord.add("discord-register-role", discordrole);
-        discord.add("discord-command-prefix", discordprefix);
+        discord.add("token", discordtoken);
+        discord.add("link", discordlink);
 
         root.child("config.hjson").writeString(config.toString(Stringify.HJSON_COMMENTS));
     }

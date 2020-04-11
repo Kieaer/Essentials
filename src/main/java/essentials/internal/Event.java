@@ -195,7 +195,7 @@ public class Event {
                             }
                         } else {
                             Locale lc = tool.getGeo(e.player);
-                            if (playerDB.register(e.player, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, "none", e.player.name, "none")) {
+                            if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name, "none")) {
                                 playerCore.load(e.player);
                             } else {
                                 Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
@@ -237,7 +237,7 @@ public class Event {
                         playerCore.load(e.player);
                     } else {
                         Locale lc = tool.getGeo(e.player);
-                        if (playerDB.register(e.player, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, "none", e.player.name, "none")) {
+                        if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name, "none")) {
                             playerCore.load(e.player);
                         } else {
                             Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
@@ -353,7 +353,7 @@ public class Event {
                                 }
                             }
                         }
-                        Log.info("<&y{0}: &lm{1}&lg>", e.player.name, e.message);
+                        Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
                     }
                 }
 
@@ -662,9 +662,9 @@ public class Event {
             }
 
             // Discord 봇 시작
-            if (config.passwordmethod.equals("discord") || config.passwordmethod.equals("mixed")) {
+            //if (config.passwordmethod.equals("discord") || config.passwordmethod.equals("mixed")) {
                 discord.start();
-            }
+            //}
 
             // 채팅 포맷 변경
             netServer.admins.addChatFilter((player, text) -> null);

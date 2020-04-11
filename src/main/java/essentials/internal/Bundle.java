@@ -21,7 +21,7 @@ public class Bundle {
                     ? new PropertyResourceBundle(Files.newInputStream(Paths.get(root.child("bundle.properties").path())))
                     : ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
         } catch (Exception e) {
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.US, new UTF8Control());
         }
     }
 
@@ -31,7 +31,7 @@ public class Bundle {
                     ? new PropertyResourceBundle(Files.newInputStream(Paths.get(root.child("bundle.properties").path())))
                     : ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
         } catch (Exception e) {
-            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
+            RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.US, new UTF8Control());
         }
     }
 
@@ -39,9 +39,20 @@ public class Bundle {
         try {
             return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            ResourceBundle bundle = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
-            new CrashReport(e);
-            return MessageFormat.format(bundle.getString(key), params);
+            return null;
+        }
+    }
+
+    public String get(boolean NotNull, String key, Object... params) {
+        try {
+            return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
+        } catch (MissingResourceException e) {
+            if (NotNull) {
+                ResourceBundle bundle = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
+                return MessageFormat.format(bundle.getString(key), params);
+            } else {
+                return null;
+            }
         }
     }
 
@@ -49,9 +60,20 @@ public class Bundle {
         try {
             return MessageFormat.format(config.prefix + RESOURCE_BUNDLE.getString(key), params);
         } catch (MissingResourceException e) {
-            ResourceBundle bundle = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
-            new CrashReport(e);
-            return MessageFormat.format(bundle.getString(key), params);
+            return null;
+        }
+    }
+
+    public String prefix(boolean NotNull, String key, Object... params) {
+        try {
+            return MessageFormat.format(config.prefix + RESOURCE_BUNDLE.getString(key), params);
+        } catch (MissingResourceException e) {
+            if (NotNull) {
+                ResourceBundle bundle = ResourceBundle.getBundle("bundle.bundle", new Locale("en", "US"), new UTF8Control());
+                return MessageFormat.format(bundle.getString(key), params);
+            } else {
+                return null;
+            }
         }
     }
 }

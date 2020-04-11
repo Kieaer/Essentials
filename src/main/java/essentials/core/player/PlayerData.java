@@ -49,7 +49,6 @@ public class PlayerData {
     public boolean mute;
     public boolean alert;
     public Long udid;
-    public String email;
     public String accountid;
     public String accountpw;
 
@@ -70,7 +69,7 @@ public class PlayerData {
         this.error = error;
     }
 
-    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String email, String accountid, String accountpw) {
+    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String accountid, String accountpw) {
         this.name = name;
         this.uuid = uuid;
         this.country = country;
@@ -110,7 +109,6 @@ public class PlayerData {
         this.mute = mute;
         this.alert = alert;
         this.udid = udid;
-        this.email = email;
         this.accountid = accountid;
         this.accountpw = accountpw;
 
@@ -274,10 +272,6 @@ public class PlayerData {
         this.udid = udid;
     }
 
-    public void email(String email) {
-        this.email = email;
-    }
-
     public void accountid(String accountid) {
         this.accountid = accountid;
     }
@@ -363,7 +357,6 @@ public class PlayerData {
         map.put("mute", mute);
         map.put("alert", alert);
         map.put("udid", udid);
-        map.put("email", email);
         map.put("accountid", accountid);
         map.put("accountpw", accountpw);
         return map;

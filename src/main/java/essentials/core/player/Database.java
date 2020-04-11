@@ -56,7 +56,6 @@ public class Database {
                 "mute TINYTEXT NOT NULL," +
                 "alert TINYTEXT NOT NULL," +
                 "udid TEXT NOT NULL," +
-                "email TEXT NOT NULL," +
                 "accountid TEXT NOT NULL," +
                 "accountpw TEXT NOT NULL" +
                 ")";

@@ -1,6 +1,5 @@
 package essentials.internal;
 
-import essentials.core.plugin.Config;
 import mindustry.Vars;
 import mindustry.core.Version;
 import org.hjson.JsonValue;
@@ -13,12 +12,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+import static essentials.Main.config;
 import static essentials.Main.root;
 import static essentials.PluginVars.plugin_version;
 
 public class CrashReport {
-    Config config = new Config();
-
     public CrashReport(Throwable e) {
         if (!config.debug) {
             StringBuilder sb = new StringBuilder();

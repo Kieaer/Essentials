@@ -88,6 +88,8 @@ public class Main extends Plugin {
     public static ArrayList<EventServer.EventService> eventServers = new ArrayList<>();
     public final ApplicationListener listener;
 
+    public static boolean debugas = false;
+
     public Main() {
         // 서버 버전 확인
         if (Version.build != build_version) {
@@ -126,7 +128,9 @@ public class Main extends Plugin {
         }
 
         // 설정 불러오기
+        debugas = true;
         config = new Config();
+        debugas = false;
 
         // 스레드 시작
         new TickTrigger();
@@ -358,7 +362,6 @@ public class Main extends Plugin {
                             "mute: " + rs.getBoolean("mute") + "\n" +
                             "alert: " + rs.getBoolean("alert") + "\n" +
                             "udid: " + rs.getLong("udid") + "\n" +
-                            "email: " + rs.getString("email") + "\n" +
                             "accountid: " + rs.getString("accountid");
                     PlayerData current = playerDB.get(uuid);
                     if (!current.error) {
@@ -503,21 +506,6 @@ public class Main extends Plugin {
                 default:
                     player.sendMessage(new Bundle(playerData.locale).prefix("wrong-command"));
                     break;
-            }
-        });
-        handler.<Player>register("email", "<key>", "Email Authentication", (arg, player) -> {
-            for (PluginData.maildata data : pluginData.emailauth) {
-                if (data.uuid.equals(player.uuid)) {
-                    if (data.authkey.equals(arg[0])) {
-                        if (playerDB.register(player, data.id, data.pw, tool.getGeo(player).toString(), true, serverIP, "default", 0L, data.email, data.id, data.pw)) {
-                            playerCore.load(player);
-                        }
-                    } else {
-                        player.sendMessage("You have entered an incorrect authentication key.");
-                    }
-                } else {
-                    player.sendMessage("You didn't enter your email information when you registered.");
-                }
             }
         });
         handler.<Player>register("help", "[page]", "Show command lists", (arg, player) -> {
@@ -764,20 +752,17 @@ public class Main extends Plugin {
                     break;
             }
         });
-        handler.<Player>register("register", config.passwordmethod.equals("email") ? "<accountid> <password> <email>" : config.passwordmethod.equals("password") ? "<accountid> <password>" : "", "Register account", (arg, player) -> {
+        handler.<Player>register("signup", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : null, "Register account", (arg, player) -> {
             if (config.loginenable) {
                 switch (config.passwordmethod) {
-                    case "email":
-                        playerDB.email(player, arg[0], arg[1], arg[2]);
-                        break;
                     case "discord":
-                        // TODO discord 방법 수정
                         player.sendMessage("Join discord and use !signup command!\n" + config.discordlink);
+                        discord.queue(player);
                         break;
                     default:
                     case "password":
                         Locale lc = tool.getGeo(player);
-                        boolean register = playerDB.register(player, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, "none", arg[0], arg[1]);
+                        boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, arg[0], arg[1]);
                         if (register) {
                             PlayerData playerData = playerDB.load(player.uuid, arg[0]);
                             player.sendMessage(new Bundle(playerData.locale).prefix("register-success"));

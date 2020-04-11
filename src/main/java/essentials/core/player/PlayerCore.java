@@ -54,7 +54,7 @@ public class PlayerCore {
         return true;
     }
 
-    public PlayerData NewData(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String email, String accountid, String accountpw) {
+    public PlayerData NewData(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {
         return new PlayerData(
                 name,
                 uuid,
@@ -95,7 +95,6 @@ public class PlayerCore {
                 false,
                 true,
                 udid,
-                email,
                 accountid,
                 accountpw
         );

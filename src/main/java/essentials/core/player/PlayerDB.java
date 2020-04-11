@@ -1,23 +1,19 @@
 package essentials.core.player;
 
-import essentials.external.Mail;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.entities.type.Player;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import static essentials.Main.*;
+import static essentials.Main.database;
+import static essentials.Main.playerCore;
 import static essentials.PluginVars.playerData;
 
 public class PlayerDB {
-    Map<String, String> email = new HashMap<>();
-
     public PlayerData get(String uuid) {
         for (PlayerData p : playerData) {
             if (p.uuid.equals(uuid)) return p;
@@ -86,7 +82,6 @@ public class PlayerDB {
                         rs.getBoolean("mute"),
                         rs.getBoolean("alert"),
                         rs.getLong("udid"),
-                        rs.getString("email"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
                 );
@@ -152,14 +147,14 @@ public class PlayerDB {
         }
     }
 
-    public boolean register(Player player, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String email, String accountid, String accountpw) {
+    public boolean register(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {
         StringBuilder sql = new StringBuilder();
         sql.append("INSERT INTO players VALUES(");
 
-        PlayerData newdata = playerCore.NewData(player.name, player.uuid, country, country_code, language, connected, connserver, permission, udid, email, accountid, accountpw);
+        PlayerData newdata = playerCore.NewData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw);
         Map<String, Object> js = newdata.toMap();
 
-        js.forEach((name, value) -> {
+        js.forEach((n, value) -> {
             sql.append("?,");
         });
         sql.deleteCharAt(sql.length() - 1);
@@ -199,22 +194,5 @@ public class PlayerDB {
             new CrashReport(e);
             return false;
         }
-    }
-
-    public boolean email(Player player, String id, String pw, String email) {
-        StringBuilder key = new StringBuilder();
-        for (int a = 0; a <= 6; a++) {
-            int n = (int) (Math.random() * 10);
-            key.append(n);
-        }
-        // TODO email 인증키 입력
-        Mail mail = new Mail(config.emailserver, config.emailport, config.emailAccountID, config.emailPassword, "sender", "target", email, "subject", "text");
-        return mail.send();
-    }
-
-    public boolean verify_mail(Player player, String id, String authkey) {
-        // TODO email 인증키 확인
-        String key = email.get(id);
-        return key.equals(authkey);
     }
 }
