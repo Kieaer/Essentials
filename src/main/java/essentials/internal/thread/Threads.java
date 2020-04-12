@@ -1,6 +1,7 @@
 package essentials.internal.thread;
 
 import essentials.core.player.PlayerData;
+import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
@@ -9,6 +10,7 @@ import mindustry.content.Blocks;
 import mindustry.core.GameState;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
@@ -19,8 +21,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
-import static mindustry.Vars.playerGroup;
-import static mindustry.Vars.state;
+import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
     List<Thread> zone_border = new ArrayList<>();
@@ -64,6 +65,37 @@ public class Threads implements Runnable {
                         new PingHost(ip, port, result -> Call.setMessageBlockText(null, pluginData.messagejump.get(fa).tile, result != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline"));
                     }
                 }
+
+                // 서버 인원 확인
+                for (int i = 0; i < pluginData.jumpcount.size(); i++) {
+                    int i2 = i;
+                    PluginData.jumpcount value = pluginData.jumpcount.get(i);
+
+                    new PingHost(value.ip, value.port, result -> {
+                        if (result.name != null) {
+                            String str = String.valueOf(result.players);
+                            int[] digits = new int[str.length()];
+                            for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
+
+                            Tile tile = value.getTile();
+                            if (value.players != result.players) {
+                                if (value.numbersize != digits.length) {
+                                    for (int px = 0; px < 3; px++) {
+                                        for (int py = 0; py < 5; py++) {
+                                            Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
+                                        }
+                                    }
+                                }
+                            }
+                            tool.setTileText(tile, Blocks.copperWall, str);
+                            // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                            pluginData.jumpcount.set(i2, new PluginData.jumpcount(value.getTile(), value.ip, value.port, result.players, digits.length));
+                        } else {
+                            tool.setTileText(value.getTile(), Blocks.copperWall, "no");
+                        }
+                    });
+                }
+
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();

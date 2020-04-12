@@ -5,7 +5,6 @@ import arc.Events;
 import arc.util.Strings;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
-import essentials.external.PingHost;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
@@ -204,36 +203,6 @@ public class TickTrigger {
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             }
-                        }
-
-                        // 서버 인원 확인
-                        for (int i = 0; i < pluginData.jumpcount.size(); i++) {
-                            int i2 = i;
-                            PluginData.jumpcount value = pluginData.jumpcount.get(i);
-
-                            new PingHost(value.ip, value.port, result -> {
-                                if (result.name != null) {
-                                    String str = String.valueOf(result.players);
-                                    int[] digits = new int[str.length()];
-                                    for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
-
-                                    Tile tile = value.getTile();
-                                    if (value.players != result.players) {
-                                        if (value.numbersize != digits.length) {
-                                            for (int px = 0; px < 3; px++) {
-                                                for (int py = 0; py < 5; py++) {
-                                                    Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    tool.setTileText(tile, Blocks.copperWall, str);
-                                    // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                    pluginData.jumpcount.set(i2, new PluginData.jumpcount(value.getTile(), value.ip, value.port, result.players, digits.length));
-                                } else {
-                                    tool.setTileText(value.getTile(), Blocks.copperWall, "no");
-                                }
-                            });
                         }
 
                         // 서버간 이동 영역에 플레이어가 있는지 확인
