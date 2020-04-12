@@ -290,7 +290,7 @@ public class TickTrigger {
                                                     }
                                                 }
                                             }
-                                            tool.sendMessageAll("resource-fast-use", item.name, using.substring(0, using.length() - 2));
+                                            tool.sendMessageAll("resource-fast-use", item.name, using);
                                         }
                                     } else {
                                         resources.put(item.name, cur);

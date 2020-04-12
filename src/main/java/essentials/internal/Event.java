@@ -296,12 +296,17 @@ public class Event {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(EventType.PlayerLeave.class, e -> {
-            players.remove(e.player);
             PlayerData player = playerDB.get(e.player.uuid);
             if (player.isLogin) {
                 player.connected(false);
                 player.connserver("none");
                 if (state.rules.pvp && !state.gameOver) player.pvpbreakout(player.pvpbreakout++);
+            }
+            players.remove(e.player);
+            try {
+                playerDB.save(player);
+            } catch (Exception exception) {
+                exception.printStackTrace();
             }
             playerData.removeIf(p -> p.uuid.equals(e.player.uuid));
         });

@@ -88,8 +88,6 @@ public class Main extends Plugin {
     public static ArrayList<EventServer.EventService> eventServers = new ArrayList<>();
     public final ApplicationListener listener;
 
-    public static boolean debugas = false;
-
     public Main() {
         // 서버 버전 확인
         if (Version.build != build_version) {
@@ -128,9 +126,7 @@ public class Main extends Plugin {
         }
 
         // 설정 불러오기
-        debugas = true;
         config = new Config();
-        debugas = false;
 
         // 스레드 시작
         new TickTrigger();
@@ -146,6 +142,7 @@ public class Main extends Plugin {
         try {
             database.connect();
             database.create();
+            database.LegacyUpgrade();
             if (config.DBServer) database.server_start();
         } catch (SQLException e) {
             new CrashReport(e);
@@ -380,6 +377,28 @@ public class Main extends Plugin {
             } catch (SQLException e) {
                 new CrashReport(e);
             }
+        });
+        handler.<Player>register("setperm", "<player_name> <group>", "Set player permission", (arg) -> {
+            Player target = playerGroup.find(p -> p.name.equals(arg[0]));
+            Bundle bundle = new Bundle();
+            if (target == null) {
+                Log.warn(bundle.get("player-not-found"));
+                return;
+            }
+
+            for (JsonObject.Member p : perm.permission) {
+                if (p.getName().equals(arg[1])) {
+                    PlayerData playerData = playerDB.get(target.uuid);
+                    playerData.permission(arg[1]);
+
+                    target.isAdmin = perm.isAdmin(target);
+
+                    Log.info(bundle.get("success"));
+                    target.sendMessage(new Bundle(playerDB.get(target.uuid).locale).prefix("perm-changed"));
+                    return;
+                }
+            }
+            Log.warn(bundle.get("perm-group-not-found"));
         });
     }
 

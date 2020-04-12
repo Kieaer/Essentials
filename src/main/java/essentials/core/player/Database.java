@@ -3,9 +3,12 @@ package essentials.core.player;
 import essentials.PluginVars;
 import essentials.internal.CrashReport;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 import static essentials.Main.config;
 import static essentials.Main.root;
@@ -96,7 +99,13 @@ public class Database {
             String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", "./" + root.child("data").path(), "-tcpAllowOthers"};
             Object[] parameter = new Object[]{arr};
 
-            service = cl.getMethod("createTcpServer").invoke(obj, parameter);
+            for (Method m : cl.getMethods()) {
+                if (m.getName().contains("createTcpServer")) {
+                    service = m.invoke(obj, parameter);
+                    break;
+                }
+            }
+
             cl.getMethod("start").invoke(service, (Object[]) null);
         } catch (Exception e) {
             new CrashReport(e);
@@ -111,6 +120,29 @@ public class Database {
         try {
             disconnect();
             if (cl != null) server_stop();
+        } catch (Exception e) {
+            new CrashReport(e);
+        }
+    }
+
+    public void LegacyUpgrade() {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM players");
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                try {
+                    LocalTime lc = LocalTime.parse(rs.getString("playtime"), DateTimeFormatter.ofPattern("HH:mm.ss"));
+                    PreparedStatement update = conn.prepareStatement("UPDATE players SET playtime=? WHERE uuid=?");
+                    update.setString(1, lc.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                    update.setString(2, rs.getString("uuid"));
+                    update.execute();
+                    update.close();
+                } catch (Exception ignored) {
+                    break;
+                }
+            }
+            rs.close();
+            pstmt.close();
         } catch (Exception e) {
             new CrashReport(e);
         }
