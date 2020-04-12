@@ -1,7 +1,6 @@
 package essentials.core.player;
 
 import essentials.internal.CrashReport;
-import essentials.internal.Log;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -97,6 +96,7 @@ public class PlayerDB {
     public boolean save(PlayerData playerData) throws Exception {
         StringBuilder sql = new StringBuilder();
         Map<String, Object> js = playerData.toMap();
+        if (js.get("name") == null) return false; // TODO Find null reason
         sql.append("UPDATE players SET ");
 
         int size = js.size() + 1;
@@ -159,7 +159,6 @@ public class PlayerDB {
         });
         sql.deleteCharAt(sql.length() - 1);
         sql.append(")");
-        Log.info(sql.toString());
 
         try {
             PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
@@ -169,7 +168,6 @@ public class PlayerDB {
 
                 @Override
                 public void accept(String s, Object o) {
-                    Log.info("index: " + index + " name:" + s + " data:" + o);
                     try {
                         if (o instanceof String) {
                             pstmt.setString(index, (String) o);
@@ -186,7 +184,6 @@ public class PlayerDB {
                     index++;
                 }
             });
-            //Log.info(pstmt.toString());
             pstmt.execute();
             pstmt.close();
             return true;

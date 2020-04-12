@@ -128,6 +128,13 @@ public class Main extends Plugin {
         // 설정 불러오기
         config = new Config();
 
+        // 플러그인 데이터 불러오기
+        try {
+            pluginData.loadall();
+        } catch (Exception e) {
+            new CrashReport(e);
+        }
+
         // 스레드 시작
         new TickTrigger();
         mainThread.submit(new Threads());
@@ -167,13 +174,13 @@ public class Main extends Plugin {
                 try {
                     boolean error = false;
 
+                    discord.shutdownNow(); // Discord 서비스 종료
                     playerDB.saveAll(); // 플레이어 데이터 저장
                     pluginData.saveAll(); // 플러그인 데이터 저장
                     mainThread.shutdownNow(); // 스레드 종료
                     // config.singleService.shutdownNow(); // 로그 스레드 종료
                     timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
                     if (vote.status()) vote.interrupt(); // 투표 종료
-                    discord.shutdownNow(); // Discord 서비스 종료
                     database.dispose(); // DB 연결 종료
 
                     if (config.serverenable) {
@@ -586,21 +593,35 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player-pvpbreakout") + "[] : " + playerData.pvpbreakout;
             Call.onInfoMessage(player.con, datatext);
         });
-        handler.<Player>register("jump", "<zone/count/total> <touch> [ip] [port] [range]", "Create a server-to-server jumping zone.", (arg, player) -> {
+        handler.<Player>register("jump", "<zone/count/total> [ip] [port] [range] [clickable]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!perm.check(player, "jump")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale);
 
-            switch (arg[0]) {
+            String type = arg[0];
+            // boolean touchable = Boolean.parseBoolean(arg[1]);
+            // String ip = arg[2];
+            // int port = Integer.parseInt(arg[3]);
+            // int range = Integer.parseInt(arg[4]);
+
+            switch (type) {
                 case "zone":
-                    if (arg.length != 4) {
+                    if (arg.length != 5) {
                         player.sendMessage(bundle.prefix("jump-incorrect"));
                         return;
                     }
+
                     int size;
+                    boolean touchable;
+                    String ip;
+                    int port;
+
                     try {
                         size = Integer.parseInt(arg[3]);
-                    } catch (Exception ignored) {
+                        touchable = Boolean.parseBoolean(arg[4]);
+                        ip = arg[1];
+                        port = Integer.parseInt(arg[2]);
+                    } catch (NumberFormatException ignored) {
                         player.sendMessage(bundle.prefix("jump-not-int"));
                         return;
                     }
@@ -608,15 +629,22 @@ public class Main extends Plugin {
                     int tf = player.tileX() + size;
                     int ty = player.tileY() + size;
 
-                    pluginData.jumpzone.add(new PluginData.jumpzone(world.tile(player.tileX(), player.tileY()), world.tile(tf, ty), Boolean.parseBoolean(arg[1]), arg[2], Integer.parseInt(arg[3])));
+                    pluginData.jumpzone.add(new PluginData.jumpzone(world.tile(player.tileX(), player.tileY()), world.tile(tf, ty), touchable, ip, port));
                     player.sendMessage(bundle.prefix("jump-added"));
                     break;
                 case "count":
-                    pluginData.jumpcount.add(new PluginData.jumpcount(world.tile(player.tileX(), player.tileY()), arg[2], Integer.parseInt(arg[3]), 0, 0));
+                    try {
+                        ip = arg[1];
+                        port = Integer.parseInt(arg[2]);
+                    } catch (NumberFormatException ignored) {
+                        // TODO add message
+                        return;
+                    }
+
+                    pluginData.jumpcount.add(new PluginData.jumpcount(world.tile(player.tileX(), player.tileY()), ip, port, 0, 0));
                     player.sendMessage(bundle.prefix("jump-added"));
                     break;
                 case "total":
-                    // tilex, tiley, total players, number length
                     pluginData.jumptotal.add(new PluginData.jumptotal(world.tile(player.tileX(), player.tileY()), 0, 0));
                     player.sendMessage(bundle.prefix("jump-added"));
                     break;

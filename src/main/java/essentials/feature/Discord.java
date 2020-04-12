@@ -175,6 +175,6 @@ public class Discord extends ListenerAdapter {
     }
 
     public void shutdownNow() {
-        if (jda != null) jda.shutdownNow();
+        if (jda != null) jda.shutdown();
     }
 }

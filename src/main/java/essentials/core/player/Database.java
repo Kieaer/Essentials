@@ -14,6 +14,7 @@ import static essentials.Main.config;
 import static essentials.Main.root;
 
 public class Database {
+    public Method m;
     public Object service;
     public Connection conn;
     Class<?> cl = null;
@@ -96,24 +97,19 @@ public class Database {
             cl = Class.forName("org.h2.tools.Server", true, cla);
             Object obj = cl.getDeclaredConstructor().newInstance();
 
-            String[] arr = {"-tcp", "-tcpPort", "9090", "-baseDir", "./" + root.child("data").path(), "-tcpAllowOthers"};
-            Object[] parameter = new Object[]{arr};
+            m = cl.getMethod("createTcpServer", String[].class);
+            service = m.invoke(obj, new Object[]{new String[]{"-tcp", "-tcpPort", "9090", "-baseDir", "./" + root.child("data").path(), "-tcpAllowOthers"}});
 
-            for (Method m : cl.getMethods()) {
-                if (m.getName().contains("createTcpServer")) {
-                    service = m.invoke(obj, parameter);
-                    break;
-                }
-            }
-
-            cl.getMethod("start").invoke(service, (Object[]) null);
+            m = cl.getMethod("start");
+            m.invoke(service);
         } catch (Exception e) {
             new CrashReport(e);
         }
     }
 
     public void server_stop() throws Exception {
-        cl.getMethod("stop").invoke(service, (Object[]) null);
+        m = cl.getMethod("stop");
+        m.invoke(service);
     }
 
     public void dispose() {
@@ -137,6 +133,10 @@ public class Database {
                     update.setString(2, rs.getString("uuid"));
                     update.execute();
                     update.close();
+
+                    Statement update2 = conn.createStatement();
+                    update2.execute("ALTER TABLE players DROP COLUMN IF EXISTS email");
+                    update2.close();
                 } catch (Exception ignored) {
                     break;
                 }

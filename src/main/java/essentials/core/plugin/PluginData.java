@@ -1,5 +1,6 @@
 package essentials.core.plugin;
 
+import essentials.internal.Log;
 import mindustry.world.Tile;
 
 import java.io.*;
@@ -46,7 +47,7 @@ public class PluginData {
 
     @SuppressWarnings("unchecked") // 의도적인 작동임
     public void loadall() throws Exception {
-        if (!root.child("data/data.object").exists()) {
+        if (!root.child("data/PluginData.object").exists()) {
             Map<String, ArrayList<Object>> map = new HashMap<>();
             FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
             ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -67,6 +68,8 @@ public class PluginData {
             blacklist = (ArrayList<String>) map.get("blacklist");
             banned = (ArrayList<banned>) map.get("banned");
             ois.close();
+            fis.close();
+            Log.info("plugindata-loaded");
         }
     }
 

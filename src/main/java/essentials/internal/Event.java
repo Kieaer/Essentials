@@ -2,7 +2,6 @@ package essentials.internal;
 
 import arc.Core;
 import arc.Events;
-import arc.util.Strings;
 import essentials.PluginVars;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
@@ -56,16 +55,12 @@ public class Event {
 
             if (!playerData.error) {
                 for (PluginData.jumpzone data : pluginData.jumpzone) {
-                    int port = 6567;
+                    int port = data.port;
                     String ip = data.ip;
-                    if (data.ip.contains(":") && Strings.canParsePostiveInt(data.ip.split(":")[1])) {
-                        ip = data.ip.split(":")[0];
-                        port = Strings.parseInt(data.ip.split(":")[1]);
-                    }
 
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
-                            Log.info("player-jumped", e.player.name, data.ip);
+                            Log.info("player-jumped", e.player.name, data.ip + ":" + data.port);
                             playerData.connected(false);
                             playerData.connserver("none");
                             Call.onConnect(e.player.con, ip, port);
@@ -667,9 +662,9 @@ public class Event {
             }
 
             // Discord 봇 시작
-            //if (config.passwordmethod.equals("discord") || config.passwordmethod.equals("mixed")) {
+            if (config.passwordmethod.equals("discord") || config.passwordmethod.equals("mixed")) {
                 discord.start();
-            //}
+            }
 
             // 채팅 포맷 변경
             netServer.admins.addChatFilter((player, text) -> null);

@@ -55,7 +55,7 @@ public class TickTrigger {
                 }
 
                 // 1초마다 실행
-                if ((tick % 60) != 0) {
+                if ((tick % 60) == 0) {
                     // 서버 켜진시간 카운트
                     uptime = uptime.plusSeconds(1);
 
@@ -282,7 +282,7 @@ public class TickTrigger {
                                         if ((cur - resources.get(item.name)) <= -55) {
                                             StringBuilder using = new StringBuilder();
                                             for (Player p : playerGroup) {
-                                                if (p.buildRequest().block != null) {
+                                                if (p.buildRequest() != null) {
                                                     for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
                                                         if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {
                                                             using.append(p.name).append(", ");
