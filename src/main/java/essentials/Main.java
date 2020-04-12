@@ -141,6 +141,7 @@ public class Main extends Plugin {
         mainThread.submit(new ColorNick());
         timer.scheduleAtFixedRate(new AutoRollback(), 600000, 600000);
         mainThread.submit(colornick);
+        mainThread.submit(jumpBorder);
 
         // DB 드라이버 로딩
         new DriverLoader();

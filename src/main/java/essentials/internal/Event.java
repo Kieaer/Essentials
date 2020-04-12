@@ -146,6 +146,8 @@ public class Event {
                 if (e.player.name.contains("　"))
                     Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
                 if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");
+                if (e.player.name.replaceAll("\\([.*?]\\)", "").length() == 0)
+                    Call.onKick(e.player.con, "Can't use only color tags nickname in this server.");
             }
 
             /*if(config.isStrictname()){
