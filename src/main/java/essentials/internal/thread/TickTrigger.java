@@ -2,6 +2,7 @@ package essentials.internal.thread;
 
 import arc.Core;
 import arc.Events;
+import arc.struct.ObjectMap;
 import arc.util.Strings;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
@@ -24,8 +25,6 @@ import org.hjson.JsonObject;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 
 import static essentials.Main.*;
 import static essentials.PluginVars.*;
@@ -36,7 +35,7 @@ public class TickTrigger {
     public TickTrigger() {
         Events.on(EventType.Trigger.update, new Runnable() {
             int tick = 0;
-            Map<String, Integer> resources = new HashMap<>();
+            ObjectMap<String, Integer> resources = new ObjectMap<>();
 
             @Override
             public void run() {
@@ -67,7 +66,7 @@ public class TickTrigger {
                     // new changename().start();
 
                     // 임시로 밴당한 유저 감시
-                    for (int a = 0; a < pluginData.banned.size(); a++) {
+                    for (int a = 0; a < pluginData.banned.size; a++) {
                         LocalDateTime time = LocalDateTime.now();
                         if (time.isAfter(pluginData.banned.get(a).getTime())) {
                             pluginData.banned.remove(a);
@@ -112,7 +111,7 @@ public class TickTrigger {
                     }*/
 
                         // 모든 클라이언트 서버에 대한 인원 총합 카운트
-                        for (int a = 0; a < pluginData.jumptotal.size(); a++) {
+                        for (int a = 0; a < pluginData.jumptotal.size; a++) {
                             int result = 0;
                             for (PluginData.jumpcount value : pluginData.jumpcount) result = result + value.players;
 
@@ -166,7 +165,7 @@ public class TickTrigger {
                         }
 
                         // 메세지 블럭 감시
-                        for (int a = 0; a < pluginData.messagemonitor.size(); a++) {
+                        for (int a = 0; a < pluginData.messagemonitor.size; a++) {
                             String msg;
                             MessageBlock.MessageBlockEntity entity;
                             try {

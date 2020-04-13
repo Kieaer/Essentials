@@ -2,6 +2,7 @@ package essentials.external;
 
 import arc.Core;
 import arc.files.Fi;
+import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 
@@ -13,8 +14,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -24,7 +23,7 @@ import static essentials.PluginVars.DBURL;
 public class DriverLoader implements Driver {
     public static URLClassLoader H2URL;
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
-    List<URL> urls = new ArrayList<>();
+    Array urls = new Array();
     private boolean tried = false;
     private Driver driver;
 
@@ -39,10 +38,10 @@ public class DriverLoader implements Driver {
             for (String url : DBURL) urls.add(new URL(url));
             Fi[] f = root.child("Driver/").list();
 
-            for (int a = 0; a < urls.size(); a++) {
+            for (int a = 0; a < urls.size; a++) {
                 URLClassLoader cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
                 String dr = "org.sqlite.JDBC";
-                for (int b = 0; b < urls.size(); b++) {
+                for (int b = 0; b < urls.size; b++) {
                     if (f[a].name().contains("mariadb")) {
                         dr = "org.mariadb.jdbc.Driver";
                     } else if (f[a].name().contains("postgresql")) {
@@ -138,12 +137,12 @@ public class DriverLoader implements Driver {
     public void download() {
         Log.info("driver-downloading");
 
-        for (URL value : urls) {
+        for (Object value : urls) {
             String url = value.toString();
             String filename = url.substring(url.lastIndexOf('/') + 1);
             root.child("Driver/" + filename).writeString("");
             Log.info(filename + " Downloading...");
-            URLDownload(value, root.child("Driver/" + filename).file());
+            URLDownload((URL) value, root.child("Driver/" + filename).file());
         }
         new DriverLoader();
     }

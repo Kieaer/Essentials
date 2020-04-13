@@ -1,6 +1,7 @@
 package essentials.feature;
 
 import arc.Events;
+import arc.struct.Array;
 import arc.util.Time;
 import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
@@ -14,8 +15,6 @@ import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.net.Packets;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -30,7 +29,7 @@ public class Vote {
     String reason;
     Object parameters;
     VoteType type;
-    List<String> voted = new ArrayList<>();
+    Array voted = new Array();
 
     boolean status = false;
     int require;
@@ -112,6 +111,9 @@ public class Vote {
                 case map:
                     tool.sendMessageAll("vote-map");
                     break;
+                case gamemode:
+                    tool.sendMessageAll("vote-gamemode");
+                    break;
                 default:
                     player.sendMessage(bundle.get("vote-wrong-mode"));
                     return;
@@ -129,7 +131,7 @@ public class Vote {
         message_time = 0;
         voted.clear();
 
-        if (voted.size() >= require) {
+        if (voted.size >= require) {
             switch (type) {
                 case gameover:
                     tool.sendMessageAll("vote-gameover-done");
@@ -150,6 +152,12 @@ public class Vote {
                 case rollback:
                     tool.sendMessageAll("vote-rollback-done");
                     rollback.load();
+                    break;
+                case gamemode:
+                    /*Fi file = saveDirectory.child("temp." + saveExtension);
+                    SaveIO.load(file);
+                    world.loadMap(world.getMap(), map);
+                    Gamemode.valueOf(parameters[0])*/
                     break;
                 case map:
                     tool.sendMessageAll("vote-map-done");
@@ -205,7 +213,7 @@ public class Vote {
         return status;
     }
 
-    public List<String> getVoted() {
+    public Array getVoted() {
         return voted;
     }
 
@@ -214,16 +222,16 @@ public class Vote {
         for (Player others : playerGroup.all()) {
             PlayerData p = playerDB.get(others.uuid);
             if (!p.error)
-                others.sendMessage(new Bundle(p.locale).get("vote-current", voted.size(), vote.getRequire() - voted.size()));
+                others.sendMessage(new Bundle(p.locale).get("vote-current", voted.size, vote.getRequire() - voted.size));
         }
 
-        if (voted.size() >= require) {
+        if (voted.size >= require) {
             timer.cancel();
             success();
         }
     }
 
     public enum VoteType {
-        gameover, skipwave, kick, rollback, map
+        gameover, skipwave, kick, rollback, gamemode, map
     }
 }

@@ -54,11 +54,13 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Timer;
 import java.util.concurrent.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 
 import static essentials.PluginVars.*;
 import static mindustry.Vars.*;
@@ -85,7 +87,7 @@ public class Main extends Plugin {
 
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
     public static Config config;
-    public static ArrayList<EventServer.EventService> eventServers = new ArrayList<>();
+    public static Array<EventServer.EventService> eventServers = new Array<>();
     public final ApplicationListener listener;
 
     public Main() {
@@ -239,16 +241,16 @@ public class Main extends Plugin {
     @Override
     public void registerServerCommands(CommandHandler handler) {
         handler.register("gendocs", "Generate Essentials README.md", (arg) -> {
-            List<String> servercommands = new ArrayList<>(Arrays.asList(
+            String[] servercommands = new String[]{
                     "help", "version", "exit", "stop", "host", "maps", "reloadmaps", "status",
                     "mods", "mod", "js", "say", "difficulty", "rules", "fillitems", "playerlimit",
                     "config", "subnet-ban", "whitelisted", "whitelist-add", "whitelist-remove",
                     "shuffle", "nextmap", "kick", "ban", "bans", "unban", "admin", "unadmin",
                     "admins", "runwave", "load", "save", "saves", "gameover", "info", "search", "gc"
-            ));
-            List<String> clientcommands = new ArrayList<>(Arrays.asList(
+            };
+            String[] clientcommands = new String[]{
                     "help", "t", "sync"
-            ));
+            };
             String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String gentime = "\nREADME.md Generated time: " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
@@ -274,9 +276,11 @@ public class Main extends Plugin {
 
             StringBuilder tempbuild = new StringBuilder();
             for (CommandHandler.Command command : netServer.clientCommands.getCommandList()) {
-                if (!clientcommands.contains(command.text)) {
-                    String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
-                    tempbuild.append(temp);
+                for (String com : clientcommands) {
+                    if (com.equals(command.text)) {
+                        String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
+                        tempbuild.append(temp);
+                    }
                 }
             }
 
@@ -284,9 +288,11 @@ public class Main extends Plugin {
             tempbuild = new StringBuilder();
 
             for (CommandHandler.Command command : handler.getCommandList()) {
-                if (!servercommands.contains(command.text)) {
-                    String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
-                    tempbuild.append(temp);
+                for (String com : servercommands) {
+                    if (com.equals(command.text)) {
+                        String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
+                        tempbuild.append(temp);
+                    }
                 }
             }
 
@@ -412,9 +418,6 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
-        handler.removeCommand("vote");
-        handler.removeCommand("votekick"); // TODO 망치 아이콘으로 투표 처리
-
         handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
             if (!perm.check(player, "alert")) return;
 
@@ -541,7 +544,7 @@ public class Main extends Plugin {
                 return;
             }
 
-            ArrayList<String> temp = new ArrayList<>();
+            Array<String> temp = new Array<>();
             for (int a = 0; a < netServer.clientCommands.getCommandList().size; a++) {
                 CommandHandler.Command command = netServer.clientCommands.getCommandList().get(a);
                 if (perm.check(player, command.text) || command.text.equals("t") || command.text.equals("sync")) {
@@ -549,12 +552,10 @@ public class Main extends Plugin {
                 }
             }
 
-            List<String> deduped = temp.stream().distinct().collect(Collectors.toList());
-
             StringBuilder result = new StringBuilder();
             int perpage = 8;
             int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
-            int pages = Mathf.ceil((float) deduped.size() / perpage);
+            int pages = Mathf.ceil((float) temp.size / perpage);
 
             page--;
 
@@ -564,8 +565,8 @@ public class Main extends Plugin {
             }
 
             result.append(Strings.format("[orange]-- Commands Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n", (page + 1), pages));
-            for (int a = perpage * page; a < Math.min(perpage * (page + 1), deduped.size()); a++) {
-                result.append(deduped.get(a));
+            for (int a = perpage * page; a < Math.min(perpage * (page + 1), temp.size); a++) {
+                result.append(temp.get(a));
             }
             player.sendMessage(result.toString().substring(0, result.length() - 1));
         });
@@ -770,7 +771,7 @@ public class Main extends Plugin {
             Bundle bundle = new Bundle(playerData.locale);
             switch (arg[0]) {
                 case "zone":
-                    for (int a = 0; a < pluginData.jumpzone.size(); a++) {
+                    for (int a = 0; a < pluginData.jumpzone.size; a++) {
                         if (arg.length != 2) {
                             player.sendMessage(bundle.prefix("no-parameter"));
                             return;
@@ -1184,33 +1185,37 @@ public class Main extends Plugin {
                     return;
                 }
 
-                if (arg.length == 2) {
-                    if (arg[0].equals("kick")) {
-                        Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-                        if (target == null) target = players.get(Integer.parseInt(arg[1]));
-                        if (target == null) {
-                            player.sendMessage(bundle.prefix("player-not-found"));
-                            return;
-                        }
-
-                        if (target.isAdmin) {
-                            player.sendMessage(bundle.prefix("vote-target-admin"));
-                            return;
-                        }
-
-                        // 강퇴 투표
-                        vote.start(player, target, arg[1]);
-                    } else if (arg[0].equals("map")) {
-                        // 맵 투표
-                        Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
-                        if (world == null) world = Vars.maps.all().get(Integer.parseInt(arg[1]));
-                        if (world == null) {
-                            player.sendMessage(bundle.prefix("vote-map-not-found"));
-                        } else {
-                            vote.start(Vote.VoteType.map, player, world);
-                        }
+                if (arg[0].equals("kick")) {
+                    Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+                    if (target == null) target = players.get(Integer.parseInt(arg[1]));
+                    if (target == null) {
+                        player.sendMessage(bundle.prefix("player-not-found"));
+                        return;
                     }
-                } else if (arg.length == 1) {
+
+                    if (target.isAdmin) {
+                        player.sendMessage(bundle.prefix("vote-target-admin"));
+                        return;
+                    }
+
+                    // 강퇴 투표
+                    vote.start(player, target, arg[1]);
+                } else if (arg[0].equals("map")) {
+                    // 맵 투표
+                    Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
+                    if (world == null) world = Vars.maps.all().get(Integer.parseInt(arg[1]));
+                    if (world == null) {
+                        player.sendMessage(bundle.prefix("vote-map-not-found"));
+                    } else {
+                        vote.start(Vote.VoteType.map, player, world);
+                    }
+                } else if (arg[0].equals("gameover")) {
+                    vote.start(Vote.VoteType.gameover, player);
+                } else if (arg[0].equals("rollback")) {
+                    vote.start(Vote.VoteType.rollback, player);
+                } else if (arg[0].equals("gamemode")) {
+                    vote.start(Vote.VoteType.gamemode, player);
+                } else {
                     switch (arg[0]) {
                         case "gamemode":
                             player.sendMessage(bundle.prefix("vote-list-gamemode"));
@@ -1225,10 +1230,6 @@ public class Main extends Plugin {
                             player.sendMessage(bundle.prefix("vote-list"));
                             break;
                     }
-                } else if (arg[0].equals("gameover")) {
-                    vote.start(Vote.VoteType.gameover, player);
-                } else if (arg[0].equals("map")) {
-                    vote.start(Vote.VoteType.map, player, arg[2]);
                 }
             });
         }

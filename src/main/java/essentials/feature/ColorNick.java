@@ -1,16 +1,15 @@
 package essentials.feature;
 
+import arc.struct.Array;
 import essentials.core.player.PlayerData;
 import mindustry.entities.type.Player;
-
-import java.util.ArrayList;
 
 import static essentials.Main.config;
 import static essentials.Main.playerDB;
 
 public class ColorNick implements Runnable {
     private static int colorOffset = 0;
-    public ArrayList<Player> targets = new ArrayList<>();
+    public Array<Player> targets = new Array<>();
 
     @Override
     public void run() {

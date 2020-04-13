@@ -1,6 +1,8 @@
 package essentials.internal;
 
 import arc.files.Fi;
+import arc.struct.Array;
+import arc.struct.ObjectMap;
 import essentials.external.UTF8Control;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
@@ -18,8 +20,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
@@ -169,7 +169,7 @@ public class Tools {
     }
 
     public void setTileText(Tile tile, Block block, String text) {
-        HashMap<String, int[]> letters = new HashMap<>();
+        ObjectMap<String, int[]> letters = new ObjectMap<>();
         letters.put("A", new int[]{0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1});
         letters.put("B", new int[]{1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0});
         letters.put("C", new int[]{0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1});
@@ -216,7 +216,7 @@ public class Tools {
         String[] texts = text.split("");
 
         for (String txt : texts) {
-            ArrayList<int[]> pos = new ArrayList<>();
+            Array<int[]> pos = new Array<>();
             int[] target = letters.get(txt.toUpperCase());
             int xv = 0;
             int yv = 0;
@@ -253,7 +253,7 @@ public class Tools {
                 }
             }
 
-            for (int a = 0; a < pos.size(); a++) {
+            for (int a = 0; a < pos.size; a++) {
                 Tile target_tile = world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]);
                 if (target[a] == 1) {
                     target_tile.set(block, Team.sharded, 0);

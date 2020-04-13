@@ -1,5 +1,6 @@
 package essentials.internal.thread;
 
+import arc.struct.Array;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
@@ -15,8 +16,6 @@ import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +23,7 @@ import static essentials.Main.*;
 import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
-    List<Thread> zone_border = new ArrayList<>();
+    Array<Thread> zone_border = new Array<>();
 
     @Override
     public void run() {
@@ -49,7 +48,7 @@ public class Threads implements Runnable {
                 }
 
                 // 외부 서버 플레이어 인원 - 메세지 블럭
-                for (int a = 0; a < pluginData.messagejump.size(); a++) {
+                for (int a = 0; a < pluginData.messagejump.size; a++) {
                     if (state.is(GameState.State.playing)) {
                         if (pluginData.messagejump.get(a).tile.entity.block != Blocks.message) {
                             pluginData.messagejump.remove(a);
@@ -67,7 +66,7 @@ public class Threads implements Runnable {
                 }
 
                 // 서버 인원 확인
-                for (int i = 0; i < pluginData.jumpcount.size(); i++) {
+                for (int i = 0; i < pluginData.jumpcount.size; i++) {
                     int i2 = i;
                     PluginData.jumpcount value = pluginData.jumpcount.get(i);
 

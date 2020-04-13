@@ -1,6 +1,7 @@
 package essentials.network;
 
 import arc.Core;
+import arc.struct.Array;
 import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
@@ -32,14 +33,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Base64;
+import java.util.Locale;
+import java.util.Random;
 
 import static essentials.Main.*;
 import static essentials.PluginVars.*;
 import static mindustry.Vars.*;
 
 public class Server implements Runnable {
-    public ArrayList<service> list = new ArrayList<>();
+    public Array<service> list = new Array<>();
     public ServerSocket serverSocket;
 
     Bundle bundle = new Bundle();
@@ -351,7 +354,7 @@ public class Server implements Runnable {
         }
 
         private String rankingdata() throws Exception {
-            ArrayList<String> lists = new ArrayList<>(Arrays.asList("placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount", "attackclear"));
+            String[] lists = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount", "attackclear"};
             JsonObject results = new JsonObject();
 
             Locale language = tool.getGeo(ip);
@@ -379,7 +382,7 @@ public class Server implements Runnable {
             for (int a = 0; a < sql.length; a++) {
                 ResultSet rs = stmt.executeQuery(sql[a]);
                 JsonArray array = new JsonArray();
-                if (lists.get(a).equals("pvpwincount")) {
+                if (lists[a].equals("pvpwincount")) {
                     String header = "<tr><th>" + name + "</th><th>" + country + "</th><th>" + win + "</th><th>" + lose + "</th><th>" + rate + "</th></tr>";
                     array.add(header);
                     while (rs.next()) {
@@ -393,14 +396,14 @@ public class Server implements Runnable {
                         array.add(data);
                     }
                 } else {
-                    String header = "<tr><th>" + name + "</th><th>" + country + "</th><th>" + lists.get(a) + "</th></tr>";
+                    String header = "<tr><th>" + name + "</th><th>" + country + "</th><th>" + lists[a] + "</th></tr>";
                     array.add(header);
                     while (rs.next()) {
-                        String data = "<tr><td>" + rs.getString("name") + "</td><td>" + rs.getString("country") + "</td><td>" + rs.getString(lists.get(a)) + "</td></tr>\n";
+                        String data = "<tr><td>" + rs.getString("name") + "</td><td>" + rs.getString("country") + "</td><td>" + rs.getString(lists[a]) + "</td></tr>\n";
                         array.add(data);
                     }
                 }
-                results.add(lists.get(a), array);
+                results.add(lists[a], array);
                 rs.close();
             }
             stmt.close();
@@ -489,7 +492,7 @@ public class Server implements Runnable {
                             String datatext;
                             if (!config.internalDB) {
                                 Statement stmt = database.conn.createStatement();
-                                ArrayList<String> array = new ArrayList<>();
+                                Array<String> array = new Array<>();
                                 for (String s : ranking) {
                                     ResultSet rs1 = stmt.executeQuery(s);
                                     while (rs1.next()) {

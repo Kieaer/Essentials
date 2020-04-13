@@ -1,12 +1,12 @@
 package essentials.core.player;
 
+import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static essentials.Main.database;
 import static essentials.Main.playerCore;
@@ -95,34 +95,32 @@ public class PlayerDB {
 
     public boolean save(PlayerData playerData) throws Exception {
         StringBuilder sql = new StringBuilder();
-        Map<String, Object> js = playerData.toMap();
+        ObjectMap<String, Object> js = playerData.toMap();
         if (js.get("name") == null) return false; // TODO Find null reason
         sql.append("UPDATE players SET ");
 
-        int size = js.size() + 1;
+        int size = js.size + 1;
 
-        js.forEach((name, value) -> {
-            sql.append(name).append("=?,");
-        });
+        js.forEach((s) -> sql.append(s).append("=?,"));
 
         sql.deleteCharAt(sql.length() - 1);
         sql.append(" WHERE uuid=?");
 
         PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
-        js.forEach(new BiConsumer<>() {
+        js.forEach(new Consumer<>() {
             int index = 1;
 
             @Override
-            public void accept(String s, Object o) {
+            public void accept(ObjectMap.Entry<String, Object> o) {
                 try {
-                    if (o instanceof String) {
-                        pstmt.setString(index, (String) o);
-                    } else if (o instanceof Boolean) {
-                        pstmt.setBoolean(index, (Boolean) o);
-                    } else if (o instanceof Integer) {
-                        pstmt.setInt(index, (Integer) o);
-                    } else if (o instanceof Long) {
-                        pstmt.setLong(index, (Long) o);
+                    if (o.value instanceof String) {
+                        pstmt.setString(index, (String) o.value);
+                    } else if (o.value instanceof Boolean) {
+                        pstmt.setBoolean(index, (Boolean) o.value);
+                    } else if (o.value instanceof Integer) {
+                        pstmt.setInt(index, (Integer) o.value);
+                    } else if (o.value instanceof Long) {
+                        pstmt.setLong(index, (Long) o.value);
                     }
                 } catch (SQLException e) {
                     new CrashReport(e);
@@ -152,9 +150,9 @@ public class PlayerDB {
         sql.append("INSERT INTO players VALUES(");
 
         PlayerData newdata = playerCore.NewData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw);
-        Map<String, Object> js = newdata.toMap();
+        ObjectMap<String, Object> js = newdata.toMap();
 
-        js.forEach((n, value) -> {
+        js.forEach((s) -> {
             sql.append("?,");
         });
         sql.deleteCharAt(sql.length() - 1);
@@ -163,20 +161,20 @@ public class PlayerDB {
         try {
             PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
 
-            js.forEach(new BiConsumer<>() {
+            js.forEach(new Consumer<>() {
                 int index = 1;
 
                 @Override
-                public void accept(String s, Object o) {
+                public void accept(ObjectMap.Entry<String, Object> o) {
                     try {
-                        if (o instanceof String) {
-                            pstmt.setString(index, (String) o);
-                        } else if (o instanceof Boolean) {
-                            pstmt.setBoolean(index, (Boolean) o);
-                        } else if (o instanceof Integer) {
-                            pstmt.setInt(index, (Integer) o);
-                        } else if (o instanceof Long) {
-                            pstmt.setLong(index, (Long) o);
+                        if (o.value instanceof String) {
+                            pstmt.setString(index, (String) o.value);
+                        } else if (o.value instanceof Boolean) {
+                            pstmt.setBoolean(index, (Boolean) o.value);
+                        } else if (o.value instanceof Integer) {
+                            pstmt.setInt(index, (Integer) o.value);
+                        } else if (o.value instanceof Long) {
+                            pstmt.setLong(index, (Long) o.value);
                         }
                     } catch (SQLException e) {
                         new CrashReport(e);

@@ -2,6 +2,7 @@ package essentials.internal;
 
 import arc.Core;
 import arc.Events;
+import arc.struct.Array;
 import essentials.PluginVars;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
@@ -29,7 +30,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Locale;
 
@@ -305,7 +305,7 @@ public class Event {
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
-            playerData.removeIf(p -> p.uuid.equals(e.player.uuid));
+            playerData.remove(p -> p.uuid.equals(e.player.uuid));
         });
 
         // 플레이어가 수다떨었을 때
@@ -464,7 +464,7 @@ public class Event {
                             }
                         }
                     }
-                    target.grief_tilelist(new ArrayList<>());
+                    target.grief_tilelist(new Array<>());
                 }
             }
         });
@@ -490,7 +490,7 @@ public class Event {
                     // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
                     if (e.builder.buildRequest().block == Blocks.message) {
                         try {
-                            for (int i = 0; i < pluginData.powerblock.size(); i++) {
+                            for (int i = 0; i < pluginData.powerblock.size; i++) {
                                 if (pluginData.powerblock.get(i).tile == e.tile) {
                                     pluginData.powerblock.remove(i);
                                     break;

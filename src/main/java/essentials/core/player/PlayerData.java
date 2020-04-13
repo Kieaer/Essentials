@@ -1,10 +1,10 @@
 package essentials.core.player;
 
+import arc.struct.Array;
+import arc.struct.ObjectMap;
+
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import static essentials.Main.config;
 import static essentials.Main.tool;
@@ -61,7 +61,7 @@ public class PlayerData {
 
     public int grief_build_count = 0;
     public int grief_destory_count = 0;
-    public ArrayList<short[]> grief_tilelist = new ArrayList<>();
+    public Array<short[]> grief_tilelist = new Array<>();
 
     public Locale locale = config.language;
 
@@ -308,7 +308,7 @@ public class PlayerData {
         this.grief_destory_count = grief_destory_count;
     }
 
-    public void grief_tilelist(ArrayList<short[]> grief_tilelist) {
+    public void grief_tilelist(Array<short[]> grief_tilelist) {
         this.grief_tilelist = grief_tilelist;
     }
 
@@ -316,8 +316,8 @@ public class PlayerData {
         this.locale = locale;
     }
 
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<>();
+    public ObjectMap<String, Object> toMap() {
+        ObjectMap<String, Object> map = new ObjectMap<>();
         map.put("name", name);
         map.put("uuid", uuid);
         map.put("country", country);

@@ -2,6 +2,7 @@ package essentials.feature;
 
 import arc.ApplicationListener;
 import arc.Core;
+import arc.struct.Array;
 import essentials.external.PingHost;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
@@ -15,14 +16,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.TimerTask;
 
 import static essentials.Main.*;
 
 public class EventServer {
-    public List<Process> servers = new ArrayList<>();
+    public Array<Process> servers = new Array<>();
 
     public boolean create(String roomname, String map, String gamemode, int port) {
         try {

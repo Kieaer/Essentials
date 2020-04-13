@@ -1,12 +1,12 @@
 package essentials.core.plugin;
 
+import arc.struct.Array;
+import arc.struct.ObjectMap;
 import essentials.internal.Log;
 import mindustry.world.Tile;
 
 import java.io.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import static essentials.Main.root;
@@ -14,25 +14,25 @@ import static mindustry.Vars.world;
 
 public class PluginData {
     // 일회성 플러그인 데이터
-    public ArrayList<nukeblock> nukeblock = new ArrayList<>();
-    public ArrayList<eventservers> eventservers = new ArrayList<>();
-    public ArrayList<powerblock> powerblock = new ArrayList<>();
-    public ArrayList<messagemonitor> messagemonitor = new ArrayList<>();
-    public ArrayList<messagejump> messagejump = new ArrayList<>();
-    public ArrayList<Tile> scancore = new ArrayList<>();
-    public ArrayList<Tile> nukedata = new ArrayList<>();
-    public ArrayList<Tile> nukeposition = new ArrayList<>();
-    public ArrayList<Process> process = new ArrayList<>();
+    public Array<nukeblock> nukeblock = new Array<>();
+    public Array<eventservers> eventservers = new Array<>();
+    public Array<powerblock> powerblock = new Array<>();
+    public Array<messagemonitor> messagemonitor = new Array<>();
+    public Array<messagejump> messagejump = new Array<>();
+    public Array<Tile> scancore = new Array<>();
+    public Array<Tile> nukedata = new Array<>();
+    public Array<Tile> nukeposition = new Array<>();
+    public Array<Process> process = new Array<>();
 
     // 종료시 저장되는 플러그인 데이터
-    public ArrayList<jumpzone> jumpzone = new ArrayList<>();
-    public ArrayList<jumpcount> jumpcount = new ArrayList<>();
-    public ArrayList<jumptotal> jumptotal = new ArrayList<>();
-    public ArrayList<String> blacklist = new ArrayList<>();
-    public ArrayList<banned> banned = new ArrayList<>();
+    public Array<jumpzone> jumpzone = new Array<>();
+    public Array<jumpcount> jumpcount = new Array<>();
+    public Array<jumptotal> jumptotal = new Array<>();
+    public Array<String> blacklist = new Array<>();
+    public Array<banned> banned = new Array<>();
 
     public void saveAll() throws Exception {
-        Map<String, ArrayList<?>> map = new HashMap<>();
+        ObjectMap<String, Array<?>> map = new ObjectMap<>();
         map.put("jumpzone", jumpzone);
         map.put("jumpcount", jumpcount);
         map.put("jumptotal", jumptotal);
@@ -48,25 +48,25 @@ public class PluginData {
     @SuppressWarnings("unchecked") // 의도적인 작동임
     public void loadall() throws Exception {
         if (!root.child("data/PluginData.object").exists()) {
-            Map<String, ArrayList<Object>> map = new HashMap<>();
+            ObjectMap<String, Array<Object>> map = new ObjectMap<>();
             FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
             ObjectOutputStream oos = new ObjectOutputStream(fos);
-            map.put("jumpzone", new ArrayList<>());
-            map.put("jumpcount", new ArrayList<>());
-            map.put("jumptotal", new ArrayList<>());
-            map.put("blacklist", new ArrayList<>());
-            map.put("banned", new ArrayList<>());
+            map.put("jumpzone", new Array<>());
+            map.put("jumpcount", new Array<>());
+            map.put("jumptotal", new Array<>());
+            map.put("blacklist", new Array<>());
+            map.put("banned", new Array<>());
             oos.writeObject(map);
             oos.close();
         } else {
             FileInputStream fis = new FileInputStream(root.child("data/PluginData.object").file());
             ObjectInputStream ois = new ObjectInputStream(fis);
             Map<String, Object> map = (Map<String, Object>) ois.readObject();
-            jumpzone = (ArrayList<jumpzone>) map.get("jumpzone");
-            jumpcount = (ArrayList<jumpcount>) map.get("jumpcount");
-            jumptotal = (ArrayList<jumptotal>) map.get("jumptotal");
-            blacklist = (ArrayList<String>) map.get("blacklist");
-            banned = (ArrayList<banned>) map.get("banned");
+            jumpzone = (Array<jumpzone>) map.get("jumpzone");
+            jumpcount = (Array<jumpcount>) map.get("jumpcount");
+            jumptotal = (Array<jumptotal>) map.get("jumptotal");
+            blacklist = (Array<String>) map.get("blacklist");
+            banned = (Array<banned>) map.get("banned");
             ois.close();
             fis.close();
             Log.info("plugindata-loaded");

@@ -1,10 +1,10 @@
 package essentials.external;
 
-import java.util.HashMap;
+import arc.struct.ObjectMap;
 
 public class StringUtils {
     // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
-    private static final HashMap<Character, String> htmlEncodeChars = new HashMap<>();
+    private static final ObjectMap<Character, String> htmlEncodeChars = new ObjectMap<>();
 
     static {
         // Special characters for HTML
@@ -274,7 +274,7 @@ public class StringUtils {
         return encode(source, htmlEncodeChars);
     }
 
-    private static String encode(String source, HashMap<Character, String> encodingTable) {
+    private static String encode(String source, ObjectMap<Character, String> encodingTable) {
         if (null == source) return null;
         if (null == encodingTable) return source;
 

@@ -1,6 +1,7 @@
 package essentials.internal.thread;
 
 import arc.graphics.Color;
+import arc.struct.Array;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Log;
@@ -9,7 +10,6 @@ import mindustry.core.GameState;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
 
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.config;
@@ -20,7 +20,7 @@ import static mindustry.Vars.world;
 
 public class JumpBorder implements Runnable {
     public int length = 0;
-    public ArrayList<Thread> thread = new ArrayList<>();
+    public Array<Thread> thread = new Array<>();
 
     @Override
     public void run() {
@@ -28,7 +28,7 @@ public class JumpBorder implements Runnable {
     }
 
     public void main() {
-        this.length = pluginData.jumpzone.size();
+        this.length = pluginData.jumpzone.size;
 
         for (PluginData.jumpzone data : pluginData.jumpzone) {
             Thread t = new Thread(() -> {
