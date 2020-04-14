@@ -29,7 +29,7 @@ public class Vote {
     String reason;
     Object parameters;
     VoteType type;
-    Array voted = new Array();
+    Array<String> voted = new Array<>();
 
     boolean status = false;
     int require;
@@ -213,7 +213,7 @@ public class Vote {
         return status;
     }
 
-    public Array getVoted() {
+    public Array<String> getVoted() {
         return voted;
     }
 

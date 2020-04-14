@@ -11,6 +11,7 @@ import static essentials.Main.tool;
 public class PluginVars {
     public static int db_version = 5;
     public static int build_version = 104;
+    public static int build_revision = 6;
     public static int config_version = 13;
     public static String plugin_version;
 

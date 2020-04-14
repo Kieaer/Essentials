@@ -229,7 +229,7 @@ public class TickTrigger {
                 }
 
                 // 1분마다 실행
-                if ((tick % 3600) != 0) {
+                if ((tick % 3600) == 0) {
                     try {
                         playerDB.saveAll();
                         pluginData.saveAll();
@@ -239,7 +239,7 @@ public class TickTrigger {
                 }
 
                 // 1.5초마다 실행
-                if ((tick % 90) != 0) {
+                if ((tick % 90) == 0) {
                     if (state.is(GameState.State.playing)) {
                         for (Item item : content.items()) {
                             if (item.type == ItemType.material) {

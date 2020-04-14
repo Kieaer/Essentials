@@ -92,11 +92,11 @@ public class Main extends Plugin {
 
     public Main() {
         // 서버 버전 확인
-        if (Version.build != build_version) {
+        if (Version.build != build_version && Version.revision < build_revision) {
             try {
                 InputStream reader = getClass().getResourceAsStream("/plugin.json");
                 BufferedReader br = new BufferedReader(new InputStreamReader(reader));
-                throw new Exception("Essentials " + JsonObject.readJSON(br).asObject().get("version").asString() + " plugin only works with mindustry build 104.");
+                throw new Exception("Essentials " + JsonObject.readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + build_version + "." + build_revision + " or higher.");
             } catch (Exception e) {
                 e.printStackTrace();
                 Core.app.dispose();
@@ -801,7 +801,7 @@ public class Main extends Plugin {
                     break;
             }
         });
-        handler.<Player>register("signup", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : null, "Register account", (arg, player) -> {
+        handler.<Player>register("signup", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
             if (config.loginenable) {
                 switch (config.passwordmethod) {
                     case "discord":
@@ -1269,23 +1269,25 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(target.locale).prefix(target.mute ? "player-unmute" : "player-muted", target.name));
             }
         });
-        handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
-            if (!perm.check(player, "votekick")) return;
-            Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-            PlayerData playerData = playerDB.get(player.uuid);
-            Bundle bundle = new Bundle(playerData.locale);
+        if (config.vote) {
+            handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
+                if (!perm.check(player, "votekick")) return;
+                Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+                PlayerData playerData = playerDB.get(player.uuid);
+                Bundle bundle = new Bundle(playerData.locale);
 
-            if (other == null) other = players.get(Integer.parseInt(arg[1]));
-            if (other == null) {
-                player.sendMessage(bundle.prefix("player-not-found"));
-                return;
-            }
-            if (other.isAdmin) {
-                player.sendMessage(bundle.prefix("vote-target-admin"));
-                return;
-            }
+                if (other == null) other = players.get(Integer.parseInt(arg[1]));
+                if (other == null) {
+                    player.sendMessage(bundle.prefix("player-not-found"));
+                    return;
+                }
+                if (other.isAdmin) {
+                    player.sendMessage(bundle.prefix("vote-target-admin"));
+                    return;
+                }
 
-            vote.start(Vote.VoteType.kick, player, other);
-        });
+                vote.start(Vote.VoteType.kick, player, other);
+            });
+        }
     }
 }

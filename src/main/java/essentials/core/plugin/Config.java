@@ -55,6 +55,7 @@ public class Config {
     public boolean loginenable;
     public String passwordmethod;
     public boolean validconnect;
+    public boolean autologin;
     public String discordtoken;
     public String discordlink;
     public boolean translate;
@@ -178,6 +179,7 @@ public class Config {
         loginenable = auth.getBoolean("loginenable", false);
         passwordmethod = auth.getString("loginmethod", "password");
         validconnect = auth.getBoolean("validconnect", false);
+        autologin = auth.getBoolean("autologin", true);
 
         discord = auth.get("discord").asObject();
         discordtoken = discord.getString("token", "none");
@@ -532,6 +534,7 @@ public class Config {
         auth.add("loginenable", loginenable, bundle.get("config-login-description"));
         auth.add("loginmethod", passwordmethod, bundle.get("config-loginmethod-description"));
         auth.add("validconnect", validconnect, bundle.get("config-validconnect-description"));
+        auth.add("autologin", autologin);
 
         // Discord 설정 (auth 상속)
         //auth.setLineLength(1);

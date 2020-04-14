@@ -183,7 +183,7 @@ public class Event {
 
                 if (config.loginenable) {
                     if (config.passwordmethod.equals("mixed")) {
-                        if (!playerData.error) {
+                        if (!playerData.error && config.autologin) {
                             if (playerData.udid != 0L) {
                                 new Thread(() -> Call.onConnect(e.player.con, serverIP, 7060)).start();
                             } else {
@@ -199,7 +199,7 @@ public class Event {
                             }
                         }
                     } else if (config.passwordmethod.equals("discord")) {
-                        if (!playerData.error) {
+                        if (!playerData.error && config.autologin) {
                             e.player.sendMessage(bundle.get("autologin"));
                             playerCore.load(e.player);
                         } else {
@@ -213,7 +213,7 @@ public class Event {
                             Call.onInfoMessage(e.player.con, message);
                         }
                     } else {
-                        if (!playerData.error) {
+                        if (!playerData.error && config.autologin) {
                             e.player.sendMessage(bundle.get("autologin"));
                             playerCore.load(e.player);
                         } else {
@@ -229,7 +229,7 @@ public class Event {
                     }
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (!playerData.error) {
+                    if (!playerData.error && config.autologin) {
                         e.player.sendMessage(bundle.get("autologin"));
                         playerCore.load(e.player);
                     } else {

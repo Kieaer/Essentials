@@ -28,7 +28,7 @@ public class JumpBorder implements Runnable {
     }
 
     public void main() {
-        this.length = pluginData.jumpzone.size;
+        length = pluginData.jumpzone.size;
 
         for (PluginData.jumpzone data : pluginData.jumpzone) {
             Thread t = new Thread(() -> {
