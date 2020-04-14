@@ -260,7 +260,7 @@ public class Main extends Plugin {
                     "I'm getting a lot of suggestions.<br>\n" +
                     "Please submit your idea to this repository issues or Mindustry official discord!\n\n" +
                     "## Requirements for running this plugin\n" +
-                    "Minimum require java version: __11__\n" +
+                    "Minimum require java version: __Java 11 or higher__<br>\n" +
                     "This plugin does a lot of disk read/write operations depending on the features usage.\n\n" +
                     "### Minimum\n" +
                     "CPU: Athlon 200GE or Intel i5 2300<br>\n" +
