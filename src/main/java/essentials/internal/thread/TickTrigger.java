@@ -116,6 +116,7 @@ public class TickTrigger {
                             for (PluginData.jumpcount value : pluginData.jumpcount) result = result + value.players;
 
                             String str = String.valueOf(result);
+                            // TODO remake
                             int[] digits = new int[str.length()];
                             for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
@@ -129,6 +130,7 @@ public class TickTrigger {
                                     }
                                 }
                             }
+
                             tool.setTileText(tile, Blocks.copperWall, String.valueOf(result));
 
                             pluginData.jumptotal.set(a, new PluginData.jumptotal(tile, result, digits.length));

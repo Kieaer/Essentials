@@ -1,6 +1,5 @@
 package essentials.internal.thread;
 
-import arc.struct.Array;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
@@ -23,8 +22,6 @@ import static essentials.Main.*;
 import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
-    Array<Thread> zone_border = new Array<>();
-
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {

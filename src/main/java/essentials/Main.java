@@ -18,10 +18,7 @@ import essentials.external.DriverLoader;
 import essentials.external.StringUtils;
 import essentials.feature.*;
 import essentials.internal.*;
-import essentials.internal.thread.AutoRollback;
-import essentials.internal.thread.JumpBorder;
-import essentials.internal.thread.Threads;
-import essentials.internal.thread.TickTrigger;
+import essentials.internal.thread.*;
 import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.Vars;
@@ -142,6 +139,7 @@ public class Main extends Plugin {
         mainThread.submit(new Threads());
         mainThread.submit(new ColorNick());
         timer.scheduleAtFixedRate(new AutoRollback(), 600000, 600000);
+        timer.scheduleAtFixedRate(new Login(), 30000, 30000);
         mainThread.submit(colornick);
         mainThread.submit(jumpBorder);
 
@@ -262,12 +260,13 @@ public class Main extends Plugin {
                     "I'm getting a lot of suggestions.<br>\n" +
                     "Please submit your idea to this repository issues or Mindustry official discord!\n\n" +
                     "## Requirements for running this plugin\n" +
+                    "Minimum require java version: __11__\n" +
                     "This plugin does a lot of disk read/write operations depending on the features usage.\n\n" +
                     "### Minimum\n" +
                     "CPU: Athlon 200GE or Intel i5 2300<br>\n" +
                     "RAM: 20MB<br>\n" +
                     "Disk: HDD capable of more than 2MB/s random read/write.\n\n" +
-                    "### Recommand\n" +
+                    "### Recommend\n" +
                     "CPU: Ryzen 3 2200G or Intel i3 8100<br>\n" +
                     "RAM: 50MB<br>\n" +
                     "Disk: HDD capable of more than 5MB/s random read/write.\n\n" +
@@ -1185,51 +1184,58 @@ public class Main extends Plugin {
                     return;
                 }
 
-                if (arg[0].equals("kick")) {
-                    Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-                    if (target == null) target = players.get(Integer.parseInt(arg[1]));
-                    if (target == null) {
-                        player.sendMessage(bundle.prefix("player-not-found"));
-                        return;
-                    }
+                switch (arg[0]) {
+                    case "kick":
+                        Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
+                        if (target == null) target = players.get(Integer.parseInt(arg[1]));
+                        if (target == null) {
+                            player.sendMessage(bundle.prefix("player-not-found"));
+                            return;
+                        }
 
-                    if (target.isAdmin) {
-                        player.sendMessage(bundle.prefix("vote-target-admin"));
-                        return;
-                    }
+                        if (target.isAdmin) {
+                            player.sendMessage(bundle.prefix("vote-target-admin"));
+                            return;
+                        }
 
-                    // 강퇴 투표
-                    vote.start(player, target, arg[1]);
-                } else if (arg[0].equals("map")) {
-                    // 맵 투표
-                    Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
-                    if (world == null) world = Vars.maps.all().get(Integer.parseInt(arg[1]));
-                    if (world == null) {
-                        player.sendMessage(bundle.prefix("vote-map-not-found"));
-                    } else {
-                        vote.start(Vote.VoteType.map, player, world);
-                    }
-                } else if (arg[0].equals("gameover")) {
-                    vote.start(Vote.VoteType.gameover, player);
-                } else if (arg[0].equals("rollback")) {
-                    vote.start(Vote.VoteType.rollback, player);
-                } else if (arg[0].equals("gamemode")) {
-                    vote.start(Vote.VoteType.gamemode, player);
-                } else {
-                    switch (arg[0]) {
-                        case "gamemode":
-                            player.sendMessage(bundle.prefix("vote-list-gamemode"));
-                            break;
-                        case "map":
+                        // 강퇴 투표
+                        vote.start(player, target, arg[1]);
+                        break;
+                    case "map":
+                        // 맵 투표
+                        Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
+                        if (world == null) world = Vars.maps.all().get(Integer.parseInt(arg[1]));
+                        if (world == null) {
                             player.sendMessage(bundle.prefix("vote-map-not-found"));
-                            break;
-                        case "kick":
-                            player.sendMessage(bundle.prefix("vote-kick-parameter"));
-                            break;
-                        default:
-                            player.sendMessage(bundle.prefix("vote-list"));
-                            break;
-                    }
+                        } else {
+                            vote.start(Vote.VoteType.map, player, world);
+                        }
+                        break;
+                    case "gameover":
+                        vote.start(Vote.VoteType.gameover, player);
+                        break;
+                    case "rollback":
+                        vote.start(Vote.VoteType.rollback, player);
+                        break;
+                    case "gamemode":
+                        vote.start(Vote.VoteType.gamemode, player);
+                        break;
+                    default:
+                        switch (arg[0]) {
+                            case "gamemode":
+                                player.sendMessage(bundle.prefix("vote-list-gamemode"));
+                                break;
+                            case "map":
+                                player.sendMessage(bundle.prefix("vote-map-not-found"));
+                                break;
+                            case "kick":
+                                player.sendMessage(bundle.prefix("vote-kick-parameter"));
+                                break;
+                            default:
+                                player.sendMessage(bundle.prefix("vote-list"));
+                                break;
+                        }
+                        break;
                 }
             });
         }

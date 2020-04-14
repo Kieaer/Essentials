@@ -49,13 +49,11 @@ public class Server implements Runnable {
     Base64.Encoder encoder = Base64.getEncoder();
     Base64.Decoder decoder = Base64.getDecoder();
 
-    public boolean stop() {
+    public void stop() {
         try {
             serverSocket.close();
-            return true;
         } catch (IOException e) {
             new CrashReport(e);
-            return false;
         }
     }
 

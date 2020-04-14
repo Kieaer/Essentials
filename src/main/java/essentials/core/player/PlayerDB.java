@@ -135,13 +135,11 @@ public class PlayerDB {
         return true;
     }
 
-    public boolean saveAll() {
+    public void saveAll() {
         try {
             for (PlayerData p : playerData) save(p);
-            return true;
         } catch (Exception e) {
             new CrashReport(e);
-            return false;
         }
     }
 
@@ -152,9 +150,7 @@ public class PlayerDB {
         PlayerData newdata = playerCore.NewData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw);
         ObjectMap<String, Object> js = newdata.toMap();
 
-        js.forEach((s) -> {
-            sql.append("?,");
-        });
+        sql.append("?,".repeat(js.size));
         sql.deleteCharAt(sql.length() - 1);
         sql.append(")");
 

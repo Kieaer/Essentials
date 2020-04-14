@@ -271,12 +271,11 @@ public class StringUtils {
     }
 
     public static String encodeHtml(String source) {
-        return encode(source, htmlEncodeChars);
+        return encode(source);
     }
 
-    private static String encode(String source, ObjectMap<Character, String> encodingTable) {
+    private static String encode(String source) {
         if (null == source) return null;
-        if (null == encodingTable) return source;
 
         StringBuffer encoded_string = null;
         char[] string_to_encode_array = source.toCharArray();
@@ -285,11 +284,11 @@ public class StringUtils {
 
         for (int i = 0; i < string_to_encode_array.length; i++) {
             char char_to_encode = string_to_encode_array[i];
-            if (encodingTable.containsKey(char_to_encode)) {
+            if (StringUtils.htmlEncodeChars.containsKey(char_to_encode)) {
                 if (null == encoded_string) encoded_string = new StringBuffer(source.length());
                 difference = i - (last_match + 1);
                 if (difference > 0) encoded_string.append(string_to_encode_array, last_match + 1, difference);
-                encoded_string.append(encodingTable.get(char_to_encode));
+                encoded_string.append(StringUtils.htmlEncodeChars.get(char_to_encode));
                 last_match = i;
             }
         }

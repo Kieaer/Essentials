@@ -23,7 +23,7 @@ import static essentials.PluginVars.DBURL;
 public class DriverLoader implements Driver {
     public static URLClassLoader H2URL;
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
-    Array urls = new Array();
+    Array<URL> urls = new Array<>();
     private boolean tried = false;
     private Driver driver;
 
@@ -102,17 +102,14 @@ public class DriverLoader implements Driver {
         }
 
         int maxBareSize = 20;
-        int remainProcent = ((20 * remain) / total);
+        int remainPercent = ((20 * remain) / total);
         char defaultChar = '-';
         String icon = "*";
         String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
-        StringBuilder bareDone = new StringBuilder();
-        bareDone.append("[");
-        for (int i = 0; i < remainProcent; i++) {
-            bareDone.append(icon);
-        }
-        String bareRemain = bare.substring(remainProcent);
-        System.out.print("\r" + humanReadableByteCount(remain, true) + "/" + humanReadableByteCount(total, true) + "\t" + bareDone + bareRemain + " " + remainProcent * 5 + "%, ETA: " + etaHms);
+        String bareRemain = bare.substring(remainPercent);
+        String bareDone = "[" +
+                icon.repeat(Math.max(0, remainPercent));
+        System.out.print("\r" + humanReadableByteCount(remain, true) + "/" + humanReadableByteCount(total, true) + "\t" + bareDone + bareRemain + " " + remainPercent * 5 + "%, ETA: " + etaHms);
         if (remain == total) {
             System.out.print("\n");
         }
