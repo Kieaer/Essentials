@@ -128,11 +128,7 @@ public class Main extends Plugin {
         config = new Config();
 
         // 플러그인 데이터 불러오기
-        try {
-            pluginData.loadall();
-        } catch (Exception e) {
-            new CrashReport(e);
-        }
+        pluginData.loadall();
 
         // 스레드 시작
         new TickTrigger();
@@ -238,6 +234,13 @@ public class Main extends Plugin {
 
     @Override
     public void registerServerCommands(CommandHandler handler) {
+        handler.register("saveall", "desc", (arg) -> {
+            try {
+                pluginData.saveAll();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
         handler.register("gendocs", "Generate Essentials README.md", (arg) -> {
             String[] servercommands = new String[]{
                     "help", "version", "exit", "stop", "host", "maps", "reloadmaps", "status",
@@ -276,7 +279,7 @@ public class Main extends Plugin {
             StringBuilder tempbuild = new StringBuilder();
             for (CommandHandler.Command command : netServer.clientCommands.getCommandList()) {
                 for (String com : clientcommands) {
-                    if (com.equals(command.text)) {
+                    if (!com.equals(command.text)) {
                         String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
                         tempbuild.append(temp);
                     }
@@ -288,7 +291,7 @@ public class Main extends Plugin {
 
             for (CommandHandler.Command command : handler.getCommandList()) {
                 for (String com : servercommands) {
-                    if (com.equals(command.text)) {
+                    if (!com.equals(command.text)) {
                         String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
                         tempbuild.append(temp);
                     }

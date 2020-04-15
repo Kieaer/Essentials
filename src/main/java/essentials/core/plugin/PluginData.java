@@ -1,12 +1,13 @@
 package essentials.core.plugin;
 
 import arc.struct.Array;
-import arc.struct.ObjectMap;
+import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.world.Tile;
 
 import java.io.*;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 import static essentials.Main.root;
@@ -32,44 +33,67 @@ public class PluginData {
     public Array<banned> banned = new Array<>();
 
     public void saveAll() throws Exception {
-        ObjectMap<String, Array<?>> map = new ObjectMap<>();
-        map.put("jumpzone", jumpzone);
-        map.put("jumpcount", jumpcount);
-        map.put("jumptotal", jumptotal);
-        map.put("blacklist", blacklist);
-        map.put("banned", banned);
+        Map<String, Object> map = new HashMap<>();
+        map.put("jumpzone", jumpzone.toArray());
+        map.put("jumpcount", jumpcount.toArray());
+        map.put("jumptotal", jumptotal.toArray());
+        map.put("blacklist", blacklist.toArray());
+        map.put("banned", banned.toArray());
 
-        FileOutputStream fos = new FileOutputStream(root.child("data/data.object").file());
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(map);
-        oos.close();
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ObjectOutputStream o = new ObjectOutputStream(b);
+        o.writeObject(map);
+        root.child("data/PluginData.object").writeBytes(b.toByteArray(), false);
+        o.close();
+        b.close();
     }
 
     @SuppressWarnings("unchecked") // 의도적인 작동임
-    public void loadall() throws Exception {
-        if (!root.child("data/PluginData.object").exists()) {
-            ObjectMap<String, Array<Object>> map = new ObjectMap<>();
-            FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            map.put("jumpzone", new Array<>());
-            map.put("jumpcount", new Array<>());
-            map.put("jumptotal", new Array<>());
-            map.put("blacklist", new Array<>());
-            map.put("banned", new Array<>());
-            oos.writeObject(map);
-            oos.close();
-        } else {
-            FileInputStream fis = new FileInputStream(root.child("data/PluginData.object").file());
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, Object> map = (Map<String, Object>) ois.readObject();
-            jumpzone = (Array<jumpzone>) map.get("jumpzone");
-            jumpcount = (Array<jumpcount>) map.get("jumpcount");
-            jumptotal = (Array<jumptotal>) map.get("jumptotal");
-            blacklist = (Array<String>) map.get("blacklist");
-            banned = (Array<banned>) map.get("banned");
-            ois.close();
-            fis.close();
-            Log.info("plugindata-loaded");
+    public void loadall() {
+        ByteArrayOutputStream fos = null;
+        ObjectOutputStream oos = null;
+        ByteArrayInputStream fis = null;
+        ObjectInputStream ois = null;
+        try {
+            if (!root.child("data/PluginData.object").exists()) {
+                Map<String, Array<Object>> map = new HashMap<>();
+                map.put("jumpzone", new Array<>());
+                map.put("jumpcount", new Array<>());
+                map.put("jumptotal", new Array<>());
+                map.put("blacklist", new Array<>());
+                map.put("banned", new Array<>());
+
+                fos = new ByteArrayOutputStream();
+                oos = new ObjectOutputStream(fos);
+                oos.writeObject(map);
+
+                root.child("data/PluginData.object").writeBytes(fos.toByteArray(), false);
+                oos.close();
+                fos.close();
+
+            } else {
+                fis = new ByteArrayInputStream(root.child("data/PluginData.object").readBytes());
+                ois = new ObjectInputStream(fis);
+                Map<String, Object> map = (HashMap<String, Object>) ois.readObject();
+                jumpzone = (Array<jumpzone>) map.get("jumpzone");
+                jumpcount = (Array<jumpcount>) map.get("jumpcount");
+                jumptotal = (Array<jumptotal>) map.get("jumptotal");
+                blacklist = (Array<String>) map.get("blacklist");
+                banned = (Array<banned>) map.get("banned");
+                ois.close();
+                fis.close();
+                Log.info("plugindata-loaded");
+            }
+        } catch (Exception i) {
+            try {
+                if (fos != null) fos.close();
+                if (oos != null) oos.close();
+                if (fis != null) fis.close();
+                if (ois != null) ois.close();
+                root.child("data/PluginData.object").delete();
+            } catch (Exception e) {
+                new CrashReport(e);
+            }
         }
     }
 

@@ -28,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.time.LocalTime;
 import java.util.Base64;
@@ -658,6 +659,8 @@ public class Event {
                     } else if (latest.compareTo(current) < 0) {
                         Log.client("version-devel");
                     }
+                } catch (SocketTimeoutException i) {
+                    i.printStackTrace();
                 } catch (Exception ex) {
                     new CrashReport(ex);
                 }

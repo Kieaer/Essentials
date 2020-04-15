@@ -134,8 +134,8 @@ public class Database {
                     update.execute();
                     update.close();
 
-                    Statement update2 = conn.createStatement();
-                    update2.execute("ALTER TABLE players DROP COLUMN IF EXISTS email");
+                    PreparedStatement update2 = conn.prepareStatement("ALTER TABLE players DROP COLUMN IF EXISTS email");
+                    update2.execute();
                     update2.close();
                 } catch (Exception ignored) {
                     break;
