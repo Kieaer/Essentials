@@ -7,6 +7,8 @@ import mindustry.entities.type.Player;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
+import java.io.IOException;
+
 import static essentials.Main.playerDB;
 import static essentials.Main.root;
 
@@ -21,6 +23,8 @@ public class Permission {
         if (root.child("permission.hjson").exists()) {
             try {
                 permission = JsonValue.readHjson(root.child("permission.hjson").reader()).asObject();
+                if (permission.get("default").asObject() == null)
+                    throw new IOException("Don't delete `default` group in permission.hjson!");
                 for (JsonObject.Member data : permission) {
                     String name = data.getName();
                     if (permission.get(name).asObject().get("inheritance") != null) {
@@ -33,7 +37,8 @@ public class Permission {
                         }
                     }
                 }
-
+            } catch (IOException e) {
+                e.printStackTrace();
             } catch (Exception e) {
                 new CrashReport(e);
             }
@@ -59,6 +64,7 @@ public class Permission {
 
     public boolean isAdmin(Player player) {
         PlayerData p = playerDB.get(player.uuid);
+        if (permission.get(p.permission).asObject() == null) p.permission("default");
         return permission.get(p.permission).asObject().getBoolean("admin", false);
     }
 }

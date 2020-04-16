@@ -24,7 +24,6 @@ import essentials.network.Server;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Mechs;
-import mindustry.content.UnitTypes;
 import mindustry.core.Version;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
@@ -232,23 +231,6 @@ public class Main extends Plugin {
         });
     }
 
-    public Player findPlayer(String name){
-        return playerGroup.find(p->p.name.equals(name));
-    }
-
-    public Team getTeamByName(String name){
-        for(Team t:Team.all()){
-            if(t.name.equals(name)){
-                return t;
-            }
-        }
-        return null;
-    }
-
-    public UnitType getUnitByName(String name){
-        return content.units().find(unitType -> unitType.name.equals(name));
-    }
-
     @Override
     public void registerServerCommands(CommandHandler handler) {
         handler.register("saveall", "desc", (arg) -> {
@@ -411,9 +393,11 @@ public class Main extends Plugin {
                 new CrashReport(e);
             }
         });
-        handler.<Player>register("setperm", "<player_name> <group>", "Set player permission", (arg) -> {
+        // TODO change perm all group
+        handler.<Player>register("setperm", "<player_name/uuid> <group>", "Set player permission", (arg) -> {
             Player target = playerGroup.find(p -> p.name.equals(arg[0]));
             Bundle bundle = new Bundle();
+            PlayerData playerData;
             if (target == null) {
                 Log.warn(bundle.get("player-not-found"));
                 return;
@@ -421,7 +405,7 @@ public class Main extends Plugin {
 
             for (JsonObject.Member p : perm.permission) {
                 if (p.getName().equals(arg[1])) {
-                    PlayerData playerData = playerDB.get(target.uuid);
+                    playerData = playerDB.get(target.uuid);
                     playerData.permission(arg[1]);
 
                     target.isAdmin = perm.isAdmin(target);
@@ -848,7 +832,7 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale);
 
-            UnitType targetUnit=getUnitByName(arg[0]);
+            UnitType targetUnit = tool.getUnitByName(arg[0]);
             if(targetUnit==null){
                 player.sendMessage(bundle.prefix("mob-not-found"));
                 return;
@@ -864,12 +848,12 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.prefix("spawn-limit"));
                 return;
             }
-            Player targetPlayer = arg.length > 3 ? findPlayer(arg[3]) : player;
+            Player targetPlayer = arg.length > 3 ? tool.findPlayer(arg[3]) : player;
             if (targetPlayer == null){
                 player.sendMessage(bundle.prefix("player-not-found"));
                 targetPlayer=player;
             }
-            Team targetTeam = arg.length > 2 ? getTeamByName(arg[2]) : targetPlayer.getTeam();
+            Team targetTeam = arg.length > 2 ? tool.getTeamByName(arg[2]) : targetPlayer.getTeam();
             if (targetTeam == null){
                 player.sendMessage(bundle.prefix("team-not-found"));
                 targetTeam=targetPlayer.getTeam();
@@ -1106,6 +1090,7 @@ public class Main extends Plugin {
             player.sendMessage(new Bundle(playerData.locale).prefix(playerData.translate ? "translate" : "translate-disable", player.name));
 
         });
+        // TODO finish remake vote
         if (config.vote) {
             handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
                 if (!perm.check(player, "vote")) return;

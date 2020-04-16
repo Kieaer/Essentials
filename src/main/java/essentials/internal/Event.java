@@ -266,7 +266,7 @@ public class Event {
                 if (config.antirush && state.rules.pvp && playtime.isBefore(config.antirushtime)) {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
-                    onSetRules(state.rules);
+                    Call.onSetRules(state.rules);
                     PluginVars.PvPPeace = true;
                 }
 

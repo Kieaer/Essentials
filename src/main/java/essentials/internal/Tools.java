@@ -7,6 +7,7 @@ import essentials.external.UTF8Control;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
+import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
@@ -26,8 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Main.*;
-import static mindustry.Vars.playerGroup;
-import static mindustry.Vars.world;
+import static mindustry.Vars.*;
 
 public class Tools {
     public Locale TextToLocale(String data) {
@@ -264,5 +264,22 @@ public class Tools {
 
             tile = world.tile(tile.x + (xv + 1), tile.y);
         }
+    }
+
+    public Player findPlayer(String name) {
+        return playerGroup.find(p -> p.name.equals(name));
+    }
+
+    public Team getTeamByName(String name) {
+        for (Team t : Team.all()) {
+            if (t.name.equals(name)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    public UnitType getUnitByName(String name) {
+        return content.units().find(unitType -> unitType.name.equals(name));
     }
 }

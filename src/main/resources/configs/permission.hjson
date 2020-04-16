@@ -37,6 +37,7 @@
     ]
   }
   default: {
+    default: true
     permission: [
       alert
       ch
