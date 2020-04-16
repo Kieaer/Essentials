@@ -232,6 +232,23 @@ public class Main extends Plugin {
         });
     }
 
+    public Player findPlayer(String name){
+        return playerGroup.find(p->p.name.equals(name));
+    }
+
+    public Team getTeamByName(String name){
+        for(Team t:Team.all()){
+            if(t.name.equals(name)){
+                return t;
+            }
+        }
+        return null;
+    }
+
+    public UnitType getUnitByName(String name){
+        return content.units().find(unitType -> unitType.name.equals(name));
+    }
+
     @Override
     public void registerServerCommands(CommandHandler handler) {
         handler.register("saveall", "desc", (arg) -> {
@@ -826,61 +843,15 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerDB.get(player.uuid) == null ? playerDB.get(player.uuid).locale : locale).prefix("login-not-use"));
             }
         });
-        handler.<Player>register("spawn", "<mob_name> <count> [team] [playername]", "Spawn mob in player position", (arg, player) -> {
+        handler.<Player>register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", (arg, player) -> {
             if (!perm.check(player, "spawn")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale);
 
-            UnitType targetunit;
-            switch (arg[0]) {
-                case "draug":
-                    targetunit = UnitTypes.draug;
-                    break;
-                case "spirit":
-                    targetunit = UnitTypes.spirit;
-                    break;
-                case "phantom":
-                    targetunit = UnitTypes.phantom;
-                    break;
-                case "wraith":
-                    targetunit = UnitTypes.wraith;
-                    break;
-                case "ghoul":
-                    targetunit = UnitTypes.ghoul;
-                    break;
-                case "revenant":
-                    targetunit = UnitTypes.revenant;
-                    break;
-                case "lich":
-                    targetunit = UnitTypes.lich;
-                    break;
-                case "reaper":
-                    targetunit = UnitTypes.reaper;
-                    break;
-                case "dagger":
-                    targetunit = UnitTypes.dagger;
-                    break;
-                case "crawler":
-                    targetunit = UnitTypes.crawler;
-                    break;
-                case "titan":
-                    targetunit = UnitTypes.titan;
-                    break;
-                case "fortress":
-                    targetunit = UnitTypes.fortress;
-                    break;
-                case "eruptor":
-                    targetunit = UnitTypes.eruptor;
-                    break;
-                case "chaosArray":
-                    targetunit = UnitTypes.chaosArray;
-                    break;
-                case "eradicator":
-                    targetunit = UnitTypes.eradicator;
-                    break;
-                default:
-                    player.sendMessage(bundle.prefix("mob-not-found"));
-                    return;
+            UnitType targetUnit=getUnitByName(arg[0]);
+            if(targetUnit==null){
+                player.sendMessage(bundle.prefix("mob-not-found"));
+                return;
             }
             int count;
             try {
@@ -893,64 +864,23 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.prefix("spawn-limit"));
                 return;
             }
-            Team targetteam = null;
-            if (arg.length >= 3) {
-                switch (arg[2]) {
-                    case "sharded":
-                        targetteam = Team.sharded;
-                        break;
-                    case "blue":
-                        targetteam = Team.blue;
-                        break;
-                    case "crux":
-                        targetteam = Team.crux;
-                        break;
-                    case "derelict":
-                        targetteam = Team.derelict;
-                        break;
-                    case "green":
-                        targetteam = Team.green;
-                        break;
-                    case "purple":
-                        targetteam = Team.purple;
-                        break;
-                    default:
-                        player.sendMessage(bundle.prefix("team-not-found"));
-                        return;
-                }
+            Player targetPlayer = arg.length > 3 ? findPlayer(arg[3]) : player;
+            if (targetPlayer == null){
+                player.sendMessage(bundle.prefix("player-not-found"));
+                targetPlayer=player;
             }
-            Player targetplayer = null;
-            if (arg.length >= 4) {
-                Player target = playerGroup.find(p -> p.name.equals(arg[3]));
-                if (target == null) {
-                    player.sendMessage(bundle.prefix("player-not-found"));
-                    return;
-                } else {
-                    targetplayer = target;
-                }
+            Team targetTeam = arg.length > 2 ? getTeamByName(arg[2]) : targetPlayer.getTeam();
+            if (targetTeam == null){
+                player.sendMessage(bundle.prefix("team-not-found"));
+                targetTeam=targetPlayer.getTeam();
             }
-            if (targetteam != null) {
-                if (targetplayer != null) {
-                    for (int i = 0; count > i; i++) {
-                        BaseUnit baseUnit = targetunit.create(targetplayer.getTeam());
-                        baseUnit.set(targetplayer.getX(), targetplayer.getY());
-                        baseUnit.add();
-                    }
-                } else {
-                    for (int i = 0; count > i; i++) {
-                        BaseUnit baseUnit = targetunit.create(targetteam);
-                        baseUnit.set(player.getX(), player.getY());
-                        baseUnit.add();
-                    }
-                }
-            } else {
-                for (int i = 0; count > i; i++) {
-                    BaseUnit baseUnit = targetunit.create(player.getTeam());
-                    baseUnit.set(player.getX(), player.getY());
-                    baseUnit.add();
-                }
+            for (int i = 0; count > i; i++) {
+                BaseUnit baseUnit = targetUnit.create(targetTeam);
+                baseUnit.set(targetPlayer.getX(), targetPlayer.getY());
+                baseUnit.add();
             }
         });
+
         handler.<Player>register("setperm", "<player_name> <group>", "Set player permission", (arg, player) -> {
             if (!perm.check(player, "setperm")) return;
             PlayerData playerData = playerDB.get(player.uuid);
