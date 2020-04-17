@@ -4,6 +4,7 @@ import essentials.core.player.PlayerData;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.entities.type.Player;
+import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
@@ -14,9 +15,35 @@ import static essentials.Main.root;
 
 public class Permission {
     public JsonObject permission;
+    private JsonObject permission_user;
 
     public Permission() {
         reload();
+    }
+
+    public void create(PlayerData playerData) {
+        JsonArray list = new JsonArray();
+        JsonObject object = new JsonObject();
+
+        int size = permission.get(playerData.permission).asObject().get("permission").asArray().size();
+        for (int a = 0; a < size; a++) {
+            String permlevel = permission.get(playerData.permission).asObject().get("permission").asArray().get(a).asString();
+            list.add(permlevel);
+        }
+
+        object.add("permission", list);
+        object.add("prefix", "");
+        object.add("admin", playerData.isAdmin);
+
+        permission_user.add(playerData.name, object);
+    }
+
+    public void update(PlayerData playerData) {
+        // TODO 권한 수정시 플레이어 업데이트 만들기
+    }
+
+    public void read(PlayerData playerData) {
+        // TODO 플레이어별 권한 읽기
     }
 
     public void reload() {
@@ -43,7 +70,17 @@ public class Permission {
                 new CrashReport(e);
             }
         } else {
-            Log.warn("file-not-found");
+            Log.warn("file-not-found", "permission.hjson");
+        }
+
+        if (root.child("permission_user.hjson").exists()) {
+            try {
+                permission_user = JsonValue.readHjson(root.child("permission_user.hjson").reader()).asObject();
+            } catch (IOException e) {
+                new CrashReport(e);
+            }
+        } else {
+            root.child("permission_user.hjson").writeString("{}");
         }
     }
 
