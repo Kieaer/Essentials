@@ -87,7 +87,7 @@ public class DataMigration {
 
             System.out.print("\r" + stringbuf + current + "/" + total + " " + new Bundle(locale).get("success") + "\n");
 
-            // TODO config update
+            // TODO 설정 업데이트 기능 만들기
             /*config.OldDBMigration(false);
             config.update();*/
         } catch (Exception e) {

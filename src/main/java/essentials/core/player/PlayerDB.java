@@ -29,7 +29,7 @@ public class PlayerDB {
         }
     }
 
-    // TODO more simple source
+    // TODO 소스를 더 간단하게 만들기
     public PlayerData load(String uuid, String... AccountID) {
         try {
             StringBuilder sql = new StringBuilder();
@@ -96,7 +96,7 @@ public class PlayerDB {
     public boolean save(PlayerData playerData) throws Exception {
         StringBuilder sql = new StringBuilder();
         ObjectMap<String, Object> js = playerData.toMap();
-        if (js.get("name") == null) return false; // TODO Find null reason
+        if (js.get("name") == null) return false; // TODO 왜 NULL 가 일어나는지 알아보기
         sql.append("UPDATE players SET ");
 
         int size = js.size + 1;

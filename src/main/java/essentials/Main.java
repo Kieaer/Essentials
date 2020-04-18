@@ -393,7 +393,7 @@ public class Main extends Plugin {
                 new CrashReport(e);
             }
         });
-        // TODO change perm all group
+        // TODO 모든 권한 그룹 변경 만들기
         handler.<Player>register("setperm", "<player_name/uuid> <group>", "Set player permission", (arg) -> {
             Player target = playerGroup.find(p -> p.name.equals(arg[0]));
             Bundle bundle = new Bundle();
@@ -642,7 +642,7 @@ public class Main extends Plugin {
                         ip = arg[1];
                         port = Integer.parseInt(arg[2]);
                     } catch (NumberFormatException ignored) {
-                        // TODO add message
+                        // TODO 메세지 추가
                         return;
                     }
 
@@ -1090,7 +1090,7 @@ public class Main extends Plugin {
             player.sendMessage(new Bundle(playerData.locale).prefix(playerData.translate ? "translate" : "translate-disable", player.name));
 
         });
-        // TODO finish remake vote
+        // TODO 투표기능 다시 만들기
         if (config.vote) {
             handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
                 if (!perm.check(player, "vote")) return;

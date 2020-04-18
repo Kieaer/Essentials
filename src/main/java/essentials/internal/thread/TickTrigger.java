@@ -116,7 +116,7 @@ public class TickTrigger {
                             for (PluginData.jumpcount value : pluginData.jumpcount) result = result + value.players;
 
                             String str = String.valueOf(result);
-                            // TODO remake
+                            // TODO 인원 카운트 다시 만들기
                             int[] digits = new int[str.length()];
                             for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 

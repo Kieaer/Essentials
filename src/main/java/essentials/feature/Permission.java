@@ -1,5 +1,6 @@
 package essentials.feature;
 
+import arc.Core;
 import essentials.core.player.PlayerData;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
@@ -7,6 +8,7 @@ import mindustry.entities.type.Player;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import org.hjson.Stringify;
 
 import java.io.IOException;
 
@@ -16,6 +18,7 @@ import static essentials.Main.root;
 public class Permission {
     public JsonObject permission;
     private JsonObject permission_user;
+    private String default_group = null;
 
     public Permission() {
         reload();
@@ -31,6 +34,7 @@ public class Permission {
             list.add(permlevel);
         }
 
+        object.add("group", default_group);
         object.add("permission", list);
         object.add("prefix", "");
         object.add("admin", playerData.isAdmin);
@@ -39,21 +43,60 @@ public class Permission {
     }
 
     public void update(PlayerData playerData) {
-        // TODO 권한 수정시 플레이어 업데이트 만들기
+        for (JsonObject.Member p : permission_user) {
+            boolean isMatch = false;
+            String group = p.getValue().asObject().get("group").asString();
+            for (JsonObject.Member d : permission) {
+                if (d.getValue().asString().equals(group)) {
+                    isMatch = true;
+                    break;
+                }
+            }
+
+            if (!isMatch) {
+                JsonObject o = permission_user.get(p.getName()).asObject();
+                o.remove("permission");
+
+                JsonArray list = new JsonArray();
+                int size = permission.get(playerData.permission).asObject().get("permission").asArray().size();
+                for (int a = 0; a < size; a++) {
+                    String permlevel = permission.get(playerData.permission).asObject().get("permission").asArray().get(a).asString();
+                    list.add(permlevel);
+                }
+                o.add("permission", list);
+                o.set("group", default_group);
+            }
+        }
     }
 
-    public void read(PlayerData playerData) {
-        // TODO 플레이어별 권한 읽기
+    public void read() {
+        try {
+            permission_user = JsonValue.readHjson(root.child("permission_user.hjson").reader()).asObject();
+        } catch (IOException e) {
+            new CrashReport(e);
+        }
+    }
+
+    public void saveAll() {
+        root.child("permission_user.hjson").writeString(permission_user.toString(Stringify.HJSON));
     }
 
     public void reload() {
         if (root.child("permission.hjson").exists()) {
             try {
                 permission = JsonValue.readHjson(root.child("permission.hjson").reader()).asObject();
-                if (permission.get("default").asObject() == null)
-                    throw new IOException("Don't delete `default` group in permission.hjson!");
                 for (JsonObject.Member data : permission) {
                     String name = data.getName();
+                    if (permission.get(name).asObject().get("default") != null) {
+                        if (default_group == null) {
+                            if (permission.get(name).asObject().get("default").asBoolean()) {
+                                default_group = name;
+                            }
+                        } else {
+                            // TODO 언어별 오류 메세지 추가
+                            throw new IOException("Duplicate default group settings. check permission.hjson");
+                        }
+                    }
                     if (permission.get(name).asObject().get("inheritance") != null) {
                         String inheritance = permission.get(name).asObject().getString("inheritance", null);
                         while (inheritance != null) {
@@ -65,7 +108,7 @@ public class Permission {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                Core.app.dispose();
             } catch (Exception e) {
                 new CrashReport(e);
             }

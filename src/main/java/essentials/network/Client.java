@@ -290,14 +290,14 @@ public class Client extends Thread {
                         return;
                     case unbanip:
                         netServer.admins.unbanPlayerIP(data.get("ip").asString());
-                        // TODO make success message
+                        // TODO 성공 메세지 만들기
                         break;
                     case unbanid:
                         netServer.admins.unbanPlayerID(data.get("uuid").asString());
-                        // TODO make success message
+                        // TODO 성공 메세지 만들기
                         break;
                     case datashare:
-                        // TODO make datashare
+                        // TODO 데이터 공유 만들기
                         break;
                 }
             } catch (Exception e) {
