@@ -3,6 +3,7 @@ package essentials.external;
 import arc.Core;
 import arc.files.Fi;
 import essentials.internal.Bundle;
+import essentials.internal.CrashReport;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -87,11 +88,10 @@ public class DataMigration {
 
             System.out.print("\r" + stringbuf + current + "/" + total + " " + new Bundle(locale).get("success") + "\n");
 
-            // TODO 설정 업데이트 기능 만들기
-            /*config.OldDBMigration(false);
-            config.update();*/
+            config.oldDBMigration(false);
+            config.update();
         } catch (Exception e) {
-            e.printStackTrace();
+            new CrashReport(e);
         }
     }
 

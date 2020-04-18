@@ -300,13 +300,9 @@ public class Event {
                 player.connserver("none");
                 if (state.rules.pvp && !state.gameOver) player.pvpbreakout(player.pvpbreakout++);
             }
-            players.remove(e.player);
-            try {
-                playerDB.save(player);
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
+            playerDB.save(player);
             playerData.remove(p -> p.uuid.equals(e.player.uuid));
+            players.remove(e.player);
         });
 
         // 플레이어가 수다떨었을 때

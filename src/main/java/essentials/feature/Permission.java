@@ -34,6 +34,7 @@ public class Permission {
             list.add(permlevel);
         }
 
+        object.add("uuid", playerData.uuid);
         object.add("group", default_group);
         object.add("permission", list);
         object.add("prefix", "");
@@ -131,12 +132,17 @@ public class Permission {
         PlayerData p = playerDB.get(player.uuid);
 
         if (!p.error) {
-            int size = permission.get(p.permission).asObject().get("permission").asArray().size();
-            for (int a = 0; a < size; a++) {
-                String permlevel = permission.get(p.permission).asObject().get("permission").asArray().get(a).asString();
-                if (permlevel.equals(command) || permlevel.equals("ALL")) {
-                    return true;
+            JsonObject object = permission_user.get(player.name).asObject();
+            if (object != null) {
+                int size = object.get("permission").asArray().size();
+                for (int a = 0; a < size; a++) {
+                    String permlevel = object.get("permission").asArray().get(a).asString();
+                    if (permlevel.equals(command) || permlevel.equals("ALL")) {
+                        return true;
+                    }
                 }
+            } else {
+                return false;
             }
         }
         return false;

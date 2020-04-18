@@ -204,6 +204,10 @@ public class Config {
         this.crashreport = crashreport;
     }
 
+    public void oldDBMigration(boolean oldDBMigration) {
+        this.OldDBMigration = oldDBMigration;
+    }
+
     public void update() {
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
         Bundle bundle = new Bundle(locale);

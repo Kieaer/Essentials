@@ -17,7 +17,7 @@ public class PlayerDB {
         for (PlayerData p : playerData) {
             if (p.uuid.equals(uuid)) return p;
         }
-        return new PlayerData(true);
+        return new PlayerData();
     }
 
     public void remove(String uuid) {
@@ -29,7 +29,6 @@ public class PlayerDB {
         }
     }
 
-    // TODO 소스를 더 간단하게 만들기
     public PlayerData load(String uuid, String... AccountID) {
         try {
             StringBuilder sql = new StringBuilder();
@@ -90,13 +89,12 @@ public class PlayerDB {
         } catch (SQLException e) {
             new CrashReport(e);
         }
-        return new PlayerData(true);
+        return new PlayerData();
     }
 
-    public boolean save(PlayerData playerData) throws Exception {
+    public void save(PlayerData playerData) {
         StringBuilder sql = new StringBuilder();
         ObjectMap<String, Object> js = playerData.toMap();
-        if (js.get("name") == null) return false; // TODO 왜 NULL 가 일어나는지 알아보기
         sql.append("UPDATE players SET ");
 
         int size = js.size + 1;
@@ -106,41 +104,40 @@ public class PlayerDB {
         sql.deleteCharAt(sql.length() - 1);
         sql.append(" WHERE uuid=?");
 
-        PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
-        js.forEach(new Consumer<>() {
-            int index = 1;
+        try {
+            PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
+            js.forEach(new Consumer<>() {
+                int index = 1;
 
-            @Override
-            public void accept(ObjectMap.Entry<String, Object> o) {
-                try {
-                    if (o.value instanceof String) {
-                        pstmt.setString(index, (String) o.value);
-                    } else if (o.value instanceof Boolean) {
-                        pstmt.setBoolean(index, (Boolean) o.value);
-                    } else if (o.value instanceof Integer) {
-                        pstmt.setInt(index, (Integer) o.value);
-                    } else if (o.value instanceof Long) {
-                        pstmt.setLong(index, (Long) o.value);
+                @Override
+                public void accept(ObjectMap.Entry<String, Object> o) {
+                    try {
+                        if (o.value instanceof String) {
+                            pstmt.setString(index, (String) o.value);
+                        } else if (o.value instanceof Boolean) {
+                            pstmt.setBoolean(index, (Boolean) o.value);
+                        } else if (o.value instanceof Integer) {
+                            pstmt.setInt(index, (Integer) o.value);
+                        } else if (o.value instanceof Long) {
+                            pstmt.setLong(index, (Long) o.value);
+                        }
+                    } catch (SQLException e) {
+                        new CrashReport(e);
                     }
-                } catch (SQLException e) {
-                    new CrashReport(e);
+                    index++;
                 }
-                index++;
-            }
-        });
+            });
 
-        pstmt.setString(size, playerData.uuid);
-        pstmt.execute();
-        pstmt.close();
-        return true;
+            pstmt.setString(size, playerData.uuid);
+            pstmt.execute();
+            pstmt.close();
+        } catch (SQLException e) {
+            new CrashReport(e);
+        }
     }
 
     public void saveAll() {
-        try {
-            for (PlayerData p : playerData) save(p);
-        } catch (Exception e) {
-            new CrashReport(e);
-        }
+        for (PlayerData p : playerData) save(p);
     }
 
     public boolean register(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {
