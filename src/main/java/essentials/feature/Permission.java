@@ -173,9 +173,16 @@ public class Permission {
         if (!p.error) {
             JsonObject object = permission_user.get(player.name).asObject();
             if (object != null) {
-                int size = object.get("permission").asArray().size();
+                /*int size = object.get("permission").asArray().size();
                 for (int a = 0; a < size; a++) {
                     String permlevel = object.get("permission").asArray().get(a).asString();
+                    if (permlevel.equals(command) || permlevel.equals("ALL")) {
+                        return true;
+                    }
+                }*/
+                int size = permission.get(object.get("group").asString()).asObject().get("permission").asArray().size();
+                for (int a = 0; a < size; a++) {
+                    String permlevel = permission.get(object.get("group").asString()).asObject().get("permission").asArray().get(a).asString();
                     if (permlevel.equals(command) || permlevel.equals("ALL")) {
                         return true;
                     }
