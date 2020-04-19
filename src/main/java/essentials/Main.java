@@ -805,6 +805,18 @@ public class Main extends Plugin {
                     break;
             }
         });
+        handler.<Player>register("router", "Router", (arg, player) -> {
+            if (!perm.check(player, "router")) return;
+            Vars.playerGroup.getByID(player.id).name =
+                    "[#6B6B6B][#585858][#6B6B6B]\n" +
+                            "[#6B6B6B][#828282][#6B6B6B]\n" +
+                            "[#585858][#6B6B6B][#828282][#585858]\n" +
+                            "[#585858][#6B6B6B][#828282][#6B6B6B][#828282][#585858]\n" +
+                            "[#585858][#6B6B6B][#828282][#6B6B6B][#828282][#585858]\n" +
+                            "[#585858][#6B6B6B][#828282][#585858]\n" +
+                            "[#6B6B6B][#828282][#6B6B6B]\n" +
+                            "[#6B6B6B][#585858][#6B6B6B]";
+        });
         handler.<Player>register("signup", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
             if (config.loginenable) {
                 switch (config.passwordmethod) {
