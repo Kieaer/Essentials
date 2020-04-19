@@ -26,53 +26,56 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| help | [page] | Lists all commands. |
-| t | &lt;message...&gt; | Send a message only to your teammates. |
-| sync |  | Re-synchronize world state. |
-| help | [page] | Show command lists |
+| votekick | [player...] | Vote to kick a player, with a cooldown. |
+| vote | &lt;y/n&gt; | Vote to kick the current player. |
+| alert |  | Turn on/off alerts |
+| ch |  | Send chat to another server. |
+| changepw | &lt;new_password&gt; &lt;new_password_repeat&gt; | Change account password |
+| chars | &lt;Text...&gt; | Make pixel texts |
+| color |  | Enable color nickname |
+| difficulty | &lt;difficulty&gt; | Set server difficulty |
+| killall |  | Kill all enemy units |
+| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
+| info |  | Show your information |
+| jump | &lt;zone/count/total&gt; [ip] [port] [range] [clickable] | Create a server-to-server jumping zone. |
+| kickall |  | Kick all players |
+| kill | &lt;player&gt; | Kill player. |
+| login | &lt;id&gt; &lt;password&gt; | Access your account |
+| logout |  | Log-out of your account. |
+| maps | [page] | Show server maps |
+| me | &lt;text...&gt; | broadcast * message |
+| motd |  | Show server motd. |
+| save |  | Auto rollback map early save |
+| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
+| router |  | Router |
+| register | &lt;accountid&gt; &lt;password&gt; | Register account |
+| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playerName] | Spawn mob in player position |
+| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
+| spawn-core | &lt;smail/normal/big&gt; | Make new core |
+| setmech | &lt;Mech&gt; [player] | Set player mech |
+| status |  | Show server status |
+| suicide |  | Kill yourself. |
+| team | [Team...] | Change team (PvP only) |
+| tempban | &lt;player&gt; &lt;time&gt; &lt;reason&gt; | Temporarily ban player. time unit: 1 hours |
+| time |  | Show server time |
+| tp | &lt;player&gt; | Teleport to other players |
+| tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
+| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
+| tr |  | Enable/disable Translate all chat |
+| vote | &lt;mode&gt; [parameter...] | Voting system (Use /vote to check detail commands) |
+| weather | &lt;day,eday,night,enight&gt; | Change map light |
+| mute | &lt;Player_name&gt; | Mute/unmute player |
+| votekick | [player_name] | Player kick starts voting. |
 
 ## Server commands
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| help |  | Displays this command list. |
-| version |  | Displays server version info. |
-| exit |  | Exit the server application. |
-| stop |  | Stop hosting the server. |
-| host | [mapname] [mode] | Open the server. Will default to survival and a random map if not specified. |
-| maps |  | Display all available maps. |
-| reloadmaps |  | Reload all maps from disk. |
-| status |  | Display server status. |
-| mods |  | Display all loaded mods. |
-| mod | &lt;name...&gt; | Display information about a loaded plugin. |
-| js | &lt;script...&gt; | Run arbitrary Javascript. |
-| say | &lt;message...&gt; | Send a message to all players. |
-| difficulty | &lt;difficulty&gt; | Set game difficulty. |
-| rules | [remove/add] [name] [value...] | List, remove or add global rules. These will apply regardless of map. |
-| fillitems | [team] | Fill the core with items. |
-| playerlimit | [off/somenumber] | Set the server player limit. |
-| config | [name] [value...] | Configure server settings. |
-| subnet-ban | [add/remove] [address] | Ban a subnet. This simply rejects all connections with IPs starting with some string. |
-| whitelisted |  | List the entire whitelist. |
-| whitelist-add | &lt;ID&gt; | Add a player to the whitelist by ID. |
-| whitelist-remove | &lt;ID&gt; | Remove a player to the whitelist by ID. |
-| shuffle | [none/all/custom/builtin] | Set map shuffling mode. |
-| nextmap | &lt;mapname...&gt; | Set the next map to be played after a game-over. Overrides shuffling. |
-| kick | &lt;username...&gt; | Kick a person by name. |
-| ban | &lt;type-id/name/ip&gt; &lt;username/IP/ID...&gt; | Ban a person. |
-| bans |  | List all banned IPs and IDs. |
-| unban | &lt;ip/ID&gt; | Completely unban a person by IP or ID. |
-| admin | &lt;add/remove&gt; &lt;username/ID...&gt; | Make an online user admin |
-| admins |  | List all admins. |
-| runwave |  | Trigger the next wave. |
-| load | &lt;slot&gt; | Load a save from a slot. |
-| save | &lt;slot&gt; | Save game state to a slot. |
-| saves |  | List all saves in the save directory. |
-| gameover |  | Force a game over. |
-| info | &lt;IP/UUID/name...&gt; | Find player info(s). Can optionally check for all names or IPs a player has had. |
-| search | &lt;name...&gt; | Search players who have used part of a name. |
-| gc |  | Trigger a grabage struct. Testing only. |
-| admin | &lt;name&gt; | Set admin status to player. |
-| info | &lt;player/uuid&gt; | Show player information |
+| pardon | &lt;ID&gt; | Pardons a votekicked player by ID and allows them to join again. |
+| players |  | List all players currently in game. |
+| saveall |  | desc |
+| gendocs |  | Generate Essentials README.md |
+| setperm | &lt;player_name/uuid&gt; &lt;group&gt; | Set player permission |
+| reload |  | Reload Essential plugin data |
 
-README.md Generated time: 2020-04-14 22:49:06
+README.md Generated time: 2020-04-19 23:18:48

@@ -252,7 +252,7 @@ public class Main extends Plugin {
                     "admins", "runwave", "load", "save", "saves", "gameover", "info", "search", "gc"
             };
             String[] clientcommands = new String[]{
-                    "help", "t", "sync"
+                    "help", "t", "sync", "pardon", "players"
             };
             String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
@@ -279,12 +279,18 @@ public class Main extends Plugin {
                     "Put this plugin in the ``<server folder location>/config/mods`` folder.\n\n";
 
             StringBuilder tempbuild = new StringBuilder();
-            for (CommandHandler.Command command : netServer.clientCommands.getCommandList()) {
-                for (String com : clientcommands) {
-                    if (!com.equals(command.text)) {
-                        String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
-                        tempbuild.append(temp);
+            for (int a = 0; a < netServer.clientCommands.getCommandList().size; a++) {
+                CommandHandler.Command command = netServer.clientCommands.getCommandList().get(a);
+                boolean dup = false;
+                for (String as : clientcommands) {
+                    if (command.text.equals(as)) {
+                        dup = true;
+                        break;
                     }
+                }
+                if (!dup) {
+                    String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
+                    tempbuild.append(temp);
                 }
             }
 
@@ -292,11 +298,16 @@ public class Main extends Plugin {
             tempbuild = new StringBuilder();
 
             for (CommandHandler.Command command : handler.getCommandList()) {
-                for (String com : servercommands) {
-                    if (!com.equals(command.text)) {
-                        String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
-                        tempbuild.append(temp);
+                boolean dup = false;
+                for (String as : servercommands) {
+                    if (command.text.equals(as)) {
+                        dup = true;
+                        break;
                     }
+                }
+                if (!dup) {
+                    String temp = "| " + command.text + " | " + StringUtils.encodeHtml(command.paramText) + " | " + command.description + " |\n";
+                    tempbuild.append(temp);
                 }
             }
 
@@ -702,8 +713,8 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerData.locale).prefix("system.login.disabled"));
             }
         });
-        handler.<Player>register("system.logout", "Log-out of your account.", (arg, player) -> {
-            if (!perm.check(player, "system.logout")) return;
+        handler.<Player>register("logout", "Log-out of your account.", (arg, player) -> {
+            if (!perm.check(player, "logout")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale);
