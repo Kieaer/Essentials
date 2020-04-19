@@ -95,7 +95,7 @@ public class Main extends Plugin {
                 throw new Exception("Essentials " + JsonObject.readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + build_version + "." + build_revision + " or higher.");
             } catch (Exception e) {
                 e.printStackTrace();
-                Core.app.dispose();
+                System.exit(0);
             }
         }
 
@@ -125,7 +125,7 @@ public class Main extends Plugin {
 
         // 설정 불러오기
         config = new Config();
-        Log.info("config.language", config.language.getDisplayLanguage());
+        Log.info("config.language", config.language.getDisplayCountry()); // TODO 국가명 안뜨는 이유 찾기
 
         // 플러그인 데이터 불러오기
         pluginData.loadall();
@@ -136,6 +136,7 @@ public class Main extends Plugin {
         mainThread.submit(new ColorNick());
         timer.scheduleAtFixedRate(new AutoRollback(), 600000, 600000);
         timer.scheduleAtFixedRate(new Login(), 30000, 30000);
+        mainThread.submit(new PermissionWatch());
         mainThread.submit(colornick);
         mainThread.submit(jumpBorder);
 
@@ -214,6 +215,7 @@ public class Main extends Plugin {
                     }
                 } catch (Exception e) {
                     new CrashReport(e);
+                    System.exit(1); // 오류로 인한 강제 종료
                 }
             }
         };
@@ -304,7 +306,6 @@ public class Main extends Plugin {
         });
         handler.register("admin", "<name>", "Set admin status to player.", (arg) -> {
             if (arg.length != 0) {
-                Permission perm = new Permission();
                 Player player = playerGroup.find(p -> p.name.equals(arg[0]));
 
                 if (player == null) {
@@ -348,8 +349,8 @@ public class Main extends Plugin {
                             "deathcount: " + rs.getInt("deathcount") + "\n" +
                             "joincount: " + rs.getInt("joincount") + "\n" +
                             "kickcount: " + rs.getInt("kickcount") + "\n" +
-                            "level: " + rs.getInt("system.level") + "\n" +
-                            "exp: " + rs.getInt("system.exp") + "\n" +
+                            "level: " + rs.getInt("level") + "\n" +
+                            "exp: " + rs.getInt("exp") + "\n" +
                             "reqexp: " + rs.getInt("reqexp") + "\n" +
                             "reqtotalexp: " + rs.getString("reqtotalexp") + "\n" +
                             "firstdate: " + rs.getString("firstdate") + "\n" +
@@ -365,15 +366,15 @@ public class Main extends Plugin {
                             "reactorcount: " + rs.getInt("reactorcount") + "\n" +
                             "bantimeset: " + rs.getString("bantimeset") + "\n" +
                             "bantime: " + rs.getString("bantime") + "\n" +
-                            "banned: " + rs.getBoolean("account.banned") + "\n" +
+                            "banned: " + rs.getBoolean("banned") + "\n" +
                             "translate: " + rs.getBoolean("translate") + "\n" +
-                            "crosschat: " + rs.getBoolean("player.crosschat") + "\n" +
-                            "colornick: " + rs.getBoolean("feature.colornick.enable") + "\n" +
+                            "crosschat: " + rs.getBoolean("crosschat") + "\n" +
+                            "colornick: " + rs.getBoolean("colornick") + "\n" +
                             "connected: " + rs.getBoolean("connected") + "\n" +
                             "connserver: " + rs.getString("connserver") + "\n" +
                             "permission: " + rs.getString("permission") + "\n" +
                             "mute: " + rs.getBoolean("mute") + "\n" +
-                            "alert: " + rs.getBoolean("anti-grief.alert.enable") + "\n" +
+                            "alert: " + rs.getBoolean("alert") + "\n" +
                             "udid: " + rs.getLong("udid") + "\n" +
                             "accountid: " + rs.getString("accountid");
                     PlayerData current = playerDB.get(uuid);
@@ -395,7 +396,7 @@ public class Main extends Plugin {
             }
         });
         // TODO 모든 권한 그룹 변경 만들기
-        handler.<Player>register("setperm", "<player_name/uuid> <group>", "Set player permission", (arg) -> {
+        handler.register("setperm", "<player_name/uuid> <group>", "Set player permission", (arg) -> {
             Player target = playerGroup.find(p -> p.name.equals(arg[0]));
             Bundle bundle = new Bundle();
             PlayerData playerData;
@@ -418,12 +419,15 @@ public class Main extends Plugin {
             }
             Log.warn(bundle.get("perm-group-not-found"));
         });
+        handler.register("reload", "Reload Essential plugin data", (arg) -> {
+
+        });
     }
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
-        handler.<Player>register("anti-grief.alert.enable", "Turn on/off alerts", (arg, player) -> {
-            if (!perm.check(player, "anti-grief.alert.enable")) return;
+        handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
+            if (!perm.check(player, "alert")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.alert) {
@@ -643,7 +647,7 @@ public class Main extends Plugin {
                         ip = arg[1];
                         port = Integer.parseInt(arg[2]);
                     } catch (NumberFormatException ignored) {
-                        // TODO 메세지 추가
+                        player.sendMessage(bundle.prefix("system.server-to-server.port-not-int"));
                         return;
                     }
 
@@ -817,11 +821,11 @@ public class Main extends Plugin {
                             "[#6B6B6B][#828282][#6B6B6B]\n" +
                             "[#6B6B6B][#585858][#6B6B6B]";
         });
-        handler.<Player>register("signup", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
+        handler.<Player>register("register", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
             if (config.loginenable) {
                 switch (config.passwordmethod) {
                     case "discord":
-                        player.sendMessage("Join discord and use !signup command!\n" + config.discordlink);
+                        player.sendMessage("Join discord and use !register command!\n" + config.discordlink);
                         discord.queue(player);
                         break;
                     default:

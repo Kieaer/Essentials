@@ -48,8 +48,8 @@ public class DataMigration {
                 pstmt.setInt(10, rs.getInt("deathcount"));
                 pstmt.setInt(11, rs.getInt("joincount"));
                 pstmt.setInt(12, rs.getInt("kickcount"));
-                pstmt.setInt(13, rs.getInt("system.level"));
-                pstmt.setInt(14, rs.getInt("system.exp"));
+                pstmt.setInt(13, rs.getInt("level"));
+                pstmt.setInt(14, rs.getInt("exp"));
                 pstmt.setInt(15, rs.getInt("reqexp"));
                 pstmt.setString(16, rs.getString("reqtotalexp"));
                 pstmt.setString(17, rs.getString("firstdate"));
@@ -65,10 +65,10 @@ public class DataMigration {
                 pstmt.setInt(27, rs.getInt("reactorcount"));
                 pstmt.setInt(28, rs.getInt("bantimeset"));
                 pstmt.setString(29, rs.getString("bantime"));
-                pstmt.setBoolean(30, rs.getBoolean("account.banned"));
+                pstmt.setBoolean(30, rs.getBoolean("banned"));
                 pstmt.setBoolean(31, rs.getBoolean("translate"));
-                pstmt.setBoolean(32, rs.getBoolean("player.crosschat"));
-                pstmt.setBoolean(33, rs.getBoolean("feature.colornick.enable"));
+                pstmt.setBoolean(32, rs.getBoolean("crosschat"));
+                pstmt.setBoolean(33, rs.getBoolean("colornick"));
                 pstmt.setBoolean(34, rs.getBoolean("connected"));
                 pstmt.setString(35, rs.getString("connserver"));
                 pstmt.setString(36, rs.getString("permission"));

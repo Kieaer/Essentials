@@ -17,18 +17,18 @@ import static essentials.PluginVars.serverIP;
 import static mindustry.Vars.netServer;
 
 public class PlayerCore {
-    public boolean load(Player player, String... AccountID) {
+    public void load(Player player, String... AccountID) {
         playerDB.remove(player.uuid);
         PlayerData playerData = playerDB.load(AccountID.length > 0 ? player.uuid : player.uuid, AccountID);
         if (playerData.error) {
             new CrashReport(new Exception("DATA NOT FOUND"));
-            return false;
+            return;
         }
 
         if (playerData.banned) {
             netServer.admins.banPlayerID(player.uuid);
             Call.onKick(player.con, Packets.KickReason.banned);
-            return false;
+            return;
         }
 
         String motd = tool.getMotd(playerData.locale);
@@ -41,6 +41,10 @@ public class PlayerCore {
 
         if (config.realname || config.passwordmethod.equals("discord")) player.name = playerData.name;
         if (playerData.colornick) colornick.targets.add(player);
+        if (perm.permission_user == null || perm.permission_user.get(playerData.name) == null) {
+            perm.create(playerData);
+            perm.saveAll();
+        }
 
         player.isAdmin = perm.isAdmin(player);
 
@@ -51,7 +55,6 @@ public class PlayerCore {
         playerData.exp(playerData.exp + playerData.joincount);
         playerData.joincount(playerData.joincount++);
         playerData.login(true);
-        return true;
     }
 
     public PlayerData NewData(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {
@@ -87,7 +90,7 @@ public class PlayerCore {
                 "none",
                 false,
                 false,
-                true,
+                false,
                 false,
                 connected,
                 connserver,

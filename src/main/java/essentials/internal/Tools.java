@@ -3,6 +3,7 @@ package essentials.internal;
 import arc.files.Fi;
 import arc.struct.Array;
 import arc.struct.ObjectMap;
+import essentials.core.player.PlayerData;
 import essentials.external.UTF8Control;
 import mindustry.Vars;
 import mindustry.entities.type.Player;
@@ -42,7 +43,12 @@ public class Tools {
     }
 
     public void sendMessageAll(String value, Object... parameter) {
-        for (Player p : playerGroup.all()) p.sendMessage(new Bundle(playerDB.get(p.uuid).locale).get(value, parameter));
+        for (Player p : playerGroup.all()) {
+            PlayerData playerData = playerDB.get(p.uuid);
+            if (!playerData.error) {
+                p.sendMessage(new Bundle(playerData.locale).get(value, parameter));
+            }
+        }
     }
 
     public String getTime() {

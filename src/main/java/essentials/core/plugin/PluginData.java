@@ -38,7 +38,7 @@ public class PluginData {
         map.put("jumpcount", jumpcount.toArray());
         map.put("jumptotal", jumptotal.toArray());
         map.put("blacklist", blacklist.toArray());
-        map.put("account.banned", banned.toArray());
+        map.put("banned", banned.toArray());
 
         ByteArrayOutputStream b = new ByteArrayOutputStream();
         ObjectOutputStream o = new ObjectOutputStream(b);
@@ -61,7 +61,7 @@ public class PluginData {
                 map.put("jumpcount", new Array<>());
                 map.put("jumptotal", new Array<>());
                 map.put("blacklist", new Array<>());
-                map.put("account.banned", new Array<>());
+                map.put("banned", new Array<>());
 
                 fos = new ByteArrayOutputStream();
                 oos = new ObjectOutputStream(fos);
@@ -79,7 +79,7 @@ public class PluginData {
                 jumpcount = (Array<jumpcount>) map.get("jumpcount");
                 jumptotal = (Array<jumptotal>) map.get("jumptotal");
                 blacklist = (Array<String>) map.get("blacklist");
-                banned = (Array<banned>) map.get("account.banned");
+                banned = (Array<banned>) map.get("banned");
                 ois.close();
                 fis.close();
                 Log.info("plugindata-loaded");

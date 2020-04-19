@@ -1,5 +1,6 @@
 package essentials.core.player;
 
+import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
 
@@ -53,8 +54,8 @@ public class PlayerDB {
                         rs.getInt("deathcount"),
                         rs.getInt("joincount"),
                         rs.getInt("kickcount"),
-                        rs.getInt("system.level"),
-                        rs.getInt("system.exp"),
+                        rs.getInt("level"),
+                        rs.getInt("exp"),
                         rs.getInt("reqexp"),
                         rs.getString("reqtotalexp"),
                         rs.getString("firstdate"),
@@ -70,15 +71,15 @@ public class PlayerDB {
                         rs.getInt("reactorcount"),
                         rs.getString("bantimeset"),
                         rs.getString("bantime"),
-                        rs.getBoolean("account.banned"),
+                        rs.getBoolean("banned"),
                         rs.getBoolean("translate"),
-                        rs.getBoolean("player.crosschat"),
-                        rs.getBoolean("feature.colornick.enable"),
+                        rs.getBoolean("crosschat"),
+                        rs.getBoolean("colornick"),
                         rs.getBoolean("connected"),
                         rs.getString("connserver"),
                         rs.getString("permission"),
                         rs.getBoolean("mute"),
-                        rs.getBoolean("anti-grief.alert.enable"),
+                        rs.getBoolean("alert"),
                         rs.getLong("udid"),
                         rs.getString("accountid"),
                         rs.getString("accountpw")
@@ -94,14 +95,18 @@ public class PlayerDB {
 
     public void save(PlayerData playerData) {
         StringBuilder sql = new StringBuilder();
-        ObjectMap<String, Object> js = playerData.toMap();
+        ArrayMap<String, Object> js = playerData.toMap();
         sql.append("UPDATE players SET ");
 
         int size = js.size + 1;
 
-        js.forEach((s) -> sql.append(s).append("=?,"));
 
-        sql.deleteCharAt(sql.length() - 1);
+        js.forEach((s) -> {
+            String buf = s.key.toLowerCase() + "=?, ";
+            sql.append(buf);
+        });
+
+        sql.deleteCharAt(sql.length() - 2);
         sql.append(" WHERE uuid=?");
 
         try {
@@ -145,7 +150,7 @@ public class PlayerDB {
         sql.append("INSERT INTO players VALUES(");
 
         PlayerData newdata = playerCore.NewData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw);
-        ObjectMap<String, Object> js = newdata.toMap();
+        ArrayMap<String, Object> js = newdata.toMap();
 
         sql.append("?,".repeat(js.size));
         sql.deleteCharAt(sql.length() - 1);

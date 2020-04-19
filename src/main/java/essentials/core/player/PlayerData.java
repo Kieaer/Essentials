@@ -1,7 +1,7 @@
 package essentials.core.player;
 
 import arc.struct.Array;
-import arc.struct.ObjectMap;
+import arc.struct.ArrayMap;
 
 import java.time.LocalTime;
 import java.util.Locale;
@@ -316,8 +316,8 @@ public class PlayerData {
         this.locale = locale;
     }
 
-    public ObjectMap<String, Object> toMap() {
-        ObjectMap<String, Object> map = new ObjectMap<>();
+    public ArrayMap<String, Object> toMap() {
+        ArrayMap<String, Object> map = new ArrayMap<>();
         map.put("name", name);
         map.put("uuid", uuid);
         map.put("country", country);
@@ -330,8 +330,8 @@ public class PlayerData {
         map.put("deathcount", deathcount);
         map.put("joincount", joincount);
         map.put("kickcount", kickcount);
-        map.put("system.level", level);
-        map.put("system.exp", exp);
+        map.put("level", level);
+        map.put("exp", exp);
         map.put("reqexp", reqexp);
         map.put("reqtotalexp", reqtotalexp);
         map.put("firstdate", firstdate);
@@ -347,15 +347,15 @@ public class PlayerData {
         map.put("reactorcount", reactorcount);
         map.put("bantimeset", bantimeset);
         map.put("bantime", bantime);
-        map.put("account.banned", banned);
+        map.put("banned", banned);
         map.put("translate", translate);
-        map.put("player.crosschat", crosschat);
-        map.put("feature.colornick.enable", colornick);
+        map.put("crosschat", crosschat);
+        map.put("colornick", colornick);
         map.put("connected", connected);
         map.put("connserver", connserver);
         map.put("permission", permission);
         map.put("mute", mute);
-        map.put("anti-grief.alert.enable", alert);
+        map.put("alert", alert);
         map.put("udid", udid);
         map.put("accountid", accountid);
         map.put("accountpw", accountpw);

@@ -305,7 +305,7 @@ public class Server implements Runnable {
             result.add("resource", items);
 
             JsonObject rank = new JsonObject();
-            String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "system.exp", "playtime", "pvpwincount", "reactorcount"};
+            String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
             Statement stmt = database.conn.createStatement();
             for (String s : list) {
                 ResultSet rs = stmt.executeQuery("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
@@ -352,7 +352,7 @@ public class Server implements Runnable {
         }
 
         private String rankingdata() throws Exception {
-            String[] lists = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "system.exp", "playtime", "pvpwincount", "reactorcount", "attackclear"};
+            String[] lists = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount", "attackclear"};
             JsonObject results = new JsonObject();
 
             Locale language = tool.getGeo(ip);

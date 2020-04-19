@@ -22,26 +22,32 @@ import static essentials.Main.*;
 import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
+    int delay = 0;
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 // 로그인 요청 알림
-                for (int a = 0; a < playerGroup.size(); a++) {
-                    Player p = playerGroup.all().get(a);
-                    PlayerData playerData = playerDB.get(p.uuid);
-                    if (playerData.error) {
-                        String message;
-                        String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
-                        JsonObject result = JsonValue.readJSON(json).asObject();
-                        Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
-                        if (config.passwordmethod.equals("discord")) {
-                            message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink;
-                        } else {
-                            message = new Bundle(language).get("system.login.require.password");
+                if (delay == 20) {
+                    for (int a = 0; a < playerGroup.size(); a++) {
+                        Player p = playerGroup.all().get(a);
+                        PlayerData playerData = playerDB.get(p.uuid);
+                        if (playerData.error) {
+                            String message;
+                            String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
+                            JsonObject result = JsonValue.readJSON(json).asObject();
+                            Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
+                            if (config.passwordmethod.equals("discord")) {
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink;
+                            } else {
+                                message = new Bundle(language).get("system.login.require.password");
+                            }
+                            p.sendMessage(message);
                         }
-                        p.sendMessage(message);
                     }
+                    delay = 0;
+                } else {
+                    delay++;
                 }
 
                 // 외부 서버 플레이어 인원 - 메세지 블럭
@@ -91,6 +97,8 @@ public class Threads implements Runnable {
                         }
                     });
                 }
+
+                perm.isUse = false;
 
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException ignored) {
