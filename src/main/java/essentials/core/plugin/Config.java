@@ -179,7 +179,7 @@ public class Config {
         loginenable = auth.getBoolean("loginenable", false);
         passwordmethod = auth.getString("loginmethod", "password");
         validconnect = auth.getBoolean("validconnect", false);
-        autologin = auth.getBoolean("autologin", true);
+        autologin = auth.getBoolean("account.autologin", true);
 
         discord = auth.get("discord").asObject();
         discordtoken = discord.getString("token", "none");
@@ -212,7 +212,7 @@ public class Config {
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
         Bundle bundle = new Bundle(locale);
 
-        if (obj.getInt("version", 0) < config_version) Log.info("config-updated");
+        if (obj.getInt("version", 0) < config_version) Log.info("config.updated");
 
         JsonObject config = new JsonObject();
         JsonObject settings = new JsonObject();
@@ -232,72 +232,72 @@ public class Config {
         config.add("auth", auth);
 
         // 플러그인 설정
-        settings.add("version", version, bundle.get("config-version-description"));
-        settings.add("language", language.toString(), bundle.get("config-language-description"));
-        settings.add("logging", logging, bundle.get("config-logging-description"));
-        settings.add("update", update, bundle.get("config-update-description"));
+        settings.add("version", version, bundle.get("config.version"));
+        settings.add("language", language.toString(), bundle.get("config.language.description"));
+        settings.add("logging", logging, bundle.get("config.feature.logging"));
+        settings.add("update", update, bundle.get("config.update"));
         //settings.add(CommentType.BOL, CommentStyle.BLOCK,"\n\nasdkfjlkfkjdaslkfjdaslkfjdsalkfjdsalkfjadsflkajdsflkasjflkdasjflks");
-        settings.add("debug", debug, bundle.get("config-debug-description"));
+        settings.add("debug", debug, bundle.get("config.debug"));
         settings.add("debugcode", debugcode);
         settings.add("crash-report", crashreport);
         //settings.setLineLength(1);
-        settings.add("prefix", prefix, bundle.get("config-prefix-description"));
+        settings.add("prefix", prefix, bundle.get("config.prefix"));
         //settings.setLineLength(1);
 
         // DB 설정 (settings 상속)
         settings.add("database", db);
-        db.add("internalDB", internalDB, bundle.get("config-database-description"));
+        db.add("internalDB", internalDB, bundle.get("config.database"));
         db.add("DBServer", DBServer);
         db.add("DBurl", DBurl);
         //db.setLineLength(1);
-        db.add("old-db-migration", OldDBMigration, bundle.get("config-old-database-migration-description"));
+        db.add("old-db-migration", OldDBMigration, bundle.get("config.database.old-database-migration"));
         db.add("old-db-url", OldDBurl);
         db.add("old-db-id", OldDBID);
         db.add("old-db-pw", OldDBPW);
         //db.setLineLength(1);
-        db.add("data-server-url", dataserverurl, bundle.get("config-data-share-description"));
+        db.add("data-server-url", dataserverurl, bundle.get("config.client.data-share"));
         db.add("data-server-id", dataserverid);
         db.add("data-server-pw", dataserverpw);
 
         // 네트워크 설정
-        network.add("server-enable", serverenable, bundle.get("config-network-description"));
+        network.add("server-enable", serverenable, bundle.get("config.network"));
         network.add("server-port", serverport);
         network.add("client-enable", clientenable);
         network.add("client-port", clientport);
         network.add("client-host", clienthost);
         //network.setLineLength(1);
-        network.add("banshare", banshare, bundle.get("config-banshare-description"));
-        network.add("bantrust", bantrust, bundle.get("config-bantrust-description"));
+        network.add("banshare", banshare, bundle.get("config.server.banshare"));
+        network.add("bantrust", bantrust, bundle.get("config.server.bantrust"));
         //network.setLineLength(1);
-        network.add("query", query, bundle.get("config-query-description"));
+        network.add("query", query, bundle.get("config.server.query"));
 
         // 테러방지 설정
-        anti.add("antigrief", antigrief, bundle.get("config-antigrief-description"));
-        anti.add("antivpn", antivpn, bundle.get("config-antivpn-description"));
-        anti.add("antirush", antirush, bundle.get("config-antirush-description"));
-        anti.add("antirushtime", antirushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config-antirushtime-description"));
+        anti.add("antigrief", antigrief, bundle.get("config.anti-grief.desc"));
+        anti.add("antivpn", antivpn, bundle.get("config.anti-grief.vpn"));
+        anti.add("antirush", antirush, bundle.get("config.anti-grief.pvprush"));
+        anti.add("antirushtime", antirushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         anti.add("alert-action", alertaction, bundle.get("config-alert-action-description"));
-        anti.add("realname", realname, bundle.get("config-realname-description"));
+        anti.add("realname", realname, bundle.get("config.anti-grief.realname"));
         anti.add("strict-name", strictname, bundle.get("config-strict-name-description"));
-        anti.add("scanresource", scanresource, bundle.get("config-scanresource-description"));
+        anti.add("scanresource", scanresource, bundle.get("config.anti-grief.scan-resource"));
 
         // 특별한 기능 설정
-        features.add("explimit", explimit, bundle.get("config-exp-explimit-description"));
-        features.add("basexp", basexp, bundle.get("config-exp-basexp-description"));
-        features.add("exponent", exponent, bundle.get("config-exp-exponent-description"));
-        features.add("levelupalarm", levelupalarm, bundle.get("config-exp-levelupalarm-description"));
-        features.add("alarm-minimal-level", alarmlevel, bundle.get("config-exp-minimal-level-description"));
-        features.add("vote", vote, bundle.get("config-vote-description"));
-        features.add("savetime", savetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config-savetime-description"));
-        features.add("rollback", rollback, bundle.get("config-slotnumber-description"));
+        features.add("explimit", explimit, bundle.get("config.feature.exp.limit"));
+        features.add("basexp", basexp, bundle.get("config.feature.exp.basexp"));
+        features.add("exponent", exponent, bundle.get("config.feature.exp.exponent"));
+        features.add("levelupalarm", levelupalarm, bundle.get("config.feature.exp.levelup-alarm"));
+        features.add("alarm-minimal-level", alarmlevel, bundle.get("config.feature.exp.minimal-level"));
+        features.add("vote", vote, bundle.get("config.feature.vote"));
+        features.add("savetime", savetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config.feature.save-time"));
+        features.add("rollback", rollback, bundle.get("config.feature.slot-number"));
         features.add("slotnumber", slotnumber);
-        features.add("border", border, bundle.get("config-border-description"));
-        features.add("spawnlimit", spawnlimit, bundle.get("config-spawnlimit-description"));
-        features.add("eventport", eventport, bundle.get("config-event-port-description"));
-        features.add("cupdatei", cupdatei, bundle.get("config-colornick-description"));
+        features.add("border", border, bundle.get("config.feature.border"));
+        features.add("spawnlimit", spawnlimit, bundle.get("config.feature.spawn-limit"));
+        features.add("eventport", eventport, bundle.get("config.feature.event.port"));
+        features.add("cupdatei", cupdatei, bundle.get("config.feature.colornick"));
 
         // 난이도 설정 (features 상속)
-        features.add("difficulty", difficulty, bundle.get("config-auto-difficulty-description"));
+        features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
         difficulty.add("auto-difficulty", autodifficulty);
         difficulty.add("easy", difficultyEasy);
         difficulty.add("normal", difficultyNormal);
@@ -305,20 +305,20 @@ public class Config {
         difficulty.add("insane", difficultyInsane);
 
         // 번역 설정 (features 상속)
-        features.add("translate", tr, bundle.get("config-papago-description"));
+        features.add("translate", tr, bundle.get("config.feature.papago"));
         tr.add("translate", translate);
         tr.add("translateid", translateid);
         tr.add("translatepw", translatepw);
 
         // 로그인 설정
-        auth.add("loginenable", loginenable, bundle.get("config-login-description"));
-        auth.add("loginmethod", passwordmethod, bundle.get("config-loginmethod-description"));
-        auth.add("validconnect", validconnect, bundle.get("config-validconnect-description"));
-        auth.add("autologin", autologin);
+        auth.add("loginenable", loginenable, bundle.get("config.account.login"));
+        auth.add("loginmethod", passwordmethod, bundle.get("config.account.login.method"));
+        auth.add("validconnect", validconnect, bundle.get("config.account.valid-connect"));
+        auth.add("account.autologin", autologin);
 
         // Discord 설정 (auth 상속)
         //auth.setLineLength(1);
-        auth.add("discord", discord, bundle.get("config-discord-description"));
+        auth.add("discord", discord, bundle.get("config.feature.discord.desc"));
         discord.add("token", discordtoken);
         discord.add("link", discordlink);
 
@@ -414,76 +414,76 @@ public class Config {
         config.add("features", features);
         config.add("auth", auth);
 
-        settings.add("version", version, bundle.get("config-version-description"));
-        settings.add("language", language.toString(), bundle.get("config-language-description"));
-        settings.add("logging", logging, bundle.get("config-logging-description"));
-        settings.add("update", update, bundle.get("config-update-description"));
-        settings.add("debug", debug, bundle.get("config-debug-description"));
+        settings.add("version", version, bundle.get("config.version"));
+        settings.add("language", language.toString(), bundle.get("config.language.description"));
+        settings.add("logging", logging, bundle.get("config.feature.logging"));
+        settings.add("update", update, bundle.get("config.update"));
+        settings.add("debug", debug, bundle.get("config.debug"));
         settings.add("debugcode", debugcode);
         settings.add("crash-report", crashreport);
-        settings.add("prefix", prefix, bundle.get("config-prefix-description"));
+        settings.add("prefix", prefix, bundle.get("config.prefix"));
 
         settings.add("database", db);
-        db.add("internalDB", internalDB, bundle.get("config-database-description"));
+        db.add("internalDB", internalDB, bundle.get("config.database"));
         db.add("DBServer", DBServer);
         db.add("DBurl", DBurl);
-        db.add("old-db-migration", OldDBMigration, bundle.get("config-old-database-migration-description"));
+        db.add("old-db-migration", OldDBMigration, bundle.get("config.database.old-database-migration"));
         db.add("old-db-url", OldDBurl);
         db.add("old-db-id", OldDBID);
         db.add("old-db-pw", OldDBPW);
-        db.add("data-server-url", dataserverurl, bundle.get("config-data-share-description"));
+        db.add("data-server-url", dataserverurl, bundle.get("config.client.data-share"));
         db.add("data-server-id", dataserverid);
         db.add("data-server-pw", dataserverpw);
 
-        network.add("server-enable", serverenable, bundle.get("config-network-description"));
+        network.add("server-enable", serverenable, bundle.get("config.network"));
         network.add("server-port", serverport);
         network.add("client-enable", clientenable);
         network.add("client-port", clientport);
         network.add("client-host", clienthost);
-        network.add("banshare", banshare, bundle.get("config-banshare-description"));
-        network.add("bantrust", bantrust, bundle.get("config-bantrust-description"));
-        network.add("query", query, bundle.get("config-query-description"));
+        network.add("banshare", banshare, bundle.get("config.server.banshare"));
+        network.add("bantrust", bantrust, bundle.get("config.server.bantrust"));
+        network.add("query", query, bundle.get("config.server.query"));
 
-        anti.add("antigrief", antigrief, bundle.get("config-antigrief-description"));
-        anti.add("antivpn", antivpn, bundle.get("config-antivpn-description"));
-        anti.add("antirush", antirush, bundle.get("config-antirush-description"));
-        anti.add("antirushtime", antirushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config-antirushtime-description"));
+        anti.add("antigrief", antigrief, bundle.get("config.anti-grief.desc"));
+        anti.add("antivpn", antivpn, bundle.get("config.anti-grief.vpn"));
+        anti.add("antirush", antirush, bundle.get("config.anti-grief.pvprush"));
+        anti.add("antirushtime", antirushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         anti.add("alert-action", alertaction, bundle.get("config-alert-action-description"));
-        anti.add("realname", realname, bundle.get("config-realname-description"));
+        anti.add("realname", realname, bundle.get("config.anti-grief.realname"));
         anti.add("strict-name", strictname, bundle.get("config-strict-name-description"));
-        anti.add("scanresource", scanresource, bundle.get("config-scanresource-description"));
+        anti.add("scanresource", scanresource, bundle.get("config.anti-grief.scan-resource"));
 
-        features.add("explimit", explimit, bundle.get("config-exp-explimit-description"));
-        features.add("basexp", basexp, bundle.get("config-exp-basexp-description"));
-        features.add("exponent", exponent, bundle.get("config-exp-exponent-description"));
-        features.add("levelupalarm", levelupalarm, bundle.get("config-exp-levelupalarm-description"));
-        features.add("alarm-minimal-level", alarmlevel, bundle.get("config-exp-minimal-level-description"));
-        features.add("vote", true, bundle.get("config-vote-description"));
-        features.add("savetime", savetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config-savetime-description"));
-        features.add("rollback", rollback, bundle.get("config-slotnumber-description"));
+        features.add("explimit", explimit, bundle.get("config.feature.exp.limit"));
+        features.add("basexp", basexp, bundle.get("config.feature.exp.basexp"));
+        features.add("exponent", exponent, bundle.get("config.feature.exp.exponent"));
+        features.add("levelupalarm", levelupalarm, bundle.get("config.feature.exp.levelup-alarm"));
+        features.add("alarm-minimal-level", alarmlevel, bundle.get("config.feature.exp.minimal-level"));
+        features.add("vote", true, bundle.get("config.feature.vote"));
+        features.add("savetime", savetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config.feature.save-time"));
+        features.add("rollback", rollback, bundle.get("config.feature.slot-number"));
         features.add("slotnumber", slotnumber);
-        features.add("border", border, bundle.get("config-border-description"));
-        features.add("spawnlimit", spawnlimit, bundle.get("config-spawnlimit-description"));
-        features.add("eventport", eventport, bundle.get("config-event-port-description"));
-        features.add("cupdatei", cupdatei, bundle.get("config-colornick-description"));
+        features.add("border", border, bundle.get("config.feature.border"));
+        features.add("spawnlimit", spawnlimit, bundle.get("config.feature.spawn-limit"));
+        features.add("eventport", eventport, bundle.get("config.feature.event.port"));
+        features.add("cupdatei", cupdatei, bundle.get("config.feature.colornick"));
 
-        features.add("difficulty", difficulty, bundle.get("config-auto-difficulty-description"));
+        features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
         difficulty.add("auto-difficulty", autodifficulty);
         difficulty.add("easy", difficultyEasy);
         difficulty.add("normal", difficultyNormal);
         difficulty.add("hard", difficultyHard);
         difficulty.add("insane", difficultyInsane);
 
-        features.add("translate", tr, bundle.get("config-papago-description"));
+        features.add("translate", tr, bundle.get("config.feature.papago"));
         tr.add("translate", translate);
         tr.add("translateid", translateid);
         tr.add("translatepw", translatepw);
 
-        auth.add("loginenable", loginenable, bundle.get("config-login-description"));
-        auth.add("loginmethod", passwordmethod, bundle.get("config-loginmethod-description"));
-        auth.add("validconnect", validconnect, bundle.get("config-validconnect-description"));
+        auth.add("loginenable", loginenable, bundle.get("config.account.login"));
+        auth.add("loginmethod", passwordmethod, bundle.get("config.account.login.method"));
+        auth.add("validconnect", validconnect, bundle.get("config.account.valid-connect"));
 
-        auth.add("discord", discord, bundle.get("config-discord-description"));
+        auth.add("discord", discord, bundle.get("config.feature.discord.desc"));
         discord.add("token", discordtoken);
         discord.add("link", discordlink);
     }

@@ -39,9 +39,9 @@ public class Discord extends ListenerAdapter {
             jda = new JDABuilder(config.discordtoken).build();
             jda.awaitReady();
             jda.addEventListener(new Discord());
-            Log.info("discord-enabled");
+            Log.info("system.discord.enabled");
         } catch (LoginException e) {
-            Log.err("discord-error");
+            Log.err("system.discord.error");
         } catch (InterruptedException ignored) {
         }
     }
@@ -139,12 +139,12 @@ public class Discord extends ListenerAdapter {
         if (!matcher.matches()) {
             // 정규식에 맞지 않을경우
             send("The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!");
-            Log.player("password-match-regex", username);
+            Log.player("system.password.match.regex", username);
             return false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             send("Passwords should not be similar to nicknames!");
-            Log.player("password-match-name", username);
+            Log.player("system.password.match.name", username);
             return false;
         } else if (pw.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -153,7 +153,7 @@ public class Discord extends ListenerAdapter {
         } else if (pw.contains(" ")) {
             // 비밀번호에 공백이 있을경우
             send("Password must not contain spaces!");
-            Log.player("password-match-blank", username);
+            Log.player("system.password.match.blank", username);
             return false;
         } else if (id.contains(" ")) {
             send("Username must not contain spaces!");
@@ -162,7 +162,7 @@ public class Discord extends ListenerAdapter {
         } else if (pw.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
             send("<password> format isn't allowed! Use /register password");
-            Log.player("password-match-invalid", username);
+            Log.player("system.password.match.invalid", username);
             return false;
         }
         return true;

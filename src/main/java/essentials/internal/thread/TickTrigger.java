@@ -220,7 +220,7 @@ public class TickTrigger {
                                                 resultIP = temp[0];
                                                 port = Integer.parseInt(temp[1]);
                                             }
-                                            Log.info("player-jumped", player.name, resultIP + ":" + port);
+                                            Log.info("player.jumped", player.name, resultIP + ":" + port);
                                             Call.onConnect(player.con, resultIP, port);
                                         }
                                     }

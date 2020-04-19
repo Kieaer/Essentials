@@ -137,13 +137,13 @@ public class Tools {
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
-            Log.player("password-match-regex", player.name);
+            Log.player("system.password.match.regex", player.name);
             return false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
-            Log.player("password-match-name", player.name);
+            Log.player("system.password.match.name", player.name);
             return false;
         } else if (password.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -154,7 +154,7 @@ public class Tools {
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
-            Log.player("password-match-blank", player.name);
+            Log.player("system.password.match.blank", player.name);
             return false;
         } else if (password.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
@@ -162,7 +162,7 @@ public class Tools {
                     "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
-            Log.player("password-match-invalid", player.name);
+            Log.player("system.password.match.invalid", player.name);
             return false;
         }
         return true;

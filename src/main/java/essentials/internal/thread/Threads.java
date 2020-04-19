@@ -36,9 +36,9 @@ public class Threads implements Runnable {
                         JsonObject result = JsonValue.readJSON(json).asObject();
                         Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
                         if (config.passwordmethod.equals("discord")) {
-                            message = new Bundle(language).get("login-require-discord") + "\n" + config.discordlink;
+                            message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink;
                         } else {
-                            message = new Bundle(language).get("login-require-password");
+                            message = new Bundle(language).get("system.login.require.password");
                         }
                         p.sendMessage(message);
                     }

@@ -53,7 +53,7 @@ public class Log {
         Fi logfolder = root.child("log");
 
         if (mainlog != null && mainlog.length() > 1024 * 256) {
-            mainlog.writeString(new Bundle().get("log-file-end", date), true);
+            mainlog.writeString(new Bundle().get("log.file-end", date), true);
             try {
                 Files.move(newlog, oldlog, REPLACE_EXISTING);
             } catch (IOException e) {

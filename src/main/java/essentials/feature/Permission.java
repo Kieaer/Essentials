@@ -114,7 +114,7 @@ public class Permission {
                 new CrashReport(e);
             }
         } else {
-            Log.warn("file-not-found", "permission.hjson");
+            Log.warn("system.file-not-found", "permission.hjson");
         }
 
         if (root.child("permission_user.hjson").exists()) {

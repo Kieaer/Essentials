@@ -47,7 +47,7 @@ public class Event {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.alertaction) {
                 tool.sendMessageAll("tap-config", e.player.name, e.tile.entity.block.name);
                 if (config.debug)
-                    Log.info("antigrief-build-config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                    Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
             }
         });
 
@@ -61,7 +61,7 @@ public class Event {
 
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
-                            Log.info("player-jumped", e.player.name, data.ip + ":" + data.port);
+                            Log.info("player.jumped", e.player.name, data.ip + ":" + data.port);
                             playerData.connected(false);
                             playerData.connserver("none");
                             Call.onConnect(e.player.con, ip, port);
@@ -73,12 +73,12 @@ public class Event {
 
         Events.on(EventType.WithdrawEvent.class, e -> {
             if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.antigrief) {
-                tool.sendMessageAll("log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+                tool.sendMessageAll("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (config.debug)
-                    Log.info("log-withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+                    Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
-                        e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid).locale).get("flammable-disabled"));
+                        e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid).locale).get("system.flammable.disabled"));
                         e.player.clearItem();
                     }
                 }
@@ -132,8 +132,8 @@ public class Event {
                 if (e.player.name.matches(s)) {
                     try {
                         Locale locale = tool.getGeo(e.player);
-                        Call.onKick(e.player.con, new Bundle(locale).get("nickname-blacklisted-kick"));
-                        Log.info("nickname-blacklisted", e.player.name);
+                        Call.onKick(e.player.con, new Bundle(locale).get("system.nickname.blacklisted.kick"));
+                        Log.info("system.nickname.blacklisted", e.player.name);
                     } catch (Exception ex) {
                         new CrashReport(ex);
                     }
@@ -170,7 +170,7 @@ public class Event {
                 return;
             }
             if (config.alertaction)
-                tool.sendMessageAll("depositevent", e.player.name, e.player.item().item.name, e.tile.block().name);
+                tool.sendMessageAll("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name);
         });
 
         // 플레이어가 서버에 들어왔을 때
@@ -188,7 +188,7 @@ public class Event {
                             if (playerData.udid != 0L) {
                                 new Thread(() -> Call.onConnect(e.player.con, serverIP, 7060)).start();
                             } else {
-                                e.player.sendMessage(bundle.get("autologin"));
+                                e.player.sendMessage(bundle.get("account.autologin"));
                                 playerCore.load(e.player);
                             }
                         } else {
@@ -201,29 +201,29 @@ public class Event {
                         }
                     } else if (config.passwordmethod.equals("discord")) {
                         if (!playerData.error && config.autologin) {
-                            e.player.sendMessage(bundle.get("autologin"));
+                            e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
                             Locale language = tool.getGeo(e.player);
                             if (config.passwordmethod.equals("discord")) {
-                                message = new Bundle(language).get("login-require-discord") + "\n" + config.discordlink;
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink;
                             } else {
-                                message = new Bundle(language).get("login-require-password");
+                                message = new Bundle(language).get("system.login.require.password");
                             }
                             Call.onInfoMessage(e.player.con, message);
                         }
                     } else {
                         if (!playerData.error && config.autologin) {
-                            e.player.sendMessage(bundle.get("autologin"));
+                            e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
                             Locale language = tool.getGeo(e.player);
                             if (config.passwordmethod.equals("discord")) {
-                                message = new Bundle(language).get("login-require-discord") + "\n" + config.discordlink;
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink;
                             } else {
-                                message = new Bundle(language).get("login-require-password");
+                                message = new Bundle(language).get("system.login.require.password");
                             }
                             Call.onInfoMessage(e.player.con, message);
                         }
@@ -231,7 +231,7 @@ public class Event {
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
                     if (!playerData.error && config.autologin) {
-                        e.player.sendMessage(bundle.get("autologin"));
+                        e.player.sendMessage(bundle.get("account.autologin"));
                         playerCore.load(e.player);
                     } else {
                         Locale lc = tool.getGeo(e.player);
@@ -254,7 +254,7 @@ public class Event {
                         while ((line = br.readLine()) != null) {
                             IpAddressMatcher match = new IpAddressMatcher(line);
                             if (match.matches(ip)) {
-                                Call.onKick(e.player.con, new Bundle().get("antivpn-kick"));
+                                Call.onKick(e.player.con, new Bundle().get("anti-grief.vpn"));
                             }
                         }
                     } catch (IOException ex) {
@@ -275,16 +275,16 @@ public class Event {
                     int total = playerGroup.size();
                     if (config.difficultyEasy >= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("difficulty-easy");
+                        tool.sendMessageAll("system.difficulty.easy");
                     } else if (config.difficultyNormal == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("difficulty-normal");
+                        tool.sendMessageAll("system.difficulty.normal");
                     } else if (config.difficultyHard == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("difficulty-hard");
+                        tool.sendMessageAll("system.difficulty.hard");
                     } else if (config.difficultyInsane <= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("difficulty-insane");
+                        tool.sendMessageAll("system.difficulty.insane");
                     }
                     onSetRules(state.rules);
                 }
@@ -317,7 +317,7 @@ public class Event {
                     if (e.message.equals("y") && vote.status()) {
                         // 투표가 진행중일때
                         if (vote.getVoted().contains(e.player.uuid)) {
-                            e.player.sendMessage(bundle.get("vote-already"));
+                            e.player.sendMessage(bundle.get("vote.already-voted"));
                         } else {
                             vote.set(e.player.uuid);
                         }
@@ -439,7 +439,7 @@ public class Event {
                 }
 
                 if (config.debug && config.antigrief) {
-                    Log.info("antigrief-build-finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                    Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
 
                 // 필터 아트 감지
@@ -507,10 +507,10 @@ public class Event {
                                 int blockreqlevel = obj.getInt(name, 999);
                                 if (level < blockreqlevel) {
                                     Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
-                                    ((Player) e.builder).sendMessage(new Bundle(playerDB.get(((Player) e.builder).uuid).locale).get("epg-block-require", name, blockreqlevel));
+                                    ((Player) e.builder).sendMessage(new Bundle(playerDB.get(((Player) e.builder).uuid).locale).get("system.epg.block-require", name, blockreqlevel));
                                 }
                             } else {
-                                Log.err("epg-block-not-valid", name);
+                                Log.err("system.epg.block-not-valid", name);
                             }
                         } catch (Exception ex) {
                             new CrashReport(ex);
@@ -531,7 +531,7 @@ public class Event {
                     // if (target.grief_destory_count > 30) nLog.info(target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                 }
                 if (config.debug && config.antigrief) {
-                    Log.info("antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
+                    Log.info("anti-grief.destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
         });
@@ -563,7 +563,7 @@ public class Event {
                 }
 
                 for (Player player : playerGroup.all()) {
-                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("player-banned", e.player.name));
+                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("player.banned", e.player.name));
                     if (netServer.admins.isIDBanned(player.uuid)) {
                         player.con.kick(Packets.KickReason.banned);
                     }
@@ -597,7 +597,7 @@ public class Event {
             if (config.OldDBMigration) new DataMigration().MigrateDB();
             // 업데이트 확인
             if (config.update) {
-                Log.client("client-checking-version");
+                Log.client("client.update-check");
                 try {
                     JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
 

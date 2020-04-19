@@ -46,7 +46,7 @@ public class Vote {
         @Override
         public void run() {
             Thread.currentThread().setName("Vote alert timertask");
-            String[] bundlename = {"vote-50sec", "vote-40sec", "vote-30sec", "vote-20sec", "vote-10sec"};
+            String[] bundlename = {"vote.count.50", "vote.count.40", "vote.count.30", "vote.count.20", "vote.count.10"};
 
             if (message_time <= 4) {
                 if (playerGroup.size() > 0) {
@@ -70,7 +70,7 @@ public class Vote {
         Bundle bundle = new Bundle(playerDB.get(player.uuid).locale);
 
         if (playerGroup.size() == 1) {
-            player.sendMessage(bundle.get("vote-min"));
+            player.sendMessage(bundle.get("vote.mininal"));
             return;
         } else if (playerGroup.size() <= 3) {
             require = 2;
@@ -79,14 +79,14 @@ public class Vote {
         }
 
         if (!status) {
-            tool.sendMessageAll("vote-suggest-name", player.name);
-            tool.sendMessageAll("vote-reason", reason);
-            tool.sendMessageAll("vote-kick", player.name, target.name);
+            tool.sendMessageAll("vote.suggester-name", player.name);
+            tool.sendMessageAll("vote.reason", reason);
+            tool.sendMessageAll("vote.kick", player.name, target.name);
             timer.scheduleAtFixedRate(counting, 0, 1000);
             timer.scheduleAtFixedRate(alert, 10000, 10000);
             status = true;
         } else {
-            player.sendMessage(bundle.get("vote-in-processing"));
+            player.sendMessage(bundle.get("vote.in-processing"));
         }
     }
 
@@ -100,27 +100,27 @@ public class Vote {
         if (!status) {
             switch (type) {
                 case gameover:
-                    tool.sendMessageAll("vote-gameover");
+                    tool.sendMessageAll("vote.gameover");
                     break;
                 case skipwave:
-                    tool.sendMessageAll("vote-skipwave");
+                    tool.sendMessageAll("vote.skipwave");
                     break;
                 case rollback:
-                    tool.sendMessageAll("vote-rollback");
+                    tool.sendMessageAll("vote.rollback");
                     break;
                 case map:
-                    tool.sendMessageAll("vote-map");
+                    tool.sendMessageAll("vote.map");
                     break;
                 case gamemode:
                     tool.sendMessageAll("vote-gamemode");
                     break;
                 default:
-                    player.sendMessage(bundle.get("vote-wrong-mode"));
+                    player.sendMessage(bundle.get("vote.wrong-mode"));
                     return;
             }
             status = true;
         } else {
-            player.sendMessage(bundle.get("vote-in-processing"));
+            player.sendMessage(bundle.get("vote.in-processing"));
         }
     }
 
@@ -134,23 +134,23 @@ public class Vote {
         if (voted.size >= require) {
             switch (type) {
                 case gameover:
-                    tool.sendMessageAll("vote-gameover-done");
+                    tool.sendMessageAll("vote.gameover.done");
                     Events.fire(new EventType.GameOverEvent(Team.crux));
                     break;
                 case skipwave:
-                    tool.sendMessageAll("vote-skipwave-done");
+                    tool.sendMessageAll("vote.skipwave.done");
                     for (int a = 0; a < (Integer) parameters; a++) {
                         logic.runWave();
                     }
                     break;
                 case kick:
-                    tool.sendMessageAll("vote-kick-done");
+                    tool.sendMessageAll("vote.kick.done");
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
                     Call.onKick(target.con, Packets.KickReason.vote);
-                    Log.write(Log.LogType.player, "log-player-kick");
+                    Log.write(Log.LogType.player, "log.player.kick");
                     break;
                 case rollback:
-                    tool.sendMessageAll("vote-rollback-done");
+                    tool.sendMessageAll("vote.rollback.done");
                     rollback.load();
                     break;
                 case gamemode:
@@ -160,7 +160,7 @@ public class Vote {
                     Gamemode.valueOf(parameters[0])*/
                     break;
                 case map:
-                    tool.sendMessageAll("vote-map-done");
+                    tool.sendMessageAll("vote.map.done");
 
                     Gamemode current = Gamemode.survival;
                     if (state.rules.attackMode) {
@@ -180,25 +180,25 @@ public class Vote {
                         if (Vars.state.rules.pvp) p.setTeam(Vars.netServer.assignTeam(p, playerGroup.all()));
                     }
                     Log.info("Map rollbacked.");
-                    tool.sendMessageAll("vote-map-done");
+                    tool.sendMessageAll("vote.map.done");
                     break;
             }
         } else {
             switch (type) {
                 case gameover:
-                    tool.sendMessageAll("vote-gameover-fail");
+                    tool.sendMessageAll("vote.gameover.fail");
                     break;
                 case skipwave:
-                    tool.sendMessageAll("vote-skipwave-fail");
+                    tool.sendMessageAll("vote.skipwave.fail");
                     break;
                 case kick:
-                    tool.sendMessageAll("vote-kick-fail");
+                    tool.sendMessageAll("vote.kick.fail");
                     break;
                 case rollback:
-                    tool.sendMessageAll("vote-rollback-fail");
+                    tool.sendMessageAll("vote.rollback.fail");
                     break;
                 case map:
-                    tool.sendMessageAll("vote-map-fail");
+                    tool.sendMessageAll("vote.map.fail");
                     break;
             }
         }
@@ -222,7 +222,7 @@ public class Vote {
         for (Player others : playerGroup.all()) {
             PlayerData p = playerDB.get(others.uuid);
             if (!p.error)
-                others.sendMessage(new Bundle(p.locale).get("vote-current", voted.size, vote.getRequire() - voted.size));
+                others.sendMessage(new Bundle(p.locale).get("vote.current-voted", voted.size, vote.getRequire() - voted.size));
         }
 
         if (voted.size >= require) {

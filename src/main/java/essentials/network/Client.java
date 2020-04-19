@@ -74,7 +74,7 @@ public class Client extends Thread {
                 activated = true;
                 mainThread.execute(new Thread(this));
                 Log.client(JsonValue.readJSON(receive).asObject().get("result").asString());
-                Log.client(disconnected ? "client-reconnect" : "client-enabled", socket.getInetAddress().toString().replace("/", ""));
+                Log.client(disconnected ? "client.reconnected" : "client.enabled", socket.getInetAddress().toString().replace("/", ""));
                 disconnected = false;
             } else {
                 throw new SocketException("Invalid request!");
@@ -129,7 +129,7 @@ public class Client extends Thread {
                     os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
-                    Log.client("client-banlist-sented");
+                    Log.client("client.banlist.sented");
                 } catch (Exception e) {
                     new CrashReport(e);
                 }
@@ -145,7 +145,7 @@ public class Client extends Thread {
                     os.flush();
 
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
-                    Log.client("client-sent-message", config.clienthost, message);
+                    Log.client("client.message", config.clienthost, message);
                 } catch (Exception e) {
                     new CrashReport(e);
                 }
@@ -233,12 +233,12 @@ public class Client extends Thread {
                     data = JsonValue.readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
-                    Log.client("server-disconnected", config.clienthost);
+                    Log.client("server.disconnected", config.clienthost);
                     if (!Thread.currentThread().isInterrupted()) this.wakeup();
                     return;
                 } catch (Exception e) {
                     if (!e.getMessage().equals("Socket closed")) new CrashReport(e);
-                    Log.client("server-disconnected", config.clienthost);
+                    Log.client("server.disconnected", config.clienthost);
 
                     activated = false;
                     try {
@@ -301,7 +301,7 @@ public class Client extends Thread {
                         break;
                 }
             } catch (Exception e) {
-                Log.client("server-disconnected", config.clienthost);
+                Log.client("server.disconnected", config.clienthost);
 
                 activated = false;
                 try {

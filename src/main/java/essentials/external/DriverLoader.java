@@ -132,7 +132,7 @@ public class DriverLoader implements Driver {
     }
 
     public void download() {
-        Log.info("driver-downloading");
+        Log.info("system.driver-downloading");
 
         for (Object value : urls) {
             String url = value.toString();
