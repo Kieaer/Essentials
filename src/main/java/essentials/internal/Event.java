@@ -328,7 +328,7 @@ public class Event {
                                     Call.sendMessage(perm.permission_user.get(playerData.name).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
                             } else {
                                 if (!playerData.crosschat)
-                                    Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] :[white] " + e.message);
+                                    Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
                             }
 
                             // 서버간 대화기능 작동

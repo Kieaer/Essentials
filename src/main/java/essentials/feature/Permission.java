@@ -40,7 +40,7 @@ public class Permission {
         object.add("uuid", playerData.uuid);
         object.add("group", default_group);
         // object.add("permission", list);
-        object.add("prefix", "");
+        object.add("prefix", permission.get(playerData.permission).asObject().getString("prefix", "[orange]%1[orange] >[white] %2"));
         object.add("admin", playerData.isAdmin);
 
         permission_user.add(playerData.name, object);
