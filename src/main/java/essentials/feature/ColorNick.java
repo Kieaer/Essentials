@@ -13,6 +13,7 @@ public class ColorNick implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Essential color nickname thread");
         while (!Thread.currentThread().isInterrupted()) {
             for (Player player : targets) {
                 PlayerData p = playerDB.get(player.uuid);

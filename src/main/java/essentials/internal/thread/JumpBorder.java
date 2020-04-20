@@ -24,6 +24,7 @@ public class JumpBorder implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Essential server to server work thread");
         main();
     }
 

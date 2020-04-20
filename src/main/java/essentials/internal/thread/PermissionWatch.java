@@ -31,6 +31,7 @@ public class PermissionWatch implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Essential Permission Watch thread");
         while (true) {
             try {
                 watchKey = watchService.take();

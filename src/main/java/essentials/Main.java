@@ -135,7 +135,6 @@ public class Main extends Plugin {
         mainThread.submit(new Threads());
         mainThread.submit(new ColorNick());
         timer.scheduleAtFixedRate(new AutoRollback(), 600000, 600000);
-        timer.scheduleAtFixedRate(new Login(), 30000, 30000);
         mainThread.submit(new PermissionWatch());
         mainThread.submit(colornick);
         mainThread.submit(jumpBorder);
@@ -823,14 +822,14 @@ public class Main extends Plugin {
         handler.<Player>register("router", "Router", (arg, player) -> {
             if (!perm.check(player, "router")) return;
             Vars.playerGroup.getByID(player.id).name =
-                    "[#6B6B6B][#585858][#6B6B6B]\n" +
-                            "[#6B6B6B][#828282][#6B6B6B]\n" +
-                            "[#585858][#6B6B6B][#828282][#585858]\n" +
-                            "[#585858][#6B6B6B][#828282][#6B6B6B][#828282][#585858]\n" +
-                            "[#585858][#6B6B6B][#828282][#6B6B6B][#828282][#585858]\n" +
-                            "[#585858][#6B6B6B][#828282][#585858]\n" +
-                            "[#6B6B6B][#828282][#6B6B6B]\n" +
-                            "[#6B6B6B][#585858][#6B6B6B]";
+                    "[#6B6B6B][#585858][#6B6B6B]\n" +
+                            "[#6B6B6B][#828282][#6B6B6B]\n" +
+                            "[#585858][#6B6B6B][#828282][#585858]\n" +
+                            "[#585858][#6B6B6B][#828282][#6B6B6B][#828282][#585858]\n" +
+                            "[#585858][#6B6B6B][#828282][#6B6B6B][#828282][#585858]\n" +
+                            "[#585858][#6B6B6B][#828282][#585858]\n" +
+                            "[#6B6B6B][#828282][#6B6B6B]\n" +
+                            "[#6B6B6B][#585858][#6B6B6B]";
         });
         handler.<Player>register("register", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
             if (config.loginenable) {

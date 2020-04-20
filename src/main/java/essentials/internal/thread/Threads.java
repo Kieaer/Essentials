@@ -25,6 +25,7 @@ public class Threads implements Runnable {
     int delay = 0;
     @Override
     public void run() {
+        Thread.currentThread().setName("Essential thread");
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 // 로그인 요청 알림
