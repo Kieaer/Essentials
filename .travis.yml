@@ -10,3 +10,5 @@ addons:
 
 script:
   - ./gradlew sonarqube
+git:
+  depth: false
