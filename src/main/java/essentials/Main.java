@@ -64,7 +64,7 @@ import static mindustry.Vars.*;
 public class Main extends Plugin {
     public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
     public static final Timer timer = new Timer(true);
-    public static final ExecutorService mainThread = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(), 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    public static final ExecutorService mainThread = new ThreadPoolExecutor(0, 8, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
 
     public static final Tools tool = new Tools();
     public static final PlayerDB playerDB = new PlayerDB();
@@ -228,6 +228,8 @@ public class Main extends Plugin {
 
         // 비 로그인 유저 통제
         netServer.admins.addActionFilter(action -> {
+            if (action.player == null) return true;
+
             PlayerData playerData = playerDB.get(action.player.uuid);
             return playerData.isLogin;
         });
