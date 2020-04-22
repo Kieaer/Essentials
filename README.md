@@ -1,4 +1,6 @@
 # Essentials
+[![Build Status](https://travis-ci.org/Kieaer/Essentials.svg?branch=master)](https://travis-ci.org/Kieaer/Essentials)
+
 Add more commands to the server.
 
 I'm getting a lot of suggestions.<br>

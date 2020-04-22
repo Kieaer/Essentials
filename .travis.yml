@@ -1,1 +1,12 @@
 language: java
+os: linux
+dist: xenial
+
+addons:
+  sonarcloud:
+    organization: "kieaer"
+    token:
+      secure: "1qgt3EFq/Bdr/q8B9kj5yt15v2oeUFQeazd6dIAGrAetQVQTsbHEAzye8TABWJUk7wGnNviA6lIW/GX4DgwVPLLCvX4gfjtBYOhBVxH0N+6a3hzAXsl1+hZuQQrrRTmHoYY7nTj1wcRA9Av4bVCX0SeE+ltXgyNONggubnfWAwH5nIMoTPkpVsbwO2TRhX/kjHsnD5gGWLotdyG6ZjSj2jecNSN5YWLsnh/3AGH6yBYdLBzdRM42bKac8e+y2p0gVyoIf9q0cS8SoHCaxpqV590La1jmIM2VZkoZ8AnPVZLQ2++ejfw0pf1st9NNig8Zc631YqqeXGTpVKGwKlSSJt+VGDBi0NZkx2+0vuxFPxWu3Go2iEHhx+ZYiByVE2fcJP20OsMsakPFnFfV6kcXMeoWb62d7FAozD3oaEGSR0VLDzOaX+fRl/aEtzzii3ymghbACy3n0hxJ69pNh056ygVTKTlVfjD/UWb5wKaIvMRCNqbtJOo6njUz/0VRw2wkW4A9sMVP+Mqc9gFx86ivHe7py8ZkJetLgBrnAwTuPgNEEhJJuD10ksjdbgZCS7Rnzv5Gr+w8KKp9y3JIao8WwfrgC9I49UrXR25W9sKwc4yUWOBMdiAQR8Ng9TccOlBIi9P6FzDfBkGHLiEovYx6iw7FVhrEaWG3Nd1LB6DDoLo="
+
+script:
+  - ./gradlew sonarqube
