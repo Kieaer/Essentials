@@ -5,7 +5,6 @@ import essentials.core.player.PlayerData;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.entities.type.Player;
-import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.hjson.Stringify;
@@ -24,84 +23,48 @@ public class Permission {
     public boolean isUse = false;
 
     public void create(PlayerData playerData) {
-        // JsonArray list = new JsonArray();
         JsonObject object = new JsonObject();
 
-        /*int size = permission.get(playerData.permission).asObject().get("permission").asArray().size();
-        for (int a = 0; a < size; a++) {
-            String permlevel = permission.get(playerData.permission).asObject().get("permission").asArray().get(a).asString();
-            list.add(permlevel);
-        }*/
-
-        object.add("uuid", playerData.uuid);
+        object.add("name", playerData.name);
         object.add("group", default_group);
-        // object.add("permission", list);
         object.add("prefix", permission.get(playerData.permission).asObject().getString("prefix", "[orange]%1[orange] >[white] %2"));
         object.add("admin", playerData.isAdmin);
 
-        permission_user.add(playerData.name, object);
+        permission_user.add(playerData.uuid, object);
     }
 
     public void update() {
         for (JsonObject.Member p : permission_user) {
+            JsonObject object = p.getValue().asObject();
             boolean isMatch = false;
-            boolean isPerm = false;
 
             String group = p.getValue().asObject().get("group").asString();
             for (JsonObject.Member d : permission) {
                 if (d.getName().equals(group)) {
                     isMatch = true;
-
-                    /*for (JsonValue v : p.getValue().asObject().get("permission").asArray()) {
-                        for (JsonValue o : d.getValue().asObject().get("permission").asArray()){
-                            System.out.println(v.asString()+"/"+o.asString());
-                            if (v.asString().equals(o.asString())) {
-                                break;
-                            }
-                        }
-                    }*/
+                    break;
                 }
             }
 
-            if (!isMatch) {
-                JsonArray list = new JsonArray();
-                int size = permission.get(default_group).asObject().get("permission").asArray().size();
-                for (int a = 0; a < size; a++) {
-                    String permlevel = permission.get(default_group).asObject().get("permission").asArray().get(a).asString();
-                    list.add(permlevel);
-                }
-                // permission_user.get(p.getName()).asObject().set("permission", list);
-                permission_user.get(p.getName()).asObject().set("group", default_group);
-            }
+            if (!isMatch) permission_user.get(p.getName()).asObject().set("group", default_group);
 
-            if (isPerm) {
-                JsonArray buf = new JsonArray();
-
-                for (JsonValue v : p.getValue().asObject().get("permission").asArray()) {
-                    for (JsonObject.Member d : permission) {
-                        for (JsonValue b : d.getValue().asObject().get("permission").asArray()) {
-                            if (!b.asString().equals(v.asString())) {
-                                buf.add(v.asString());
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                int size = permission.get(group).asObject().get("permission").asArray().size();
-                for (int b = 0; b < size; b++) {
-                    for (JsonValue a : buf) {
-                        if (!a.asString().equals(permission.get(group).asObject().get("permission").asArray().get(b).asString())) {
-                            buf.add(permission.get(group).asObject().get("permission").asArray().get(b).asString());
-                        }
-                    }
-                }
-                // permission_user.get(p.getName()).asObject().set("permission", buf);
-                permission_user.get(p.getName()).asObject().set("group", group);
-                break;
+            Player player = playerGroup.find(pl -> pl.uuid.equals(p.getName()));
+            if (player != null && !p.getValue().asObject().get("name").asString().equals(player.name)) {
+                player.name = object.getString("name", player.name);
             }
         }
         saveAll();
+    }
+
+    public void rename(String uuid, String new_name) {
+        for (JsonObject.Member j : permission_user) {
+            if (j.getName().equals(uuid)) {
+                JsonObject o = j.getValue().asObject().set("name", new_name);
+                o.set("name", new_name);
+                permission_user.set(uuid, o);
+                break;
+            }
+        }
     }
 
     public void saveAll() {
@@ -167,15 +130,8 @@ public class Permission {
         PlayerData p = playerDB.get(player.uuid);
 
         if (!p.error) {
-            JsonObject object = permission_user.get(player.name).asObject();
+            JsonObject object = permission_user.get(player.uuid).asObject();
             if (object != null) {
-                /*int size = object.get("permission").asArray().size();
-                for (int a = 0; a < size; a++) {
-                    String permlevel = object.get("permission").asArray().get(a).asString();
-                    if (permlevel.equals(command) || permlevel.equals("ALL")) {
-                        return true;
-                    }
-                }*/
                 int size = permission.get(object.get("group").asString()).asObject().get("permission").asArray().size();
                 for (int a = 0; a < size; a++) {
                     String permlevel = permission.get(object.get("group").asString()).asObject().get("permission").asArray().get(a).asString();
@@ -192,6 +148,6 @@ public class Permission {
 
     public boolean isAdmin(Player player) {
         PlayerData p = playerDB.get(player.uuid);
-        return permission_user.get(p.name).asObject().getBoolean("admin", false);
+        return permission_user.get(p.uuid).asObject().getBoolean("admin", false);
     }
 }
