@@ -12,7 +12,6 @@ import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
-import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
@@ -29,6 +28,7 @@ import java.util.regex.Pattern;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
+import static org.hjson.JsonValue.readJSON;
 
 public class Tools {
     public Locale TextToLocale(String data) {
@@ -69,7 +69,7 @@ public class Tools {
         String ip = data instanceof Player ? Vars.netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
         try {
             String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(3000).execute().body();
-            JsonObject result = JsonValue.readJSON(json).asObject();
+            JsonObject result = readJSON(json).asObject();
 
             if (result.get("reserved") != null) {
                 return locale;

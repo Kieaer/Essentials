@@ -9,7 +9,6 @@ import essentials.internal.Log;
 import mindustry.game.Gamemode;
 import org.codehaus.plexus.util.FileUtils;
 import org.hjson.JsonObject;
-import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
 
 import java.io.File;
@@ -19,13 +18,14 @@ import java.nio.file.Paths;
 import java.util.TimerTask;
 
 import static essentials.Main.*;
+import static org.hjson.JsonValue.readJSON;
 
 public class EventServer {
     public Array<Process> servers = new Array<>();
 
     public boolean create(String roomname, String map, String gamemode, int port) {
         try {
-            JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
+            JsonObject json = readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
             String url = json.get("assets").asObject().get("0").asObject().get("browser_download_url").asString();
             FileUtils.copyURLToFile(new URL(url), new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar"));
             EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
@@ -69,7 +69,7 @@ public class EventServer {
                         new PingHost("localhost", port, result -> {
                             if (disablecount > 300) {
                                 try {
-                                    JsonObject settings = JsonValue.readJSON(root.child("data/data.json").reader()).asObject();
+                                    JsonObject settings = readJSON(root.child("data/data.json").reader()).asObject();
                                     for (int a = 0; a < settings.get("servers").asArray().size(); a++) {
                                         if (settings.get("servers").asArray().get(a).asObject().getInt("port", 0) == port) {
                                             settings.get("servers").asArray().remove(a);

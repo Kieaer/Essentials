@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static mindustry.Vars.netServer;
+import static org.hjson.JsonValue.readJSON;
 
 public class Client extends Thread {
     public Socket socket;
@@ -70,10 +71,10 @@ public class Client extends Thread {
 
             String receive = new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher));
 
-            if (JsonValue.readJSON(receive).asObject().get("result") != null) {
+            if (readJSON(receive).asObject().get("result") != null) {
                 activated = true;
                 mainThread.execute(new Thread(this));
-                Log.client(JsonValue.readJSON(receive).asObject().get("result").asString());
+                Log.client(readJSON(receive).asObject().get("result").asString());
                 Log.client(disconnected ? "client.reconnected" : "client.enabled", socket.getInetAddress().toString().replace("/", ""));
                 disconnected = false;
             } else {
@@ -230,7 +231,7 @@ public class Client extends Thread {
             try {
                 JsonObject data;
                 try {
-                    data = JsonValue.readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
+                    data = readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
                     Log.client("server.disconnected", config.clienthost);

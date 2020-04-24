@@ -18,6 +18,7 @@ import essentials.external.DriverLoader;
 import essentials.external.StringUtils;
 import essentials.feature.*;
 import essentials.internal.*;
+import essentials.internal.exception.PluginException;
 import essentials.internal.thread.*;
 import essentials.network.Client;
 import essentials.network.Server;
@@ -60,6 +61,7 @@ import java.util.jar.JarFile;
 
 import static essentials.PluginVars.*;
 import static mindustry.Vars.*;
+import static org.hjson.JsonValue.readJSON;
 
 public class Main extends Plugin {
     public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -92,8 +94,8 @@ public class Main extends Plugin {
             try {
                 InputStream reader = getClass().getResourceAsStream("/plugin.json");
                 BufferedReader br = new BufferedReader(new InputStreamReader(reader));
-                throw new Exception("Essentials " + JsonObject.readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + build_version + "." + build_revision + " or higher.");
-            } catch (Exception e) {
+                throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + build_version + "." + build_revision + " or higher.");
+            } catch (PluginException | IOException e) {
                 e.printStackTrace();
                 System.exit(0);
             }
@@ -129,6 +131,9 @@ public class Main extends Plugin {
 
         // 플러그인 데이터 불러오기
         pluginData.loadall();
+
+        // 플레이어 권한 목록 불러오기
+        perm.reload(true);
 
         // 스레드 시작
         new TickTrigger();

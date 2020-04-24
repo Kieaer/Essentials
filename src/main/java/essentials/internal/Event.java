@@ -40,6 +40,7 @@ import static essentials.external.DriverLoader.URLDownload;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
 import static mindustry.core.NetClient.onSetRules;
+import static org.hjson.JsonValue.readJSON;
 
 public class Event {
     public Event() {
@@ -389,7 +390,7 @@ public class Event {
                                                 .followRedirects(true)
                                                 .execute()
                                                 .body();
-                                        JsonObject object = JsonValue.readJSON(response).asObject();
+                                        JsonObject object = readJSON(response).asObject();
                                         if (object.get("error") != null) {
                                             String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
                                             if (target.translate) {
@@ -599,7 +600,7 @@ public class Event {
             if (config.update) {
                 Log.client("client.update-check");
                 try {
-                    JsonObject json = JsonValue.readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
+                    JsonObject json = readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
 
                     for (int a = 0; a < mods.list().size; a++) {
                         if (mods.list().get(a).meta.name.equals("Essentials")) {

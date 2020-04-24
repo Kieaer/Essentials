@@ -13,6 +13,7 @@ import java.util.Locale;
 
 import static essentials.Main.*;
 import static essentials.PluginVars.config_version;
+import static org.hjson.JsonValue.readJSON;
 
 public class Config {
     public int version;
@@ -135,7 +136,7 @@ public class Config {
         clientport = network.getInt("clientport", 25000);
         clienthost = network.getString("clienthost", "mindustry.kr");
         banshare = network.getBoolean("banshare", false);
-        bantrust = network.get("bantrust") == null ? JsonArray.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : network.get("bantrust").asArray();
+        bantrust = network.get("bantrust") == null ? readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : network.get("bantrust").asArray();
         query = network.getBoolean("query", false);
 
         anti = obj.get("antigrief").asObject();
@@ -345,7 +346,7 @@ public class Config {
         boolean levelupalarm = obj.getBoolean("levelupalarm", false);
         int alarmlevel = obj.getInt("alarmlevel", 20);
         boolean banshare = obj.getBoolean("banshare", false);
-        JsonArray bantrust = obj.get("bantrust") == null ? JsonArray.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : obj.get("bantrust").asArray();
+        JsonArray bantrust = obj.get("bantrust") == null ? readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : obj.get("bantrust").asArray();
         boolean query = obj.getBoolean("query", false);
         boolean antivpn = obj.getBoolean("antivpn", false);
         boolean antirush = obj.getBoolean("antirush", false);

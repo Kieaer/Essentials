@@ -23,10 +23,6 @@ public class Permission {
     public String default_group = null;
     public boolean isUse = false;
 
-    public Permission() {
-        reload(true);
-    }
-
     public void create(PlayerData playerData) {
         // JsonArray list = new JsonArray();
         JsonObject object = new JsonObject();

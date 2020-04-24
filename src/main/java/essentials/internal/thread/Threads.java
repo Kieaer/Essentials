@@ -12,7 +12,6 @@ import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
-import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
 
 import java.util.Locale;
@@ -20,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
+import static org.hjson.JsonValue.readJSON;
 
 public class Threads implements Runnable {
     int delay = 0;
@@ -36,7 +36,7 @@ public class Threads implements Runnable {
                         if (playerData.error) {
                             String message;
                             String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
-                            JsonObject result = JsonValue.readJSON(json).asObject();
+                            JsonObject result = readJSON(json).asObject();
                             Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
                             if (config.passwordmethod.equals("discord")) {
                                 message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink;

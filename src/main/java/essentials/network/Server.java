@@ -40,6 +40,7 @@ import java.util.Random;
 import static essentials.Main.*;
 import static essentials.PluginVars.*;
 import static mindustry.Vars.*;
+import static org.hjson.JsonValue.readJSON;
 
 public class Server implements Runnable {
     public Array<service> list = new Array<>();
@@ -139,7 +140,7 @@ public class Server implements Runnable {
                     ip = socket.getInetAddress().toString().replace("/", "");
                     String value = new String(tool.decrypt(decoder.decode(in.readLine()), spec, cipher));
                     JsonObject answer = new JsonObject();
-                    JsonObject data = JsonValue.readJSON(value).asObject();
+                    JsonObject data = readJSON(value).asObject();
                     Request type = Request.valueOf(data.get("type").asString());
                     switch (type) {
                         case ping:
