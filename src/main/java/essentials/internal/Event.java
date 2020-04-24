@@ -141,8 +141,8 @@ public class Event {
 
             if (config.strictname) {
                 if (e.player.name.length() > 32) Call.onKick(e.player.con, "Nickname too long!");
-                if (e.player.name.matches(".*\\[.*].*"))
-                    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
+                //if (e.player.name.matches(".*\\[.*].*"))
+                //    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
                 if (e.player.name.contains("　"))
                     Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
                 if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");

@@ -121,20 +121,20 @@ public class Config {
         internalDB = database.getBoolean("internalDB", true);
         DBServer = database.getBoolean("DBServer", false);
         DBurl = database.getString("DBurl", "jdbc:h2:file:./config/mods/Essentials/data/player");
-        OldDBMigration = database.getBoolean("OldDBMigration", false);
-        OldDBurl = database.getString("OldDBurl", "jdbc:sqlite:config/mods/Essentials/data/player.sqlite3");
-        OldDBID = database.getString("OldDBID", "none");
-        OldDBPW = database.getString("OldDBPW", "none");
-        dataserverurl = database.getString("dataserverurl", "none");
-        dataserverid = database.getString("dataserverid", "none");
-        dataserverpw = database.getString("dataserverpw", "none");
+        OldDBMigration = database.getBoolean("old-db-migration", false);
+        OldDBurl = database.getString("old-db-url", "jdbc:sqlite:config/mods/Essentials/data/player.sqlite3");
+        OldDBID = database.getString("old-db-id", "none");
+        OldDBPW = database.getString("old-db-pw", "none");
+        dataserverurl = database.getString("data-server-url", "none");
+        dataserverid = database.getString("data-server-id", "none");
+        dataserverpw = database.getString("data-server-pw", "none");
 
         network = obj.get("network").asObject();
-        serverenable = network.getBoolean("serverenable", false);
-        serverport = network.getInt("serverport", 25000);
-        clientenable = network.getBoolean("clientenable", false);
-        clientport = network.getInt("clientport", 25000);
-        clienthost = network.getString("clienthost", "mindustry.kr");
+        serverenable = network.getBoolean("server-enable", false);
+        serverport = network.getInt("server-port", 25000);
+        clientenable = network.getBoolean("client-enable", false);
+        clientport = network.getInt("client-port", 25000);
+        clienthost = network.getString("client-host", "mindustry.kr");
         banshare = network.getBoolean("banshare", false);
         bantrust = network.get("bantrust") == null ? readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : network.get("bantrust").asArray();
         query = network.getBoolean("query", false);
@@ -144,9 +144,9 @@ public class Config {
         antivpn = anti.getBoolean("antivpn", false);
         antirush = anti.getBoolean("antirush", false);
         antirushtime = LocalTime.parse(anti.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
-        alertaction = anti.getBoolean("alertaction", false);
+        alertaction = anti.getBoolean("alert-action", false);
         realname = anti.getBoolean("realname", false);
-        strictname = anti.getBoolean("strictname", false);
+        strictname = anti.getBoolean("strict-name", false);
         scanresource = anti.getBoolean("scanresource", false);
 
         features = obj.get("features").asObject();
@@ -154,7 +154,7 @@ public class Config {
         basexp = features.getDouble("basexp", 500.0);
         exponent = features.getDouble("exponent", 1.12);
         levelupalarm = features.getBoolean("levelupalarm", false);
-        alarmlevel = features.getInt("alarmlevel", 20);
+        alarmlevel = features.getInt("alarm-minimal-level", 20);
         vote = features.getBoolean("vote", true);
         savetime = LocalTime.parse(features.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
         rollback = features.getBoolean("rollback", false);
@@ -165,11 +165,11 @@ public class Config {
         cupdatei = features.getInt("cupdatei", 1000);
 
         difficulty = features.get("difficulty").asObject();
-        autodifficulty = difficulty.getBoolean("autodifficulty", false);
-        difficultyEasy = difficulty.getInt("difficultyEasy", 2);
-        difficultyNormal = difficulty.getInt("difficultyNormal", 4);
-        difficultyHard = difficulty.getInt("difficultyHard", 6);
-        difficultyInsane = difficulty.getInt("difficultyInsane", 10);
+        autodifficulty = difficulty.getBoolean("auto-difficulty", false);
+        difficultyEasy = difficulty.getInt("easy", 2);
+        difficultyNormal = difficulty.getInt("normal", 4);
+        difficultyHard = difficulty.getInt("hard", 6);
+        difficultyInsane = difficulty.getInt("insane", 10);
 
         tr = features.get("translate").asObject();
         translate = tr.getBoolean("translate", false);
@@ -180,7 +180,7 @@ public class Config {
         loginenable = auth.getBoolean("loginenable", false);
         passwordmethod = auth.getString("loginmethod", "password");
         validconnect = auth.getBoolean("validconnect", false);
-        autologin = auth.getBoolean("account.autologin", true);
+        autologin = auth.getBoolean("autologin", true);
 
         discord = auth.get("discord").asObject();
         discordtoken = discord.getString("token", "none");
@@ -315,7 +315,7 @@ public class Config {
         auth.add("loginenable", loginenable, bundle.get("config.account.login"));
         auth.add("loginmethod", passwordmethod, bundle.get("config.account.login.method"));
         auth.add("validconnect", validconnect, bundle.get("config.account.valid-connect"));
-        auth.add("account.autologin", autologin);
+        auth.add("autologin", autologin);
 
         // Discord 설정 (auth 상속)
         //auth.setLineLength(1);
