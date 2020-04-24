@@ -409,7 +409,7 @@ public class Event {
         // 플레이어가 블럭을 건설했을 때
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             PlayerData target = playerDB.get(e.player.uuid);
-            if (!e.breaking && e.player.buildRequest() != null && !target.error && e.tile != null && e.player.buildRequest() != null) {
+            if (!e.breaking && e.player.buildRequest() != null && !target.error && e.tile.block() != null && e.player.buildRequest() != null) {
                 String name = e.tile.block().name;
                 try {
                     JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
@@ -490,19 +490,6 @@ public class Event {
                             new CrashReport(ex);
                         }
                     }
-
-                    /*if(e.builder.buildRequest().block == Blocks.conveyor || e.builder.buildRequest().block == Blocks.armoredConveyor || e.builder.buildRequest().block == Blocks.titaniumConveyor){
-                        for(int a=0;a<conveyor.size();a++){
-                            if(conveyor.get(a) == e.tile){
-                                conveyor.remove(a);
-                                break;
-                            }
-                        }
-                    }*/
-
-                    //target.grief_destory_count(target.grief_destory_count++);
-                    // Call.sendMessage(String.valueOf(target.grief_destory_count));
-                    // if (target.grief_destory_count > 30) nLog.info(target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                 }
                 if (config.debug && config.antigrief) {
                     Log.info("anti-grief.destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
