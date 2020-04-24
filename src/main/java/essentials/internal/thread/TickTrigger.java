@@ -161,9 +161,6 @@ public class TickTrigger {
                                 if (!state.rules.editor) new Exp(p);
                                 if (kick) Call.onKick(p.con, "AFK");
                             }
-                            if (target.grief_destory_count > 0)
-                                target.grief_destory_count(target.grief_destory_count--);
-                            if (target.grief_build_count > 0) target.grief_build_count(target.grief_build_count--);
                         }
 
                         // 메세지 블럭 감시

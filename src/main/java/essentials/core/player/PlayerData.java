@@ -1,6 +1,5 @@
 package essentials.core.player;
 
-import arc.struct.Array;
 import arc.struct.ArrayMap;
 
 import java.time.LocalTime;
@@ -58,10 +57,6 @@ public class PlayerData {
     public LocalTime afk = LocalTime.of(0, 0, 0);
     public int afk_tilex = 0;
     public int afk_tiley = 0;
-
-    public int grief_build_count = 0;
-    public int grief_destory_count = 0;
-    public Array<short[]> grief_tilelist = new Array<>();
 
     public Locale locale = config.language;
 
@@ -298,18 +293,6 @@ public class PlayerData {
 
     public void afk_tiley(int afk_tiley) {
         this.afk_tiley = afk_tiley;
-    }
-
-    public void grief_build_count(int grief_build_count) {
-        this.grief_build_count = grief_build_count;
-    }
-
-    public void grief_destory_count(int grief_destory_count) {
-        this.grief_destory_count = grief_destory_count;
-    }
-
-    public void grief_tilelist(Array<short[]> grief_tilelist) {
-        this.grief_tilelist = grief_tilelist;
     }
 
     public void locale(Locale locale) {

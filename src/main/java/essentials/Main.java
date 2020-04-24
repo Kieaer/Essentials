@@ -400,8 +400,7 @@ public class Main extends Plugin {
                                 "isLogin: " + current.isLogin + "\n" +
                                 "afk: " + current.afk.format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
                                 "afk_tilex: " + current.afk_tilex + "\n" +
-                                "afk_tiley: " + current.afk_tiley + "\n" +
-                                "grief_tilelist: " + current.grief_tilelist.toString();
+                                "afk_tiley: " + current.afk_tiley;
 
                     }
                     Log.info(datatext);
@@ -1160,7 +1159,7 @@ public class Main extends Plugin {
                         if (world == null) {
                             player.sendMessage(bundle.prefix("vote.map.not-found"));
                         } else {
-                            vote.start(Vote.VoteType.map, player, world);
+                            vote.start(player, world);
                         }
                         break;
                     case "gameover":

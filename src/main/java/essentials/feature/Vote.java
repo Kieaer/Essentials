@@ -108,9 +108,6 @@ public class Vote {
                 case rollback:
                     tool.sendMessageAll("vote.rollback");
                     break;
-                case map:
-                    tool.sendMessageAll("vote.map");
-                    break;
                 case gamemode:
                     tool.sendMessageAll("vote-gamemode");
                     break;
@@ -118,6 +115,20 @@ public class Vote {
                     player.sendMessage(bundle.get("vote.wrong-mode"));
                     return;
             }
+            status = true;
+        } else {
+            player.sendMessage(bundle.get("vote.in-processing"));
+        }
+    }
+
+    public void start(Player player, Map map) {
+        this.player = player;
+        this.type = VoteType.map;
+
+        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale);
+
+        if (!status) {
+            tool.sendMessageAll("vote.map");
             status = true;
         } else {
             player.sendMessage(bundle.get("vote.in-processing"));

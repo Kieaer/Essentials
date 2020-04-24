@@ -2,7 +2,6 @@ package essentials.internal;
 
 import arc.Core;
 import arc.Events;
-import arc.struct.Array;
 import essentials.PluginVars;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
@@ -17,7 +16,6 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.net.Packets;
-import mindustry.world.Tile;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -425,9 +423,6 @@ public class Event {
                     new CrashReport(ex);
                 }
 
-                target.grief_build_count++;
-                target.grief_tilelist.add(new short[]{e.tile.x, e.tile.y});
-
                 // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                 if (e.tile.entity.block == Blocks.message) {
                     pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
@@ -441,28 +436,6 @@ public class Event {
 
                 if (config.debug && config.antigrief) {
                     Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
-                }
-
-                // 필터 아트 감지
-                int sorter_count = 0;
-                //int conveyor_count = 0;
-                for (short[] t : target.grief_tilelist) {
-                    Tile tile = world.tile(t[0], t[1]);
-                    if (tile != null && tile.block() != null) {
-                        if (tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) sorter_count++;
-                    }
-                    //if(tile.entity.block == Blocks.conveyor || tile.entity.block == Blocks.armoredConveyor || tile.entity.block == Blocks.titaniumConveyor) conveyor_count++;
-                }
-                if (sorter_count > 20) {
-                    for (short[] t : target.grief_tilelist) {
-                        Tile tile = world.tile(t[0], t[1]);
-                        if (tile != null && tile.entity != null && tile.entity.block != null) {
-                            if (tile.entity.block == Blocks.sorter || tile.entity.block == Blocks.invertedSorter) {
-                                Call.onDeconstructFinish(tile, Blocks.air, e.player.id);
-                            }
-                        }
-                    }
-                    target.grief_tilelist(new Array<>());
                 }
             }
         });
@@ -527,7 +500,7 @@ public class Event {
                         }
                     }*/
 
-                    target.grief_destory_count(target.grief_destory_count++);
+                    //target.grief_destory_count(target.grief_destory_count++);
                     // Call.sendMessage(String.valueOf(target.grief_destory_count));
                     // if (target.grief_destory_count > 30) nLog.info(target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                 }
