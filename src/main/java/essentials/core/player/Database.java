@@ -192,13 +192,13 @@ public class Database {
 
                 ArrayMap<String, Object> js = p.toMap();
 
-                sql.append("?,".repeat(js.size));
+                js.forEach((s) -> sql.append("?,"));
                 sql.deleteCharAt(sql.length() - 1);
                 sql.append(")");
 
                 PreparedStatement ps = conn.prepareStatement(sql.toString());
 
-                js.forEach(new Consumer<>() {
+                js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
                     int index = 1;
 
                     @Override

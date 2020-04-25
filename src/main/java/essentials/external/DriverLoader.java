@@ -106,9 +106,12 @@ public class DriverLoader implements Driver {
         char defaultChar = '-';
         String icon = "*";
         String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
+        StringBuilder bareDone = new StringBuilder();
+        bareDone.append("[");
+        for (int i = 0; i < remainPercent; i++) {
+            bareDone.append(icon);
+        }
         String bareRemain = bare.substring(remainPercent);
-        String bareDone = "[" +
-                icon.repeat(Math.max(0, remainPercent));
         System.out.print("\r" + humanReadableByteCount(remain, true) + "/" + humanReadableByteCount(total, true) + "\t" + bareDone + bareRemain + " " + remainPercent * 5 + "%, ETA: " + etaHms);
         if (remain == total) {
             System.out.print("\n");

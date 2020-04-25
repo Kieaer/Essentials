@@ -111,7 +111,7 @@ public class PlayerDB {
 
         try {
             PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
-            js.forEach(new Consumer<>() {
+            js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
                 int index = 1;
 
                 @Override
@@ -152,14 +152,14 @@ public class PlayerDB {
         PlayerData newdata = playerCore.NewData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw);
         ArrayMap<String, Object> js = newdata.toMap();
 
-        sql.append("?,".repeat(js.size));
+        js.forEach((s) -> sql.append("?,"));
         sql.deleteCharAt(sql.length() - 1);
         sql.append(")");
 
         try {
             PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
 
-            js.forEach(new Consumer<>() {
+            js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
                 int index = 1;
 
                 @Override

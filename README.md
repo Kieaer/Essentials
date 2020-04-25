@@ -7,7 +7,7 @@ I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
 
 ## Requirements for running this plugin
-Minimum require java version: __Java 11 or higher__<br>
+Minimum require java version: Only __Java 8__<br>
 This plugin does a lot of disk read/write operations depending on the features usage.
 
 ### Minimum
