@@ -240,28 +240,30 @@ public class TickTrigger {
                 // 1.5초마다 실행
                 if ((tick % 90) == 0) {
                     if (state.is(GameState.State.playing)) {
-                        for (Item item : content.items()) {
-                            if (item.type == ItemType.material) {
-                                if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                                if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                    int cur = state.teams.get(Team.sharded).cores.first().items.get(item);
-                                    if (resources.get(item.name) != null) {
-                                        if ((cur - resources.get(item.name)) <= -55) {
-                                            StringBuilder using = new StringBuilder();
-                                            for (Player p : playerGroup) {
-                                                if (p.buildRequest() != null) {
-                                                    for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
-                                                        if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {
-                                                            using.append(p.name).append(", ");
+                        if (config.scanresource) {
+                            for (Item item : content.items()) {
+                                if (item.type == ItemType.material) {
+                                    if (state.teams.get(Team.sharded).cores.isEmpty()) return;
+                                    if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                                        int cur = state.teams.get(Team.sharded).cores.first().items.get(item);
+                                        if (resources.get(item.name) != null) {
+                                            if ((cur - resources.get(item.name)) <= -55) {
+                                                StringBuilder using = new StringBuilder();
+                                                for (Player p : playerGroup) {
+                                                    if (p.buildRequest() != null) {
+                                                        for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
+                                                            if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {
+                                                                using.append(p.name).append(", ");
+                                                            }
                                                         }
                                                     }
                                                 }
+                                                if (using.length() > 2)
+                                                    tool.sendMessageAll("resource-fast-use", item.name, using);
                                             }
-                                            if (using.length() > 2)
-                                                tool.sendMessageAll("resource-fast-use", item.name, using);
+                                        } else {
+                                            resources.put(item.name, cur);
                                         }
-                                    } else {
-                                        resources.put(item.name, cur);
                                     }
                                 }
                             }

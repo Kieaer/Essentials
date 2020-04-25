@@ -30,6 +30,7 @@ import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.entities.type.Unit;
 import mindustry.game.Difficulty;
+import mindustry.game.Gamemode;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
@@ -1169,7 +1170,13 @@ public class Main extends Plugin {
                         vote.start(Vote.VoteType.rollback, player);
                         break;
                     case "gamemode":
-                        vote.start(Vote.VoteType.gamemode, player);
+                        Gamemode gm;
+                        try {
+                            gm = Gamemode.valueOf(arg[1]);
+                            vote.start(Vote.VoteType.gamemode, player, gm);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(bundle.prefix("vote.gamemode.incorrect"));
+                        }
                         break;
                     default:
                         switch (arg[0]) {

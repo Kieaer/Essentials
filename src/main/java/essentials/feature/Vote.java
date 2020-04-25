@@ -10,6 +10,7 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Gamemode;
+import mindustry.game.Rules;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
@@ -109,7 +110,7 @@ public class Vote {
                     tool.sendMessageAll("vote.rollback");
                     break;
                 case gamemode:
-                    tool.sendMessageAll("vote-gamemode");
+                    tool.sendMessageAll("vote-gamemode", ((Gamemode) parameters[0]).name());
                     break;
                 default:
                     player.sendMessage(bundle.get("vote.wrong-mode"));
@@ -165,10 +166,12 @@ public class Vote {
                     rollback.load();
                     break;
                 case gamemode:
-                    /*Fi file = saveDirectory.child("temp." + saveExtension);
-                    SaveIO.load(file);
-                    world.loadMap(world.getMap(), map);
-                    Gamemode.valueOf(parameters[0])*/
+                    Map map = world.getMap();
+                    Rules rules = world.getMap().rules();
+                    if (rules.attackMode) rules.attackMode = false;
+
+                    world.loadMap(world.getMap(), rules);
+                    Gamemode.valueOf((String) parameters);
                     break;
                 case map:
                     tool.sendMessageAll("vote.map.done");
@@ -191,7 +194,7 @@ public class Vote {
                         if (Vars.state.rules.pvp) p.setTeam(Vars.netServer.assignTeam(p, playerGroup.all()));
                     }
                     Log.info("Map rollbacked.");
-                    tool.sendMessageAll("vote.map.done");
+                    //tool.sendMessageAll("vote.map.done");
                     break;
             }
         } else {
