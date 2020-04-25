@@ -236,10 +236,10 @@ public class Vote {
         for (Player others : playerGroup.all()) {
             PlayerData p = playerDB.get(others.uuid);
             if (!p.error)
-                others.sendMessage(new Bundle(p.locale).get("vote.current-voted", voted.size, vote.getRequire() - voted.size));
+                others.sendMessage(new Bundle(p.locale).get("vote.current-voted", voted.size, getRequire() - voted.size));
         }
 
-        if (voted.size >= require) {
+        if (voted.size >= getRequire()) {
             timer.cancel();
             success();
         }

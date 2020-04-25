@@ -322,9 +322,9 @@ public class Event {
                         }
                     } else {
                         if (!playerData.mute) {
-                            if (perm.permission_user.get(playerData.name).asObject().get("prefix") != null) {
+                            if (perm.permission_user.get(playerData.uuid).asObject().get("prefix") != null) {
                                 if (!playerData.crosschat)
-                                    Call.sendMessage(perm.permission_user.get(playerData.name).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
+                                    Call.sendMessage(perm.permission_user.get(playerData.uuid).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
                             } else {
                                 if (!playerData.crosschat)
                                     Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
