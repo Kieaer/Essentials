@@ -74,7 +74,7 @@ public class Database {
     }
 
     public void connect() throws SQLException {
-        conn = DriverManager.getConnection(config.DBurl, "", "");
+        conn = DriverManager.getConnection(config.getDBurl(), "", "");
     }
 
     public void disconnect() throws SQLException {

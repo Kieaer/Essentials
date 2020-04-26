@@ -18,7 +18,7 @@ import static essentials.PluginVars.plugin_version;
 
 public class CrashReport {
     public CrashReport(Throwable e) {
-        if (!config.debug) {
+        if (!config.isDebug()) {
             StringBuilder sb = new StringBuilder();
             sb.append(e.toString()).append("\n");
             StackTraceElement[] element = e.getStackTrace();
@@ -28,7 +28,7 @@ public class CrashReport {
 
             Log.write(Log.LogType.error, text);
             Log.err("Plugin internal error! - " + e.getMessage());
-            if (config.crashreport) {
+            if (config.isCrashreport()) {
                 try {
                     InetAddress address = InetAddress.getByName("mindustry.kr");
                     Socket socket = new Socket(address, 6560);

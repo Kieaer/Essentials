@@ -45,7 +45,7 @@ public class TickTrigger {
                     tick = 0;
                 }
 
-                if (config.border) {
+                if (config.isBorder()) {
                     for (Player p : playerGroup.all()) {
                         if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
                             Call.onPlayerDeath(p);
@@ -85,7 +85,7 @@ public class TickTrigger {
                         playtime = playtime.plusSeconds(1);
 
                         // PvP 평화시간 카운트
-                        if (config.antirush && state.rules.pvp && playtime.isAfter(config.antirushtime) && PvPPeace) {
+                        if (config.isAntirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime()) && PvPPeace) {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
@@ -96,12 +96,12 @@ public class TickTrigger {
                             PvPPeace = false;
                         }
 
-                    /*if(config.debugcode.contains("jumptotal_count")){
+                    /*if(config.isDebug()code.contains("jumptotal_count")){
                         int result = 0;
                         for (PluginData.jumpcount value : data.jumpcount) result = result + value.players;
                         String name = "[#FFA]Lobby server [green]|[white] Anti griefing\n" +
                                 "[#F32]Using Discord Authentication";
-                        String desc = "[white]"+config.discordlink+"\n" +
+                        String desc = "[white]"+config.getDiscordlink()+"\n" +
                                 "[green]Total [white]"+result+" Players\n" +
                                 "[sky]POWERED BY Essentials 9.0.0";
                         Administration.Config c = Administration.Config.desc;
@@ -240,7 +240,7 @@ public class TickTrigger {
                 // 1.5초마다 실행
                 if ((tick % 90) == 0) {
                     if (state.is(GameState.State.playing)) {
-                        if (config.scanresource) {
+                        if (config.isScanresource()) {
                             for (Item item : content.items()) {
                                 if (item.type == ItemType.material) {
                                     if (state.teams.get(Team.sharded).cores.isEmpty()) return;

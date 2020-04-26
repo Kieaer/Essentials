@@ -61,7 +61,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
         try {
-            this.serverSocket = new ServerSocket(config.serverport);
+            this.serverSocket = new ServerSocket(config.getServerport());
             Log.info("server.enabled");
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
@@ -195,7 +195,7 @@ public class Server implements Runnable {
 
                             for (service ser : list) {
                                 String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
-                                for (JsonValue b : config.bantrust) {
+                                for (JsonValue b : config.getBantrust()) {
                                     if (b.asString().equals(remoteip)) {
                                         ser.os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), ser.spec, ser.cipher)) + "\n");
                                         ser.os.flush();
@@ -443,7 +443,7 @@ public class Server implements Runnable {
             String time = now.format(dateTimeFormatter);
 
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-            if (config.query && state.is(GameState.State.playing)) {
+            if (config.isQuery() && state.is(GameState.State.playing)) {
                 if (receive.matches("GET / HTTP/.*")) {
                     String data = query();
                     bw.write("HTTP/1.1 200 OK\r\n");
@@ -489,7 +489,7 @@ public class Server implements Runnable {
                             ranking[11] = "SELECT uuid, pvpbreakout, RANK() over (ORDER BY pvpbreakout desc) valrank FROM players";
 
                             String datatext;
-                            if (!config.internalDB) {
+                            if (!config.isInternalDB()) {
                                 Statement stmt = database.conn.createStatement();
                                 Array<String> array = new Array<>();
                                 for (String s : ranking) {

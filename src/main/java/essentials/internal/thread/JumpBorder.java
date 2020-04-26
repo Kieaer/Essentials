@@ -63,7 +63,7 @@ public class JumpBorder implements Runnable {
                                     }
                                     if (size < 5) sleep(2000);
                                 } else {
-                                    if (config.debug)
+                                    if (config.isDebug())
                                         Log.info("jump zone " + ip + " offline! After 1 minute, try to connect again.");
                                     TimeUnit.MINUTES.sleep(1);
                                 }

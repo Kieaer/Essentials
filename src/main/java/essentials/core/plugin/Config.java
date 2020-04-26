@@ -16,67 +16,67 @@ import static essentials.PluginVars.config_version;
 import static org.hjson.JsonValue.readJSON;
 
 public class Config {
-    public int version;
-    public Locale language;
-    public boolean serverenable;
-    public int serverport;
-    public boolean clientenable;
-    public int clientport;
-    public String clienthost;
-    public boolean realname;
-    public boolean strictname;
-    public int cupdatei;
-    public boolean scanresource;
-    public boolean antigrief;
-    public boolean alertaction;
-    public boolean explimit;
-    public double basexp;
-    public double exponent;
-    public boolean levelupalarm;
-    public int alarmlevel;
-    public boolean banshare;
-    public JsonArray bantrust;
-    public boolean query;
-    public boolean antivpn;
-    public boolean antirush;
-    public LocalTime antirushtime;
-    public boolean vote;
-    public boolean logging;
-    public boolean update;
-    public boolean internalDB;
-    public boolean DBServer;
-    public String DBurl;
-    public boolean OldDBMigration;
-    public String OldDBurl;
-    public String OldDBID;
-    public String OldDBPW;
-    public String dataserverurl;
-    public String dataserverid;
-    public String dataserverpw;
-    public boolean loginenable;
-    public String passwordmethod;
-    public boolean validconnect;
-    public boolean autologin;
-    public String discordtoken;
-    public String discordlink;
-    public boolean translate;
-    public String translateid;
-    public String translatepw;
-    public boolean debug;
-    public String debugcode;
-    public boolean crashreport;
-    public LocalTime savetime;
-    public boolean rollback;
-    public int slotnumber;
-    public boolean autodifficulty;
-    public int difficultyEasy;
-    public int difficultyNormal;
-    public int difficultyHard;
-    public int difficultyInsane;
-    public boolean border;
-    public int spawnlimit;
-    public String prefix;
-    public String eventport;
+    private int version;
+    private Locale language;
+    private boolean serverenable;
+    private int serverport;
+    private boolean clientenable;
+    private int clientport;
+    private String clienthost;
+    private boolean realname;
+    private boolean strictname;
+    private int cupdatei;
+    private boolean scanresource;
+    private boolean antigrief;
+    private boolean alertaction;
+    private boolean explimit;
+    private double basexp;
+    private double exponent;
+    private boolean levelupalarm;
+    private int alarmlevel;
+    private boolean banshare;
+    private JsonArray bantrust;
+    private boolean query;
+    private boolean antivpn;
+    private boolean antirush;
+    private LocalTime antirushtime;
+    private boolean vote;
+    private boolean logging;
+    private boolean update;
+    private boolean internalDB;
+    private boolean DBServer;
+    private String DBurl;
+    private boolean OldDBMigration;
+    private String OldDBurl;
+    private String OldDBID;
+    private String OldDBPW;
+    private String dataserverurl;
+    private String dataserverid;
+    private String dataserverpw;
+    private boolean loginenable;
+    private String passwordmethod;
+    private boolean validconnect;
+    private boolean autologin;
+    private String discordtoken;
+    private String discordlink;
+    private boolean translate;
+    private String translateid;
+    private String translatepw;
+    private boolean debug;
+    private String debugcode;
+    private boolean crashreport;
+    private LocalTime savetime;
+    private boolean rollback;
+    private int slotnumber;
+    private boolean autodifficulty;
+    private int difficultyEasy;
+    private int difficultyNormal;
+    private int difficultyHard;
+    private int difficultyInsane;
+    private boolean border;
+    private int spawnlimit;
+    private String prefix;
+    private String eventport;
 
     JsonObject obj;
 
@@ -487,5 +487,249 @@ public class Config {
         auth.add("discord", discord, bundle.get("config.feature.discord.desc"));
         discord.add("token", discordtoken);
         discord.add("link", discordlink);
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public Locale getLanguage() {
+        return language;
+    }
+
+    public boolean isServerenable() {
+        return serverenable;
+    }
+
+    public int getServerport() {
+        return serverport;
+    }
+
+    public boolean isClientenable() {
+        return clientenable;
+    }
+
+    public int getClientport() {
+        return clientport;
+    }
+
+    public String getClienthost() {
+        return clienthost;
+    }
+
+    public boolean isRealname() {
+        return realname;
+    }
+
+    public boolean isStrictname() {
+        return strictname;
+    }
+
+    public int getCupdatei() {
+        return cupdatei;
+    }
+
+    public boolean isScanresource() {
+        return scanresource;
+    }
+
+    public boolean isAntigrief() {
+        return antigrief;
+    }
+
+    public boolean isAlertaction() {
+        return alertaction;
+    }
+
+    public boolean isExplimit() {
+        return explimit;
+    }
+
+    public double getBasexp() {
+        return basexp;
+    }
+
+    public double getExponent() {
+        return exponent;
+    }
+
+    public boolean isLevelupalarm() {
+        return levelupalarm;
+    }
+
+    public int getAlarmlevel() {
+        return alarmlevel;
+    }
+
+    public boolean isBanshare() {
+        return banshare;
+    }
+
+    public JsonArray getBantrust() {
+        return bantrust;
+    }
+
+    public boolean isQuery() {
+        return query;
+    }
+
+    public boolean isAntivpn() {
+        return antivpn;
+    }
+
+    public boolean isAntirush() {
+        return antirush;
+    }
+
+    public LocalTime getAntirushtime() {
+        return antirushtime;
+    }
+
+    public boolean isVote() {
+        return vote;
+    }
+
+    public boolean isLogging() {
+        return logging;
+    }
+
+    public boolean isUpdate() {
+        return update;
+    }
+
+    public boolean isInternalDB() {
+        return internalDB;
+    }
+
+    public boolean isDBServer() {
+        return DBServer;
+    }
+
+    public String getDBurl() {
+        return DBurl;
+    }
+
+    public boolean isOldDBMigration() {
+        return OldDBMigration;
+    }
+
+    public String getOldDBurl() {
+        return OldDBurl;
+    }
+
+    public String getOldDBID() {
+        return OldDBID;
+    }
+
+    public String getOldDBPW() {
+        return OldDBPW;
+    }
+
+    public String getDataserverurl() {
+        return dataserverurl;
+    }
+
+    public String getDataserverid() {
+        return dataserverid;
+    }
+
+    public String getDataserverpw() {
+        return dataserverpw;
+    }
+
+    public boolean isLoginenable() {
+        return loginenable;
+    }
+
+    public String getPasswordmethod() {
+        return passwordmethod;
+    }
+
+    public boolean isValidconnect() {
+        return validconnect;
+    }
+
+    public boolean isAutologin() {
+        return autologin;
+    }
+
+    public String getDiscordtoken() {
+        return discordtoken;
+    }
+
+    public String getDiscordlink() {
+        return discordlink;
+    }
+
+    public boolean isTranslate() {
+        return translate;
+    }
+
+    public String getTranslateid() {
+        return translateid;
+    }
+
+    public String getTranslatepw() {
+        return translatepw;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public String getDebugcode() {
+        return debugcode;
+    }
+
+    public boolean isCrashreport() {
+        return crashreport;
+    }
+
+    public LocalTime getSavetime() {
+        return savetime;
+    }
+
+    public boolean isRollback() {
+        return rollback;
+    }
+
+    public int getSlotnumber() {
+        return slotnumber;
+    }
+
+    public boolean isAutodifficulty() {
+        return autodifficulty;
+    }
+
+    public int getDifficultyEasy() {
+        return difficultyEasy;
+    }
+
+    public int getDifficultyNormal() {
+        return difficultyNormal;
+    }
+
+    public int getDifficultyHard() {
+        return difficultyHard;
+    }
+
+    public int getDifficultyInsane() {
+        return difficultyInsane;
+    }
+
+    public boolean isBorder() {
+        return border;
+    }
+
+    public int getSpawnlimit() {
+        return spawnlimit;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public String getEventport() {
+        return eventport;
     }
 }

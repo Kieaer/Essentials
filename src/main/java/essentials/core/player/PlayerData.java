@@ -58,7 +58,7 @@ public class PlayerData {
     public int afk_tilex = 0;
     public int afk_tiley = 0;
 
-    public Locale locale = config.language;
+    public Locale locale = config.getLanguage();
 
     public PlayerData() {
         this.error = true;

@@ -38,8 +38,8 @@ public class Threads implements Runnable {
                             String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
                             JsonObject result = readJSON(json).asObject();
                             Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
-                            if (config.passwordmethod.equals("discord")) {
-                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink;
+                            if (config.getPasswordmethod().equals("discord")) {
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.getDiscordlink();
                             } else {
                                 message = new Bundle(language).get("system.login.require.password");
                             }

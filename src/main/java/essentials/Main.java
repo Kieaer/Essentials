@@ -128,7 +128,7 @@ public class Main extends Plugin {
 
         // 설정 불러오기
         config = new Config();
-        Log.info("config.language", config.language.getDisplayCountry()); // TODO 국가명 안뜨는 이유 찾기
+        Log.info("config.language", config.getLanguage().getDisplayCountry()); // TODO 국가명 안뜨는 이유 찾기
 
         // 플러그인 데이터 불러오기
         pluginData.loadall();
@@ -153,19 +153,19 @@ public class Main extends Plugin {
             database.connect();
             database.create();
             database.LegacyUpgrade();
-            if (config.DBServer) database.server_start();
+            if (config.isDBServer()) database.server_start();
         } catch (SQLException e) {
             new CrashReport(e);
         }
 
         // Client 연결
-        if (config.clientenable) new Client();
+        if (config.isClientenable()) new Client();
 
         // Server 시작
-        if (config.serverenable) new Server();
+        if (config.isServerenable()) new Server();
 
         // 기록 시작
-        if (config.logging) new ActivityLog();
+        if (config.isLogging()) new ActivityLog();
 
         // 이벤트 시작
         new Event();
@@ -186,7 +186,7 @@ public class Main extends Plugin {
                     if (vote.status()) vote.interrupt(); // 투표 종료
                     database.dispose(); // DB 연결 종료
 
-                    if (config.serverenable) {
+                    if (config.isServerenable()) {
                         try {
                             Iterator<Server.service> servers = server.list.iterator();
                             while (servers.hasNext()) {
@@ -206,7 +206,7 @@ public class Main extends Plugin {
                     }
 
                     // 클라이언트 종료
-                    if (config.clientenable && client.activated) {
+                    if (config.isClientenable() && client.activated) {
                         client.request(Client.Request.exit, null, null);
                         Log.info("client.shutdown");
                     }
@@ -526,7 +526,7 @@ public class Main extends Plugin {
                         }
                         player.sendMessage(new Bundle(playerData.locale).prefix("system.event.making"));
 
-                        String[] range = config.eventport.split("-");
+                        String[] range = config.getEventport().split("-");
                         int firstport = Integer.parseInt(range[0]);
                         int lastport = Integer.parseInt(range[1]);
                         int customport = ThreadLocalRandom.current().nextInt(firstport, lastport + 1);
@@ -696,10 +696,10 @@ public class Main extends Plugin {
         });
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             PlayerData playerData = playerDB.get(player.uuid);
-            if (config.loginenable) {
+            if (config.isLoginenable()) {
                 if (playerData.error) {
                     if (playerCore.login(player, arg[0], arg[1])) {
-                        if (config.passwordmethod.equals("discord")) {
+                        if (config.getPasswordmethod().equals("discord")) {
                             playerCore.load(player, arg[0]);
                         } else {
                             playerCore.load(player);
@@ -709,7 +709,7 @@ public class Main extends Plugin {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
                     }
                 } else {
-                    if (config.passwordmethod.equals("mixed")) {
+                    if (config.getPasswordmethod().equals("mixed")) {
                         if (playerCore.login(player, arg[0], arg[1])) Call.onConnect(player.con, serverIP, 7060);
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
@@ -724,7 +724,7 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale);
-            if (config.loginenable) {
+            if (config.isLoginenable()) {
                 playerData.connected(false);
                 playerData.connserver("none");
                 playerData.uuid("Logout");
@@ -786,7 +786,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
             if (!perm.check(player, "save")) return;
-            Fi file = saveDirectory.child(config.slotnumber + "." + saveExtension);
+            Fi file = saveDirectory.child(config.getSlotnumber() + "." + saveExtension);
             SaveIO.save(file);
             player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).prefix("system.map-saved"));
         });
@@ -838,11 +838,11 @@ public class Main extends Plugin {
                             "[#6B6B6B][#828282][#6B6B6B]\n" +
                             "[#6B6B6B][#585858][#6B6B6B]";
         });
-        handler.<Player>register("register", config.passwordmethod.equals("password") ? "<accountid> <password>" : config.passwordmethod.equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
-            if (config.loginenable) {
-                switch (config.passwordmethod) {
+        handler.<Player>register("register", config.getPasswordmethod().equals("password") ? "<accountid> <password>" : config.getPasswordmethod().equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
+            if (config.isLoginenable()) {
+                switch (config.getPasswordmethod()) {
                     case "discord":
-                        player.sendMessage("Join discord and use !register command!\n" + config.discordlink);
+                        player.sendMessage("Join discord and use !register command!\n" + config.getDiscordlink());
                         discord.queue(player);
                         break;
                     default:
@@ -878,7 +878,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.prefix("syttem.mob.not-number"));
                 return;
             }
-            if (config.spawnlimit == count) {
+            if (config.getSpawnlimit() == count) {
                 player.sendMessage(bundle.prefix("spawn-limit"));
                 return;
             }
@@ -1125,7 +1125,7 @@ public class Main extends Plugin {
 
         });
         // TODO 투표기능 다시 만들기
-        if (config.vote) {
+        if (config.isVote()) {
             handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
                 if (!perm.check(player, "vote")) return;
                 PlayerData playerData = playerDB.get(player.uuid);
@@ -1233,7 +1233,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(target.locale).prefix(target.mute ? "player.unmute" : "player.muted", target.name));
             }
         });
-        if (config.vote) {
+        if (config.isVote()) {
             handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
                 if (!perm.check(player, "votekick")) return;
                 Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
