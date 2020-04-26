@@ -487,7 +487,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("chars", "<Text...>", "Make pixel texts", (arg, player) -> {
             if (!perm.check(player, "chars")) return;
-            tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[1]);
+            tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[0]);
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
             if (!perm.check(player, "color")) return;
