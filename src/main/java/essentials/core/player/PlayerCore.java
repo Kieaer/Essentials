@@ -13,13 +13,17 @@ import java.sql.SQLException;
 import java.time.LocalTime;
 
 import static essentials.Main.*;
-import static essentials.PluginVars.serverIP;
 import static mindustry.Vars.netServer;
 
 public class PlayerCore {
     public void load(Player player, String... AccountID) {
         playerDB.remove(player.uuid);
-        PlayerData playerData = playerDB.load(AccountID.length > 0 ? player.uuid : player.uuid, AccountID);
+        PlayerData playerData;
+        if (AccountID.length > 0) {
+            playerData = playerDB.load(player.uuid);
+        } else {
+            playerData = playerDB.load(player.uuid, AccountID);
+        }
         if (playerData.error()) {
             new CrashReport(new Exception("DATA NOT FOUND"));
             return;
@@ -56,7 +60,7 @@ public class PlayerCore {
         playerData.uuid(player.uuid);
         playerData.connected(true);
         playerData.lastdate(tool.getTime());
-        playerData.connserver(serverIP);
+        playerData.connserver(vars.serverIP());
         playerData.exp(playerData.exp() + playerData.joincount());
         playerData.joincount(playerData.joincount() + 1);
         playerData.login(true);

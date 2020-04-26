@@ -16,7 +16,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static essentials.PluginVars.DBURL;
+import static essentials.Main.vars;
 
 public class DriverLoader implements Driver {
     URLClassLoader H2URL;
@@ -34,7 +34,7 @@ public class DriverLoader implements Driver {
         // Ugly source :worried:
         URLClassLoader cla = null;
         try {
-            for (String url : DBURL) urls.add(new URL(url));
+            for (String url : vars.dburl()) urls.add(new URL(url));
             Fi[] f = root.child("Driver/").list();
 
             for (int a = 0; a < urls.size; a++) {
@@ -94,10 +94,9 @@ public class DriverLoader implements Driver {
         long eta = remain == 0 ? 0 :
                 (total - remain) * (System.currentTimeMillis() - startTime) / remain;
 
-        String etaHms = total == 0 ? "N/A" :
-                String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
-                        TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
-                        TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1));
+        String etaHms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
+                TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1));
 
         if (remain > total) {
             throw new IllegalArgumentException();

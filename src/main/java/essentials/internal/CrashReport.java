@@ -9,15 +9,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.Main.config;
-import static essentials.Main.root;
-import static essentials.PluginVars.plugin_version;
+import static essentials.Main.*;
 
 public class CrashReport {
     Logger log = LoggerFactory.getLogger(CrashReport.class);
@@ -34,10 +31,7 @@ public class CrashReport {
             Log.write(Log.LogType.error, text);
             Log.err("Plugin internal error! - " + e.getMessage());
             if (config.crashreport()) {
-                Socket socket = null;
-                try {
-                    InetAddress address = InetAddress.getByName("mindustry.kr");
-                    socket = new Socket(address, 6560);
+                try (Socket socket = new Socket(InetAddress.getByName("mindustry.kr"), 6560)) {
                     BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     DataOutputStream os = new DataOutputStream(socket.getOutputStream());
                     os.writeBytes(e.toString() + "\n");
@@ -50,7 +44,7 @@ public class CrashReport {
                     for (int a = 0; a < Vars.mods.list().size; a++)
                         plugins.append(Vars.mods.list().get(a).name).append(", ");
 
-                    String logs = "플러그인 버전: " + plugin_version + "\n" +
+                    String logs = "플러그인 버전: " + vars.pluginVersion() + "\n" +
                             "서버 버전: " + Version.build + "." + Version.revision + " " + Version.modifier + "\n" +
                             "OS: " + System.getProperty("os.name") + "\n" +
                             "플러그인 목록: " + plugins.toString().substring(0, plugins.length() - 2) + "\n" +
@@ -67,11 +61,6 @@ public class CrashReport {
                     }
                 } catch (Exception ex) {
                     log.warn("Crash Report Error", ex);
-                } finally {
-                    if (socket != null) try {
-                        socket.close();
-                    } catch (IOException ignored) {
-                    }
                 }
             }
         } else {

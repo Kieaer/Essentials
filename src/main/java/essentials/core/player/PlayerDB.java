@@ -9,25 +9,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 
-import static essentials.Main.database;
-import static essentials.Main.playerCore;
-import static essentials.PluginVars.playerData;
+import static essentials.Main.*;
 
 public class PlayerDB {
     public PlayerData get(String uuid) {
-        for (PlayerData p : playerData) {
+        for (PlayerData p : vars.playerData()) {
             if (p.uuid().equals(uuid)) return p;
         }
         return new PlayerData();
     }
 
     public void remove(String uuid) {
-        for (PlayerData p : playerData) {
-            if (p.uuid().equals(uuid)) {
-                playerData.remove(p);
-                break;
-            }
-        }
+        vars.removePlayerData(p -> p.uuid().equals(uuid));
     }
 
     public PlayerData load(String uuid, String... AccountID) {
@@ -83,7 +76,7 @@ public class PlayerDB {
                         rs.getString("accountid"),
                         rs.getString("accountpw")
                 );
-                playerData.add(data);
+                vars.addPlayerData(data);
                 return data;
             }
         } catch (SQLException e) {
@@ -139,7 +132,7 @@ public class PlayerDB {
     }
 
     public void saveAll() {
-        for (PlayerData p : playerData) save(p);
+        for (PlayerData p : vars.playerData()) save(p);
     }
 
     public boolean register(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {

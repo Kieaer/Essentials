@@ -26,7 +26,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Main.*;
-import static essentials.PluginVars.serverIP;
 import static mindustry.Vars.playerGroup;
 
 public class Discord extends ListenerAdapter {
@@ -93,7 +92,7 @@ public class Discord extends ListenerAdapter {
                                             Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(name));
                                             if (player != null) {
                                                 Locale lc = tool.getGeo(player);
-                                                boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", e.getAuthor().getIdLong(), name, pw);
+                                                boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", e.getAuthor().getIdLong(), name, pw);
                                                 if (register) {
                                                     PlayerData playerData = playerDB.load(player.uuid);
                                                     player.sendMessage(new Bundle(playerData.locale()).prefix("register-success"));

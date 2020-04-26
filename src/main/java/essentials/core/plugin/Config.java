@@ -12,7 +12,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import static essentials.Main.*;
-import static essentials.PluginVars.config_version;
 import static org.hjson.JsonValue.readJSON;
 
 public class Config {
@@ -107,7 +106,7 @@ public class Config {
         }
 
         settings = obj.get("settings").asObject();
-        version = settings.getInt("version", config_version);
+        version = settings.getInt("version", vars.configVersion());
         language = new Locale(settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")));
         logging = settings.getBoolean("logging", true);
         update = settings.getBoolean("update", true);
@@ -212,7 +211,7 @@ public class Config {
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
         Bundle bundle = new Bundle(locale);
 
-        if (obj.getInt("version", 0) < config_version) Log.info("config.updated");
+        if (obj.getInt("version", 0) < vars.configVersion()) Log.info("config.updated");
 
         JsonObject config = new JsonObject();
         JsonObject settings = new JsonObject();
@@ -346,7 +345,7 @@ public class Config {
         config.add("features", features);
         config.add("auth", auth);
 
-        settings.add("version", obj.getInt("version", config_version), bundle.get("config.version"));
+        settings.add("version", obj.getInt("version", vars.configVersion()), bundle.get("config.version"));
         settings.add("language", new Locale(obj.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country"))).toString(), bundle.get("config.language.description"));
         settings.add("logging", obj.getBoolean("logging", true), bundle.get("config.feature.logging"));
         settings.add("update", obj.getBoolean("update", true), bundle.get("config.update"));

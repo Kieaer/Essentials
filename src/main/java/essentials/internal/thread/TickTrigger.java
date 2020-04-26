@@ -27,7 +27,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 import static essentials.Main.*;
-import static essentials.PluginVars.*;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.onSetRules;
 
@@ -55,7 +54,7 @@ public class TickTrigger {
                 // 1초마다 실행
                 if ((tick % 60) == 0) {
                     // 서버 켜진시간 카운트
-                    uptime = uptime.plusSeconds(1);
+                    vars.uptime(vars.uptime().plusSeconds(1));
 
                     // 데이터 저장
                     JsonObject json = new JsonObject();
@@ -82,10 +81,10 @@ public class TickTrigger {
                         // new jumpzone().start();
 
                         // 맵 플탐 카운트
-                        playtime = playtime.plusSeconds(1);
+                        vars.playtime(vars.playtime().plusSeconds(1));
 
                         // PvP 평화시간 카운트
-                        if (config.antirush() && state.rules.pvp && playtime.isAfter(config.antirushtime()) && PvPPeace) {
+                        if (config.antirush() && state.rules.pvp && vars.playtime().isAfter(config.antirushtime()) && vars.isPvPPeace()) {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
@@ -93,7 +92,7 @@ public class TickTrigger {
                                 player.sendMessage(new Bundle(playerDB.get(p.uuid).locale()).get("pvp-peacetime"));
                                 player.kill();
                             }
-                            PvPPeace = false;
+                            vars.setPvPPeace(false);
                         }
 
                     /*if(config.isDebug()code.contains("jumptotal_count")){

@@ -2,7 +2,6 @@ package essentials.internal;
 
 import arc.Core;
 import arc.Events;
-import essentials.PluginVars;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.external.DataMigration;
@@ -35,7 +34,6 @@ import java.util.Base64;
 import java.util.Locale;
 
 import static essentials.Main.*;
-import static essentials.PluginVars.*;
 import static essentials.external.DriverLoader.URLDownload;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
@@ -123,7 +121,7 @@ public class Event {
 
         // 맵이 불러와졌을 때
         Events.on(EventType.WorldLoadEvent.class, e -> {
-            playtime = LocalTime.of(0, 0, 0);
+            vars.playtime(LocalTime.of(0, 0, 0));
 
             // 전력 노드 정보 초기화
             pluginData.powerblock.clear();
@@ -178,7 +176,7 @@ public class Event {
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(EventType.PlayerJoin.class, e -> {
-            players.add(e.player);
+            vars.addPlayers(e.player);
             e.player.isAdmin = false;
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name + " Player Join thread");
@@ -189,14 +187,14 @@ public class Event {
                     if (config.passwordmethod().equals("mixed")) {
                         if (!playerData.error() && config.autologin()) {
                             if (playerData.udid() != 0L) {
-                                new Thread(() -> Call.onConnect(e.player.con, serverIP, 7060)).start();
+                                new Thread(() -> Call.onConnect(e.player.con, vars.serverIP(), 7060)).start();
                             } else {
                                 e.player.sendMessage(bundle.get("account.autologin"));
                                 playerCore.load(e.player);
                             }
                         } else {
                             Locale lc = tool.getGeo(e.player);
-                            if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name, "none")) {
+                            if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", 0L, e.player.name, "none")) {
                                 playerCore.load(e.player);
                             } else {
                                 Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
@@ -238,7 +236,7 @@ public class Event {
                         playerCore.load(e.player);
                     } else {
                         Locale lc = tool.getGeo(e.player);
-                        if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name, "none")) {
+                        if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", 0L, e.player.name, "none")) {
                             playerCore.load(e.player);
                         } else {
                             Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
@@ -266,11 +264,11 @@ public class Event {
                 }
 
                 // PvP 평화시간 설정
-                if (config.antirush() && state.rules.pvp && playtime.isBefore(config.antirushtime())) {
+                if (config.antirush() && state.rules.pvp && vars.playtime().isBefore(config.antirushtime())) {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
                     Call.onSetRules(state.rules);
-                    PluginVars.PvPPeace = true;
+                    vars.setPvPPeace(true);
                 }
 
                 // 플레이어 인원별 난이도 설정
@@ -304,8 +302,8 @@ public class Event {
                 if (state.rules.pvp && !state.gameOver) player.pvpbreakout(player.pvpbreakout() + 1);
             }
             playerDB.save(player);
-            playerData.remove(p -> p.uuid().equals(e.player.uuid));
-            players.remove(e.player);
+            vars.removePlayerData(p -> p.uuid().equals(e.player.uuid));
+            vars.removePlayers(e.player);
         });
 
         // 플레이어가 수다떨었을 때
@@ -569,12 +567,12 @@ public class Event {
 
                     for (int a = 0; a < mods.list().size; a++) {
                         if (mods.list().get(a).meta.name.equals("Essentials")) {
-                            plugin_version = mods.list().get(a).meta.version;
+                            vars.pluginVersion(mods.list().get(a).meta.version);
                         }
                     }
 
-                    DefaultArtifactVersion latest = new DefaultArtifactVersion(json.getString("tag_name", plugin_version));
-                    DefaultArtifactVersion current = new DefaultArtifactVersion(plugin_version);
+                    DefaultArtifactVersion latest = new DefaultArtifactVersion(json.getString("tag_name", vars.pluginVersion()));
+                    DefaultArtifactVersion current = new DefaultArtifactVersion(vars.pluginVersion());
 
                     if (latest.compareTo(current) > 0) {
                         Log.client("version-new");

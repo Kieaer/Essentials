@@ -16,18 +16,18 @@ public class DataMigration {
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     public void MigrateDB() {
-        try {
-            String stringbuf = new Bundle(locale).get("database.migration") + " ";
-            System.out.print("\r" + stringbuf);
+        String stringbuf = new Bundle(locale).get("database.migration") + " ";
+        System.out.print("\r" + stringbuf);
 
-            String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            database.conn.prepareStatement("DELETE FROM players").execute();
-            PreparedStatement pstmt = database.conn.prepareStatement(sql);
+        String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-            Connection con = DriverManager.getConnection(config.olddburl(), config.olddbid(), config.olddbpw());
-            PreparedStatement pmt = con.prepareStatement("SELECT * from players");
-            ResultSet rs = pmt.executeQuery();
+        try (PreparedStatement del = database.conn.prepareStatement("DELETE FROM players");
+             PreparedStatement pstmt = database.conn.prepareStatement(sql);
 
+             Connection con = DriverManager.getConnection(config.olddburl(), config.olddbid(), config.olddbpw());
+             PreparedStatement pmt = con.prepareStatement("SELECT * from players");
+             ResultSet rs = pmt.executeQuery()) {
+            del.execute();
             int total = 0;
             if (rs.last()) {
                 total = rs.getRow();

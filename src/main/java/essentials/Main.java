@@ -62,7 +62,6 @@ import java.util.concurrent.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import static essentials.PluginVars.*;
 import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
@@ -85,6 +84,7 @@ public class Main extends Plugin {
     public static final AutoRollback rollback = new AutoRollback();
     public static final EventServer eventServer = new EventServer();
     public static final JumpBorder jumpBorder = new JumpBorder();
+    public static final PluginVars vars = new PluginVars();
 
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
     public static Config config = new Config();
@@ -94,11 +94,11 @@ public class Main extends Plugin {
 
     public Main() {
         // 서버 버전 확인
-        if (Version.build != build_version && Version.revision < build_revision) {
+        if (Version.build != vars.buildVersion() && Version.revision < vars.buildRevision()) {
             try {
                 InputStream reader = getClass().getResourceAsStream("/plugin.json");
                 BufferedReader br = new BufferedReader(new InputStreamReader(reader));
-                throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + build_version + "." + build_revision + " or higher.");
+                throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");
             } catch (PluginException | IOException e) {
                 log.warn("Plugin", e);
                 System.exit(0);
@@ -542,7 +542,7 @@ public class Main extends Plugin {
                             Log.info("event.host.opened", player.name, customport);
                             playerData.connected(false);
                             playerData.connserver("none");
-                            Call.onConnect(player.con, serverIP, customport);
+                            Call.onConnect(player.con, vars.serverIP(), customport);
                             Log.info("Player " + playerData.name() + " joined to " + customport + " port");
                         }
                     } else {
@@ -555,8 +555,8 @@ public class Main extends Plugin {
                             PlayerData val = playerDB.get(player.uuid);
                             val.connected(false);
                             val.connserver("none");
-                            Call.onConnect(player.con, serverIP, server.port);
-                            Log.info(serverIP + ":" + server.port);
+                            Call.onConnect(player.con, vars.serverIP(), server.port);
+                            Log.info(vars.serverIP() + ":" + server.port);
                             break;
                         }
                     }
@@ -713,7 +713,7 @@ public class Main extends Plugin {
                     }
                 } else {
                     if (config.passwordmethod().equals("mixed")) {
-                        if (playerCore.login(player, arg[0], arg[1])) Call.onConnect(player.con, serverIP, 7060);
+                        if (playerCore.login(player, arg[0], arg[1])) Call.onConnect(player.con, vars.serverIP(), 7060);
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
                     }
@@ -851,7 +851,7 @@ public class Main extends Plugin {
                     default:
                     case "password":
                         Locale lc = tool.getGeo(player);
-                        boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, arg[0], arg[1]);
+                        boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", 0L, arg[0], arg[1]);
                         if (register) {
                             PlayerData playerData = playerDB.load(player.uuid, arg[0]);
                             player.sendMessage(new Bundle(playerData.locale()).prefix("register-success"));
@@ -1001,7 +1001,7 @@ public class Main extends Plugin {
                 ipb++;
             }
             int bancount = idb + ipb;
-            player.sendMessage(bundle.prefix("server.status.banstat", fps, playerGroup.size(), bancount, idb, ipb, playtime, uptime, plugin_version));
+            player.sendMessage(bundle.prefix("server.status.banstat", fps, playerGroup.size(), bancount, idb, ipb, vars.playtime(), vars.uptime(), vars.pluginVersion()));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if (!perm.check(player, "suicide")) return;
@@ -1142,7 +1142,7 @@ public class Main extends Plugin {
                 switch (arg[0]) {
                     case "kick":
                         Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-                        if (target == null) target = players.get(Integer.parseInt(arg[1]));
+                        if (target == null) target = vars.players().get(Integer.parseInt(arg[1]));
                         if (target == null) {
                             player.sendMessage(bundle.prefix("player.not-found"));
                             return;
@@ -1243,7 +1243,7 @@ public class Main extends Plugin {
                 PlayerData playerData = playerDB.get(player.uuid);
                 Bundle bundle = new Bundle(playerData.locale());
 
-                if (other == null) other = players.get(Integer.parseInt(arg[1]));
+                if (other == null) other = vars.players().get(Integer.parseInt(arg[1]));
                 if (other == null) {
                     player.sendMessage(bundle.prefix("player.not-found"));
                     return;

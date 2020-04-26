@@ -38,7 +38,6 @@ import java.util.Locale;
 import java.util.Random;
 
 import static essentials.Main.*;
-import static essentials.PluginVars.*;
 import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
@@ -275,8 +274,8 @@ public class Server implements Runnable {
             JsonObject result = new JsonObject();
             result.add("players", playerGroup.size()); // 플레이어 인원
             result.add("version", Version.build); // 버전
-            result.add("plugin-version", plugin_version);
-            result.add("playtime", playtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            result.add("plugin-version", vars.pluginVersion());
+            result.add("playtime", vars.playtime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             result.add("name", Core.settings.getString("servername"));
             result.add("mapname", world.getMap().name());
             result.add("wave", state.wave);
@@ -308,24 +307,16 @@ public class Server implements Runnable {
             JsonObject rank = new JsonObject();
             String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
 
-            Statement stmt = null;
-            try {
-                stmt = database.conn.createStatement();
-                for (String s : list) {
-                    ResultSet rs = stmt.executeQuery("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
+            for (String s : list) {
+                try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
+                     ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
                         rank.add(rs.getString("name"), rs.getString(s));
                     }
-                }
-            } catch (SQLException e) {
-                new CrashReport(e);
-            } finally {
-                if (stmt != null) try {
-                    stmt.close();
-                } catch (SQLException ignored) {
+                } catch (SQLException e) {
+                    new CrashReport(e);
                 }
             }
-
 
             return result.toString();
         }
@@ -342,8 +333,8 @@ public class Server implements Runnable {
                 }
                 int version = Version.build;
                 String description = Core.settings.getString("servername");
-                String worldtime = playtime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-                String serveruptime = uptime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                String worldtime = vars.playtime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                String serveruptime = vars.uptime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
                 StringBuilder items = new StringBuilder();
                 for (Item item : content.items()) {
                     if (item.type == ItemType.material) {
@@ -474,7 +465,7 @@ public class Server implements Runnable {
                     String data = query();
                     bw.write("HTTP/1.1 200 OK\r\n");
                     bw.write("Date: " + time + "\r\n");
-                    bw.write("Server: Mindustry/Essentials " + plugin_version + "\r\n");
+                    bw.write("Server: Mindustry/Essentials " + vars.pluginVersion() + "\r\n");
                     bw.write("Content-Type: application/json; charset=utf-8\r\n");
                     bw.write("Content-Length: " + data.getBytes().length + 1 + "\r\n");
                     bw.write("\r\n");
@@ -483,7 +474,7 @@ public class Server implements Runnable {
                     String rank = rankingdata();
                     bw.write("HTTP/1.1 200 OK\r\n");
                     bw.write("Date: " + time + "\r\n");
-                    bw.write("Server: Mindustry/Essentials " + plugin_version + "\r\n");
+                    bw.write("Server: Mindustry/Essentials " + vars.pluginVersion() + "\r\n");
                     bw.write("Content-Type: text/html; charset=utf-8\r\n");
                     bw.write("Content-Length: " + rank.getBytes().length + 1 + "\r\n");
                     bw.write("\r\n");
@@ -519,29 +510,17 @@ public class Server implements Runnable {
                                 Array<String> array = new Array<>();
 
                                 if (!config.internaldb()) {
-                                    Statement stmt = null;
-                                    ResultSet rs1 = null;
-                                    try {
-                                        stmt = database.conn.createStatement();
-                                        for (String s : ranking) {
-                                            rs1 = stmt.executeQuery(s);
+                                    for (String s : ranking) {
+                                        try (PreparedStatement pstmt = database.conn.prepareStatement(s);
+                                             ResultSet rs1 = pstmt.executeQuery()) {
                                             while (rs1.next()) {
                                                 if (rs1.getString("uuid").equals(db.uuid())) {
                                                     array.add(rs1.getString("valrank"));
                                                     break;
                                                 }
                                             }
-                                        }
-                                    } catch (SQLException e) {
-                                        new CrashReport(e);
-                                    } finally {
-                                        if (stmt != null) try {
-                                            stmt.close();
-                                        } catch (SQLException ignored) {
-                                        }
-                                        if (rs1 != null) try {
-                                            rs1.close();
-                                        } catch (SQLException ignored) {
+                                        } catch (SQLException e) {
+                                            new CrashReport(e);
                                         }
                                     }
 
