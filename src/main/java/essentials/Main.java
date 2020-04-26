@@ -43,6 +43,8 @@ import mindustry.type.UnitType;
 import mindustry.world.Block;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -89,6 +91,8 @@ public class Main extends Plugin {
     public Array<EventServer.EventService> eventServers = new Array<>();
     public final ApplicationListener listener;
 
+    Logger log = LoggerFactory.getLogger(Main.class);
+
     public Main() {
         // 서버 버전 확인
         if (Version.build != build_version && Version.revision < build_revision) {
@@ -97,7 +101,7 @@ public class Main extends Plugin {
                 BufferedReader br = new BufferedReader(new InputStreamReader(reader));
                 throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + build_version + "." + build_revision + " or higher.");
             } catch (PluginException | IOException e) {
-                e.printStackTrace();
+                log.warn("Plugin", e);
                 System.exit(0);
             }
         }
@@ -122,7 +126,7 @@ public class Main extends Plugin {
             }
             jar.close();
         } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
+            log.warn("File Extract", e);
             System.exit(0);
         }
 
@@ -247,7 +251,7 @@ public class Main extends Plugin {
             try {
                 pluginData.saveAll();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.warn("PluginData save", e);
             }
         });
         handler.register("gendocs", "Generate Essentials README.md", (arg) -> {

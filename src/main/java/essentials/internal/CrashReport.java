@@ -4,6 +4,8 @@ import mindustry.Vars;
 import mindustry.core.Version;
 import org.hjson.JsonValue;
 import org.hjson.Stringify;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -17,6 +19,8 @@ import static essentials.Main.root;
 import static essentials.PluginVars.plugin_version;
 
 public class CrashReport {
+    Logger log = LoggerFactory.getLogger(CrashReport.class);
+
     public CrashReport(Throwable e) {
         if (!config.debug()) {
             StringBuilder sb = new StringBuilder();
@@ -60,11 +64,11 @@ public class CrashReport {
                         Log.err("Data send failed!");
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.warn("Crash Report Error", ex);
                 }
             }
         } else {
-            e.printStackTrace();
+            log.warn("Plugin Error", e);
         }
     }
 }

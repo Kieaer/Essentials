@@ -21,6 +21,8 @@ import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,6 +43,8 @@ import static mindustry.core.NetClient.onSetRules;
 import static org.hjson.JsonValue.readJSON;
 
 public class Event {
+    Logger log = LoggerFactory.getLogger(Event.class);
+
     public Event() {
         Events.on(EventType.TapConfigEvent.class, e -> {
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.alertaction()) {
@@ -257,7 +261,7 @@ public class Event {
                             }
                         }
                     } catch (IOException ex) {
-                        ex.printStackTrace();
+                        log.warn("VPN File", ex);
                     }
                 }
 
@@ -343,7 +347,7 @@ public class Event {
                                             ser.os.flush();
                                         }
                                     } catch (Exception ex) {
-                                        ex.printStackTrace();
+                                        log.warn("Crosschat", ex);
                                     }
                                 } else {
                                     e.player.sendMessage(bundle.get("no-any-network"));
@@ -618,7 +622,7 @@ public class Event {
                         Log.client("version-devel");
                     }
                 } catch (SocketTimeoutException i) {
-                    i.printStackTrace();
+                    log.warn("SocketTimeOut");
                 } catch (Exception ex) {
                     new CrashReport(ex);
                 }

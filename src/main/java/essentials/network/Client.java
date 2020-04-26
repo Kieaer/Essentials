@@ -52,7 +52,7 @@ public class Client extends Thread {
             byte[] raw = key.getEncoded();
 
             spec = new SecretKeySpec(raw, "AES");
-            cipher = Cipher.getInstance("AES");
+            cipher = Cipher.getInstance("AES/GCM/NoPadding");
             is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             os = new DataOutputStream(socket.getOutputStream());
 

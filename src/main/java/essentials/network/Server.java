@@ -125,7 +125,7 @@ public class Server implements Runnable {
                 }
 
                 spec = new SecretKeySpec(decoder.decode(authkey), "AES");
-                cipher = Cipher.getInstance("AES");
+                cipher = Cipher.getInstance("AES/GCM/NoPadding");
             } catch (SocketException ignored) {
             } catch (Exception e) {
                 new CrashReport(e);

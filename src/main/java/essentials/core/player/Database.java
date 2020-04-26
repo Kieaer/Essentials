@@ -4,6 +4,7 @@ import arc.struct.Array;
 import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -74,7 +75,7 @@ public class Database {
     }
 
     public void connect() throws SQLException {
-        conn = DriverManager.getConnection(config.dburl(), "", "");
+        conn = DriverManager.getConnection(config.dburl());
     }
 
     public void disconnect() throws SQLException {
@@ -173,7 +174,7 @@ public class Database {
                     );
                     buffer.add(data);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LoggerFactory.getLogger(Database.class).info("Database", e);
                     break;
                 }
             }

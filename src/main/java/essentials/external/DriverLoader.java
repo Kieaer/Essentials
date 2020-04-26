@@ -5,6 +5,7 @@ import arc.files.Fi;
 import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
 import static essentials.PluginVars.DBURL;
 
 public class DriverLoader implements Driver {
-    public static URLClassLoader H2URL;
+    URLClassLoader H2URL;
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
     Array<URL> urls = new Array<>();
     private boolean tried = false;
@@ -52,14 +53,14 @@ public class DriverLoader implements Driver {
                 }
                 Driver driver = (Driver) Class.forName(dr, true, cla).getDeclaredConstructor().newInstance();
                 DriverManager.registerDriver(new DriverLoader(driver));
-                if (dr.contains("h2")) H2URL = cla;
+                if (dr.contains("h2")) this.H2URL = cla;
             }
         } catch (Exception e) {
             if (!tried) {
                 tried = true;
                 download();
             } else {
-                e.printStackTrace();
+                LoggerFactory.getLogger(DriverLoader.class).error("Driver load", e);
                 Core.app.exit();
             }
         }

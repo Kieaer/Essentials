@@ -8,6 +8,7 @@ import mindustry.entities.type.Player;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.hjson.Stringify;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -119,7 +120,7 @@ public class Permission {
                 }
             } catch (IOException e) {
                 // 이것도 유저들이 알아야 고침
-                e.printStackTrace();
+                LoggerFactory.getLogger(Permission.class).error("Permission parsing", e);
             }
         } else {
             root.child("permission_user.hjson").writeString(new JsonObject().toString(Stringify.FORMATTED));
