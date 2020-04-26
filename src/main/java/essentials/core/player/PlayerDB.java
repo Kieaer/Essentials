@@ -31,15 +31,14 @@ public class PlayerDB {
     }
 
     public PlayerData load(String uuid, String... AccountID) {
-        try {
-            StringBuilder sql = new StringBuilder();
-            sql.append("SELECT * FROM players WHERE uuid=?");
-            if (AccountID != null && AccountID.length != 0) sql.append(" OR accountid=?");
-            PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT * FROM players WHERE uuid=?");
+        if (AccountID != null && AccountID.length != 0) sql.append(" OR accountid=?");
+
+        try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
+             ResultSet rs = pstmt.executeQuery()) {
             pstmt.setString(1, uuid);
             if (AccountID != null && AccountID.length != 0) pstmt.setString(2, AccountID[0]);
-            ResultSet rs = pstmt.executeQuery();
-
             if (rs.next()) {
                 PlayerData data = new PlayerData(
                         rs.getString("name"),
@@ -109,8 +108,7 @@ public class PlayerDB {
         sql.deleteCharAt(sql.length() - 2);
         sql.append(" WHERE uuid=?");
 
-        try {
-            PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
+        try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
             js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
                 int index = 1;
 
@@ -135,7 +133,6 @@ public class PlayerDB {
 
             pstmt.setString(size, playerData.uuid());
             pstmt.execute();
-            pstmt.close();
         } catch (SQLException e) {
             new CrashReport(e);
         }
@@ -156,9 +153,7 @@ public class PlayerDB {
         sql.deleteCharAt(sql.length() - 1);
         sql.append(")");
 
-        try {
-            PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
-
+        try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
             js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
                 int index = 1;
 

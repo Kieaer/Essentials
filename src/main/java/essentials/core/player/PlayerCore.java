@@ -119,11 +119,10 @@ public class PlayerCore {
     }
 
     public boolean login(Player player, String id, String pw) {
-        try {
-            PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE accountid=? AND accountpw=?");
+        try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE accountid=? AND accountpw=?");
+             ResultSet rs = pstmt.executeQuery()) {
             pstmt.setString(1, id);
             pstmt.setString(2, pw);
-            ResultSet rs = pstmt.executeQuery();
             return rs.next();
         } catch (SQLException e) {
             new CrashReport(e);

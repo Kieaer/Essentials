@@ -24,7 +24,7 @@ public class Database {
     public Connection conn;
     Class<?> cl = null;
 
-    public void create() throws SQLException {
+    public void create() {
         String data = "CREATE TABLE IF NOT EXISTS players (" +
                 "name TEXT NOT NULL," +
                 "uuid TEXT NOT NULL," +
@@ -69,9 +69,11 @@ public class Database {
                 "accountpw TEXT NOT NULL" +
                 ")";
 
-        PreparedStatement pstmt = conn.prepareStatement(data);
-        pstmt.execute();
-        pstmt.close();
+        try (PreparedStatement pstmt = conn.prepareStatement(data)) {
+            pstmt.execute();
+        } catch (SQLException e) {
+            new CrashReport(e);
+        }
     }
 
     public void connect() throws SQLException {
@@ -114,9 +116,9 @@ public class Database {
 
     public void LegacyUpgrade() {
         Array<PlayerData> buffer = new Array<>();
-        try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM players");
-            ResultSet rs = pstmt.executeQuery();
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM players");
+             ResultSet rs = pstmt.executeQuery();
+             Statement sm = conn.createStatement()) {
             while (rs.next()) {
                 try {
                     try {
@@ -178,13 +180,8 @@ public class Database {
                     break;
                 }
             }
-            rs.close();
-            pstmt.close();
 
-            Statement sm = conn.createStatement();
             sm.execute("DROP TABLE players");
-            sm.close();
-
             create();
 
             for (PlayerData p : buffer) {
@@ -197,31 +194,33 @@ public class Database {
                 sql.deleteCharAt(sql.length() - 1);
                 sql.append(")");
 
-                PreparedStatement ps = conn.prepareStatement(sql.toString());
 
-                js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
-                    int index = 1;
+                try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+                    js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
+                        int index = 1;
 
-                    @Override
-                    public void accept(ObjectMap.Entry<String, Object> o) {
-                        try {
-                            if (o.value instanceof String) {
-                                ps.setString(index, (String) o.value);
-                            } else if (o.value instanceof Boolean) {
-                                ps.setBoolean(index, (Boolean) o.value);
-                            } else if (o.value instanceof Integer) {
-                                ps.setInt(index, (Integer) o.value);
-                            } else if (o.value instanceof Long) {
-                                ps.setLong(index, (Long) o.value);
+                        @Override
+                        public void accept(ObjectMap.Entry<String, Object> o) {
+                            try {
+                                if (o.value instanceof String) {
+                                    ps.setString(index, (String) o.value);
+                                } else if (o.value instanceof Boolean) {
+                                    ps.setBoolean(index, (Boolean) o.value);
+                                } else if (o.value instanceof Integer) {
+                                    ps.setInt(index, (Integer) o.value);
+                                } else if (o.value instanceof Long) {
+                                    ps.setLong(index, (Long) o.value);
+                                }
+                            } catch (SQLException e) {
+                                new CrashReport(e);
                             }
-                        } catch (SQLException e) {
-                            new CrashReport(e);
+                            index++;
                         }
-                        index++;
-                    }
-                });
-                ps.execute();
-                ps.close();
+                    });
+                    ps.execute();
+                } catch (SQLException e) {
+                    new CrashReport(e);
+                }
             }
         } catch (Exception e) {
             new CrashReport(e);
