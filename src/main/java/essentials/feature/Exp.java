@@ -9,8 +9,8 @@ import static essentials.Main.config;
 import static essentials.Main.playerDB;
 
 public class Exp {
-    final double BASE_XP = config.getBasexp();
-    final double EXPONENT = config.getExponent();
+    final double BASE_XP = config.basexp();
+    final double EXPONENT = config.exponent();
 
     public Exp(Player player) {
         PlayerData target = playerDB.get(player.uuid);
@@ -28,7 +28,7 @@ public class Exp {
         target.level(level);
         target.reqtotalexp(reqtotalexp);
 
-        if (currentlevel < level && currentlevel > config.getAlarmlevel() && config.isLevelupalarm())
+        if (currentlevel < level && currentlevel > config.alarmlevel() && config.levelupalarm())
             Call.onInfoToast(new Bundle(target.locale()).get("player.levelup", player.name, level), 600);
     }
 

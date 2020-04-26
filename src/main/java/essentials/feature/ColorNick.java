@@ -23,7 +23,7 @@ public class ColorNick implements Runnable {
                 }
             }
             try {
-                Thread.sleep(config.getCupdatei());
+                Thread.sleep(config.cupdatei());
             } catch (InterruptedException ignored) {
                 return;
             }

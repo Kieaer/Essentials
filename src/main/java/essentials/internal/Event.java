@@ -43,9 +43,9 @@ import static org.hjson.JsonValue.readJSON;
 public class Event {
     public Event() {
         Events.on(EventType.TapConfigEvent.class, e -> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.isAlertaction()) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.alertaction()) {
                 tool.sendMessageAll("tap-config", e.player.name, e.tile.entity.block.name);
-                if (config.isDebug())
+                if (config.debug())
                     Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
             }
         });
@@ -71,9 +71,9 @@ public class Event {
         });
 
         Events.on(EventType.WithdrawEvent.class, e -> {
-            if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.isAntigrief()) {
+            if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.antigrief()) {
                 tool.sendMessageAll("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
-                if (config.isDebug())
+                if (config.debug())
                     Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
@@ -139,7 +139,7 @@ public class Event {
                 }
             }
 
-            if (config.isStrictname()) {
+            if (config.strictname()) {
                 if (e.player.name.length() > 32) Call.onKick(e.player.con, "Nickname too long!");
                 //if (e.player.name.matches(".*\\[.*].*"))
                 //    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
@@ -168,7 +168,7 @@ public class Event {
                 player.con.kick("Invalid request!");
                 return;
             }
-            if (config.isAlertaction())
+            if (config.alertaction())
                 tool.sendMessageAll("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name);
         });
 
@@ -181,9 +181,9 @@ public class Event {
                 PlayerData playerData = playerDB.load(e.player.uuid);
                 Bundle bundle = new Bundle(playerData.locale());
 
-                if (config.isLoginenable()) {
-                    if (config.getPasswordmethod().equals("mixed")) {
-                        if (!playerData.error() && config.isAutologin()) {
+                if (config.loginenable()) {
+                    if (config.passwordmethod().equals("mixed")) {
+                        if (!playerData.error() && config.autologin()) {
                             if (playerData.udid() != 0L) {
                                 new Thread(() -> Call.onConnect(e.player.con, serverIP, 7060)).start();
                             } else {
@@ -198,29 +198,29 @@ public class Event {
                                 Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
                             }
                         }
-                    } else if (config.getPasswordmethod().equals("discord")) {
-                        if (!playerData.error() && config.isAutologin()) {
+                    } else if (config.passwordmethod().equals("discord")) {
+                        if (!playerData.error() && config.autologin()) {
                             e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
                             Locale language = tool.getGeo(e.player);
-                            if (config.getPasswordmethod().equals("discord")) {
-                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.getDiscordlink();
+                            if (config.passwordmethod().equals("discord")) {
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink();
                             } else {
                                 message = new Bundle(language).get("system.login.require.password");
                             }
                             Call.onInfoMessage(e.player.con, message);
                         }
                     } else {
-                        if (!playerData.error() && config.isAutologin()) {
+                        if (!playerData.error() && config.autologin()) {
                             e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
                             Locale language = tool.getGeo(e.player);
-                            if (config.getPasswordmethod().equals("discord")) {
-                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.getDiscordlink();
+                            if (config.passwordmethod().equals("discord")) {
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink();
                             } else {
                                 message = new Bundle(language).get("system.login.require.password");
                             }
@@ -229,7 +229,7 @@ public class Event {
                     }
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (!playerData.error() && config.isAutologin()) {
+                    if (!playerData.error() && config.autologin()) {
                         e.player.sendMessage(bundle.get("account.autologin"));
                         playerCore.load(e.player);
                     } else {
@@ -243,7 +243,7 @@ public class Event {
                 }
 
                 // VPN을 사용중인지 확인
-                if (config.isAntivpn()) {
+                if (config.antivpn()) {
                     try {
                         InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
                         BufferedReader br = new BufferedReader(new InputStreamReader(reader));
@@ -262,7 +262,7 @@ public class Event {
                 }
 
                 // PvP 평화시간 설정
-                if (config.isAntirush() && state.rules.pvp && playtime.isBefore(config.getAntirushtime())) {
+                if (config.antirush() && state.rules.pvp && playtime.isBefore(config.antirushtime())) {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
                     Call.onSetRules(state.rules);
@@ -270,18 +270,18 @@ public class Event {
                 }
 
                 // 플레이어 인원별 난이도 설정
-                if (config.isAutodifficulty()) {
+                if (config.autodifficulty()) {
                     int total = playerGroup.size();
-                    if (config.getDifficultyEasy() >= total) {
+                    if (config.difficultyeasy() >= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
                         tool.sendMessageAll("system.difficulty.easy");
-                    } else if (config.getDifficultyNormal() == total) {
+                    } else if (config.difficultynormal() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
                         tool.sendMessageAll("system.difficulty.normal");
-                    } else if (config.getDifficultyHard() == total) {
+                    } else if (config.difficultyhard() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
                         tool.sendMessageAll("system.difficulty.hard");
-                    } else if (config.getDifficultyInsane() <= total) {
+                    } else if (config.difficultyinsane() <= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
                         tool.sendMessageAll("system.difficulty.insane");
                     }
@@ -332,9 +332,9 @@ public class Event {
 
                             // 서버간 대화기능 작동
                             if (playerData.crosschat()) {
-                                if (config.isClientenable()) {
+                                if (config.clienten()) {
                                     client.request(Client.Request.chat, e.player, e.message);
-                                } else if (config.isServerenable()) {
+                                } else if (config.serverenable()) {
                                     // 메세지를 모든 클라이언트에게 전송함
                                     String msg = "[" + e.player.name + "]: " + e.message;
                                     try {
@@ -359,7 +359,7 @@ public class Event {
                 playerData.lastchat(e.message);
 
                 // 번역
-                if (config.isTranslate()) {
+                if (config.translate()) {
                     try {
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player p = playerGroup.all().get(i);
@@ -379,8 +379,8 @@ public class Event {
                                     if (found) {
                                         String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
                                                 .method(Connection.Method.POST)
-                                                .header("X-NCP-APIGW-API-KEY-ID", config.getTranslateid())
-                                                .header("X-NCP-APIGW-API-KEY", config.getTranslatepw())
+                                                .header("X-NCP-APIGW-API-KEY-ID", config.translateid())
+                                                .header("X-NCP-APIGW-API-KEY", config.translatepw())
                                                 .data("source", playerData.language())
                                                 .data("target", target.language())
                                                 .data("text", e.message)
@@ -435,7 +435,7 @@ public class Event {
                     pluginData.nukedata.add(e.tile);
                 }
 
-                if (config.isDebug() && config.isAntigrief()) {
+                if (config.debug() && config.antigrief()) {
                     Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
@@ -474,7 +474,7 @@ public class Event {
                     }
 
                     // Exp Playing Game (EPG)
-                    if (config.isExplimit()) {
+                    if (config.explimit()) {
                         int level = target.level();
                         try {
                             JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
@@ -492,7 +492,7 @@ public class Event {
                         }
                     }
                 }
-                if (config.isDebug() && config.isAntigrief()) {
+                if (config.debug() && config.antigrief()) {
                     Log.info("anti-grief.destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
@@ -520,7 +520,7 @@ public class Event {
         // 플레이어가 밴당했을 때 공유기능 작동
         Events.on(EventType.PlayerBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
-                if (config.isBanshare() && config.isClientenable()) {
+                if (config.banshare() && config.clienten()) {
                     client.request(Client.Request.bansync, null, null);
                 }
 
@@ -537,7 +537,7 @@ public class Event {
         // 이건 IP 밴당했을때 작동
         Events.on(EventType.PlayerIpBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
-                if (config.isBanshare() && client.activated) {
+                if (config.banshare() && client.activated) {
                     client.request(Client.Request.bansync, null, null);
                 }
             });
@@ -556,7 +556,7 @@ public class Event {
 
         Events.on(EventType.ServerLoadEvent.class, e -> {
             // 예전 DB 변환
-            if (config.isOldDBMigration()) new DataMigration().MigrateDB();
+            if (config.olddbmigration()) new DataMigration().MigrateDB();
             // 업데이트 확인
             if (config.isUpdate()) {
                 Log.client("client.update-check");
@@ -581,7 +581,7 @@ public class Event {
                                 System.out.println(json.getString("body", "No description found."));
                                 System.out.println(new Bundle().get("plugin-downloading-standby"));
                                 timer.cancel();
-                                if (config.isServerenable()) {
+                                if (config.serverenable()) {
                                     try {
                                         for (Server.service ser : server.list) {
                                             ser.interrupt();
@@ -594,7 +594,7 @@ public class Event {
                                     } catch (Exception ignored) {
                                     }
                                 }
-                                if (config.isClientenable() && client.activated) {
+                                if (config.clienten() && client.activated) {
                                     client.request(Client.Request.exit, null, null);
                                 }
                                 mainThread.shutdown();
@@ -625,7 +625,7 @@ public class Event {
             }
 
             // Discord 봇 시작
-            if (config.getPasswordmethod().equals("discord") || config.getPasswordmethod().equals("mixed")) {
+            if (config.passwordmethod().equals("discord") || config.passwordmethod().equals("mixed")) {
                 discord.start();
             }
 

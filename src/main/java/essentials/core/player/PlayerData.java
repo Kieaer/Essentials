@@ -55,10 +55,10 @@ public class PlayerData {
     private boolean isLogin;
 
     private LocalTime afk = LocalTime.of(0, 0, 0);
-    private int afk_tilex = 0;
-    private int afk_tiley = 0;
+    private int tilex = 0;
+    private int tiley = 0;
 
-    private Locale locale = config.getLanguage();
+    private Locale locale = config.language();
 
     public PlayerData() {
         this.error = true;
@@ -287,12 +287,12 @@ public class PlayerData {
         this.afk = afk;
     }
 
-    public void afk_tilex(int afk_tilex) {
-        this.afk_tilex = afk_tilex;
+    public void tilex(int afk_tilex) {
+        this.tilex = afk_tilex;
     }
 
-    public void afk_tiley(int afk_tiley) {
-        this.afk_tiley = afk_tiley;
+    public void tiley(int afk_tiley) {
+        this.tiley = afk_tiley;
     }
 
     public void locale(Locale locale) {
@@ -475,12 +475,12 @@ public class PlayerData {
         return afk;
     }
 
-    public int afk_tilex() {
-        return afk_tilex;
+    public int tilex() {
+        return tilex;
     }
 
-    public int afk_tiley() {
-        return afk_tiley;
+    public int tiley() {
+        return tiley;
     }
 
     public Locale locale() {

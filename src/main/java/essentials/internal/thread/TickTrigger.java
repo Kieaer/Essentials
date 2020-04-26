@@ -45,7 +45,7 @@ public class TickTrigger {
                     tick = 0;
                 }
 
-                if (config.isBorder()) {
+                if (config.border()) {
                     for (Player p : playerGroup.all()) {
                         if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
                             Call.onPlayerDeath(p);
@@ -85,7 +85,7 @@ public class TickTrigger {
                         playtime = playtime.plusSeconds(1);
 
                         // PvP 평화시간 카운트
-                        if (config.isAntirush() && state.rules.pvp && playtime.isAfter(config.getAntirushtime()) && PvPPeace) {
+                        if (config.antirush() && state.rules.pvp && playtime.isAfter(config.antirushtime()) && PvPPeace) {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
@@ -147,7 +147,7 @@ public class TickTrigger {
 
                                 // 잠수 및 플레이 시간 계산
                                 target.playtime(LocalTime.parse(target.playtime(), DateTimeFormatter.ofPattern("HH:mm:ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-                                if (target.afk_tilex() == p.tileX() && target.afk_tiley() == p.tileY()) {
+                                if (target.tilex() == p.tileX() && target.tiley() == p.tileY()) {
                                     target.afk(target.afk().plusSeconds(1));
                                     if (target.afk() == LocalTime.of(0, 5, 0)) {
                                         kick = true;
@@ -155,8 +155,8 @@ public class TickTrigger {
                                 } else {
                                     target.afk(LocalTime.of(0, 0, 0));
                                 }
-                                target.afk_tilex(p.tileX());
-                                target.afk_tiley(p.tileY());
+                                target.tilex(p.tileX());
+                                target.tiley(p.tileY());
 
                                 if (!state.rules.editor) new Exp(p);
                                 if (kick) Call.onKick(p.con, "AFK");
@@ -240,7 +240,7 @@ public class TickTrigger {
                 // 1.5초마다 실행
                 if ((tick % 90) == 0) {
                     if (state.is(GameState.State.playing)) {
-                        if (config.isScanresource()) {
+                        if (config.scanresource()) {
                             for (Item item : content.items()) {
                                 if (item.type == ItemType.material) {
                                     if (state.teams.get(Team.sharded).cores.isEmpty()) return;

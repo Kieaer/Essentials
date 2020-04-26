@@ -44,7 +44,7 @@ public class PlayerCore {
             perm.create(playerData);
             perm.saveAll();
         } else {
-            if (config.isRealname() || config.getPasswordmethod().equals("discord")) {
+            if (config.realname() || config.passwordmethod().equals("discord")) {
                 player.name = playerData.name();
             } else {
                 player.name = perm.permission_user.get(playerData.uuid()).asObject().get("name").asString();

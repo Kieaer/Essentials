@@ -24,7 +24,7 @@ public class DataMigration {
             database.conn.prepareStatement("DELETE FROM players").execute();
             PreparedStatement pstmt = database.conn.prepareStatement(sql);
 
-            Connection con = DriverManager.getConnection(config.getOldDBurl(), config.getOldDBID(), config.getOldDBPW());
+            Connection con = DriverManager.getConnection(config.olddburl(), config.olddbid(), config.olddbpw());
             PreparedStatement pmt = con.prepareStatement("SELECT * from players");
             ResultSet rs = pmt.executeQuery();
 
