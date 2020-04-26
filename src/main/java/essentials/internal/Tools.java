@@ -17,6 +17,7 @@ import org.jsoup.Jsoup;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -106,12 +107,18 @@ public class Tools {
     }
 
     public String getHostIP() {
+        BufferedReader in = null;
         try {
             URL whatismyip = new URL("http://checkip.amazonaws.com");
-            BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
+            in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
             return in.readLine();
         } catch (Exception e) {
             return "127.0.0.1";
+        } finally {
+            if (in != null) try {
+                in.close();
+            } catch (IOException ignored) {
+            }
         }
     }
 

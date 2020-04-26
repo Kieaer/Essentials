@@ -23,6 +23,7 @@ import static org.hjson.JsonValue.readJSON;
 
 public class Threads implements Runnable {
     int delay = 0;
+
     @Override
     public void run() {
         Thread.currentThread().setName("Essential thread");

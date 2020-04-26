@@ -12,8 +12,7 @@ import java.util.function.Consumer;
 public class PingHost {
     // source from https://github.com/Anuken/CoreBot/blob/master/src/corebot/Net.java#L57-L84
     public PingHost(String ip, int port, Consumer<Host> listener) {
-        try {
-            DatagramSocket socket = new DatagramSocket();
+        try (DatagramSocket socket = new DatagramSocket()) {
             socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(ip), port));
 
             socket.setSoTimeout(1000);
@@ -26,7 +25,6 @@ public class PingHost {
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
             listener.accept(readServerData(ip, buffer, System.currentTimeMillis() - start));
             socket.disconnect();
-            socket.close();
         } catch (Exception e) {
             listener.accept(new Host(null, ip, null, 0, 0, 0, null, null, 0, null));
         }

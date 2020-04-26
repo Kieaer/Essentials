@@ -19,6 +19,7 @@ import javax.security.auth.login.LoginException;
 import java.security.SecureRandom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -42,7 +43,8 @@ public class Discord extends ListenerAdapter {
             Log.info("system.discord.enabled");
         } catch (LoginException e) {
             Log.err("system.discord.error");
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -80,11 +82,13 @@ public class Discord extends ListenerAdapter {
                                 send("PW: " + pw);
                                 if (checkpw(e.getAuthor().getName(), name, pw)) {
                                     send("check pw success");
+                                    PreparedStatement pstmt = null;
+                                    ResultSet rs = null;
                                     try {
                                         pw = BCrypt.gensalt(12, SecureRandom.getInstanceStrong());
-                                        PreparedStatement pstmt = database.conn.prepareStatement("SELECT * FROM players WHERE accountid=?");
+                                        pstmt = database.conn.prepareStatement("SELECT * FROM players WHERE accountid=?");
                                         pstmt.setString(1, name);
-                                        ResultSet rs = pstmt.executeQuery();
+                                        rs = pstmt.executeQuery();
                                         if (!rs.next()) {
                                             Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(name));
                                             if (player != null) {
@@ -104,6 +108,15 @@ public class Discord extends ListenerAdapter {
                                         }
                                     } catch (Exception ex) {
                                         new CrashReport(ex);
+                                    } finally {
+                                        if (pstmt != null) try {
+                                            pstmt.close();
+                                        } catch (SQLException ignored) {
+                                        }
+                                        if (rs != null) try {
+                                            rs.close();
+                                        } catch (SQLException ignored) {
+                                        }
                                     }
                                 } else {
                                     send("Check password failed.");

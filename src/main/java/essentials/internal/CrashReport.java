@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -33,9 +34,10 @@ public class CrashReport {
             Log.write(Log.LogType.error, text);
             Log.err("Plugin internal error! - " + e.getMessage());
             if (config.crashreport()) {
+                Socket socket = null;
                 try {
                     InetAddress address = InetAddress.getByName("mindustry.kr");
-                    Socket socket = new Socket(address, 6560);
+                    socket = new Socket(address, 6560);
                     BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     DataOutputStream os = new DataOutputStream(socket.getOutputStream());
                     os.writeBytes(e.toString() + "\n");
@@ -65,6 +67,11 @@ public class CrashReport {
                     }
                 } catch (Exception ex) {
                     log.warn("Crash Report Error", ex);
+                } finally {
+                    if (socket != null) try {
+                        socket.close();
+                    } catch (IOException ignored) {
+                    }
                 }
             }
         } else {

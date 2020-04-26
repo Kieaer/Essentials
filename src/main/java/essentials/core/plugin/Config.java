@@ -16,6 +16,7 @@ import static essentials.PluginVars.config_version;
 import static org.hjson.JsonValue.readJSON;
 
 public class Config {
+    JsonObject obj;
     private int version;
     private Locale language;
     private boolean serverenable;
@@ -77,8 +78,6 @@ public class Config {
     private int spawnlimit;
     private String prefix;
     private String eventport;
-
-    JsonObject obj;
 
     public void init() {
         JsonObject settings;

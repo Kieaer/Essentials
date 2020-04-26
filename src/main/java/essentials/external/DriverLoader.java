@@ -7,10 +7,7 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
@@ -35,12 +32,13 @@ public class DriverLoader implements Driver {
 
     public DriverLoader() {
         // Ugly source :worried:
+        URLClassLoader cla = null;
         try {
             for (String url : DBURL) urls.add(new URL(url));
             Fi[] f = root.child("Driver/").list();
 
             for (int a = 0; a < urls.size; a++) {
-                URLClassLoader cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
+                cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
                 String dr = "org.sqlite.JDBC";
                 for (int b = 0; b < urls.size; b++) {
                     if (f[a].name().contains("mariadb")) {
@@ -63,12 +61,16 @@ public class DriverLoader implements Driver {
                 LoggerFactory.getLogger(DriverLoader.class).error("Driver load", e);
                 Core.app.exit();
             }
+        } finally {
+            if (cla != null) try {
+                cla.close();
+            } catch (IOException ignored) {
+            }
         }
     }
 
     public static void URLDownload(URL URL, File savepath) {
-        try {
-            BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath));
+        try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath))) {
             URLConnection urlConnection = URL.openConnection();
             InputStream is = urlConnection.getInputStream();
             int size = urlConnection.getContentLength();
@@ -83,7 +85,6 @@ public class DriverLoader implements Driver {
                 printProgress(startTime, size, byteWritten);
             }
             is.close();
-            outputStream.close();
         } catch (Exception e) {
             new CrashReport(e);
         }

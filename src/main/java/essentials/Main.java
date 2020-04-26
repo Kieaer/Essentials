@@ -88,9 +88,8 @@ public class Main extends Plugin {
 
     public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
     public static Config config = new Config();
-    public Array<EventServer.EventService> eventServers = new Array<>();
     public final ApplicationListener listener;
-
+    public Array<EventServer.EventService> eventServers = new Array<>();
     Logger log = LoggerFactory.getLogger(Main.class);
 
     public Main() {
@@ -871,7 +870,7 @@ public class Main extends Plugin {
             Bundle bundle = new Bundle(playerData.locale());
 
             UnitType targetUnit = tool.getUnitByName(arg[0]);
-            if(targetUnit==null){
+            if (targetUnit == null) {
                 player.sendMessage(bundle.prefix("system.mob.not-found"));
                 return;
             }
@@ -887,14 +886,14 @@ public class Main extends Plugin {
                 return;
             }
             Player targetPlayer = arg.length > 3 ? tool.findPlayer(arg[3]) : player;
-            if (targetPlayer == null){
+            if (targetPlayer == null) {
                 player.sendMessage(bundle.prefix("player.not-found"));
                 targetPlayer = player;
             }
             Team targetTeam = arg.length > 2 ? tool.getTeamByName(arg[2]) : targetPlayer.getTeam();
-            if (targetTeam == null){
+            if (targetTeam == null) {
                 player.sendMessage(bundle.prefix("team-not-found"));
-                targetTeam=targetPlayer.getTeam();
+                targetTeam = targetPlayer.getTeam();
             }
             for (int i = 0; count > i; i++) {
                 BaseUnit baseUnit = targetUnit.create(targetTeam);

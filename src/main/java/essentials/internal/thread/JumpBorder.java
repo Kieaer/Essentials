@@ -67,14 +67,15 @@ public class JumpBorder implements Runnable {
                                         Log.info("jump zone " + ip + " offline! After 1 minute, try to connect again.");
                                     TimeUnit.MINUTES.sleep(1);
                                 }
-                            } catch (InterruptedException ignored) {
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
                             }
                         });
                     } else {
                         try {
                             TimeUnit.SECONDS.sleep(1);
-                        } catch (InterruptedException ignored) {
-                            return;
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }

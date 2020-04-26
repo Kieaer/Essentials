@@ -413,7 +413,7 @@ public class Event {
         // 플레이어가 블럭을 건설했을 때
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             PlayerData target = playerDB.get(e.player.uuid);
-            if (!e.breaking && e.player.buildRequest() != null && !target.error() && e.tile.block() != null && e.player.buildRequest() != null) {
+            if (!e.breaking && e.player.buildRequest() != null && !target.error() && e.tile.block() != null) {
                 String name = e.tile.block().name;
                 try {
                     JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();

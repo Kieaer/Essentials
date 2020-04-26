@@ -74,7 +74,7 @@ public class PermissionWatch implements Runnable {
                     }
                 }
             } catch (InterruptedException e) {
-                return;
+                Thread.currentThread().interrupt();
             } catch (Exception ignored) {
             }
         }
