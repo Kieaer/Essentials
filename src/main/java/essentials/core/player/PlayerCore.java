@@ -20,18 +20,18 @@ public class PlayerCore {
     public void load(Player player, String... AccountID) {
         playerDB.remove(player.uuid);
         PlayerData playerData = playerDB.load(AccountID.length > 0 ? player.uuid : player.uuid, AccountID);
-        if (playerData.error) {
+        if (playerData.error()) {
             new CrashReport(new Exception("DATA NOT FOUND"));
             return;
         }
 
-        if (playerData.banned) {
+        if (playerData.banned()) {
             netServer.admins.banPlayerID(player.uuid);
             Call.onKick(player.con, Packets.KickReason.banned);
             return;
         }
 
-        String motd = tool.getMotd(playerData.locale);
+        String motd = tool.getMotd(playerData.locale());
         int count = motd.split("\r\n|\r|\n").length;
         if (count > 10) {
             Call.onInfoMessage(player.con, motd);
@@ -39,15 +39,15 @@ public class PlayerCore {
             player.sendMessage(motd);
         }
 
-        if (playerData.colornick) colornick.targets.add(player);
-        if (perm.permission_user.get(playerData.uuid) == null) {
+        if (playerData.colornick()) colornick.targets.add(player);
+        if (perm.permission_user.get(playerData.uuid()) == null) {
             perm.create(playerData);
             perm.saveAll();
         } else {
             if (config.isRealname() || config.getPasswordmethod().equals("discord")) {
-                player.name = playerData.name;
+                player.name = playerData.name();
             } else {
-                player.name = perm.permission_user.get(playerData.uuid).asObject().get("name").asString();
+                player.name = perm.permission_user.get(playerData.uuid()).asObject().get("name").asString();
             }
         }
 
@@ -57,8 +57,8 @@ public class PlayerCore {
         playerData.connected(true);
         playerData.lastdate(tool.getTime());
         playerData.connserver(serverIP);
-        playerData.exp(playerData.exp + playerData.joincount);
-        playerData.joincount(playerData.joincount++);
+        playerData.exp(playerData.exp() + playerData.joincount());
+        playerData.joincount(playerData.joincount() + 1);
         playerData.login(true);
     }
 

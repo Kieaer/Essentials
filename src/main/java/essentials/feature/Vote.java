@@ -68,7 +68,7 @@ public class Vote {
         this.reason = reason;
         this.type = VoteType.kick;
 
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale);
+        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale());
 
         if (playerGroup.size() == 1) {
             player.sendMessage(bundle.get("vote.mininal"));
@@ -96,7 +96,7 @@ public class Vote {
         this.type = type;
         this.parameters = parameters;
 
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale);
+        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale());
 
         if (!status) {
             switch (type) {
@@ -126,7 +126,7 @@ public class Vote {
         this.player = player;
         this.type = VoteType.map;
 
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale);
+        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale());
 
         if (!status) {
             tool.sendMessageAll("vote.map");
@@ -235,8 +235,8 @@ public class Vote {
         voted.add(uuid);
         for (Player others : playerGroup.all()) {
             PlayerData p = playerDB.get(others.uuid);
-            if (!p.error)
-                others.sendMessage(new Bundle(p.locale).get("vote.current-voted", voted.size, getRequire() - voted.size));
+            if (!p.error())
+                others.sendMessage(new Bundle(p.locale()).get("vote.current-voted", voted.size, getRequire() - voted.size));
         }
 
         if (voted.size >= getRequire()) {

@@ -25,12 +25,12 @@ public class Permission {
     public void create(PlayerData playerData) {
         JsonObject object = new JsonObject();
 
-        object.add("name", playerData.name);
+        object.add("name", playerData.name());
         object.add("group", default_group);
-        object.add("prefix", permission.get(playerData.permission).asObject().getString("prefix", "[orange]%1[orange] >[white] %2"));
-        object.add("admin", playerData.isAdmin);
+        object.add("prefix", permission.get(playerData.permission()).asObject().getString("prefix", "[orange]%1[orange] >[white] %2"));
+        object.add("admin", playerData.isAdmin());
 
-        permission_user.add(playerData.uuid, object);
+        permission_user.add(playerData.uuid(), object);
     }
 
     public void update() {
@@ -129,7 +129,7 @@ public class Permission {
     public boolean check(Player player, String command) {
         PlayerData p = playerDB.get(player.uuid);
 
-        if (!p.error) {
+        if (!p.error()) {
             JsonObject object = permission_user.get(player.uuid).asObject();
             if (object != null) {
                 int size = permission.get(object.get("group").asString()).asObject().get("permission").asArray().size();
@@ -148,6 +148,6 @@ public class Permission {
 
     public boolean isAdmin(Player player) {
         PlayerData p = playerDB.get(player.uuid);
-        return permission_user.get(p.uuid).asObject().getBoolean("admin", false);
+        return permission_user.get(p.uuid()).asObject().getBoolean("admin", false);
     }
 }

@@ -17,8 +17,8 @@ public class ColorNick implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             for (Player player : targets) {
                 PlayerData p = playerDB.get(player.uuid);
-                if (p.connected) {
-                    String name = p.name.replaceAll("\\[(.*?)]", "");
+                if (p.connected()) {
+                    String name = p.name().replaceAll("\\[(.*?)]", "");
                     nickcolor(name, player);
                 }
             }

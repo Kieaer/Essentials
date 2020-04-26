@@ -16,14 +16,14 @@ import static essentials.PluginVars.playerData;
 public class PlayerDB {
     public PlayerData get(String uuid) {
         for (PlayerData p : playerData) {
-            if (p.uuid.equals(uuid)) return p;
+            if (p.uuid().equals(uuid)) return p;
         }
         return new PlayerData();
     }
 
     public void remove(String uuid) {
         for (PlayerData p : playerData) {
-            if (p.uuid.equals(uuid)) {
+            if (p.uuid().equals(uuid)) {
                 playerData.remove(p);
                 break;
             }
@@ -133,7 +133,7 @@ public class PlayerDB {
                 }
             });
 
-            pstmt.setString(size, playerData.uuid);
+            pstmt.setString(size, playerData.uuid());
             pstmt.execute();
             pstmt.close();
         } catch (SQLException e) {

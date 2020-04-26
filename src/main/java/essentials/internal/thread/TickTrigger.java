@@ -90,7 +90,7 @@ public class TickTrigger {
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
                             for (Player p : playerGroup.all()) {
-                                player.sendMessage(new Bundle(playerDB.get(p.uuid).locale).get("pvp-peacetime"));
+                                player.sendMessage(new Bundle(playerDB.get(p.uuid).locale()).get("pvp-peacetime"));
                                 player.kill();
                             }
                             PvPPeace = false;
@@ -141,15 +141,15 @@ public class TickTrigger {
                             PlayerData target = playerDB.get(p.uuid);
                             boolean kick = false;
 
-                            if (target.isLogin) {
+                            if (target.login()) {
                                 // Exp 계산
-                                target.exp(target.exp + (int) (Math.random() * 5));
+                                target.exp(target.exp() + (int) (Math.random() * 5));
 
                                 // 잠수 및 플레이 시간 계산
-                                target.playtime(LocalTime.parse(target.playtime, DateTimeFormatter.ofPattern("HH:mm:ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-                                if (target.afk_tilex == p.tileX() && target.afk_tiley == p.tileY()) {
-                                    target.afk(target.afk.plusSeconds(1));
-                                    if (target.afk == LocalTime.of(0, 5, 0)) {
+                                target.playtime(LocalTime.parse(target.playtime(), DateTimeFormatter.ofPattern("HH:mm:ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                                if (target.afk_tilex() == p.tileX() && target.afk_tiley() == p.tileY()) {
+                                    target.afk(target.afk().plusSeconds(1));
+                                    if (target.afk() == LocalTime.of(0, 5, 0)) {
                                         kick = true;
                                     }
                                 } else {

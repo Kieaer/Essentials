@@ -45,8 +45,8 @@ public class Tools {
     public void sendMessageAll(String value, Object... parameter) {
         for (Player p : playerGroup.all()) {
             PlayerData playerData = playerDB.get(p.uuid);
-            if (!playerData.error) {
-                p.sendMessage(new Bundle(playerData.locale).get(value, parameter));
+            if (!playerData.error()) {
+                p.sendMessage(new Bundle(playerData.locale()).get(value, parameter));
             }
         }
     }

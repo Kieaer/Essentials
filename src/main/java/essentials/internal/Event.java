@@ -53,7 +53,7 @@ public class Event {
         Events.on(EventType.TapEvent.class, e -> {
             PlayerData playerData = playerDB.get(e.player.uuid);
 
-            if (!playerData.error) {
+            if (!playerData.error()) {
                 for (PluginData.jumpzone data : pluginData.jumpzone) {
                     int port = data.port;
                     String ip = data.ip;
@@ -77,7 +77,7 @@ public class Event {
                     Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
-                        e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid).locale).get("system.flammable.disabled"));
+                        e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid).locale()).get("system.flammable.disabled"));
                         e.player.clearItem();
                     }
                 }
@@ -97,11 +97,11 @@ public class Event {
                     for (int i = 0; i < playerGroup.size(); i++) {
                         Player player = playerGroup.all().get(i);
                         PlayerData target = playerDB.get(player.uuid);
-                        if (target.isLogin) {
+                        if (target.login()) {
                             if (player.getTeam().name.equals(e.winner.name)) {
-                                target.pvpwincount(target.pvpwincount++);
+                                target.pvpwincount(target.pvpwincount() + 1);
                             } else if (!player.getTeam().name.equals(e.winner.name)) {
-                                target.pvplosecount(target.pvplosecount++);
+                                target.pvplosecount(target.pvplosecount() + 1);
                             }
                         }
                     }
@@ -110,8 +110,8 @@ public class Event {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     PlayerData target = playerDB.get(player.uuid);
-                    if (target.isLogin) {
-                        target.attackclear(target.attackclear++);
+                    if (target.login()) {
+                        target.attackclear(target.attackclear() + 1);
                     }
                 }
             }
@@ -179,12 +179,12 @@ public class Event {
             Thread t = new Thread(() -> {
                 Thread.currentThread().setName(e.player.name + " Player Join thread");
                 PlayerData playerData = playerDB.load(e.player.uuid);
-                Bundle bundle = new Bundle(playerData.locale);
+                Bundle bundle = new Bundle(playerData.locale());
 
                 if (config.isLoginenable()) {
                     if (config.getPasswordmethod().equals("mixed")) {
-                        if (!playerData.error && config.isAutologin()) {
-                            if (playerData.udid != 0L) {
+                        if (!playerData.error() && config.isAutologin()) {
+                            if (playerData.udid() != 0L) {
                                 new Thread(() -> Call.onConnect(e.player.con, serverIP, 7060)).start();
                             } else {
                                 e.player.sendMessage(bundle.get("account.autologin"));
@@ -199,7 +199,7 @@ public class Event {
                             }
                         }
                     } else if (config.getPasswordmethod().equals("discord")) {
-                        if (!playerData.error && config.isAutologin()) {
+                        if (!playerData.error() && config.isAutologin()) {
                             e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
@@ -213,7 +213,7 @@ public class Event {
                             Call.onInfoMessage(e.player.con, message);
                         }
                     } else {
-                        if (!playerData.error && config.isAutologin()) {
+                        if (!playerData.error() && config.isAutologin()) {
                             e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
@@ -229,7 +229,7 @@ public class Event {
                     }
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (!playerData.error && config.isAutologin()) {
+                    if (!playerData.error() && config.isAutologin()) {
                         e.player.sendMessage(bundle.get("account.autologin"));
                         playerCore.load(e.player);
                     } else {
@@ -294,22 +294,22 @@ public class Event {
         // 플레이어가 서버에서 탈주했을 때
         Events.on(EventType.PlayerLeave.class, e -> {
             PlayerData player = playerDB.get(e.player.uuid);
-            if (player.isLogin) {
+            if (player.login()) {
                 player.connected(false);
                 player.connserver("none");
-                if (state.rules.pvp && !state.gameOver) player.pvpbreakout(player.pvpbreakout++);
+                if (state.rules.pvp && !state.gameOver) player.pvpbreakout(player.pvpbreakout() + 1);
             }
             playerDB.save(player);
-            playerData.remove(p -> p.uuid.equals(e.player.uuid));
+            playerData.remove(p -> p.uuid().equals(e.player.uuid));
             players.remove(e.player);
         });
 
         // 플레이어가 수다떨었을 때
         Events.on(EventType.PlayerChatEvent.class, e -> {
             PlayerData playerData = playerDB.get(e.player.uuid);
-            Bundle bundle = new Bundle(playerData.locale);
+            Bundle bundle = new Bundle(playerData.locale());
 
-            if (!playerData.error) {
+            if (!playerData.error()) {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
                 if (!check.equals("/")) {
@@ -321,17 +321,17 @@ public class Event {
                             vote.set(e.player.uuid);
                         }
                     } else {
-                        if (!playerData.mute) {
-                            if (perm.permission_user.get(playerData.uuid).asObject().get("prefix") != null) {
-                                if (!playerData.crosschat)
-                                    Call.sendMessage(perm.permission_user.get(playerData.uuid).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
+                        if (!playerData.mute()) {
+                            if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
+                                if (!playerData.crosschat())
+                                    Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
                             } else {
-                                if (!playerData.crosschat)
+                                if (!playerData.crosschat())
                                     Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
                             }
 
                             // 서버간 대화기능 작동
-                            if (playerData.crosschat) {
+                            if (playerData.crosschat()) {
                                 if (config.isClientenable()) {
                                     client.request(Client.Request.chat, e.player, e.message);
                                 } else if (config.isServerenable()) {
@@ -364,10 +364,10 @@ public class Event {
                         for (int i = 0; i < playerGroup.size(); i++) {
                             Player p = playerGroup.all().get(i);
                             PlayerData target = playerDB.get(p.uuid);
-                            if (!target.error) {
+                            if (!target.error()) {
                                 String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
-                                String language = target.language;
-                                String orignal = playerData.language;
+                                String language = target.language();
+                                String orignal = playerData.language();
                                 if (!language.equals(orignal)) {
                                     boolean found = false;
                                     for (String s : support) {
@@ -381,8 +381,8 @@ public class Event {
                                                 .method(Connection.Method.POST)
                                                 .header("X-NCP-APIGW-API-KEY-ID", config.getTranslateid())
                                                 .header("X-NCP-APIGW-API-KEY", config.getTranslatepw())
-                                                .data("source", playerData.language)
-                                                .data("target", target.language)
+                                                .data("source", playerData.language())
+                                                .data("target", target.language())
                                                 .data("text", e.message)
                                                 .ignoreContentType(true)
                                                 .followRedirects(true)
@@ -391,7 +391,7 @@ public class Event {
                                         JsonObject object = readJSON(response).asObject();
                                         if (object.get("error") != null) {
                                             String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
-                                            if (target.translate) {
+                                            if (target.translate()) {
                                                 p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
                                             }
                                         }
@@ -409,16 +409,17 @@ public class Event {
         // 플레이어가 블럭을 건설했을 때
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             PlayerData target = playerDB.get(e.player.uuid);
-            if (!e.breaking && e.player.buildRequest() != null && !target.error && e.tile.block() != null && e.player.buildRequest() != null) {
+            if (!e.breaking && e.player.buildRequest() != null && !target.error() && e.tile.block() != null && e.player.buildRequest() != null) {
                 String name = e.tile.block().name;
                 try {
                     JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                     int blockexp = obj.getInt(name, 0);
 
-                    target.lastplacename = e.tile.block().name;
-                    target.placecount++;
-                    target.exp = target.exp + blockexp;
-                    if (e.player.buildRequest().block == Blocks.thoriumReactor) target.reactorcount++;
+                    target.lastplacename(e.tile.block().name);
+                    target.placecount(target.placecount() + 1);
+                    target.exp(target.exp() + blockexp);
+                    if (e.player.buildRequest().block == Blocks.thoriumReactor)
+                        target.reactorcount(target.reactorcount() + 1);
                 } catch (Exception ex) {
                     new CrashReport(ex);
                 }
@@ -450,12 +451,12 @@ public class Event {
                         JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                         int blockexp = obj.getInt(name, 0);
 
-                        target.lastbreakname = e.tile.block().name;
-                        target.breakcount++;
-                        target.exp = target.exp + blockexp;
+                        target.lastbreakname(e.tile.block().name);
+                        target.breakcount(target.breakcount() + 1);
+                        target.exp(target.exp() + blockexp);
                     } catch (Exception ex) {
                         new CrashReport(ex);
-                        Call.onKick(((Player) e.builder).con, new Bundle(target.locale).get("not-logged"));
+                        Call.onKick(((Player) e.builder).con, new Bundle(target.locale()).get("not-logged"));
                     }
 
                     // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
@@ -474,14 +475,14 @@ public class Event {
 
                     // Exp Playing Game (EPG)
                     if (config.isExplimit()) {
-                        int level = target.level;
+                        int level = target.level();
                         try {
                             JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                             if (obj.get(name) != null) {
                                 int blockreqlevel = obj.getInt(name, 999);
                                 if (level < blockreqlevel) {
                                     Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
-                                    ((Player) e.builder).sendMessage(new Bundle(playerDB.get(((Player) e.builder).uuid).locale).get("system.epg.block-require", name, blockreqlevel));
+                                    ((Player) e.builder).sendMessage(new Bundle(playerDB.get(((Player) e.builder).uuid).locale()).get("system.epg.block-require", name, blockreqlevel));
                                 }
                             } else {
                                 Log.err("system.epg.block-not-valid", name);
@@ -503,7 +504,7 @@ public class Event {
             if (e.unit instanceof Player) {
                 Player player = (Player) e.unit;
                 PlayerData target = playerDB.get(player.uuid);
-                if (!state.teams.get(player.getTeam()).cores.isEmpty()) target.deathcount(target.deathcount++);
+                if (!state.teams.get(player.getTeam()).cores.isEmpty()) target.deathcount(target.deathcount() + 1);
             }
 
             // 터진 유닛수만큼 카운트해줌
@@ -511,7 +512,7 @@ public class Event {
                 for (int i = 0; i < playerGroup.size(); i++) {
                     Player player = playerGroup.all().get(i);
                     PlayerData target = playerDB.get(player.uuid);
-                    if (!state.teams.get(player.getTeam()).cores.isEmpty()) target.killcount(target.killcount++);
+                    if (!state.teams.get(player.getTeam()).cores.isEmpty()) target.killcount(target.killcount() + 1);
                 }
             }
         });
@@ -524,7 +525,7 @@ public class Event {
                 }
 
                 for (Player player : playerGroup.all()) {
-                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("player.banned", e.player.name));
+                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).get("player.banned", e.player.name));
                     if (netServer.admins.isIDBanned(player.uuid)) {
                         player.con.kick(Packets.KickReason.banned);
                     }

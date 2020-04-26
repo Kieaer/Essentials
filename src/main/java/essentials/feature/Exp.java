@@ -15,21 +15,21 @@ public class Exp {
     public Exp(Player player) {
         PlayerData target = playerDB.get(player.uuid);
 
-        int currentlevel = target.level;
+        int currentlevel = target.level();
         int max = (int) calculateFullTargetXp(currentlevel);
 
-        int xp = target.exp;
+        int xp = target.exp();
         int levelXp = max - xp;
         int level = calculateLevel(xp);
         int reqexp = (int) Math.floor(max);
         String reqtotalexp = xp + "(" + (int) Math.floor(levelXp) + ") / " + (int) Math.floor(max);
 
-        target.reqexp = reqexp;
-        target.level = level;
-        target.reqtotalexp = reqtotalexp;
+        target.reqexp(reqexp);
+        target.level(level);
+        target.reqtotalexp(reqtotalexp);
 
         if (currentlevel < level && currentlevel > config.getAlarmlevel() && config.isLevelupalarm())
-            Call.onInfoToast(new Bundle(target.locale).get("player.levelup", player.name, level), 600);
+            Call.onInfoToast(new Bundle(target.locale()).get("player.levelup", player.name, level), 600);
     }
 
     double calcXpForLevel(int level) {

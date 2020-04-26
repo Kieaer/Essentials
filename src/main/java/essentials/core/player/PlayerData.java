@@ -9,56 +9,56 @@ import static essentials.Main.config;
 import static essentials.Main.tool;
 
 public class PlayerData {
-    public String name;
-    public String uuid;
-    public String country;
-    public String country_code;
-    public String language;
-    public boolean isAdmin;
-    public int placecount;
-    public int breakcount;
-    public int killcount;
-    public int deathcount;
-    public int joincount;
-    public int kickcount;
-    public int level;
-    public int exp;
-    public int reqexp;
-    public String reqtotalexp;
-    public String firstdate;
-    public String lastdate;
-    public String lastplacename;
-    public String lastbreakname;
-    public String lastchat;
-    public String playtime;
-    public int attackclear;
-    public int pvpwincount;
-    public int pvplosecount;
-    public int pvpbreakout;
-    public int reactorcount;
-    public String bantimeset;
-    public String bantime;
-    public boolean banned;
-    public boolean translate;
-    public boolean crosschat;
-    public boolean colornick;
-    public boolean connected;
-    public String connserver;
-    public String permission;
-    public boolean mute;
-    public boolean alert;
-    public Long udid;
-    public String accountid;
-    public String accountpw;
+    private String name;
+    private String uuid;
+    private String country;
+    private String country_code;
+    private String language;
+    private boolean isAdmin;
+    private int placecount;
+    private int breakcount;
+    private int killcount;
+    private int deathcount;
+    private int joincount;
+    private int kickcount;
+    private int level;
+    private int exp;
+    private int reqexp;
+    private String reqtotalexp;
+    private String firstdate;
+    private String lastdate;
+    private String lastplacename;
+    private String lastbreakname;
+    private String lastchat;
+    private String playtime;
+    private int attackclear;
+    private int pvpwincount;
+    private int pvplosecount;
+    private int pvpbreakout;
+    private int reactorcount;
+    private String bantimeset;
+    private String bantime;
+    private boolean banned;
+    private boolean translate;
+    private boolean crosschat;
+    private boolean colornick;
+    private boolean connected;
+    private String connserver;
+    private String permission;
+    private boolean mute;
+    private boolean alert;
+    private Long udid;
+    private String accountid;
+    private String accountpw;
 
-    public boolean error;
-    public boolean isLogin;
+    private boolean error;
+    private boolean isLogin;
 
-    public LocalTime afk = LocalTime.of(0, 0, 0);
-    public int afk_tilex = 0;
-    public int afk_tiley = 0;
+    private LocalTime afk = LocalTime.of(0, 0, 0);
+    private int afk_tilex = 0;
+    private int afk_tiley = 0;
 
-    public Locale locale = config.getLanguage();
+    private Locale locale = config.getLanguage();
 
     public PlayerData() {
         this.error = true;
@@ -131,7 +131,7 @@ public class PlayerData {
         this.language = language;
     }
 
-    public void admin(boolean admin) {
+    public void isAdmin(boolean admin) {
         isAdmin = admin;
     }
 
@@ -297,6 +297,194 @@ public class PlayerData {
 
     public void locale(Locale locale) {
         this.locale = locale;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public String uuid() {
+        return uuid;
+    }
+
+    public String country() {
+        return country;
+    }
+
+    public String country_code() {
+        return country_code;
+    }
+
+    public String language() {
+        return language;
+    }
+
+    public boolean isAdmin() {
+        return isAdmin;
+    }
+
+    public int placecount() {
+        return placecount;
+    }
+
+    public int breakcount() {
+        return breakcount;
+    }
+
+    public int killcount() {
+        return killcount;
+    }
+
+    public int deathcount() {
+        return deathcount;
+    }
+
+    public int joincount() {
+        return joincount;
+    }
+
+    public int kickcount() {
+        return kickcount;
+    }
+
+    public int level() {
+        return level;
+    }
+
+    public int exp() {
+        return exp;
+    }
+
+    public int reqexp() {
+        return reqexp;
+    }
+
+    public String reqtotalexp() {
+        return reqtotalexp;
+    }
+
+    public String firstdate() {
+        return firstdate;
+    }
+
+    public String lastdate() {
+        return lastdate;
+    }
+
+    public String lastplacename() {
+        return lastplacename;
+    }
+
+    public String lastbreakname() {
+        return lastbreakname;
+    }
+
+    public String lastchat() {
+        return lastchat;
+    }
+
+    public String playtime() {
+        return playtime;
+    }
+
+    public int attackclear() {
+        return attackclear;
+    }
+
+    public int pvpwincount() {
+        return pvpwincount;
+    }
+
+    public int pvplosecount() {
+        return pvplosecount;
+    }
+
+    public int pvpbreakout() {
+        return pvpbreakout;
+    }
+
+    public int reactorcount() {
+        return reactorcount;
+    }
+
+    public String bantimeset() {
+        return bantimeset;
+    }
+
+    public String bantime() {
+        return bantime;
+    }
+
+    public boolean banned() {
+        return banned;
+    }
+
+    public boolean translate() {
+        return translate;
+    }
+
+    public boolean crosschat() {
+        return crosschat;
+    }
+
+    public boolean colornick() {
+        return colornick;
+    }
+
+    public boolean connected() {
+        return connected;
+    }
+
+    public String connserver() {
+        return connserver;
+    }
+
+    public String permission() {
+        return permission;
+    }
+
+    public boolean mute() {
+        return mute;
+    }
+
+    public boolean alert() {
+        return alert;
+    }
+
+    public Long udid() {
+        return udid;
+    }
+
+    public String accountid() {
+        return accountid;
+    }
+
+    public String accountpw() {
+        return accountpw;
+    }
+
+    public boolean error() {
+        return error;
+    }
+
+    public boolean login() {
+        return isLogin;
+    }
+
+    public LocalTime afk() {
+        return afk;
+    }
+
+    public int afk_tilex() {
+        return afk_tilex;
+    }
+
+    public int afk_tiley() {
+        return afk_tiley;
+    }
+
+    public Locale locale() {
+        return locale;
     }
 
     public ArrayMap<String, Object> toMap() {

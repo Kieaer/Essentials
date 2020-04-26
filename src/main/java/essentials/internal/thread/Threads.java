@@ -33,7 +33,7 @@ public class Threads implements Runnable {
                     for (int a = 0; a < playerGroup.size(); a++) {
                         Player p = playerGroup.all().get(a);
                         PlayerData playerData = playerDB.get(p.uuid);
-                        if (playerData.error) {
+                        if (playerData.error()) {
                             String message;
                             String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
                             JsonObject result = readJSON(json).asObject();

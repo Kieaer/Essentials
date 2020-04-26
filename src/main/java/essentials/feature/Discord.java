@@ -48,7 +48,7 @@ public class Discord extends ListenerAdapter {
 
     public void queue(Player player) {
         PlayerData playerData = playerDB.get(player.uuid);
-        Bundle bundle = new Bundle(playerData.error ? locale : playerData.locale);
+        Bundle bundle = new Bundle(playerData.error() ? locale : playerData.locale());
         int pin = new Random().nextInt(9999);
         pins.put(player.name, pin);
         player.sendMessage(bundle.prefix(true, "discord-pin-queue", pin));
@@ -92,8 +92,8 @@ public class Discord extends ListenerAdapter {
                                                 boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", e.getAuthor().getIdLong(), name, pw);
                                                 if (register) {
                                                     PlayerData playerData = playerDB.load(player.uuid);
-                                                    player.sendMessage(new Bundle(playerData.locale).prefix("register-success"));
-                                                    send(new Bundle(playerData.locale).get("register-success"));
+                                                    player.sendMessage(new Bundle(playerData.locale()).prefix("register-success"));
+                                                    send(new Bundle(playerData.locale()).get("register-success"));
                                                     break;
                                                 }
                                             } else {
