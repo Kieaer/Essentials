@@ -1,6 +1,4 @@
 # Essentials
-[![Build Status](https://travis-ci.org/Kieaer/Essentials.svg?branch=master)](https://travis-ci.org/Kieaer/Essentials)
-
 Add more commands to the server.
 
 I'm getting a lot of suggestions.<br>
@@ -50,7 +48,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | save |  | Auto rollback map early save |
 | reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
 | router |  | Router |
-| register | &lt;accountid&gt; &lt;password&gt; | Register account |
+| register |  | Register account |
 | spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playerName] | Spawn mob in player position |
 | setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
 | spawn-core | &lt;smail/normal/big&gt; | Make new core |
@@ -64,20 +62,17 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
 | tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
 | tr |  | Enable/disable Translate all chat |
-| vote | &lt;mode&gt; [parameter...] | Voting system (Use /vote to check detail commands) |
 | weather | &lt;day,eday,night,enight&gt; | Change map light |
 | mute | &lt;Player_name&gt; | Mute/unmute player |
-| votekick | [player_name] | Player kick starts voting. |
 
 ## Server commands
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| pardon | &lt;ID&gt; | Pardons a votekicked player by ID and allows them to join again. |
 | players |  | List all players currently in game. |
 | saveall |  | desc |
 | gendocs |  | Generate Essentials README.md |
 | setperm | &lt;player_name/uuid&gt; &lt;group&gt; | Set player permission |
 | reload |  | Reload Essential plugin data |
 
-README.md Generated time: 2020-04-19 23:18:48
+README.md Generated time: 2020-05-01 22:59:03
