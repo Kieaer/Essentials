@@ -148,6 +148,12 @@ public class Permission {
     }
 
     public boolean isAdmin(Player player) {
+        if (player == null) {
+            new CrashReport(new Exception("isAdmin player NULL!"));
+            Core.app.dispose();
+            Core.app.exit();
+            System.exit(0);
+        }
         PlayerData p = playerDB.get(player.uuid);
         return permission_user.get(p.uuid()).asObject().getBoolean("admin", false);
     }

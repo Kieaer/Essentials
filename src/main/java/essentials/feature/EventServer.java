@@ -60,7 +60,7 @@ public class EventServer {
                 pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
                 pb.inheritIO().redirectOutput(Core.settings.getDataDirectory().child("test.txt").file());
                 p = pb.start();
-                pluginData.process.add(p);
+                eventServer.servers.add(p);
                 if (p.isAlive()) Log.info(roomname + " Event serer online!");
 
                 TimerTask t = new TimerTask() {
