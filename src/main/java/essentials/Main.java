@@ -70,13 +70,14 @@ public class Main extends Plugin {
     public static final Timer timer = new Timer(true);
     public static final ExecutorService mainThread = new ThreadPoolExecutor(0, 8, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
 
+    public static final Array<Vote> vote = new Array<>();
+
     public static final Tools tool = new Tools();
     public static final PlayerDB playerDB = new PlayerDB();
     public static final Database database = new Database();
     public static final PluginData pluginData = new PluginData();
     public static final Server server = new Server();
     public static final Client client = new Client();
-    public static final Vote vote = new Vote();
     public static final PlayerCore playerCore = new PlayerCore();
     public static final ColorNick colornick = new ColorNick();
     public static final Permission perm = new Permission();
@@ -186,7 +187,7 @@ public class Main extends Plugin {
                     mainThread.shutdownNow(); // 스레드 종료
                     // config.singleService.shutdownNow(); // 로그 스레드 종료
                     timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
-                    if (vote.status()) vote.interrupt(); // 투표 종료
+                    if (vote.size != 0) vote.get(0).interrupt(); // 투표 종료
                     database.dispose(); // DB 연결 종료
 
                     if (config.serverenable()) {
@@ -1134,7 +1135,7 @@ public class Main extends Plugin {
                 PlayerData playerData = playerDB.get(player.uuid);
                 Bundle bundle = new Bundle(playerData.locale());
 
-                if (vote.status()) {
+                if (vote.size != 0) {
                     player.sendMessage(bundle.prefix("vote.in-processing"));
                     return;
                 }
@@ -1154,7 +1155,7 @@ public class Main extends Plugin {
                         }
 
                         // 강퇴 투표
-                        vote.start(player, target, arg[1]);
+                        vote.add(new Vote(player, Vote.VoteType.kick, target, arg[1]));
                         break;
                     case "map":
                         // 맵 투표
@@ -1163,22 +1164,20 @@ public class Main extends Plugin {
                         if (world == null) {
                             player.sendMessage(bundle.prefix("vote.map.not-found"));
                         } else {
-                            vote.start(player, world);
+                            vote.add(new Vote(player, Vote.VoteType.map, world));
                         }
                         break;
                     case "gameover":
-                        vote.start(Vote.VoteType.gameover, player);
+                        vote.add(new Vote(player, Vote.VoteType.gameover));
                         break;
                     case "rollback":
-                        vote.start(Vote.VoteType.rollback, player);
+                        vote.add(new Vote(player, Vote.VoteType.rollback));
                         break;
                     case "gamemode":
-                        Gamemode gm;
                         try {
-                            gm = Gamemode.valueOf(arg[1]);
-                            vote.start(Vote.VoteType.gamemode, player, gm);
+                            vote.add(new Vote(player, Vote.VoteType.gamemode, Gamemode.valueOf(arg[1])));
                         } catch (IllegalArgumentException e) {
-                            player.sendMessage(bundle.prefix("vote.gamemode.incorrect"));
+                            player.sendMessage(bundle.prefix("vote.wrong-gamemode"));
                         }
                         break;
                     default:
@@ -1253,7 +1252,7 @@ public class Main extends Plugin {
                     return;
                 }
 
-                vote.start(Vote.VoteType.kick, player, other);
+                //vote.start(Vote.VoteType.kick, player, other);
             });
         }
     }

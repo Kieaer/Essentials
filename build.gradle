@@ -56,6 +56,11 @@ dependencies{
         exclude module: 'opus-java'
     }
     compile 'org.slf4j:slf4j-nop:1.7.25'
+
+    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.7'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.3.3'
+    testCompile "com.github.Anuken.Arc:arc-core:$targetversion"
+    testCompile "com.github.Anuken.Mindustry:core:$targetversion"
 }
 
 jar{

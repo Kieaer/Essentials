@@ -25,17 +25,69 @@ import static mindustry.Vars.*;
 public class Vote {
     Timer timer = new Timer(true);
 
-    Player player;
-    Player target;
-    String reason;
-    Object parameters;
-    VoteType type;
-    Array<String> voted = new Array<>();
+    public Player player;
+    public PlayerData playerData;
+    private Bundle bundle;
 
-    boolean status = false;
-    int require;
-    int time = 0;
-    int message_time = 0;
+    public Player target;
+    public String reason;
+    public Gamemode gamemode;
+    public Map map;
+
+    public VoteType type;
+    public Array<String> voted = new Array<>();
+
+    public double require;
+    public int time = 0;
+    public int message_time = 0;
+
+    public Vote(Player player, VoteType voteType, Object... parameters) {
+        this.player = player;
+        this.playerData = playerDB.get(player.uuid);
+        this.bundle = new Bundle(playerData.locale());
+        this.type = voteType;
+
+        switch (type) {
+            case kick:
+                this.target = (Player) parameters[0];
+                this.reason = (String) parameters[1];
+                tool.sendMessageAll("vote.suggester-name", player.name);
+                tool.sendMessageAll("vote.reason", reason);
+                tool.sendMessageAll("vote.kick", player.name, target.name);
+                break;
+            case gameover:
+                tool.sendMessageAll("vote.gameover");
+                break;
+            case skipwave:
+                tool.sendMessageAll("vote.skipwave");
+                break;
+            case rollback:
+                tool.sendMessageAll("vote.rollback");
+                break;
+            case gamemode:
+                if (parameters[0] instanceof Gamemode) {
+                    this.gamemode = (Gamemode) parameters[0];
+                    tool.sendMessageAll("vote-gamemode", gamemode.name());
+                } else {
+                    player.sendMessage("vote.wrong-gamemode");
+                    return;
+                }
+                break;
+            case map:
+                if (parameters[0] instanceof Map) {
+                    this.map = (Map) parameters[0];
+                    tool.sendMessageAll("vote.map");
+                }
+                break;
+            default:
+                player.sendMessage(bundle.get("vote.wrong-mode"));
+                return;
+        }
+
+        timer.scheduleAtFixedRate(counting, 0, 1000);
+        timer.scheduleAtFixedRate(alert, 10000, 10000);
+    }
+
     TimerTask counting = new TimerTask() {
         @Override
         public void run() {
@@ -58,86 +110,9 @@ public class Vote {
         }
     };
 
-    public int getRequire() {
-        return require;
-    }
 
-    public void start(Player player, Player target, String reason) {
-        this.player = player;
-        this.target = target;
-        this.reason = reason;
-        this.type = VoteType.kick;
-
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale());
-
-        if (playerGroup.size() == 1) {
-            player.sendMessage(bundle.get("vote.mininal"));
-            return;
-        } else if (playerGroup.size() <= 3) {
-            require = 2;
-        } else {
-            require = (int) Math.ceil((double) playerGroup.size() / 2);
-        }
-
-        if (!status) {
-            tool.sendMessageAll("vote.suggester-name", player.name);
-            tool.sendMessageAll("vote.reason", reason);
-            tool.sendMessageAll("vote.kick", player.name, target.name);
-            timer.scheduleAtFixedRate(counting, 0, 1000);
-            timer.scheduleAtFixedRate(alert, 10000, 10000);
-            status = true;
-        } else {
-            player.sendMessage(bundle.get("vote.in-processing"));
-        }
-    }
-
-    public void start(VoteType type, Player player, Object... parameters) {
-        this.player = player;
-        this.type = type;
-        this.parameters = parameters;
-
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale());
-
-        if (!status) {
-            switch (type) {
-                case gameover:
-                    tool.sendMessageAll("vote.gameover");
-                    break;
-                case skipwave:
-                    tool.sendMessageAll("vote.skipwave");
-                    break;
-                case rollback:
-                    tool.sendMessageAll("vote.rollback");
-                    break;
-                case gamemode:
-                    tool.sendMessageAll("vote-gamemode", ((Gamemode) parameters[0]).name());
-                    break;
-                default:
-                    player.sendMessage(bundle.get("vote.wrong-mode"));
-                    return;
-            }
-            status = true;
-        } else {
-            player.sendMessage(bundle.get("vote.in-processing"));
-        }
-    }
-
-    public void start(Player player, Map map) {
-        this.player = player;
-        this.type = VoteType.map;
-
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale());
-
-        if (!status) {
-            tool.sendMessageAll("vote.map");
-            status = true;
-        } else {
-            player.sendMessage(bundle.get("vote.in-processing"));
-        }
-    }
 
     public void success() {
-        status = false;
         timer.cancel();
         time = 0;
         message_time = 0;
@@ -151,7 +126,7 @@ public class Vote {
                     break;
                 case skipwave:
                     tool.sendMessageAll("vote.skipwave.done");
-                    for (int a = 0; a < (Integer) parameters; a++) {
+                    for (int a = 0; a < 10; a++) {
                         logic.runWave();
                     }
                     break;
@@ -166,12 +141,12 @@ public class Vote {
                     rollback.load();
                     break;
                 case gamemode:
-                    Map map = world.getMap();
+                    Map m = world.getMap();
                     Rules rules = world.getMap().rules();
                     if (rules.attackMode) rules.attackMode = false;
 
                     world.loadMap(world.getMap(), rules);
-                    Gamemode.valueOf((String) parameters);
+                    // TODO 게임 모드 변경 만들기
                     break;
                 case map:
                     tool.sendMessageAll("vote.map.done");
@@ -184,7 +159,7 @@ public class Vote {
                     } else if (state.rules.editor) {
                         current = Gamemode.editor;
                     }
-                    world.loadMap((Map) parameters, ((Map) parameters).applyRules(current));
+                    world.loadMap(map, (map).applyRules(current));
                     Call.onWorldDataBegin();
 
                     for (Player p : playerGroup.all()) {
@@ -194,7 +169,7 @@ public class Vote {
                         if (Vars.state.rules.pvp) p.setTeam(Vars.netServer.assignTeam(p, playerGroup.all()));
                     }
                     Log.info("Map rollbacked.");
-                    //tool.sendMessageAll("vote.map.done");
+                    tool.sendMessageAll("vote.map.done");
                     break;
             }
         } else {
@@ -211,6 +186,9 @@ public class Vote {
                 case rollback:
                     tool.sendMessageAll("vote.rollback.fail");
                     break;
+                case gamemode:
+                    tool.sendMessageAll("vote.gamemode.fail");
+                    break;
                 case map:
                     tool.sendMessageAll("vote.map.fail");
                     break;
@@ -223,10 +201,6 @@ public class Vote {
         success();
     }
 
-    public boolean status() {
-        return status;
-    }
-
     public Array<String> getVoted() {
         return voted;
     }
@@ -236,10 +210,10 @@ public class Vote {
         for (Player others : playerGroup.all()) {
             PlayerData p = playerDB.get(others.uuid);
             if (!p.error())
-                others.sendMessage(new Bundle(p.locale()).get("vote.current-voted", voted.size, getRequire() - voted.size));
+                others.sendMessage(new Bundle(p.locale()).get("vote.current-voted", voted.size, require - voted.size));
         }
 
-        if (voted.size >= getRequire()) {
+        if (voted.size >= require) {
             timer.cancel();
             success();
         }

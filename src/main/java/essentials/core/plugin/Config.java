@@ -15,7 +15,7 @@ import static essentials.Main.*;
 import static org.hjson.JsonValue.readJSON;
 
 public class Config {
-    JsonObject obj;
+    public JsonObject obj;
     private int version;
     private Locale language;
     private boolean serverenable;

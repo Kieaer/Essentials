@@ -28,56 +28,57 @@ public class PlayerDB {
         sql.append("SELECT * FROM players WHERE uuid=?");
         if (AccountID != null && AccountID.length != 0) sql.append(" OR accountid=?");
 
-        try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString());
-             ResultSet rs = pstmt.executeQuery()) {
+        try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
             pstmt.setString(1, uuid);
-            if (AccountID != null && AccountID.length != 0) pstmt.setString(2, AccountID[0]);
-            if (rs.next()) {
-                PlayerData data = new PlayerData(
-                        rs.getString("name"),
-                        rs.getString("uuid"),
-                        rs.getString("country"),
-                        rs.getString("country_code"),
-                        rs.getString("language"),
-                        rs.getBoolean("isAdmin"),
-                        rs.getInt("placecount"),
-                        rs.getInt("breakcount"),
-                        rs.getInt("killcount"),
-                        rs.getInt("deathcount"),
-                        rs.getInt("joincount"),
-                        rs.getInt("kickcount"),
-                        rs.getInt("level"),
-                        rs.getInt("exp"),
-                        rs.getInt("reqexp"),
-                        rs.getString("reqtotalexp"),
-                        rs.getString("firstdate"),
-                        rs.getString("lastdate"),
-                        rs.getString("lastplacename"),
-                        rs.getString("lastbreakname"),
-                        rs.getString("lastchat"),
-                        rs.getString("playtime"),
-                        rs.getInt("attackclear"),
-                        rs.getInt("pvpwincount"),
-                        rs.getInt("pvplosecount"),
-                        rs.getInt("pvpbreakout"),
-                        rs.getInt("reactorcount"),
-                        rs.getString("bantimeset"),
-                        rs.getString("bantime"),
-                        rs.getBoolean("banned"),
-                        rs.getBoolean("translate"),
-                        rs.getBoolean("crosschat"),
-                        rs.getBoolean("colornick"),
-                        rs.getBoolean("connected"),
-                        rs.getString("connserver"),
-                        rs.getString("permission"),
-                        rs.getBoolean("mute"),
-                        rs.getBoolean("alert"),
-                        rs.getLong("udid"),
-                        rs.getString("accountid"),
-                        rs.getString("accountpw")
-                );
-                vars.addPlayerData(data);
-                return data;
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (AccountID != null && AccountID.length != 0) pstmt.setString(2, AccountID[0]);
+                if (rs.next()) {
+                    PlayerData data = new PlayerData(
+                            rs.getString("name"),
+                            rs.getString("uuid"),
+                            rs.getString("country"),
+                            rs.getString("country_code"),
+                            rs.getString("language"),
+                            rs.getBoolean("isAdmin"),
+                            rs.getInt("placecount"),
+                            rs.getInt("breakcount"),
+                            rs.getInt("killcount"),
+                            rs.getInt("deathcount"),
+                            rs.getInt("joincount"),
+                            rs.getInt("kickcount"),
+                            rs.getInt("level"),
+                            rs.getInt("exp"),
+                            rs.getInt("reqexp"),
+                            rs.getString("reqtotalexp"),
+                            rs.getString("firstdate"),
+                            rs.getString("lastdate"),
+                            rs.getString("lastplacename"),
+                            rs.getString("lastbreakname"),
+                            rs.getString("lastchat"),
+                            rs.getString("playtime"),
+                            rs.getInt("attackclear"),
+                            rs.getInt("pvpwincount"),
+                            rs.getInt("pvplosecount"),
+                            rs.getInt("pvpbreakout"),
+                            rs.getInt("reactorcount"),
+                            rs.getString("bantimeset"),
+                            rs.getString("bantime"),
+                            rs.getBoolean("banned"),
+                            rs.getBoolean("translate"),
+                            rs.getBoolean("crosschat"),
+                            rs.getBoolean("colornick"),
+                            rs.getBoolean("connected"),
+                            rs.getString("connserver"),
+                            rs.getString("permission"),
+                            rs.getBoolean("mute"),
+                            rs.getBoolean("alert"),
+                            rs.getLong("udid"),
+                            rs.getString("accountid"),
+                            rs.getString("accountpw")
+                    );
+                    vars.addPlayerData(data);
+                    return data;
+                }
             }
         } catch (SQLException e) {
             new CrashReport(e);

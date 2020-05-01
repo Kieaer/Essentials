@@ -45,8 +45,13 @@ public class Event {
 
     public Event() {
         Events.on(EventType.TapConfigEvent.class, e -> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.alertaction()) {
-                tool.sendMessageAll("tap-config", e.player.name, e.tile.entity.block.name);
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && config.alertaction()) {
+                for (Player p : playerGroup.all()) {
+                    PlayerData playerData = playerDB.get(p.uuid);
+                    if (playerData.alert()) {
+                        p.sendMessage(new Bundle(playerData.locale()).get("tap-config", e.player.name, e.tile.entity.block.name));
+                    }
+                }
                 if (config.debug())
                     Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
             }
@@ -315,12 +320,12 @@ public class Event {
                 String check = String.valueOf(e.message.charAt(0));
                 // 명령어인지 확인
                 if (!check.equals("/")) {
-                    if (e.message.equals("y") && vote.status()) {
+                    if (e.message.equals("y") && vote.size != 0) {
                         // 투표가 진행중일때
-                        if (vote.getVoted().contains(e.player.uuid)) {
+                        if (vote.get(0).getVoted().contains(e.player.uuid)) {
                             e.player.sendMessage(bundle.get("vote.already-voted"));
                         } else {
-                            vote.set(e.player.uuid);
+                            vote.get(0).set(e.player.uuid);
                         }
                     } else {
                         if (!playerData.mute()) {
@@ -410,6 +415,7 @@ public class Event {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
+            if (e.player == null) return; // 만약 건설자가 드론일경우
             PlayerData target = playerDB.get(e.player.uuid);
             if (!e.breaking && e.player.buildRequest() != null && !target.error() && e.tile.block() != null) {
                 String name = e.tile.block().name;
