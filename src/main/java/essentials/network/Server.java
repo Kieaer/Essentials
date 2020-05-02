@@ -51,7 +51,7 @@ public class Server implements Runnable {
 
     public void stop() {
         try {
-            serverSocket.close();
+            if (serverSocket != null) serverSocket.close();
         } catch (IOException e) {
             new CrashReport(e);
         }

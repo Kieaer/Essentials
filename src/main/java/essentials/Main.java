@@ -35,7 +35,6 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
-import mindustry.net.Administration;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
 import mindustry.type.Mech;
@@ -86,19 +85,20 @@ public class Main extends Plugin {
     public static final EventServer eventServer = new EventServer();
     public static final JumpBorder jumpBorder = new JumpBorder();
     public static final PluginVars vars = new PluginVars();
+    public static final Config config = new Config();
 
-    public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
-    public static Config config = new Config();
     public final ApplicationListener listener;
-    public Array<EventServer.EventService> eventServers = new Array<>();
-    Logger log = LoggerFactory.getLogger(Main.class);
+    public final Array<EventServer.EventService> eventServers = new Array<>();
+
+    final Logger log = LoggerFactory.getLogger(Main.class);
+
+    public static Locale locale;
 
     public Main() {
         // 서버 버전 확인
         if (Version.build != vars.buildVersion() && Version.revision < vars.buildRevision()) {
-            try {
-                InputStream reader = getClass().getResourceAsStream("/plugin.json");
-                BufferedReader br = new BufferedReader(new InputStreamReader(reader));
+            try (InputStream reader = getClass().getResourceAsStream("/plugin.json");
+                 BufferedReader br = new BufferedReader(new InputStreamReader(reader))) {
                 throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");
             } catch (PluginException | IOException e) {
                 log.warn("Plugin", e);
@@ -108,8 +108,7 @@ public class Main extends Plugin {
 
 
         // 파일 압축해제
-        try {
-            final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()));
+        try (final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()))) {
             final Enumeration<JarEntry> enumEntries = jar.entries();
             while (enumEntries.hasMoreElements()) {
                 JarEntry file = enumEntries.nextElement();
@@ -119,12 +118,11 @@ public class Main extends Plugin {
                         root.child(renamed).file().mkdir();
                         continue;
                     }
-                    InputStream is = jar.getInputStream(file);
-                    root.child(renamed).write(is, false);
-                    is.close();
+                    try (InputStream is = jar.getInputStream(file)) {
+                        root.child(renamed).write(is, false);
+                    }
                 }
             }
-            jar.close();
         } catch (IOException | URISyntaxException e) {
             log.warn("File Extract", e);
             System.exit(0);
@@ -132,7 +130,7 @@ public class Main extends Plugin {
 
         // 설정 불러오기
         config.init();
-        Log.info("config.language", config.language().getDisplayCountry()); // TODO 국가명 안뜨는 이유 찾기
+        Log.info("config.language", config.language().getDisplayLanguage()); // TODO 국가명 안뜨는 이유 찾기
 
         // 플러그인 데이터 불러오기
         pluginData.loadall();
@@ -447,6 +445,9 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
+        handler.<Player>register("test", "Test geo", (arg, player) -> {
+            tool.getGeo(player);
+        });
         handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
             if (!perm.check(player, "alert")) return;
 
@@ -606,7 +607,7 @@ public class Main extends Plugin {
             String datatext = "[#DEA82A]" + new Bundle(playerData.locale()).get("player.info") + "[]\n" +
                     "[#2B60DE]====================================[]\n" +
                     "[green]" + bundle.get("player.name") + "[] : " + player.name + "[white]\n" +
-                    "[green]" + bundle.get("player.country") + "[] : " + locale.getDisplayCountry() + "\n" +
+                    "[green]" + bundle.get("player.country") + "[] : " + playerData.locale().getDisplayCountry(playerData.locale()) + "\n" +
                     "[green]" + bundle.get("player.placecount") + "[] : " + playerData.placecount() + "\n" +
                     "[green]" + bundle.get("player.breakcount") + "[] : " + playerData.breakcount() + "\n" +
                     "[green]" + bundle.get("player.killcount") + "[] : " + playerData.killcount() + "\n" +
@@ -989,20 +990,10 @@ public class Main extends Plugin {
             player.sendMessage(bundle.prefix("server.status"));
             player.sendMessage("[#2B60DE]========================================[]");
             float fps = Math.round((int) 60f / Time.delta());
-            int idb = 0;
-            int ipb = 0;
-
-            Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
-            for (Administration.PlayerInfo ignored : bans) {
-                idb++;
-            }
-
-            Array<String> ipbans = netServer.admins.getBannedIPs();
-            for (String ignored : ipbans) {
-                ipb++;
-            }
-            int bancount = idb + ipb;
-            player.sendMessage(bundle.prefix("server.status.banstat", fps, playerGroup.size(), bancount, idb, ipb, vars.playtime(), vars.uptime(), vars.pluginVersion()));
+            int bans = netServer.admins.getBanned().size;
+            int ipbans = netServer.admins.getBannedIPs().size;
+            int bancount = bans + ipbans;
+            player.sendMessage(bundle.prefix("server.status.banstat", fps, playerGroup.size(), bancount, bans, ipbans, vars.playtime(), vars.uptime(), vars.pluginVersion()));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if (!perm.check(player, "suicide")) return;
@@ -1056,7 +1047,7 @@ public class Main extends Plugin {
             if (!perm.check(player, "time")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a HH:mm:ss");
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss");
             String nowString = now.format(dateTimeFormatter);
             player.sendMessage(new Bundle(playerData.locale()).prefix("servertime", nowString));
         });
@@ -1079,7 +1070,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.prefix("player.not-found"));
                 return;
             }
-            player.setNet(other.getX(), other.getY());
+            player.set(other.getX(), other.getY());
         });
         handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
             if (!perm.check(player, "tpp")) return;

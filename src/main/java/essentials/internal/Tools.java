@@ -47,7 +47,7 @@ public class Tools {
         for (Player p : playerGroup.all()) {
             PlayerData playerData = playerDB.get(p.uuid);
             if (!playerData.error()) {
-                p.sendMessage(new Bundle(playerData.locale()).get(value, parameter));
+                p.sendMessage(new Bundle(playerData.locale()).prefix(value, parameter));
             }
         }
     }
@@ -76,11 +76,17 @@ public class Tools {
                 return locale;
             } else {
                 Locale loc = locale;
-                String lc = result.get("country_code").asString().split(",")[0];
-                if (lc.split("_").length == 2) {
-                    String[] array = lc.split("_");
+                String lc = result.get("languages").asString().split(",")[0];
+
+                if (lc.split("-").length == 2) {
+                    String[] array = lc.split("-");
                     loc = new Locale(array[0], array[1]);
+
+                    if (array[0].equals("zh")) {
+                        return Locale.SIMPLIFIED_CHINESE;
+                    }
                 }
+
                 try {
                     ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
                     RESOURCE_BUNDLE.getString("success");
@@ -88,8 +94,8 @@ public class Tools {
                     for (int a = 0; a < result.get("country_code").asString().split(",").length; a++) {
                         try {
                             lc = result.get("country_code").asString().split(",")[a];
-                            if (lc.split("_").length == 2) {
-                                String[] array = lc.split("_");
+                            if (lc.split("-").length == 2) {
+                                String[] array = lc.split("-");
                                 loc = new Locale(array[0], array[1]);
                             }
                             ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());

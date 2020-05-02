@@ -79,7 +79,12 @@ public class Event {
 
         Events.on(EventType.WithdrawEvent.class, e -> {
             if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.antigrief()) {
-                tool.sendMessageAll("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+                for (Player p : playerGroup.all()) {
+                    PlayerData playerData = playerDB.get(p.uuid);
+                    if (playerData.alert()) {
+                        p.sendMessage(new Bundle(playerData.locale()).get("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name));
+                    }
+                }
                 if (config.debug())
                     Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (state.rules.pvp) {
@@ -175,8 +180,12 @@ public class Event {
                 player.con.kick("Invalid request!");
                 return;
             }
-            if (config.alertaction())
-                tool.sendMessageAll("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name);
+            for (Player p : playerGroup.all()) {
+                PlayerData playerData = playerDB.get(p.uuid);
+                if (playerData.alert()) {
+                    p.sendMessage(new Bundle(playerData.locale()).get("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name));
+                }
+            }
         });
 
         // 플레이어가 서버에 들어왔을 때
@@ -281,16 +290,16 @@ public class Event {
                     int total = playerGroup.size();
                     if (config.difficultyeasy() >= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.easy");
+                        //tool.sendMessageAll("system.difficulty.easy");
                     } else if (config.difficultynormal() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.normal");
+                        //tool.sendMessageAll("system.difficulty.normal");
                     } else if (config.difficultyhard() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.hard");
+                        //tool.sendMessageAll("system.difficulty.hard");
                     } else if (config.difficultyinsane() <= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.insane");
+                        //tool.sendMessageAll("system.difficulty.insane");
                     }
                     onSetRules(state.rules);
                 }
@@ -629,6 +638,13 @@ public class Event {
                     log.warn("SocketTimeOut");
                 } catch (Exception ex) {
                     new CrashReport(ex);
+                }
+            } else {
+                for (int a = 0; a < mods.list().size; a++) {
+                    if (mods.list().get(a).meta.name.equals("Essentials")) {
+                        vars.pluginVersion(mods.list().get(a).meta.version);
+                        break;
+                    }
                 }
             }
 
