@@ -107,7 +107,7 @@ public class Config {
 
         settings = obj.get("settings").asObject();
         version = settings.getInt("version", vars.configVersion());
-        language = new Locale(settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")));
+        language = Locale.forLanguageTag(settings.getString("language", Locale.getDefault().toString()).replaceAll("_", "-"));
         logging = settings.getBoolean("logging", true);
         update = settings.getBoolean("update", true);
         debug = settings.getBoolean("debug", false);

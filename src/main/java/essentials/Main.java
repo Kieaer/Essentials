@@ -132,7 +132,7 @@ public class Main extends Plugin {
 
         // 설정 불러오기
         config.init();
-        Log.info("config.language", config.language().getDisplayCountry()); // TODO 국가명 안뜨는 이유 찾기
+        Log.info("config.language", config.language().getDisplayCountry());
 
         // 플러그인 데이터 불러오기
         pluginData.loadall();
