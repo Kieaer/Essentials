@@ -15,6 +15,7 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.net.Packets;
+import mindustry.world.blocks.logic.MessageBlock;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -366,19 +367,12 @@ public class Event {
 
                 // 번역
                 if (config.translate()) {
-                    mainThread.submit(new Thread(() -> {
+                    new Thread(() -> {
+                        Thread.currentThread().setName(e.player.name + " 의 번역 스레드");
                         try {
-                            if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
-                                if (!playerData.crosschat() && !e.message.startsWith("/"))
-                                    e.player.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
-                            } else {
-                                if (!playerData.crosschat() && !e.message.startsWith("/"))
-                                    e.player.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
-                            }
-
                             for (Player p : playerGroup.all()) {
                                 PlayerData target = playerDB.get(p.uuid);
-                                if (!target.error() && !target.mute()) {
+                                if (!target.error() && !target.mute() && !e.message.startsWith("/")) {
                                     String original = playerData.locale().getLanguage();
                                     String language = target.locale().getLanguage();
 
@@ -396,18 +390,37 @@ public class Event {
                                             wr.flush();
                                             wr.close();
 
-                                            try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-                                                String inputLine;
-                                                StringBuilder response = new StringBuilder();
-                                                while ((inputLine = br.readLine()) != null) {
-                                                    response.append(inputLine);
+                                            if (con.getResponseCode() != 200) {
+                                                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getErrorStream(), StandardCharsets.UTF_8))) {
+                                                    String inputLine;
+                                                    StringBuilder response = new StringBuilder();
+                                                    while ((inputLine = br.readLine()) != null) {
+                                                        response.append(inputLine);
+                                                    }
+                                                    Log.write(Log.LogType.error, response.toString());
                                                 }
+                                            } else {
+                                                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                                                    String inputLine;
+                                                    StringBuilder response = new StringBuilder();
+                                                    while ((inputLine = br.readLine()) != null) {
+                                                        response.append(inputLine);
+                                                    }
 
-                                                JsonObject object = readJSON(response.toString()).asObject();
-                                                p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + object.get("message").asObject().get("result").asObject().get("translatedText").asString());
+                                                    JsonObject object = readJSON(response.toString()).asObject();
+                                                    p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + object.get("message").asObject().get("result").asObject().get("translatedText").asString());
+                                                }
                                             }
                                         } catch (Exception ex) {
                                             new CrashReport(ex);
+                                        }
+                                    } else if (!e.message.startsWith("/")) {
+                                        if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
+                                            if (!playerData.crosschat())
+                                                p.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
+                                        } else {
+                                            if (!playerData.crosschat())
+                                                p.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
                                         }
                                     }
                                 }
@@ -415,19 +428,19 @@ public class Event {
                         } catch (Exception ex) {
                             new CrashReport(ex);
                         }
-                    }));
+                    }).start();
                 } else {
                     if (playerData.mute()) {
                         if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
                             if (!playerData.crosschat())
-                                Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
+                                Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
                         } else {
                             if (!playerData.crosschat())
                                 Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
                         }
-                        Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
                     }
                 }
+                Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
             }
         });
 
@@ -452,7 +465,9 @@ public class Event {
 
                 // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                 if (e.tile.entity.block == Blocks.message) {
-                    pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
+                    if (e.tile.entity instanceof MessageBlock.MessageBlockEntity) {
+                        pluginData.messagemonitor.add(new PluginData.messagemonitor((MessageBlock.MessageBlockEntity) e.tile.entity));
+                    }
                 }
 
                 // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.

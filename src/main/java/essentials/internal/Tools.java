@@ -4,10 +4,11 @@ import arc.files.Fi;
 import arc.struct.Array;
 import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
-import essentials.external.UTF8Control;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
+import mindustry.gen.Call;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
@@ -23,7 +24,6 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,6 +68,7 @@ public class Tools {
 
     public Locale getGeo(Object data) {
         String ip = data instanceof Player ? Vars.netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
+        Locale loc = Locale.US;
         try {
             String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(3000).execute().body();
             JsonObject result = readJSON(json).asObject();
@@ -75,7 +76,6 @@ public class Tools {
             if (result.get("reserved") != null) {
                 return locale;
             } else {
-                Locale loc = locale;
                 String lc = result.get("languages").asString().split(",")[0];
 
                 if (lc.split("-").length == 2) {
@@ -87,7 +87,8 @@ public class Tools {
                     }
                 }
 
-                try {
+                // TODO Bundle 검증 다시 만들기
+                /*try {
                     ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
                     RESOURCE_BUNDLE.getString("success");
                 } catch (Exception e) {
@@ -104,12 +105,12 @@ public class Tools {
                         } catch (Exception ignored) {
                         }
                     }
-                }
+                }*/
             }
         } catch (Exception e) {
             new CrashReport(e);
         }
-        return locale;
+        return loc;
     }
 
     public String getHostIP() {
@@ -275,9 +276,9 @@ public class Tools {
             for (int a = 0; a < pos.size; a++) {
                 Tile target_tile = world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]);
                 if (target[a] == 1) {
-                    target_tile.set(block, Team.sharded, 0);
+                    Call.onConstructFinish(target_tile, block, 100, (byte) 0, Team.sharded, false);
                 } else {
-                    target_tile.remove();
+                    Call.onDeconstructFinish(target_tile, Blocks.air, 100);
                 }
             }
 
