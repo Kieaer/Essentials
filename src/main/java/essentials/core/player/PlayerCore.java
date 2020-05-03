@@ -105,7 +105,7 @@ public class PlayerCore {
                 connserver,
                 permission,
                 false,
-                true,
+                false,
                 udid,
                 accountid,
                 accountpw

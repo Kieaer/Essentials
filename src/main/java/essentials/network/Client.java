@@ -41,8 +41,8 @@ public class Client extends Thread {
 
     public void wakeup() {
         try {
-            InetAddress address = InetAddress.getByName(config.clienthost());
-            socket = new Socket(address, config.clientport());
+            InetAddress address = InetAddress.getByName(config.clientHost());
+            socket = new Socket(address, config.clientPort());
             socket.setSoTimeout(disconnected ? 2000 : 0);
 
             // 키 생성
@@ -146,7 +146,7 @@ public class Client extends Thread {
                     os.flush();
 
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
-                    Log.client("client.message", config.clienthost(), message);
+                    Log.client("client.message", config.clientHost(), message);
                 } catch (Exception e) {
                     new CrashReport(e);
                 }
@@ -234,12 +234,12 @@ public class Client extends Thread {
                     data = readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
-                    Log.client("server.disconnected", config.clienthost());
+                    Log.client("server.disconnected", config.clientHost());
                     if (!Thread.currentThread().isInterrupted()) this.wakeup();
                     return;
                 } catch (Exception e) {
                     if (!e.getMessage().equals("Socket closed")) new CrashReport(e);
-                    Log.client("server.disconnected", config.clienthost());
+                    Log.client("server.disconnected", config.clientHost());
 
                     activated = false;
                     try {
@@ -302,7 +302,7 @@ public class Client extends Thread {
                         break;
                 }
             } catch (Exception e) {
-                Log.client("server.disconnected", config.clienthost());
+                Log.client("server.disconnected", config.clientHost());
 
                 activated = false;
                 try {

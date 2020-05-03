@@ -15,20 +15,20 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.net.Packets;
+import mindustry.world.blocks.logic.MessageBlock;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.util.Base64;
 import java.util.Locale;
@@ -79,7 +79,12 @@ public class Event {
 
         Events.on(EventType.WithdrawEvent.class, e -> {
             if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.antigrief()) {
-                tool.sendMessageAll("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+                for (Player p : playerGroup.all()) {
+                    PlayerData playerData = playerDB.get(p.uuid);
+                    if (playerData.alert()) {
+                        p.sendMessage(new Bundle(playerData.locale()).get("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name));
+                    }
+                }
                 if (config.debug())
                     Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (state.rules.pvp) {
@@ -175,8 +180,12 @@ public class Event {
                 player.con.kick("Invalid request!");
                 return;
             }
-            if (config.alertaction())
-                tool.sendMessageAll("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name);
+            for (Player p : playerGroup.all()) {
+                PlayerData playerData = playerDB.get(p.uuid);
+                if (playerData.alert()) {
+                    p.sendMessage(new Bundle(playerData.locale()).get("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name));
+                }
+            }
         });
 
         // 플레이어가 서버에 들어왔을 때
@@ -281,16 +290,16 @@ public class Event {
                     int total = playerGroup.size();
                     if (config.difficultyeasy() >= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.easy");
+                        //tool.sendMessageAll("system.difficulty.easy");
                     } else if (config.difficultynormal() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.normal");
+                        //tool.sendMessageAll("system.difficulty.normal");
                     } else if (config.difficultyhard() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.hard");
+                        //tool.sendMessageAll("system.difficulty.hard");
                     } else if (config.difficultyinsane() <= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.insane");
+                        //tool.sendMessageAll("system.difficulty.insane");
                     }
                     onSetRules(state.rules);
                 }
@@ -329,19 +338,11 @@ public class Event {
                         }
                     } else {
                         if (!playerData.mute()) {
-                            if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
-                                if (!playerData.crosschat())
-                                    Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
-                            } else {
-                                if (!playerData.crosschat())
-                                    Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
-                            }
-
                             // 서버간 대화기능 작동
                             if (playerData.crosschat()) {
-                                if (config.clienten()) {
+                                if (config.clientEnable()) {
                                     client.request(Client.Request.chat, e.player, e.message);
-                                } else if (config.serverenable()) {
+                                } else if (config.serverEnable()) {
                                     // 메세지를 모든 클라이언트에게 전송함
                                     String msg = "[" + e.player.name + "]: " + e.message;
                                     try {
@@ -358,7 +359,6 @@ public class Event {
                                 }
                             }
                         }
-                        Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
                     }
                 }
 
@@ -367,49 +367,80 @@ public class Event {
 
                 // 번역
                 if (config.translate()) {
-                    try {
-                        for (int i = 0; i < playerGroup.size(); i++) {
-                            Player p = playerGroup.all().get(i);
-                            PlayerData target = playerDB.get(p.uuid);
-                            if (!target.error()) {
-                                String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
-                                String language = target.language();
-                                String orignal = playerData.language();
-                                if (!language.equals(orignal)) {
-                                    boolean found = false;
-                                    for (String s : support) {
-                                        if (orignal.equals(s)) {
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (found) {
-                                        String response = Jsoup.connect("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation")
-                                                .method(Connection.Method.POST)
-                                                .header("X-NCP-APIGW-API-KEY-ID", config.translateid())
-                                                .header("X-NCP-APIGW-API-KEY", config.translatepw())
-                                                .data("source", playerData.language())
-                                                .data("target", target.language())
-                                                .data("text", e.message)
-                                                .ignoreContentType(true)
-                                                .followRedirects(true)
-                                                .execute()
-                                                .body();
-                                        JsonObject object = readJSON(response).asObject();
-                                        if (object.get("error") != null) {
-                                            String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
-                                            if (target.translate()) {
-                                                p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
+                    new Thread(() -> {
+                        Thread.currentThread().setName(e.player.name + " 의 번역 스레드");
+                        try {
+                            for (Player p : playerGroup.all()) {
+                                PlayerData target = playerDB.get(p.uuid);
+                                if (!target.error() && !target.mute() && !e.message.startsWith("/")) {
+                                    String original = playerData.locale().getLanguage();
+                                    String language = target.locale().getLanguage();
+
+                                    if (original.equals("zh")) original = "zh-CN";
+                                    if (language.equals("zh")) language = "zh-CN";
+
+                                    if (!language.equals(original)) {
+                                        HttpURLConnection con = (HttpURLConnection) new URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation").openConnection();
+                                        con.setRequestMethod("POST");
+                                        con.setRequestProperty("X-NCP-APIGW-API-KEY-ID", config.translateid());
+                                        con.setRequestProperty("X-NCP-APIGW-API-KEY", config.translatepw());
+                                        con.setDoOutput(true);
+                                        try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+                                            wr.writeBytes("source=" + original + "&target=" + language + "&text=" + URLEncoder.encode(e.message, "UTF-8"));
+                                            wr.flush();
+                                            wr.close();
+
+                                            if (con.getResponseCode() != 200) {
+                                                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getErrorStream(), StandardCharsets.UTF_8))) {
+                                                    String inputLine;
+                                                    StringBuilder response = new StringBuilder();
+                                                    while ((inputLine = br.readLine()) != null) {
+                                                        response.append(inputLine);
+                                                    }
+                                                    Log.write(Log.LogType.error, response.toString());
+                                                }
+                                            } else {
+                                                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                                                    String inputLine;
+                                                    StringBuilder response = new StringBuilder();
+                                                    while ((inputLine = br.readLine()) != null) {
+                                                        response.append(inputLine);
+                                                    }
+
+                                                    JsonObject object = readJSON(response.toString()).asObject();
+                                                    p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + object.get("message").asObject().get("result").asObject().get("translatedText").asString());
+                                                }
                                             }
+                                        } catch (Exception ex) {
+                                            new CrashReport(ex);
+                                        }
+                                    } else if (!e.message.startsWith("/")) {
+                                        if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
+                                            if (!playerData.crosschat())
+                                                p.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
+                                        } else {
+                                            if (!playerData.crosschat())
+                                                p.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
                                         }
                                     }
                                 }
                             }
+                        } catch (Exception ex) {
+                            new CrashReport(ex);
                         }
-                    } catch (Exception ex) {
-                        new CrashReport(ex);
+                    }).start();
+                } else {
+                    if (playerData.mute()) {
+                        if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
+                            if (!playerData.crosschat())
+                                Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
+                        } else {
+                            if (!playerData.crosschat())
+                                Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
+                        }
                     }
                 }
+                Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
             }
         });
 
@@ -434,7 +465,9 @@ public class Event {
 
                 // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                 if (e.tile.entity.block == Blocks.message) {
-                    pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
+                    if (e.tile.entity instanceof MessageBlock.MessageBlockEntity) {
+                        pluginData.messagemonitor.add(new PluginData.messagemonitor((MessageBlock.MessageBlockEntity) e.tile.entity));
+                    }
                 }
 
                 // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
@@ -528,17 +561,18 @@ public class Event {
         // 플레이어가 밴당했을 때 공유기능 작동
         Events.on(EventType.PlayerBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
-                if (config.banshare() && config.clienten()) {
+                if (config.banshare() && config.clientEnable()) {
                     client.request(Client.Request.bansync, null, null);
                 }
-
-                for (Player player : playerGroup.all()) {
-                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).get("player.banned", e.player.name));
-                    if (netServer.admins.isIDBanned(player.uuid)) {
-                        player.con.kick(Packets.KickReason.banned);
-                    }
-                }
             });
+
+            for (Player player : playerGroup.all()) {
+                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).get("player.banned", e.player.name));
+                if (netServer.admins.isIDBanned(player.uuid)) {
+                    player.con.kick(Packets.KickReason.banned);
+                }
+            }
+
             mainThread.submit(bansharing);
         });
 
@@ -589,7 +623,7 @@ public class Event {
                                 System.out.println(json.getString("body", "No description found."));
                                 System.out.println(new Bundle().get("plugin-downloading-standby"));
                                 timer.cancel();
-                                if (config.serverenable()) {
+                                if (config.serverEnable()) {
                                     try {
                                         for (Server.service ser : server.list) {
                                             ser.interrupt();
@@ -602,7 +636,7 @@ public class Event {
                                     } catch (Exception ignored) {
                                     }
                                 }
-                                if (config.clienten() && client.activated) {
+                                if (config.clientEnable() && client.activated) {
                                     client.request(Client.Request.exit, null, null);
                                 }
                                 mainThread.shutdown();
@@ -629,6 +663,13 @@ public class Event {
                     log.warn("SocketTimeOut");
                 } catch (Exception ex) {
                     new CrashReport(ex);
+                }
+            } else {
+                for (int a = 0; a < mods.list().size; a++) {
+                    if (mods.list().get(a).meta.name.equals("Essentials")) {
+                        vars.pluginVersion(mods.list().get(a).meta.version);
+                        break;
+                    }
                 }
             }
 

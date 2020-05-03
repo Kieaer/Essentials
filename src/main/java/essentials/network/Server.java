@@ -51,7 +51,7 @@ public class Server implements Runnable {
 
     public void stop() {
         try {
-            serverSocket.close();
+            if (serverSocket != null) serverSocket.close();
         } catch (IOException e) {
             new CrashReport(e);
         }
@@ -60,7 +60,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
         try {
-            this.serverSocket = new ServerSocket(config.serverport());
+            this.serverSocket = new ServerSocket(config.serverPort());
             Log.info("server.enabled");
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();

@@ -4,6 +4,7 @@ import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.world.Tile;
+import mindustry.world.blocks.logic.MessageBlock;
 
 import java.io.*;
 import java.time.LocalDateTime;
@@ -128,10 +129,10 @@ public class PluginData {
     }
 
     public static class messagemonitor {
-        public final Tile tile;
+        public final MessageBlock.MessageBlockEntity entity;
 
-        public messagemonitor(Tile tile) {
-            this.tile = tile;
+        public messagemonitor(MessageBlock.MessageBlockEntity entity) {
+            this.entity = entity;
         }
     }
 

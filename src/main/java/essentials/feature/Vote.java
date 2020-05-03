@@ -194,8 +194,8 @@ public class Vote {
                     break;
             }
         }
+        vote.clear();
     }
-
     public void interrupt() {
         timer.cancel();
         success();
@@ -209,8 +209,9 @@ public class Vote {
         voted.add(uuid);
         for (Player others : playerGroup.all()) {
             PlayerData p = playerDB.get(others.uuid);
-            if (!p.error())
-                others.sendMessage(new Bundle(p.locale()).get("vote.current-voted", voted.size, require - voted.size));
+            if (!p.error() && require - voted.size != -1) {
+                others.sendMessage(new Bundle(p.locale()).prefix("vote.current-voted", voted.size, require - voted.size));
+            }
         }
 
         if (voted.size >= require) {

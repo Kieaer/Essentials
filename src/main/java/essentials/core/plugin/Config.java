@@ -107,7 +107,16 @@ public class Config {
 
         settings = obj.get("settings").asObject();
         version = settings.getInt("version", vars.configVersion());
-        language = Locale.forLanguageTag(settings.getString("language", Locale.getDefault().toString()).replaceAll("_", "-"));
+
+        String lc = settings.get("language").asString().split(",")[0];
+        if (lc.split("-").length == 2) {
+            String[] array = lc.split("-");
+            language = new Locale(array[0], array[1]);
+        } else {
+            language = new Locale(System.getProperty("user.language") + "_" + System.getProperty("user.country"));
+        }
+        locale = config.language();
+
         logging = settings.getBoolean("logging", true);
         update = settings.getBoolean("update", true);
         debug = settings.getBoolean("debug", false);
@@ -232,7 +241,7 @@ public class Config {
 
         // 플러그인 설정
         settings.add("version", version, bundle.get("config.version"));
-        settings.add("language", language.toString(), bundle.get("config.language.description"));
+        settings.add("language", language.toLanguageTag(), bundle.get("config.language.description"));
         settings.add("logging", logging, bundle.get("config.feature.logging"));
         settings.add("update", update, bundle.get("config.update"));
         settings.add("debug", debug, bundle.get("config.debug"));
@@ -427,23 +436,23 @@ public class Config {
         return language;
     }
 
-    public boolean serverenable() {
+    public boolean serverEnable() {
         return serverenable;
     }
 
-    public int serverport() {
+    public int serverPort() {
         return serverport;
     }
 
-    public boolean clienten() {
+    public boolean clientEnable() {
         return clientenable;
     }
 
-    public int clientport() {
+    public int clientPort() {
         return clientport;
     }
 
-    public String clienthost() {
+    public String clientHost() {
         return clienthost;
     }
 

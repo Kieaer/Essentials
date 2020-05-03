@@ -24,6 +24,7 @@ import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Bullets;
 import mindustry.content.Mechs;
 import mindustry.core.Version;
 import mindustry.entities.type.BaseUnit;
@@ -35,7 +36,6 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
-import mindustry.net.Administration;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
 import mindustry.type.Mech;
@@ -54,14 +54,12 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
@@ -86,19 +84,20 @@ public class Main extends Plugin {
     public static final EventServer eventServer = new EventServer();
     public static final JumpBorder jumpBorder = new JumpBorder();
     public static final PluginVars vars = new PluginVars();
+    public static final Config config = new Config();
 
-    public static Locale locale = new Locale(System.getProperty("user.language"), System.getProperty("user.country"));
-    public static Config config = new Config();
     public final ApplicationListener listener;
-    public Array<EventServer.EventService> eventServers = new Array<>();
-    Logger log = LoggerFactory.getLogger(Main.class);
+    public final Array<EventServer.EventService> eventServers = new Array<>();
+
+    final Logger log = LoggerFactory.getLogger(Main.class);
+
+    public static Locale locale;
 
     public Main() {
         // 서버 버전 확인
         if (Version.build != vars.buildVersion() && Version.revision < vars.buildRevision()) {
-            try {
-                InputStream reader = getClass().getResourceAsStream("/plugin.json");
-                BufferedReader br = new BufferedReader(new InputStreamReader(reader));
+            try (InputStream reader = getClass().getResourceAsStream("/plugin.json");
+                 BufferedReader br = new BufferedReader(new InputStreamReader(reader))) {
                 throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");
             } catch (PluginException | IOException e) {
                 log.warn("Plugin", e);
@@ -108,8 +107,7 @@ public class Main extends Plugin {
 
 
         // 파일 압축해제
-        try {
-            final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()));
+        try (final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()))) {
             final Enumeration<JarEntry> enumEntries = jar.entries();
             while (enumEntries.hasMoreElements()) {
                 JarEntry file = enumEntries.nextElement();
@@ -119,12 +117,11 @@ public class Main extends Plugin {
                         root.child(renamed).file().mkdir();
                         continue;
                     }
-                    InputStream is = jar.getInputStream(file);
-                    root.child(renamed).write(is, false);
-                    is.close();
+                    try (InputStream is = jar.getInputStream(file)) {
+                        root.child(renamed).write(is, false);
+                    }
                 }
             }
-            jar.close();
         } catch (IOException | URISyntaxException e) {
             log.warn("File Extract", e);
             System.exit(0);
@@ -132,7 +129,7 @@ public class Main extends Plugin {
 
         // 설정 불러오기
         config.init();
-        Log.info("config.language", config.language().getDisplayCountry());
+        Log.info("config.language", config.language().getDisplayLanguage());
 
         // 플러그인 데이터 불러오기
         pluginData.loadall();
@@ -163,10 +160,10 @@ public class Main extends Plugin {
         }
 
         // Client 연결
-        if (config.clienten()) new Client();
+        if (config.clientEnable()) new Client();
 
         // Server 시작
-        if (config.serverenable()) new Server();
+        if (config.serverEnable()) new Server();
 
         // 기록 시작
         if (config.logging()) new ActivityLog();
@@ -190,7 +187,7 @@ public class Main extends Plugin {
                     if (vote.size != 0) vote.get(0).interrupt(); // 투표 종료
                     database.dispose(); // DB 연결 종료
 
-                    if (config.serverenable()) {
+                    if (config.serverEnable()) {
                         try {
                             Iterator<Server.service> servers = server.list.iterator();
                             while (servers.hasNext()) {
@@ -210,7 +207,7 @@ public class Main extends Plugin {
                     }
 
                     // 클라이언트 종료
-                    if (config.clienten() && client.activated) {
+                    if (config.clientEnable() && client.activated) {
                         client.request(Client.Request.exit, null, null);
                         Log.info("client.shutdown");
                     }
@@ -336,7 +333,7 @@ public class Main extends Plugin {
                     for (JsonObject.Member data : perm.permission) {
                         if (data.getName().equals(arg[0])) {
                             PlayerData p = playerDB.get(player.uuid);
-                            p.permission("new_admin");
+                            p.permission("newadmin");
                             Log.info("success");
                             break;
                         }
@@ -352,65 +349,67 @@ public class Main extends Plugin {
             String uuid = arg[0];
             if (player != null) uuid = player.uuid;
 
-            try {
-                PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE uuid=?");
+            try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE uuid=?")) {
                 pstmt.setString(1, uuid);
-                ResultSet rs = pstmt.executeQuery();
-                if (rs.next()) {
-                    String datatext = "\n" + rs.getString("name") + " Player information\n" +
-                            "=====================================" + "\n" +
-                            "name: " + rs.getString("name") + "\n" +
-                            "uuid: " + rs.getString("uuid") + "\n" +
-                            "country: " + rs.getString("country") + "\n" +
-                            "country_code: " + rs.getString("country_code") + "\n" +
-                            "language: " + rs.getString("language") + "\n" +
-                            "isAdmin: " + rs.getBoolean("isAdmin") + "\n" +
-                            "placecount: " + rs.getInt("placecount") + "\n" +
-                            "breakcount: " + rs.getInt("breakcount") + "\n" +
-                            "killcount: " + rs.getInt("killcount") + "\n" +
-                            "deathcount: " + rs.getInt("deathcount") + "\n" +
-                            "joincount: " + rs.getInt("joincount") + "\n" +
-                            "kickcount: " + rs.getInt("kickcount") + "\n" +
-                            "level: " + rs.getInt("level") + "\n" +
-                            "exp: " + rs.getInt("exp") + "\n" +
-                            "reqexp: " + rs.getInt("reqexp") + "\n" +
-                            "reqtotalexp: " + rs.getString("reqtotalexp") + "\n" +
-                            "firstdate: " + rs.getString("firstdate") + "\n" +
-                            "lastdate: " + rs.getString("lastdate") + "\n" +
-                            "lastplacename: " + rs.getString("lastplacename") + "\n" +
-                            "lastbreakname: " + rs.getString("lastbreakname") + "\n" +
-                            "lastchat: " + rs.getString("lastchat") + "\n" +
-                            "playtime: " + rs.getString("playtime") + "\n" +
-                            "attackclear: " + rs.getInt("attackclear") + "\n" +
-                            "pvpwincount: " + rs.getInt("pvpwincount") + "\n" +
-                            "pvplosecount: " + rs.getInt("pvplosecount") + "\n" +
-                            "pvpbreakout: " + rs.getInt("pvpbreakout") + "\n" +
-                            "reactorcount: " + rs.getInt("reactorcount") + "\n" +
-                            "bantimeset: " + rs.getString("bantimeset") + "\n" +
-                            "bantime: " + rs.getString("bantime") + "\n" +
-                            "banned: " + rs.getBoolean("banned") + "\n" +
-                            "translate: " + rs.getBoolean("translate") + "\n" +
-                            "crosschat: " + rs.getBoolean("crosschat") + "\n" +
-                            "colornick: " + rs.getBoolean("colornick") + "\n" +
-                            "connected: " + rs.getBoolean("connected") + "\n" +
-                            "connserver: " + rs.getString("connserver") + "\n" +
-                            "permission: " + rs.getString("permission") + "\n" +
-                            "mute: " + rs.getBoolean("mute") + "\n" +
-                            "alert: " + rs.getBoolean("alert") + "\n" +
-                            "udid: " + rs.getLong("udid") + "\n" +
-                            "accountid: " + rs.getString("accountid");
-                    PlayerData current = playerDB.get(uuid);
-                    if (!current.error()) {
-                        datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
-                                "isLogin: " + current.login() + "\n" +
-                                "afk: " + current.afk().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
-                                "afk_tilex: " + current.tilex() + "\n" +
-                                "afk_tiley: " + current.tiley();
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        String datatext = "\n" + rs.getString("name") + " Player information\n" +
+                                "=====================================" + "\n" +
+                                "name: " + rs.getString("name") + "\n" +
+                                "uuid: " + rs.getString("uuid") + "\n" +
+                                "lastIP: " + netServer.admins.findByName(rs.getString("name")).first().lastIP + "\n" +
+                                "ips: " + netServer.admins.findByName(rs.getString("name")).first().ips.toString() + "\n" +
+                                "country: " + rs.getString("country") + "\n" +
+                                "country_code: " + rs.getString("country_code") + "\n" +
+                                "language: " + rs.getString("language") + "\n" +
+                                "isAdmin: " + rs.getBoolean("isAdmin") + "\n" +
+                                "placecount: " + rs.getInt("placecount") + "\n" +
+                                "breakcount: " + rs.getInt("breakcount") + "\n" +
+                                "killcount: " + rs.getInt("killcount") + "\n" +
+                                "deathcount: " + rs.getInt("deathcount") + "\n" +
+                                "joincount: " + rs.getInt("joincount") + "\n" +
+                                "kickcount: " + rs.getInt("kickcount") + "\n" +
+                                "level: " + rs.getInt("level") + "\n" +
+                                "exp: " + rs.getInt("exp") + "\n" +
+                                "reqexp: " + rs.getInt("reqexp") + "\n" +
+                                "reqtotalexp: " + rs.getString("reqtotalexp") + "\n" +
+                                "firstdate: " + rs.getString("firstdate") + "\n" +
+                                "lastdate: " + rs.getString("lastdate") + "\n" +
+                                "lastplacename: " + rs.getString("lastplacename") + "\n" +
+                                "lastbreakname: " + rs.getString("lastbreakname") + "\n" +
+                                "lastchat: " + rs.getString("lastchat") + "\n" +
+                                "playtime: " + rs.getString("playtime") + "\n" +
+                                "attackclear: " + rs.getInt("attackclear") + "\n" +
+                                "pvpwincount: " + rs.getInt("pvpwincount") + "\n" +
+                                "pvplosecount: " + rs.getInt("pvplosecount") + "\n" +
+                                "pvpbreakout: " + rs.getInt("pvpbreakout") + "\n" +
+                                "reactorcount: " + rs.getInt("reactorcount") + "\n" +
+                                "bantimeset: " + rs.getString("bantimeset") + "\n" +
+                                "bantime: " + rs.getString("bantime") + "\n" +
+                                "banned: " + rs.getBoolean("banned") + "\n" +
+                                "translate: " + rs.getBoolean("translate") + "\n" +
+                                "crosschat: " + rs.getBoolean("crosschat") + "\n" +
+                                "colornick: " + rs.getBoolean("colornick") + "\n" +
+                                "connected: " + rs.getBoolean("connected") + "\n" +
+                                "connserver: " + rs.getString("connserver") + "\n" +
+                                "permission: " + rs.getString("permission") + "\n" +
+                                "mute: " + rs.getBoolean("mute") + "\n" +
+                                "alert: " + rs.getBoolean("alert") + "\n" +
+                                "udid: " + rs.getLong("udid") + "\n" +
+                                "accountid: " + rs.getString("accountid");
+                        PlayerData current = playerDB.get(uuid);
+                        if (!current.error()) {
+                            datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
+                                    "isLogin: " + current.login() + "\n" +
+                                    "afk: " + current.afk().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
+                                    "afk_tilex: " + current.tilex() + "\n" +
+                                    "afk_tiley: " + current.tiley();
 
+                        }
+                        Log.info(datatext);
+                    } else {
+                        Log.info("Player not found!");
                     }
-                    Log.info(datatext);
-                } else {
-                    Log.info("Player not found!");
                 }
             } catch (SQLException e) {
                 new CrashReport(e);
@@ -447,6 +446,27 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
+        handler.<Player>register("cha", "Test geo", (arg, player) -> {
+            PlayerData playerData = playerDB.get(player.uuid);
+            if (playerData.uuid().equals("5I1LE6+5AcgAAAAAmoXfMg==")) {
+                new Thread(() -> {
+                    Random r = new Random();
+                    for (int a = 0; a < 600; a++) {
+                        Call.createBullet(Bullets.meltdownLaser, Team.sharded, player.getX(), player.getY(), player.rotation, 1f, 1f);
+                        Call.createBullet(Bullets.artilleryHoming, Team.sharded, player.getX(), player.getY(), player.rotation > 0 ? (player.rotation - 180) + r.nextInt(20 + 1 - -20) - 20 : r.nextInt(20 + 1 - -20) - 20 + r.nextInt(15), 1f, 1f);
+                        Call.createBullet(Bullets.flakSurge, Team.sharded, player.getX(), player.getY(), player.rotation > 0 ? (player.rotation - 90) - r.nextInt(20 + 1 - -20) - 20 : (player.rotation + 90) + r.nextInt(20 + 1 - -20) - 20, 1f, 1f);
+                        Call.createBullet(Bullets.flakSurge, Team.sharded, player.getX(), player.getY(), player.rotation > 0 ? (player.rotation + 160) - r.nextInt(20 + 1 - -20) - 20 : (player.rotation - 90) + r.nextInt(20 + 1 - -20) - 20, 1f, 1f);
+                        try {
+                            sleep(16);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        player.heal();
+                    }
+
+                }).start();
+            }
+        });
         handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
             if (!perm.check(player, "alert")) return;
 
@@ -464,13 +484,8 @@ public class Main extends Plugin {
             if (!perm.check(player, "ch")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
-            if (playerData.crosschat()) {
-                playerData.crosschat(false);
-                player.sendMessage(new Bundle(playerData.locale()).prefix("player.crosschat.disable"));
-            } else {
-                playerData.crosschat(true);
-                player.sendMessage(new Bundle(playerData.locale()).prefix("player.crosschat"));
-            }
+            playerData.crosschat(!playerData.crosschat());
+            player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.crosschat() ? "player.crosschat.disable" : "player.crosschat.disable"));
         });
         handler.<Player>register("changepw", "<new_password> <new_password_repeat>", "Change account password", (arg, player) -> {
             if (!perm.check(player, "changepw")) return;
@@ -606,7 +621,7 @@ public class Main extends Plugin {
             String datatext = "[#DEA82A]" + new Bundle(playerData.locale()).get("player.info") + "[]\n" +
                     "[#2B60DE]====================================[]\n" +
                     "[green]" + bundle.get("player.name") + "[] : " + player.name + "[white]\n" +
-                    "[green]" + bundle.get("player.country") + "[] : " + locale.getDisplayCountry() + "\n" +
+                    "[green]" + bundle.get("player.country") + "[] : " + playerData.locale().getDisplayCountry(playerData.locale()) + "\n" +
                     "[green]" + bundle.get("player.placecount") + "[] : " + playerData.placecount() + "\n" +
                     "[green]" + bundle.get("player.breakcount") + "[] : " + playerData.breakcount() + "\n" +
                     "[green]" + bundle.get("player.killcount") + "[] : " + playerData.killcount() + "\n" +
@@ -696,7 +711,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("player.not-found"));
                 return;
             }
-            Player.onPlayerDeath(other);
+            player.kill();
         });
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             PlayerData playerData = playerDB.get(player.uuid);
@@ -989,24 +1004,30 @@ public class Main extends Plugin {
             player.sendMessage(bundle.prefix("server.status"));
             player.sendMessage("[#2B60DE]========================================[]");
             float fps = Math.round((int) 60f / Time.delta());
-            int idb = 0;
-            int ipb = 0;
+            int bans = netServer.admins.getBanned().size;
+            int ipbans = netServer.admins.getBannedIPs().size;
+            int bancount = bans + ipbans;
+            player.sendMessage(bundle.get("server.status.result", fps, playerGroup.size(), bancount, bans, ipbans, vars.playtime(), vars.uptime(), vars.pluginVersion()));
 
-            Array<Administration.PlayerInfo> bans = netServer.admins.getBanned();
-            for (Administration.PlayerInfo ignored : bans) {
-                idb++;
+            JsonObject result = new JsonObject();
+            for (PlayerData p : vars.playerData()) {
+                if (result.get(p.locale().getDisplayCountry(playerData.locale())) == null) {
+                    result.add(p.locale().getDisplayCountry(playerData.locale()), 1);
+                } else {
+                    result.set(p.locale().getDisplayCountry(playerData.locale()), result.get(p.locale().getDisplayCountry(playerData.locale())).asInt() + 1);
+                }
             }
 
-            Array<String> ipbans = netServer.admins.getBannedIPs();
-            for (String ignored : ipbans) {
-                ipb++;
+            StringBuilder s = new StringBuilder();
+            for (JsonObject.Member m : result) {
+                String d = m.getName() + ": " + m.getValue() + "\n";
+                s.append(d);
             }
-            int bancount = idb + ipb;
-            player.sendMessage(bundle.prefix("server.status.banstat", fps, playerGroup.size(), bancount, idb, ipb, vars.playtime(), vars.uptime(), vars.pluginVersion()));
+            player.sendMessage(s.substring(0, s.length() - 1));
         });
         handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
             if (!perm.check(player, "suicide")) return;
-            Player.onPlayerDeath(player);
+            player.kill();
             if (playerGroup != null && playerGroup.size() > 0) {
                 tool.sendMessageAll("suicide", player.name);
             }
@@ -1040,7 +1061,7 @@ public class Main extends Plugin {
                 }
             }
             if (other != null) {
-                LocalTime bantime = LocalTime.parse(arg[1], DateTimeFormatter.ofPattern("HH:mm:ss"));
+                LocalTime bantime = LocalTime.parse(arg[1], DateTimeFormatter.ofPattern("HH"));
                 playerCore.tempban(other, bantime, arg[2]);
                 other.con.kick("Temp kicked");
                 for (int a = 0; a < playerGroup.size(); a++) {
@@ -1056,7 +1077,7 @@ public class Main extends Plugin {
             if (!perm.check(player, "time")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd a HH:mm:ss");
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss");
             String nowString = now.format(dateTimeFormatter);
             player.sendMessage(new Bundle(playerData.locale()).prefix("servertime", nowString));
         });
@@ -1121,13 +1142,12 @@ public class Main extends Plugin {
             }
             player.setNet(x, y);
         });
-        handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
+        /*handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
             if (!perm.check(player, "tr")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             playerDB.get(player.uuid).translate(!playerData.translate());
             player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.translate() ? "translate" : "translate-disable", player.name));
-
-        });
+        });*/
         // TODO 투표기능 다시 만들기
         if (config.vote()) {
             handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
@@ -1232,7 +1252,7 @@ public class Main extends Plugin {
             } else {
                 PlayerData target = playerDB.get(other.uuid);
                 target.mute(!target.mute());
-                player.sendMessage(new Bundle(target.locale()).prefix(target.mute() ? "player.unmute" : "player.muted", target.name()));
+                player.sendMessage(new Bundle(target.locale()).prefix(target.mute() ? "player.muted" : "player.unmute", target.name()));
             }
         });
         if (config.vote()) {
@@ -1251,8 +1271,11 @@ public class Main extends Plugin {
                     player.sendMessage(bundle.prefix("vote.target-admin"));
                     return;
                 }
-
-                //vote.start(Vote.VoteType.kick, player, other);
+                if (vote.size != 0) {
+                    player.sendMessage(bundle.prefix("vote.in-processing"));
+                    return;
+                }
+                vote.add(new Vote(player, Vote.VoteType.kick, other));
             });
         }
     }

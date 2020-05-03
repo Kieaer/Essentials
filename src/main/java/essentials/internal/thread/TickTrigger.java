@@ -167,7 +167,7 @@ public class TickTrigger {
                             String msg;
                             MessageBlock.MessageBlockEntity entity;
                             try {
-                                entity = (MessageBlock.MessageBlockEntity) pluginData.messagemonitor.get(a).tile.entity;
+                                entity = pluginData.messagemonitor.get(a).entity;
                                 msg = entity.message;
                             } catch (NullPointerException e) {
                                 pluginData.messagemonitor.remove(a);
@@ -192,11 +192,11 @@ public class TickTrigger {
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             } else if (msg.contains("jump")) {
-                                pluginData.messagejump.add(new PluginData.messagejump(pluginData.messagemonitor.get(a).tile, msg));
+                                pluginData.messagejump.add(new PluginData.messagejump(pluginData.messagemonitor.get(a).entity.tile, msg));
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             } else if (msg.equals("scancore")) {
-                                pluginData.scancore.add(pluginData.messagemonitor.get(a).tile);
+                                pluginData.scancore.add(pluginData.messagemonitor.get(a).entity.tile);
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             }
