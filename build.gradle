@@ -29,7 +29,6 @@ test {
     testLogging.showStandardStreams = true
 }
 
-
 compileJava {
     options.encoding = "UTF-8"
 }
