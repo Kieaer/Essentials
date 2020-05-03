@@ -26,8 +26,8 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| votekick | [player...] | Vote to kick a player, with a cooldown. |
 | vote | &lt;y/n&gt; | Vote to kick the current player. |
+| cha |  | Test geo |
 | alert |  | Turn on/off alerts |
 | ch |  | Send chat to another server. |
 | changepw | &lt;new_password&gt; &lt;new_password_repeat&gt; | Change account password |
@@ -48,7 +48,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | save |  | Auto rollback map early save |
 | reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
 | router |  | Router |
-| register |  | Register account |
+| register | &lt;accountid&gt; &lt;password&gt; | Register account |
 | spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playerName] | Spawn mob in player position |
 | setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
 | spawn-core | &lt;smail/normal/big&gt; | Make new core |
@@ -61,7 +61,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tp | &lt;player&gt; | Teleport to other players |
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
 | tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
-| tr |  | Enable/disable Translate all chat |
+| vote | &lt;mode&gt; [parameter...] | Voting system (Use /vote to check detail commands) |
 | weather | &lt;day,eday,night,enight&gt; | Change map light |
 | mute | &lt;Player_name&gt; | Mute/unmute player |
 
@@ -69,10 +69,8 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| players |  | List all players currently in game. |
 | saveall |  | desc |
-| gendocs |  | Generate Essentials README.md |
 | setperm | &lt;player_name/uuid&gt; &lt;group&gt; | Set player permission |
 | reload |  | Reload Essential plugin data |
 
-README.md Generated time: 2020-05-01 22:59:03
+README.md Generated time: 2020-05-03 20:59:16

@@ -129,7 +129,7 @@ public class Main extends Plugin {
 
         // 설정 불러오기
         config.init();
-        Log.info("config.language", config.language().getDisplayLanguage()); // TODO 국가명 안뜨는 이유 찾기
+        Log.info("config.language", config.language().getDisplayLanguage());
 
         // 플러그인 데이터 불러오기
         pluginData.loadall();
@@ -257,10 +257,11 @@ public class Main extends Plugin {
                     "mods", "mod", "js", "say", "difficulty", "rules", "fillitems", "playerlimit",
                     "config", "subnet-ban", "whitelisted", "whitelist-add", "whitelist-remove",
                     "shuffle", "nextmap", "kick", "ban", "bans", "unban", "admin", "unadmin",
-                    "admins", "runwave", "load", "save", "saves", "gameover", "info", "search", "gc"
+                    "admins", "runwave", "load", "save", "saves", "gameover", "info", "search", "gc",
+                    "pardon", "players", "gendocs", "cha"
             };
             String[] clientcommands = new String[]{
-                    "help", "t", "sync", "pardon", "players"
+                    "help", "t", "sync", "pardon", "players", "votekick"
             };
             String serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
             String clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n";
