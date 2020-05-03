@@ -139,28 +139,7 @@ public class Event {
 
         Events.on(EventType.PlayerConnect.class, e -> {
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
-            for (String s : pluginData.blacklist) {
-                if (e.player.name.matches(s)) {
-                    try {
-                        Locale locale = tool.getGeo(e.player);
-                        Call.onKick(e.player.con, new Bundle(locale).get("system.nickname.blacklisted.kick"));
-                        Log.info("system.nickname.blacklisted", e.player.name);
-                    } catch (Exception ex) {
-                        new CrashReport(ex);
-                    }
-                }
-            }
 
-            if (config.strictname()) {
-                if (e.player.name.length() > 32) Call.onKick(e.player.con, "Nickname too long!");
-                //if (e.player.name.matches(".*\\[.*].*"))
-                //    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
-                if (e.player.name.contains("　"))
-                    Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
-                if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");
-                if (e.player.name.replaceAll("\\([.*?]\\)", "").length() == 0)
-                    Call.onKick(e.player.con, "Can't use only color tags nickname in this server.");
-            }
 
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
@@ -190,6 +169,29 @@ public class Event {
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(EventType.PlayerJoin.class, e -> {
+            for (String s : pluginData.blacklist) {
+                if (e.player.name.matches(s)) {
+                    try {
+                        Locale locale = tool.getGeo(e.player);
+                        Call.onKick(e.player.con, new Bundle(locale).get("system.nickname.blacklisted.kick"));
+                        Log.info("system.nickname.blacklisted", e.player.name);
+                    } catch (Exception ex) {
+                        new CrashReport(ex);
+                    }
+                }
+            }
+
+            if (config.strictname()) {
+                if (e.player.name.length() > 32) Call.onKick(e.player.con, "Nickname too long!");
+                //if (e.player.name.matches(".*\\[.*].*"))
+                //    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
+                if (e.player.name.contains("　"))
+                    Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
+                if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");
+                if (e.player.name.matches(".*\\[.*.\\].*"))
+                    Call.onKick(e.player.con, "Can't use only color tags nickname in this server.");
+            }
+
             vars.addPlayers(e.player);
             e.player.isAdmin = false;
             Thread t = new Thread(() -> {
