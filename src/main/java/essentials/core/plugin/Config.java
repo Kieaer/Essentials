@@ -436,23 +436,23 @@ public class Config {
         return language;
     }
 
-    public boolean serverenable() {
+    public boolean serverEnable() {
         return serverenable;
     }
 
-    public int serverport() {
+    public int serverPort() {
         return serverport;
     }
 
-    public boolean clienten() {
+    public boolean clientEnable() {
         return clientenable;
     }
 
-    public int clientport() {
+    public int clientPort() {
         return clientport;
     }
 
-    public String clienthost() {
+    public String clientHost() {
         return clienthost;
     }
 

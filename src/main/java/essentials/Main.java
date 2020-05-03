@@ -161,10 +161,10 @@ public class Main extends Plugin {
         }
 
         // Client 연결
-        if (config.clienten()) new Client();
+        if (config.clientEnable()) new Client();
 
         // Server 시작
-        if (config.serverenable()) new Server();
+        if (config.serverEnable()) new Server();
 
         // 기록 시작
         if (config.logging()) new ActivityLog();
@@ -188,7 +188,7 @@ public class Main extends Plugin {
                     if (vote.size != 0) vote.get(0).interrupt(); // 투표 종료
                     database.dispose(); // DB 연결 종료
 
-                    if (config.serverenable()) {
+                    if (config.serverEnable()) {
                         try {
                             Iterator<Server.service> servers = server.list.iterator();
                             while (servers.hasNext()) {
@@ -208,7 +208,7 @@ public class Main extends Plugin {
                     }
 
                     // 클라이언트 종료
-                    if (config.clienten() && client.activated) {
+                    if (config.clientEnable() && client.activated) {
                         client.request(Client.Request.exit, null, null);
                         Log.info("client.shutdown");
                     }
@@ -1223,7 +1223,7 @@ public class Main extends Plugin {
             } else {
                 PlayerData target = playerDB.get(other.uuid);
                 target.mute(!target.mute());
-                player.sendMessage(new Bundle(target.locale()).prefix(target.mute() ? "player.unmute" : "player.muted", target.name()));
+                player.sendMessage(new Bundle(target.locale()).prefix(target.mute() ? "player.muted" : "player.unmute", target.name()));
             }
         });
         if (config.vote()) {
@@ -1242,8 +1242,11 @@ public class Main extends Plugin {
                     player.sendMessage(bundle.prefix("vote.target-admin"));
                     return;
                 }
-
-                //vote.start(Vote.VoteType.kick, player, other);
+                if (vote.size != 0) {
+                    player.sendMessage(bundle.prefix("vote.in-processing"));
+                    return;
+                }
+                vote.add(new Vote(player, Vote.VoteType.kick, other));
             });
         }
     }
