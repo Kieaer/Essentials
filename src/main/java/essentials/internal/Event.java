@@ -2,6 +2,8 @@ package essentials.internal;
 
 import arc.Core;
 import arc.Events;
+import arc.struct.ArrayMap;
+import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.external.DataMigration;
@@ -370,7 +372,7 @@ public class Event {
                 // 번역
                 if (config.translate()) {
                     new Thread(() -> {
-                        Thread.currentThread().setName(e.player.name + " 의 번역 스레드");
+                        ArrayMap<String, String> buf = new ArrayMap<>();
                         try {
                             for (Player p : playerGroup.all()) {
                                 PlayerData target = playerDB.get(p.uuid);
@@ -381,7 +383,16 @@ public class Event {
                                     if (original.equals("zh")) original = "zh-CN";
                                     if (language.equals("zh")) language = "zh-CN";
 
-                                    if (!language.equals(original)) {
+                                    boolean match = false;
+                                    for (ObjectMap.Entry<String, String> b : buf) {
+                                        if (language.equals(b.key)) {
+                                            match = true;
+                                            p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + b.value);
+                                            break;
+                                        }
+                                    }
+
+                                    if (!language.equals(original) && !match) {
                                         HttpURLConnection con = (HttpURLConnection) new URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation").openConnection();
                                         con.setRequestMethod("POST");
                                         con.setRequestProperty("X-NCP-APIGW-API-KEY-ID", config.translateid());
@@ -410,7 +421,9 @@ public class Event {
                                                     }
 
                                                     JsonObject object = readJSON(response.toString()).asObject();
-                                                    p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + object.get("message").asObject().get("result").asObject().get("translatedText").asString());
+                                                    String result = object.get("message").asObject().get("result").asObject().get("translatedText").asString();
+                                                    buf.put(language, result);
+                                                    p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + result);
                                                 }
                                             }
                                         } catch (Exception ex) {

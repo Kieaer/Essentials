@@ -345,6 +345,13 @@ public class Main extends Plugin {
                 Log.warn("no-parameter");
             }
         });
+        handler.register("bansync", "Synchronize ban list with server", (arg) -> {
+            if (client.activated) {
+                client.request(Client.Request.bansync, null, null);
+            } else {
+                Log.client("client.disabled");
+            }
+        });
         handler.register("info", "<player/uuid>", "Show player information", (arg) -> {
             Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             String uuid = arg[0];

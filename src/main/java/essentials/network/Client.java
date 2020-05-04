@@ -255,6 +255,8 @@ public class Client extends Thread {
                 Request type = Request.valueOf(data.get("type").asString());
                 switch (type) {
                     case bansync:
+                        Log.client("client.banlist.received");
+
                         // 적용
                         JsonArray ban = data.get("ban").asArray();
                         JsonArray ipban = data.get("ipban").asArray();
@@ -272,7 +274,7 @@ public class Client extends Thread {
                             netServer.admins.addSubnetBan(b.asString());
                         }
 
-                        System.out.println("DONE");
+                        Log.client("success");
                         break;
                     case chat:
                         String name = data.get("name").asString();

@@ -5,21 +5,17 @@ import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
-import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
-import org.hjson.JsonObject;
-import org.jsoup.Jsoup;
 
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
-import static org.hjson.JsonValue.readJSON;
 
 public class Threads implements Runnable {
     int delay = 0;
@@ -36,13 +32,10 @@ public class Threads implements Runnable {
                         PlayerData playerData = playerDB.get(p.uuid);
                         if (playerData.error()) {
                             String message;
-                            String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
-                            JsonObject result = readJSON(json).asObject();
-                            Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
                             if (config.passwordmethod().equals("discord")) {
-                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink();
+                                message = new Bundle(Locale.US).get("system.login.require.discord") + "\n" + config.discordlink();
                             } else {
-                                message = new Bundle(language).get("system.login.require.password");
+                                message = new Bundle(Locale.US).get("system.login.require.password");
                             }
                             p.sendMessage(message);
                         }
