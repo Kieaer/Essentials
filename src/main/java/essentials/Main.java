@@ -47,7 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -64,9 +63,8 @@ import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
 public class Main extends Plugin {
-    public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
     public static final Timer timer = new Timer(true);
-    public static final ExecutorService mainThread = new ThreadPoolExecutor(0, 8, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    public static final ExecutorService mainThread = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(), 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
 
     public static final Array<Vote> vote = new Array<>();
 
@@ -85,6 +83,7 @@ public class Main extends Plugin {
     public static final JumpBorder jumpBorder = new JumpBorder();
     public static final PluginVars vars = new PluginVars();
     public static final Config config = new Config();
+    public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     public final ApplicationListener listener;
     public final Array<EventServer.EventService> eventServers = new Array<>();
@@ -107,7 +106,8 @@ public class Main extends Plugin {
 
 
         // 파일 압축해제
-        try (final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()))) {
+        //try (final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()))) {
+        try (final JarFile jar = new JarFile(new File("C:\\Users\\cloud\\Documents\\Github\\Essentials\\build\\libs\\Essentials.jar"))) {
             final Enumeration<JarEntry> enumEntries = jar.entries();
             while (enumEntries.hasMoreElements()) {
                 JarEntry file = enumEntries.nextElement();
@@ -122,7 +122,8 @@ public class Main extends Plugin {
                     }
                 }
             }
-        } catch (IOException | URISyntaxException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             log.warn("File Extract", e);
             System.exit(0);
         }

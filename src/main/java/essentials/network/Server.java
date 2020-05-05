@@ -21,6 +21,7 @@ import org.jsoup.nodes.Document;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.ServerSocket;
@@ -83,6 +84,7 @@ public class Server implements Runnable {
         public Socket socket;
         public SecretKeySpec spec;
         public Cipher cipher;
+        public IvParameterSpec iv;
         public String ip;
 
         public service(Socket socket) {
@@ -124,7 +126,8 @@ public class Server implements Runnable {
                 }
 
                 spec = new SecretKeySpec(decoder.decode(authkey), "AES");
-                cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                iv = new IvParameterSpec(authkey.getBytes());
             } catch (SocketException ignored) {
             } catch (Exception e) {
                 new CrashReport(e);
@@ -137,7 +140,9 @@ public class Server implements Runnable {
                 while (!Thread.currentThread().isInterrupted()) {
                     Thread.currentThread().setName(ip + " Client Thread");
                     ip = socket.getInetAddress().toString().replace("/", "");
-                    String value = new String(tool.decrypt(decoder.decode(in.readLine()), spec, cipher));
+                    String received = in.readLine();
+                    System.out.println(received);
+                    String value = new String(tool.decrypt(decoder.decode(received), spec, cipher, iv));
                     JsonObject answer = new JsonObject();
                     JsonObject data = readJSON(value).asObject();
                     Request type = Request.valueOf(data.get("type").asString());
@@ -266,6 +271,7 @@ public class Server implements Runnable {
                 socket.close();
                 list.remove(this);
             } catch (Exception e) {
+                e.printStackTrace();
                 Log.server("client.disconnected", ip, bundle.get("client.disconnected.reason.error"));
             }
         }

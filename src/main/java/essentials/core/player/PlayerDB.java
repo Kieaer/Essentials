@@ -86,7 +86,7 @@ public class PlayerDB {
         return new PlayerData();
     }
 
-    public void save(PlayerData playerData) {
+    public boolean save(PlayerData playerData) {
         StringBuilder sql = new StringBuilder();
         ArrayMap<String, Object> js = playerData.toMap();
         sql.append("UPDATE players SET ");
@@ -127,8 +127,10 @@ public class PlayerDB {
 
             pstmt.setString(size, playerData.uuid());
             pstmt.execute();
+            return true;
         } catch (SQLException e) {
             new CrashReport(e);
+            return false;
         }
     }
 

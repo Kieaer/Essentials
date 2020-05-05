@@ -157,7 +157,7 @@ public class TickTrigger {
                                 target.tilex(p.tileX());
                                 target.tiley(p.tileY());
 
-                                if (!state.rules.editor) new Exp(p);
+                                if (!state.rules.editor) new Exp(target);
                                 if (kick) Call.onKick(p.con, "AFK");
                             }
                         }

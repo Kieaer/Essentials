@@ -18,6 +18,7 @@ import static essentials.Main.*;
 
 public class CrashReport {
     Logger log = LoggerFactory.getLogger(CrashReport.class);
+    public boolean success = false;
 
     public CrashReport(Throwable e) {
         if (!config.debug()) {
@@ -56,6 +57,7 @@ public class CrashReport {
                     String data = is.readLine();
                     if (data != null) {
                         Log.info("Error reported!");
+                        success = true;
                     } else {
                         Log.err("Data send failed!");
                     }
@@ -65,6 +67,7 @@ public class CrashReport {
             }
         } else {
             log.warn("Plugin Error", e);
+            success = true;
         }
     }
 }

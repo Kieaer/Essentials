@@ -22,7 +22,7 @@ public class Database {
     public Method m;
     public Object service;
     public Connection conn;
-    Class<?> cl = null;
+    public Class<?> cl = null;
 
     public void create() {
         String data = "CREATE TABLE IF NOT EXISTS players (" +
@@ -103,6 +103,7 @@ public class Database {
     public void server_stop() throws Exception {
         m = cl.getMethod("stop");
         m.invoke(service);
+        cl = null;
     }
 
     public void dispose() {

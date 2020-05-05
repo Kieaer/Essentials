@@ -16,6 +16,7 @@ import org.hjson.JsonObject;
 import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -61,8 +62,8 @@ public class Tools {
         return cipher.doFinal(data.getBytes());
     }
 
-    public byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
-        cipher.init(Cipher.DECRYPT_MODE, spec);
+    public byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher, IvParameterSpec iv) throws Exception {
+        cipher.init(Cipher.DECRYPT_MODE, spec, iv);
         return cipher.doFinal(data);
     }
 
@@ -133,7 +134,7 @@ public class Tools {
         if (root.child("motd/" + loc.toString() + ".txt").exists()) {
             return root.child("motd/" + loc.toString() + ".txt").readString();
         } else {
-            Fi file = root.child("motd/motd_" + locale.toString() + ".txt");
+            Fi file = root.child("motd/" + locale.toString() + ".txt");
             return file.exists() ? file.readString() : "Welcome to the server!";
         }
     }

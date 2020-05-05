@@ -108,7 +108,7 @@ public class Config {
         settings = obj.get("settings").asObject();
         version = settings.getInt("version", vars.configVersion());
 
-        String lc = settings.get("language").asString().split(",")[0];
+        String lc = settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")).split(",")[0];
         if (lc.split("-").length == 2) {
             String[] array = lc.split("-");
             language = new Locale(array[0], array[1]);

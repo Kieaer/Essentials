@@ -44,8 +44,15 @@ dependencies {
     implementation 'org.apache.maven:maven-artifact:3.6.3'
     implementation 'org.jsoup:jsoup:1.13.1'
     implementation 'org.slf4j:slf4j-nop:1.7.30'
-    testCompileOnly 'com.github.Anuken.Arc:arc-core:v104.6'
-    testCompileOnly 'com.github.Anuken.Mindustry:core:v104.6'
+
+    testCompile 'com.github.Anuken.Arc:arc-core:v104.6'
+    testCompile 'com.github.Anuken.Mindustry:core:v104.6'
+    testCompile 'com.github.Anuken.Mindustry:server:v104.6'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0-M1'
+    testCompile 'org.junit.jupiter:junit-jupiter-params:5.7.0-M1'
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.7.0-M1'
+    testCompile 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation 'org.powermock:powermock-module-junit4:2.0.7'
     testImplementation 'org.mockito:mockito-core:3.3.3'
 }
@@ -58,4 +65,12 @@ jar {
 shadowJar {
     archiveFileName = "${project.archivesBaseName}.jar" // remove jar classifier and version
     minimize() // remove unused classes
+}
+
+sourceSets{
+    test{
+        resources{
+            srcDir "src/main/resources"
+        }
+    }
 }
