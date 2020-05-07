@@ -5,6 +5,7 @@ import arc.Core;
 import arc.files.Fi;
 import arc.math.Mathf;
 import arc.struct.Array;
+import arc.struct.ObjectSet;
 import arc.util.CommandHandler;
 import arc.util.Strings;
 import arc.util.Time;
@@ -36,6 +37,7 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
+import mindustry.net.Administration;
 import mindustry.net.Packets;
 import mindustry.plugin.Plugin;
 import mindustry.type.Mech;
@@ -354,74 +356,74 @@ public class Main extends Plugin {
             }
         });
         handler.register("info", "<player/uuid>", "Show player information", (arg) -> {
-            Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-            String uuid = arg[0];
-            if (player != null) uuid = player.uuid;
+            ObjectSet<Administration.PlayerInfo> players = netServer.admins.findByName(arg[0]);
 
-            try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE uuid=?")) {
-                pstmt.setString(1, uuid);
-                try (ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) {
-                        String datatext = "\n" + rs.getString("name") + " Player information\n" +
-                                "=====================================" + "\n" +
-                                "name: " + rs.getString("name") + "\n" +
-                                "uuid: " + rs.getString("uuid") + "\n" +
-                                "lastIP: " + netServer.admins.findByName(rs.getString("name")).first().lastIP + "\n" +
-                                "ips: " + netServer.admins.findByName(rs.getString("name")).first().ips.toString() + "\n" +
-                                "country: " + rs.getString("country") + "\n" +
-                                "country_code: " + rs.getString("country_code") + "\n" +
-                                "language: " + rs.getString("language") + "\n" +
-                                "isAdmin: " + rs.getBoolean("isAdmin") + "\n" +
-                                "placecount: " + rs.getInt("placecount") + "\n" +
-                                "breakcount: " + rs.getInt("breakcount") + "\n" +
-                                "killcount: " + rs.getInt("killcount") + "\n" +
-                                "deathcount: " + rs.getInt("deathcount") + "\n" +
-                                "joincount: " + rs.getInt("joincount") + "\n" +
-                                "kickcount: " + rs.getInt("kickcount") + "\n" +
-                                "level: " + rs.getInt("level") + "\n" +
-                                "exp: " + rs.getInt("exp") + "\n" +
-                                "reqexp: " + rs.getInt("reqexp") + "\n" +
-                                "reqtotalexp: " + rs.getString("reqtotalexp") + "\n" +
-                                "firstdate: " + rs.getString("firstdate") + "\n" +
-                                "lastdate: " + rs.getString("lastdate") + "\n" +
-                                "lastplacename: " + rs.getString("lastplacename") + "\n" +
-                                "lastbreakname: " + rs.getString("lastbreakname") + "\n" +
-                                "lastchat: " + rs.getString("lastchat") + "\n" +
-                                "playtime: " + rs.getString("playtime") + "\n" +
-                                "attackclear: " + rs.getInt("attackclear") + "\n" +
-                                "pvpwincount: " + rs.getInt("pvpwincount") + "\n" +
-                                "pvplosecount: " + rs.getInt("pvplosecount") + "\n" +
-                                "pvpbreakout: " + rs.getInt("pvpbreakout") + "\n" +
-                                "reactorcount: " + rs.getInt("reactorcount") + "\n" +
-                                "bantimeset: " + rs.getString("bantimeset") + "\n" +
-                                "bantime: " + rs.getString("bantime") + "\n" +
-                                "banned: " + rs.getBoolean("banned") + "\n" +
-                                "translate: " + rs.getBoolean("translate") + "\n" +
-                                "crosschat: " + rs.getBoolean("crosschat") + "\n" +
-                                "colornick: " + rs.getBoolean("colornick") + "\n" +
-                                "connected: " + rs.getBoolean("connected") + "\n" +
-                                "connserver: " + rs.getString("connserver") + "\n" +
-                                "permission: " + rs.getString("permission") + "\n" +
-                                "mute: " + rs.getBoolean("mute") + "\n" +
-                                "alert: " + rs.getBoolean("alert") + "\n" +
-                                "udid: " + rs.getLong("udid") + "\n" +
-                                "accountid: " + rs.getString("accountid");
-                        PlayerData current = playerDB.get(uuid);
-                        if (!current.error()) {
-                            datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
-                                    "isLogin: " + current.login() + "\n" +
-                                    "afk: " + current.afk().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
-                                    "afk_tilex: " + current.tilex() + "\n" +
-                                    "afk_tiley: " + current.tiley();
+            for (Administration.PlayerInfo p : players) {
+                try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE uuid=?")) {
+                    pstmt.setString(1, p.id);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            String datatext = "\n" + rs.getString("name") + " Player information\n" +
+                                    "=====================================" + "\n" +
+                                    "name: " + rs.getString("name") + "\n" +
+                                    "uuid: " + rs.getString("uuid") + "\n" +
+                                    "lastIP: " + p.lastIP + "\n" +
+                                    "ips: " + p.ips.toString() + "\n" +
+                                    "country: " + rs.getString("country") + "\n" +
+                                    "country_code: " + rs.getString("country_code") + "\n" +
+                                    "language: " + rs.getString("language") + "\n" +
+                                    "isAdmin: " + rs.getBoolean("isAdmin") + "\n" +
+                                    "placecount: " + rs.getInt("placecount") + "\n" +
+                                    "breakcount: " + rs.getInt("breakcount") + "\n" +
+                                    "killcount: " + rs.getInt("killcount") + "\n" +
+                                    "deathcount: " + rs.getInt("deathcount") + "\n" +
+                                    "joincount: " + rs.getInt("joincount") + "\n" +
+                                    "kickcount: " + rs.getInt("kickcount") + "\n" +
+                                    "level: " + rs.getInt("level") + "\n" +
+                                    "exp: " + rs.getInt("exp") + "\n" +
+                                    "reqexp: " + rs.getInt("reqexp") + "\n" +
+                                    "reqtotalexp: " + rs.getString("reqtotalexp") + "\n" +
+                                    "firstdate: " + rs.getString("firstdate") + "\n" +
+                                    "lastdate: " + rs.getString("lastdate") + "\n" +
+                                    "lastplacename: " + rs.getString("lastplacename") + "\n" +
+                                    "lastbreakname: " + rs.getString("lastbreakname") + "\n" +
+                                    "lastchat: " + rs.getString("lastchat") + "\n" +
+                                    "playtime: " + rs.getString("playtime") + "\n" +
+                                    "attackclear: " + rs.getInt("attackclear") + "\n" +
+                                    "pvpwincount: " + rs.getInt("pvpwincount") + "\n" +
+                                    "pvplosecount: " + rs.getInt("pvplosecount") + "\n" +
+                                    "pvpbreakout: " + rs.getInt("pvpbreakout") + "\n" +
+                                    "reactorcount: " + rs.getInt("reactorcount") + "\n" +
+                                    "bantimeset: " + rs.getString("bantimeset") + "\n" +
+                                    "bantime: " + rs.getString("bantime") + "\n" +
+                                    "banned: " + rs.getBoolean("banned") + "\n" +
+                                    "translate: " + rs.getBoolean("translate") + "\n" +
+                                    "crosschat: " + rs.getBoolean("crosschat") + "\n" +
+                                    "colornick: " + rs.getBoolean("colornick") + "\n" +
+                                    "connected: " + rs.getBoolean("connected") + "\n" +
+                                    "connserver: " + rs.getString("connserver") + "\n" +
+                                    "permission: " + rs.getString("permission") + "\n" +
+                                    "mute: " + rs.getBoolean("mute") + "\n" +
+                                    "alert: " + rs.getBoolean("alert") + "\n" +
+                                    "udid: " + rs.getLong("udid") + "\n" +
+                                    "accountid: " + rs.getString("accountid");
+                            PlayerData current = playerDB.get(p.id);
+                            if (!current.error()) {
+                                datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
+                                        "isLogin: " + current.login() + "\n" +
+                                        "afk: " + current.afk().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
+                                        "afk_tilex: " + current.tilex() + "\n" +
+                                        "afk_tiley: " + current.tiley();
 
+                            }
+                            Log.info(datatext);
+                        } else {
+                            Log.info("Player not found!");
                         }
-                        Log.info(datatext);
-                    } else {
-                        Log.info("Player not found!");
                     }
+                } catch (SQLException e) {
+                    new CrashReport(e);
                 }
-            } catch (SQLException e) {
-                new CrashReport(e);
             }
         });
         // TODO 모든 권한 그룹 변경 만들기
