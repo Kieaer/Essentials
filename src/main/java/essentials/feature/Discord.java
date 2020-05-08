@@ -36,7 +36,7 @@ public class Discord extends ListenerAdapter {
     public void start() {
         // TODO discord 방식 변경
         try {
-            jda = JDABuilder.createDefault(config.discordtoken()).build();
+            jda = JDABuilder.createDefault(config.discordToken()).build();
             jda.awaitReady();
             jda.addEventListener(new Discord());
             Log.info("system.discord.enabled");

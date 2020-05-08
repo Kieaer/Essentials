@@ -48,7 +48,10 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -94,22 +97,20 @@ public class Main extends Plugin {
 
     public static Locale locale;
 
-    public Main() {
+    public Main() throws PluginException {
         // 서버 버전 확인
         if (Version.build != vars.buildVersion() && Version.revision < vars.buildRevision()) {
             try (InputStream reader = getClass().getResourceAsStream("/plugin.json");
                  BufferedReader br = new BufferedReader(new InputStreamReader(reader))) {
                 throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");
-            } catch (PluginException | IOException e) {
+            } catch (IOException e) {
                 log.warn("Plugin", e);
-                System.exit(0);
             }
         }
 
 
         // 파일 압축해제
-        //try (final JarFile jar = new JarFile(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()))) {
-        try (final JarFile jar = new JarFile(new File("C:\\Users\\cloud\\Documents\\Github\\Essentials\\build\\libs\\Essentials.jar"))) {
+        try (final JarFile jar = new JarFile(Core.settings.getDataDirectory().child("mods/Essentials.jar").file())) {
             final Enumeration<JarEntry> enumEntries = jar.entries();
             while (enumEntries.hasMoreElements()) {
                 JarEntry file = enumEntries.nextElement();
@@ -124,10 +125,8 @@ public class Main extends Plugin {
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.warn("File Extract", e);
-            System.exit(0);
+        } catch (IOException e) {
+            throw new PluginException(e);
         }
 
         // 설정 불러오기
@@ -157,7 +156,7 @@ public class Main extends Plugin {
             database.connect();
             database.create();
             database.LegacyUpgrade();
-            if (config.dbserver()) database.server_start();
+            if (config.dbServer()) database.server_start();
         } catch (SQLException e) {
             new CrashReport(e);
         }
@@ -272,7 +271,8 @@ public class Main extends Plugin {
 
             Log.info("readme-generating");
 
-            String header = "# Essentials\n" +
+            String header = "[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=alert_status)](https://sonarcloud.io/dashboard?id=Kieaer_Essentials)\n" +
+                    "# Essentials\n" +
                     "Add more commands to the server.\n\n" +
                     "I'm getting a lot of suggestions.<br>\n" +
                     "Please submit your idea to this repository issues or Mindustry official discord!\n\n" +
@@ -355,20 +355,18 @@ public class Main extends Plugin {
                 Log.client("client.disabled");
             }
         });
-        handler.register("info", "<player/uuid>", "Show player information", (arg) -> {
-            ObjectSet<Administration.PlayerInfo> players = netServer.admins.findByName(arg[0]);
-
-            for (Administration.PlayerInfo p : players) {
+        handler.register("info", "<player/uuid>", "Show player information", new CommandHandler.CommandRunner<Object>() {
+            public void execute(String uuid) {
                 try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE uuid=?")) {
-                    pstmt.setString(1, p.id);
+                    pstmt.setString(1, uuid);
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
                             String datatext = "\n" + rs.getString("name") + " Player information\n" +
                                     "=====================================" + "\n" +
                                     "name: " + rs.getString("name") + "\n" +
                                     "uuid: " + rs.getString("uuid") + "\n" +
-                                    "lastIP: " + p.lastIP + "\n" +
-                                    "ips: " + p.ips.toString() + "\n" +
+                                    /*"lastIP: " + p.lastIP + "\n" +
+                                    "ips: " + p.ips.toString() + "\n" +*/
                                     "country: " + rs.getString("country") + "\n" +
                                     "country_code: " + rs.getString("country_code") + "\n" +
                                     "language: " + rs.getString("language") + "\n" +
@@ -407,7 +405,7 @@ public class Main extends Plugin {
                                     "alert: " + rs.getBoolean("alert") + "\n" +
                                     "udid: " + rs.getLong("udid") + "\n" +
                                     "accountid: " + rs.getString("accountid");
-                            PlayerData current = playerDB.get(p.id);
+                            PlayerData current = playerDB.get(uuid);
                             if (!current.error()) {
                                 datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
                                         "isLogin: " + current.login() + "\n" +
@@ -423,6 +421,18 @@ public class Main extends Plugin {
                     }
                 } catch (SQLException e) {
                     new CrashReport(e);
+                }
+            }
+
+            @Override
+            public void accept(String[] strings, Object o) {
+                ObjectSet<Administration.PlayerInfo> players = netServer.admins.findByName(strings[0]);
+                if (players.size != 0) {
+                    for (Administration.PlayerInfo p : players) {
+                        execute(p.id);
+                    }
+                } else {
+                    execute(strings[0]);
                 }
             }
         });
@@ -556,7 +566,7 @@ public class Main extends Plugin {
                         }
                         player.sendMessage(new Bundle(playerData.locale()).prefix("system.event.making"));
 
-                        String[] range = config.eventport().split("-");
+                        String[] range = config.eventPort().split("-");
                         int firstport = Integer.parseInt(range[0]);
                         int lastport = Integer.parseInt(range[1]);
                         int customport = ThreadLocalRandom.current().nextInt(firstport, lastport + 1);
@@ -726,10 +736,10 @@ public class Main extends Plugin {
         });
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             PlayerData playerData = playerDB.get(player.uuid);
-            if (config.loginenable()) {
+            if (config.loginEnable()) {
                 if (playerData.error()) {
                     if (playerCore.login(player, arg[0], arg[1])) {
-                        if (config.passwordmethod().equals("discord")) {
+                        if (config.passwordMethod().equals("discord")) {
                             playerCore.load(player, arg[0]);
                         } else {
                             playerCore.load(player);
@@ -739,7 +749,7 @@ public class Main extends Plugin {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
                     }
                 } else {
-                    if (config.passwordmethod().equals("mixed")) {
+                    if (config.passwordMethod().equals("mixed")) {
                         if (playerCore.login(player, arg[0], arg[1])) Call.onConnect(player.con, vars.serverIP(), 7060);
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
@@ -754,7 +764,7 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
-            if (config.loginenable()) {
+            if (config.loginEnable()) {
                 playerData.connected(false);
                 playerData.connserver("none");
                 playerData.uuid("Logout");
@@ -816,7 +826,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
             if (!perm.check(player, "save")) return;
-            Fi file = saveDirectory.child(config.slownumber() + "." + saveExtension);
+            Fi file = saveDirectory.child(config.slotNumber() + "." + saveExtension);
             SaveIO.save(file);
             player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("system.map-saved"));
         });
@@ -868,11 +878,11 @@ public class Main extends Plugin {
                             "[#6B6B6B][#828282][#6B6B6B]\n" +
                             "[#6B6B6B][#585858][#6B6B6B]";
         });
-        handler.<Player>register("register", config.passwordmethod().equals("password") ? "<accountid> <password>" : config.passwordmethod().equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
-            if (config.loginenable()) {
-                switch (config.passwordmethod()) {
+        handler.<Player>register("register", config.passwordMethod().equals("password") ? "<accountid> <password>" : config.passwordMethod().equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
+            if (config.loginEnable()) {
+                switch (config.passwordMethod()) {
                     case "discord":
-                        player.sendMessage("Join discord and use !register command!\n" + config.discordlink());
+                        player.sendMessage("Join discord and use !register command!\n" + config.discordLink());
                         discord.queue(player);
                         break;
                     default:
@@ -908,7 +918,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.prefix("syttem.mob.not-number"));
                 return;
             }
-            if (config.spawnlimit() == count) {
+            if (config.spawnLimit() == count) {
                 player.sendMessage(bundle.prefix("spawn-limit"));
                 return;
             }

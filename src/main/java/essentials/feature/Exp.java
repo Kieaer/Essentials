@@ -7,7 +7,7 @@ import mindustry.gen.Call;
 import static essentials.Main.config;
 
 public class Exp {
-    final double BASE_XP = config.basexp();
+    final double BASE_XP = config.baseXp();
     final double EXPONENT = config.exponent();
 
     public Exp(PlayerData target) {
@@ -24,7 +24,7 @@ public class Exp {
         target.level(level);
         target.reqtotalexp(reqtotalexp);
 
-        if (currentlevel < level && currentlevel > config.alarmlevel() && config.levelupalarm())
+        if (currentlevel < level && currentlevel > config.alarmLevel() && config.levelUpAlarm())
             Call.onInfoToast(new Bundle(target.locale()).get("player.levelup", target.name(), level), 600);
     }
 

@@ -12,7 +12,6 @@ import org.hjson.JsonValue;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -34,7 +33,6 @@ public class Client extends Thread {
 
     public Cipher cipher;
     public SecretKeySpec spec;
-    public IvParameterSpec iv;
 
     public boolean activated = false;
     Base64.Encoder encoder = Base64.getEncoder();
@@ -52,11 +50,9 @@ public class Client extends Thread {
             KeyGenerator gen = KeyGenerator.getInstance("AES");
             SecretKey key = gen.generateKey();
 
-            gen.init(256);
             byte[] raw = key.getEncoded();
             spec = new SecretKeySpec(raw, "AES");
-            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            iv = new IvParameterSpec(raw);
+            cipher = Cipher.getInstance("AES");
             is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             os = new DataOutputStream(socket.getOutputStream());
 
@@ -73,7 +69,7 @@ public class Client extends Thread {
             os.writeBytes(encoder.encodeToString(encrypted) + "\n");
             os.flush();
 
-            String receive = new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher, iv));
+            String receive = new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher));
 
             if (readJSON(receive).asObject().get("result") != null) {
                 activated = true;
@@ -163,11 +159,11 @@ public class Client extends Thread {
                     os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
+                    this.interrupt();
                     os.close();
                     is.close();
                     socket.close();
                     activated = false;
-                    this.interrupt();
                     return;
                 } catch (Exception e) {
                     new CrashReport(e);
@@ -235,7 +231,7 @@ public class Client extends Thread {
             try {
                 JsonObject data;
                 try {
-                    data = readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher, iv))).asObject();
+                    data = readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
                     Log.client("server.disconnected", config.clientHost());

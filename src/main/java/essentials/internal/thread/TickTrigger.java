@@ -84,7 +84,7 @@ public class TickTrigger {
                         vars.playtime(vars.playtime().plusSeconds(1));
 
                         // PvP 평화시간 카운트
-                        if (config.antirush() && state.rules.pvp && vars.playtime().isAfter(config.antirushtime()) && vars.isPvPPeace()) {
+                        if (config.antiRush() && state.rules.pvp && vars.playtime().isAfter(config.antiRushtime()) && vars.isPvPPeace()) {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
@@ -239,7 +239,7 @@ public class TickTrigger {
                 // 1.5초마다 실행
                 if ((tick % 90) == 0) {
                     if (state.is(GameState.State.playing)) {
-                        if (config.scanresource()) {
+                        if (config.scanResource()) {
                             for (Item item : content.items()) {
                                 if (item.type == ItemType.material) {
                                     if (state.teams.get(Team.sharded).cores.isEmpty()) return;

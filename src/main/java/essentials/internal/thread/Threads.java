@@ -32,8 +32,8 @@ public class Threads implements Runnable {
                         PlayerData playerData = playerDB.get(p.uuid);
                         if (playerData.error()) {
                             String message;
-                            if (config.passwordmethod().equals("discord")) {
-                                message = new Bundle(Locale.US).get("system.login.require.discord") + "\n" + config.discordlink();
+                            if (config.passwordMethod().equals("discord")) {
+                                message = new Bundle(Locale.US).get("system.login.require.discord") + "\n" + config.discordLink();
                             } else {
                                 message = new Bundle(Locale.US).get("system.login.require.password");
                             }

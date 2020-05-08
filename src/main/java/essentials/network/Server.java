@@ -21,7 +21,6 @@ import org.jsoup.nodes.Document;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.ServerSocket;
@@ -52,7 +51,10 @@ public class Server implements Runnable {
 
     public void stop() {
         try {
-            if (serverSocket != null) serverSocket.close();
+            if (serverSocket != null) {
+                Thread.currentThread().interrupt();
+                serverSocket.close();
+            }
         } catch (IOException e) {
             new CrashReport(e);
         }
@@ -70,7 +72,8 @@ public class Server implements Runnable {
                 list.add(service);
             }
         } catch (IOException e) {
-            new CrashReport(e);
+            if (!e.getMessage().matches("Socket closed")) new CrashReport(e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -84,7 +87,6 @@ public class Server implements Runnable {
         public Socket socket;
         public SecretKeySpec spec;
         public Cipher cipher;
-        public IvParameterSpec iv;
         public String ip;
 
         public service(Socket socket) {
@@ -126,8 +128,7 @@ public class Server implements Runnable {
                 }
 
                 spec = new SecretKeySpec(decoder.decode(authkey), "AES");
-                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                iv = new IvParameterSpec(authkey.getBytes());
+                cipher = Cipher.getInstance("AES");
             } catch (SocketException ignored) {
             } catch (Exception e) {
                 new CrashReport(e);
@@ -140,9 +141,7 @@ public class Server implements Runnable {
                 while (!Thread.currentThread().isInterrupted()) {
                     Thread.currentThread().setName(ip + " Client Thread");
                     ip = socket.getInetAddress().toString().replace("/", "");
-                    String received = in.readLine();
-                    System.out.println(received);
-                    String value = new String(tool.decrypt(decoder.decode(received), spec, cipher, iv));
+                    String value = new String(tool.decrypt(decoder.decode(in.readLine()), spec, cipher));
                     JsonObject answer = new JsonObject();
                     JsonObject data = readJSON(value).asObject();
                     Request type = Request.valueOf(data.get("type").asString());
@@ -199,7 +198,7 @@ public class Server implements Runnable {
 
                             for (service ser : list) {
                                 String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
-                                for (JsonValue b : config.bantrust()) {
+                                for (JsonValue b : config.banTrust()) {
                                     if (b.asString().equals(remoteip)) {
                                         ser.os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), ser.spec, ser.cipher)) + "\n");
                                         ser.os.flush();
@@ -271,7 +270,6 @@ public class Server implements Runnable {
                 socket.close();
                 list.remove(this);
             } catch (Exception e) {
-                e.printStackTrace();
                 Log.server("client.disconnected", ip, bundle.get("client.disconnected.reason.error"));
             }
         }
@@ -515,7 +513,7 @@ public class Server implements Runnable {
                                 String datatext;
                                 Array<String> array = new Array<>();
 
-                                if (!config.internaldb()) {
+                                if (!config.internalDB()) {
                                     for (String s : ranking) {
                                         try (PreparedStatement pstmt = database.conn.prepareStatement(s);
                                              ResultSet rs1 = pstmt.executeQuery()) {

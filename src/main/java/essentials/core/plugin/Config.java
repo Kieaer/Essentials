@@ -18,65 +18,65 @@ public class Config {
     public JsonObject obj;
     private int version;
     private Locale language;
-    private boolean serverenable;
-    private int serverport;
-    private boolean clientenable;
-    private int clientport;
-    private String clienthost;
-    private boolean realname;
-    private boolean strictname;
+    private boolean serverEnable;
+    private int serverPort;
+    private boolean clientEnable;
+    private int clientPort;
+    private String clientHost;
+    private boolean realName;
+    private boolean strictName;
     private int cupdatei;
-    private boolean scanresource;
-    private boolean antigrief;
-    private boolean alertaction;
-    private boolean explimit;
-    private double basexp;
+    private boolean scanResource;
+    private boolean antiGrief;
+    private boolean alertAction;
+    private boolean expLimit;
+    private double baseXp;
     private double exponent;
-    private boolean levelupalarm;
-    private int alarmlevel;
-    private boolean banshare;
-    private JsonArray bantrust;
+    private boolean levelUpAlarm;
+    private int alarmLevel;
+    private boolean banShare;
+    private JsonArray banTrust;
     private boolean query;
-    private boolean antivpn;
-    private boolean antirush;
-    private LocalTime antirushtime;
+    private boolean antiVPN;
+    private boolean antiRush;
+    private LocalTime antiRushtime;
     private boolean vote;
     private boolean logging;
     private boolean update;
     private boolean internalDB;
-    private boolean dbserver;
-    private String dburl;
-    private boolean olddbmigration;
-    private String olddburl;
-    private String olddbid;
-    private String olddbpw;
-    private String dataserverurl;
-    private String dataserverid;
-    private String dataserverpw;
-    private boolean loginenable;
-    private String passwordmethod;
-    private boolean validconnect;
-    private boolean autologin;
-    private String discordtoken;
-    private String discordlink;
+    private boolean dbServer;
+    private String dbUrl;
+    private boolean oldDBMigration;
+    private String oldDBurl;
+    private String oldDBid;
+    private String oldDBpw;
+    private String dataserverUrl;
+    private String dataserverId;
+    private String dataserverPw;
+    private boolean loginEnable;
+    private String passwordMethod;
+    private boolean validConnect;
+    private boolean autoLogin;
+    private String discordToken;
+    private String discordLink;
     private boolean translate;
-    private String translateid;
-    private String translatepw;
+    private String translateId;
+    private String translatePw;
     private boolean debug;
-    private String debugcode;
-    private boolean crashreport;
-    private LocalTime savetime;
+    private String debugCode;
+    private boolean crashReport;
+    private LocalTime saveTime;
     private boolean rollback;
-    private int slotnumber;
-    private boolean autodifficulty;
+    private int slotNumber;
+    private boolean autoDifficulty;
     private int difficultyEasy;
     private int difficultyNormal;
     private int difficultyHard;
     private int difficultyInsane;
     private boolean border;
-    private int spawnlimit;
+    private int spawnLimit;
     private String prefix;
-    private String eventport;
+    private String eventPort;
 
     public void init() {
         JsonObject settings;
@@ -120,59 +120,59 @@ public class Config {
         logging = settings.getBoolean("logging", true);
         update = settings.getBoolean("update", true);
         debug = settings.getBoolean("debug", false);
-        debugcode = settings.getString("debugcode", "none");
-        crashreport = settings.getBoolean("crashreport", true);
+        debugCode = settings.getString("debugcode", "none");
+        crashReport = settings.getBoolean("crashreport", true);
         prefix = settings.getString("prefix", "[green][Essentials] []");
 
         database = settings.get("database").asObject();
         internalDB = database.getBoolean("internalDB", true);
-        dbserver = database.getBoolean("DBServer", false);
-        dburl = database.getString("DBurl", "jdbc:h2:file:./config/mods/Essentials/data/player");
-        olddbmigration = database.getBoolean("old-db-migration", false);
-        olddburl = database.getString("old-db-url", "jdbc:sqlite:config/mods/Essentials/data/player.sqlite3");
-        olddbid = database.getString("old-db-id", "none");
-        olddbpw = database.getString("old-db-pw", "none");
-        dataserverurl = database.getString("data-server-url", "none");
-        dataserverid = database.getString("data-server-id", "none");
-        dataserverpw = database.getString("data-server-pw", "none");
+        dbServer = database.getBoolean("DBServer", false);
+        dbUrl = database.getString("DBurl", "jdbc:h2:file:./config/mods/Essentials/data/player");
+        oldDBMigration = database.getBoolean("old-db-migration", false);
+        oldDBurl = database.getString("old-db-url", "jdbc:sqlite:config/mods/Essentials/data/player.sqlite3");
+        oldDBid = database.getString("old-db-id", "none");
+        oldDBpw = database.getString("old-db-pw", "none");
+        dataserverUrl = database.getString("data-server-url", "none");
+        dataserverId = database.getString("data-server-id", "none");
+        dataserverPw = database.getString("data-server-pw", "none");
 
         network = obj.get("network").asObject();
-        serverenable = network.getBoolean("server-enable", false);
-        serverport = network.getInt("server-port", 25000);
-        clientenable = network.getBoolean("client-enable", false);
-        clientport = network.getInt("client-port", 25000);
-        clienthost = network.getString("client-host", "mindustry.kr");
-        banshare = network.getBoolean("banshare", false);
-        bantrust = network.get("bantrust") == null ? readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : network.get("bantrust").asArray();
+        serverEnable = network.getBoolean("server-enable", false);
+        serverPort = network.getInt("server-port", 25000);
+        clientEnable = network.getBoolean("client-enable", false);
+        clientPort = network.getInt("client-port", 25000);
+        clientHost = network.getString("client-host", "mindustry.kr");
+        banShare = network.getBoolean("banshare", false);
+        banTrust = network.get("bantrust") == null ? readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : network.get("bantrust").asArray();
         query = network.getBoolean("query", false);
 
         anti = obj.get("antigrief").asObject();
-        antigrief = anti.getBoolean("antigrief", false);
-        antivpn = anti.getBoolean("antivpn", false);
-        antirush = anti.getBoolean("antirush", false);
-        antirushtime = LocalTime.parse(anti.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
-        alertaction = anti.getBoolean("alert-action", false);
-        realname = anti.getBoolean("realname", false);
-        strictname = anti.getBoolean("strict-name", false);
-        scanresource = anti.getBoolean("scanresource", false);
+        antiGrief = anti.getBoolean("antigrief", false);
+        antiVPN = anti.getBoolean("antivpn", false);
+        antiRush = anti.getBoolean("antirush", false);
+        antiRushtime = LocalTime.parse(anti.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
+        alertAction = anti.getBoolean("alert-action", false);
+        realName = anti.getBoolean("realname", false);
+        strictName = anti.getBoolean("strict-name", false);
+        scanResource = anti.getBoolean("scanresource", false);
 
         features = obj.get("features").asObject();
-        explimit = features.getBoolean("explimit", false);
-        basexp = features.getDouble("basexp", 500.0);
+        expLimit = features.getBoolean("explimit", false);
+        baseXp = features.getDouble("basexp", 500.0);
         exponent = features.getDouble("exponent", 1.12);
-        levelupalarm = features.getBoolean("levelupalarm", false);
-        alarmlevel = features.getInt("alarm-minimal-level", 20);
+        levelUpAlarm = features.getBoolean("levelupalarm", false);
+        alarmLevel = features.getInt("alarm-minimal-level", 20);
         vote = features.getBoolean("vote", true);
-        savetime = LocalTime.parse(features.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
+        saveTime = LocalTime.parse(features.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
         rollback = features.getBoolean("rollback", false);
-        slotnumber = features.getInt("slotnumber", 1000);
+        slotNumber = features.getInt("slotnumber", 1000);
         border = features.getBoolean("border", false);
-        spawnlimit = features.getInt("spawnlimit", 500);
-        eventport = features.getString("eventport", "8000-8050");
+        spawnLimit = features.getInt("spawnlimit", 500);
+        eventPort = features.getString("eventport", "8000-8050");
         cupdatei = features.getInt("cupdatei", 1000);
 
         difficulty = features.get("difficulty").asObject();
-        autodifficulty = difficulty.getBoolean("auto-difficulty", false);
+        autoDifficulty = difficulty.getBoolean("auto-difficulty", false);
         difficultyEasy = difficulty.getInt("easy", 2);
         difficultyNormal = difficulty.getInt("normal", 4);
         difficultyHard = difficulty.getInt("hard", 6);
@@ -180,43 +180,23 @@ public class Config {
 
         tr = features.get("translate").asObject();
         translate = tr.getBoolean("translate", false);
-        translateid = tr.getString("translateid", "none");
-        translatepw = tr.getString("translatepw", "none");
+        translateId = tr.getString("translateid", "none");
+        translatePw = tr.getString("translatepw", "none");
 
         auth = obj.get("auth").asObject();
-        loginenable = auth.getBoolean("loginenable", false);
-        passwordmethod = auth.getString("loginmethod", "password");
-        validconnect = auth.getBoolean("validconnect", false);
-        autologin = auth.getBoolean("autologin", true);
+        loginEnable = auth.getBoolean("loginenable", false);
+        passwordMethod = auth.getString("loginmethod", "password");
+        validConnect = auth.getBoolean("validconnect", false);
+        autoLogin = auth.getBoolean("autologin", true);
 
         discord = auth.get("discord").asObject();
-        discordtoken = discord.getString("token", "none");
-        discordlink = discord.getString("link", "none");
+        discordToken = discord.getString("token", "none");
+        discordLink = discord.getString("link", "none");
 
-        update();
+        updateConfig();
     }
 
-    public void version(int version) {
-        this.version = version;
-    }
-
-    public void language(Locale language) {
-        this.language = language;
-    }
-
-    public void translate(boolean translate) {
-        this.translate = translate;
-    }
-
-    public void crashreport(boolean crashreport) {
-        this.crashreport = crashreport;
-    }
-
-    public void oldDBMigration(boolean oldDBMigration) {
-        this.olddbmigration = oldDBMigration;
-    }
-
-    public void update() {
+    public void updateConfig() {
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
         Bundle bundle = new Bundle(locale);
 
@@ -245,61 +225,61 @@ public class Config {
         settings.add("logging", logging, bundle.get("config.feature.logging"));
         settings.add("update", update, bundle.get("config.update"));
         settings.add("debug", debug, bundle.get("config.debug"));
-        settings.add("debugcode", debugcode);
-        settings.add("crash-report", crashreport);
+        settings.add("debugcode", debugCode);
+        settings.add("crash-report", crashReport);
         settings.add("prefix", prefix, bundle.get("config.prefix"));
 
         // DB 설정 (settings 상속)
         settings.add("database", db);
         db.add("internalDB", internalDB, bundle.get("config.database"));
-        db.add("DBServer", dbserver);
-        db.add("DBurl", dburl);
-        db.add("old-db-migration", olddbmigration, bundle.get("config.database.old-database-migration"));
-        db.add("old-db-url", olddburl);
-        db.add("old-db-id", olddbid);
-        db.add("old-db-pw", olddbpw);
-        db.add("data-server-url", dataserverurl, bundle.get("config.client.data-share"));
-        db.add("data-server-id", dataserverid);
-        db.add("data-server-pw", dataserverpw);
+        db.add("DBServer", dbServer);
+        db.add("DBurl", dbUrl);
+        db.add("old-db-migration", oldDBMigration, bundle.get("config.database.old-database-migration"));
+        db.add("old-db-url", oldDBurl);
+        db.add("old-db-id", oldDBid);
+        db.add("old-db-pw", oldDBpw);
+        db.add("data-server-url", dataserverUrl, bundle.get("config.client.data-share"));
+        db.add("data-server-id", dataserverId);
+        db.add("data-server-pw", dataserverPw);
 
         // 네트워크 설정
-        network.add("server-enable", serverenable, bundle.get("config.network"));
-        network.add("server-port", serverport);
-        network.add("client-enable", clientenable);
-        network.add("client-port", clientport);
-        network.add("client-host", clienthost);
-        network.add("banshare", banshare, bundle.get("config.server.banshare"));
-        network.add("bantrust", bantrust, bundle.get("config.server.bantrust"));
+        network.add("server-enable", serverEnable, bundle.get("config.network"));
+        network.add("server-port", serverPort);
+        network.add("client-enable", clientEnable);
+        network.add("client-port", clientPort);
+        network.add("client-host", clientHost);
+        network.add("banshare", banShare, bundle.get("config.server.banshare"));
+        network.add("bantrust", banTrust, bundle.get("config.server.bantrust"));
         network.add("query", query, bundle.get("config.server.query"));
 
         // 테러방지 설정
-        anti.add("antigrief", antigrief, bundle.get("config.anti-grief.desc"));
-        anti.add("antivpn", antivpn, bundle.get("config.anti-grief.vpn"));
-        anti.add("antirush", antirush, bundle.get("config.anti-grief.pvprush"));
-        anti.add("antirushtime", antirushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-        anti.add("alert-action", alertaction, bundle.get("config-alert-action-description"));
-        anti.add("realname", realname, bundle.get("config.anti-grief.realname"));
-        anti.add("strict-name", strictname, bundle.get("config-strict-name-description"));
-        anti.add("scanresource", scanresource, bundle.get("config.anti-grief.scan-resource"));
+        anti.add("antigrief", antiGrief, bundle.get("config.anti-grief.desc"));
+        anti.add("antivpn", antiVPN, bundle.get("config.anti-grief.vpn"));
+        anti.add("antirush", antiRush, bundle.get("config.anti-grief.pvprush"));
+        anti.add("antirushtime", antiRushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        anti.add("alert-action", alertAction, bundle.get("config-alert-action-description"));
+        anti.add("realname", realName, bundle.get("config.anti-grief.realname"));
+        anti.add("strict-name", strictName, bundle.get("config-strict-name-description"));
+        anti.add("scanresource", scanResource, bundle.get("config.anti-grief.scan-resource"));
 
         // 특별한 기능 설정
-        features.add("explimit", explimit, bundle.get("config.feature.exp.limit"));
-        features.add("basexp", basexp, bundle.get("config.feature.exp.basexp"));
+        features.add("explimit", expLimit, bundle.get("config.feature.exp.limit"));
+        features.add("basexp", baseXp, bundle.get("config.feature.exp.basexp"));
         features.add("exponent", exponent, bundle.get("config.feature.exp.exponent"));
-        features.add("levelupalarm", levelupalarm, bundle.get("config.feature.exp.levelup-alarm"));
-        features.add("alarm-minimal-level", alarmlevel, bundle.get("config.feature.exp.minimal-level"));
+        features.add("levelupalarm", levelUpAlarm, bundle.get("config.feature.exp.levelup-alarm"));
+        features.add("alarm-minimal-level", alarmLevel, bundle.get("config.feature.exp.minimal-level"));
         features.add("vote", vote, bundle.get("config.feature.vote"));
-        features.add("savetime", savetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config.feature.save-time"));
+        features.add("savetime", saveTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config.feature.save-time"));
         features.add("rollback", rollback, bundle.get("config.feature.slot-number"));
-        features.add("slotnumber", slotnumber);
+        features.add("slotnumber", slotNumber);
         features.add("border", border, bundle.get("config.feature.border"));
-        features.add("spawnlimit", spawnlimit, bundle.get("config.feature.spawn-limit"));
-        features.add("eventport", eventport, bundle.get("config.feature.event.port"));
+        features.add("spawnlimit", spawnLimit, bundle.get("config.feature.spawn-limit"));
+        features.add("eventport", eventPort, bundle.get("config.feature.event.port"));
         features.add("cupdatei", cupdatei, bundle.get("config.feature.colornick"));
 
         // 난이도 설정 (features 상속)
         features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
-        difficulty.add("auto-difficulty", autodifficulty);
+        difficulty.add("auto-difficulty", autoDifficulty);
         difficulty.add("easy", difficultyEasy);
         difficulty.add("normal", difficultyNormal);
         difficulty.add("hard", difficultyHard);
@@ -308,19 +288,19 @@ public class Config {
         // 번역 설정 (features 상속)
         features.add("translate", tr, bundle.get("config.feature.papago"));
         tr.add("translate", translate);
-        tr.add("translateid", translateid);
-        tr.add("translatepw", translatepw);
+        tr.add("translateid", translateId);
+        tr.add("translatepw", translatePw);
 
         // 로그인 설정
-        auth.add("loginenable", loginenable, bundle.get("config.account.login"));
-        auth.add("loginmethod", passwordmethod, bundle.get("config.account.login.method"));
-        auth.add("validconnect", validconnect, bundle.get("config.account.valid-connect"));
-        auth.add("autologin", autologin);
+        auth.add("loginenable", loginEnable, bundle.get("config.account.login"));
+        auth.add("loginmethod", passwordMethod, bundle.get("config.account.login.method"));
+        auth.add("validconnect", validConnect, bundle.get("config.account.valid-connect"));
+        auth.add("autologin", autoLogin);
 
         // Discord 설정 (auth 상속)
         auth.add("discord", discord, bundle.get("config.feature.discord.desc"));
-        discord.add("token", discordtoken);
-        discord.add("link", discordlink);
+        discord.add("token", discordToken);
+        discord.add("link", discordLink);
 
         root.child("config.hjson").writeString(config.toString(Stringify.HJSON_COMMENTS));
     }
@@ -432,243 +412,487 @@ public class Config {
         return version;
     }
 
+    public void version(int version) {
+        this.version = version;
+    }
+
     public Locale language() {
         return language;
     }
 
+    public void language(Locale language) {
+        this.language = language;
+    }
+
     public boolean serverEnable() {
-        return serverenable;
+        return serverEnable;
+    }
+
+    public void serverEnable(boolean serverEnable) {
+        this.serverEnable = serverEnable;
     }
 
     public int serverPort() {
-        return serverport;
+        return serverPort;
+    }
+
+    public void serverPort(int serverPort) {
+        this.serverPort = serverPort;
     }
 
     public boolean clientEnable() {
-        return clientenable;
+        return clientEnable;
+    }
+
+    public void clientEnable(boolean clientEnable) {
+        this.clientEnable = clientEnable;
     }
 
     public int clientPort() {
-        return clientport;
+        return clientPort;
+    }
+
+    public void clientPort(int clientPort) {
+        this.clientPort = clientPort;
     }
 
     public String clientHost() {
-        return clienthost;
+        return clientHost;
     }
 
-    public boolean realname() {
-        return realname;
+    public void clientHost(String clientHost) {
+        this.clientHost = clientHost;
     }
 
-    public boolean strictname() {
-        return strictname;
+    public boolean realName() {
+        return realName;
+    }
+
+    public void realName(boolean realName) {
+        this.realName = realName;
+    }
+
+    public boolean strictName() {
+        return strictName;
+    }
+
+    public void strictName(boolean strictName) {
+        this.strictName = strictName;
     }
 
     public int cupdatei() {
         return cupdatei;
     }
 
-    public boolean scanresource() {
-        return scanresource;
+    public void cupdatei(int cupdatei) {
+        this.cupdatei = cupdatei;
     }
 
-    public boolean antigrief() {
-        return antigrief;
+    public boolean scanResource() {
+        return scanResource;
     }
 
-    public boolean alertaction() {
-        return alertaction;
+    public void scanResource(boolean scanResource) {
+        this.scanResource = scanResource;
     }
 
-    public boolean explimit() {
-        return explimit;
+    public boolean antiGrief() {
+        return antiGrief;
     }
 
-    public double basexp() {
-        return basexp;
+    public void antiGrief(boolean antiGrief) {
+        this.antiGrief = antiGrief;
+    }
+
+    public boolean alertAction() {
+        return alertAction;
+    }
+
+    public void alertAction(boolean alertAction) {
+        this.alertAction = alertAction;
+    }
+
+    public boolean expLimit() {
+        return expLimit;
+    }
+
+    public void expLimit(boolean expLimit) {
+        this.expLimit = expLimit;
+    }
+
+    public double baseXp() {
+        return baseXp;
+    }
+
+    public void baseXp(double baseXp) {
+        this.baseXp = baseXp;
     }
 
     public double exponent() {
         return exponent;
     }
 
-    public boolean levelupalarm() {
-        return levelupalarm;
+    public void exponent(double exponent) {
+        this.exponent = exponent;
     }
 
-    public int alarmlevel() {
-        return alarmlevel;
+    public boolean levelUpAlarm() {
+        return levelUpAlarm;
     }
 
-    public boolean banshare() {
-        return banshare;
+    public void levelUpAlarm(boolean levelUpAlarm) {
+        this.levelUpAlarm = levelUpAlarm;
     }
 
-    public JsonArray bantrust() {
-        return bantrust;
+    public int alarmLevel() {
+        return alarmLevel;
+    }
+
+    public void alarmLevel(int alarmLevel) {
+        this.alarmLevel = alarmLevel;
+    }
+
+    public boolean banShare() {
+        return banShare;
+    }
+
+    public void banShare(boolean banShare) {
+        this.banShare = banShare;
+    }
+
+    public JsonArray banTrust() {
+        return banTrust;
+    }
+
+    public void banTrust(JsonArray banTrust) {
+        this.banTrust = banTrust;
     }
 
     public boolean query() {
         return query;
     }
 
-    public boolean antivpn() {
-        return antivpn;
+    public void query(boolean query) {
+        this.query = query;
     }
 
-    public boolean antirush() {
-        return antirush;
+    public boolean antiVPN() {
+        return antiVPN;
     }
 
-    public LocalTime antirushtime() {
-        return antirushtime;
+    public void antiVPN(boolean antiVpn) {
+        this.antiVPN = antiVpn;
+    }
+
+    public boolean antiRush() {
+        return antiRush;
+    }
+
+    public void antiRush(boolean antiRush) {
+        this.antiRush = antiRush;
+    }
+
+    public LocalTime antiRushtime() {
+        return antiRushtime;
+    }
+
+    public void antiRushtime(LocalTime antiRushtime) {
+        this.antiRushtime = antiRushtime;
     }
 
     public boolean vote() {
         return vote;
     }
 
+    public void vote(boolean vote) {
+        this.vote = vote;
+    }
+
     public boolean logging() {
         return logging;
     }
 
-    public boolean isUpdate() {
+    public void logging(boolean logging) {
+        this.logging = logging;
+    }
+
+    public boolean update() {
         return update;
     }
 
-    public boolean internaldb() {
+    public void update(boolean update) {
+        this.update = update;
+    }
+
+    public boolean internalDB() {
         return internalDB;
     }
 
-    public boolean dbserver() {
-        return dbserver;
+    public void internalDB(boolean internalDB) {
+        this.internalDB = internalDB;
     }
 
-    public String dburl() {
-        return dburl;
+    public boolean dbServer() {
+        return dbServer;
     }
 
-    public boolean olddbmigration() {
-        return olddbmigration;
+    public void dbServer(boolean dbServer) {
+        this.dbServer = dbServer;
     }
 
-    public String olddburl() {
-        return olddburl;
+    public String dbUrl() {
+        return dbUrl;
     }
 
-    public String olddbid() {
-        return olddbid;
+    public void dbUrl(String dbUrl) {
+        this.dbUrl = dbUrl;
     }
 
-    public String olddbpw() {
-        return olddbpw;
+    public boolean oldDBMigration() {
+        return oldDBMigration;
     }
 
-    public String dataserverurl() {
-        return dataserverurl;
+    public void oldDBMigration(boolean oldDBMigration) {
+        this.oldDBMigration = oldDBMigration;
     }
 
-    public String dataserverid() {
-        return dataserverid;
+    public String oldDBurl() {
+        return oldDBurl;
     }
 
-    public String dataserverpw() {
-        return dataserverpw;
+    public void oldDBurl(String oldDBurl) {
+        this.oldDBurl = oldDBurl;
     }
 
-    public boolean loginenable() {
-        return loginenable;
+    public String oldDBid() {
+        return oldDBid;
     }
 
-    public String passwordmethod() {
-        return passwordmethod;
+    public void oldDBid(String oldDBid) {
+        this.oldDBid = oldDBid;
     }
 
-    public boolean validconnect() {
-        return validconnect;
+    public String oldDBpw() {
+        return oldDBpw;
     }
 
-    public boolean autologin() {
-        return autologin;
+    public void oldDBpw(String oldDBpw) {
+        this.oldDBpw = oldDBpw;
     }
 
-    public String discordtoken() {
-        return discordtoken;
+    public String dataserverUrl() {
+        return dataserverUrl;
     }
 
-    public String discordlink() {
-        return discordlink;
+    public void dataserverUrl(String dataserverUrl) {
+        this.dataserverUrl = dataserverUrl;
+    }
+
+    public String dataserverId() {
+        return dataserverId;
+    }
+
+    public void dataserverId(String dataserverId) {
+        this.dataserverId = dataserverId;
+    }
+
+    public String dataserverPw() {
+        return dataserverPw;
+    }
+
+    public void dataserverPw(String dataserverPw) {
+        this.dataserverPw = dataserverPw;
+    }
+
+    public boolean loginEnable() {
+        return loginEnable;
+    }
+
+    public void loginEnable(boolean loginEnable) {
+        this.loginEnable = loginEnable;
+    }
+
+    public String passwordMethod() {
+        return passwordMethod;
+    }
+
+    public void passwordMethod(String passwordMethod) {
+        this.passwordMethod = passwordMethod;
+    }
+
+    public boolean validConnect() {
+        return validConnect;
+    }
+
+    public void validConnect(boolean validConnect) {
+        this.validConnect = validConnect;
+    }
+
+    public boolean autoLogin() {
+        return autoLogin;
+    }
+
+    public void autoLogin(boolean autoLogin) {
+        this.autoLogin = autoLogin;
+    }
+
+    public String discordToken() {
+        return discordToken;
+    }
+
+    public void discordToken(String discordToken) {
+        this.discordToken = discordToken;
+    }
+
+    public String discordLink() {
+        return discordLink;
+    }
+
+    public void discordLink(String discordLink) {
+        this.discordLink = discordLink;
     }
 
     public boolean translate() {
         return translate;
     }
 
-    public String translateid() {
-        return translateid;
+    public void translate(boolean translate) {
+        this.translate = translate;
     }
 
-    public String translatepw() {
-        return translatepw;
+    public String translateId() {
+        return translateId;
+    }
+
+    public void translateId(String translateId) {
+        this.translateId = translateId;
+    }
+
+    public String translatePw() {
+        return translatePw;
+    }
+
+    public void translatePw(String translatePw) {
+        this.translatePw = translatePw;
     }
 
     public boolean debug() {
         return debug;
     }
 
-    public String debugcode() {
-        return debugcode;
+    public void debug(boolean debug) {
+        this.debug = debug;
     }
 
-    public boolean crashreport() {
-        return crashreport;
+    public String debugCode() {
+        return debugCode;
     }
 
-    public LocalTime savetime() {
-        return savetime;
+    public void debugCode(String debugCode) {
+        this.debugCode = debugCode;
+    }
+
+    public boolean crashReport() {
+        return crashReport;
+    }
+
+    public void crashReport(boolean crashReport) {
+        this.crashReport = crashReport;
+    }
+
+    public LocalTime saveTime() {
+        return saveTime;
+    }
+
+    public void saveTime(LocalTime saveTime) {
+        this.saveTime = saveTime;
     }
 
     public boolean rollback() {
         return rollback;
     }
 
-    public int slownumber() {
-        return slotnumber;
+    public void rollback(boolean rollback) {
+        this.rollback = rollback;
     }
 
-    public boolean autodifficulty() {
-        return autodifficulty;
+    public int slotNumber() {
+        return slotNumber;
     }
 
-    public int difficultyeasy() {
+    public void slotNumber(int slotNumber) {
+        this.slotNumber = slotNumber;
+    }
+
+    public boolean autoDifficulty() {
+        return autoDifficulty;
+    }
+
+    public void autoDifficulty(boolean autoDifficulty) {
+        this.autoDifficulty = autoDifficulty;
+    }
+
+    public int difficultyEasy() {
         return difficultyEasy;
     }
 
-    public int difficultynormal() {
+    public void difficultyEasy(int difficultyEasy) {
+        this.difficultyEasy = difficultyEasy;
+    }
+
+    public int difficultyNormal() {
         return difficultyNormal;
     }
 
-    public int difficultyhard() {
+    public void difficultyNormal(int difficultyNormal) {
+        this.difficultyNormal = difficultyNormal;
+    }
+
+    public int difficultyHard() {
         return difficultyHard;
     }
 
-    public int difficultyinsane() {
+    public void difficultyHard(int difficultyHard) {
+        this.difficultyHard = difficultyHard;
+    }
+
+    public int difficultyInsane() {
         return difficultyInsane;
+    }
+
+    public void difficultyInsane(int difficultyInsane) {
+        this.difficultyInsane = difficultyInsane;
     }
 
     public boolean border() {
         return border;
     }
 
-    public int spawnlimit() {
-        return spawnlimit;
+    public void border(boolean border) {
+        this.border = border;
+    }
+
+    public int spawnLimit() {
+        return spawnLimit;
+    }
+
+    public void spawnLimit(int spawnLimit) {
+        this.spawnLimit = spawnLimit;
     }
 
     public String prefix() {
         return prefix;
     }
 
-    public String eventport() {
-        return eventport;
+    public void prefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String eventPort() {
+        return eventPort;
+    }
+
+    public void eventPort(String eventPort) {
+        this.eventPort = eventPort;
     }
 }

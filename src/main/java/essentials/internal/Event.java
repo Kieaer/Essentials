@@ -47,7 +47,7 @@ public class Event {
 
     public Event() {
         Events.on(EventType.TapConfigEvent.class, e -> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && config.alertaction()) {
+            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && config.alertAction()) {
                 for (Player p : playerGroup.all()) {
                     PlayerData playerData = playerDB.get(p.uuid);
                     if (playerData.alert()) {
@@ -80,7 +80,7 @@ public class Event {
         });
 
         Events.on(EventType.WithdrawEvent.class, e -> {
-            if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.antigrief()) {
+            if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.antiGrief()) {
                 for (Player p : playerGroup.all()) {
                     PlayerData playerData = playerDB.get(p.uuid);
                     if (playerData.alert()) {
@@ -153,7 +153,7 @@ public class Event {
                 }
             }
 
-            if (config.strictname()) {
+            if (config.strictName()) {
                 if (e.player.name.length() > 32) Call.onKick(e.player.con, "Nickname too long!");
                 //if (e.player.name.matches(".*\\[.*].*"))
                 //    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
@@ -199,9 +199,9 @@ public class Event {
                 PlayerData playerData = playerDB.load(e.player.uuid);
                 Bundle bundle = new Bundle(playerData.locale());
 
-                if (config.loginenable()) {
-                    if (config.passwordmethod().equals("mixed")) {
-                        if (!playerData.error() && config.autologin()) {
+                if (config.loginEnable()) {
+                    if (config.passwordMethod().equals("mixed")) {
+                        if (!playerData.error() && config.autoLogin()) {
                             if (playerData.udid() != 0L) {
                                 new Thread(() -> Call.onConnect(e.player.con, vars.serverIP(), 7060)).start();
                             } else {
@@ -216,29 +216,29 @@ public class Event {
                                 Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
                             }
                         }
-                    } else if (config.passwordmethod().equals("discord")) {
-                        if (!playerData.error() && config.autologin()) {
+                    } else if (config.passwordMethod().equals("discord")) {
+                        if (!playerData.error() && config.autoLogin()) {
                             e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
                             Locale language = tool.getGeo(e.player);
-                            if (config.passwordmethod().equals("discord")) {
-                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink();
+                            if (config.passwordMethod().equals("discord")) {
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordLink();
                             } else {
                                 message = new Bundle(language).get("system.login.require.password");
                             }
                             Call.onInfoMessage(e.player.con, message);
                         }
                     } else {
-                        if (!playerData.error() && config.autologin()) {
+                        if (!playerData.error() && config.autoLogin()) {
                             e.player.sendMessage(bundle.get("account.autologin"));
                             playerCore.load(e.player);
                         } else {
                             String message;
                             Locale language = tool.getGeo(e.player);
-                            if (config.passwordmethod().equals("discord")) {
-                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink();
+                            if (config.passwordMethod().equals("discord")) {
+                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordLink();
                             } else {
                                 message = new Bundle(language).get("system.login.require.password");
                             }
@@ -247,7 +247,7 @@ public class Event {
                     }
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (!playerData.error() && config.autologin()) {
+                    if (!playerData.error() && config.autoLogin()) {
                         e.player.sendMessage(bundle.get("account.autologin"));
                         playerCore.load(e.player);
                     } else {
@@ -261,7 +261,7 @@ public class Event {
                 }
 
                 // VPN을 사용중인지 확인
-                if (config.antivpn()) {
+                if (config.antiVPN()) {
                     try {
                         InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
                         BufferedReader br = new BufferedReader(new InputStreamReader(reader));
@@ -280,7 +280,7 @@ public class Event {
                 }
 
                 // PvP 평화시간 설정
-                if (config.antirush() && state.rules.pvp && vars.playtime().isBefore(config.antirushtime())) {
+                if (config.antiRush() && state.rules.pvp && vars.playtime().isBefore(config.antiRushtime())) {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
                     Call.onSetRules(state.rules);
@@ -288,18 +288,18 @@ public class Event {
                 }
 
                 // 플레이어 인원별 난이도 설정
-                if (config.autodifficulty()) {
+                if (config.autoDifficulty()) {
                     int total = playerGroup.size();
-                    if (config.difficultyeasy() >= total) {
+                    if (config.difficultyEasy() >= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
                         //tool.sendMessageAll("system.difficulty.easy");
-                    } else if (config.difficultynormal() == total) {
+                    } else if (config.difficultyNormal() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
                         //tool.sendMessageAll("system.difficulty.normal");
-                    } else if (config.difficultyhard() == total) {
+                    } else if (config.difficultyHard() == total) {
                         state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
                         //tool.sendMessageAll("system.difficulty.hard");
-                    } else if (config.difficultyinsane() <= total) {
+                    } else if (config.difficultyInsane() <= total) {
                         state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
                         //tool.sendMessageAll("system.difficulty.insane");
                     }
@@ -393,8 +393,8 @@ public class Event {
                                     if (!language.equals(original) && !match) {
                                         HttpURLConnection con = (HttpURLConnection) new URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation").openConnection();
                                         con.setRequestMethod("POST");
-                                        con.setRequestProperty("X-NCP-APIGW-API-KEY-ID", config.translateid());
-                                        con.setRequestProperty("X-NCP-APIGW-API-KEY", config.translatepw());
+                                        con.setRequestProperty("X-NCP-APIGW-API-KEY-ID", config.translateId());
+                                        con.setRequestProperty("X-NCP-APIGW-API-KEY", config.translatePw());
                                         con.setDoOutput(true);
                                         try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
                                             wr.writeBytes("source=" + original + "&target=" + language + "&text=" + URLEncoder.encode(e.message, "UTF-8"));
@@ -489,7 +489,7 @@ public class Event {
                     pluginData.nukedata.add(e.tile);
                 }
 
-                if (config.debug() && config.antigrief()) {
+                if (config.debug() && config.antiGrief()) {
                     Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
@@ -528,7 +528,7 @@ public class Event {
                     }
 
                     // Exp Playing Game (EPG)
-                    if (config.explimit()) {
+                    if (config.expLimit()) {
                         int level = target.level();
                         try {
                             JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
@@ -546,7 +546,7 @@ public class Event {
                         }
                     }
                 }
-                if (config.debug() && config.antigrief()) {
+                if (config.debug() && config.antiGrief()) {
                     Log.info("anti-grief.destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
@@ -574,7 +574,7 @@ public class Event {
         // 플레이어가 밴당했을 때 공유기능 작동
         Events.on(EventType.PlayerBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
-                if (config.banshare() && config.clientEnable()) {
+                if (config.banShare() && config.clientEnable()) {
                     client.request(Client.Request.bansync, null, null);
                 }
             });
@@ -592,7 +592,7 @@ public class Event {
         // 이건 IP 밴당했을때 작동
         Events.on(EventType.PlayerIpBanEvent.class, e -> {
             Thread bansharing = new Thread(() -> {
-                if (config.banshare() && client.activated) {
+                if (config.banShare() && client.activated) {
                     client.request(Client.Request.bansync, null, null);
                 }
             });
@@ -611,9 +611,9 @@ public class Event {
 
         Events.on(EventType.ServerLoadEvent.class, e -> {
             // 예전 DB 변환
-            if (config.olddbmigration()) new DataMigration().MigrateDB();
+            if (config.oldDBMigration()) new DataMigration().MigrateDB();
             // 업데이트 확인
-            if (config.isUpdate()) {
+            if (config.update()) {
                 Log.client("client.update-check");
                 try {
                     JsonObject json = readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
@@ -687,7 +687,7 @@ public class Event {
             }
 
             // Discord 봇 시작
-            if (config.passwordmethod().equals("discord") || config.passwordmethod().equals("mixed")) {
+            if (config.passwordMethod().equals("discord") || config.passwordMethod().equals("mixed")) {
                 discord.start();
             }
 

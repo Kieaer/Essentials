@@ -16,7 +16,6 @@ import org.hjson.JsonObject;
 import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,8 +61,8 @@ public class Tools {
         return cipher.doFinal(data.getBytes());
     }
 
-    public byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher, IvParameterSpec iv) throws Exception {
-        cipher.init(Cipher.DECRYPT_MODE, spec, iv);
+    public byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
+        cipher.init(Cipher.DECRYPT_MODE, spec);
         return cipher.doFinal(data);
     }
 

@@ -18,7 +18,6 @@ import static essentials.Main.*;
 
 public class CrashReport {
     Logger log = LoggerFactory.getLogger(CrashReport.class);
-    public boolean success = false;
 
     public CrashReport(Throwable e) {
         if (!config.debug()) {
@@ -31,7 +30,7 @@ public class CrashReport {
 
             Log.write(Log.LogType.error, text);
             Log.err("Plugin internal error! - " + e.getMessage());
-            if (config.crashreport()) {
+            if (config.crashReport()) {
                 try (Socket socket = new Socket(InetAddress.getByName("mindustry.kr"), 6560)) {
                     BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     DataOutputStream os = new DataOutputStream(socket.getOutputStream());
@@ -57,7 +56,6 @@ public class CrashReport {
                     String data = is.readLine();
                     if (data != null) {
                         Log.info("Error reported!");
-                        success = true;
                     } else {
                         Log.err("Data send failed!");
                     }
@@ -67,7 +65,6 @@ public class CrashReport {
             }
         } else {
             log.warn("Plugin Error", e);
-            success = true;
         }
     }
 }
