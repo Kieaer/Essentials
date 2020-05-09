@@ -10,7 +10,6 @@ crash-report-*
 .idea/
 build/
 gradle/
-test/
 config/
 
 ## OS Specific
