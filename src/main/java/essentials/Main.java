@@ -100,7 +100,7 @@ public class Main extends Plugin {
 
     public Main() throws PluginException {
         // 서버 버전 확인
-        if (Version.build != vars.buildVersion() && Version.revision < vars.buildRevision()) {
+        if (Version.build != vars.buildVersion() && Version.revision >= vars.buildRevision()) {
             try (InputStream reader = getClass().getResourceAsStream("/plugin.json");
                  BufferedReader br = new BufferedReader(new InputStreamReader(reader))) {
                 throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");

@@ -12,7 +12,7 @@ import static essentials.Main.tool;
 public class PluginVars {
     private int dbVersion = 5;
     private int buildVersion = 104;
-    private int buildRevision = 10;
+    private int buildRevision = 6;
     private int configVersion = 13;
     private String[] DBURL = new String[]{
             "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar",

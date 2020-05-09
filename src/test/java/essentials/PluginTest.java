@@ -1,41 +1,30 @@
 package essentials;
 
-import arc.Application;
-import arc.ApplicationListener;
+import arc.ApplicationCore;
 import arc.Core;
-import arc.Settings;
+import arc.backend.headless.HeadlessApplication;
 import arc.files.Fi;
-import arc.func.Cons;
 import arc.graphics.Color;
-import arc.struct.Array;
 import arc.util.CommandHandler;
 import essentials.core.player.PlayerData;
 import essentials.feature.Exp;
+import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import essentials.internal.exception.PluginException;
 import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.Vars;
+import mindustry.core.FileTree;
+import mindustry.core.Logic;
 import mindustry.core.NetServer;
-import mindustry.core.Version;
-import mindustry.entities.EntityGroup;
 import mindustry.entities.type.Player;
-import mindustry.net.Host;
+import mindustry.maps.Map;
 import mindustry.net.Net;
 import mindustry.net.NetConnection;
 import org.hjson.JsonObject;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.junit.runners.MethodSorters;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -44,118 +33,23 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
-import static mindustry.Vars.netServer;
-import static mindustry.Vars.playerGroup;
+import static mindustry.Vars.*;
 import static org.junit.Assert.*;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.crypto.*")
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-//@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@PowerMockRunnerDelegate(JUnit4.class)
 public class PluginTest {
     static Main main;
     static Fi root;
     static CommandHandler serverHandler = new CommandHandler("");
     static CommandHandler clientHandler = new CommandHandler("");
+    static Map testMap;
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    @ClassRule
+    public static final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
-    @BeforeClass
-    public static void init() throws PluginException {
-        Core.settings = new Settings();
-        Core.settings.setDataDirectory(new Fi("config"));
-        root = Core.settings.getDataDirectory().child("mods/Essentials");
-        Core.app = new Application() {
-            Array<ApplicationListener> listeners = new Array<>();
-
-            @Override
-            public Array<ApplicationListener> getListeners() {
-                return listeners;
-            }
-
-            @Override
-            public ApplicationType getType() {
-                return null;
-            }
-
-            @Override
-            public String getClipboardText() {
-                return null;
-            }
-
-            @Override
-            public void setClipboardText(String s) {
-
-            }
-
-            @Override
-            public void post(Runnable runnable) {
-
-            }
-
-            @Override
-            public void exit() {
-
-            }
-
-            @Override
-            public void dispose() {
-
-            }
-        };
-        Version.build = 104;
-        Version.revision = 10;
-        Vars.playerGroup = new EntityGroup<>(0, Player.class, false);
-        Vars.net = new Net(new Net.NetProvider() {
-            @Override
-            public void connectClient(String s, int i, Runnable runnable) throws IOException {
-
-            }
-
-            @Override
-            public void sendClient(Object o, Net.SendMode sendMode) {
-
-            }
-
-            @Override
-            public void disconnectClient() {
-
-            }
-
-            @Override
-            public void discoverServers(Cons<Host> cons, Runnable runnable) {
-
-            }
-
-            @Override
-            public void pingHost(String s, int i, Cons<Host> cons, Cons<Exception> cons1) {
-
-            }
-
-            @Override
-            public void hostServer(int i) throws IOException {
-
-            }
-
-            @Override
-            public Iterable<? extends NetConnection> getConnections() {
-                return null;
-            }
-
-            @Override
-            public void closeServer() {
-
-            }
-        });
-        netServer = new NetServer();
-        netServer.admins.banPlayer("fakebanid1");
-        netServer.admins.banPlayer("fakebnaid2");
-
-        Vars.player = new Player();
-        Vars.player.isAdmin = false;
-        Vars.player.con = new NetConnection("127.0.0.1") {
+    public Player createNewPlayer() {
+        Player player = new Player();
+        player.isAdmin = false;
+        player.con = new NetConnection("127.0.0.1") {
             @Override
             public void send(Object o, Net.SendMode sendMode) {
 
@@ -166,20 +60,72 @@ public class PluginTest {
 
             }
         };
-        Vars.player.usid = "fake usid";
-        Vars.player.name = "i am fake";
-        Vars.player.uuid = "fake uuid";
-        Vars.player.isMobile = false;
-        Vars.player.dead = true;
-        Vars.player.setNet(1, 1);
-        Vars.player.color.set(Color.orange);
-        Vars.player.color.a = 1f;
-        Vars.player.reset();
+        player.usid = "fake usid";
+        player.name = "i am fake";
+        player.uuid = "fake uuid";
+        player.isMobile = false;
+        player.dead = true;
+        player.setNet(1, 1);
+        player.color.set(Color.orange);
+        player.color.a = 1f;
 
         playerGroup.add(Vars.player);
+        return player;
+    }
+
+    @Before
+    public void clearLog() {
+        systemOutRule.clearLog();
+    }
+
+    @BeforeClass
+    public static void init() throws PluginException {
+        try {
+            boolean[] begins = {false};
+            Throwable[] exceptionThrown = {null};
+            arc.util.Log.setUseColors(false);
+
+            ApplicationCore core = new ApplicationCore() {
+                @Override
+                public void setup() {
+                    headless = true;
+                    net = new Net(null);
+                    tree = new FileTree();
+                    Vars.init();
+                    content.createBaseContent();
+
+                    add(logic = new Logic());
+                    add(netServer = new NetServer());
+
+                    content.init();
+                }
+
+                @Override
+                public void init() {
+                    super.init();
+                    begins[0] = true;
+                    testMap = maps.loadInternalMap("maze");
+                    Thread.currentThread().interrupt();
+                }
+            };
+
+            new HeadlessApplication(core, null, throwable -> exceptionThrown[0] = throwable);
+
+            while (!begins[0]) {
+                if (exceptionThrown[0] != null) {
+                    Assert.fail(String.valueOf(exceptionThrown[0]));
+                }
+                Thread.sleep(10);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Core.settings.setDataDirectory(new Fi("config"));
+        root = Core.settings.getDataDirectory().child("mods/Essentials");
 
         // Reset status
-        root.deleteDirectory();
+        // root.deleteDirectory();
 
         try (FileInputStream fis = new FileInputStream("build/libs/Essentials.jar");
              FileOutputStream fos = new FileOutputStream("config/mods/Essentials.jar")) {
@@ -195,6 +141,8 @@ public class PluginTest {
         main.init();
         main.registerServerCommands(serverHandler);
         main.registerClientCommands(clientHandler);
+
+        world.loadMap(testMap);
     }
 
     @Test
@@ -321,21 +269,14 @@ public class PluginTest {
 
     @Test
     public void serverCommandTest() {
-        serverHandler.handleMessage("saveall");
-        assertEquals("", systemOutRule.getLogWithNormalizedLineSeparator());
-
-        root.child("README.md").delete();
-        serverHandler.handleMessage("gendocs");
-        assertTrue(root.child("README.md").exists());
-
-
         serverHandler.handleMessage("info fakeuuid");
-        assertNotEquals("Player not found!", systemOutRule.getLog());
+        assertNotEquals("Player not found!", systemOutRule.getLogWithNormalizedLineSeparator());
+        systemOutRule.clearLog();
     }
 
-    @Test
-    public void shutdownTest() {
-        Core.app.dispose();
-        //assertEquals(new Bundle(locale).get("thread-disabled")+"\n", systemOutRule.getLogWithNormalizedLineSeparator());
+    @AfterClass
+    public static void shutdown() {
+        Core.app.getListeners().get(1).dispose();
+        assertTrue(systemOutRule.getLogWithNormalizedLineSeparator().contains(new Bundle(locale).get("thread-disabled")));
     }
 }
