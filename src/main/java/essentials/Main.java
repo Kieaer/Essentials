@@ -18,6 +18,7 @@ import essentials.core.plugin.PluginData;
 import essentials.external.DriverLoader;
 import essentials.external.StringUtils;
 import essentials.feature.*;
+import essentials.internal.Event;
 import essentials.internal.*;
 import essentials.internal.exception.PluginException;
 import essentials.internal.thread.*;
@@ -48,10 +49,13 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -108,6 +112,13 @@ public class Main extends Plugin {
             }
         }
 
+        if (!root.exists()) {
+            // 처음 플러그인을 사용하는 유저에게 wiki 오픈
+            try {
+                Desktop.getDesktop().browse(new URI("https://github.com/Kieaer/Essentials/wiki/How-to-edit-config.hjson"));
+            } catch (IOException | URISyntaxException ignored) {
+            }
+        }
 
         // 파일 압축해제
         try (final JarFile jar = new JarFile(Core.settings.getDataDirectory().child("mods/Essentials.jar").file())) {
@@ -533,7 +544,7 @@ public class Main extends Plugin {
             if (!perm.check(player, "color")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             playerData.colornick(!playerData.colornick());
-            player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.colornick() ? "feature.colornick.disable" : "feature.colornick.enable"));
+            player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.colornick() ? "feature.colornick.enable" : "feature.colornick.disable"));
         });
         handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
             if (!perm.check(player, "difficulty")) return;
