@@ -50,10 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
@@ -121,7 +118,7 @@ public class Main extends Plugin {
         }
 
         // 파일 압축해제
-        try (final JarFile jar = new JarFile(Core.settings.getDataDirectory().child("mods/Essentials.jar").file())) {
+        try (final JarFile jar = new JarFile(new File(Core.settings.getDataDirectory().child("mods/Essentials.jar").absolutePath()))) {
             final Enumeration<JarEntry> enumEntries = jar.entries();
             while (enumEntries.hasMoreElements()) {
                 JarEntry file = enumEntries.nextElement();
