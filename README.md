@@ -1,3 +1,4 @@
+![logo](https://s6.gifyu.com/images/ezgif.com-gif-maker80d2b8fafdd7f15a.gif)
 # Essentials
 Add more commands to the server.
 
