@@ -15,7 +15,3 @@ config/
 ## OS Specific
 .DS_Store
 Thumbs.db
-
-version.properties
-locales
-maps/

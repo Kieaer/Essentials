@@ -2,10 +2,12 @@ package essentials;
 
 import arc.ApplicationCore;
 import arc.Core;
+import arc.Settings;
 import arc.backend.headless.HeadlessApplication;
 import arc.files.Fi;
 import arc.graphics.Color;
 import arc.util.CommandHandler;
+import com.github.javafaker.Faker;
 import essentials.core.player.PlayerData;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
@@ -15,41 +17,65 @@ import essentials.internal.exception.PluginException;
 import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.content.Mechs;
 import mindustry.core.FileTree;
 import mindustry.core.Logic;
 import mindustry.core.NetServer;
+import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
+import mindustry.game.Difficulty;
+import mindustry.game.Team;
 import mindustry.maps.Map;
 import mindustry.net.Net;
 import mindustry.net.NetConnection;
+import mindustry.type.UnitType;
 import org.hjson.JsonObject;
 import org.junit.*;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.runners.MethodSorters;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
 import static org.junit.Assert.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PluginTest {
     static Main main;
     static Fi root;
+    static Fi testroot;
     static CommandHandler serverHandler = new CommandHandler("");
-    static CommandHandler clientHandler = new CommandHandler("");
+    static CommandHandler clientHandler = new CommandHandler("/");
     static Map testMap;
+    static Player player;
+
+    Random r = new Random();
 
     @ClassRule
-    public static final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final static SystemOutRule out = new SystemOutRule().enableLog();
 
-    public Player createNewPlayer() {
+    public String randomString(int length) {
+        int leftLimit = 48;
+        int rightLimit = 122;
+
+        return r.ints(leftLimit, rightLimit + 1)
+                .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                .limit(length)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+    }
+
+    public Player createNewPlayer(boolean isFull) {
         Player player = new Player();
         player.isAdmin = false;
-        player.con = new NetConnection("127.0.0.1") {
+        player.con = new NetConnection(r.nextInt(256) + "." + r.nextInt(256) + "." + r.nextInt(256) + "." + r.nextInt(256)) {
             @Override
             public void send(Object o, Net.SendMode sendMode) {
 
@@ -60,26 +86,44 @@ public class PluginTest {
 
             }
         };
-        player.usid = "fake usid";
-        player.name = "i am fake";
-        player.uuid = "fake uuid";
-        player.isMobile = false;
-        player.dead = true;
-        player.setNet(1, 1);
-        player.color.set(Color.orange);
-        player.color.a = 1f;
+        player.usid = randomString(22) + "==";
+        player.name = new Faker().name().lastName();
+        player.uuid = randomString(22) + "==";
+        player.isMobile = r.nextBoolean();
+        player.dead = false;
+        player.setNet(r.nextInt(300), r.nextInt(500));
+        player.color.set(Color.rgb(r.nextInt(255), r.nextInt(255), r.nextInt(255)));
+        player.color.a = r.nextFloat();
 
-        playerGroup.add(Vars.player);
+        if (isFull) {
+            playerDB.register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, "none");
+            playerDB.load(player.uuid);
+
+            perm.create(playerDB.get(player.uuid));
+            perm.saveAll();
+            System.out.println("만들기 전 인원 " + Vars.entities.all().size);
+            Vars.playerGroup.add(player);
+            player.add();
+            System.out.println("만들때 인원 " + Vars.entities.all().size);
+            System.out.println("만들때 인원 " + Vars.playerGroup.all().size);
+        }
         return player;
     }
 
     @Before
-    public void clearLog() {
-        systemOutRule.clearLog();
+    @After
+    public void resetLog() {
+        out.clearLog();
     }
 
     @BeforeClass
     public static void init() throws PluginException {
+        Core.settings = new Settings();
+        Core.settings.setDataDirectory(new Fi(""));
+        Core.settings.getDataDirectory().child("locales").writeString("en");
+        Core.settings.getDataDirectory().child("version.properties").writeString("modifier=release\ntype=official\nnumber=5\nbuild=custom build");
+        testroot = Core.settings.getDataDirectory();
+
         try {
             boolean[] begins = {false};
             Throwable[] exceptionThrown = {null};
@@ -142,42 +186,33 @@ public class PluginTest {
         main.registerServerCommands(serverHandler);
         main.registerClientCommands(clientHandler);
 
+        Vars.playerGroup = entities.add(Player.class).enableMapping();
+
         world.loadMap(testMap);
     }
 
     @Test
-    public void configTest() {
+    public void test01_config() {
         assertEquals(config.dbUrl(), "jdbc:h2:file:./config/mods/Essentials/data/player");
     }
 
     @Test
-    public void playerDataTest() {
-        PlayerData playerData = playerCore.NewData("Tester", "fakeuuid", "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, "Tester", "none");
-        assertEquals(playerData.locale().getLanguage(), Locale.KOREAN.getLanguage());
-        assertTrue(playerDB.save(playerData));
-    }
-
-    @Test
-    public void registerTest() {
-        playerDB.register("Tester", "fakeuuid", "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, "Tester", "none");
-        playerDB.load("fakeuuid");
-        assertFalse(playerDB.get("fakeuuid").error());
-
-        perm.create(playerDB.get("fakeuuid"));
-        perm.saveAll();
+    public void test02_register() {
+        player = createNewPlayer(true);
+        assertFalse(playerDB.get(player.uuid).error());
 
         JsonObject json = JsonObject.readJSON(root.child("permission_user.hjson").readString()).asObject();
-        assertNotNull(json.get("fakeuuid").asObject());
+        assertNotNull(json.get(player.uuid).asObject());
     }
 
     @Test
-    public void motdTest() {
+    public void test03_motd() {
         PlayerData playerData = playerDB.get("fakeuuid");
         assertNotNull(tool.getMotd(playerData.locale()));
     }
 
     @Test
-    public void crashReportTest() {
+    public void test04_crashReport() {
         try {
             throw new Exception("Crash Report Test");
         } catch (Exception e) {
@@ -186,38 +221,37 @@ public class PluginTest {
     }
 
     @Test
-    public void logTest() {
+    public void test05_log() {
         Log.info("Info Test");
-        assertEquals("Info Test\n", systemOutRule.getLogWithNormalizedLineSeparator());
-        systemOutRule.clearLog();
+        assertEquals("Info Test\n", out.getLogWithNormalizedLineSeparator());
+        out.clearLog();
 
         Log.info("success");
-        assertNotEquals("success\n", systemOutRule.getLogWithNormalizedLineSeparator());
-        systemOutRule.clearLog();
+        assertEquals(new Bundle().get("success") + "\n", out.getLogWithNormalizedLineSeparator());
+        out.clearLog();
 
         Log.warn("warning");
-        assertEquals("warning\n", systemOutRule.getLogWithNormalizedLineSeparator());
-        systemOutRule.clearLog();
+        assertEquals("warning\n", out.getLogWithNormalizedLineSeparator());
+        out.clearLog();
 
         Log.server("server");
-        assertEquals("[EssentialServer] server\n", systemOutRule.getLogWithNormalizedLineSeparator());
-        systemOutRule.clearLog();
+        assertEquals("[EssentialServer] server\n", out.getLogWithNormalizedLineSeparator());
+        out.clearLog();
 
         Log.client("client");
-        assertEquals("[EssentialClient] client\n", systemOutRule.getLogWithNormalizedLineSeparator());
-        systemOutRule.clearLog();
+        assertEquals("[EssentialClient] client\n", out.getLogWithNormalizedLineSeparator());
+        out.clearLog();
 
         Log.player("player");
-        assertEquals("[EssentialPlayer] player\n", systemOutRule.getLogWithNormalizedLineSeparator());
-        systemOutRule.clearLog();
+        assertEquals("[EssentialPlayer] player\n", out.getLogWithNormalizedLineSeparator());
+        out.clearLog();
 
         Log.write(Log.LogType.player, "Log write test");
         assertTrue(root.child("log/player.log").readString().contains("Log write test"));
-        systemOutRule.clearLog();
     }
 
     @Test
-    public void remoteDatabaseTest() throws Exception {
+    public void test06_remoteDatabase() throws Exception {
         database.server_start();
         assertNotNull(database.cl);
         database.server_stop();
@@ -225,13 +259,13 @@ public class PluginTest {
     }
 
     @Test
-    public void geoTest() {
+    public void test07_geo() {
         Locale locale = tool.getGeo(vars.serverIP());
         assertNotEquals(locale.getDisplayCountry(), "");
     }
 
     @Test
-    public void expTest() {
+    public void test08_exp() {
         PlayerData playerData = playerDB.get("fakeuuid");
         int buf = playerData.reqexp();
         new Exp(playerData);
@@ -239,7 +273,7 @@ public class PluginTest {
     }
 
     @Test
-    public void NetworkTest() throws InterruptedException {
+    public void test09_network() throws InterruptedException {
         Server server = new Server();
         Client client = new Client();
         config.clientHost("127.0.0.1");
@@ -268,15 +302,116 @@ public class PluginTest {
     }
 
     @Test
-    public void serverCommandTest() {
-        serverHandler.handleMessage("info fakeuuid");
-        assertNotEquals("Player not found!", systemOutRule.getLogWithNormalizedLineSeparator());
-        systemOutRule.clearLog();
+    public void test10_playerLoad() {
+        playerCore.load(player);
+        assertTrue(playerDB.get(player.uuid).login());
+    }
+
+    @Test
+    public void test11_serverCommand() {
+        serverHandler.handleMessage("saveall");
+
+        root.child("README.md").delete();
+        serverHandler.handleMessage("gendocs");
+        assertTrue(root.child("README.md").exists());
+
+        serverHandler.handleMessage("admin " + player.name);
+        System.out.println("admin " + player.name);
+        System.out.println(Vars.playerGroup.size());
+        System.out.println(Vars.playerGroup.find(p -> p.name.equals(player.name)) != null);
+        for (Player p : Vars.playerGroup.all()) {
+            System.out.println(p.name);
+        }
+        assertEquals("newadmin", playerDB.get(player.uuid).permission());
+
+        serverHandler.handleMessage("info " + player.uuid);
+        assertNotEquals("Player not found!\n", out.getLogWithNormalizedLineSeparator());
+
+        serverHandler.handleMessage("setperm " + player.name + " owner");
+        assertEquals("owner", playerDB.get(player.uuid).permission());
+    }
+
+    @Test
+    public void test12_clientCommandTest() {
+        clientHandler.handleMessage("/alert", player);
+        assertTrue(playerDB.get(player.uuid).alert());
+
+        clientHandler.handleMessage("/ch", player);
+        assertTrue(playerDB.get(player.uuid).crosschat());
+
+        clientHandler.handleMessage("/changepw testpw123 testpw123", player);
+        assertNotEquals("none", playerDB.get(player.uuid).accountpw());
+
+        clientHandler.handleMessage("/chars hi", player);
+        assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.plastaniumWall);
+
+        clientHandler.handleMessage("/color", player);
+        assertTrue(playerDB.get(player.uuid).colornick());
+
+        clientHandler.handleMessage("/difficulty easy", player);
+        assertEquals(state.rules.waveSpacing, Difficulty.easy.waveTime * 60 * 60 * 2, 0.0);
+
+        UnitType targetUnit = tool.getUnitByName("reaper");
+        BaseUnit baseUnit = targetUnit.create(Team.sharded);
+        baseUnit.set(player.getX() + 20, player.getY() + 20);
+        baseUnit.add();
+        clientHandler.handleMessage("/killall", player);
+        assertEquals(0, unitGroup.size());
+
+        clientHandler.handleMessage("/setperm " + player.name + " newadmin", player);
+        assertEquals("newadmin", playerDB.get(player.uuid).permission());
+        playerDB.get(player.uuid).permission("owner");
+
+        clientHandler.handleMessage("/spawn-core big", player);
+        assertSame(Blocks.coreFoundation, world.tile(player.tileX(), player.tileY()).block());
+
+        clientHandler.handleMessage("/setmech omega", player);
+        assertSame(Mechs.omega, player.mech);
+
+        clientHandler.handleMessage("/suicide", player);
+        assertTrue(player.isDead());
+        player.dead = false;
+
+        state.rules.pvp = true;
+        clientHandler.handleMessage("/team crux", player);
+        assertSame(Team.crux, player.getTeam());
+        state.rules.pvp = false;
+
+        Player dummy = createNewPlayer(true);
+        clientHandler.handleMessage("/tempban " + dummy.name + " 10 test", player);
+        assertNotEquals("none", playerDB.get(dummy.uuid).bantimeset());
+
+        clientHandler.handleMessage("/tp " + dummy.name, player);
+        assertSame(world.tile(player.tileX(), player.tileY()), world.tile(dummy.tileX(), dummy.tileY()));
+
+        Player dummy2 = createNewPlayer(true);
+        clientHandler.handleMessage("/tpp " + dummy.name + " " + dummy2.name, player);
+        assertSame(world.tile(dummy.tileX(), dummy.tileY()), world.tile(dummy2.tileX(), dummy2.tileY()));
+
+        clientHandler.handleMessage("/tppos 50 50", player);
+        assertSame(world.tile(player.tileX(), player.tileY()), world.tile(50, 50));
+
+        //clientHandler.handleMessage("/vote", player);
+
+        clientHandler.handleMessage("/weather eday", player);
+        assertEquals(0.3f, state.rules.ambientLight.a, 0.0f);
+
+        clientHandler.handleMessage("/mute " + dummy.name, player);
+        assertTrue(playerDB.get(dummy.uuid).mute());
+
+        //clientHandler.handleMessage("/votekick");
+    }
+
+    @Test
+    public void test13_events() {
+
     }
 
     @AfterClass
     public static void shutdown() {
         Core.app.getListeners().get(1).dispose();
-        assertTrue(systemOutRule.getLogWithNormalizedLineSeparator().contains(new Bundle(locale).get("thread-disabled")));
+        assertTrue(out.getLogWithNormalizedLineSeparator().contains(new Bundle(locale).get("thread-disabled")));
+        testroot.child("locales").delete();
+        testroot.child("version.properties").delete();
     }
 }

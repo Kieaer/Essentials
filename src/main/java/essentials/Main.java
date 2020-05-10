@@ -458,6 +458,8 @@ public class Main extends Plugin {
                 if (p.getName().equals(arg[1])) {
                     playerData = playerDB.get(target.uuid);
                     playerData.permission(arg[1]);
+                    perm.permission_user.get(playerData.uuid()).asObject().set("group", arg[1]);
+                    perm.update();
 
                     target.isAdmin = perm.isAdmin(target);
 
@@ -957,10 +959,13 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.prefix("player.not-found"));
                 return;
             }
-            for (JsonObject.Member perm : perm.permission) {
-                if (perm.getName().equals(arg[0])) {
+            for (JsonObject.Member permission : perm.permission) {
+                if (permission.getName().equals(arg[0])) {
                     PlayerData val = playerDB.get(target.uuid);
                     val.permission(arg[1]);
+                    perm.permission_user.get(playerData.uuid()).asObject().set("group", arg[1]);
+                    perm.update();
+
                     player.sendMessage(bundle.prefix("success"));
                     target.sendMessage(new Bundle(playerData.locale()).prefix("perm-changed"));
                     return;
