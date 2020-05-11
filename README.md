@@ -1,4 +1,4 @@
-![logo](https://s6.gifyu.com/images/ezgif.com-gif-maker80d2b8fafdd7f15a.gif)
+[![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=Kieaer_Essentials)
 # Essentials
 Add more commands to the server.
 

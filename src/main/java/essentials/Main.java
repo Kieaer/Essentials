@@ -279,7 +279,7 @@ public class Main extends Plugin {
 
             Log.info("readme-generating");
 
-            String header = "[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=alert_status)](https://sonarcloud.io/dashboard?id=Kieaer_Essentials)\n" +
+            String header = "[![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=Kieaer_Essentials)\n" +
                     "# Essentials\n" +
                     "Add more commands to the server.\n\n" +
                     "I'm getting a lot of suggestions.<br>\n" +
