@@ -2,6 +2,7 @@ package essentials;
 
 import arc.ApplicationCore;
 import arc.Core;
+import arc.Events;
 import arc.Settings;
 import arc.backend.headless.HeadlessApplication;
 import arc.files.Fi;
@@ -18,6 +19,7 @@ import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Items;
 import mindustry.content.Mechs;
 import mindustry.core.FileTree;
 import mindustry.core.Logic;
@@ -25,7 +27,9 @@ import mindustry.core.NetServer;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.game.Difficulty;
+import mindustry.game.EventType.*;
 import mindustry.game.Team;
+import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.net.Net;
 import mindustry.net.NetConnection;
@@ -38,6 +42,7 @@ import org.junit.runners.MethodSorters;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -89,7 +94,7 @@ public class PluginTest {
         player.usid = randomString(22) + "==";
         player.name = new Faker().name().lastName();
         player.uuid = randomString(22) + "==";
-        player.isMobile = r.nextBoolean();
+        player.isMobile = false;
         player.dead = false;
         player.setNet(r.nextInt(300), r.nextInt(500));
         player.color.set(Color.rgb(r.nextInt(255), r.nextInt(255), r.nextInt(255)));
@@ -101,12 +106,9 @@ public class PluginTest {
 
             perm.create(playerDB.get(player.uuid));
             perm.saveAll();
-            System.out.println("만들기 전 인원 " + Vars.entities.all().size);
-            Vars.playerGroup.add(player);
-            player.add();
-            System.out.println("만들때 인원 " + Vars.entities.all().size);
-            System.out.println("만들때 인원 " + Vars.playerGroup.all().size);
         }
+        player.add();
+        playerGroup.updateEvents();
         return player;
     }
 
@@ -316,12 +318,6 @@ public class PluginTest {
         assertTrue(root.child("README.md").exists());
 
         serverHandler.handleMessage("admin " + player.name);
-        System.out.println("admin " + player.name);
-        System.out.println(Vars.playerGroup.size());
-        System.out.println(Vars.playerGroup.find(p -> p.name.equals(player.name)) != null);
-        for (Player p : Vars.playerGroup.all()) {
-            System.out.println(p.name);
-        }
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
 
         serverHandler.handleMessage("info " + player.uuid);
@@ -343,7 +339,7 @@ public class PluginTest {
         assertNotEquals("none", playerDB.get(player.uuid).accountpw());
 
         clientHandler.handleMessage("/chars hi", player);
-        assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.plastaniumWall);
+        assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall);
 
         clientHandler.handleMessage("/color", player);
         assertTrue(playerDB.get(player.uuid).colornick());
@@ -360,10 +356,10 @@ public class PluginTest {
 
         clientHandler.handleMessage("/setperm " + player.name + " newadmin", player);
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
-        playerDB.get(player.uuid).permission("owner");
+        serverHandler.handleMessage("setperm " + player.name + " owner");
 
         clientHandler.handleMessage("/spawn-core big", player);
-        assertSame(Blocks.coreFoundation, world.tile(player.tileX(), player.tileY()).block());
+        assertSame(Blocks.coreNucleus, world.tile(player.tileX(), player.tileY()).block());
 
         clientHandler.handleMessage("/setmech omega", player);
         assertSame(Mechs.omega, player.mech);
@@ -373,6 +369,7 @@ public class PluginTest {
         player.dead = false;
 
         state.rules.pvp = true;
+        Call.onConstructFinish(world.tile(100, 40), Blocks.coreFoundation, 1, (byte) 0, Team.crux, true);
         clientHandler.handleMessage("/team crux", player);
         assertSame(Team.crux, player.getTeam());
         state.rules.pvp = false;
@@ -382,14 +379,14 @@ public class PluginTest {
         assertNotEquals("none", playerDB.get(dummy.uuid).bantimeset());
 
         clientHandler.handleMessage("/tp " + dummy.name, player);
-        assertSame(world.tile(player.tileX(), player.tileY()), world.tile(dummy.tileX(), dummy.tileY()));
+        assertTrue(player.x == dummy.x && player.y == dummy.y);
 
         Player dummy2 = createNewPlayer(true);
         clientHandler.handleMessage("/tpp " + dummy.name + " " + dummy2.name, player);
-        assertSame(world.tile(dummy.tileX(), dummy.tileY()), world.tile(dummy2.tileX(), dummy2.tileY()));
+        assertTrue(dummy.x == dummy2.x && dummy.y == dummy2.y);
 
         clientHandler.handleMessage("/tppos 50 50", player);
-        assertSame(world.tile(player.tileX(), player.tileY()), world.tile(50, 50));
+        assertTrue(player.x == 50 && player.y == 50);
 
         //clientHandler.handleMessage("/vote", player);
 
@@ -404,7 +401,40 @@ public class PluginTest {
 
     @Test
     public void test13_events() {
+        Events.fire(new TapConfigEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, 5));
 
+        Events.fire(new TapEvent(world.tile(r.nextInt(50), r.nextInt(50)), player));
+
+        state.rules.attackMode = true;
+        Call.onSetRules(state.rules);
+
+        Events.fire(new GameOverEvent(Team.sharded));
+        assertEquals(1, playerDB.get(player.uuid).attackclear());
+
+        Events.fire(new WorldLoadEvent());
+        assertSame(LocalTime.of(0, 0, 0), vars.playtime());
+        assertEquals(0, pluginData.powerblock.size);
+
+        Events.fire(new PlayerConnect(player));
+
+        Events.fire(new DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5));
+
+        Player dummy = createNewPlayer(false);
+        Events.fire(new PlayerJoin(dummy));
+        //assertFalse(playerDB.get(dummy.uuid).error());
+
+        Events.fire(new PlayerLeave(dummy));
+        //assertEquals(3, vars.playerData().size);
+
+        Events.fire(new PlayerChatEvent(player, "hi"));
+
+        Events.fire(new BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false));
+
+        Events.fire(new BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, false));
+
+        Events.fire(new UnitDestroyEvent(player));
+
+        Events.fire(new ServerLoadEvent());
     }
 
     @AfterClass

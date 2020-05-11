@@ -16,23 +16,23 @@ import static essentials.Main.*;
 import static mindustry.Vars.netServer;
 
 public class PlayerCore {
-    public void load(Player player, String... AccountID) {
+    public boolean load(Player player, String... AccountID) {
         playerDB.remove(player.uuid);
         PlayerData playerData;
-        if (AccountID.length > 0) {
+        if (AccountID.length == 0) {
             playerData = playerDB.load(player.uuid);
         } else {
             playerData = playerDB.load(player.uuid, AccountID);
         }
         if (playerData.error()) {
             new CrashReport(new Exception("DATA NOT FOUND"));
-            return;
+            return false;
         }
 
         if (playerData.banned()) {
             netServer.admins.banPlayerID(player.uuid);
             Call.onKick(player.con, Packets.KickReason.banned);
-            return;
+            return false;
         }
 
         String motd = tool.getMotd(playerData.locale());
@@ -64,6 +64,7 @@ public class PlayerCore {
         playerData.exp(playerData.exp() + playerData.joincount());
         playerData.joincount(playerData.joincount() + 1);
         playerData.login(true);
+        return true;
     }
 
     public PlayerData NewData(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {

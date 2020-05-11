@@ -443,7 +443,7 @@ public class Event {
                         }
                     }).start();
                 } else {
-                    if (playerData.mute()) {
+                    if (!playerData.mute()) {
                         if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
                             if (!playerData.crosschat())
                                 Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));

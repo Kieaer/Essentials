@@ -277,7 +277,7 @@ public class Tools {
                 Tile target_tile = world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]);
                 if (target[a] == 1) {
                     Call.onConstructFinish(target_tile, block, 100, (byte) 0, Team.sharded, false);
-                } else {
+                } else if (target_tile.getTeam() != null) {
                     Call.onDeconstructFinish(target_tile, Blocks.air, 100);
                 }
             }

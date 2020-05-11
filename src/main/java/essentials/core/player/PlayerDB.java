@@ -171,9 +171,7 @@ public class PlayerDB {
                     index++;
                 }
             });
-            pstmt.execute();
-            pstmt.close();
-            return true;
+            return pstmt.execute();
         } catch (SQLException e) {
             new CrashReport(e);
             return false;

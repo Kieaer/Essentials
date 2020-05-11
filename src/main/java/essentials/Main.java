@@ -343,14 +343,14 @@ public class Main extends Plugin {
                     Log.warn("player.not-found");
                 } else {
                     for (JsonObject.Member data : perm.permission) {
-                        if (data.getName().equals(arg[0])) {
+                        if (data.getName().equals("newadmin")) {
                             PlayerData p = playerDB.get(player.uuid);
                             p.permission("newadmin");
                             Log.info("success");
                             break;
                         }
                     }
-                    Log.warn("use-setperm");
+                    //Log.warn("use-setperm");
                 }
             } else {
                 Log.warn("no-parameter");
@@ -523,7 +523,7 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
-            if (!tool.checkPassword(player, playerData.accountid(), arg[1], arg[2])) {
+            if (!tool.checkPassword(player, playerData.accountid(), arg[0], arg[1])) {
                 player.sendMessage(bundle.prefix("system.account.need-new-password"));
                 return;
             }
@@ -549,7 +549,8 @@ public class Main extends Plugin {
             if (!perm.check(player, "difficulty")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             try {
-                Difficulty.valueOf(arg[0]);
+                state.rules.waveSpacing = Difficulty.valueOf(arg[0]).waveTime * 60 * 60 * 2;
+                Call.onSetRules(state.rules);
                 player.sendMessage(new Bundle(playerData.locale()).prefix("system.difficulty.set", arg[0]));
             } catch (IllegalArgumentException e) {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("system.difficulty.not-found", arg[0]));
@@ -960,7 +961,7 @@ public class Main extends Plugin {
                 return;
             }
             for (JsonObject.Member permission : perm.permission) {
-                if (permission.getName().equals(arg[0])) {
+                if (permission.getName().equals(arg[1])) {
                     PlayerData val = playerDB.get(target.uuid);
                     val.permission(arg[1]);
                     perm.permission_user.get(playerData.uuid()).asObject().set("group", arg[1]);
@@ -1253,7 +1254,7 @@ public class Main extends Plugin {
                 }
             });
         }
-        handler.<Player>register("weather", "<day,eday,night,enight>", "Change map light", (arg, player) -> {
+        handler.<Player>register("weather", "<day/eday/night/enight>", "Change map light", (arg, player) -> {
             if (!perm.check(player, "weather")) return;
             // Command idea from Minecraft EssentialsX and Quezler's plugin!
             // Useful with the Quezler's plugin.
