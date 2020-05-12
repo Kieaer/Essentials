@@ -21,13 +21,11 @@ import mindustry.world.blocks.logic.MessageBlock;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
-import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -251,10 +249,9 @@ public class Event {
                         e.player.sendMessage(bundle.get("account.autologin"));
                         playerCore.load(e.player);
                     } else {
-                        Locale lc = tool.getGeo(e.player);
-                        if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", 0L, e.player.name, "none")) {
-                            playerCore.load(e.player);
-                        } else {
+                        Locale lc = tool.getGeo(e.player.con.address);
+                        boolean register = playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", 0L, e.player.name, "none");
+                        if (!register || !playerCore.load(e.player)) {
                             Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
                         }
                     }
@@ -616,7 +613,7 @@ public class Event {
             if (config.update()) {
                 Log.client("client.update-check");
                 try {
-                    JsonObject json = readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
+                    JsonObject json = readJSON(tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")).asObject();
 
                     for (int a = 0; a < mods.list().size; a++) {
                         if (mods.list().get(a).meta.name.equals("Essentials")) {
@@ -672,8 +669,6 @@ public class Event {
                     } else if (latest.compareTo(current) < 0) {
                         Log.client("version-devel");
                     }
-                } catch (SocketTimeoutException i) {
-                    log.warn("SocketTimeOut");
                 } catch (Exception ex) {
                     new CrashReport(ex);
                 }

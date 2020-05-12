@@ -9,7 +9,6 @@ import essentials.internal.Log;
 import mindustry.game.Gamemode;
 import org.codehaus.plexus.util.FileUtils;
 import org.hjson.JsonObject;
-import org.jsoup.Jsoup;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +24,7 @@ public class EventServer {
 
     public boolean create(String roomname, String map, String gamemode, int port) {
         try {
-            JsonObject json = readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
+            JsonObject json = readJSON(tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")).asObject();
             String url = json.get("assets").asObject().get("0").asObject().get("browser_download_url").asString();
             FileUtils.copyURLToFile(new URL(url), new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar"));
             EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);

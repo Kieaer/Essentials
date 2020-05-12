@@ -91,9 +91,6 @@ public class PlayerDB {
         ArrayMap<String, Object> js = playerData.toMap();
         sql.append("UPDATE players SET ");
 
-        int size = js.size + 1;
-
-
         js.forEach((s) -> {
             String buf = s.key.toLowerCase() + "=?, ";
             sql.append(buf);
@@ -125,9 +122,8 @@ public class PlayerDB {
                 }
             });
 
-            pstmt.setString(size, playerData.uuid());
-            pstmt.execute();
-            return true;
+            pstmt.setString(js.size + 1, playerData.uuid());
+            return pstmt.execute();
         } catch (SQLException e) {
             new CrashReport(e);
             return false;
@@ -171,7 +167,8 @@ public class PlayerDB {
                     index++;
                 }
             });
-            return pstmt.execute();
+            int count = pstmt.executeUpdate();
+            return count > 0;
         } catch (SQLException e) {
             new CrashReport(e);
             return false;

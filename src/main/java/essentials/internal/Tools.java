@@ -4,7 +4,6 @@ import arc.files.Fi;
 import arc.struct.Array;
 import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
-import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
@@ -13,7 +12,6 @@ import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
-import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -24,6 +22,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,48 +66,43 @@ public class Tools {
     }
 
     public Locale getGeo(Object data) {
-        String ip = data instanceof Player ? Vars.netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
+        String ip = data instanceof Player ? netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
         Locale loc = Locale.US;
-        try {
-            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(3000).execute().body();
-            JsonObject result = readJSON(json).asObject();
+        JsonObject result = readJSON(getWebContent("https://ipapi.co/" + ip + "/json")).asObject();
 
-            if (result.get("reserved") != null) {
-                return locale;
-            } else {
-                String lc = result.get("languages").asString().split(",")[0];
+        if (result.get("reserved") != null) {
+            return locale;
+        } else {
+            String lc = result.get("languages").asString().split(",")[0];
 
-                if (lc.split("-").length == 2) {
-                    String[] array = lc.split("-");
-                    loc = new Locale(array[0], array[1]);
+            if (lc.split("-").length == 2) {
+                String[] array = lc.split("-");
+                loc = new Locale(array[0], array[1]);
 
-                    if (array[0].equals("zh")) {
-                        return Locale.SIMPLIFIED_CHINESE;
+                if (array[0].equals("zh")) {
+                    return Locale.SIMPLIFIED_CHINESE;
+                }
+            }
+
+            // TODO Bundle 검증 다시 만들기
+            /*try {
+                ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
+                RESOURCE_BUNDLE.getString("success");
+            } catch (Exception e) {
+                for (int a = 0; a < result.get("country_code").asString().split(",").length; a++) {
+                    try {
+                        lc = result.get("country_code").asString().split(",")[a];
+                        if (lc.split("-").length == 2) {
+                            String[] array = lc.split("-");
+                            loc = new Locale(array[0], array[1]);
+                        }
+                        ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
+                        RESOURCE_BUNDLE.getString("success");
+                        return loc;
+                    } catch (Exception ignored) {
                     }
                 }
-
-                // TODO Bundle 검증 다시 만들기
-                /*try {
-                    ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
-                    RESOURCE_BUNDLE.getString("success");
-                } catch (Exception e) {
-                    for (int a = 0; a < result.get("country_code").asString().split(",").length; a++) {
-                        try {
-                            lc = result.get("country_code").asString().split(",")[a];
-                            if (lc.split("-").length == 2) {
-                                String[] array = lc.split("-");
-                                loc = new Locale(array[0], array[1]);
-                            }
-                            ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
-                            RESOURCE_BUNDLE.getString("success");
-                            return loc;
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }*/
-            }
-        } catch (Exception e) {
-            new CrashReport(e);
+            }*/
         }
         return loc;
     }
@@ -301,5 +295,19 @@ public class Tools {
 
     public UnitType getUnitByName(String name) {
         return content.units().find(unitType -> unitType.name.equals(name));
+    }
+
+    public String getWebContent(String url) {
+        try {
+            Scanner sc = new Scanner(new URL(url).openStream());
+            StringBuilder sb = new StringBuilder();
+            while (sc.hasNext()) {
+                sb.append(sc.next());
+            }
+            return sb.toString();
+        } catch (IOException e) {
+            new CrashReport(e);
+        }
+        return null;
     }
 }

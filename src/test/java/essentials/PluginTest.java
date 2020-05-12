@@ -80,7 +80,7 @@ public class PluginTest {
     public Player createNewPlayer(boolean isFull) {
         Player player = new Player();
         player.isAdmin = false;
-        player.con = new NetConnection(r.nextInt(256) + "." + r.nextInt(256) + "." + r.nextInt(256) + "." + r.nextInt(256)) {
+        player.con = new NetConnection(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
             @Override
             public void send(Object o, Net.SendMode sendMode) {
 
@@ -99,6 +99,8 @@ public class PluginTest {
         player.setNet(r.nextInt(300), r.nextInt(500));
         player.color.set(Color.rgb(r.nextInt(255), r.nextInt(255), r.nextInt(255)));
         player.color.a = r.nextFloat();
+        player.add();
+        playerGroup.updateEvents();
 
         if (isFull) {
             playerDB.register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, "none");
@@ -107,8 +109,7 @@ public class PluginTest {
             perm.create(playerDB.get(player.uuid));
             perm.saveAll();
         }
-        player.add();
-        playerGroup.updateEvents();
+
         return player;
     }
 
@@ -400,7 +401,7 @@ public class PluginTest {
     }
 
     @Test
-    public void test13_events() {
+    public void test13_events() throws InterruptedException {
         Events.fire(new TapConfigEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, 5));
 
         Events.fire(new TapEvent(world.tile(r.nextInt(50), r.nextInt(50)), player));
@@ -421,10 +422,11 @@ public class PluginTest {
 
         Player dummy = createNewPlayer(false);
         Events.fire(new PlayerJoin(dummy));
-        //assertFalse(playerDB.get(dummy.uuid).error());
+        TimeUnit.SECONDS.sleep(3);
+        assertTrue(playerDB.get(dummy.uuid).login());
 
         Events.fire(new PlayerLeave(dummy));
-        //assertEquals(3, vars.playerData().size);
+        assertTrue(playerDB.get(dummy.uuid).error());
 
         Events.fire(new PlayerChatEvent(player, "hi"));
 
