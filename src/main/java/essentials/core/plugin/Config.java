@@ -16,6 +16,9 @@ import static org.hjson.JsonValue.readJSON;
 
 public class Config {
     public JsonObject obj;
+    public Locale locale;
+    public Bundle bundle;
+
     private int version;
     private Locale language;
     private boolean serverEnable;
@@ -198,7 +201,7 @@ public class Config {
 
     public void updateConfig() {
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
-        Bundle bundle = new Bundle(locale);
+        this.bundle = config.bundle;
 
         if (obj.getInt("version", 0) < vars.configVersion()) Log.info("config.updated");
 

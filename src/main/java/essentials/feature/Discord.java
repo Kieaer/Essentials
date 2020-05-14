@@ -49,7 +49,7 @@ public class Discord extends ListenerAdapter {
 
     public void queue(Player player) {
         PlayerData playerData = playerDB.get(player.uuid);
-        Bundle bundle = new Bundle(playerData.error() ? locale : playerData.locale());
+        Bundle bundle = new Bundle(playerData.error() ? config.locale : playerData.locale());
         int pin = new Random().nextInt(9999);
         pins.put(player.name, pin);
         player.sendMessage(bundle.prefix(true, "discord-pin-queue", pin));

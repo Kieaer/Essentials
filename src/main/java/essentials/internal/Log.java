@@ -10,8 +10,7 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static essentials.Main.root;
-import static essentials.Main.tool;
+import static essentials.Main.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Log {
@@ -45,7 +44,7 @@ public class Log {
         arc.util.Log.info("[EssentialPlayer] " + (result != null ? MessageFormat.format(result, parameter) : value));
     }
 
-    public static void write(LogType type, String value) {
+    public static void write(LogType type, String value, Object... params) {
         String date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now());
         Path newlog = Paths.get(root.child("log/" + type + ".log").path());
         Path oldlog = Paths.get(root.child("log/old/" + type + "/" + date + ".log").path());
@@ -63,7 +62,7 @@ public class Log {
         }
 
         if (mainlog == null) mainlog = logfolder.child(type + ".log");
-        mainlog.writeString("[" + tool.getTime() + "]" + value + "\n", true);
+        mainlog.writeString("[" + tool.getTime() + "]" + config.bundle.get(value, params) + "\n", true);
     }
 
     public enum LogType {

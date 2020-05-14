@@ -2,7 +2,6 @@ package essentials.external;
 
 import arc.Core;
 import arc.files.Fi;
-import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 
 import java.sql.Connection;
@@ -10,13 +9,14 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import static essentials.Main.*;
+import static essentials.Main.config;
+import static essentials.Main.database;
 
 public class DataMigration {
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
 
     public void MigrateDB() {
-        String stringbuf = new Bundle(locale).get("database.migration") + " ";
+        String stringbuf = config.bundle.get("database.migration") + " ";
         System.out.print("\r" + stringbuf);
 
         String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -86,7 +86,7 @@ public class DataMigration {
             rs.close();
             con.close();
 
-            System.out.print("\r" + stringbuf + current + "/" + total + " " + new Bundle(locale).get("success") + "\n");
+            System.out.print("\r" + stringbuf + current + "/" + total + " " + config.bundle.get("success") + "\n");
 
             config.oldDBMigration(false);
             config.updateConfig();

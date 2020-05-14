@@ -71,7 +71,7 @@ public class Tools {
         JsonObject result = readJSON(getWebContent("https://ipapi.co/" + ip + "/json")).asObject();
 
         if (result.get("reserved") != null) {
-            return locale;
+            return config.locale;
         } else {
             String lc = result.get("languages").asString().split(",")[0];
 
@@ -127,7 +127,7 @@ public class Tools {
         if (root.child("motd/" + loc.toString() + ".txt").exists()) {
             return root.child("motd/" + loc.toString() + ".txt").readString();
         } else {
-            Fi file = root.child("motd/" + locale.toString() + ".txt");
+            Fi file = root.child("motd/" + config.locale.toString() + ".txt");
             return file.exists() ? file.readString() : "Welcome to the server!";
         }
     }

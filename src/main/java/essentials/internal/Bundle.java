@@ -10,7 +10,8 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
-import static essentials.Main.*;
+import static essentials.Main.config;
+import static essentials.Main.root;
 
 public class Bundle {
     ResourceBundle RESOURCE_BUNDLE;
@@ -19,7 +20,7 @@ public class Bundle {
         try {
             RESOURCE_BUNDLE = root.child("bundle.properties").exists()
                     ? new PropertyResourceBundle(Files.newInputStream(Paths.get(root.child("bundle.properties").path())))
-                    : ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control());
+                    : ResourceBundle.getBundle("bundle.bundle", config.locale, new UTF8Control());
         } catch (Exception e) {
             RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", Locale.US, new UTF8Control());
         }

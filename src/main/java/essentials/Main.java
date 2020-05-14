@@ -70,7 +70,7 @@ import static org.hjson.JsonValue.readJSON;
 
 public class Main extends Plugin {
     public static final Timer timer = new Timer(true);
-    public static final ExecutorService mainThread = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(), 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    public static final ExecutorService mainThread = new ThreadPoolExecutor(0, 10, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
 
     public static final Array<Vote> vote = new Array<>();
 
@@ -95,8 +95,6 @@ public class Main extends Plugin {
     public final Array<EventServer.EventService> eventServers = new Array<>();
 
     final Logger log = LoggerFactory.getLogger(Main.class);
-
-    public static Locale locale;
 
     public Main() throws PluginException {
         // 서버 버전 확인
@@ -909,7 +907,7 @@ public class Main extends Plugin {
                         break;
                 }
             } else {
-                player.sendMessage(new Bundle(playerDB.get(player.uuid) == null ? playerDB.get(player.uuid).locale() : locale).prefix("system.login.disabled"));
+                player.sendMessage(new Bundle(playerDB.get(player.uuid) == null ? playerDB.get(player.uuid).locale() : config.locale).prefix("system.login.disabled"));
             }
         });
         handler.<Player>register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", (arg, player) -> {

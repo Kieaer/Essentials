@@ -54,10 +54,13 @@ public class Event {
                 }
                 if (config.debug())
                     Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                if (config.logging()) Log.write(Log.LogType.tap, "log.tap-config", e.player.name, e.tile.block().name);
             }
         });
 
         Events.on(EventType.TapEvent.class, e -> {
+            if (config.logging()) Log.write(Log.LogType.tap, "log.tap", e.player.name, e.tile.block().name);
+
             PlayerData playerData = playerDB.get(e.player.uuid);
 
             if (!playerData.error()) {
@@ -87,6 +90,8 @@ public class Event {
                 }
                 if (config.debug())
                     Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+                if (config.logging())
+                    Log.write(Log.LogType.withdraw, "log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
                 if (state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
                         e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid).locale()).get("system.flammable.disabled"));
@@ -138,6 +143,9 @@ public class Event {
         });
 
         Events.on(EventType.PlayerConnect.class, e -> {
+            if (config.logging())
+                Log.write(Log.LogType.player, "log.player.connect", e.player.name, e.player.uuid, e.player.con.address);
+
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (String s : pluginData.blacklist) {
                 if (e.player.name.matches(s)) {
@@ -186,10 +194,15 @@ public class Event {
                     p.sendMessage(new Bundle(playerData.locale()).get("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name));
                 }
             }
+            if (config.logging())
+                Log.write(Log.LogType.deposit, "log.deposit", e.player.name, e.player.item().item.name, e.tile.block().name);
         });
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(EventType.PlayerJoin.class, e -> {
+            if (config.logging())
+                Log.write(Log.LogType.player, "log.player.join", e.player.name, e.player.uuid, e.player.con.address);
+
             vars.addPlayers(e.player);
             e.player.isAdmin = false;
             Thread t = new Thread(() -> {
@@ -308,6 +321,9 @@ public class Event {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(EventType.PlayerLeave.class, e -> {
+            if (config.logging())
+                Log.write(Log.LogType.player, "log.player.leave", e.player.name, e.player.uuid, e.player.con.address);
+
             PlayerData player = playerDB.get(e.player.uuid);
             if (player.login()) {
                 player.connected(false);
@@ -457,6 +473,8 @@ public class Event {
         // 플레이어가 블럭을 건설했을 때
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             if (e.player == null) return; // 만약 건설자가 드론일경우
+            Log.write(Log.LogType.block, "log.block.place", e.player.name, e.tile.block().name);
+
             PlayerData target = playerDB.get(e.player.uuid);
             if (!e.breaking && e.player.buildRequest() != null && !target.error() && e.tile.block() != null) {
                 String name = e.tile.block().name;
@@ -496,6 +514,8 @@ public class Event {
         Events.on(EventType.BuildSelectEvent.class, e -> {
             if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
                 if (e.breaking) {
+                    Log.write(Log.LogType.block, "log.block.remove", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
+
                     PlayerData target = playerDB.get(((Player) e.builder).uuid);
                     String name = e.tile.block().name;
                     try {
