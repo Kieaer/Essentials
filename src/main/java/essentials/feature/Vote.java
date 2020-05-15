@@ -30,7 +30,6 @@ public class Vote {
     private Bundle bundle;
 
     public Player target;
-    public String reason;
     public Gamemode gamemode;
     public Map map;
 
@@ -47,12 +46,12 @@ public class Vote {
         this.bundle = new Bundle(playerData.locale());
         this.type = voteType;
 
+        require = playerGroup.size() / 2.0;
+
         switch (type) {
             case kick:
                 this.target = (Player) parameters[0];
-                this.reason = (String) parameters[1];
                 tool.sendMessageAll("vote.suggester-name", player.name);
-                tool.sendMessageAll("vote.reason", reason);
                 tool.sendMessageAll("vote.kick", player.name, target.name);
                 break;
             case gameover:
@@ -92,7 +91,7 @@ public class Vote {
         @Override
         public void run() {
             time++;
-            if (time >= 60) success();
+            if (time >= 60) success(voted.size >= require);
         }
     };
     TimerTask alert = new TimerTask() {
@@ -111,14 +110,13 @@ public class Vote {
     };
 
 
-
-    public void success() {
+    public void success(boolean success) {
         timer.cancel();
         time = 0;
         message_time = 0;
         voted.clear();
 
-        if (voted.size >= require) {
+        if (success) {
             switch (type) {
                 case gameover:
                     tool.sendMessageAll("vote.gameover.done");
@@ -134,6 +132,7 @@ public class Vote {
                     tool.sendMessageAll("vote.kick.done");
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
                     Call.onKick(target.con, Packets.KickReason.vote);
+                    Log.info(target.name + " Player kicked");
                     Log.write(Log.LogType.player, "log.player.kick");
                     break;
                 case rollback:
@@ -198,7 +197,7 @@ public class Vote {
     }
     public void interrupt() {
         timer.cancel();
-        success();
+        success(voted.size >= require);
     }
 
     public Array<String> getVoted() {
@@ -216,7 +215,7 @@ public class Vote {
 
         if (voted.size >= require) {
             timer.cancel();
-            success();
+            success(true);
         }
     }
 

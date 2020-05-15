@@ -7,7 +7,6 @@ import essentials.external.PingHost;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.game.Gamemode;
-import org.codehaus.plexus.util.FileUtils;
 import org.hjson.JsonObject;
 
 import java.io.File;
@@ -17,6 +16,7 @@ import java.nio.file.Paths;
 import java.util.TimerTask;
 
 import static essentials.Main.*;
+import static essentials.external.DriverLoader.URLDownload;
 import static org.hjson.JsonValue.readJSON;
 
 public class EventServer {
@@ -24,9 +24,10 @@ public class EventServer {
 
     public boolean create(String roomname, String map, String gamemode, int port) {
         try {
-            JsonObject json = readJSON(tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")).asObject();
-            String url = json.get("assets").asObject().get("0").asObject().get("browser_download_url").asString();
-            FileUtils.copyURLToFile(new URL(url), new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar"));
+            JsonObject json = readJSON(tool.getWebContent("https://api.github.com/repos/anuken/Mindustry/releases/latest")).asObject();
+            String url = json.get("assets").asArray().get(0).asObject().get("browser_download_url").asString();
+            root.child("temp").child(roomname).mkdirs();
+            URLDownload(new URL(url), root.child("temp/" + roomname + "/server.jar").file());
             EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
             service.start();
             Thread.sleep(5000);

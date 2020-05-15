@@ -734,14 +734,19 @@ public class Main extends Plugin {
                 if (player != p) Call.onKick(p.con, Packets.KickReason.kick);
             }
         });
-        handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
+        handler.<Player>register("kill", "[player]", "Kill player.", (arg, player) -> {
             if (!perm.check(player, "kill")) return;
-            Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
-            if (other == null) {
-                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("player.not-found"));
-                return;
+            if (arg.length == 0) {
+                player.kill();
+            } else {
+                Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
+                if (other == null) {
+                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("player.not-found"));
+                    return;
+                } else {
+                    other.kill();
+                }
             }
-            player.kill();
         });
         handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             PlayerData playerData = playerDB.get(player.uuid);
@@ -1196,7 +1201,13 @@ public class Main extends Plugin {
                 switch (arg[0]) {
                     case "kick":
                         Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-                        if (target == null) target = vars.players().get(Integer.parseInt(arg[1]));
+                        try {
+                            if (target == null) target = vars.players().get(Integer.parseInt(arg[1]));
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(bundle.prefix("player.not-found"));
+                            return;
+                        }
+
                         if (target == null) {
                             player.sendMessage(bundle.prefix("player.not-found"));
                             return;

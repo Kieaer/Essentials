@@ -276,11 +276,10 @@ public class Event {
                         InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
                         BufferedReader br = new BufferedReader(new InputStreamReader(reader));
 
-                        String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
                         String line;
                         while ((line = br.readLine()) != null) {
                             IpAddressMatcher match = new IpAddressMatcher(line);
-                            if (match.matches(ip)) {
+                            if (match.matches(e.player.con.address)) {
                                 Call.onKick(e.player.con, new Bundle().get("anti-grief.vpn"));
                             }
                         }

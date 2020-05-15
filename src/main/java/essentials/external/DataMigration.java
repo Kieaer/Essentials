@@ -28,13 +28,7 @@ public class DataMigration {
              PreparedStatement pmt = con.prepareStatement("SELECT * from players");
              ResultSet rs = pmt.executeQuery()) {
             del.execute();
-            int total = 0;
-            if (rs.last()) {
-                total = rs.getRow();
-                rs.beforeFirst();
-            }
             int current = 0;
-
             while (rs.next()) {
                 pstmt.setString(1, rs.getString("name"));
                 pstmt.setString(2, rs.getString("uuid"));
@@ -79,14 +73,14 @@ public class DataMigration {
                 pstmt.setString(41, rs.getString("accountpw"));
                 pstmt.execute();
                 current++;
-                System.out.print("\r" + stringbuf + current + "/" + total);
+                System.out.print("\r" + stringbuf + current);
             }
             pstmt.close();
             pmt.close();
             rs.close();
             con.close();
 
-            System.out.print("\r" + stringbuf + current + "/" + total + " " + config.bundle.get("success") + "\n");
+            System.out.print("\r" + stringbuf + current + " " + config.bundle.get("success") + "\n");
 
             config.oldDBMigration(false);
             config.updateConfig();

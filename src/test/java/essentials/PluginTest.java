@@ -10,6 +10,7 @@ import arc.graphics.Color;
 import arc.util.CommandHandler;
 import com.github.javafaker.Faker;
 import essentials.core.player.PlayerData;
+import essentials.external.DataMigration;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
@@ -42,6 +43,7 @@ import org.junit.runners.MethodSorters;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.*;
 import java.time.LocalTime;
 import java.util.Locale;
 import java.util.Random;
@@ -329,7 +331,9 @@ public class PluginTest {
     }
 
     @Test
-    public void test12_clientCommandTest() {
+    public void test12_clientCommandTest() throws InterruptedException {
+        playerDB.get(player.uuid).level(50);
+
         clientHandler.handleMessage("/alert", player);
         assertTrue(playerDB.get(player.uuid).alert());
 
@@ -355,6 +359,40 @@ public class PluginTest {
         clientHandler.handleMessage("/killall", player);
         assertEquals(0, unitGroup.size());
 
+        // clientHandler.handleMessage("/event host testroom maze survival", player);
+        // TimeUnit.SECONDS.sleep(20);
+        // assertEquals(1, pluginData.eventservers.size);
+
+        clientHandler.handleMessage("/help", player);
+
+        clientHandler.handleMessage("/info", player);
+
+        clientHandler.handleMessage("/jump count localhost 6567", player);
+        assertEquals(1, pluginData.jumpcount.size);
+
+        Player dummy1 = createNewPlayer(true);
+        clientHandler.handleMessage("/kill " + dummy1.name, player);
+        assertTrue(dummy1.isDead());
+
+        //clientHandler.handleMessage("/login", player);
+
+        //clientHandler.handleMessage("/logout", player);
+
+        clientHandler.handleMessage("/maps", player);
+
+        clientHandler.handleMessage("/me It's me!", player);
+
+        clientHandler.handleMessage("/motd", player);
+
+        clientHandler.handleMessage("/save", player);
+
+        clientHandler.handleMessage("/reset count localhost", player);
+        assertEquals(0, pluginData.jumpcount.size);
+
+        //clientHandler.handleMessage("/register testacount testas123 testas123", player);
+
+        clientHandler.handleMessage("/spawn dagger 5 crux", player);
+
         clientHandler.handleMessage("/setperm " + player.name + " newadmin", player);
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
         serverHandler.handleMessage("setperm " + player.name + " owner");
@@ -364,6 +402,8 @@ public class PluginTest {
 
         clientHandler.handleMessage("/setmech omega", player);
         assertSame(Mechs.omega, player.mech);
+
+        clientHandler.handleMessage("/status", player);
 
         clientHandler.handleMessage("/suicide", player);
         assertTrue(player.isDead());
@@ -375,27 +415,33 @@ public class PluginTest {
         assertSame(Team.crux, player.getTeam());
         state.rules.pvp = false;
 
-        Player dummy = createNewPlayer(true);
-        clientHandler.handleMessage("/tempban " + dummy.name + " 10 test", player);
-        assertNotEquals("none", playerDB.get(dummy.uuid).bantimeset());
-
-        clientHandler.handleMessage("/tp " + dummy.name, player);
-        assertTrue(player.x == dummy.x && player.y == dummy.y);
-
         Player dummy2 = createNewPlayer(true);
-        clientHandler.handleMessage("/tpp " + dummy.name + " " + dummy2.name, player);
-        assertTrue(dummy.x == dummy2.x && dummy.y == dummy2.y);
+        clientHandler.handleMessage("/tempban " + dummy2.name + " 10 test", player);
+        assertNotEquals("none", playerDB.get(dummy2.uuid).bantimeset());
+
+        clientHandler.handleMessage("/time", player);
+
+        clientHandler.handleMessage("/tp " + dummy2.name, player);
+        assertTrue(player.x == dummy2.x && player.y == dummy2.y);
+
+        Player dummy3 = createNewPlayer(true);
+        clientHandler.handleMessage("/tpp " + dummy2.name + " " + dummy3.name, player);
+        assertTrue(dummy2.x == dummy3.x && dummy2.y == dummy3.y);
 
         clientHandler.handleMessage("/tppos 50 50", player);
         assertTrue(player.x == 50 && player.y == 50);
 
-        //clientHandler.handleMessage("/vote", player);
+        Player dummy4 = createNewPlayer(true);
+        clientHandler.handleMessage("/vote kick " + dummy4.name, player);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
 
         clientHandler.handleMessage("/weather eday", player);
         assertEquals(0.3f, state.rules.ambientLight.a, 0.0f);
 
-        clientHandler.handleMessage("/mute " + dummy.name, player);
-        assertTrue(playerDB.get(dummy.uuid).mute());
+        clientHandler.handleMessage("/mute " + dummy2.name, player);
+        assertTrue(playerDB.get(dummy2.uuid).mute());
 
         //clientHandler.handleMessage("/votekick");
     }
@@ -421,6 +467,7 @@ public class PluginTest {
         Events.fire(new DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5));
 
         Player dummy = createNewPlayer(false);
+        config.antiVPN(true);
         Events.fire(new PlayerJoin(dummy));
         TimeUnit.SECONDS.sleep(3);
         assertTrue(playerDB.get(dummy.uuid).login());
@@ -437,6 +484,108 @@ public class PluginTest {
         Events.fire(new UnitDestroyEvent(player));
 
         Events.fire(new ServerLoadEvent());
+    }
+
+    @Test
+    public void test14_internal() throws SQLException, ClassNotFoundException {
+        root.child("data/player.sqlite3").delete();
+        Class.forName("org.sqlite.JDBC");
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + root.child("data/player.sqlite3").absolutePath());
+        String sql = "CREATE TABLE IF NOT EXISTS players (\n" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                "name TEXT,\n" +
+                "uuid TEXT,\n" +
+                "country TEXT,\n" +
+                "country_code TEXT,\n" +
+                "language TEXT,\n" +
+                "isadmin TEXT,\n" +
+                "placecount INTEGER,\n" +
+                "breakcount INTEGER,\n" +
+                "killcount INTEGER,\n" +
+                "deathcount INTEGER,\n" +
+                "joincount INTEGER,\n" +
+                "kickcount INTEGER,\n" +
+                "level INTEGER,\n" +
+                "exp INTEGER,\n" +
+                "reqexp INTEGER,\n" +
+                "reqtotalexp TEXT,\n" +
+                "firstdate TEXT,\n" +
+                "lastdate TEXT,\n" +
+                "lastplacename TEXT,\n" +
+                "lastbreakname TEXT,\n" +
+                "lastchat TEXT,\n" +
+                "playtime TEXT,\n" +
+                "attackclear INTEGER,\n" +
+                "pvpwincount INTEGER,\n" +
+                "pvplosecount INTEGER,\n" +
+                "pvpbreakout INTEGER,\n" +
+                "reactorcount INTEGER,\n" +
+                "bantimeset INTEGER,\n" +
+                "bantime TEXT,\n" +
+                "banned TEXT,\n" +
+                "translate TEXT,\n" +
+                "crosschat TEXT,\n" +
+                "colornick TEXT,\n" +
+                "connected TEXT,\n" +
+                "connserver TEXT,\n" +
+                "permission TEXT,\n" +
+                "mute TEXT,\n" +
+                "udid TEXT,\n" +
+                "accountid TEXT,\n" +
+                "accountpw TEXT\n" +
+                ");";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(sql);
+        }
+        String insert = "INSERT INTO 'main'.'players' ('name', 'uuid', 'country', 'country_code', 'language', 'isadmin', 'placecount', 'breakcount', 'killcount', 'deathcount', 'joincount', 'kickcount', 'level', 'exp', 'reqexp', 'reqtotalexp', 'firstdate', 'lastdate', 'lastplacename', 'lastbreakname', 'lastchat', 'playtime', 'attackclear', 'pvpwincount', 'pvplosecount', 'pvpbreakout', 'reactorcount', 'bantimeset', 'bantime', 'banned', 'translate', 'crosschat', 'colornick', 'connected', 'connserver', 'permission', 'mute', 'udid', 'accountid', 'accountpw') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(insert)) {
+            for (int a = 0; a < 30; a++) {
+                pstmt.setString(1, new Faker().name().lastName());
+                pstmt.setString(2, randomString(22) + "==");
+                pstmt.setString(3, "South Korea");
+                pstmt.setString(4, "ko-KR");
+                pstmt.setString(5, "ko-KR");
+                pstmt.setBoolean(6, false);
+                pstmt.setInt(7, 0);
+                pstmt.setInt(8, 0);
+                pstmt.setInt(9, 0);
+                pstmt.setInt(10, 0);
+                pstmt.setInt(11, 0);
+                pstmt.setInt(12, 0);
+                pstmt.setInt(13, 1);
+                pstmt.setInt(14, 0);
+                pstmt.setInt(15, 500);
+                pstmt.setString(16, "0(500) / 500");
+                pstmt.setString(17, tool.getTime());
+                pstmt.setString(18, tool.getTime());
+                pstmt.setString(19, "none");
+                pstmt.setString(20, "none");
+                pstmt.setString(21, "none");
+                pstmt.setString(22, "00:00.00");
+                pstmt.setInt(23, 0);
+                pstmt.setInt(24, 0);
+                pstmt.setInt(25, 0);
+                pstmt.setInt(26, 0);
+                pstmt.setInt(27, 0);
+                pstmt.setInt(28, 0);
+                pstmt.setString(29, "none");
+                pstmt.setBoolean(30, false);
+                pstmt.setBoolean(31, false);
+                pstmt.setBoolean(32, false);
+                pstmt.setBoolean(33, false);
+                pstmt.setBoolean(34, false);
+                pstmt.setString(35, "127.0.0.1");
+                pstmt.setString(36, "default");
+                pstmt.setBoolean(37, false);
+                pstmt.setLong(38, 0L); // UDID
+                pstmt.setString(39, new Faker().name().lastName());
+                pstmt.setString(40, "none");
+                pstmt.execute();
+            }
+        }
+
+        DataMigration dataMigration = new DataMigration();
+        dataMigration.MigrateDB();
     }
 
     @AfterClass

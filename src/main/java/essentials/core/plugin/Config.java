@@ -201,7 +201,7 @@ public class Config {
 
     public void updateConfig() {
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
-        this.bundle = config.bundle;
+        this.bundle = new Bundle(locale);
 
         if (obj.getInt("version", 0) < vars.configVersion()) Log.info("config.updated");
 
