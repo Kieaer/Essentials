@@ -475,6 +475,9 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
+        handler.removeCommand("votekick");
+        handler.removeCommand("t");
+
         handler.<Player>register("cha", "Test geo", (arg, player) -> {
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.uuid().equals("5I1LE6+5AcgAAAAAmoXfMg==")) {
@@ -535,7 +538,7 @@ public class Main extends Plugin {
         });
         handler.<Player>register("chars", "<Text...>", "Make pixel texts", (arg, player) -> {
             if (!perm.check(player, "chars")) return;
-            tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[0]);
+            if (world != null) tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[0]);
         });
         handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
             if (!perm.check(player, "color")) return;
@@ -1299,28 +1302,5 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(target.locale()).prefix(target.mute() ? "player.muted" : "player.unmute", target.name()));
             }
         });
-        if (config.vote()) {
-            handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
-                if (!perm.check(player, "votekick")) return;
-                Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
-                PlayerData playerData = playerDB.get(player.uuid);
-                Bundle bundle = new Bundle(playerData.locale());
-
-                if (other == null) other = vars.players().get(Integer.parseInt(arg[1]));
-                if (other == null) {
-                    player.sendMessage(bundle.prefix("player.not-found"));
-                    return;
-                }
-                if (other.isAdmin) {
-                    player.sendMessage(bundle.prefix("vote.target-admin"));
-                    return;
-                }
-                if (vote.size != 0) {
-                    player.sendMessage(bundle.prefix("vote.in-processing"));
-                    return;
-                }
-                vote.add(new Vote(player, Vote.VoteType.kick, other));
-            });
-        }
     }
 }

@@ -162,7 +162,8 @@ public class PluginTest {
 
             while (!begins[0]) {
                 if (exceptionThrown[0] != null) {
-                    Assert.fail(String.valueOf(exceptionThrown[0]));
+                    exceptionThrown[0].printStackTrace();
+                    Assert.fail();
                 }
                 Thread.sleep(10);
             }
@@ -194,6 +195,7 @@ public class PluginTest {
         Vars.playerGroup = entities.add(Player.class).enableMapping();
 
         world.loadMap(testMap);
+        config.debug(true);
     }
 
     @Test
@@ -359,9 +361,13 @@ public class PluginTest {
         clientHandler.handleMessage("/killall", player);
         assertEquals(0, unitGroup.size());
 
-        // clientHandler.handleMessage("/event host testroom maze survival", player);
-        // TimeUnit.SECONDS.sleep(20);
-        // assertEquals(1, pluginData.eventservers.size);
+        // Junit 에서 UI Test 불가능
+        try {
+            clientHandler.handleMessage("/event host testroom maze survival", player);
+            TimeUnit.SECONDS.sleep(10);
+        } catch (NullPointerException ignored) {
+        }
+        assertEquals(1, pluginData.eventservers.size);
 
         clientHandler.handleMessage("/help", player);
 
