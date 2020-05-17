@@ -129,10 +129,10 @@ public class Vote {
                     }
                     break;
                 case kick:
+                    playerDB.get(target.uuid).kickcount(playerDB.get(target.uuid).kickcount() + 1);
                     tool.sendMessageAll("vote.kick.done");
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
-                    Call.onKick(target.con, Packets.KickReason.vote);
-                    Log.info(target.name + " Player kicked");
+                    target.con.kick(Packets.KickReason.vote);
                     Log.write(Log.LogType.player, "log.player.kick");
                     break;
                 case rollback:

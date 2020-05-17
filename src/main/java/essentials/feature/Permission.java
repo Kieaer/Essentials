@@ -148,7 +148,11 @@ public class Permission {
     }
 
     public boolean isAdmin(PlayerData player) {
-        return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
+        if (permission_user.has(player.uuid())) {
+            return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
+        } else {
+            return false;
+        }
     }
 
     public void setPermission_user(String old, String newid) {

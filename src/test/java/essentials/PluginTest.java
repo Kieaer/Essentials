@@ -7,6 +7,7 @@ import arc.Settings;
 import arc.backend.headless.HeadlessApplication;
 import arc.files.Fi;
 import arc.util.CommandHandler;
+import arc.util.Time;
 import essentials.core.player.PlayerData;
 import essentials.external.DataMigration;
 import essentials.feature.Exp;
@@ -21,8 +22,10 @@ import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.Mechs;
 import mindustry.core.FileTree;
+import mindustry.core.GameState;
 import mindustry.core.Logic;
 import mindustry.core.NetServer;
+import mindustry.entities.traits.BuilderTrait;
 import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.game.Difficulty;
@@ -71,6 +74,10 @@ public class PluginTest {
     @After
     public void resetLog() {
         out.clearLog();
+        try {
+            TimeUnit.MILLISECONDS.sleep(500);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @BeforeClass
@@ -143,6 +150,8 @@ public class PluginTest {
         Vars.playerGroup = entities.add(Player.class).enableMapping();
 
         world.loadMap(testMap[0]);
+
+        state.set(GameState.State.playing);
     }
 
     @Test
@@ -331,7 +340,13 @@ public class PluginTest {
         // Junit 에서 UI Test 불가능
         try {
             clientHandler.handleMessage("/event host testroom maze survival", player);
-            TimeUnit.SECONDS.sleep(10);
+            for (int a = 0; a < 30; a++) {
+                if (pluginData.eventservers.size == 0) {
+                    System.out.print("\rWaiting... " + a);
+                    TimeUnit.SECONDS.sleep(1);
+                }
+            }
+            if (pluginData.eventservers.size == 0) System.out.println("\n");
         } catch (NullPointerException ignored) {
         }
         assertEquals(1, pluginData.eventservers.size);
@@ -343,13 +358,15 @@ public class PluginTest {
         clientHandler.handleMessage("/jump count localhost 6567", player);
         assertEquals(1, pluginData.jumpcount.size);
 
+        clientHandler.handleMessage("/jump zone 127.0.0.1 6567 5 true", player);
+        assertEquals(1, pluginData.jumpzone.size);
+
+        clientHandler.handleMessage("/jump total", player);
+        assertEquals(1, pluginData.jumptotal.size);
+
         Player dummy1 = createNewPlayer(true);
         clientHandler.handleMessage("/kill " + dummy1.name, player);
         assertTrue(dummy1.isDead());
-
-        //clientHandler.handleMessage("/login", player);
-
-        //clientHandler.handleMessage("/logout", player);
 
         clientHandler.handleMessage("/maps", player);
 
@@ -372,8 +389,10 @@ public class PluginTest {
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
         serverHandler.handleMessage("setperm " + player.name + " owner");
 
+        player.set(80 * 8, 80 * 8);
+        player.setNet(80 * 8, 80 * 8);
         clientHandler.handleMessage("/spawn-core big", player);
-        assertSame(Blocks.coreNucleus, world.tile(player.tileX(), player.tileY()).block());
+        assertSame(Blocks.coreNucleus, world.tile(80, 80).block());
 
         clientHandler.handleMessage("/setmech omega", player);
         assertSame(Mechs.omega, player.mech);
@@ -427,9 +446,13 @@ public class PluginTest {
 
         Events.fire(new TapEvent(world.tile(r.nextInt(50), r.nextInt(50)), player));
 
+        Events.fire(new WithdrawEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10));
+
         state.rules.attackMode = true;
         Call.onSetRules(state.rules);
 
+        state.rules.attackMode = true;
+        Call.onSetRules(state.rules);
         Events.fire(new GameOverEvent(Team.sharded));
         assertEquals(1, playerDB.get(player.uuid).attackclear());
 
@@ -463,9 +486,29 @@ public class PluginTest {
 
         Events.fire(new PlayerChatEvent(player, "hi"));
 
+        Time.update();
+        unitGroup.update();
+        puddleGroup.update();
+        shieldGroup.update();
+        bulletGroup.update();
+        tileGroup.update();
+        fireGroup.update();
+        collisions.collideGroups(bulletGroup, unitGroup);
+        collisions.collideGroups(bulletGroup, playerGroup);
+        unitGroup.updateEvents();
+        collisions.updatePhysics(unitGroup);
+        playerGroup.update();
+        effectGroup.update();
+
+        player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5, 0, Blocks.copperWall));
+        Call.onConstructFinish(Vars.world.tile(5, 5), Blocks.copperWall, player.id, (byte) 0, Team.sharded, false);
         Events.fire(new BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false));
 
+        player.buildQueue().clear();
+        player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5));
+        Call.onDeconstructFinish(Vars.world.tile(5, 5), Blocks.air, player.id);
         Events.fire(new BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, false));
+        player.buildQueue().clear();
 
         Events.fire(new UnitDestroyEvent(player));
 

@@ -98,13 +98,15 @@ public class Main extends Plugin {
 
     public Main() throws PluginException {
         // 서버 버전 확인
-        if (Version.build != vars.buildVersion() && Version.revision >= vars.buildRevision()) {
-            try (InputStream reader = getClass().getResourceAsStream("/plugin.json");
-                 BufferedReader br = new BufferedReader(new InputStreamReader(reader))) {
-                throw new PluginException("Essentials " + readJSON(br).asObject().get("version").asString() + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");
-            } catch (IOException e) {
-                log.warn("Plugin", e);
+        try (InputStream reader = getClass().getResourceAsStream("/plugin.json");
+             BufferedReader br = new BufferedReader(new InputStreamReader(reader))) {
+            String version = readJSON(br).asObject().get("version").asString();
+            if (Version.build != vars.buildVersion() && Version.revision >= vars.buildRevision()) {
+                throw new PluginException("Essentials " + version + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");
             }
+            vars.pluginVersion(version);
+        } catch (IOException e) {
+            log.warn("Plugin", e);
         }
 
         if (!root.exists()) {
@@ -383,6 +385,7 @@ public class Main extends Plugin {
                                     "deathcount: " + rs.getInt("deathcount") + "\n" +
                                     "joincount: " + rs.getInt("joincount") + "\n" +
                                     "kickcount: " + rs.getInt("kickcount") + "\n" +
+                                    "votekickcount: " + rs.getInt("votekickcount") + "\n" +
                                     "level: " + rs.getInt("level") + "\n" +
                                     "exp: " + rs.getInt("exp") + "\n" +
                                     "reqexp: " + rs.getInt("reqexp") + "\n" +
@@ -415,7 +418,7 @@ public class Main extends Plugin {
                             if (!current.error()) {
                                 datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
                                         "isLogin: " + current.login() + "\n" +
-                                        "afk: " + current.afk().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
+                                        "afk: " + current.afk().format(DateTimeFormatter.ofPattern("dd HH:mm:ss")) + "\n" +
                                         "afk_tilex: " + current.tilex() + "\n" +
                                         "afk_tiley: " + current.tiley();
 
