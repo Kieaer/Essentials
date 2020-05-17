@@ -88,10 +88,4 @@ public class DataMigration {
             new CrashReport(e);
         }
     }
-
-    public void move(String path) {
-        String data = root.child(path + ".yml").readString();
-        root.child(path + ".hjson").writeString("{\n" + data + "\n}");
-        root.child(path + ".yml").delete();
-    }
 }

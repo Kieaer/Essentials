@@ -30,8 +30,8 @@ public class PlayerDB {
 
         try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
             pstmt.setString(1, uuid);
+            if (AccountID != null && AccountID.length != 0) pstmt.setString(2, AccountID[0]);
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (AccountID != null && AccountID.length != 0) pstmt.setString(2, AccountID[0]);
                 if (rs.next()) {
                     PlayerData data = new PlayerData(
                             rs.getString("name"),

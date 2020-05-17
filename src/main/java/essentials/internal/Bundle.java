@@ -44,19 +44,6 @@ public class Bundle {
         }
     }
 
-    public String get(boolean NotNull, String key, Object... params) {
-        try {
-            return MessageFormat.format(RESOURCE_BUNDLE.getString(key), params);
-        } catch (MissingResourceException e) {
-            if (NotNull) {
-                ResourceBundle bundle = ResourceBundle.getBundle("bundle.bundle", Locale.US, new UTF8Control());
-                return MessageFormat.format(bundle.getString(key), params);
-            } else {
-                return null;
-            }
-        }
-    }
-
     public String prefix(String key, Object... params) {
         try {
             return MessageFormat.format(config.prefix() + RESOURCE_BUNDLE.getString(key), params);

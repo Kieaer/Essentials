@@ -4,6 +4,7 @@ import essentials.internal.CrashReport;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.net.Packets;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -24,6 +25,7 @@ public class PlayerCore {
         } else {
             playerData = playerDB.load(player.uuid, AccountID);
         }
+
         if (playerData.error()) {
             new CrashReport(new Exception("DATA NOT FOUND"));
             return false;
@@ -44,26 +46,27 @@ public class PlayerCore {
         }
 
         if (playerData.colornick()) colornick.targets.add(player);
-        if (perm.permission_user.get(playerData.uuid()) == null) {
-            perm.create(playerData);
-            perm.saveAll();
-        } else {
-            if (config.realName() || config.passwordMethod().equals("discord")) {
-                player.name = playerData.name();
-            } else {
-                player.name = perm.permission_user.get(playerData.uuid()).asObject().get("name").asString();
-            }
-        }
 
-        player.isAdmin = perm.isAdmin(player);
-
+        String oldUUID = playerData.uuid();
         playerData.uuid(player.uuid);
+        playerData.uuid();
         playerData.connected(true);
         playerData.lastdate(tool.getTime());
         playerData.connserver(vars.serverIP());
         playerData.exp(playerData.exp() + playerData.joincount());
         playerData.joincount(playerData.joincount() + 1);
         playerData.login(true);
+
+        perm.setPermission_user(oldUUID, player.uuid);
+
+        if (perm.permission_user.get(player.uuid) == null) {
+            perm.create(playerData);
+            perm.saveAll();
+        } else {
+            player.name = perm.permission_user.get(playerData.uuid()).asObject().get("name").asString();
+        }
+
+        player.isAdmin = perm.isAdmin(playerData);
         return true;
     }
 
@@ -115,7 +118,7 @@ public class PlayerCore {
 
     public boolean isLocal(Player player) {
         try {
-            InetAddress addr = InetAddress.getByName(netServer.admins.getInfo(player.uuid).lastIP);
+            InetAddress addr = InetAddress.getByName(player.con.address);
             if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) return true;
             return NetworkInterface.getByInetAddress(addr) != null;
         } catch (Exception e) {
@@ -123,12 +126,15 @@ public class PlayerCore {
         }
     }
 
-    public boolean login(Player player, String id, String pw) {
-        try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE accountid=? AND accountpw=?")) {
+    public boolean login(String id, String pw) {
+        try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE accountid=?")) {
             pstmt.setString(1, id);
-            pstmt.setString(2, pw);
             try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                if (rs.next()) {
+                    return BCrypt.checkpw(pw, rs.getString("accountpw"));
+                } else {
+                    return false;
+                }
             }
         } catch (SQLException e) {
             new CrashReport(e);

@@ -458,8 +458,9 @@ public class Main extends Plugin {
                     playerData.permission(arg[1]);
                     perm.permission_user.get(playerData.uuid()).asObject().set("group", arg[1]);
                     perm.update();
+                    perm.reload(false);
 
-                    target.isAdmin = perm.isAdmin(target);
+                    target.isAdmin = perm.isAdmin(playerData);
 
                     Log.info(bundle.get("success"));
                     target.sendMessage(new Bundle(playerDB.get(target.uuid).locale()).prefix("perm-changed"));
@@ -530,7 +531,7 @@ public class Main extends Plugin {
             }
             try {
                 Class.forName("org.mindrot.jbcrypt.BCrypt");
-                playerData.accountpw(BCrypt.hashpw(arg[0], BCrypt.gensalt(11)));
+                playerData.accountpw(BCrypt.hashpw(arg[0], BCrypt.gensalt(12)));
                 player.sendMessage(bundle.prefix("success"));
             } catch (ClassNotFoundException e) {
                 new CrashReport(e);
@@ -755,19 +756,16 @@ public class Main extends Plugin {
             PlayerData playerData = playerDB.get(player.uuid);
             if (config.loginEnable()) {
                 if (playerData.error()) {
-                    if (playerCore.login(player, arg[0], arg[1])) {
-                        if (config.passwordMethod().equals("discord")) {
-                            playerCore.load(player, arg[0]);
-                        } else {
-                            playerCore.load(player);
+                    if (playerCore.login(arg[0], arg[1])) {
+                        if (playerCore.load(player, arg[0])) {
+                            player.sendMessage(new Bundle(playerData.locale()).prefix("system.login.success"));
                         }
-                        player.sendMessage(new Bundle(playerData.locale()).prefix("system.login.success"));
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!");
                     }
                 } else {
                     if (config.passwordMethod().equals("mixed")) {
-                        if (playerCore.login(player, arg[0], arg[1])) Call.onConnect(player.con, vars.serverIP(), 7060);
+                        if (playerCore.login(arg[0], arg[1])) Call.onConnect(player.con, vars.serverIP(), 7060);
                     } else {
                         player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.");
                     }
@@ -781,11 +779,11 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
-            if (config.loginEnable()) {
+            if (config.loginEnable() && !playerData.error()) {
                 playerData.connected(false);
                 playerData.connserver("none");
                 playerData.uuid("Logout");
-                Call.onKick(player.con, bundle.get("system.logout"));
+                Call.onKick(player.con, new Bundle(playerData.locale()).get("system.logout"));
             } else {
                 player.sendMessage(bundle.prefix("system.login.disabled"));
             }
@@ -905,10 +903,11 @@ public class Main extends Plugin {
                     default:
                     case "password":
                         Locale lc = tool.getGeo(player);
-                        boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", 0L, arg[0], arg[1]);
+                        String hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12));
+                        boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", 0L, arg[0], hash);
                         if (register) {
-                            PlayerData playerData = playerDB.load(player.uuid, arg[0]);
-                            player.sendMessage(new Bundle(playerData.locale()).prefix("register-success"));
+                            playerCore.load(player);
+                            player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("register-success"));
                         } else {
                             player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!");
                         }

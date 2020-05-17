@@ -47,7 +47,7 @@ public class CrashReport {
                     String logs = "플러그인 버전: " + vars.pluginVersion() + "\n" +
                             "서버 버전: " + Version.build + "." + Version.revision + " " + Version.modifier + "\n" +
                             "OS: " + System.getProperty("os.name") + "\n" +
-                            "플러그인 목록: " + plugins.toString().substring(0, plugins.length() - 2) + "\n" +
+                            "플러그인 목록: " + (plugins.toString().contains(", ") ? plugins.toString().substring(0, plugins.length() - 2) : plugins.toString()) + "\n" +
                             "== 설정파일 ==\n" + JsonValue.readHjson(root.child("config.hjson").readString()).toString(Stringify.HJSON) + "\n" +
                             "== Stacktrace ==\n" + sb.toString() + "\n!exit!\n";
 

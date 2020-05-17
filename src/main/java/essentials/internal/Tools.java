@@ -68,6 +68,7 @@ public class Tools {
     public Locale getGeo(Object data) {
         String ip = data instanceof Player ? netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
         Locale loc = Locale.US;
+        if (ip.equals("<unknown>")) return loc;
         JsonObject result = readJSON(getWebContent("https://ipapi.co/" + ip + "/json")).asObject();
 
         if (result.get("reserved") != null) {

@@ -13,8 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.text.ParseException;
 
-import static essentials.Main.playerDB;
-import static essentials.Main.root;
+import static essentials.Main.*;
 import static mindustry.Vars.playerGroup;
 
 public class Permission {
@@ -116,7 +115,7 @@ public class Permission {
             try {
                 permission_user = JsonValue.readHjson(root.child("permission_user.hjson").reader()).asObject();
                 for (Player p : playerGroup.all()) {
-                    p.isAdmin = isAdmin(p);
+                    p.isAdmin = isAdmin(vars.playerData().find(d -> d.name().equals(p.name)));
                 }
             } catch (IOException e) {
                 // 이것도 유저들이 알아야 고침
@@ -131,11 +130,12 @@ public class Permission {
         PlayerData p = playerDB.get(player.uuid);
 
         if (!p.error()) {
-            JsonObject object = permission_user.get(player.uuid).asObject();
+            JsonValue object = permission_user.get(player.uuid);
             if (object != null) {
-                int size = permission.get(object.get("group").asString()).asObject().get("permission").asArray().size();
+                JsonObject obj = object.asObject();
+                int size = permission.get(obj.get("group").asString()).asObject().get("permission").asArray().size();
                 for (int a = 0; a < size; a++) {
-                    String permlevel = permission.get(object.get("group").asString()).asObject().get("permission").asArray().get(a).asString();
+                    String permlevel = permission.get(obj.get("group").asString()).asObject().get("permission").asArray().get(a).asString();
                     if (permlevel.equals(command) || permlevel.equals("ALL")) {
                         return true;
                     }
@@ -147,14 +147,16 @@ public class Permission {
         return false;
     }
 
-    public boolean isAdmin(Player player) {
-        if (player == null) {
-            new CrashReport(new Exception("isAdmin player NULL!"));
-            Core.app.dispose();
-            Core.app.exit();
-            System.exit(0);
+    public boolean isAdmin(PlayerData player) {
+        return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
+    }
+
+    public void setPermission_user(String old, String newid) {
+        if (!old.equals(newid)) {
+            JsonObject oldJson = permission_user.get(old).asObject();
+            permission_user.set(newid, oldJson);
+            permission_user.remove(old);
+            update();
         }
-        PlayerData p = playerDB.get(player.uuid);
-        return permission_user.get(p.uuid()).asObject().getBoolean("admin", false);
     }
 }

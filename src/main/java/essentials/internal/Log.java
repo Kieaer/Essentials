@@ -62,7 +62,7 @@ public class Log {
         }
 
         if (mainlog == null) mainlog = logfolder.child(type + ".log");
-        mainlog.writeString("[" + tool.getTime() + "]" + config.bundle.get(value, params) + "\n", true);
+        mainlog.writeString("[" + tool.getTime() + "] " + (config.bundle.get(value, params) != null ? config.bundle.get(value, params) : value) + "\n", true);
     }
 
     public enum LogType {
