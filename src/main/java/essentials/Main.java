@@ -1196,10 +1196,11 @@ public class Main extends Plugin {
                         if (target == null) {
                             player.sendMessage(bundle.prefix("player.not-found"));
                             return;
-                        }
-
-                        if (target.isAdmin) {
+                        } else if (target.isAdmin) {
                             player.sendMessage(bundle.prefix("vote.target-admin"));
+                            return;
+                        } else if (target == player) {
+                            player.sendMessage(bundle.prefix("vote.target-own"));
                             return;
                         }
 
