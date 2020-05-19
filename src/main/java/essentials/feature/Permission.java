@@ -7,6 +7,7 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import essentials.internal.exception.PluginException;
 import mindustry.entities.type.Player;
+import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.hjson.Stringify;
@@ -16,6 +17,7 @@ import java.io.IOException;
 
 import static essentials.Main.*;
 import static mindustry.Vars.playerGroup;
+import static org.hjson.JsonValue.readHjson;
 
 public class Permission {
     public JsonObject permission;
@@ -69,7 +71,6 @@ public class Permission {
     }
 
     public void saveAll() {
-        root.child("permission.hjson").writeString(permission.toString(Stringify.FORMATTED));
         root.child("permission_user.hjson").writeString(permission_user.toString(Stringify.FORMATTED));
     }
 
@@ -104,8 +105,12 @@ public class Permission {
                         String name = data.getName();
                         if (name.equals("default")) {
                             default_group = name;
-                            permission.get("default").asObject().add("default", true);
-                            saveAll();
+                            JsonObject json = readHjson(root.child("permission.hjson").reader()).asObject();
+                            JsonArray perms = json.get("default").asObject().get("permission").asArray();
+                            json.get("default").asObject().remove("permission");
+                            json.get("default").asObject().add("default", true);
+                            json.get("default").asObject().add("permission", perms);
+                            root.child("permission.hjson").writeString(json.toString(Stringify.HJSON));
                         }
                     }
                 }
