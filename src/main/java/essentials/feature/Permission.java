@@ -2,8 +2,10 @@ package essentials.feature;
 
 import arc.Core;
 import essentials.core.player.PlayerData;
+import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import essentials.internal.exception.PluginException;
 import mindustry.entities.type.Player;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -11,7 +13,6 @@ import org.hjson.Stringify;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.text.ParseException;
 
 import static essentials.Main.*;
 import static mindustry.Vars.playerGroup;
@@ -84,7 +85,7 @@ public class Permission {
                             }
                         } else if (init) {
                             // TODO 언어별 오류 메세지 추가
-                            throw new IOException("Duplicate default group settings. check permission.hjson");
+                            throw new PluginException(new Bundle(config.locale).get("system.perm.duplicate"));
                         }
                     }
                     if (permission.get(name).asObject().get("inheritance") != null) {
@@ -99,8 +100,8 @@ public class Permission {
                 }
 
                 if (default_group == null)
-                    throw new ParseException("Please SET default group in permission.hjson file.", 0);
-            } catch (ParseException | IOException e) {
+                    throw new PluginException(new Bundle(config.locale).get("system.perm.no-default"));
+            } catch (IOException e) {
                 Log.err(e.getMessage());
                 Core.app.dispose();
                 Core.app.exit();
