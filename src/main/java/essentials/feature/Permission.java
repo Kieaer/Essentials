@@ -69,6 +69,7 @@ public class Permission {
     }
 
     public void saveAll() {
+        root.child("permission.hjson").writeString(permission.toString(Stringify.FORMATTED));
         root.child("permission_user.hjson").writeString(permission_user.toString(Stringify.FORMATTED));
     }
 
@@ -84,7 +85,6 @@ public class Permission {
                                 default_group = name;
                             }
                         } else if (init) {
-                            // TODO 언어별 오류 메세지 추가
                             throw new PluginException(new Bundle(config.locale).get("system.perm.duplicate"));
                         }
                     }
@@ -99,8 +99,20 @@ public class Permission {
                     }
                 }
 
-                if (default_group == null)
+                if (default_group == null) {
+                    for (JsonObject.Member data : permission) {
+                        String name = data.getName();
+                        if (name.equals("default")) {
+                            default_group = name;
+                            permission.get("default").asObject().add("default", true);
+                            saveAll();
+                        }
+                    }
+                }
+
+                if (default_group == null) {
                     throw new PluginException(new Bundle(config.locale).get("system.perm.no-default"));
+                }
             } catch (IOException e) {
                 Log.err(e.getMessage());
                 Core.app.dispose();
