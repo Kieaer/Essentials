@@ -1229,6 +1229,8 @@ public class Main extends Plugin {
                             player.sendMessage(bundle.prefix("vote.wrong-gamemode"));
                         }
                         break;
+                    case "skipwave":
+                        vote.add(new Vote(player, Vote.VoteType.skipwave));
                     default:
                         switch (arg[0]) {
                             case "gamemode":
