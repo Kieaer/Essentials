@@ -55,17 +55,21 @@ public class Vote {
                 tool.sendMessageAll("vote.kick", player.name, target.name);
                 break;
             case gameover:
+                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.gameover");
                 break;
             case skipwave:
+                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.skipwave");
                 break;
             case rollback:
+                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.rollback");
                 break;
             case gamemode:
                 if (parameters[0] instanceof Gamemode) {
                     this.gamemode = (Gamemode) parameters[0];
+                    tool.sendMessageAll("vote.suggester-name", player.name);
                     tool.sendMessageAll("vote-gamemode", gamemode.name());
                 } else {
                     player.sendMessage("vote.wrong-gamemode");
@@ -75,7 +79,8 @@ public class Vote {
             case map:
                 if (parameters[0] instanceof Map) {
                     this.map = (Map) parameters[0];
-                    tool.sendMessageAll("vote.map");
+                    tool.sendMessageAll("vote.suggester-name", player.name);
+                    tool.sendMessageAll("vote.map", map.name());
                 }
                 break;
             default:
