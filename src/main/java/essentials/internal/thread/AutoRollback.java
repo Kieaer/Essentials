@@ -38,22 +38,23 @@ public class AutoRollback extends TimerTask {
         try {
             Fi file = saveDirectory.child(config.slotNumber() + "." + saveExtension);
             SaveIO.load(file);
+
+            logic.play();
+
+            for (Player p : players) {
+                if (p.con == null) continue;
+
+                p.reset();
+                if (state.rules.pvp) {
+                    p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+                }
+                netServer.sendWorldData(p);
+            }
         } catch (SaveIO.SaveException e) {
             new CrashReport(e);
         }
-        logic.play();
-
-        for (Player p : players) {
-            if (p.con == null) continue;
-
-            p.reset();
-            if (state.rules.pvp) {
-                p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
-            }
-            netServer.sendWorldData(p);
-        }
         Log.info("Map rollbacked.");
-        Call.sendMessage("[green]Map rollbacked.");
+        if (state.is(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.");
     }
 
     @Override
