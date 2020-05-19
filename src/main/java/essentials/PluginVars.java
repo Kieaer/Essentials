@@ -14,12 +14,6 @@ public class PluginVars {
     private int buildVersion = 104;
     private int buildRevision = 6;
     private int configVersion = 13;
-    private String[] DBURL = new String[]{
-            "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar",
-            "https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.6.0/mariadb-java-client-2.6.0.jar",
-            "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.12/postgresql-42.2.12.jar",
-            "https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar",
-    };
     private String serverIP = tool.getHostIP();
     private String pluginVersion;
     private LocalTime uptime = LocalTime.of(0, 0, 0);
@@ -58,14 +52,6 @@ public class PluginVars {
 
     public void configVersion(int configVersion) {
         this.configVersion = configVersion;
-    }
-
-    public String[] dburl() {
-        return DBURL;
-    }
-
-    public void dburl(String[] dburl) {
-        this.DBURL = dburl;
     }
 
     public String serverIP() {

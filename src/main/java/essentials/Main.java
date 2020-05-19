@@ -15,7 +15,6 @@ import essentials.core.player.PlayerDB;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.Config;
 import essentials.core.plugin.PluginData;
-import essentials.external.DriverLoader;
 import essentials.external.StringUtils;
 import essentials.feature.*;
 import essentials.internal.Event;
@@ -156,9 +155,6 @@ public class Main extends Plugin {
         mainThread.submit(new PermissionWatch());
         mainThread.submit(colornick);
         mainThread.submit(jumpBorder);
-
-        // DB 드라이버 로딩
-        new DriverLoader();
 
         // DB 연결
         try {

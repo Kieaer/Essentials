@@ -7,8 +7,6 @@ import essentials.internal.CrashReport;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.sql.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -16,7 +14,6 @@ import java.time.format.DateTimeParseException;
 import java.util.function.Consumer;
 
 import static essentials.Main.config;
-import static essentials.Main.root;
 
 public class Database {
     public Method m;
@@ -86,19 +83,6 @@ public class Database {
 
     public void server_start() {
         // TODO H2 library 사용
-        try {
-            URLClassLoader cla = new URLClassLoader(new URL[]{root.child("Driver/h2-1.4.200.jar").file().toURI().toURL()}, this.getClass().getClassLoader());
-            cl = Class.forName("org.h2.tools.Server", true, cla);
-            Object obj = cl.getDeclaredConstructor().newInstance();
-
-            m = cl.getMethod("createTcpServer", String[].class);
-            service = m.invoke(obj, new Object[]{new String[]{"-tcp", "-tcpPort", "9090", "-baseDir", "./" + root.child("data").path(), "-tcpAllowOthers"}});
-
-            m = cl.getMethod("start");
-            m.invoke(service);
-        } catch (Exception e) {
-            new CrashReport(e);
-        }
     }
 
     public void server_stop() throws Exception {
