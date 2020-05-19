@@ -36,7 +36,7 @@ public class Vote {
     public VoteType type;
     public Array<String> voted = new Array<>();
 
-    public double require;
+    public int require;
     public int time = 0;
     public int message_time = 0;
 
@@ -46,7 +46,7 @@ public class Vote {
         this.bundle = new Bundle(playerData.locale());
         this.type = voteType;
 
-        require = playerGroup.size() / 2.0;
+        require = (int) Math.round((double) vars.playerData().size / 3);
 
         switch (type) {
             case kick:

@@ -4,7 +4,6 @@ import arc.files.Fi;
 import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.Vars;
 import mindustry.core.GameState;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
@@ -26,9 +25,15 @@ public class AutoRollback extends TimerTask {
     }
 
     public void load() {
-        Array<Player> all = Vars.playerGroup.all();
         Array<Player> players = new Array<>();
-        players.addAll(all);
+        for (Player p : playerGroup.all()) {
+            players.add(p);
+            p.setDead(true);
+        }
+
+        logic.reset();
+
+        Call.onWorldDataBegin();
 
         try {
             Fi file = saveDirectory.child(config.slotNumber() + "." + saveExtension);
@@ -36,16 +41,16 @@ public class AutoRollback extends TimerTask {
         } catch (SaveIO.SaveException e) {
             new CrashReport(e);
         }
-
-        Call.onWorldDataBegin();
+        logic.play();
 
         for (Player p : players) {
-            Vars.netServer.sendWorldData(p);
-            p.reset();
+            if (p.con == null) continue;
 
-            if (Vars.state.rules.pvp) {
-                p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+            p.reset();
+            if (state.rules.pvp) {
+                p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
             }
+            netServer.sendWorldData(p);
         }
         Log.info("Map rollbacked.");
         Call.sendMessage("[green]Map rollbacked.");

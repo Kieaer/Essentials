@@ -385,7 +385,6 @@ public class Main extends Plugin {
                                     "deathcount: " + rs.getInt("deathcount") + "\n" +
                                     "joincount: " + rs.getInt("joincount") + "\n" +
                                     "kickcount: " + rs.getInt("kickcount") + "\n" +
-                                    "votekickcount: " + rs.getInt("votekickcount") + "\n" +
                                     "level: " + rs.getInt("level") + "\n" +
                                     "exp: " + rs.getInt("exp") + "\n" +
                                     "reqexp: " + rs.getInt("reqexp") + "\n" +
@@ -418,7 +417,7 @@ public class Main extends Plugin {
                             if (!current.error()) {
                                 datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
                                         "isLogin: " + current.login() + "\n" +
-                                        "afk: " + current.afk().format(DateTimeFormatter.ofPattern("dd HH:mm:ss")) + "\n" +
+                                        "afk: " + current.afk().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
                                         "afk_tilex: " + current.tilex() + "\n" +
                                         "afk_tiley: " + current.tiley();
 
@@ -473,7 +472,8 @@ public class Main extends Plugin {
             Log.warn(bundle.get("perm-group-not-found"));
         });
         handler.register("reload", "Reload Essential plugin data", (arg) -> {
-
+            perm.reload(false);
+            Log.info("plugin-reloaded");
         });
     }
 
@@ -658,6 +658,7 @@ public class Main extends Plugin {
             String datatext = "[#DEA82A]" + new Bundle(playerData.locale()).get("player.info") + "[]\n" +
                     "[#2B60DE]====================================[]\n" +
                     "[green]" + bundle.get("player.name") + "[] : " + player.name + "[white]\n" +
+                    "[green]" + bundle.get("player.uuid") + "[] : " + playerData.uuid() + "[white]\n" +
                     "[green]" + bundle.get("player.country") + "[] : " + playerData.locale().getDisplayCountry(playerData.locale()) + "\n" +
                     "[green]" + bundle.get("player.placecount") + "[] : " + playerData.placecount() + "\n" +
                     "[green]" + bundle.get("player.breakcount") + "[] : " + playerData.breakcount() + "\n" +
@@ -1013,7 +1014,7 @@ public class Main extends Plugin {
                 case "delta":
                     mech = Mechs.delta;
                     break;
-                case "javalin":
+                case "javelin":
                     mech = Mechs.javelin;
                     break;
                 case "omega":
