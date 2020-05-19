@@ -26,7 +26,6 @@ import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.content.Bullets;
 import mindustry.content.Mechs;
 import mindustry.core.Version;
 import mindustry.entities.type.BaseUnit;
@@ -59,12 +58,14 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Timer;
 import java.util.concurrent.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
@@ -481,28 +482,6 @@ public class Main extends Plugin {
     public void registerClientCommands(CommandHandler handler) {
         handler.removeCommand("votekick");
         handler.removeCommand("t");
-
-        handler.<Player>register("cha", "Test geo", (arg, player) -> {
-            PlayerData playerData = playerDB.get(player.uuid);
-            if (playerData.uuid().equals("5I1LE6+5AcgAAAAAmoXfMg==")) {
-                new Thread(() -> {
-                    Random r = new Random();
-                    for (int a = 0; a < 600; a++) {
-                        Call.createBullet(Bullets.meltdownLaser, Team.sharded, player.getX(), player.getY(), player.rotation, 1f, 1f);
-                        Call.createBullet(Bullets.artilleryHoming, Team.sharded, player.getX(), player.getY(), player.rotation > 0 ? (player.rotation - 180) + r.nextInt(20 + 1 - -20) - 20 : r.nextInt(20 + 1 - -20) - 20 + r.nextInt(15), 1f, 1f);
-                        Call.createBullet(Bullets.flakSurge, Team.sharded, player.getX(), player.getY(), player.rotation > 0 ? (player.rotation - 90) - r.nextInt(20 + 1 - -20) - 20 : (player.rotation + 90) + r.nextInt(20 + 1 - -20) - 20, 1f, 1f);
-                        Call.createBullet(Bullets.flakSurge, Team.sharded, player.getX(), player.getY(), player.rotation > 0 ? (player.rotation + 160) - r.nextInt(20 + 1 - -20) - 20 : (player.rotation - 90) + r.nextInt(20 + 1 - -20) - 20, 1f, 1f);
-                        try {
-                            sleep(16);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        player.heal();
-                    }
-
-                }).start();
-            }
-        });
         handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
             if (!perm.check(player, "alert")) return;
 
