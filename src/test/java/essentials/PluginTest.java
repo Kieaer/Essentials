@@ -226,11 +226,10 @@ public class PluginTest {
     }
 
     @Test
-    public void test06_remoteDatabase() throws Exception {
-        database.server_start();
-        assertNotNull(database.cl);
-        database.server_stop();
-        assertNull(database.cl);
+    public void test06_remoteDatabase() {
+        if (config.dbServer()) {
+            assertNotNull(database.server);
+        }
     }
 
     @Test

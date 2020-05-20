@@ -158,11 +158,10 @@ public class Main extends Plugin {
 
         // DB 연결
         try {
-            database.connect();
+            database.connect(config.dbServer());
             database.create();
             database.LegacyUpgrade();
-            if (config.dbServer()) database.server_start();
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             new CrashReport(e);
         }
 

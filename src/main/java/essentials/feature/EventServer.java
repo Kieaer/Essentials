@@ -16,7 +16,6 @@ import java.nio.file.Paths;
 import java.util.TimerTask;
 
 import static essentials.Main.*;
-import static essentials.external.DriverLoader.URLDownload;
 import static org.hjson.JsonValue.readJSON;
 
 public class EventServer {
@@ -27,7 +26,7 @@ public class EventServer {
             JsonObject json = readJSON(tool.getWebContent("https://api.github.com/repos/anuken/Mindustry/releases/latest")).asObject();
             String url = json.get("assets").asArray().get(0).asObject().get("browser_download_url").asString();
             root.child("temp").child(roomname).mkdirs();
-            URLDownload(new URL(url), root.child("temp/" + roomname + "/server.jar").file());
+            tool.URLDownload(new URL(url), root.child("temp/" + roomname + "/server.jar").file());
             EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
             service.start();
             Thread.sleep(5000);

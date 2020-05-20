@@ -4,6 +4,7 @@ import arc.struct.Array;
 import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
+import org.h2.tools.Server;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
@@ -14,12 +15,14 @@ import java.time.format.DateTimeParseException;
 import java.util.function.Consumer;
 
 import static essentials.Main.config;
+import static essentials.Main.root;
 
 public class Database {
     public Method m;
     public Object service;
     public Connection conn;
-    public Class<?> cl = null;
+
+    public Server server;
 
     public void create() {
         String data = "CREATE TABLE IF NOT EXISTS players (" +
@@ -73,28 +76,29 @@ public class Database {
         }
     }
 
-    public void connect() throws SQLException {
-        conn = DriverManager.getConnection(config.dbUrl());
+    public void connect(boolean isServer) throws SQLException, ClassNotFoundException {
+        if (isServer) {
+            Class.forName("org.h2.Driver");
+            server = Server.createTcpServer("-tcpPort", "9079", "-tcpAllowOthers", "-tcpDaemon", "-baseDir", "./" + root.child("data").path(), "-ifNotExists");
+            server.start();
+            conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player");
+        } else {
+            conn = DriverManager.getConnection(config.dbUrl());
+        }
     }
 
     public void disconnect() throws SQLException {
         conn.close();
     }
 
-    public void server_start() {
-        // TODO H2 library 사용
-    }
-
-    public void server_stop() throws Exception {
-        m = cl.getMethod("stop");
-        m.invoke(service);
-        cl = null;
+    public void server_stop() {
+        server.stop();
     }
 
     public void dispose() {
         try {
             disconnect();
-            if (cl != null) server_stop();
+            if (server != null) server_stop();
         } catch (Exception e) {
             new CrashReport(e);
         }

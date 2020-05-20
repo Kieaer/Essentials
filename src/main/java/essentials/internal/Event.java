@@ -34,7 +34,6 @@ import java.util.Base64;
 import java.util.Locale;
 
 import static essentials.Main.*;
-import static essentials.external.DriverLoader.URLDownload;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
 import static mindustry.core.NetClient.onSetRules;
@@ -663,7 +662,7 @@ public class Event {
                                 mainThread.shutdown();
                                 database.dispose();
 
-                                URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
+                                tool.URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
                                         Core.settings.getDataDirectory().child("mods/Essentials.jar").file());
                                 Core.app.exit();
                             } catch (Exception ex) {
