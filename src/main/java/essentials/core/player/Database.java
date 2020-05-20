@@ -1,18 +1,13 @@
 package essentials.core.player;
 
-import arc.struct.Array;
-import arc.struct.ArrayMap;
-import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
 import org.h2.tools.Server;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.sql.*;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.function.Consumer;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import static essentials.Main.config;
 import static essentials.Main.root;
@@ -99,119 +94,6 @@ public class Database {
         try {
             disconnect();
             if (server != null) server_stop();
-        } catch (Exception e) {
-            new CrashReport(e);
-        }
-    }
-
-    public void LegacyUpgrade() {
-        Array<PlayerData> buffer = new Array<>();
-        try (PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM players");
-             ResultSet rs = pstmt.executeQuery();
-             Statement sm = conn.createStatement()) {
-            while (rs.next()) {
-                try {
-                    try {
-                        LocalTime lc = LocalTime.parse(rs.getString("playtime"), DateTimeFormatter.ofPattern("HH:mm.ss"));
-                        PreparedStatement update = conn.prepareStatement("UPDATE players SET playtime=? WHERE uuid=?");
-                        update.setString(1, lc.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-                        update.setString(2, rs.getString("uuid"));
-                        update.execute();
-                        update.close();
-                    } catch (DateTimeParseException ignored) {
-                    }
-
-                    PlayerData data = new PlayerData(
-                            rs.getString("name"),
-                            rs.getString("uuid"),
-                            rs.getString("country"),
-                            rs.getString("country_code"),
-                            rs.getString("language"),
-                            rs.getBoolean("isAdmin"),
-                            rs.getInt("placecount"),
-                            rs.getInt("breakcount"),
-                            rs.getInt("killcount"),
-                            rs.getInt("deathcount"),
-                            rs.getInt("joincount"),
-                            rs.getInt("kickcount"),
-                            rs.getInt("level"),
-                            rs.getInt("exp"),
-                            rs.getInt("reqexp"),
-                            rs.getString("reqtotalexp"),
-                            rs.getString("firstdate"),
-                            rs.getString("lastdate"),
-                            rs.getString("lastplacename"),
-                            rs.getString("lastbreakname"),
-                            rs.getString("lastchat"),
-                            rs.getString("playtime"),
-                            rs.getInt("attackclear"),
-                            rs.getInt("pvpwincount"),
-                            rs.getInt("pvplosecount"),
-                            rs.getInt("pvpbreakout"),
-                            rs.getInt("reactorcount"),
-                            rs.getString("bantimeset"),
-                            rs.getString("bantime"),
-                            rs.getBoolean("banned"),
-                            rs.getBoolean("translate"),
-                            rs.getBoolean("crosschat"),
-                            rs.getBoolean("colornick"),
-                            rs.getBoolean("connected"),
-                            rs.getString("connserver"),
-                            rs.getString("permission"),
-                            rs.getBoolean("mute"),
-                            rs.getBoolean("alert"),
-                            rs.getLong("udid"),
-                            rs.getString("accountid"),
-                            rs.getString("accountpw")
-                    );
-                    buffer.add(data);
-                } catch (Exception e) {
-                    LoggerFactory.getLogger(Database.class).info("Database", e);
-                    break;
-                }
-            }
-
-            sm.execute("DROP TABLE players");
-            create();
-
-            for (PlayerData p : buffer) {
-                StringBuilder sql = new StringBuilder();
-                sql.append("INSERT INTO players VALUES(");
-
-                ArrayMap<String, Object> js = p.toMap();
-
-                js.forEach((s) -> sql.append("?,"));
-                sql.deleteCharAt(sql.length() - 1);
-                sql.append(")");
-
-
-                try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-                    js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
-                        int index = 1;
-
-                        @Override
-                        public void accept(ObjectMap.Entry<String, Object> o) {
-                            try {
-                                if (o.value instanceof String) {
-                                    ps.setString(index, (String) o.value);
-                                } else if (o.value instanceof Boolean) {
-                                    ps.setBoolean(index, (Boolean) o.value);
-                                } else if (o.value instanceof Integer) {
-                                    ps.setInt(index, (Integer) o.value);
-                                } else if (o.value instanceof Long) {
-                                    ps.setLong(index, (Long) o.value);
-                                }
-                            } catch (SQLException e) {
-                                new CrashReport(e);
-                            }
-                            index++;
-                        }
-                    });
-                    ps.execute();
-                } catch (SQLException e) {
-                    new CrashReport(e);
-                }
-            }
         } catch (Exception e) {
             new CrashReport(e);
         }

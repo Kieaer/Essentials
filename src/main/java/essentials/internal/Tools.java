@@ -18,6 +18,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.Clob;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -388,5 +392,23 @@ public class Tools {
             Log.info(filename + " Downloading...");
             URLDownload((URL) value, root.child("Driver/" + filename).file());
         }*/
+    }
+
+    public JsonObject resultToJson(ResultSet rs) throws SQLException, IOException {
+        StringBuilder builder = new StringBuilder();
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        JsonObject resultsMap = new JsonObject();
+        for (int i = 1; i <= columnCount; ++i) {
+            String columnName = metaData.getColumnName(i).toLowerCase();
+            Clob object = rs.getClob(i);
+            Reader r = object.getCharacterStream();
+            int ch;
+            while ((ch = r.read()) != -1) {
+                builder.append((char) ch);
+            }
+            resultsMap.add(columnName, builder.toString());
+        }
+        return resultsMap;
     }
 }

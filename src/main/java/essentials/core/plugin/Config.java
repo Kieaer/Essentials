@@ -433,32 +433,16 @@ public class Config {
         return serverEnable;
     }
 
-    public void serverEnable(boolean serverEnable) {
-        this.serverEnable = serverEnable;
-    }
-
     public int serverPort() {
         return serverPort;
-    }
-
-    public void serverPort(int serverPort) {
-        this.serverPort = serverPort;
     }
 
     public boolean clientEnable() {
         return clientEnable;
     }
 
-    public void clientEnable(boolean clientEnable) {
-        this.clientEnable = clientEnable;
-    }
-
     public int clientPort() {
         return clientPort;
-    }
-
-    public void clientPort(int clientPort) {
-        this.clientPort = clientPort;
     }
 
     public String clientHost() {
@@ -473,136 +457,68 @@ public class Config {
         return realName;
     }
 
-    public void realName(boolean realName) {
-        this.realName = realName;
-    }
-
     public boolean strictName() {
         return strictName;
-    }
-
-    public void strictName(boolean strictName) {
-        this.strictName = strictName;
     }
 
     public int cupdatei() {
         return cupdatei;
     }
 
-    public void cupdatei(int cupdatei) {
-        this.cupdatei = cupdatei;
-    }
-
     public boolean scanResource() {
         return scanResource;
-    }
-
-    public void scanResource(boolean scanResource) {
-        this.scanResource = scanResource;
     }
 
     public boolean antiGrief() {
         return antiGrief;
     }
 
-    public void antiGrief(boolean antiGrief) {
-        this.antiGrief = antiGrief;
-    }
-
     public boolean alertAction() {
         return alertAction;
-    }
-
-    public void alertAction(boolean alertAction) {
-        this.alertAction = alertAction;
     }
 
     public boolean expLimit() {
         return expLimit;
     }
 
-    public void expLimit(boolean expLimit) {
-        this.expLimit = expLimit;
-    }
-
     public double baseXp() {
         return baseXp;
-    }
-
-    public void baseXp(double baseXp) {
-        this.baseXp = baseXp;
     }
 
     public double exponent() {
         return exponent;
     }
 
-    public void exponent(double exponent) {
-        this.exponent = exponent;
-    }
-
     public boolean levelUpAlarm() {
         return levelUpAlarm;
-    }
-
-    public void levelUpAlarm(boolean levelUpAlarm) {
-        this.levelUpAlarm = levelUpAlarm;
     }
 
     public int alarmLevel() {
         return alarmLevel;
     }
 
-    public void alarmLevel(int alarmLevel) {
-        this.alarmLevel = alarmLevel;
-    }
-
     public boolean banShare() {
         return banShare;
-    }
-
-    public void banShare(boolean banShare) {
-        this.banShare = banShare;
     }
 
     public JsonArray banTrust() {
         return banTrust;
     }
 
-    public void banTrust(JsonArray banTrust) {
-        this.banTrust = banTrust;
-    }
-
     public boolean query() {
         return query;
-    }
-
-    public void query(boolean query) {
-        this.query = query;
     }
 
     public boolean antiVPN() {
         return antiVPN;
     }
 
-    public void antiVPN(boolean antiVpn) {
-        this.antiVPN = antiVpn;
-    }
-
     public boolean antiRush() {
         return antiRush;
     }
 
-    public void antiRush(boolean antiRush) {
-        this.antiRush = antiRush;
-    }
-
     public LocalTime antiRushtime() {
         return antiRushtime;
-    }
-
-    public void antiRushtime(LocalTime antiRushtime) {
-        this.antiRushtime = antiRushtime;
     }
 
     public boolean vote() {
@@ -617,10 +533,6 @@ public class Config {
         return logging;
     }
 
-    public void logging(boolean logging) {
-        this.logging = logging;
-    }
-
     public boolean update() {
         return update;
     }
@@ -633,16 +545,8 @@ public class Config {
         return internalDB;
     }
 
-    public void internalDB(boolean internalDB) {
-        this.internalDB = internalDB;
-    }
-
     public boolean dbServer() {
         return dbServer;
-    }
-
-    public void dbServer(boolean dbServer) {
-        this.dbServer = dbServer;
     }
 
     public String dbUrl() {
@@ -665,96 +569,49 @@ public class Config {
         return oldDBurl;
     }
 
-    public void oldDBurl(String oldDBurl) {
-        this.oldDBurl = oldDBurl;
-    }
-
     public String oldDBid() {
         return oldDBid;
-    }
-
-    public void oldDBid(String oldDBid) {
-        this.oldDBid = oldDBid;
     }
 
     public String oldDBpw() {
         return oldDBpw;
     }
 
-    public void oldDBpw(String oldDBpw) {
-        this.oldDBpw = oldDBpw;
-    }
-
     public String dataserverUrl() {
         return dataserverUrl;
-    }
-
-    public void dataserverUrl(String dataserverUrl) {
-        this.dataserverUrl = dataserverUrl;
     }
 
     public String dataserverId() {
         return dataserverId;
     }
 
-    public void dataserverId(String dataserverId) {
-        this.dataserverId = dataserverId;
-    }
-
     public String dataserverPw() {
         return dataserverPw;
-    }
-
-    public void dataserverPw(String dataserverPw) {
-        this.dataserverPw = dataserverPw;
     }
 
     public boolean loginEnable() {
         return loginEnable;
     }
 
-    public void loginEnable(boolean loginEnable) {
-        this.loginEnable = loginEnable;
-    }
-
     public String passwordMethod() {
         return passwordMethod;
-    }
-
-    public void passwordMethod(String passwordMethod) {
-        this.passwordMethod = passwordMethod;
     }
 
     public boolean validConnect() {
         return validConnect;
     }
 
-    public void validConnect(boolean validConnect) {
-        this.validConnect = validConnect;
-    }
-
     public boolean autoLogin() {
         return autoLogin;
-    }
-
-    public void autoLogin(boolean autoLogin) {
-        this.autoLogin = autoLogin;
     }
 
     public String discordToken() {
         return discordToken;
     }
 
-    public void discordToken(String discordToken) {
-        this.discordToken = discordToken;
-    }
 
     public String discordLink() {
         return discordLink;
-    }
-
-    public void discordLink(String discordLink) {
-        this.discordLink = discordLink;
     }
 
     public boolean translate() {
@@ -769,135 +626,68 @@ public class Config {
         return translateId;
     }
 
-    public void translateId(String translateId) {
-        this.translateId = translateId;
-    }
-
     public String translatePw() {
         return translatePw;
-    }
-
-    public void translatePw(String translatePw) {
-        this.translatePw = translatePw;
     }
 
     public boolean debug() {
         return debug;
     }
 
-    public void debug(boolean debug) {
-        this.debug = debug;
-    }
-
     public String debugCode() {
         return debugCode;
-    }
-
-    public void debugCode(String debugCode) {
-        this.debugCode = debugCode;
     }
 
     public boolean crashReport() {
         return crashReport;
     }
 
-    public void crashReport(boolean crashReport) {
-        this.crashReport = crashReport;
-    }
-
     public LocalTime saveTime() {
         return saveTime;
-    }
-
-    public void saveTime(LocalTime saveTime) {
-        this.saveTime = saveTime;
     }
 
     public boolean rollback() {
         return rollback;
     }
 
-    public void rollback(boolean rollback) {
-        this.rollback = rollback;
-    }
 
     public int slotNumber() {
         return slotNumber;
-    }
-
-    public void slotNumber(int slotNumber) {
-        this.slotNumber = slotNumber;
     }
 
     public boolean autoDifficulty() {
         return autoDifficulty;
     }
 
-    public void autoDifficulty(boolean autoDifficulty) {
-        this.autoDifficulty = autoDifficulty;
-    }
-
     public int difficultyEasy() {
         return difficultyEasy;
-    }
-
-    public void difficultyEasy(int difficultyEasy) {
-        this.difficultyEasy = difficultyEasy;
     }
 
     public int difficultyNormal() {
         return difficultyNormal;
     }
 
-    public void difficultyNormal(int difficultyNormal) {
-        this.difficultyNormal = difficultyNormal;
-    }
-
     public int difficultyHard() {
         return difficultyHard;
-    }
-
-    public void difficultyHard(int difficultyHard) {
-        this.difficultyHard = difficultyHard;
     }
 
     public int difficultyInsane() {
         return difficultyInsane;
     }
 
-    public void difficultyInsane(int difficultyInsane) {
-        this.difficultyInsane = difficultyInsane;
-    }
-
     public boolean border() {
         return border;
-    }
-
-    public void border(boolean border) {
-        this.border = border;
     }
 
     public int spawnLimit() {
         return spawnLimit;
     }
 
-    public void spawnLimit(int spawnLimit) {
-        this.spawnLimit = spawnLimit;
-    }
-
     public String prefix() {
         return prefix;
     }
 
-    public void prefix(String prefix) {
-        this.prefix = prefix;
-    }
-
     public String eventPort() {
         return eventPort;
-    }
-
-    public void eventPort(String eventPort) {
-        this.eventPort = eventPort;
     }
 }

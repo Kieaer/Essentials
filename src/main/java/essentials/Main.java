@@ -160,7 +160,6 @@ public class Main extends Plugin {
         try {
             database.connect(config.dbServer());
             database.create();
-            database.LegacyUpgrade();
         } catch (SQLException | ClassNotFoundException e) {
             new CrashReport(e);
         }
