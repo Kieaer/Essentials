@@ -203,11 +203,7 @@ public class PluginTest {
 
     @Test
     public void test04_crashReport() {
-        try {
-            throw new Exception("Crash Report Test");
-        } catch (Exception e) {
-            new CrashReport(e);
-        }
+        assertTrue(new CrashReport(new Exception("test")).success);
     }
 
     @Test
@@ -267,17 +263,16 @@ public class PluginTest {
     public void test09_network() throws InterruptedException {
         Server server = new Server();
         Client client = new Client();
-        config.clientHost("127.0.0.1");
 
         // Server start test
         mainThread.submit(server);
-        TimeUnit.SECONDS.sleep(1);
+        sleep(1000);
         assertNotNull(server.serverSocket);
 
         // Client start test
         mainThread.submit(client);
-        TimeUnit.SECONDS.sleep(1);
         client.wakeup();
+        sleep(1000);
         assertTrue(client.activated);
 
         // Ban data sharing test
@@ -363,7 +358,7 @@ public class PluginTest {
             for (int a = 0; a < 30; a++) {
                 if (pluginData.eventservers.size == 0) {
                     System.out.print("\rWaiting... " + a);
-                    TimeUnit.MILLISECONDS.sleep(250);
+                    TimeUnit.SECONDS.sleep(1);
                 }
             }
             clientHandler.handleMessage("/event join testroom", player);
@@ -467,17 +462,14 @@ public class PluginTest {
 
         Player dummy3 = createNewPlayer(true);
         clientHandler.handleMessage("/tpp " + dummy2.name + " " + dummy3.name, player);
+        sleep(100);
         assertTrue(dummy2.x == dummy3.x && dummy2.y == dummy3.y);
 
         clientHandler.handleMessage("/tppos 50 50", player);
         assertTrue(player.x == 50 && player.y == 50);
 
         Player dummy4 = createNewPlayer(true);
-        player.add();
-        dummy1.add();
-        dummy2.add();
-        dummy3.add();
-        dummy4.add();
+
         System.out.println("== votekick");
         clientHandler.handleMessage("/vote kick " + dummy4.name, player);
         Events.fire(new PlayerChatEvent(player, "y"));
@@ -524,8 +516,8 @@ public class PluginTest {
         clientHandler.handleMessage("/weather enight", player);
         assertEquals(0.85f, state.rules.ambientLight.a, 0.0f);
 
-        clientHandler.handleMessage("/mute " + dummy4.name, player);
-        assertTrue(playerDB.get(dummy4.uuid).mute());
+        clientHandler.handleMessage("/mute " + dummy3.name, player);
+        assertTrue(playerDB.get(dummy3.uuid).mute());
 
         //clientHandler.handleMessage("/votekick");
     }

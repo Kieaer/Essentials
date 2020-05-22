@@ -6,7 +6,6 @@ import arc.util.Time;
 import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
 import essentials.internal.Log;
-import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Gamemode;
@@ -141,7 +140,7 @@ public class Vote {
                     playerDB.get(target.uuid).kickcount(playerDB.get(target.uuid).kickcount() + 1);
                     tool.sendMessageAll("vote.kick.done");
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
-                    target.con.kick(Packets.KickReason.vote);
+                    Call.onKick(target.con, Packets.KickReason.vote);
                     Log.write(Log.LogType.player, "log.player.kick");
                     break;
                 case rollback:
@@ -161,6 +160,14 @@ public class Vote {
                     Log.info("Vote map passed!");
                     tool.sendMessageAll("vote.map.done");
 
+                    Array<Player> players = new Array<>();
+                    for (Player p : playerGroup.all()) {
+                        players.add(p);
+                        p.setDead(true);
+                    }
+
+                    logic.reset();
+
                     Gamemode current = Gamemode.survival;
                     if (state.rules.attackMode) {
                         current = Gamemode.attack;
@@ -172,11 +179,16 @@ public class Vote {
                     world.loadMap(map, (map).applyRules(current));
                     Call.onWorldDataBegin();
 
-                    for (Player p : playerGroup.all()) {
-                        Vars.netServer.sendWorldData(p);
-                        p.reset();
+                    logic.play();
 
-                        if (Vars.state.rules.pvp) p.setTeam(Vars.netServer.assignTeam(p, playerGroup.all()));
+                    for (Player p : players) {
+                        if (p.con == null) continue;
+
+                        p.reset();
+                        if (state.rules.pvp) {
+                            p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+                        }
+                        netServer.sendWorldData(p);
                     }
                     tool.sendMessageAll("vote.map.done");
                     break;

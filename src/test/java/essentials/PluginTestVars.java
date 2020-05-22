@@ -27,9 +27,9 @@ public class PluginTestVars {
             "    }\n" +
             "  },\n" +
             "  \"network\": {\n" +
-            "    \"server-enable\": true,\n" +
+            "    \"server-enable\": false,\n" +
             "    \"server-port\": 25000,\n" +
-            "    \"client-enable\": true,\n" +
+            "    \"client-enable\": false,\n" +
             "    \"client-port\": 25000,\n" +
             "    \"client-host\": \"127.0.0.1\",\n" +
             "    \"banshare\": true,\n" +

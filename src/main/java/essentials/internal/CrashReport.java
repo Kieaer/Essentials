@@ -16,6 +16,7 @@ public class CrashReport {
     Throwable e;
     String data;
     boolean slight;
+    public boolean success = false;
 
     public CrashReport(Throwable e, boolean... slight) {
         this.e = e;
@@ -68,6 +69,7 @@ public class CrashReport {
                     String data = is.readLine();
                     if (data != null) {
                         Log.info("Error reported!");
+                        success = true;
                     } else {
                         Log.err("Data send failed!");
                     }
@@ -79,7 +81,10 @@ public class CrashReport {
                 }
             }
         } else {
-            Log.warn("Plugin Error!");
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            System.out.println(sw.toString());
+            success = true;
         }
     }
 }
