@@ -7,7 +7,6 @@ import arc.Settings;
 import arc.backend.headless.HeadlessApplication;
 import arc.files.Fi;
 import arc.util.CommandHandler;
-import arc.util.Time;
 import essentials.core.player.PlayerData;
 import essentials.external.DataMigration;
 import essentials.feature.Exp;
@@ -53,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import static essentials.Main.*;
 import static essentials.PluginTestDB.createNewPlayer;
 import static essentials.PluginTestDB.setupDB;
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static org.junit.Assert.*;
 
@@ -74,10 +74,6 @@ public class PluginTest {
     @After
     public void resetLog() {
         out.clearLog();
-        try {
-            TimeUnit.MILLISECONDS.sleep(500);
-        } catch (InterruptedException ignored) {
-        }
     }
 
     @BeforeClass
@@ -125,7 +121,7 @@ public class PluginTest {
                     exceptionThrown[0].printStackTrace();
                     Assert.fail();
                 }
-                Thread.sleep(10);
+                sleep(10);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -152,6 +148,27 @@ public class PluginTest {
         world.loadMap(testMap[0]);
 
         state.set(GameState.State.playing);
+
+        new Thread(() -> {
+            while (true) {
+                try {
+                    unitGroup.update();
+                    puddleGroup.update();
+                    shieldGroup.update();
+                    bulletGroup.update();
+                    tileGroup.update();
+                    fireGroup.update();
+                    collisions.collideGroups(bulletGroup, unitGroup);
+                    collisions.collideGroups(bulletGroup, playerGroup);
+                    unitGroup.updateEvents();
+                    collisions.updatePhysics(unitGroup);
+                    playerGroup.update();
+                    effectGroup.update();
+                    sleep(16);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }).start();
     }
 
     @Test
@@ -170,7 +187,7 @@ public class PluginTest {
     }
 
     @Test
-    public void test02_register() {
+    public void test02_register() throws InterruptedException {
         player = createNewPlayer(true);
         assertFalse(playerDB.get(player.uuid).error());
 
@@ -300,11 +317,15 @@ public class PluginTest {
         serverHandler.handleMessage("admin " + player.name);
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
 
+        serverHandler.handleMessage("bansync");
+
         serverHandler.handleMessage("info " + player.uuid);
         assertNotEquals("Player not found!\n", out.getLogWithNormalizedLineSeparator());
 
         serverHandler.handleMessage("setperm " + player.name + " owner");
         assertEquals("owner", playerDB.get(player.uuid).permission());
+
+        serverHandler.handleMessage("reload");
     }
 
     @Test
@@ -342,9 +363,11 @@ public class PluginTest {
             for (int a = 0; a < 30; a++) {
                 if (pluginData.eventservers.size == 0) {
                     System.out.print("\rWaiting... " + a);
-                    TimeUnit.SECONDS.sleep(1);
+                    TimeUnit.MILLISECONDS.sleep(250);
                 }
             }
+            clientHandler.handleMessage("/event join testroom", player);
+
             if (pluginData.eventservers.size == 0) System.out.println("\n");
         } catch (NullPointerException ignored) {
         }
@@ -366,6 +389,7 @@ public class PluginTest {
         Player dummy1 = createNewPlayer(true);
         clientHandler.handleMessage("/kill " + dummy1.name, player);
         assertTrue(dummy1.isDead());
+        dummy1.setDead(false);
 
         clientHandler.handleMessage("/maps", player);
 
@@ -380,6 +404,12 @@ public class PluginTest {
         clientHandler.handleMessage("/reset count localhost", player);
         assertEquals(0, pluginData.jumpcount.size);
 
+        clientHandler.handleMessage("/reset zone 127.0.0.1", player);
+        assertEquals(0, pluginData.jumpzone.size);
+
+        clientHandler.handleMessage("/reset total", player);
+        assertEquals(0, pluginData.jumptotal.size);
+
         //clientHandler.handleMessage("/register testacount testas123 testas123", player);
 
         clientHandler.handleMessage("/spawn dagger 5 crux", player);
@@ -388,13 +418,31 @@ public class PluginTest {
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
         serverHandler.handleMessage("setperm " + player.name + " owner");
 
-        player.set(80 * 8, 80 * 8);
-        player.setNet(80 * 8, 80 * 8);
+        player.set(80, 80);
+        player.setNet(80, 80);
         clientHandler.handleMessage("/spawn-core big", player);
-        assertSame(Blocks.coreNucleus, world.tile(80, 80).block());
+        assertSame(Blocks.coreNucleus, world.tileWorld(80, 80).block());
+
+        clientHandler.handleMessage("/setmech alpha", player);
+        assertSame(Mechs.alpha, player.mech);
+
+        clientHandler.handleMessage("/setmech dart", player);
+        assertSame(Mechs.dart, player.mech);
+
+        clientHandler.handleMessage("/setmech glaive", player);
+        assertSame(Mechs.glaive, player.mech);
+
+        clientHandler.handleMessage("/setmech javelin", player);
+        assertSame(Mechs.javelin, player.mech);
 
         clientHandler.handleMessage("/setmech omega", player);
         assertSame(Mechs.omega, player.mech);
+
+        clientHandler.handleMessage("/setmech tau", player);
+        assertSame(Mechs.tau, player.mech);
+
+        clientHandler.handleMessage("/setmech trident", player);
+        assertSame(Mechs.trident, player.mech);
 
         clientHandler.handleMessage("/status", player);
 
@@ -425,16 +473,59 @@ public class PluginTest {
         assertTrue(player.x == 50 && player.y == 50);
 
         Player dummy4 = createNewPlayer(true);
+        player.add();
+        dummy1.add();
+        dummy2.add();
+        dummy3.add();
+        dummy4.add();
+        System.out.println("== votekick");
         clientHandler.handleMessage("/vote kick " + dummy4.name, player);
         Events.fire(new PlayerChatEvent(player, "y"));
         Events.fire(new PlayerChatEvent(dummy1, "y"));
         Events.fire(new PlayerChatEvent(dummy3, "y"));
+        // Can't check player kicked
+
+        System.out.println("== votemap");
+        clientHandler.handleMessage("/vote map fork", player);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+        assertEquals("Fork", world.getMap().name());
+
+        System.out.println("== vote gameover");
+        clientHandler.handleMessage("/vote gameover", player);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+
+        System.out.println("== vote rollback");
+        serverHandler.handleMessage("save 1000");
+        clientHandler.handleMessage("/vote rollback", player);
+        TimeUnit.SECONDS.sleep(1);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+
+        System.out.println("== vote skipwave");
+        clientHandler.handleMessage("/vote skipwave", player);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+
+        clientHandler.handleMessage("/weather day", player);
+        assertEquals(0.0f, state.rules.ambientLight.a, 0.0f);
 
         clientHandler.handleMessage("/weather eday", player);
         assertEquals(0.3f, state.rules.ambientLight.a, 0.0f);
 
-        clientHandler.handleMessage("/mute " + dummy2.name, player);
-        assertTrue(playerDB.get(dummy2.uuid).mute());
+        clientHandler.handleMessage("/weather night", player);
+        assertEquals(0.7f, state.rules.ambientLight.a, 0.0f);
+
+        clientHandler.handleMessage("/weather enight", player);
+        assertEquals(0.85f, state.rules.ambientLight.a, 0.0f);
+
+        clientHandler.handleMessage("/mute " + dummy4.name, player);
+        assertTrue(playerDB.get(dummy4.uuid).mute());
 
         //clientHandler.handleMessage("/votekick");
     }
@@ -449,10 +540,7 @@ public class PluginTest {
 
         state.rules.attackMode = true;
         Call.onSetRules(state.rules);
-
-        state.rules.attackMode = true;
-        Call.onSetRules(state.rules);
-        Events.fire(new GameOverEvent(Team.sharded));
+        Events.fire(new GameOverEvent(player.getTeam()));
         assertEquals(1, playerDB.get(player.uuid).attackclear());
 
         Events.fire(new WorldLoadEvent());
@@ -465,19 +553,15 @@ public class PluginTest {
 
         Player dummy = createNewPlayer(false);
         Events.fire(new PlayerJoin(dummy));
-        TimeUnit.SECONDS.sleep(1);
 
         clientHandler.handleMessage("/register hello testas123", dummy);
-        TimeUnit.SECONDS.sleep(1);
 
         clientHandler.handleMessage("/logout", dummy);
-        TimeUnit.SECONDS.sleep(1);
 
         Player dummy2 = createNewPlayer(false);
         Events.fire(new PlayerJoin(dummy2));
 
         clientHandler.handleMessage("/login hello testas123", dummy2);
-        TimeUnit.SECONDS.sleep(1);
         assertTrue(playerDB.get(dummy2.uuid).login());
 
         Events.fire(new PlayerLeave(dummy2));
@@ -485,7 +569,7 @@ public class PluginTest {
 
         Events.fire(new PlayerChatEvent(player, "hi"));
 
-        Time.update();
+        /*Time.update();
         unitGroup.update();
         puddleGroup.update();
         shieldGroup.update();
@@ -497,7 +581,7 @@ public class PluginTest {
         unitGroup.updateEvents();
         collisions.updatePhysics(unitGroup);
         playerGroup.update();
-        effectGroup.update();
+        effectGroup.update();*/
 
         player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5, 0, Blocks.copperWall));
         Call.onConstructFinish(Vars.world.tile(5, 5), Blocks.copperWall, player.id, (byte) 0, Team.sharded, false);

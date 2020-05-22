@@ -121,19 +121,23 @@ public class Vote {
         message_time = 0;
         voted.clear();
 
+        // TODO 투표 성공 메세지 bundle 추가
         if (success) {
             switch (type) {
                 case gameover:
+                    Log.info("Vote gameover passed!");
                     tool.sendMessageAll("vote.gameover.done");
                     Events.fire(new EventType.GameOverEvent(Team.crux));
                     break;
                 case skipwave:
+                    Log.info("Vote skipwave passed!");
                     tool.sendMessageAll("vote.skipwave.done");
                     for (int a = 0; a < 10; a++) {
                         logic.runWave();
                     }
                     break;
                 case kick:
+                    Log.info("Vote kick passed!");
                     playerDB.get(target.uuid).kickcount(playerDB.get(target.uuid).kickcount() + 1);
                     tool.sendMessageAll("vote.kick.done");
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
@@ -141,6 +145,7 @@ public class Vote {
                     Log.write(Log.LogType.player, "log.player.kick");
                     break;
                 case rollback:
+                    Log.info("Vote rollback passed!");
                     tool.sendMessageAll("vote.rollback.done");
                     rollback.load();
                     break;
@@ -153,6 +158,7 @@ public class Vote {
                     // TODO 게임 모드 변경 만들기
                     break;
                 case map:
+                    Log.info("Vote map passed!");
                     tool.sendMessageAll("vote.map.done");
 
                     Gamemode current = Gamemode.survival;
@@ -172,7 +178,6 @@ public class Vote {
 
                         if (Vars.state.rules.pvp) p.setTeam(Vars.netServer.assignTeam(p, playerGroup.all()));
                     }
-                    Log.info("Map rollbacked.");
                     tool.sendMessageAll("vote.map.done");
                     break;
             }

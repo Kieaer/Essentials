@@ -3,6 +3,7 @@ package essentials.core.player;
 import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
+import essentials.internal.exception.PluginException;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -114,8 +115,10 @@ public class PlayerDB {
                             pstmt.setInt(index, (Integer) o.value);
                         } else if (o.value instanceof Long) {
                             pstmt.setLong(index, (Long) o.value);
+                        } else {
+                            throw new PluginException("Player data save null!");
                         }
-                    } catch (SQLException e) {
+                    } catch (SQLException | PluginException e) {
                         new CrashReport(e);
                     }
                     index++;
@@ -131,7 +134,9 @@ public class PlayerDB {
     }
 
     public void saveAll() {
-        for (PlayerData p : vars.playerData()) save(p);
+        for (PlayerData p : vars.playerData()) {
+            save(p);
+        }
     }
 
     public boolean register(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {

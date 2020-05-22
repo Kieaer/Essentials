@@ -447,17 +447,15 @@ public class Event {
                                 new CrashReport(ex);
                             }
                         }).start();
-                    } else {
-                        if (!playerData.mute()) {
-                            Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
-                        }
+                    } else if (colorizeName(e.player.id, e.player.name) != null) {
+                        Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replace("%2", e.message.replaceAll(".*\\\\.*", "")));
                     }
-
-                    // 마지막 대화 데이터를 DB에 저장함
-                    playerData.lastchat(e.message);
-
-                    Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
                 }
+
+                // 마지막 대화 데이터를 DB에 저장함
+                playerData.lastchat(e.message);
+
+                Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
             }
         });
 

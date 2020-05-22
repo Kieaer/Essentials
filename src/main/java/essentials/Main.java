@@ -468,6 +468,8 @@ public class Main extends Plugin {
         });
         handler.register("reload", "Reload Essential plugin data", (arg) -> {
             perm.reload(false);
+            perm.update();
+            perm.isUse = false;
             Log.info("plugin-reloaded");
         });
     }

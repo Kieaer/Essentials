@@ -25,7 +25,7 @@ public class PluginTestDB {
                 .toString();
     }
 
-    public static Player createNewPlayer(boolean isFull, String... password) {
+    public static Player createNewPlayer(boolean isFull, String... password) throws InterruptedException {
         Player player = new Player();
         player.isAdmin = false;
         player.con = new NetConnection(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {

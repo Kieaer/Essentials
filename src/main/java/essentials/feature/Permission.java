@@ -7,10 +7,7 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import essentials.internal.exception.PluginException;
 import mindustry.entities.type.Player;
-import org.hjson.JsonArray;
-import org.hjson.JsonObject;
-import org.hjson.JsonValue;
-import org.hjson.Stringify;
+import org.hjson.*;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -135,7 +132,7 @@ public class Permission {
                 for (Player p : playerGroup.all()) {
                     p.isAdmin = isAdmin(vars.playerData().find(d -> d.name().equals(p.name)));
                 }
-            } catch (IOException e) {
+            } catch (IOException | ParseException e) {
                 // 이것도 유저들이 알아야 고침
                 LoggerFactory.getLogger(Permission.class).error("Permission parsing", e);
             }
