@@ -449,7 +449,7 @@ public class Event {
                             }
                         }).start();
                     } else {
-                        if (!playerData.mute()) {
+                        if (!playerData.mute() && colorizeName(e.player.id, e.player.name) != null) {
                             Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
                         }
                     }
