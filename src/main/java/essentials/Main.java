@@ -165,10 +165,10 @@ public class Main extends Plugin {
         }
 
         // Client 연결
-        if (config.clientEnable()) new Client();
+        if (config.clientEnable()) mainThread.submit(new Client());
 
         // Server 시작
-        if (config.serverEnable()) new Server();
+        if (config.serverEnable()) mainThread.submit(new Server());
 
         // 기록 시작
         if (config.logging()) new ActivityLog();
