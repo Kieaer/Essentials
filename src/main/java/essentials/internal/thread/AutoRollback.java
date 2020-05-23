@@ -64,6 +64,7 @@ public class AutoRollback extends TimerTask {
                 state.rules.respawnTime = orignal;
                 Call.onSetRules(state.rules);
             } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
             }
 
         }).start();
