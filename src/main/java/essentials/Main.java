@@ -816,7 +816,7 @@ public class Main extends Plugin {
 
             build.append("[green]==[white] Players list page ").append(page).append("/").append(pages).append(" [green]==[white]\n");
             for (int a = 6 * page; a < Math.min(6 * (page + 1), playerGroup.size()); a++) {
-                build.append("[gray]").append(a).append("[] ").append(playerGroup.all().get(a).name).append("\n");
+                build.append("[gray]").append(playerGroup.all().get(a).id).append("[] ").append(playerGroup.all().get(a).name).append("\n");
             }
             player.sendMessage(build.toString());
         });
@@ -825,6 +825,18 @@ public class Main extends Plugin {
             Fi file = saveDirectory.child(config.slotNumber() + "." + saveExtension);
             SaveIO.save(file);
             player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("system.map-saved"));
+        });
+        handler.<Player>register("r", "<player id> [message]", "Send Direct message to target player", (arg, player) -> {
+            if (!perm.check(player, "r")) return;
+            PlayerData playerData = playerDB.get(player.uuid);
+            Bundle bundle = new Bundle(playerData.locale());
+            Player target = playerGroup.all().find(p -> p.name.contains(arg[0]));
+            if (target != null) {
+                target.sendMessage("[orange]DM [sky]" + playerData.name() + " [green]>> [white]" + arg[1]);
+                player.sendMessage("[cyan]DM [sky]" + target.name + " [green]>> [white]" + arg[1]);
+            } else {
+                player.sendMessage(bundle.get("player.not-found"));
+            }
         });
         handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server jumping zone data.", (arg, player) -> {
             if (!perm.check(player, "reset")) return;
@@ -1185,7 +1197,7 @@ public class Main extends Plugin {
                     case "kick":
                         Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
                         try {
-                            if (target == null) target = vars.players().get(Integer.parseInt(arg[1]));
+                            if (target == null) target = playerGroup.find(p -> p.id == Integer.parseInt(arg[1]));
                         } catch (NumberFormatException e) {
                             player.sendMessage(bundle.prefix("player.not-found"));
                             return;
@@ -1208,9 +1220,14 @@ public class Main extends Plugin {
                     case "map":
                         // 맵 투표
                         Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
-                        if (world == null) world = Vars.maps.all().get(Integer.parseInt(arg[1]));
+
                         if (world == null) {
-                            player.sendMessage(bundle.prefix("vote.map.not-found"));
+                            try {
+                                world = Vars.maps.all().get(Integer.parseInt(arg[1]));
+                                vote.add(new Vote(player, Vote.VoteType.map, world));
+                            } catch (NumberFormatException ignored) {
+                                player.sendMessage(bundle.prefix("vote.map.not-found"));
+                            }
                         } else {
                             vote.add(new Vote(player, Vote.VoteType.map, world));
                         }

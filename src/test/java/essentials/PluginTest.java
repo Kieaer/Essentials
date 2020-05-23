@@ -415,6 +415,8 @@ public class PluginTest {
 
         clientHandler.handleMessage("/save", player);
 
+        clientHandler.handleMessage("/r " + dummy1.name + " Hi!", player);
+
         clientHandler.handleMessage("/reset count localhost", player);
         assertEquals(0, pluginData.jumpcount.size);
 
