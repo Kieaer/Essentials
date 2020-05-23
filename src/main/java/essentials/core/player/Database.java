@@ -71,12 +71,12 @@ public class Database {
         }
     }
 
-    public void connect(boolean isServer) throws SQLException, ClassNotFoundException {
+    public void connect(boolean isServer) throws SQLException {
         if (isServer) {
-            Class.forName("org.h2.Driver");
+            org.h2.Driver.load();
             server = Server.createTcpServer("-tcpPort", "9079", "-tcpAllowOthers", "-tcpDaemon", "-baseDir", "./" + root.child("data").path(), "-ifNotExists");
             server.start();
-            conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player");
+            conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player", "", "");
         } else {
             conn = DriverManager.getConnection(config.dbUrl());
         }
