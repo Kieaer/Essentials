@@ -303,8 +303,7 @@ public class Tools {
     }
 
     public String getWebContent(String url) {
-        try {
-            Scanner sc = new Scanner(new URL(url).openStream());
+        try (Scanner sc = new Scanner(new URL(url).openStream())) {
             StringBuilder sb = new StringBuilder();
             while (sc.hasNext()) {
                 sb.append(sc.next());

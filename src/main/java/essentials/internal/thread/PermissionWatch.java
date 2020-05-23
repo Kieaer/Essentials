@@ -32,7 +32,7 @@ public class PermissionWatch implements Runnable {
     @Override
     public void run() {
         Thread.currentThread().setName("Essential Permission Watch thread");
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 watchKey = watchService.take();
                 Thread.sleep(50);
@@ -74,7 +74,7 @@ public class PermissionWatch implements Runnable {
                     }
                 }
             } catch (InterruptedException e) {
-                break;
+                Thread.currentThread().interrupt();
             } catch (Exception ignored) {
             }
         }

@@ -496,7 +496,9 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             playerData.crosschat(!playerData.crosschat());
-            player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.crosschat() ? "player.crosschat.disable" : "player.crosschat.disable"));
+            Bundle bundle = new Bundle(playerData.locale());
+
+            player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.crosschat() ? "player.crosschat.disable" : "player.crosschat.enabled"));
         });
         handler.<Player>register("changepw", "<new_password> <new_password_repeat>", "Change account password", (arg, player) -> {
             if (!perm.check(player, "changepw")) return;
