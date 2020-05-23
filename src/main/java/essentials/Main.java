@@ -211,7 +211,7 @@ public class Main extends Plugin {
 
                     // 모든 이벤트 서버 종료
                     for (Process value : eventServer.servers) value.destroy();
-                    if (server.serverSocket.isClosed() && client.socket.isClosed() && mainThread.isShutdown()) {
+                    if ((server.serverSocket == null || server.serverSocket.isClosed()) || (client.socket == null || client.socket.isClosed())) {
                         Log.info("thread-disabled");
                     } else {
                         Log.warn("thread-not-dead");
