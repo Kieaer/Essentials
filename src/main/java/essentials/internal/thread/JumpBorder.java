@@ -25,12 +25,11 @@ public class JumpBorder implements Runnable {
     @Override
     public void run() {
         Thread.currentThread().setName("Essential server to server work thread");
-        main();
+        length = pluginData.jumpzone.size;
+        start();
     }
 
-    public void main() {
-        length = pluginData.jumpzone.size;
-
+    public void start() {
         for (PluginData.jumpzone data : pluginData.jumpzone) {
             Thread t = new Thread(() -> {
                 while (true) {

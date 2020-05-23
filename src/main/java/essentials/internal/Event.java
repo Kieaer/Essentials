@@ -30,6 +30,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
@@ -163,7 +164,7 @@ public class Event {
                 if (e.player.name.contains("　"))
                     Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
                 if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");
-                if (e.player.name.matches(".*\\[.*.\\].*"))
+                if (Pattern.matches(".*\\[.*.].*", e.player.name))
                     Call.onKick(e.player.con, "Can't use only color tags nickname in this server.");
             }
 
@@ -433,7 +434,7 @@ public class Event {
                                         } else {
                                             if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
                                                 if (!playerData.crosschat())
-                                                    p.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
+                                                    p.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replace("%2", e.message));
                                             } else {
                                                 if (!playerData.crosschat())
                                                     p.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
@@ -446,7 +447,7 @@ public class Event {
                             }
                         }).start();
                     } else if (colorizeName(e.player.id, e.player.name) != null) {
-                        Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replace("%2", e.message.replaceAll(".*\\\\.*", "")));
+                        Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replace("%2", e.message));
                     }
                 }
 
@@ -499,7 +500,7 @@ public class Event {
 
         // 플레이어가 블럭을 뽀갰을 때
         Events.on(EventType.BuildSelectEvent.class, e -> {
-            if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
+            if (e.builder instanceof Player && e.builder.buildRequest() != null && !Pattern.matches(".*build.*", e.builder.buildRequest().block.name) && e.tile.block() != Blocks.air) {
                 if (e.breaking) {
                     Log.write(Log.LogType.block, "log.block.remove", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
 
@@ -672,7 +673,6 @@ public class Event {
                         Log.client("version-devel");
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
                     new CrashReport(ex);
                 }
             } else {

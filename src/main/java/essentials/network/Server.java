@@ -27,6 +27,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,7 +36,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Locale;
-import java.util.Random;
+import java.util.regex.Pattern;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
@@ -107,7 +108,7 @@ public class Server implements Runnable {
             // 키 값 읽기
             String authkey = in.readLine();
             if (authkey == null) throw new IOException("Auth key is null");
-            if (authkey.matches(".*HTTP/.*")) {
+            if (Pattern.matches(".*HTTP/.*", authkey)) {
                 StringBuilder headers = new StringBuilder();
                 headers.append(authkey).append("\n");
                 headers.append("Remote IP: ").append(ip).append("\n");
@@ -166,7 +167,7 @@ public class Server implements Runnable {
                     switch (type) {
                         case ping:
                             String[] msg = {"Hi " + ip + "! Your connection is successful!", "Hello " + ip + "! I'm server!", "Welcome to the server " + ip + "!"};
-                            int rnd = new Random().nextInt(msg.length);
+                            int rnd = new SecureRandom().nextInt(msg.length);
                             answer.add("result", msg[rnd]);
                             os.writeBytes(tool.encrypt(answer.toString(), spec) + "\n");
                             os.flush();
@@ -325,7 +326,8 @@ public class Server implements Runnable {
             String[] list = new String[]{"placecount", "breakcount", "killcount", "joincount", "kickcount", "exp", "playtime", "pvpwincount", "reactorcount"};
 
             for (String s : list) {
-                try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT " + s + ",name FROM players ORDER BY `" + s + "`");
+                String sql = "SELECT " + s + ",name FROM players ORDER BY `" + s + "`";
+                try (PreparedStatement pstmt = database.conn.prepareStatement(sql);
                      ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
                         rank.add(rs.getString("name"), rs.getString(s));
@@ -608,9 +610,9 @@ public class Server implements Runnable {
                         result.append(line).append("\n");
                     }
 
-                    int rand = (int) (Math.random() * 2);
+                    boolean rand = new SecureRandom().nextBoolean();
                     InputStream image;
-                    if (rand == 0) {
+                    if (rand) {
                         image = getClass().getResourceAsStream("/HTML/404_Error.gif");
                     } else {
                         image = getClass().getResourceAsStream("/HTML/404.webp");
@@ -626,7 +628,7 @@ public class Server implements Runnable {
                     byte[] fileArray = byteOutStream.toByteArray();
                     String changeString;
                     Base64.Encoder encoder = Base64.getEncoder();
-                    if (rand == 0) {
+                    if (rand) {
                         changeString = "data:image/gif;base64," + encoder.encodeToString(fileArray);
                     } else {
                         changeString = "data:image/webp;base64," + encoder.encodeToString(fileArray);

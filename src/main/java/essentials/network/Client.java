@@ -25,7 +25,7 @@ import static essentials.Main.*;
 import static mindustry.Vars.netServer;
 import static org.hjson.JsonValue.readJSON;
 
-public class Client extends Thread {
+public class Client implements Runnable {
     public Socket socket;
     public BufferedReader is;
     public DataOutputStream os;
@@ -37,7 +37,7 @@ public class Client extends Thread {
 
     public void shutdown() {
         try {
-            this.interrupt();
+            Thread.currentThread().interrupt();
             os.close();
             is.close();
             socket.close();
@@ -95,7 +95,7 @@ public class Client extends Thread {
                     TimeUnit.SECONDS.sleep(5);
                     this.wakeup();
                 } catch (InterruptedException | IOException ex) {
-                    this.interrupt();
+                    Thread.currentThread().interrupt();
                 }
             } else {
                 try {

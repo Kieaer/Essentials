@@ -59,13 +59,14 @@ public class EventServer {
                 pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
                 pb.inheritIO().redirectOutput(Core.settings.getDataDirectory().child("test.txt").file());
                 p = pb.start();
+                sleep(2000);
                 eventServer.servers.add(p);
                 if (p.isAlive()) Log.info(roomname + " Event serer online!");
 
                 TimerTask t = new TimerTask() {
                     @Override
                     public void run() {
-                        new PingHost("localhost", port, result -> {
+                        new PingHost("127.0.0.1", port, result -> {
                             if (disablecount > 300) {
                                 try {
                                     JsonObject settings = readJSON(root.child("data/data.json").reader()).asObject();

@@ -112,7 +112,8 @@ public class Main extends Plugin {
         if (!root.exists()) {
             // 처음 플러그인을 사용하는 유저에게 wiki 오픈
             try {
-                Desktop.getDesktop().browse(new URI("https://github.com/Kieaer/Essentials/wiki/How-to-edit-config.hjson"));
+                final String url = "https://github.com/Kieaer/Essentials/wiki/How-to-edit-config.hjson";
+                Desktop.getDesktop().browse(new URI(url));
             } catch (IOException | URISyntaxException ignored) {
             }
         }
@@ -150,10 +151,9 @@ public class Main extends Plugin {
         // 스레드 시작
         new TickTrigger();
         mainThread.submit(new Threads());
-        mainThread.submit(new ColorNick());
-        timer.scheduleAtFixedRate(new AutoRollback(), 600000, 600000);
-        mainThread.submit(new PermissionWatch());
         mainThread.submit(colornick);
+        timer.scheduleAtFixedRate(rollback, 600000, 600000);
+        mainThread.submit(new PermissionWatch());
         mainThread.submit(jumpBorder);
 
         // DB 연결
@@ -165,10 +165,10 @@ public class Main extends Plugin {
         }
 
         // Client 연결
-        if (config.clientEnable()) mainThread.submit(new Client());
+        if (config.clientEnable()) mainThread.submit(client);
 
         // Server 시작
-        if (config.serverEnable()) mainThread.submit(new Server());
+        if (config.serverEnable()) mainThread.submit(server);
 
         // 기록 시작
         if (config.logging()) new ActivityLog();
@@ -181,8 +181,6 @@ public class Main extends Plugin {
             @Override
             public void dispose() {
                 try {
-                    boolean error = false;
-
                     discord.shutdownNow(); // Discord 서비스 종료
                     playerDB.saveAll(); // 플레이어 데이터 저장
                     pluginData.saveAll(); // 플러그인 데이터 저장
@@ -193,22 +191,16 @@ public class Main extends Plugin {
                     database.dispose(); // DB 연결 종료
 
                     if (config.serverEnable()) {
-                        try {
-                            Iterator<Server.service> servers = server.list.iterator();
-                            while (servers.hasNext()) {
-                                Server.service ser = servers.next();
-                                ser.os.close();
-                                ser.in.close();
-                                ser.socket.close();
-                                servers.remove();
-                            }
-                            server.shutdown();
-                            Log.info("server-thread-disabled");
-                        } catch (Exception e) {
-                            error = true;
-                            Log.err("server-thread-disable-error");
-                            new CrashReport(e);
+                        Iterator<Server.service> servers = server.list.iterator();
+                        while (servers.hasNext()) {
+                            Server.service ser = servers.next();
+                            ser.os.close();
+                            ser.in.close();
+                            ser.socket.close();
+                            servers.remove();
                         }
+                        server.shutdown();
+                        Log.info("server-thread-disabled");
                     }
 
                     // 클라이언트 종료
@@ -219,7 +211,7 @@ public class Main extends Plugin {
 
                     // 모든 이벤트 서버 종료
                     for (Process value : eventServer.servers) value.destroy();
-                    if (!error) {
+                    if (server.serverSocket.isClosed() && client.socket.isClosed() && mainThread.isShutdown()) {
                         Log.info("thread-disabled");
                     } else {
                         Log.warn("thread-not-dead");
@@ -855,7 +847,7 @@ public class Main extends Plugin {
                                 value.interrupt();
                             }
                             jumpBorder.thread.clear();
-                            jumpBorder.main();
+                            jumpBorder.start();
                             player.sendMessage(bundle.prefix("success"));
                             break;
                         }

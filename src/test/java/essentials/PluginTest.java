@@ -43,9 +43,9 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalTime;
 import java.util.Locale;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
@@ -57,7 +57,7 @@ import static org.junit.Assert.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PluginTest {
     static final PluginTestVars testVars = new PluginTestVars();
-    static final Random r = new Random();
+    static final SecureRandom r = new SecureRandom();
     static Fi root;
     static Fi testroot;
     static Main main;
@@ -259,60 +259,64 @@ public class PluginTest {
     }
 
     @Test
-    public void test09_network() throws InterruptedException {
-        Server server = new Server();
-        Client client = new Client();
-
-        // Server start test
-        mainThread.submit(server);
-        sleep(1000);
-        assertNotNull(server.serverSocket);
-
-        // Client start test
-        mainThread.submit(client);
-        client.wakeup();
-        sleep(1000);
-        assertTrue(client.activated);
-
-        // Ban data sharing test
-        client.request(Client.Request.bansync, null, null);
-        TimeUnit.SECONDS.sleep(1);
-        assertTrue(client.activated);
-        assertTrue(server.list.size != 0);
-
-        out.clearLog();
-        client.request(Client.Request.chat, player, "Cross-chat message!");
-        assertTrue(out.getLogWithNormalizedLineSeparator().contains("[EssentialClient]"));
-
-        client.request(Client.Request.unbanip, null, "127.0.0.1");
-
-        client.request(Client.Request.unbanid, null, player.uuid);
-
-        // Server http server test
+    public void test09_network() {
         try {
-            HttpURLConnection con = (HttpURLConnection) new URL("http://127.0.0.1:25000/rank").openConnection();
-            con.setRequestMethod("GET");
-            con.setDoInput(true);
-            if (con.getResponseCode() != 200) {
-                fail("HTTP test failed");
-            } else {
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-                    String inputLine;
-                    StringBuilder response = new StringBuilder();
-                    while ((inputLine = br.readLine()) != null) {
-                        response.append(inputLine);
-                    }
-                    assertTrue(response.toString().contains("attack"));
-                }
-            }
-            con.disconnect();
-        } catch (Exception ignored) {
-        }
+            Server server = new Server();
+            Client client = new Client();
 
-        // Connection close test
-        client.request(Client.Request.exit, null, null);
-        TimeUnit.SECONDS.sleep(1);
-        server.shutdown();
+            // Server start test
+            mainThread.submit(server);
+            sleep(1000);
+            assertNotNull(server.serverSocket);
+
+            // Client start test
+            mainThread.submit(client);
+            client.wakeup();
+            sleep(1000);
+            assertTrue(client.activated);
+
+            // Ban data sharing test
+            client.request(Client.Request.bansync, null, null);
+            TimeUnit.SECONDS.sleep(1);
+            assertTrue(client.activated);
+            assertTrue(server.list.size != 0);
+
+            out.clearLog();
+            client.request(Client.Request.chat, player, "Cross-chat message!");
+            assertTrue(out.getLogWithNormalizedLineSeparator().contains("[EssentialClient]"));
+
+            client.request(Client.Request.unbanip, null, "127.0.0.1");
+
+            client.request(Client.Request.unbanid, null, player.uuid);
+
+            // Server http server test
+            try {
+                HttpURLConnection con = (HttpURLConnection) new URL("http://127.0.0.1:25000/rank").openConnection();
+                con.setRequestMethod("GET");
+                con.setDoInput(true);
+                if (con.getResponseCode() != 200) {
+                    fail("HTTP test failed");
+                } else {
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                        String inputLine;
+                        StringBuilder response = new StringBuilder();
+                        while ((inputLine = br.readLine()) != null) {
+                            response.append(inputLine);
+                        }
+                        assertTrue(response.toString().contains("attack"));
+                    }
+                }
+                con.disconnect();
+            } catch (Exception ignored) {
+            }
+
+            // Connection close test
+            client.request(Client.Request.exit, null, null);
+            sleep(1000);
+            server.shutdown();
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Test
@@ -344,7 +348,7 @@ public class PluginTest {
     }
 
     @Test
-    public void test12_clientCommandTest() throws InterruptedException {
+    public void test12_clientCommand() throws InterruptedException {
         playerDB.get(player.uuid).level(50);
 
         clientHandler.handleMessage("/alert", player);
@@ -374,10 +378,12 @@ public class PluginTest {
 
         try {
             clientHandler.handleMessage("/event host testroom maze survival", player);
-            for (int a = 0; a < 30; a++) {
+            for (int a = 0; a < 60; a++) {
                 if (pluginData.eventservers.size == 0) {
                     System.out.print("\rWaiting... " + a);
                     TimeUnit.SECONDS.sleep(1);
+                } else {
+                    break;
                 }
             }
             clientHandler.handleMessage("/event join testroom", player);
@@ -391,11 +397,12 @@ public class PluginTest {
 
         clientHandler.handleMessage("/info", player);
 
-        clientHandler.handleMessage("/jump count localhost 6567", player);
+        clientHandler.handleMessage("/jump count 192.168.35.100 6567", player);
         assertEquals(1, pluginData.jumpcount.size);
 
-        clientHandler.handleMessage("/jump zone 127.0.0.1 6567 5 true", player);
+        clientHandler.handleMessage("/jump zone 192.168.35.100 6567 20 true", player);
         assertEquals(1, pluginData.jumpzone.size);
+        sleep(4000);
 
         clientHandler.handleMessage("/jump total", player);
         assertEquals(1, pluginData.jumptotal.size);
@@ -417,10 +424,10 @@ public class PluginTest {
 
         clientHandler.handleMessage("/r " + dummy1.name + " Hi!", player);
 
-        clientHandler.handleMessage("/reset count localhost", player);
+        clientHandler.handleMessage("/reset count 192.168.35.100", player);
         assertEquals(0, pluginData.jumpcount.size);
 
-        clientHandler.handleMessage("/reset zone 127.0.0.1", player);
+        clientHandler.handleMessage("/reset zone 192.168.35.100", player);
         assertEquals(0, pluginData.jumpzone.size);
 
         clientHandler.handleMessage("/reset total", player);
@@ -635,6 +642,8 @@ public class PluginTest {
         Call.onConstructFinish(world.tile(120, 120), Blocks.message, player.id, (byte) 0, Team.sharded, true);
         Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
         Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
+
+        discord.start();
     }
 
     @AfterClass
