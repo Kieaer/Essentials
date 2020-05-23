@@ -826,7 +826,7 @@ public class Main extends Plugin {
             SaveIO.save(file);
             player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("system.map-saved"));
         });
-        handler.<Player>register("r", "<player id> [message]", "Send Direct message to target player", (arg, player) -> {
+        handler.<Player>register("r", "<player> [message]", "Send Direct message to target player", (arg, player) -> {
             if (!perm.check(player, "r")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -1135,7 +1135,7 @@ public class Main extends Plugin {
             }
             player.setNet(other.getX(), other.getY());
         });
-        handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
+        handler.<Player>register("tpp", "<source> <target>", "Teleport to other players", (arg, player) -> {
             if (!perm.check(player, "tpp")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Player other1 = null;
