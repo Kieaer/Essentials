@@ -51,7 +51,7 @@ public class Vote {
             case kick:
                 this.target = (Player) parameters[0];
                 tool.sendMessageAll("vote.suggester-name", player.name);
-                tool.sendMessageAll("vote.kick", player.name, target.name);
+                tool.sendMessageAll("vote.kick", target.name);
                 break;
             case gameover:
                 tool.sendMessageAll("vote.suggester-name", player.name);
@@ -202,7 +202,7 @@ public class Vote {
                     tool.sendMessageAll("vote.skipwave.fail");
                     break;
                 case kick:
-                    tool.sendMessageAll("vote.kick.fail");
+                    tool.sendMessageAll("vote.kick.fail", target.name);
                     break;
                 case rollback:
                     tool.sendMessageAll("vote.rollback.fail");
