@@ -345,7 +345,7 @@ public class Tools {
             URLConnection urlConnection = URL.openConnection();
             InputStream is = urlConnection.getInputStream();
             int size = urlConnection.getContentLength();
-            byte[] buf = new byte[256];
+            byte[] buf = new byte[5120];
             int byteRead;
             int byteWritten = 0;
             long startTime = System.currentTimeMillis();
