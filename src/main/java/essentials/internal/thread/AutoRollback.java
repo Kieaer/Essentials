@@ -12,6 +12,7 @@ import mindustry.io.SaveIO;
 import java.util.TimerTask;
 
 import static essentials.Main.config;
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class AutoRollback extends TimerTask {
@@ -54,6 +55,18 @@ public class AutoRollback extends TimerTask {
             new CrashReport(e);
         }
         Log.info("Map rollbacked.");
+        new Thread(() -> {
+            try {
+                float orignal = state.rules.respawnTime;
+                state.rules.respawnTime = 0f;
+                Call.onSetRules(state.rules);
+                sleep(100000);
+                state.rules.respawnTime = orignal;
+                Call.onSetRules(state.rules);
+            } catch (InterruptedException ignored) {
+            }
+
+        }).start();
         if (state.is(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.");
     }
 
