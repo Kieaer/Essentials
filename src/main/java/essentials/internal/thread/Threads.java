@@ -55,8 +55,11 @@ public class Threads implements Runnable {
                         Call.setMessageBlockText(null, pluginData.messagejump.get(a).tile, "[green]Working...");
 
                         String[] arr = pluginData.messagejump.get(a).message.split(" ");
-                        String ip = arr[1];
-                        int port = Integer.parseInt(arr[2]);
+                        String ip = arr[0];
+                        int port = 6567;
+                        if (arr.length == 2) {
+                            port = Integer.parseInt(arr[1]);
+                        }
 
                         int fa = a;
                         new PingHost(ip, port, result -> Call.setMessageBlockText(null, pluginData.messagejump.get(fa).tile, result != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline"));
