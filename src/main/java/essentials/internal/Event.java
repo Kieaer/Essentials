@@ -30,7 +30,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
-import java.util.Base64;
 import java.util.Locale;
 
 import static essentials.Main.*;
@@ -359,7 +358,7 @@ public class Event {
                                     String msg = "[" + e.player.name + "]: " + e.message;
                                     try {
                                         for (Server.service ser : server.list) {
-                                            ser.os.writeBytes(Base64.getEncoder().encodeToString(tool.encrypt(msg, ser.spec, ser.cipher)));
+                                            ser.os.writeBytes(tool.encrypt(msg, ser.spec));
                                             ser.os.flush();
                                         }
                                     } catch (Exception ex) {
@@ -650,7 +649,7 @@ public class Event {
                                             ser.socket.close();
                                             server.list.remove(ser);
                                         }
-                                        server.stop();
+                                        server.shutdown();
                                     } catch (Exception ignored) {
                                     }
                                 }

@@ -21,11 +21,11 @@ import org.jsoup.nodes.Document;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,10 +46,8 @@ public class Server implements Runnable {
     public ServerSocket serverSocket;
 
     Bundle bundle = new Bundle();
-    Base64.Encoder encoder = Base64.getEncoder();
-    Base64.Decoder decoder = Base64.getDecoder();
 
-    public void stop() {
+    public void shutdown() {
         try {
             if (serverSocket != null) {
                 Thread.currentThread().interrupt();
@@ -85,55 +83,72 @@ public class Server implements Runnable {
         public BufferedReader in;
         public DataOutputStream os;
         public Socket socket;
-        public SecretKeySpec spec;
+        public SecretKey spec;
         public Cipher cipher;
         public String ip;
 
-        public service(Socket socket) {
+        public void shutdown(String bundle, String... parameter) {
             try {
-                this.socket = socket;
-                ip = socket.getInetAddress().toString();
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-                os = new DataOutputStream(socket.getOutputStream());
+                os.close();
+                in.close();
+                socket.close();
+                list.remove(this);
+                if (bundle != null) Log.server(bundle, (Object) parameter);
+            } catch (Exception ignored) {
+            }
+        }
 
-                // 키 값 읽기
-                String authkey = in.readLine();
-                if (authkey == null) throw new SocketException();
-                System.out.println(authkey);
-                if (authkey.matches(".*HTTP/.*")) {
-                    Log.write(Log.LogType.web, authkey);
-                    Log.write(Log.LogType.web, "Remote IP: " + ip);
-                    String headerLine;
-                    while ((headerLine = in.readLine()).length() != 0) {
-                        Log.write(Log.LogType.web, headerLine);
-                    }
-                    Log.write(Log.LogType.web, "========================");
-                    StringBuilder payload = new StringBuilder();
-                    while (in.ready()) {
-                        payload.append((char) in.read());
-                    }
+        public service(Socket socket) throws IOException {
+            this.socket = socket;
+            ip = socket.getInetAddress().toString();
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            os = new DataOutputStream(socket.getOutputStream());
 
-                    if (authkey.matches("POST /rank HTTP/.*") && payload.toString().split("\\|\\|\\|").length != 2) {
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-                        bw.write("Login failed!\n");
-                        bw.flush();
-                        bw.close();
-                        os.close();
-                        in.close();
-                        socket.close();
-                        list.remove(this);
-                        Log.server("client.disconnected.http", ip);
-                    } else {
-                        httpserver(authkey, payload.toString());
-                    }
-                    return;
+            // 키 값 읽기
+            String authkey = in.readLine();
+            if (authkey == null) throw new IOException("Auth key is null");
+            if (authkey.matches(".*HTTP/.*")) {
+                StringBuilder headers = new StringBuilder();
+                headers.append(authkey).append("\n");
+                headers.append("Remote IP: ").append(ip).append("\n");
+
+                String headerLine;
+                while ((headerLine = in.readLine()).length() != 0) {
+                    headers.append(headerLine).append("\n");
                 }
 
-                spec = new SecretKeySpec(decoder.decode(authkey), "AES");
-                cipher = Cipher.getInstance("AES");
-            } catch (SocketException ignored) {
-            } catch (Exception e) {
-                new CrashReport(e);
+                headers.append("========================");
+                Log.write(Log.LogType.web, headers.toString());
+
+                StringBuilder payload = new StringBuilder();
+                while (in.ready()) {
+                    payload.append((char) in.read());
+                }
+
+                if (authkey.matches("POST /rank HTTP/.*") && payload.toString().split("\\|\\|\\|").length != 2) {
+                    try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
+                        bw.write("Login failed!\n");
+                        bw.flush();
+                    } finally {
+                        shutdown("client.disconnected.http", ip);
+                    }
+                } else if (config.query()) {
+                    httpserver(authkey, payload.toString());
+                } else if (!config.query()) {
+                    try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
+                        bw.write("HTTP/1.1 403 Forbidden\r\n");
+                        bw.write("Date: " + tool.getTime() + "\r\n");
+                        bw.write("Server: Mindustry/Essentials " + vars.pluginVersion() + "\r\n");
+                        bw.write("Content-Encoding: gzip");
+                        bw.write("\r\n");
+                        bw.write("<TITLE>403 Forbidden</TITLE>");
+                        bw.write("<p>This server isn't allowed query!</p>");
+                    } finally {
+                        shutdown("client.disconnected.http", ip);
+                    }
+                }
+            } else {
+                spec = new SecretKeySpec(Base64.getDecoder().decode(authkey), "AES");
             }
         }
 
@@ -143,7 +158,8 @@ public class Server implements Runnable {
                 while (!Thread.currentThread().isInterrupted()) {
                     Thread.currentThread().setName(ip + " Client Thread");
                     ip = socket.getInetAddress().toString().replace("/", "");
-                    String value = new String(tool.decrypt(decoder.decode(in.readLine()), spec, cipher));
+
+                    String value = tool.decrypt(in.readLine(), spec);
                     JsonObject answer = new JsonObject();
                     JsonObject data = readJSON(value).asObject();
                     Request type = Request.valueOf(data.get("type").asString());
@@ -152,7 +168,7 @@ public class Server implements Runnable {
                             String[] msg = {"Hi " + ip + "! Your connection is successful!", "Hello " + ip + "! I'm server!", "Welcome to the server " + ip + "!"};
                             int rnd = new Random().nextInt(msg.length);
                             answer.add("result", msg[rnd]);
-                            os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), spec, cipher)) + "\n");
+                            os.writeBytes(tool.encrypt(answer.toString(), spec) + "\n");
                             os.flush();
                             Log.server("client.connected", ip);
                             break;
@@ -202,7 +218,7 @@ public class Server implements Runnable {
                                 String remoteip = ser.socket.getInetAddress().toString().replace("/", "");
                                 for (JsonValue b : config.banTrust()) {
                                     if (b.asString().equals(remoteip)) {
-                                        ser.os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), ser.spec, ser.cipher)) + "\n");
+                                        ser.os.writeBytes(tool.encrypt(answer.toString(), ser.spec) + "\n");
                                         ser.os.flush();
                                         Log.server("server.data-sented", ser.socket.getInetAddress().toString());
                                     }
@@ -217,7 +233,7 @@ public class Server implements Runnable {
 
                             for (service ser : list) {
                                 if (ser.spec != spec) {
-                                    ser.os.writeBytes(encoder.encodeToString(tool.encrypt(value, ser.spec, ser.cipher)) + "\n");
+                                    ser.os.writeBytes(tool.encrypt(value, ser.spec) + "\n");
                                     ser.os.flush();
                                 }
                             }
@@ -225,11 +241,7 @@ public class Server implements Runnable {
                             Log.server("server-message-received", ip, message);
                             break;
                         case exit:
-                            os.close();
-                            in.close();
-                            socket.close();
-                            list.remove(this);
-                            Log.server("client.disconnected", ip, bundle.get("client.disconnected.reason.exit"));
+                            shutdown("client.disconnected", ip, bundle.get("client.disconnected.reason.exit"));
                             this.interrupt();
                             return;
                         case unbanip:
@@ -262,15 +274,12 @@ public class Server implements Runnable {
                                 }
                             }
                             answer.add("result", found ? "true" : "false");
-                            os.writeBytes(encoder.encodeToString(tool.encrypt(answer.toString(), spec, cipher)) + "\n");
+                            os.writeBytes(tool.encrypt(answer.toString(), spec) + "\n");
                             os.flush();
                             break;
                     }
                 }
-                os.close();
-                in.close();
-                socket.close();
-                list.remove(this);
+                shutdown(null);
             } catch (Exception e) {
                 e.printStackTrace();
                 Log.server("client.disconnected", ip, bundle.get("client.disconnected.reason.error"));
@@ -461,13 +470,12 @@ public class Server implements Runnable {
             return doc.toString();
         }
 
-        private void httpserver(String receive, String payload) throws IOException {
+        private void httpserver(String receive, String payload) {
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss", Locale.ENGLISH);
             String time = now.format(dateTimeFormatter);
 
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-            if (config.query() && state.is(GameState.State.playing)) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
                 if (receive.matches("GET / HTTP/.*")) {
                     String data = query();
                     bw.write("HTTP/1.1 200 OK\r\n");
@@ -490,7 +498,6 @@ public class Server implements Runnable {
                     String[] value = payload.split("\\|\\|\\|");
                     String id = value[0].replace("id=", "");
                     String pw = value[1].replace("pw=", "");
-
 
                     try (PreparedStatement pstm = database.conn.prepareStatement("SELECT * FROM players WHERE accountid = ?")) {
                         pstm.setString(1, id);
@@ -617,6 +624,7 @@ public class Server implements Runnable {
 
                     byte[] fileArray = byteOutStream.toByteArray();
                     String changeString;
+                    Base64.Encoder encoder = Base64.getEncoder();
                     if (rand == 0) {
                         changeString = "data:image/gif;base64," + encoder.encodeToString(fileArray);
                     } else {
@@ -632,22 +640,12 @@ public class Server implements Runnable {
                     bw.write(doc.toString());
                     Log.info("Web request :" + receive);
                 }
-            } else {
-                bw.write("HTTP/1.1 403 Forbidden\r\n");
-                bw.write("Date: " + time + "\r\n");
-                bw.write("Server: Mindustry/Essentials 7.0\r\n");
-                bw.write("Content-Encoding: gzip");
-                bw.write("\r\n");
-                bw.write("<TITLE>403 Forbidden</TITLE>");
-                bw.write("<p>This server isn't allowed query!</p>");
+            } catch (IOException e) {
+                new CrashReport(e);
+            } finally {
+                shutdown("client.disconnected.http", ip);
             }
-            bw.flush();
-            bw.close();
-            os.close();
-            in.close();
-            socket.close();
-            list.remove(this);
-            Log.server("client.disconnected.http", ip);
+
         }
     }
 }

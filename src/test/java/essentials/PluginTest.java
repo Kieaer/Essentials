@@ -292,7 +292,7 @@ public class PluginTest {
         // Connection close test
         client.request(Client.Request.exit, null, null);
         TimeUnit.SECONDS.sleep(1);
-        server.stop();
+        server.shutdown();
     }
 
     @Test
@@ -352,7 +352,6 @@ public class PluginTest {
         clientHandler.handleMessage("/killall", player);
         assertEquals(0, unitGroup.size());
 
-        // Junit 에서 UI Test 불가능
         try {
             clientHandler.handleMessage("/event host testroom maze survival", player);
             for (int a = 0; a < 30; a++) {

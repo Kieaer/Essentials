@@ -160,7 +160,7 @@ public class Main extends Plugin {
         try {
             database.connect(config.dbServer());
             database.create();
-        } catch (SQLException | ClassNotFoundException e) {
+        } catch (SQLException e) {
             new CrashReport(e);
         }
 
@@ -202,7 +202,7 @@ public class Main extends Plugin {
                                 ser.socket.close();
                                 servers.remove();
                             }
-                            server.stop();
+                            server.shutdown();
                             Log.info("server-thread-disabled");
                         } catch (Exception e) {
                             error = true;
