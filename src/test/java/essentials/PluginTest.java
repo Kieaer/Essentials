@@ -7,8 +7,8 @@ import arc.Settings;
 import arc.backend.headless.HeadlessApplication;
 import arc.files.Fi;
 import arc.util.CommandHandler;
+import arc.util.Time;
 import essentials.core.player.PlayerData;
-import essentials.external.DataMigration;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
@@ -35,15 +35,14 @@ import mindustry.maps.Map;
 import mindustry.net.Net;
 import mindustry.type.UnitType;
 import org.hjson.JsonObject;
-import org.hjson.JsonValue;
 import org.junit.*;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runners.MethodSorters;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.sql.SQLException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.util.Locale;
 import java.util.Random;
@@ -51,7 +50,6 @@ import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static essentials.PluginTestDB.createNewPlayer;
-import static essentials.PluginTestDB.setupDB;
 import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static org.junit.Assert.*;
@@ -152,6 +150,7 @@ public class PluginTest {
         new Thread(() -> {
             while (true) {
                 try {
+                    Time.update();
                     unitGroup.update();
                     puddleGroup.update();
                     shieldGroup.update();
@@ -289,6 +288,27 @@ public class PluginTest {
 
         client.request(Client.Request.unbanid, null, player.uuid);
 
+        // Server http server test
+        try {
+            HttpURLConnection con = (HttpURLConnection) new URL("http://127.0.0.1:25000/rank").openConnection();
+            con.setRequestMethod("GET");
+            con.setDoInput(true);
+            if (con.getResponseCode() != 200) {
+                fail("HTTP test failed");
+            } else {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                    String inputLine;
+                    StringBuilder response = new StringBuilder();
+                    while ((inputLine = br.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    assertTrue(response.toString().contains("attack"));
+                }
+            }
+            con.disconnect();
+        } catch (Exception ignored) {
+        }
+
         // Connection close test
         client.request(Client.Request.exit, null, null);
         TimeUnit.SECONDS.sleep(1);
@@ -348,7 +368,7 @@ public class PluginTest {
         UnitType targetUnit = tool.getUnitByName("reaper");
         BaseUnit baseUnit = targetUnit.create(Team.sharded);
         baseUnit.set(player.getX() + 20, player.getY() + 20);
-        baseUnit.add();
+        for (int a = 0; a < 20; a++) baseUnit.add();
         clientHandler.handleMessage("/killall", player);
         assertEquals(0, unitGroup.size());
 
@@ -470,18 +490,19 @@ public class PluginTest {
         Player dummy4 = createNewPlayer(true);
 
         System.out.println("== votekick");
-        clientHandler.handleMessage("/vote kick " + dummy4.name, player);
+        clientHandler.handleMessage("/vote kick " + dummy4.id, player);
         Events.fire(new PlayerChatEvent(player, "y"));
         Events.fire(new PlayerChatEvent(dummy1, "y"));
         Events.fire(new PlayerChatEvent(dummy3, "y"));
         // Can't check player kicked
 
         System.out.println("== votemap");
-        clientHandler.handleMessage("/vote map fork", player);
+        clientHandler.handleMessage("/vote map Glacier", player);
         Events.fire(new PlayerChatEvent(player, "y"));
         Events.fire(new PlayerChatEvent(dummy1, "y"));
         Events.fire(new PlayerChatEvent(dummy3, "y"));
-        assertEquals("Fork", world.getMap().name());
+        sleep(150);
+        assertEquals("Glacier", world.getMap().name());
 
         System.out.println("== vote gameover");
         clientHandler.handleMessage("/vote gameover", player);
@@ -603,19 +624,15 @@ public class PluginTest {
     }
 
     @Test
-    public void test14_internal() throws SQLException, ClassNotFoundException {
-        setupDB();
-
-        DataMigration dataMigration = new DataMigration();
-        dataMigration.MigrateDB();
-
+    public void test14_internal() {
         playerCore.isLocal(player);
-        config.obj = JsonValue.readHjson(testVars.json).asObject();
-        config.LegacyUpgrade();
     }
 
     @Test
     public void test16_complexCommand() {
+        Call.onConstructFinish(world.tile(120, 120), Blocks.message, player.id, (byte) 0, Team.sharded, true);
+        Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
+        Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
     }
 
     @AfterClass

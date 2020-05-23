@@ -87,13 +87,13 @@ public class Server implements Runnable {
         public Cipher cipher;
         public String ip;
 
-        public void shutdown(String bundle, String... parameter) {
+        public void shutdown(String bundle, Object... parameter) {
             try {
                 os.close();
                 in.close();
                 socket.close();
                 list.remove(this);
-                if (bundle != null) Log.server(bundle, (Object) parameter);
+                if (bundle != null) Log.server(bundle, parameter);
             } catch (Exception ignored) {
             }
         }
@@ -280,8 +280,9 @@ public class Server implements Runnable {
                     }
                 }
                 shutdown(null);
+            } catch (IOException e) {
+                if (!e.getMessage().equals("Stream closed")) new CrashReport(e);
             } catch (Exception e) {
-                e.printStackTrace();
                 Log.server("client.disconnected", ip, bundle.get("client.disconnected.reason.error"));
             }
         }
