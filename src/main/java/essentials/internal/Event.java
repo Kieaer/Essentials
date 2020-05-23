@@ -7,8 +7,10 @@ import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.external.IpAddressMatcher;
+import essentials.feature.AntiGrief;
 import essentials.network.Client;
 import essentials.network.Server;
+import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.game.Difficulty;
@@ -334,6 +336,10 @@ public class Event {
 
         // 플레이어가 수다떨었을 때
         Events.on(EventType.PlayerChatEvent.class, e -> {
+            if (config.antiGrief() && (e.message.length() > Vars.maxTextLength || e.message.contains("Nexity#2671"))) {
+                Call.onKick(e.player.con, "Hacked client detected");
+            }
+
             PlayerData playerData = playerDB.get(e.player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
 
@@ -494,6 +500,24 @@ public class Event {
 
                 if (config.debug() && config.antiGrief()) {
                     Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                }
+
+                float range = new AntiGrief().getDistanceToCore(e.player, e.tile);
+                if (config.antiGrief() && range < 35) {
+                    e.player.sendMessage(new Bundle(target.locale()).get("anti-grief.reactor.close"));
+                    Call.onDeconstructFinish(e.tile, Blocks.air, e.player.id);
+                } else if (config.antiGrief()) {
+                    for (int rot = 0; rot < 4; rot++) {
+                        if (e.tile.getNearby(rot).block() != Blocks.liquidTank &&
+                                e.tile.getNearby(rot).block() != Blocks.conduit &&
+                                e.tile.getNearby(rot).block() != Blocks.bridgeConduit &&
+                                e.tile.getNearby(rot).block() != Blocks.phaseConduit &&
+                                e.tile.getNearby(rot).block() != Blocks.platedConduit &&
+                                e.tile.getNearby(rot).block() != Blocks.pulseConduit) {
+                            // TODO 냉각수 감지 추가
+                            Call.sendMessage("No cryofluid reactor detected");
+                        }
+                    }
                 }
             }
         });

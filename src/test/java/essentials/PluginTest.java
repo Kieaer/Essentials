@@ -490,7 +490,6 @@ public class PluginTest {
 
         Player dummy3 = createNewPlayer(true);
         clientHandler.handleMessage("/tpp " + dummy2.name + " " + dummy3.name, player);
-        sleep(100);
         assertTrue(dummy2.x == dummy3.x && dummy2.y == dummy3.y);
 
         clientHandler.handleMessage("/tppos 50 50", player);
