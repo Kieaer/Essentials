@@ -163,9 +163,13 @@ public class Permission {
     }
 
     public boolean isAdmin(PlayerData player) {
-        if (permission_user.has(player.uuid())) {
-            return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
-        } else {
+        try {
+            if (permission_user.has(player.uuid())) {
+                return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
+            } else {
+                return false;
+            }
+        } catch (NullPointerException ignored) {
             return false;
         }
     }
