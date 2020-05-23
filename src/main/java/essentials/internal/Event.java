@@ -6,7 +6,6 @@ import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
-import essentials.external.DataMigration;
 import essentials.external.IpAddressMatcher;
 import essentials.network.Client;
 import essentials.network.Server;
@@ -615,8 +614,6 @@ public class Event {
         });
 
         Events.on(EventType.ServerLoadEvent.class, e -> {
-            // 예전 DB 변환
-            if (config.oldDBMigration()) new DataMigration().MigrateDB();
             // 업데이트 확인
             if (config.update()) {
                 Log.client("client.update-check");

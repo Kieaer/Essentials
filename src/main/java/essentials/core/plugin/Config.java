@@ -93,11 +93,7 @@ public class Config {
         JsonObject discord;
         try {
             obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
-            try {
-                obj.get("settings").asObject();
-            } catch (NullPointerException ignored) {
-                LegacyUpgrade();
-            }
+            obj.get("settings").asObject();
         } catch (RuntimeException e) {
             JsonObject empty = new JsonObject();
             obj = new JsonObject();
@@ -306,111 +302,6 @@ public class Config {
         discord.add("link", discordLink);
 
         root.child("config.hjson").writeString(config.toString(Stringify.HJSON_COMMENTS));
-    }
-
-    public void LegacyUpgrade() {
-        JsonObject empty = new JsonObject();
-        obj = new JsonObject();
-        obj.add("settings", new JsonObject().add("database", empty));
-        obj.add("network", empty);
-        obj.add("antigrief", empty);
-        obj.add("features", new JsonObject().add("difficulty", empty).add("translate", empty));
-        obj.add("auth", new JsonObject().add("discord", empty));
-
-        locale = tool.TextToLocale(obj.getString("language", locale.toString()));
-        Bundle bundle = new Bundle(locale);
-
-        JsonObject config = new JsonObject();
-        JsonObject settings = new JsonObject();
-        JsonObject db = new JsonObject();
-        JsonObject network = new JsonObject();
-        JsonObject anti = new JsonObject();
-        JsonObject features = new JsonObject();
-        JsonObject difficulty = new JsonObject();
-        JsonObject auth = new JsonObject();
-        JsonObject discord = new JsonObject();
-        JsonObject tr = new JsonObject();
-
-        config.add("settings", settings, bundle.get("config-description"));
-        config.add("network", network);
-        config.add("antigrief", anti);
-        config.add("features", features);
-        config.add("auth", auth);
-
-        settings.add("version", obj.getInt("version", vars.configVersion()), bundle.get("config.version"));
-        settings.add("language", new Locale(obj.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country"))).toString(), bundle.get("config.language.description"));
-        settings.add("logging", obj.getBoolean("logging", true), bundle.get("config.feature.logging"));
-        settings.add("update", obj.getBoolean("update", true), bundle.get("config.update"));
-        settings.add("debug", obj.getBoolean("debug", false), bundle.get("config.debug"));
-        settings.add("debugcode", obj.getString("debugcode", "none"));
-        settings.add("crash-report", obj.getBoolean("crashreport", true));
-        settings.add("prefix", obj.getString("prefix", "[green][Essentials] []"), bundle.get("config.prefix"));
-
-        settings.add("database", db);
-        db.add("internalDB", obj.getBoolean("internalDB", true), bundle.get("config.database"));
-        db.add("DBServer", obj.getBoolean("DBServer", false));
-        db.add("DBurl", obj.getString("DBurl", "jdbc:h2:file:./config/mods/Essentials/data/player"));
-        db.add("old-db-migration", obj.getBoolean("OldDBMigration", false), bundle.get("config.database.old-database-migration"));
-        db.add("old-db-url", obj.getString("OldDBurl", "jdbc:sqlite:config/mods/Essentials/data/player.sqlite3"));
-        db.add("old-db-id", obj.getString("OldDBID", "none"));
-        db.add("old-db-pw", obj.getString("OldDBPW", "none"));
-        db.add("data-server-url", obj.getString("dataserverurl", "none"), bundle.get("config.client.data-share"));
-        db.add("data-server-id", obj.getString("dataserverid", "none"));
-        db.add("data-server-pw", obj.getString("dataserverpw", "none"));
-
-        network.add("server-enable", obj.getBoolean("serverenable", false), bundle.get("config.network"));
-        network.add("server-port", obj.getInt("serverport", 25000));
-        network.add("client-enable", obj.getBoolean("clientenable", false));
-        network.add("client-port", obj.getInt("clientport", 25000));
-        network.add("client-host", obj.getString("clienthost", "mindustry.kr"));
-        network.add("banshare", obj.getBoolean("banshare", false), bundle.get("config.server.banshare"));
-        network.add("bantrust", obj.get("bantrust") == null ? readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : obj.get("bantrust").asArray(), bundle.get("config.server.bantrust"));
-        network.add("query", obj.getBoolean("query", false), bundle.get("config.server.query"));
-
-        JsonObject antiObject = obj.get("antigrief").asObject();
-        anti.add("antigrief", antiObject.getBoolean("antigrief", false), bundle.get("config.anti-grief.desc"));
-        anti.add("antivpn", antiObject.getBoolean("antivpn", false), bundle.get("config.anti-grief.vpn"));
-        anti.add("antirush", antiObject.getBoolean("antirush", false), bundle.get("config.anti-grief.pvprush"));
-        anti.add("antirushtime", LocalTime.parse(antiObject.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss")).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-        anti.add("alert-action", antiObject.getBoolean("alertaction", false), bundle.get("config-alert-action-description"));
-        anti.add("realname", antiObject.getBoolean("realname", false), bundle.get("config.anti-grief.realname"));
-        anti.add("strict-name", antiObject.getBoolean("strictname", false), bundle.get("config-strict-name-description"));
-        anti.add("scanresource", antiObject.getBoolean("scanresource", false), bundle.get("config.anti-grief.scan-resource"));
-
-        JsonObject featureObject = obj.get("features").asObject();
-        features.add("explimit", obj.getBoolean("explimit", false), bundle.get("config.feature.exp.limit"));
-        features.add("basexp", featureObject.getDouble("basexp", 500.0), bundle.get("config.feature.exp.basexp"));
-        features.add("exponent", featureObject.getDouble("exponent", 1.12), bundle.get("config.feature.exp.exponent"));
-        features.add("levelupalarm", featureObject.getBoolean("levelupalarm", false), bundle.get("config.feature.exp.levelup-alarm"));
-        features.add("alarm-minimal-level", featureObject.getInt("alarmlevel", 20), bundle.get("config.feature.exp.minimal-level"));
-        features.add("vote", true, bundle.get("config.feature.vote"));
-        features.add("savetime", LocalTime.parse(featureObject.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss")).format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config.feature.save-time"));
-        features.add("rollback", featureObject.getBoolean("rollback", false), bundle.get("config.feature.slot-number"));
-        features.add("slotnumber", featureObject.getInt("slotnumber", 1000));
-        features.add("border", featureObject.getBoolean("border", false), bundle.get("config.feature.border"));
-        features.add("spawnlimit", featureObject.getInt("spawnlimit", 500), bundle.get("config.feature.spawn-limit"));
-        features.add("eventport", featureObject.getString("eventport", "8000-8050"), bundle.get("config.feature.event.port"));
-        features.add("cupdatei", featureObject.getInt("cupdatei", 1000), bundle.get("config.feature.colornick"));
-
-        features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
-        difficulty.add("auto-difficulty", obj.getBoolean("autodifficulty", false));
-        difficulty.add("easy", obj.getInt("difficultyEasy", 2));
-        difficulty.add("normal", obj.getInt("difficultyNormal", 4));
-        difficulty.add("hard", obj.getInt("difficultyHard", 6));
-        difficulty.add("insane", obj.getInt("difficultyInsane", 10));
-
-        features.add("translate", tr, bundle.get("config.feature.papago"));
-        tr.add("translate", obj.getBoolean("translate", false));
-        tr.add("translateid", obj.getString("translateid", "none"));
-        tr.add("translatepw", obj.getString("translatepw", "none"));
-
-        auth.add("loginenable", obj.getBoolean("loginenable", false), bundle.get("config.account.login"));
-        auth.add("loginmethod", obj.getString("passwordmethod", "password"), bundle.get("config.account.login.method"));
-        auth.add("validconnect", obj.getBoolean("validconnect", false), bundle.get("config.account.valid-connect"));
-
-        auth.add("discord", discord, bundle.get("config.feature.discord.desc"));
-        discord.add("token", obj.getString("discordtoken", "none"));
-        discord.add("link", obj.getString("discordlink", "none"));
     }
 
     public int version() {
