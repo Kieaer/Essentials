@@ -43,6 +43,8 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.time.LocalTime;
 import java.util.Locale;
@@ -636,13 +638,21 @@ public class PluginTest {
         playerCore.isLocal(player);
     }
 
+    public static int pin;
+
     @Test
     public void test16_complexCommand() {
         Call.onConstructFinish(world.tile(120, 120), Blocks.message, player.id, (byte) 0, Team.sharded, true);
         Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
         Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
-
-        discord.start();
+        try {
+            config.discordToken(new String(Files.readAllBytes(Paths.get("./token.txt"))));
+            discord.start();
+            discord.queue(player);
+            System.out.println("PIN: " + discord.pins.get(player.name));
+            sleep(10000);
+        } catch (IOException | InterruptedException ignored) {
+        }
     }
 
     @AfterClass
