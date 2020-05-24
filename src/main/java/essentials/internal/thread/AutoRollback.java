@@ -60,7 +60,7 @@ public class AutoRollback extends TimerTask {
                 float orignal = state.rules.respawnTime;
                 state.rules.respawnTime = 0f;
                 Call.onSetRules(state.rules);
-                sleep(100000);
+                sleep(3000);
                 state.rules.respawnTime = orignal;
                 Call.onSetRules(state.rules);
             } catch (InterruptedException ignored) {
