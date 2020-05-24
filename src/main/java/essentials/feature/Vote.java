@@ -176,8 +176,9 @@ public class Vote {
                     } else if (state.rules.editor) {
                         current = Gamemode.editor;
                     }
-                    world.loadMap(map, (map).applyRules(current));
                     Call.onWorldDataBegin();
+
+                    world.loadMap(map, (map).applyRules(current));
 
                     logic.play();
 
@@ -189,6 +190,7 @@ public class Vote {
                             p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                         }
                         netServer.sendWorldData(p);
+                        Call.onSetRules(p.con, (map).applyRules(current));
                     }
                     tool.sendMessageAll("vote.map.done");
                     break;
