@@ -143,7 +143,7 @@ public class TickTrigger {
 
                             if (target.login()) {
                                 // Exp 계산
-                                target.exp(target.exp() + (new SecureRandom().nextInt() * 5));
+                                target.exp(target.exp() + (new SecureRandom().nextInt(50)));
 
                                 // 잠수 및 플레이 시간 계산
                                 target.playtime(LocalTime.parse(target.playtime(), DateTimeFormatter.ofPattern("HH:mm:ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
