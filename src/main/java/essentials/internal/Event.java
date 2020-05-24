@@ -503,10 +503,10 @@ public class Event {
                 }
 
                 float range = new AntiGrief().getDistanceToCore(e.player, e.tile);
-                if (config.antiGrief() && range < 35) {
+                if (config.antiGrief() && range < 35 && e.tile.block() == Blocks.thoriumReactor) {
                     e.player.sendMessage(new Bundle(target.locale()).get("anti-grief.reactor.close"));
                     Call.onDeconstructFinish(e.tile, Blocks.air, e.player.id);
-                } else if (config.antiGrief()) {
+                }/* else if (config.antiGrief()) {
                     for (int rot = 0; rot < 4; rot++) {
                         if (e.tile.getNearby(rot).block() != Blocks.liquidTank &&
                                 e.tile.getNearby(rot).block() != Blocks.conduit &&
@@ -518,7 +518,7 @@ public class Event {
                             Call.sendMessage("No cryofluid reactor detected");
                         }
                     }
-                }
+                }*/
             }
         });
 
