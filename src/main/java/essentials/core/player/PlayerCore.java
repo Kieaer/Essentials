@@ -49,7 +49,6 @@ public class PlayerCore {
 
         String oldUUID = playerData.uuid();
         playerData.uuid(player.uuid);
-        playerData.uuid();
         playerData.connected(true);
         playerData.lastdate(tool.getTime());
         playerData.connserver(vars.serverIP());

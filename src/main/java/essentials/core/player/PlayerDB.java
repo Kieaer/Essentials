@@ -1,9 +1,7 @@
 package essentials.core.player;
 
-import arc.struct.ArrayMap;
-import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
-import essentials.internal.exception.PluginException;
+import org.hjson.JsonObject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -89,11 +87,11 @@ public class PlayerDB {
 
     public boolean save(PlayerData playerData) {
         StringBuilder sql = new StringBuilder();
-        ArrayMap<String, Object> js = playerData.toMap();
+        JsonObject js = playerData.toMap();
         sql.append("UPDATE players SET ");
 
         js.forEach((s) -> {
-            String buf = s.key.toLowerCase() + "=?, ";
+            String buf = s.getName().toLowerCase() + "=?, ";
             sql.append(buf);
         });
 
@@ -101,31 +99,29 @@ public class PlayerDB {
         sql.append(" WHERE uuid=?");
 
         try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
-            js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
+            js.forEach(new Consumer<JsonObject.Member>() {
                 int index = 1;
 
                 @Override
-                public void accept(ObjectMap.Entry<String, Object> o) {
+                public void accept(JsonObject.Member o) {
                     try {
-                        if (o.value instanceof String) {
-                            pstmt.setString(index, (String) o.value);
-                        } else if (o.value instanceof Boolean) {
-                            pstmt.setBoolean(index, (Boolean) o.value);
-                        } else if (o.value instanceof Integer) {
-                            pstmt.setInt(index, (Integer) o.value);
-                        } else if (o.value instanceof Long) {
-                            pstmt.setLong(index, (Long) o.value);
-                        } else {
-                            throw new PluginException("Player data save null!");
+                        if (o.getValue().asRaw() instanceof String) {
+                            pstmt.setString(index, o.getValue().asString());
+                        } else if (o.getValue().asRaw() instanceof Boolean) {
+                            pstmt.setBoolean(index, o.getValue().asBoolean());
+                        } else if (o.getValue().asRaw() instanceof Number) {
+                            pstmt.setInt(index, o.getValue().asInt());
+                        } else if (o.getValue().asRaw() instanceof Long) {
+                            pstmt.setLong(index, o.getValue().asLong());
                         }
-                    } catch (SQLException | PluginException e) {
+                    } catch (SQLException e) {
                         new CrashReport(e);
                     }
                     index++;
                 }
             });
 
-            pstmt.setString(js.size + 1, playerData.uuid());
+            pstmt.setString(js.size() + 1, playerData.uuid());
             return pstmt.execute();
         } catch (SQLException e) {
             new CrashReport(e);
@@ -144,27 +140,27 @@ public class PlayerDB {
         sql.append("INSERT INTO players VALUES(");
 
         PlayerData newdata = playerCore.NewData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw);
-        ArrayMap<String, Object> js = newdata.toMap();
+        JsonObject js = newdata.toMap();
 
         js.forEach((s) -> sql.append("?,"));
         sql.deleteCharAt(sql.length() - 1);
         sql.append(")");
 
         try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
-            js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
+            js.forEach(new Consumer<JsonObject.Member>() {
                 int index = 1;
 
                 @Override
-                public void accept(ObjectMap.Entry<String, Object> o) {
+                public void accept(JsonObject.Member o) {
                     try {
-                        if (o.value instanceof String) {
-                            pstmt.setString(index, (String) o.value);
-                        } else if (o.value instanceof Boolean) {
-                            pstmt.setBoolean(index, (Boolean) o.value);
-                        } else if (o.value instanceof Integer) {
-                            pstmt.setInt(index, (Integer) o.value);
-                        } else if (o.value instanceof Long) {
-                            pstmt.setLong(index, (Long) o.value);
+                        if (o.getValue().asRaw() instanceof String) {
+                            pstmt.setString(index, o.getValue().asString());
+                        } else if (o.getValue().asRaw() instanceof Boolean) {
+                            pstmt.setBoolean(index, o.getValue().asBoolean());
+                        } else if (o.getValue().asRaw() instanceof Integer) {
+                            pstmt.setInt(index, o.getValue().asInt());
+                        } else if (o.getValue().asRaw() instanceof Long) {
+                            pstmt.setLong(index, o.getValue().asLong());
                         }
                     } catch (SQLException e) {
                         new CrashReport(e);

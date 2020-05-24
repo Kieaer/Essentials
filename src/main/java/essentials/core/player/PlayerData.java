@@ -1,6 +1,6 @@
 package essentials.core.player;
 
-import arc.struct.ArrayMap;
+import org.hjson.JsonObject;
 
 import java.time.LocalTime;
 import java.util.Locale;
@@ -47,7 +47,7 @@ public class PlayerData {
     private String permission;
     private boolean mute;
     private boolean alert;
-    private Long udid;
+    private Long udid = 0L;
     private String accountid;
     private String accountpw;
 
@@ -487,49 +487,94 @@ public class PlayerData {
         return locale;
     }
 
-    public ArrayMap<String, Object> toMap() {
-        ArrayMap<String, Object> map = new ArrayMap<>();
-        map.put("name", name);
-        map.put("uuid", uuid);
-        map.put("country", country);
-        map.put("country_code", country_code);
-        map.put("language", language);
-        map.put("isAdmin", isAdmin);
-        map.put("placecount", placecount);
-        map.put("breakcount", breakcount);
-        map.put("killcount", killcount);
-        map.put("deathcount", deathcount);
-        map.put("joincount", joincount);
-        map.put("kickcount", kickcount);
-        map.put("level", level);
-        map.put("exp", exp);
-        map.put("reqexp", reqexp);
-        map.put("reqtotalexp", reqtotalexp);
-        map.put("firstdate", firstdate);
-        map.put("lastdate", lastdate);
-        map.put("lastplacename", lastplacename);
-        map.put("lastbreakname", lastbreakname);
-        map.put("lastchat", lastchat);
-        map.put("playtime", playtime);
-        map.put("attackclear", attackclear);
-        map.put("pvpwincount", pvpwincount);
-        map.put("pvplosecount", pvplosecount);
-        map.put("pvpbreakout", pvpbreakout);
-        map.put("reactorcount", reactorcount);
-        map.put("bantimeset", bantimeset);
-        map.put("bantime", bantime);
-        map.put("banned", banned);
-        map.put("translate", translate);
-        map.put("crosschat", crosschat);
-        map.put("colornick", colornick);
-        map.put("connected", connected);
-        map.put("connserver", connserver);
-        map.put("permission", permission);
-        map.put("mute", mute);
-        map.put("alert", alert);
-        map.put("udid", udid);
-        map.put("accountid", accountid);
-        map.put("accountpw", accountpw);
+    public JsonObject toMap() {
+        JsonObject map = new JsonObject();
+        map.add("name", name);
+        map.add("uuid", uuid);
+        map.add("country", country);
+        map.add("country_code", country_code);
+        map.add("language", language);
+        map.add("isAdmin", isAdmin);
+        map.add("placecount", placecount);
+        map.add("breakcount", breakcount);
+        map.add("killcount", killcount);
+        map.add("deathcount", deathcount);
+        map.add("joincount", joincount);
+        map.add("kickcount", kickcount);
+        map.add("level", level);
+        map.add("exp", exp);
+        map.add("reqexp", reqexp);
+        map.add("reqtotalexp", reqtotalexp);
+        map.add("firstdate", firstdate);
+        map.add("lastdate", lastdate);
+        map.add("lastplacename", lastplacename);
+        map.add("lastbreakname", lastbreakname);
+        map.add("lastchat", lastchat);
+        map.add("playtime", playtime);
+        map.add("attackclear", attackclear);
+        map.add("pvpwincount", pvpwincount);
+        map.add("pvplosecount", pvplosecount);
+        map.add("pvpbreakout", pvpbreakout);
+        map.add("reactorcount", reactorcount);
+        map.add("bantimeset", bantimeset);
+        map.add("bantime", bantime);
+        map.add("banned", banned);
+        map.add("translate", translate);
+        map.add("crosschat", crosschat);
+        map.add("colornick", colornick);
+        map.add("connected", connected);
+        map.add("connserver", connserver);
+        map.add("permission", permission);
+        map.add("mute", mute);
+        map.add("alert", alert);
+        map.add("udid", udid);
+        map.add("accountid", accountid);
+        map.add("accountpw", accountpw);
         return map;
+    }
+
+    public PlayerData toData(JsonObject data) {
+        this.name = data.get("name").asString();
+        this.uuid = data.get("uuid").asString();
+        this.country = data.get("country").asString();
+        this.country_code = data.get("country_code").asString();
+        this.language = data.get("language").asString();
+        this.isAdmin = data.get("isAdmin").asBoolean();
+        this.placecount = data.get("placecount").asInt();
+        this.breakcount = data.get("breakcount").asInt();
+        this.killcount = data.get("killcount").asInt();
+        this.deathcount = data.get("deathcount").asInt();
+        this.joincount = data.get("joincount").asInt();
+        this.kickcount = data.get("kickcount").asInt();
+        this.level = data.get("level").asInt();
+        this.exp = data.get("exp").asInt();
+        this.reqexp = data.get("reqexp").asInt();
+        this.reqtotalexp = data.get("reqtotalexp").asString();
+        this.firstdate = data.get("firstdate").asString();
+        this.lastdate = data.get("lastdate").asString();
+        this.lastplacename = data.get("lastplacename").asString();
+        this.lastbreakname = data.get("lastbreakname").asString();
+        this.lastchat = data.get("lastchat").asString();
+        this.playtime = data.get("playtime").asString();
+        this.attackclear = data.get("attackclear").asInt();
+        this.pvpwincount = data.get("pvpwincount").asInt();
+        this.pvplosecount = data.get("pvplosecount").asInt();
+        this.pvpbreakout = data.get("pvpbreakout").asInt();
+        this.reactorcount = data.get("reactorcount").asInt();
+        this.bantimeset = data.get("bantimeset").asString();
+        this.bantime = data.get("bantime").asString();
+        this.banned = data.get("banned").asBoolean();
+        this.translate = data.get("translate").asBoolean();
+        this.crosschat = data.get("crosschat").asBoolean();
+        this.colornick = data.get("colornick").asBoolean();
+        this.connected = data.get("connected").asBoolean();
+        this.connserver = data.get("connserver").asString();
+        this.permission = data.get("permission").asString();
+        this.mute = data.get("mute").asBoolean();
+        this.alert = data.get("alert").asBoolean();
+        this.udid = data.get("udid").asLong();
+        this.accountid = data.get("accountid").asString();
+        this.accountpw = data.get("accountpw").asString();
+        return this;
     }
 }

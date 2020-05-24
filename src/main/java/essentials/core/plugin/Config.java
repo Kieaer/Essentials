@@ -500,6 +500,9 @@ public class Config {
         return discordToken;
     }
 
+    public void discordToken(String discordToken) {
+        this.discordToken = discordToken;
+    }
 
     public String discordLink() {
         return discordLink;
@@ -540,7 +543,6 @@ public class Config {
     public boolean rollback() {
         return rollback;
     }
-
 
     public int slotNumber() {
         return slotNumber;

@@ -29,7 +29,7 @@ import static essentials.Main.*;
 import static mindustry.Vars.playerGroup;
 
 public class Discord extends ListenerAdapter {
-    static ObjectMap<String, Integer> pins = new ObjectMap<>();
+    public ObjectMap<String, Integer> pins = new ObjectMap<>();
     public JDA jda;
     private MessageReceivedEvent event;
 
@@ -69,18 +69,12 @@ public class Discord extends ListenerAdapter {
             String[] arr = msg.split(" ");
             switch (arr[0]) {
                 case "!signup":
-                    send("Array length: " + arr.length);
                     if (arr.length == 3) {
-                        send("length match true");
-                        send("pins length: " + pins.size);
                         for (ObjectMap.Entry<String, Integer> data : pins.entries()) {
                             String name = data.key;
-                            send("name: " + name);
                             if (data.value == Integer.parseInt(arr[1])) {
                                 String pw = arr[2];
-                                send("PW: " + pw);
                                 if (checkpw(e.getAuthor().getName(), name, pw)) {
-                                    send("check pw success");
                                     PreparedStatement pstmt = null;
                                     ResultSet rs = null;
                                     try {
