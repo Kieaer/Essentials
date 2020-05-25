@@ -45,7 +45,13 @@ public class Vote {
         this.bundle = new Bundle(playerData.locale());
         this.type = voteType;
 
-        require = (int) Math.round((double) vars.playerData().size / 3);
+        if (vars.playerData().size == 2) {
+            player.sendMessage(bundle.get("vote.minimal"));
+        } else if (vars.playerData().size == 3) {
+            require = 2;
+        } else if (vars.playerData().size > 3) {
+            require = (int) Math.round((double) vars.playerData().size / 3.5);
+        }
 
         switch (type) {
             case kick:
