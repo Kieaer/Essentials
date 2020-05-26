@@ -186,6 +186,9 @@ public class Vote {
 
                     world.loadMap(map, (map).applyRules(current));
 
+                    state.rules = world.getMap().applyRules(current);
+                    Call.onSetRules(state.rules);
+
                     logic.play();
 
                     for (Player p : players) {
@@ -196,7 +199,6 @@ public class Vote {
                             p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                         }
                         netServer.sendWorldData(p);
-                        Call.onSetRules(p.con, (map).applyRules(current));
                     }
                     tool.sendMessageAll("vote.map.done");
                     break;
