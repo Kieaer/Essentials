@@ -1,7 +1,11 @@
 package essentials.core.player;
 
+import arc.Core;
 import essentials.internal.CrashReport;
+import essentials.internal.Log;
 import org.hjson.JsonObject;
+import org.hjson.JsonType;
+import org.hjson.JsonValue;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -105,14 +109,24 @@ public class PlayerDB {
                 @Override
                 public void accept(JsonObject.Member o) {
                     try {
-                        if (o.getValue().asRaw() instanceof String) {
-                            pstmt.setString(index, o.getValue().asString());
-                        } else if (o.getValue().asRaw() instanceof Boolean) {
-                            pstmt.setBoolean(index, o.getValue().asBoolean());
-                        } else if (o.getValue().asRaw() instanceof Number) {
-                            pstmt.setInt(index, o.getValue().asInt());
-                        } else if (o.getValue().asRaw() instanceof Long) {
-                            pstmt.setLong(index, o.getValue().asLong());
+                        JsonValue data = o.getValue();
+                        Object value = o.getValue().asRaw();
+                        if (value instanceof String) {
+                            pstmt.setString(index, data.asString());
+                        } else if (value instanceof Boolean) {
+                            pstmt.setBoolean(index, data.asBoolean());
+                        } else if (value instanceof Integer) {
+                            pstmt.setInt(index, data.asInt());
+                        } else if (value instanceof Long) {
+                            pstmt.setLong(index, data.asLong());
+                        } else {
+                            if (o.getValue().getType() == JsonType.NUMBER) {
+                                pstmt.setInt(index, data.asInt());
+                            } else {
+                                Log.err(index + "/" + o.getName() + "/" + o.getValue().toString() + "/" + o.getValue().getType().name());
+                                Core.app.dispose();
+                                Core.app.exit();
+                            }
                         }
                     } catch (SQLException e) {
                         new CrashReport(e);
@@ -153,14 +167,24 @@ public class PlayerDB {
                 @Override
                 public void accept(JsonObject.Member o) {
                     try {
-                        if (o.getValue().asRaw() instanceof String) {
-                            pstmt.setString(index, o.getValue().asString());
-                        } else if (o.getValue().asRaw() instanceof Boolean) {
-                            pstmt.setBoolean(index, o.getValue().asBoolean());
-                        } else if (o.getValue().asRaw() instanceof Integer) {
-                            pstmt.setInt(index, o.getValue().asInt());
-                        } else if (o.getValue().asRaw() instanceof Long) {
-                            pstmt.setLong(index, o.getValue().asLong());
+                        JsonValue data = o.getValue();
+                        Object value = o.getValue().asRaw();
+                        if (value instanceof String) {
+                            pstmt.setString(index, data.asString());
+                        } else if (value instanceof Boolean) {
+                            pstmt.setBoolean(index, data.asBoolean());
+                        } else if (value instanceof Integer) {
+                            pstmt.setInt(index, data.asInt());
+                        } else if (value instanceof Long) {
+                            pstmt.setLong(index, data.asLong());
+                        } else {
+                            if (o.getValue().getType() == JsonType.NUMBER) {
+                                pstmt.setInt(index, data.asInt());
+                            } else {
+                                Log.err(index + "/" + o.getName() + "/" + o.getValue().toString() + "/" + o.getValue().getType().name());
+                                Core.app.dispose();
+                                Core.app.exit();
+                            }
                         }
                     } catch (SQLException e) {
                         new CrashReport(e);
