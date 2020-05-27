@@ -76,7 +76,7 @@ public class PluginTest {
     }
 
     @BeforeClass
-    public static void init() {
+    public static void init() throws PluginException, InterruptedException {
         Core.settings = new Settings();
         Core.settings.setDataDirectory(new Fi(""));
         Core.settings.getDataDirectory().child("locales").writeString("en");
@@ -169,17 +169,23 @@ public class PluginTest {
                 }
             }
         }).start();
-    }
 
-    @Test
-    public void test00_start() throws PluginException {
+        testroot.child("locales").delete();
+        testroot.child("version.properties").delete();
+
         root.child("config.hjson").writeString(testVars.config);
 
         main = new Main();
         main.init();
         main.registerServerCommands(serverHandler);
         main.registerClientCommands(clientHandler);
+        player = createNewPlayer(true);
     }
+
+/*    @Test
+    public void test00_start() throws PluginException {
+
+    }*/
 
     @Test
     public void test01_config() {
@@ -187,8 +193,7 @@ public class PluginTest {
     }
 
     @Test
-    public void test02_register() throws InterruptedException {
-        player = createNewPlayer(true);
+    public void test02_register() {
         assertFalse(playerDB.get(player.uuid).error());
 
         JsonObject json = JsonObject.readJSON(root.child("permission_user.hjson").readString()).asObject();
@@ -549,6 +554,7 @@ public class PluginTest {
         assertEquals(0.85f, state.rules.ambientLight.a, 0.0f);
 
         clientHandler.handleMessage("/mute " + dummy3.name, player);
+        assertNotNull(playerGroup.find(p -> p.uuid.equals(dummy3.uuid)));
         assertTrue(playerDB.get(dummy3.uuid).mute());
 
         //clientHandler.handleMessage("/votekick");
@@ -661,7 +667,5 @@ public class PluginTest {
     public static void shutdown() {
         Core.app.getListeners().get(1).dispose();
         assertTrue(out.getLogWithNormalizedLineSeparator().contains(config.bundle.get("thread-disabled")));
-        testroot.child("locales").delete();
-        testroot.child("version.properties").delete();
     }
 }

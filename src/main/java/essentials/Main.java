@@ -242,15 +242,6 @@ public class Main extends Plugin {
 
     @Override
     public void registerServerCommands(CommandHandler handler) {
-        handler.register("sql", "[SQL...]", "Execute SQL query to DB server", (arg) -> {
-            if (arg.length == 0) return;
-            try (PreparedStatement pstmt = database.conn.prepareStatement(arg[0])) {
-                int count = pstmt.executeUpdate();
-                Log.info(count == 1 ? "success" : "fail");
-            } catch (SQLException e) {
-                new CrashReport(e);
-            }
-        });
         handler.register("edit", "<uuid> <name> [value]", "Edit PlayerData directly", (arg) -> {
             String sql = "UPDATE players SET " + arg[1] + "=? WHERE uuid=?";
             try (PreparedStatement pstmt = database.conn.prepareStatement(sql)) {
@@ -258,19 +249,24 @@ public class Main extends Plugin {
                 pstmt.setString(2, arg[0]);
 
                 PlayerData playerData = playerDB.get(arg[0]);
+                Player player = playerGroup.find(p -> p.uuid.equals(arg[0]));
                 if (!playerData.error()) {
-                    Player player = playerGroup.find(p -> p.uuid.equals(arg[0]));
+                    playerDB.save(playerData);
                     playerData.toData(playerData.toMap().set(arg[1], arg[2]));
                     perm.permission_user.get(playerData.uuid()).asObject().set(arg[1], arg[2]);
                     perm.saveAll();
+                }
 
+                int count = pstmt.executeUpdate();
+
+                if (!playerData.error()) {
+                    // TODO 실패 메세지 추가
+                    vars.removePlayerData(p -> p.uuid().equals(player.uuid));
+                    vars.removePlayers(player);
                     playerCore.load(player);
                     // TODO 데이터 재설정 메세지 추가
                     player.sendMessage("Your player data reloaded!");
                 }
-
-                int count = pstmt.executeUpdate();
-                // TODO 실패 메세지 추가
                 Log.info(count == 1 ? "success" : "fail");
             } catch (SQLException e) {
                 new CrashReport(e);
