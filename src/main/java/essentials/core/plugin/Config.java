@@ -42,7 +42,7 @@ public class Config {
     private boolean query;
     private boolean antiVPN;
     private boolean antiRush;
-    private LocalTime antiRushtime;
+    private long antiRushtime;
     private boolean vote;
     private boolean logging;
     private boolean update;
@@ -149,7 +149,7 @@ public class Config {
         antiGrief = anti.getBoolean("antigrief", false);
         antiVPN = anti.getBoolean("antivpn", false);
         antiRush = anti.getBoolean("antirush", false);
-        antiRushtime = LocalTime.parse(anti.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
+        antiRushtime = anti.get("antirushtime").asString().contains(":") ? 0L : anti.getLong("antirushtime", 600);
         alertAction = anti.getBoolean("alert-action", false);
         realName = anti.getBoolean("realname", false);
         strictName = anti.getBoolean("strict-name", false);
@@ -255,7 +255,7 @@ public class Config {
         anti.add("antigrief", antiGrief, bundle.get("config.anti-grief.desc"));
         anti.add("antivpn", antiVPN, bundle.get("config.anti-grief.vpn"));
         anti.add("antirush", antiRush, bundle.get("config.anti-grief.pvprush"));
-        anti.add("antirushtime", antiRushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        anti.add("antirushtime", antiRushtime);
         anti.add("alert-action", alertAction, bundle.get("config-alert-action-description"));
         anti.add("realname", realName, bundle.get("config.anti-grief.realname"));
         anti.add("strict-name", strictName, bundle.get("config-strict-name-description"));
@@ -408,7 +408,7 @@ public class Config {
         return antiRush;
     }
 
-    public LocalTime antiRushtime() {
+    public long antiRushtime() {
         return antiRushtime;
     }
 

@@ -5,8 +5,6 @@ import arc.struct.Array;
 import essentials.core.player.PlayerData;
 import mindustry.entities.type.Player;
 
-import java.time.LocalTime;
-
 import static essentials.Main.tool;
 
 public class PluginVars {
@@ -16,8 +14,8 @@ public class PluginVars {
     private int configVersion = 13;
     private String serverIP = tool.getHostIP();
     private String pluginVersion;
-    private LocalTime uptime = LocalTime.of(0, 0, 0);
-    private LocalTime playtime = LocalTime.of(0, 0, 0);
+    private long uptime = 0L;
+    private long playtime = 0L;
     private Array<PlayerData> playerData = new Array<>();
     private Array<Player> players = new Array<>();
     private boolean PvPPeace = false;
@@ -70,19 +68,19 @@ public class PluginVars {
         this.pluginVersion = pluginVersion;
     }
 
-    public LocalTime uptime() {
+    public long uptime() {
         return uptime;
     }
 
-    public void uptime(LocalTime uptime) {
+    public void uptime(long uptime) {
         this.uptime = uptime;
     }
 
-    public LocalTime playtime() {
+    public long playtime() {
         return playtime;
     }
 
-    public void playtime(LocalTime playtime) {
+    public void playtime(long playtime) {
         this.playtime = playtime;
     }
 

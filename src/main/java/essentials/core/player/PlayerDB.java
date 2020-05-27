@@ -58,7 +58,7 @@ public class PlayerDB {
                             rs.getString("lastplacename"),
                             rs.getString("lastbreakname"),
                             rs.getString("lastchat"),
-                            rs.getString("playtime"),
+                            rs.getLong("playtime"),
                             rs.getInt("attackclear"),
                             rs.getInt("pvpwincount"),
                             rs.getInt("pvplosecount"),

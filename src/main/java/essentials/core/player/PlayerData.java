@@ -30,7 +30,7 @@ public class PlayerData {
     private String lastplacename;
     private String lastbreakname;
     private String lastchat;
-    private String playtime;
+    private Long playtime;
     private int attackclear;
     private int pvpwincount;
     private int pvplosecount;
@@ -64,7 +64,7 @@ public class PlayerData {
         this.error = true;
     }
 
-    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String accountid, String accountpw) {
+    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, Long playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String accountid, String accountpw) {
         this.name = name;
         this.uuid = uuid;
         this.country = country;
@@ -195,7 +195,7 @@ public class PlayerData {
         this.lastchat = lastchat;
     }
 
-    public void playtime(String playtime) {
+    public void playtime(Long playtime) {
         this.playtime = playtime;
     }
 
@@ -383,7 +383,7 @@ public class PlayerData {
         return lastchat;
     }
 
-    public String playtime() {
+    public Long playtime() {
         return playtime;
     }
 
@@ -555,7 +555,7 @@ public class PlayerData {
         this.lastplacename = data.get("lastplacename").asString();
         this.lastbreakname = data.get("lastbreakname").asString();
         this.lastchat = data.get("lastchat").asString();
-        this.playtime = data.get("playtime").asString();
+        this.playtime = data.get("playtime").asLong();
         this.attackclear = data.get("attackclear").asInt();
         this.pvpwincount = data.get("pvpwincount").asInt();
         this.pvplosecount = data.get("pvplosecount").asInt();

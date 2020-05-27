@@ -92,7 +92,7 @@ public class PlayerCore {
                 "none",
                 "none",
                 "",
-                "00:00:00",
+                0L,
                 0,
                 0,
                 0,

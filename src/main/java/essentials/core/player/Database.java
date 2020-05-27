@@ -1,13 +1,11 @@
 package essentials.core.player;
 
 import essentials.internal.CrashReport;
+import essentials.internal.exception.PluginException;
 import org.h2.tools.Server;
 
 import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 import static essentials.Main.config;
 import static essentials.Main.root;
@@ -95,6 +93,29 @@ public class Database {
             disconnect();
             if (server != null) server_stop();
         } catch (Exception e) {
+            new CrashReport(e);
+        }
+    }
+
+    public void update() {
+        // playtime HH:mm:ss -> long 0
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT uuid, playtime FROM players")) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    if (rs.getString("playtime").contains(":")) {
+                        try (PreparedStatement pstmt2 = conn.prepareStatement("UPDATE players SET playtime=? WHERE uuid=?")) {
+                            pstmt2.setLong(1, 0);
+                            pstmt2.setString(2, rs.getString("uuid"));
+                            int result = pstmt2.executeUpdate();
+                            if (result != 0) {
+                                new CrashReport(new PluginException("Database update error"));
+                                System.exit(1);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
             new CrashReport(e);
         }
     }

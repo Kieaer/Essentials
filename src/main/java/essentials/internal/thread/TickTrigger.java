@@ -55,7 +55,7 @@ public class TickTrigger {
                 // 1초마다 실행
                 if ((tick % 60) == 0) {
                     // 서버 켜진시간 카운트
-                    vars.uptime(vars.uptime().plusSeconds(1));
+                    vars.uptime(vars.uptime() + 1);
 
                     // 데이터 저장
                     JsonObject json = new JsonObject();
@@ -82,10 +82,10 @@ public class TickTrigger {
                         // new jumpzone().start();
 
                         // 맵 플탐 카운트
-                        vars.playtime(vars.playtime().plusSeconds(1));
+                        vars.playtime(vars.playtime() + 1);
 
                         // PvP 평화시간 카운트
-                        if (config.antiRush() && state.rules.pvp && vars.playtime().isAfter(config.antiRushtime()) && vars.isPvPPeace()) {
+                        if (config.antiRush() && state.rules.pvp && vars.playtime() < config.antiRushtime() && vars.isPvPPeace()) {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
@@ -146,7 +146,7 @@ public class TickTrigger {
                                 target.exp(target.exp() + (new SecureRandom().nextInt(50)));
 
                                 // 잠수 및 플레이 시간 계산
-                                target.playtime(LocalTime.parse(target.playtime(), DateTimeFormatter.ofPattern("HH:mm:ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                                target.playtime(target.playtime() + 1);
                                 if (target.tilex() == p.tileX() && target.tiley() == p.tileY()) {
                                     target.afk(target.afk().plusSeconds(1));
                                     if (target.afk() == LocalTime.of(0, 5, 0)) {

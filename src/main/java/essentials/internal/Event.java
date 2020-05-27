@@ -30,7 +30,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalTime;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -136,7 +135,7 @@ public class Event {
 
         // 맵이 불러와졌을 때
         Events.on(EventType.WorldLoadEvent.class, e -> {
-            vars.playtime(LocalTime.of(0, 0, 0));
+            vars.playtime(0);
 
             // 전력 노드 정보 초기화
             pluginData.powerblock.clear();
@@ -289,7 +288,7 @@ public class Event {
                 }
 
                 // PvP 평화시간 설정
-                if (config.antiRush() && state.rules.pvp && vars.playtime().isBefore(config.antiRushtime())) {
+                if (config.antiRush() && state.rules.pvp && vars.playtime() < config.antiRushtime()) {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
                     Call.onSetRules(state.rules);
@@ -342,6 +341,8 @@ public class Event {
 
             PlayerData playerData = playerDB.get(e.player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
+
+            if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
 
             if (!playerData.error()) {
                 // 명령어인지 확인
@@ -459,8 +460,6 @@ public class Event {
 
                 // 마지막 대화 데이터를 DB에 저장함
                 playerData.lastchat(e.message);
-
-                Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
             }
         });
 

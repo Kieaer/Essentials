@@ -293,7 +293,7 @@ public class Server implements Runnable {
             result.add("players", playerGroup.size()); // 플레이어 인원
             result.add("version", Version.build); // 버전
             result.add("plugin-version", vars.pluginVersion());
-            result.add("playtime", vars.playtime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            result.add("playtime", tool.milsToTime(vars.playtime()));
             result.add("name", Core.settings.getString("servername"));
             result.add("mapname", world.getMap().name());
             result.add("wave", state.wave);
@@ -352,8 +352,8 @@ public class Server implements Runnable {
                 }
                 int version = Version.build;
                 String description = Core.settings.getString("servername");
-                String worldtime = vars.playtime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-                String serveruptime = vars.uptime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                String worldtime = tool.milsToTime(vars.playtime());
+                String serveruptime = tool.milsToTime(vars.uptime());
                 StringBuilder items = new StringBuilder();
                 for (Item item : content.items()) {
                     if (item.type == ItemType.material) {
@@ -556,7 +556,7 @@ public class Server implements Runnable {
                                                 bundle.get("player.reqtotalexp") + ": " + db.reqtotalexp() + "<br>" +
                                                 bundle.get("player.firstdate") + ": " + db.firstdate() + "<br>" +
                                                 bundle.get("player.lastdate") + ": " + db.lastdate() + "<br>" +
-                                                bundle.get("player.playtime") + ": " + db.playtime() + " - <b>#" + array.get(7) + "</b><br>" +
+                                                bundle.get("player.playtime") + ": " + tool.milsToTime(db.playtime()) + " - <b>#" + array.get(7) + "</b><br>" +
                                                 bundle.get("player.attackclear") + ": " + db.attackclear() + " - <b>#" + array.get(8) + "</b><br>" +
                                                 bundle.get("player.pvpwincount") + ": " + db.pvpwincount() + " - <b>#" + array.get(9) + "</b><br>" +
                                                 bundle.get("player.pvplosecount") + ": " + db.pvplosecount() + " - <b>#" + array.get(10) + "</b><br>" +
@@ -577,7 +577,7 @@ public class Server implements Runnable {
                                                 bundle.get("player.reqtotalexp") + ": " + db.reqtotalexp() + "<br>" +
                                                 bundle.get("player.firstdate") + ": " + db.firstdate() + "<br>" +
                                                 bundle.get("player.lastdate") + ": " + db.lastdate() + "<br>" +
-                                                bundle.get("player.playtime") + ": " + db.playtime() + "<br>" +
+                                                bundle.get("player.playtime") + ": " + tool.milsToTime(db.playtime()) + "<br>" +
                                                 bundle.get("player.attackclear") + ": " + db.attackclear() + "<br>" +
                                                 bundle.get("player.pvpwincount") + ": " + db.pvpwincount() + "<br>" +
                                                 bundle.get("player.pvplosecount") + ": " + db.pvplosecount() + "<br>" +

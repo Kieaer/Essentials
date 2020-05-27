@@ -435,4 +435,13 @@ public class Tools {
         }
         return resultsMap;
     }
+
+    public String milsToTime(long mils) {
+        long sec = mils / 1000;
+        long min = sec / 60;
+        long hour = min / 60;
+        long days = hour / 24;
+        return String.format("%d:%02d:%02d:%02d",
+                days % 365, hour % 24, min % 60, sec % 60);
+    }
 }

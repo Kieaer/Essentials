@@ -160,6 +160,7 @@ public class Main extends Plugin {
         try {
             database.connect(config.dbServer());
             database.create();
+            database.update();
         } catch (SQLException e) {
             new CrashReport(e);
         }
@@ -415,7 +416,7 @@ public class Main extends Plugin {
                                     "lastplacename: " + rs.getString("lastplacename") + "\n" +
                                     "lastbreakname: " + rs.getString("lastbreakname") + "\n" +
                                     "lastchat: " + rs.getString("lastchat") + "\n" +
-                                    "playtime: " + rs.getString("playtime") + "\n" +
+                                    "playtime: " + tool.milsToTime(rs.getLong("playtime")) + "\n" +
                                     "attackclear: " + rs.getInt("attackclear") + "\n" +
                                     "pvpwincount: " + rs.getInt("pvpwincount") + "\n" +
                                     "pvplosecount: " + rs.getInt("pvplosecount") + "\n" +
@@ -673,7 +674,7 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player.reqtotalexp") + "[] : " + playerData.reqtotalexp() + "\n" +
                     "[green]" + bundle.get("player.firstdate") + "[] : " + playerData.firstdate() + "\n" +
                     "[green]" + bundle.get("player.lastdate") + "[] : " + playerData.lastdate() + "\n" +
-                    "[green]" + bundle.get("player.playtime") + "[] : " + playerData.playtime() + "\n" +
+                    "[green]" + bundle.get("player.playtime") + "[] : " + tool.milsToTime(playerData.playtime()) + "\n" +
                     "[green]" + bundle.get("player.attackclear") + "[] : " + playerData.attackclear() + "\n" +
                     "[green]" + bundle.get("player.pvpwincount") + "[] : " + playerData.pvpwincount() + "\n" +
                     "[green]" + bundle.get("player.pvplosecount") + "[] : " + playerData.pvplosecount() + "\n" +
@@ -1066,7 +1067,9 @@ public class Main extends Plugin {
             int bans = netServer.admins.getBanned().size;
             int ipbans = netServer.admins.getBannedIPs().size;
             int bancount = bans + ipbans;
-            player.sendMessage(bundle.get("server.status.result", fps, playerGroup.size(), bancount, bans, ipbans, vars.playtime(), vars.uptime(), vars.pluginVersion()));
+            String playtime = tool.milsToTime(vars.playtime());
+            String uptime = tool.milsToTime(vars.uptime());
+            player.sendMessage(bundle.get("server.status.result", fps, playerGroup.size(), bancount, bans, ipbans, playtime, uptime, vars.pluginVersion()));
 
             JsonObject result = new JsonObject();
             for (PlayerData p : vars.playerData()) {

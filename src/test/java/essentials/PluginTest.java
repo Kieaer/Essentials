@@ -46,7 +46,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
-import java.time.LocalTime;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -203,7 +202,7 @@ public class PluginTest {
     }
 
     @Test
-    public void test04_crashReport() {
+    public void test04_DBCheck() {
         assertTrue(new CrashReport(new Exception("test")).success);
     }
 
@@ -566,7 +565,7 @@ public class PluginTest {
         assertEquals(1, playerDB.get(player.uuid).attackclear());
 
         Events.fire(new WorldLoadEvent());
-        assertSame(LocalTime.of(0, 0, 0), vars.playtime());
+        assertEquals(0L, vars.playtime());
         assertEquals(0, pluginData.powerblock.size);
 
         Events.fire(new PlayerConnect(player));
