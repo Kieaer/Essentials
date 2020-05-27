@@ -330,6 +330,9 @@ public class PluginTest {
     public void test11_serverCommand() {
         serverHandler.handleMessage("saveall");
 
+        serverHandler.handleMessage("edit " + player.uuid + " lastchat Manually");
+        assertEquals("Manually", playerDB.get(player.uuid).lastchat());
+
         root.child("README.md").delete();
         serverHandler.handleMessage("gendocs");
         assertTrue(root.child("README.md").exists());
