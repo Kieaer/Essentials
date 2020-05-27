@@ -39,13 +39,18 @@ import org.junit.*;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runners.MethodSorters;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -294,6 +299,36 @@ public class PluginTest {
             client.request(Client.Request.unbanip, null, "127.0.0.1");
 
             client.request(Client.Request.unbanid, null, player.uuid);
+
+            // Ban check test
+            try (Socket socket = new Socket("127.0.0.1", 25000);) {
+                KeyGenerator gen = KeyGenerator.getInstance("AES");
+                gen.init(128);
+                SecretKey key = gen.generateKey();
+
+                byte[] raw = key.getEncoded();
+                SecretKey skey = new SecretKeySpec(raw, "AES");
+                try (BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                     DataOutputStream os = new DataOutputStream(socket.getOutputStream())) {
+
+                    os.writeBytes(new String(Base64.getEncoder().encode(raw)) + "\n");
+                    os.flush();
+
+                    JsonObject json = new JsonObject();
+                    json.add("type", "checkban");
+                    json.add("target_uuid", player.uuid);
+                    json.add("target_ip", player.con.address);
+
+                    String en = tool.encrypt(json.toString(), skey);
+                    os.writeBytes(en + "\n");
+                    os.flush();
+
+                    String receive = tool.decrypt(is.readLine(), skey);
+                    boolean kick = Boolean.parseBoolean(receive);
+                    assertFalse(kick);
+                }
+            } catch (Exception ignored) {
+            }
 
             // Server http server test
             try {

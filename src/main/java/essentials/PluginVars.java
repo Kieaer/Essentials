@@ -8,10 +8,9 @@ import mindustry.entities.type.Player;
 import static essentials.Main.tool;
 
 public class PluginVars {
-    private int dbVersion = 5;
-    private int buildVersion = 104;
-    private int buildRevision = 6;
-    private int configVersion = 13;
+    private final int buildVersion = 104;
+    private final int buildRevision = 6;
+    private final int configVersion = 13;
     private String serverIP = tool.getHostIP();
     private String pluginVersion;
     private long uptime = 0L;
@@ -20,36 +19,16 @@ public class PluginVars {
     private Array<Player> players = new Array<>();
     private boolean PvPPeace = false;
 
-    public int dbVersion() {
-        return dbVersion;
-    }
-
-    public void dbVersion(int dbVersion) {
-        this.dbVersion = dbVersion;
-    }
-
     public int buildVersion() {
         return buildVersion;
-    }
-
-    public void buildVersion(int buildVersion) {
-        this.buildVersion = buildVersion;
     }
 
     public int buildRevision() {
         return buildRevision;
     }
 
-    public void buildRevision(int buildRevision) {
-        this.buildRevision = buildRevision;
-    }
-
     public int configVersion() {
         return configVersion;
-    }
-
-    public void configVersion(int configVersion) {
-        this.configVersion = configVersion;
     }
 
     public String serverIP() {
