@@ -259,15 +259,15 @@ public class Main extends Plugin {
 
                 int count = pstmt.executeUpdate();
 
-                if (!playerData.error()) {
-                    // TODO 실패 메세지 추가
+                if (count < 1 && !playerData.error()) {
+                    Log.info("success");
                     vars.removePlayerData(p -> p.uuid().equals(player.uuid));
                     vars.removePlayers(player);
                     playerCore.load(player);
-                    // TODO 데이터 재설정 메세지 추가
-                    player.sendMessage("Your player data reloaded!");
+                    player.sendMessage(new Bundle(playerData.locale()).get("player.reloaded"));
+                } else {
+                    Log.info("failed");
                 }
-                Log.info(count == 1 ? "success" : "fail");
             } catch (SQLException e) {
                 new CrashReport(e);
             }
@@ -1206,7 +1206,6 @@ public class Main extends Plugin {
             playerDB.get(player.uuid).translate(!playerData.translate());
             player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.translate() ? "translate" : "translate-disable", player.name));
         });*/
-        // TODO 투표기능 다시 만들기
         if (config.vote()) {
             handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
                 if (!perm.check(player, "vote")) return;
