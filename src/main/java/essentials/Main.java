@@ -1271,7 +1271,7 @@ public class Main extends Plugin {
                         }
                         break;
                     case "skipwave":
-                        vote.add(new Vote(player, Vote.VoteType.skipwave));
+                        vote.add(new Vote(player, Vote.VoteType.skipwave, arg[1]));
                     default:
                         switch (arg[0]) {
                             case "gamemode":

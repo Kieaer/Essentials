@@ -26,7 +26,6 @@ public class Vote {
 
     public Player player;
     public PlayerData playerData;
-    private Bundle bundle;
 
     public Player target;
     public Gamemode gamemode;
@@ -35,15 +34,16 @@ public class Vote {
     public VoteType type;
     public Array<String> voted = new Array<>();
 
-    public int require;
-    public int time = 0;
-    public int message_time = 0;
+    int require;
+    int time = 0;
+    int message_time = 0;
+    int amount;
 
     public Vote(Player player, VoteType voteType, Object... parameters) {
         this.player = player;
         this.playerData = playerDB.get(player.uuid);
-        this.bundle = new Bundle(playerData.locale());
         this.type = voteType;
+        Bundle bundle = new Bundle(playerData.locale());
 
         if (vars.playerData().size == 2) {
             player.sendMessage(bundle.get("vote.minimal"));
@@ -64,6 +64,11 @@ public class Vote {
                 tool.sendMessageAll("vote.gameover");
                 break;
             case skipwave:
+                try {
+                    this.amount = Integer.parseInt((String) parameters[0]);
+                } catch (NumberFormatException ignored) {
+                    this.amount = 3;
+                }
                 tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.skipwave");
                 break;
