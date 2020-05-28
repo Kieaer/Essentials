@@ -107,7 +107,7 @@ public class Database {
                             pstmt2.setLong(1, 0);
                             pstmt2.setString(2, rs.getString("uuid"));
                             int result = pstmt2.executeUpdate();
-                            if (result != 0) {
+                            if (result == 0) {
                                 new CrashReport(new PluginException("Database update error"));
                                 System.exit(1);
                             }

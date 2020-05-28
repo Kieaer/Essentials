@@ -435,7 +435,7 @@ public class Main extends Plugin {
                             if (!current.error()) {
                                 datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
                                         "isLogin: " + current.login() + "\n" +
-                                        "afk: " + current.afk().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n" +
+                                        "afk: " + tool.milsToTime(current.afk()) + "\n" +
                                         "afk_tilex: " + current.tilex() + "\n" +
                                         "afk_tiley: " + current.tiley();
 
