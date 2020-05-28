@@ -29,6 +29,7 @@ public class Config {
     private boolean realName;
     private boolean strictName;
     private int cupdatei;
+    private Long afktime;
     private boolean scanResource;
     private boolean antiGrief;
     private boolean alertAction;
@@ -169,6 +170,7 @@ public class Config {
         spawnLimit = features.getInt("spawnlimit", 500);
         eventPort = features.getString("eventport", "8000-8050");
         cupdatei = features.getInt("cupdatei", 1000);
+        afktime = features.getLong("afktime", 0);
 
         difficulty = features.get("difficulty").asObject();
         autoDifficulty = difficulty.getBoolean("auto-difficulty", false);
@@ -275,6 +277,7 @@ public class Config {
         features.add("spawnlimit", spawnLimit, bundle.get("config.feature.spawn-limit"));
         features.add("eventport", eventPort, bundle.get("config.feature.event.port"));
         features.add("cupdatei", cupdatei, bundle.get("config.feature.colornick"));
+        features.add("afktime", afktime, bundle.get("config.feature.afktime"));
 
         // 난이도 설정 (features 상속)
         features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
@@ -582,5 +585,9 @@ public class Config {
 
     public String eventPort() {
         return eventPort;
+    }
+
+    public Long afktime() {
+        return afktime;
     }
 }

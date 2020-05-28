@@ -2,7 +2,6 @@ package essentials.core.player;
 
 import org.hjson.JsonObject;
 
-import java.time.LocalTime;
 import java.util.Locale;
 
 import static essentials.Main.config;
@@ -54,7 +53,7 @@ public class PlayerData {
     private boolean error;
     private boolean isLogin;
 
-    private LocalTime afk = LocalTime.of(0, 0, 0);
+    private Long afk = 0L;
     private int tilex = 0;
     private int tiley = 0;
 
@@ -283,7 +282,7 @@ public class PlayerData {
         isLogin = login;
     }
 
-    public void afk(LocalTime afk) {
+    public void afk(Long afk) {
         this.afk = afk;
     }
 
@@ -471,7 +470,7 @@ public class PlayerData {
         return isLogin;
     }
 
-    public LocalTime afk() {
+    public Long afk() {
         return afk;
     }
 

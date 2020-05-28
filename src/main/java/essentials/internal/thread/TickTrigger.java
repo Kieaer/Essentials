@@ -24,7 +24,6 @@ import org.hjson.JsonObject;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 import static essentials.Main.*;
@@ -148,12 +147,12 @@ public class TickTrigger {
                                 // 잠수 및 플레이 시간 계산
                                 target.playtime(target.playtime() + 1);
                                 if (target.tilex() == p.tileX() && target.tiley() == p.tileY()) {
-                                    target.afk(target.afk().plusSeconds(1));
-                                    if (target.afk() == LocalTime.of(0, 5, 0)) {
+                                    target.afk(target.afk() + 1);
+                                    if (config.afktime() != 0L && config.afktime() < target.afk()) {
                                         kick = true;
                                     }
                                 } else {
-                                    target.afk(LocalTime.of(0, 0, 0));
+                                    target.afk(0L);
                                 }
                                 target.tilex(p.tileX());
                                 target.tiley(p.tileY());
