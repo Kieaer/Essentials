@@ -47,10 +47,11 @@ public class Vote {
 
         if (vars.playerData().size == 2) {
             player.sendMessage(bundle.get("vote.minimal"));
+            return;
         } else if (vars.playerData().size == 3) {
             require = 2;
         } else if (vars.playerData().size > 3) {
-            require = (int) Math.round((double) vars.playerData().size / 3.5);
+            require = (int) Math.round((double) vars.playerData().size / 3);
         }
 
         switch (type) {
