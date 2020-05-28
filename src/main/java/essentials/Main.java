@@ -412,7 +412,7 @@ public class Main extends Plugin {
                                     "lastplacename: " + rs.getString("lastplacename") + "\n" +
                                     "lastbreakname: " + rs.getString("lastbreakname") + "\n" +
                                     "lastchat: " + rs.getString("lastchat") + "\n" +
-                                    "playtime: " + tool.milsToTime(rs.getLong("playtime")) + "\n" +
+                                    "playtime: " + tool.secToTime(rs.getLong("playtime")) + "\n" +
                                     "attackclear: " + rs.getInt("attackclear") + "\n" +
                                     "pvpwincount: " + rs.getInt("pvpwincount") + "\n" +
                                     "pvplosecount: " + rs.getInt("pvplosecount") + "\n" +
@@ -435,7 +435,7 @@ public class Main extends Plugin {
                             if (!current.error()) {
                                 datatext = datatext + "\n\n== " + current.name() + " Player internal data ==\n" +
                                         "isLogin: " + current.login() + "\n" +
-                                        "afk: " + tool.milsToTime(current.afk()) + "\n" +
+                                        "afk: " + tool.secToTime(current.afk()) + "\n" +
                                         "afk_tilex: " + current.tilex() + "\n" +
                                         "afk_tiley: " + current.tiley();
 
@@ -670,7 +670,7 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player.reqtotalexp") + "[] : " + playerData.reqtotalexp() + "\n" +
                     "[green]" + bundle.get("player.firstdate") + "[] : " + playerData.firstdate() + "\n" +
                     "[green]" + bundle.get("player.lastdate") + "[] : " + playerData.lastdate() + "\n" +
-                    "[green]" + bundle.get("player.playtime") + "[] : " + tool.milsToTime(playerData.playtime()) + "\n" +
+                    "[green]" + bundle.get("player.playtime") + "[] : " + tool.secToTime(playerData.playtime()) + "\n" +
                     "[green]" + bundle.get("player.attackclear") + "[] : " + playerData.attackclear() + "\n" +
                     "[green]" + bundle.get("player.pvpwincount") + "[] : " + playerData.pvpwincount() + "\n" +
                     "[green]" + bundle.get("player.pvplosecount") + "[] : " + playerData.pvplosecount() + "\n" +
@@ -1063,8 +1063,8 @@ public class Main extends Plugin {
             int bans = netServer.admins.getBanned().size;
             int ipbans = netServer.admins.getBannedIPs().size;
             int bancount = bans + ipbans;
-            String playtime = tool.milsToTime(vars.playtime());
-            String uptime = tool.milsToTime(vars.uptime());
+            String playtime = tool.secToTime(vars.playtime());
+            String uptime = tool.secToTime(vars.uptime());
             player.sendMessage(bundle.get("server.status.result", fps, playerGroup.size(), bancount, bans, ipbans, playtime, uptime, vars.pluginVersion()));
 
             JsonObject result = new JsonObject();

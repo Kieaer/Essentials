@@ -436,9 +436,9 @@ public class Tools {
         return resultsMap;
     }
 
-    public String milsToTime(long mils) {
-        long sec = mils / 1000;
-        long min = sec / 60;
+    public String secToTime(long seconds) {
+        long sec = seconds;
+        long min = seconds / 60;
         long hour = min / 60;
         long days = hour / 24;
         return String.format("%d:%02d:%02d:%02d",
