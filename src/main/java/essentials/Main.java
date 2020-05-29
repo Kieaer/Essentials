@@ -364,6 +364,7 @@ public class Main extends Plugin {
                         if (data.getName().equals("newadmin")) {
                             PlayerData p = playerDB.get(player.uuid);
                             p.permission("newadmin");
+                            player.isAdmin = perm.isAdmin(p);
                             Log.info("success");
                             break;
                         }
