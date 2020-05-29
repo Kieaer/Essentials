@@ -501,7 +501,7 @@ public class Main extends Plugin {
     @Override
     public void registerClientCommands(CommandHandler handler) {
         handler.removeCommand("votekick");
-        handler.removeCommand("t");
+        //handler.removeCommand("t");
         handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
             if (!perm.check(player, "alert")) return;
 

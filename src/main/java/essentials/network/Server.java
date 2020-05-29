@@ -71,7 +71,7 @@ public class Server implements Runnable {
                 list.add(service);
             }
         } catch (IOException e) {
-            if (!e.getMessage().matches("Socket closed")) new CrashReport(e);
+            if (!e.getMessage().equalsIgnoreCase("socket closed")) new CrashReport(e);
             Thread.currentThread().interrupt();
         }
     }
