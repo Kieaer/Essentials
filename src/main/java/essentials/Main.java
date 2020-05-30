@@ -715,6 +715,8 @@ public class Main extends Plugin {
                     int ty = player.tileY() + size;
 
                     pluginData.jumpzone.add(new PluginData.jumpzone(world.tile(player.tileX(), player.tileY()), world.tile(tf, ty), touchable, ip, port));
+                    jumpBorder.thread.clear();
+                    jumpBorder.start();
                     player.sendMessage(bundle.prefix("system.server-to-server.added"));
                     break;
                 case "count":
@@ -1220,6 +1222,11 @@ public class Main extends Plugin {
 
                 switch (arg[0]) {
                     case "kick":
+                        if (arg.length < 2) {
+                            player.sendMessage(bundle.get("no-parameter"));
+                            return;
+                        }
+
                         Player target = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
                         try {
                             if (target == null) target = playerGroup.find(p -> p.id == Integer.parseInt(arg[1]));
@@ -1243,6 +1250,11 @@ public class Main extends Plugin {
                         vote.add(new Vote(player, Vote.VoteType.kick, target, arg[1]));
                         break;
                     case "map":
+                        if (arg.length < 2) {
+                            player.sendMessage(bundle.get("no-parameter"));
+                            return;
+                        }
+
                         // 맵 투표
                         Map world = maps.all().find(map -> map.name().equalsIgnoreCase(arg[1].replace('_', ' ')) || map.name().equalsIgnoreCase(arg[1]));
 
@@ -1264,6 +1276,11 @@ public class Main extends Plugin {
                         vote.add(new Vote(player, Vote.VoteType.rollback));
                         break;
                     case "gamemode":
+                        if (arg.length < 2) {
+                            player.sendMessage(bundle.get("no-parameter"));
+                            return;
+                        }
+
                         try {
                             vote.add(new Vote(player, Vote.VoteType.gamemode, Gamemode.valueOf(arg[1])));
                         } catch (IllegalArgumentException e) {
@@ -1271,6 +1288,11 @@ public class Main extends Plugin {
                         }
                         break;
                     case "skipwave":
+                        if (arg.length < 2) {
+                            player.sendMessage(bundle.get("no-parameter"));
+                            return;
+                        }
+
                         vote.add(new Vote(player, Vote.VoteType.skipwave, arg[1]));
                     default:
                         switch (arg[0]) {

@@ -35,6 +35,8 @@ import mindustry.maps.Map;
 import mindustry.net.Net;
 import mindustry.type.UnitType;
 import org.hjson.JsonObject;
+import org.hjson.JsonValue;
+import org.jsoup.Jsoup;
 import org.junit.*;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runners.MethodSorters;
@@ -330,25 +332,68 @@ public class PluginTest {
             } catch (Exception ignored) {
             }
 
+            String[] urls = {"http://127.0.0.1:25000/rank", "http://127.0.0.1:25000/rank", "http://127.0.0.1:25000", "http://127.0.0.1:25000/404test"};
+            String[] types = {"GET", "POST", "GET", "GET"};
+
             // Server http server test
             try {
-                HttpURLConnection con = (HttpURLConnection) new URL("http://127.0.0.1:25000/rank").openConnection();
-                con.setRequestMethod("GET");
-                con.setDoInput(true);
-                if (con.getResponseCode() != 200) {
-                    fail("HTTP test failed");
-                } else {
-                    try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-                        String inputLine;
-                        StringBuilder response = new StringBuilder();
-                        while ((inputLine = br.readLine()) != null) {
-                            response.append(inputLine);
+                for (int a = 0; a < urls.length; a++) {
+                    HttpURLConnection con = (HttpURLConnection) new URL(urls[a]).openConnection();
+                    con.setDoInput(true);
+
+                    if (types[a].equals("GET")) {
+                        con.setRequestMethod("GET");
+                    } else {
+                        String rawData = "id=" + player.name + ";pw=" + playerDB.get(player.uuid).accountpw();
+                        String type = "application/x-www-form-urlencoded";
+
+                        con.setDoOutput(true);
+                        con.setRequestMethod("POST");
+                        con.setRequestProperty("Content-Type", type);
+                        con.setRequestProperty("Content-Length", String.valueOf(rawData.length()));
+
+                        try (OutputStreamWriter os = new OutputStreamWriter(con.getOutputStream(), StandardCharsets.UTF_8);
+                             PrintWriter writer = new PrintWriter(os)) {
+                            writer.write(rawData);
+                            writer.flush();
                         }
-                        assertTrue(response.toString().contains("attack"));
                     }
+
+                    if (a == 3) {
+                        assertEquals(404, con.getResponseCode());
+                    } else {
+                        try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                            String inputLine;
+                            StringBuilder response = new StringBuilder();
+                            while ((inputLine = br.readLine()) != null) {
+                                response.append(inputLine);
+                            }
+                            switch (a) {
+                                case 0:
+                                    try {
+                                        Jsoup.parse(response.toString());
+                                    } catch (Exception e) {
+                                        fail("HTML Parsing failed");
+                                    }
+                                    break;
+                                case 1:
+                                    assertNotEquals("", response.toString());
+                                    break;
+                                case 2:
+                                    try {
+                                        JsonValue.readJSON(response.toString());
+                                    } catch (Exception e) {
+                                        fail("HTML Parsing failed");
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    con.disconnect();
                 }
-                con.disconnect();
-            } catch (Exception ignored) {
+            } catch (IOException e) {
+                e.printStackTrace();
+                fail(e.getMessage());
             }
 
             // Connection close test
@@ -361,9 +406,7 @@ public class PluginTest {
     }
 
     @Test
-    public void test10_playerLoad() {
-        playerCore.load(player);
-        assertTrue(playerDB.get(player.uuid).login());
+    public void test10_blank() {
     }
 
     @Test
@@ -404,7 +447,7 @@ public class PluginTest {
         clientHandler.handleMessage("/changepw testpw123 testpw123", player);
         assertNotEquals("none", playerDB.get(player.uuid).accountpw());
 
-        clientHandler.handleMessage("/chars hi", player);
+        clientHandler.handleMessage("/chars hobc0283qz ?!", player);
         assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall);
 
         clientHandler.handleMessage("/color", player);
@@ -487,8 +530,8 @@ public class PluginTest {
 
         player.set(80, 80);
         player.setNet(80, 80);
-        clientHandler.handleMessage("/spawn-core big", player);
-        assertSame(Blocks.coreNucleus, world.tileWorld(80, 80).block());
+        clientHandler.handleMessage("/spawn-core smail", player);
+        assertSame(Blocks.coreShard, world.tileWorld(80, 80).block());
 
         clientHandler.handleMessage("/setmech alpha", player);
         assertSame(Mechs.alpha, player.mech);
@@ -571,7 +614,7 @@ public class PluginTest {
         Events.fire(new PlayerChatEvent(dummy3, "y"));
 
         System.out.println("== vote skipwave");
-        clientHandler.handleMessage("/vote skipwave", player);
+        clientHandler.handleMessage("/vote skipwave 5", player);
         Events.fire(new PlayerChatEvent(player, "y"));
         Events.fire(new PlayerChatEvent(dummy1, "y"));
         Events.fire(new PlayerChatEvent(dummy3, "y"));
@@ -588,8 +631,9 @@ public class PluginTest {
         clientHandler.handleMessage("/weather enight", player);
         assertEquals(0.85f, state.rules.ambientLight.a, 0.0f);
 
-        clientHandler.handleMessage("/mute " + dummy3.name, player);
         assertNotNull(playerGroup.find(p -> p.uuid.equals(dummy3.uuid)));
+        assertEquals("owner", playerDB.get(player.uuid).permission());
+        clientHandler.handleMessage("/mute " + dummy3.name, player);
         assertTrue(playerDB.get(dummy3.uuid).mute());
 
         //clientHandler.handleMessage("/votekick");
@@ -655,7 +699,7 @@ public class PluginTest {
         player.buildQueue().clear();
         player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5));
         Call.onDeconstructFinish(Vars.world.tile(5, 5), Blocks.air, player.id);
-        Events.fire(new BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, false));
+        Events.fire(new BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true));
         player.buildQueue().clear();
 
         Events.fire(new UnitDestroyEvent(player));

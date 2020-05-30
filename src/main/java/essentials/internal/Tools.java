@@ -21,10 +21,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.sql.Clob;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -404,36 +400,6 @@ public class Tools {
             exp -= 1;
         }
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
-    }
-
-    public void download() {
-        /*Log.info("system.driver-downloading");
-
-        for (Object value : urls) {
-            String url = value.toString();
-            String filename = url.substring(url.lastIndexOf('/') + 1);
-            root.child("Driver/" + filename).writeString("");
-            Log.info(filename + " Downloading...");
-            URLDownload((URL) value, root.child("Driver/" + filename).file());
-        }*/
-    }
-
-    public JsonObject resultToJson(ResultSet rs) throws SQLException, IOException {
-        StringBuilder builder = new StringBuilder();
-        ResultSetMetaData metaData = rs.getMetaData();
-        int columnCount = metaData.getColumnCount();
-        JsonObject resultsMap = new JsonObject();
-        for (int i = 1; i <= columnCount; ++i) {
-            String columnName = metaData.getColumnName(i).toLowerCase();
-            Clob object = rs.getClob(i);
-            Reader r = object.getCharacterStream();
-            int ch;
-            while ((ch = r.read()) != -1) {
-                builder.append((char) ch);
-            }
-            resultsMap.add(columnName, builder.toString());
-        }
-        return resultsMap;
     }
 
     public String secToTime(long seconds) {

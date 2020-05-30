@@ -6,8 +6,7 @@ import mindustry.entities.type.Player;
 import mindustry.net.Net;
 import mindustry.net.NetConnection;
 
-import static essentials.Main.perm;
-import static essentials.Main.playerDB;
+import static essentials.Main.*;
 import static essentials.PluginTest.r;
 import static mindustry.Vars.playerGroup;
 
@@ -23,7 +22,7 @@ public class PluginTestDB {
                 .toString();
     }
 
-    public static Player createNewPlayer(boolean isFull, String... password) throws InterruptedException {
+    public static Player createNewPlayer(boolean isFull, String... password) {
         Player player = new Player();
         player.isAdmin = false;
         player.con = new NetConnection(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
@@ -50,7 +49,8 @@ public class PluginTestDB {
 
         if (isFull) {
             playerDB.register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, password.length != 0 ? password[0] : "none");
-            playerDB.load(player.uuid);
+            playerCore.load(player);
+            //playerDB.load(player.uuid);
 
             perm.create(playerDB.get(player.uuid));
             perm.saveAll();

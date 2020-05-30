@@ -126,7 +126,7 @@ public class Server implements Runnable {
                     payload.append((char) in.read());
                 }
 
-                if (authkey.matches("POST /rank HTTP/.*") && payload.toString().split("\\|\\|\\|").length != 2) {
+                if (authkey.matches("POST /rank HTTP/.*") && payload.toString().split(";").length != 2) {
                     try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
                         bw.write("Login failed!\n");
                         bw.flush();
@@ -498,7 +498,7 @@ public class Server implements Runnable {
                     bw.write("\r\n");
                     bw.write(rank);
                 } else if (receive.matches("POST /rank HTTP/.*")) {
-                    String[] value = payload.split("\\|\\|\\|");
+                    String[] value = payload.split(";");
                     String id = value[0].replace("id=", "");
                     String pw = value[1].replace("pw=", "");
 
@@ -506,7 +506,8 @@ public class Server implements Runnable {
                         pstm.setString(1, id);
                         try (ResultSet rs = pstm.executeQuery()) {
                             if (rs.next()) {
-                                if (BCrypt.checkpw(pw, rs.getString("accountpw"))) {
+                                String accountpw = rs.getString("accountpw");
+                                if (pw.equals(accountpw) || BCrypt.checkpw(pw, accountpw)) {
                                     PlayerData db = playerDB.load(rs.getString("uuid"));
 
                                     String[] ranking = new String[12];
@@ -525,64 +526,40 @@ public class Server implements Runnable {
 
                                     String datatext;
                                     Array<String> array = new Array<>();
-
-                                    if (!config.internalDB()) {
-                                        for (String s : ranking) {
-                                            try (PreparedStatement pstmt = database.conn.prepareStatement(s);
-                                                 ResultSet rs1 = pstmt.executeQuery()) {
-                                                while (rs1.next()) {
-                                                    if (rs1.getString("uuid").equals(db.uuid())) {
-                                                        array.add(rs1.getString("valrank"));
-                                                        break;
-                                                    }
+                                    for (String s : ranking) {
+                                        try (PreparedStatement pstmt = database.conn.prepareStatement(s);
+                                             ResultSet rs1 = pstmt.executeQuery()) {
+                                            while (rs1.next()) {
+                                                if (rs1.getString("uuid").equals(db.uuid())) {
+                                                    array.add(rs1.getString("valrank"));
+                                                    break;
                                                 }
-                                            } catch (SQLException e) {
-                                                new CrashReport(e);
                                             }
+                                        } catch (SQLException e) {
+                                            new CrashReport(e);
                                         }
-
-                                        datatext = bundle.get("player.info") + "<br>" +
-                                                "========================================<br>" +
-                                                bundle.get("player.name") + ": " + rs.getString("name") + "<br>" +
-                                                bundle.get("player.uuid") + ": " + rs.getString("uuid") + "<br>" +
-                                                bundle.get("player.country") + ": " + db.country() + "<br>" +
-                                                bundle.get("player.placecount") + ": " + db.placecount() + " - <b>#" + array.get(0) + "</b><br>" +
-                                                bundle.get("player.breakcount") + ": " + db.breakcount() + " - <b>#" + array.get(1) + "</b><br>" +
-                                                bundle.get("player.killcount") + ": " + db.killcount() + " - <b>#" + array.get(2) + "</b><br>" +
-                                                bundle.get("player.deathcount") + ": " + db.deathcount() + " - <b>#" + array.get(3) + "</b><br>" +
-                                                bundle.get("player.joincount") + ": " + db.joincount() + " - <b>#" + array.get(4) + "</b><br>" +
-                                                bundle.get("player.kickcount") + ": " + db.kickcount() + " - <b>#" + array.get(5) + "</b><br>" +
-                                                bundle.get("player.level") + ": " + db.level() + " - <b>#" + array.get(6) + "</b><br>" +
-                                                bundle.get("player.reqtotalexp") + ": " + db.reqtotalexp() + "<br>" +
-                                                bundle.get("player.firstdate") + ": " + db.firstdate() + "<br>" +
-                                                bundle.get("player.lastdate") + ": " + db.lastdate() + "<br>" +
-                                                bundle.get("player.playtime") + ": " + tool.secToTime(db.playtime()) + " - <b>#" + array.get(7) + "</b><br>" +
-                                                bundle.get("player.attackclear") + ": " + db.attackclear() + " - <b>#" + array.get(8) + "</b><br>" +
-                                                bundle.get("player.pvpwincount") + ": " + db.pvpwincount() + " - <b>#" + array.get(9) + "</b><br>" +
-                                                bundle.get("player.pvplosecount") + ": " + db.pvplosecount() + " - <b>#" + array.get(10) + "</b><br>" +
-                                                bundle.get("player.pvpbreakout") + ": " + db.pvpbreakout() + " - <b>#" + array.get(11) + "</b><br>";
-                                    } else {
-                                        datatext = bundle.get("player.info") + "<br>" +
-                                                "========================================<br>" +
-                                                bundle.get("player.name") + ": " + rs.getString("name") + "<br>" +
-                                                bundle.get("player.uuid") + ": " + rs.getString("uuid") + "<br>" +
-                                                bundle.get("player.country") + ": " + db.country() + "<br>" +
-                                                bundle.get("player.placecount") + ": " + db.placecount() + "<br>" +
-                                                bundle.get("player.breakcount") + ": " + db.breakcount() + "<br>" +
-                                                bundle.get("player.killcount") + ": " + db.killcount() + "<br>" +
-                                                bundle.get("player.deathcount") + ": " + db.deathcount() + "<br>" +
-                                                bundle.get("player.joincount") + ": " + db.joincount() + "<br>" +
-                                                bundle.get("player.kickcount") + ": " + db.kickcount() + "<br>" +
-                                                bundle.get("player.level") + ": " + db.level() + "<br>" +
-                                                bundle.get("player.reqtotalexp") + ": " + db.reqtotalexp() + "<br>" +
-                                                bundle.get("player.firstdate") + ": " + db.firstdate() + "<br>" +
-                                                bundle.get("player.lastdate") + ": " + db.lastdate() + "<br>" +
-                                                bundle.get("player.playtime") + ": " + tool.secToTime(db.playtime()) + "<br>" +
-                                                bundle.get("player.attackclear") + ": " + db.attackclear() + "<br>" +
-                                                bundle.get("player.pvpwincount") + ": " + db.pvpwincount() + "<br>" +
-                                                bundle.get("player.pvplosecount") + ": " + db.pvplosecount() + "<br>" +
-                                                bundle.get("player.pvpbreakout") + ": " + db.pvpbreakout();
                                     }
+
+                                    datatext = bundle.get("player.info") + "<br>" +
+                                            "========================================<br>" +
+                                            bundle.get("player.name") + ": " + rs.getString("name") + "<br>" +
+                                            bundle.get("player.uuid") + ": " + rs.getString("uuid") + "<br>" +
+                                            bundle.get("player.country") + ": " + db.country() + "<br>" +
+                                            bundle.get("player.placecount") + ": " + db.placecount() + " - <b>#" + array.get(0) + "</b><br>" +
+                                            bundle.get("player.breakcount") + ": " + db.breakcount() + " - <b>#" + array.get(1) + "</b><br>" +
+                                            bundle.get("player.killcount") + ": " + db.killcount() + " - <b>#" + array.get(2) + "</b><br>" +
+                                            bundle.get("player.deathcount") + ": " + db.deathcount() + " - <b>#" + array.get(3) + "</b><br>" +
+                                            bundle.get("player.joincount") + ": " + db.joincount() + " - <b>#" + array.get(4) + "</b><br>" +
+                                            bundle.get("player.kickcount") + ": " + db.kickcount() + " - <b>#" + array.get(5) + "</b><br>" +
+                                            bundle.get("player.level") + ": " + db.level() + " - <b>#" + array.get(6) + "</b><br>" +
+                                            bundle.get("player.reqtotalexp") + ": " + db.reqtotalexp() + "<br>" +
+                                            bundle.get("player.firstdate") + ": " + db.firstdate() + "<br>" +
+                                            bundle.get("player.lastdate") + ": " + db.lastdate() + "<br>" +
+                                            bundle.get("player.playtime") + ": " + tool.secToTime(db.playtime()) + " - <b>#" + array.get(7) + "</b><br>" +
+                                            bundle.get("player.attackclear") + ": " + db.attackclear() + " - <b>#" + array.get(8) + "</b><br>" +
+                                            bundle.get("player.pvpwincount") + ": " + db.pvpwincount() + " - <b>#" + array.get(9) + "</b><br>" +
+                                            bundle.get("player.pvplosecount") + ": " + db.pvplosecount() + " - <b>#" + array.get(10) + "</b><br>" +
+                                            bundle.get("player.pvpbreakout") + ": " + db.pvpbreakout() + " - <b>#" + array.get(11) + "</b><br>";
                                     bw.write("HTTP/1.1 200 OK\r\n");
                                     bw.write("Date: " + time + "\r\n");
                                     bw.write("Server: Mindustry/Essentials " + vars.pluginVersion() + "\r\n");
@@ -597,6 +574,7 @@ public class Server implements Runnable {
                                 bw.write("Login failed!");
                             }
                         }
+                        bw.flush();
                     } catch (SQLException e) {
                         new CrashReport(e);
                     }

@@ -111,9 +111,9 @@ public class Client implements Runnable {
 
     public void request(Request request, Player player, String message) {
         JsonObject data = new JsonObject();
-        switch (request) {
-            case bansync:
-                try {
+        try {
+            switch (request) {
+                case bansync:
                     JsonArray ban = new JsonArray();
                     JsonArray ipban = new JsonArray();
                     JsonArray subban = new JsonArray();
@@ -141,12 +141,8 @@ public class Client implements Runnable {
                     os.flush();
 
                     Log.client("client.banlist.sented");
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case chat:
-                try {
+                    break;
+                case chat:
                     data.add("type", "chat");
                     data.add("name", player.name);
                     data.add("message", message);
@@ -156,12 +152,8 @@ public class Client implements Runnable {
 
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
                     Log.client("client.message", config.clientHost(), message);
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case exit:
-                try {
+                    break;
+                case exit:
                     data.add("type", "exit");
 
                     os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
@@ -169,12 +161,7 @@ public class Client implements Runnable {
 
                     shutdown();
                     return;
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case unbanip:
-                try {
+                case unbanip:
                     data.add("type", "unbanip");
 
                     boolean isip;
@@ -188,35 +175,27 @@ public class Client implements Runnable {
 
                     os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case unbanid:
-                try {
+                    break;
+                case unbanid:
                     data.add("type", "unbanid");
                     data.add("uuid", message);
 
                     os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case datashare:
-                try {
+                    break;
+                case datashare:
                     data.add("type", "datashare");
                     data.add("data", "");
 
                     os.writeBytes(tool.encrypt("datashare", skey) + "\n");
                     os.flush();
 
-                    /*String data = is.readLine();
-                    if (data.equals())*/
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
+                /*String data = is.readLine();
+                if (data.equals())*/
+                    break;
+            }
+        } catch (Exception e) {
+            new CrashReport(e);
         }
     }
 

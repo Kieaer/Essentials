@@ -143,7 +143,7 @@ public class Vote {
                 case skipwave:
                     Log.info("Vote skipwave passed!");
                     tool.sendMessageAll("vote.skipwave.done");
-                    for (int a = 0; a < 10; a++) {
+                    for (int a = 0; a < amount; a++) {
                         logic.runWave();
                     }
                     break;
