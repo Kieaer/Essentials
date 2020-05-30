@@ -725,20 +725,28 @@ public class PluginTest {
         playerCore.isLocal(player);
     }
 
-    public static int pin;
-
     @Test
     public void test16_complexCommand() {
-        Call.onConstructFinish(world.tile(120, 120), Blocks.message, player.id, (byte) 0, Team.sharded, true);
-        Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
-        Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
+        //Call.onConstructFinish(world.tile(120, 120), Blocks.message, player.id, (byte) 0, Team.sharded, true);
+        //Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
+        //Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
+
         try {
             config.discordToken(new String(Files.readAllBytes(Paths.get("./token.txt"))));
             discord.start();
-            discord.queue(player);
-            System.out.println("PIN: " + discord.pins.get(player.name));
-            sleep(10000);
-        } catch (IOException | InterruptedException ignored) {
+
+            config.loginEnable(true);
+            config.passwordMethod("discord");
+            Player p = createNewPlayer(false);
+            CommandHandler buffer = new CommandHandler("/");
+            main.registerClientCommands(buffer);
+            buffer.handleMessage("/register", p);
+
+            System.out.println("PIN: " + discord.pins.get(p.name));
+            System.out.println(discord.pins.size());
+            sleep(20000);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

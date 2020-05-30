@@ -549,6 +549,7 @@ public class Main extends Plugin {
             if (!perm.check(player, "color")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             playerData.colornick(!playerData.colornick());
+            if (playerData.colornick()) colornick.targets.add(player);
             player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.colornick() ? "feature.colornick.enable" : "feature.colornick.disable"));
         });
         handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
@@ -912,7 +913,7 @@ public class Main extends Plugin {
                             "[#6B6B6B][#828282][#6B6B6B]\n" +
                             "[#6B6B6B][#585858][#6B6B6B]";
         });
-        handler.<Player>register("register", config.passwordMethod().equals("password") ? "<accountid> <password>" : config.passwordMethod().equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
+        handler.<Player>register("register", config.passwordMethod().equalsIgnoreCase("password") ? "<accountid> <password>" : "", "Register account", (arg, player) -> {
             if (config.loginEnable()) {
                 switch (config.passwordMethod()) {
                     case "discord":
