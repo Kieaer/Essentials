@@ -33,19 +33,20 @@ public class CrashReport {
     }
 
     public void send() {
-        if (!config.debug()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(e.toString()).append("\n");
-            StackTraceElement[] element = e.getStackTrace();
-            for (StackTraceElement error : element) sb.append("\tat ").append(error.toString()).append("\n");
-            sb.append("=================================================\n");
-            String text = sb.toString();
+        Socket socket = null;
+        try {
+            if (!config.debug()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(e.toString()).append("\n");
+                StackTraceElement[] element = e.getStackTrace();
+                for (StackTraceElement error : element) sb.append("\tat ").append(error.toString()).append("\n");
+                sb.append("=================================================\n");
+                String text = sb.toString();
 
-            Log.write(Log.LogType.error, text);
-            if (!slight) Log.err("Plugin internal error! - " + e.getMessage());
-            if (config.crashReport()) {
-                Socket socket = null;
-                try {
+                Log.write(Log.LogType.error, text);
+                if (!slight) Log.err("Plugin internal error! - " + e.getMessage());
+                if (config.crashReport()) {
+
                     InetAddress address = InetAddress.getByName("mindustry.kr");
                     socket = new Socket(address, 6560);
                     try (BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
@@ -77,23 +78,18 @@ public class CrashReport {
                             Log.err("Data send failed!");
                         }
                     }
-                } catch (Exception ex) {
-                    StringWriter sw = new StringWriter();
-                    ex.printStackTrace(new PrintWriter(sw));
-                    String buffer = sw.toString();
-                    Log.warn("Crash report Error!\n" + buffer);
-                } finally {
-                    try {
-                        if (socket != null) socket.close();
-                    } catch (IOException ignored) {
-                    }
                 }
             }
-        } else {
+        } catch (Exception e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
             System.out.println(sw.toString());
             success = true;
+        } finally {
+            try {
+                if (socket != null) socket.close();
+            } catch (IOException ignored) {
+            }
         }
     }
 }

@@ -487,8 +487,16 @@ public class Config {
         return loginEnable;
     }
 
+    public void loginEnable(boolean loginEnable) {
+        this.loginEnable = loginEnable;
+    }
+
     public String passwordMethod() {
         return passwordMethod;
+    }
+
+    public void passwordMethod(String passwordMethod) {
+        this.passwordMethod = passwordMethod;
     }
 
     public boolean validConnect() {
