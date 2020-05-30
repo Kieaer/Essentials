@@ -742,7 +742,7 @@ public class PluginTest {
             main.registerClientCommands(buffer);
             buffer.handleMessage("/register", p);
 
-            System.out.println("PIN: " + discord.pins.get(p.name));
+            System.out.println("PIN: " + discord.getPins().get(p.name));
             sleep(20000);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();

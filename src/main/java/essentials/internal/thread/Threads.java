@@ -26,16 +26,20 @@ public class Threads implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 // 로그인 요청 알림
-                if (delay == 20) {
+                if (delay == 60) {
                     for (int a = 0; a < playerGroup.size(); a++) {
                         Player p = playerGroup.all().get(a);
                         PlayerData playerData = playerDB.get(p.uuid);
                         if (playerData.error()) {
                             String message;
+                            if (playerData.locale() == null) {
+                                playerData.locale(tool.getGeo(p));
+                            }
+
                             if (config.passwordMethod().equals("discord")) {
-                                message = new Bundle(Locale.US).get("system.login.require.discord") + "\n" + config.discordLink();
+                                message = new Bundle(playerData.locale()).get("system.login.require.discord") + "\n" + config.discordLink();
                             } else {
-                                message = new Bundle(Locale.US).get("system.login.require.password");
+                                message = new Bundle(playerData.locale()).get("system.login.require.password");
                             }
                             p.sendMessage(message);
                         }

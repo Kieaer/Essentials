@@ -1039,7 +1039,7 @@ public class Main extends Plugin {
                 switch (config.passwordMethod()) {
                     case "discord":
                         player.sendMessage("Join discord and use !register command!\n" + config.discordLink());
-                        discord.queue(player);
+                        if (!discord.getPins().containsKey(player.name)) discord.queue(player);
                         break;
                     default:
                     case "password":
