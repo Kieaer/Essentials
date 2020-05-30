@@ -74,7 +74,7 @@ public class Database {
             org.h2.Driver.load();
             server = Server.createTcpServer("-tcpPort", "9079", "-tcpAllowOthers", "-tcpDaemon", "-baseDir", "./" + root.child("data").path(), "-ifNotExists");
             server.start();
-            conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player", "sa", "");
+            conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player", "", "");
         } else {
             conn = DriverManager.getConnection(config.dbUrl());
         }

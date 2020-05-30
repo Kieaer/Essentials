@@ -65,6 +65,7 @@ import java.util.concurrent.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
@@ -297,7 +298,9 @@ public class Main extends Plugin {
 
             Log.info("readme-generating");
 
-            String header = "[![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=Kieaer_Essentials)\n" +
+            String header = "" +
+                    "[![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=Kieaer_Essentials) " +
+                    "[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=alert_status)](https://sonarcloud.io/dashboard?id=Kieaer_Essentials)\n" +
                     "# Essentials\n" +
                     "Add more commands to the server.\n\n" +
                     "I'm getting a lot of suggestions.<br>\n" +
@@ -903,7 +906,125 @@ public class Main extends Plugin {
         });
         handler.<Player>register("router", "Router", (arg, player) -> {
             if (!perm.check(player, "router")) return;
-            Vars.playerGroup.getByID(player.id).name =
+            new Thread(() -> {
+                String[] zero = {"[stat]\uF8ED\uF8ED\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[stat]\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[stat]\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\uF8ED[#404040]\uF8ED",
+                        "[stat]\uF8ED\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[stat]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED",
+                        "[stat]\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\uF8ED[#404040]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[stat]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#404040]\uF8ED[stat]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[stat]\uF8ED\uF8ED",
+                        "[stat]\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED\n" +
+                                "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[stat]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[stat]\uF8ED\n" +
+                                "[stat]\uF8ED\uF8ED\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED",
+                        "[#404040]\uF8ED[stat]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[stat]\uF8ED\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[stat]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED\uF8ED\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\uF8ED\n"};
+
+                String[] loop = {"[#6B6B6B]\uF8ED[stat]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                        "[#6B6B6B]\uF8ED[stat]\uF8ED[#404040]\uF8ED[]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\n",
+                        "[#6B6B6B]\uF8ED\uF8ED[stat]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED[stat]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED",
+                        "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED[stat]\uF8ED\uF8ED[]\uF8ED[#6B6B6B]\uF8ED\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED[#828282]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED[]\uF8ED[]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#585858]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[#585858]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED\n" +
+                                "[#585858]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[#585858]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED[stat]\uF8ED\uF8ED[]\uF8ED[#6B6B6B]\uF8ED\uF8ED",
+                        "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED[#828282]\uF8ED\uF8ED[stat]\uF8ED\uF8ED[]\uF8ED\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED\uF8ED\uF8ED[]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED\uF8ED[stat]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED",
+                        "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED[#828282]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED[stat]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED[stat]\uF8ED[#404040]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED[stat]\uF8ED\uF8ED[]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#828282]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED",
+                        "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED[#828282]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED[stat]\uF8ED\uF8ED[#6B6B6B]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED[stat]\uF8ED\uF8ED[#6B6B6B]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#828282]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED",
+                        "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED[#828282]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED[#828282]\uF8ED\uF8ED[#6B6B6B]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED[#828282]\uF8ED\uF8ED[#6B6B6B]\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#585858]\uF8ED[#6B6B6B]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#828282]\uF8ED[#585858]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED\uF8ED[#828282]\uF8ED[#6B6B6B]\uF8ED\n" +
+                                "[#6B6B6B]\uF8ED\uF8ED[#585858]\uF8ED\uF8ED\uF8ED\uF8ED[#6B6B6B]\uF8ED\uF8ED"};
+                try {
+                    while (player.isValid()) {
+                        for (String d : loop) {
+                            player.name = d;
+                            sleep(500);
+                        }
+                        sleep(5000);
+                        for (int i = loop.length - 1; i >= 0; i--) {
+                            player.name = loop[i];
+                            sleep(500);
+                        }
+                        for (String d : zero) {
+                            player.name = d;
+                            sleep(500);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
+            /*Vars.playerGroup.getByID(player.id).name =
                     "[#6B6B6B][#585858][#6B6B6B]\n" +
                             "[#6B6B6B][#828282][#6B6B6B]\n" +
                             "[#585858][#6B6B6B][#828282][#585858]\n" +
@@ -911,7 +1032,7 @@ public class Main extends Plugin {
                             "[#585858][#6B6B6B][#828282][#6B6B6B][#828282][#585858]\n" +
                             "[#585858][#6B6B6B][#828282][#585858]\n" +
                             "[#6B6B6B][#828282][#6B6B6B]\n" +
-                            "[#6B6B6B][#585858][#6B6B6B]";
+                            "[#6B6B6B][#585858][#6B6B6B]";*/
         });
         handler.<Player>register("register", config.passwordMethod().equalsIgnoreCase("password") ? "<accountid> <password>" : "", "Register account", (arg, player) -> {
             if (config.loginEnable()) {
