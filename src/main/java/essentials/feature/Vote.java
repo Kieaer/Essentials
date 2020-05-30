@@ -45,23 +45,21 @@ public class Vote {
         this.type = voteType;
         Bundle bundle = new Bundle(playerData.locale());
 
-        if (vars.playerData().size == 2) {
+
+        if (vars.playerData().size < 4) {
             player.sendMessage(bundle.get("vote.minimal"));
             return;
-        } else if (vars.playerData().size == 3) {
-            require = 2;
-        } else if (vars.playerData().size > 3) {
-            require = (int) Math.round((double) vars.playerData().size / 3);
+        } else {
+            require = 2 + (vars.playerData().size > 4 ? 1 : 0);
         }
 
+        tool.sendMessageAll("vote.suggester-name", player.name);
         switch (type) {
             case kick:
                 this.target = (Player) parameters[0];
-                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.kick", target.name);
                 break;
             case gameover:
-                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.gameover");
                 break;
             case skipwave:
@@ -70,17 +68,14 @@ public class Vote {
                 } catch (NumberFormatException ignored) {
                     this.amount = 3;
                 }
-                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.skipwave");
                 break;
             case rollback:
-                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.rollback");
                 break;
             case gamemode:
                 if (parameters[0] instanceof Gamemode) {
                     this.gamemode = (Gamemode) parameters[0];
-                    tool.sendMessageAll("vote.suggester-name", player.name);
                     tool.sendMessageAll("vote-gamemode", gamemode.name());
                 } else {
                     player.sendMessage("vote.wrong-gamemode");
@@ -90,13 +85,9 @@ public class Vote {
             case map:
                 if (parameters[0] instanceof Map) {
                     this.map = (Map) parameters[0];
-                    tool.sendMessageAll("vote.suggester-name", player.name);
                     tool.sendMessageAll("vote.map", map.name());
                 }
                 break;
-            default:
-                player.sendMessage(bundle.get("vote.wrong-mode"));
-                return;
         }
 
         timer.scheduleAtFixedRate(counting, 0, 1000);
