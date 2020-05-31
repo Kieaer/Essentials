@@ -608,9 +608,11 @@ public class Event {
             });
 
             for (Player player : playerGroup.all()) {
-                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).get("player.banned", e.player.name));
-                if (netServer.admins.isIDBanned(player.uuid)) {
-                    player.con.kick(Packets.KickReason.banned);
+                if (player == e.player) {
+                    tool.sendMessageAll("player.banned", e.player.name);
+                    if (netServer.admins.isIDBanned(player.uuid)) {
+                        player.con.kick(Packets.KickReason.banned);
+                    }
                 }
             }
 

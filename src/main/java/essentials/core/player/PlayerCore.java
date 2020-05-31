@@ -135,6 +135,8 @@ public class PlayerCore {
                     return false;
                 }
             }
+        } catch (RuntimeException e) {
+            return false;
         } catch (SQLException e) {
             new CrashReport(e);
             return false;
