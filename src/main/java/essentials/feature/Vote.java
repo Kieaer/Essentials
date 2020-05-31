@@ -50,7 +50,7 @@ public class Vote {
             player.sendMessage(bundle.get("vote.minimal"));
             return;
         } else {
-            require = 2 + (vars.playerData().size > 4 ? 1 : 0);
+            require = vars.playerData().size > 8 ? 6 : 2 + (vars.playerData().size > 4 ? 1 : 0);
         }
 
         tool.sendMessageAll("vote.suggester-name", player.name);
