@@ -141,7 +141,7 @@ public class Vote {
                 case kick:
                     Log.info("Vote kick passed!");
                     playerDB.get(target.uuid).kickcount(playerDB.get(target.uuid).kickcount() + 1);
-                    tool.sendMessageAll("vote.kick.done");
+                    tool.sendMessageAll("vote.kick.done", target.name);
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
                     Call.onKick(target.con, Packets.KickReason.vote);
                     Log.write(Log.LogType.player, "log.player.kick");

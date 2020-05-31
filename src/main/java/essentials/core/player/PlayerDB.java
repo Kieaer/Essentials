@@ -91,6 +91,7 @@ public class PlayerDB {
 
     public boolean save(PlayerData playerData) {
         StringBuilder sql = new StringBuilder();
+        if (playerData.error()) return false;
         JsonObject js = playerData.toMap();
         sql.append("UPDATE players SET ");
 
