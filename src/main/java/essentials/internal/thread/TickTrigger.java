@@ -8,7 +8,6 @@ import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
-import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
@@ -223,16 +222,6 @@ public class TickTrigger {
                                 }
                             }
                         }
-                    }
-                }
-
-                // 1분마다 실행
-                if ((tick % 3600) == 0) {
-                    try {
-                        playerDB.saveAll();
-                        pluginData.saveAll();
-                    } catch (Exception e) {
-                        new CrashReport(e);
                     }
                 }
 

@@ -102,6 +102,16 @@ public class Threads implements Runnable {
 
                 perm.isUse = false;
 
+                // 6초마다 실행
+                if (delay == 6) {
+                    try {
+                        playerDB.saveAll();
+                        pluginData.saveAll();
+                    } catch (Exception e) {
+                        new CrashReport(e);
+                    }
+                }
+
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
