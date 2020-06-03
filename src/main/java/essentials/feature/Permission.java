@@ -20,7 +20,6 @@ public class Permission {
     public JsonObject permission;
     public JsonObject permission_user;
     public String default_group = null;
-    public boolean isUse = false;
 
     public void create(PlayerData playerData) {
         JsonObject object = new JsonObject();

@@ -100,8 +100,6 @@ public class Threads implements Runnable {
                     });
                 }
 
-                perm.isUse = false;
-
                 // 3초마다 실행
                 if ((delay % 3) == 0) {
                     try {

@@ -150,7 +150,7 @@ public class Config {
         antiGrief = anti.getBoolean("antigrief", false);
         antiVPN = anti.getBoolean("antivpn", false);
         antiRush = anti.getBoolean("antirush", false);
-        antiRushtime = anti.get("antirushtime").isString() ? 0L : anti.getLong("antirushtime", 600);
+        antiRushtime = anti.get("antirushtime") == null || anti.get("antirushtime").isString() ? 0L : anti.getLong("antirushtime", 600);
         alertAction = anti.getBoolean("alert-action", false);
         realName = anti.getBoolean("realname", false);
         strictName = anti.getBoolean("strict-name", false);

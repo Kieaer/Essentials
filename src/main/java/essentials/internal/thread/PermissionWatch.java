@@ -35,7 +35,7 @@ public class PermissionWatch implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 watchKey = watchService.take();
-                Thread.sleep(50);
+                Thread.sleep(100);
 
                 List<WatchEvent<?>> events = watchKey.pollEvents();
                 for (WatchEvent<?> event : events) {
@@ -44,12 +44,8 @@ public class PermissionWatch implements Runnable {
                     if (paths.equals("permission_user.hjson") || paths.equals("permission.hjson")) {
                         if (kind.equals(StandardWatchEventKinds.ENTRY_MODIFY)) {
                             perm.reload(false);
-                            if (!perm.isUse) {
-                                perm.isUse = true;
-                                perm.update();
-                            } else {
-                                Log.info("system.perm.updated");
-                            }
+                            perm.update();
+                            Log.info("system.perm.updated");
                         }
                     }
                     /*if(kind.equals(StandardWatchEventKinds.ENTRY_CREATE)) {

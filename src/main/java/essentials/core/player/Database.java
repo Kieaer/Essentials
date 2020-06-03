@@ -71,6 +71,10 @@ public class Database {
 
     public void connect(boolean isServer) throws SQLException {
         if (isServer) {
+            try {
+                Class.forName("org.h2.Driver");
+            } catch (Exception ignored) {
+            }
             org.h2.Driver.load();
             server = Server.createTcpServer("-tcpPort", "9079", "-tcpAllowOthers", "-tcpDaemon", "-baseDir", "./" + root.child("data").path(), "-ifNotExists");
             server.start();

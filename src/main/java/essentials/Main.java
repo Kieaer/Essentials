@@ -115,7 +115,7 @@ public class Main extends Plugin {
             try {
                 final String url = "https://github.com/Kieaer/Essentials/wiki/How-to-edit-config.hjson";
                 Desktop.getDesktop().browse(new URI(url));
-            } catch (IOException | URISyntaxException ignored) {
+            } catch (IOException | URISyntaxException | HeadlessException ignored) {
             }
         }
 
@@ -496,7 +496,7 @@ public class Main extends Plugin {
         handler.register("reload", "Reload Essential plugin data", (arg) -> {
             perm.reload(false);
             perm.update();
-            perm.isUse = false;
+
             Log.info("plugin-reloaded");
         });
     }
@@ -523,8 +523,6 @@ public class Main extends Plugin {
 
             PlayerData playerData = playerDB.get(player.uuid);
             playerData.crosschat(!playerData.crosschat());
-            Bundle bundle = new Bundle(playerData.locale());
-
             player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.crosschat() ? "player.crosschat.disable" : "player.crosschat.enabled"));
         });
         handler.<Player>register("changepw", "<new_password> <new_password_repeat>", "Change account password", (arg, player) -> {
@@ -757,7 +755,6 @@ public class Main extends Plugin {
                 Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
                 if (other == null) {
                     player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("player.not-found"));
-                    return;
                 } else {
                     other.kill();
                 }
