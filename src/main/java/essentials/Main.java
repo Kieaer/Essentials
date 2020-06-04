@@ -110,12 +110,12 @@ public class Main extends Plugin {
             log.warn("Plugin", e);
         }
 
-        if (!root.exists()) {
+        if (!root.exists() && Desktop.isDesktopSupported()) {
             // 처음 플러그인을 사용하는 유저에게 wiki 오픈
             try {
                 final String url = "https://github.com/Kieaer/Essentials/wiki/How-to-edit-config.hjson";
                 Desktop.getDesktop().browse(new URI(url));
-            } catch (IOException | URISyntaxException | HeadlessException ignored) {
+            } catch (IOException | URISyntaxException ignored) {
             }
         }
 
