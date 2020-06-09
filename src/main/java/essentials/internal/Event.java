@@ -63,7 +63,7 @@ public class Event {
             PlayerData playerData = playerDB.get(e.player.uuid);
 
             if (!playerData.error()) {
-                for (PluginData.warpzone data : pluginData.warpzone) {
+                for (PluginData.warpzone data : pluginData.warpzones) {
                     int port = data.port;
                     String ip = data.ip;
 

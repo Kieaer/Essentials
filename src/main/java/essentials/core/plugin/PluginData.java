@@ -3,6 +3,7 @@ package essentials.core.plugin;
 import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 
@@ -27,17 +28,19 @@ public class PluginData {
     public Array<Process> process = new Array<>();
 
     // 종료시 저장되는 플러그인 데이터
-    public Array<warpzone> warpzone = new Array<>();
-    public Array<warpcount> warpcount = new Array<>();
-    public Array<warptotal> warptotal = new Array<>();
+    public Array<warpzone> warpzones = new Array<>();
+    public Array<warpblock> warpblocks = new Array<>();
+    public Array<warpcount> warpcounts = new Array<>();
+    public Array<warptotal> warptotals = new Array<>();
     public Array<String> blacklist = new Array<>();
     public Array<banned> banned = new Array<>();
 
     public void saveAll() throws Exception {
         Map<String, Object> map = new HashMap<>();
-        map.put("warpzone", warpzone.toArray());
-        map.put("warpcount", warpcount.toArray());
-        map.put("warptotal", warptotal.toArray());
+        map.put("warpzones", warpzones.toArray());
+        map.put("warpblocks", warpblocks.toArray());
+        map.put("warpcounts", warpcounts.toArray());
+        map.put("warptotals", warptotals.toArray());
         map.put("blacklist", blacklist.toArray());
         map.put("banned", banned.toArray());
 
@@ -58,9 +61,10 @@ public class PluginData {
         try {
             if (!root.child("data/PluginData.object").exists()) {
                 Map<String, Array<Object>> map = new HashMap<>();
-                map.put("warpzone", new Array<>());
-                map.put("warpcount", new Array<>());
-                map.put("warptotal", new Array<>());
+                map.put("warpzones", new Array<>());
+                map.put("warpblocks", new Array<>());
+                map.put("warpcounts", new Array<>());
+                map.put("warptotals", new Array<>());
                 map.put("blacklist", new Array<>());
                 map.put("banned", new Array<>());
 
@@ -76,9 +80,10 @@ public class PluginData {
                 fis = new ByteArrayInputStream(root.child("data/PluginData.object").readBytes());
                 ois = new ObjectInputStream(fis);
                 Map<String, Object> map = (HashMap<String, Object>) ois.readObject();
-                warpzone = (Array<warpzone>) map.get("warpzone");
-                warpcount = (Array<PluginData.warpcount>) map.get("warpcount");
-                warptotal = (Array<warptotal>) map.get("warptotal");
+                warpzones = (Array<warpzone>) map.get("warpzones");
+                warpblocks = (Array<warpblock>) map.get("warpblocks");
+                warpcounts = (Array<PluginData.warpcount>) map.get("warpcounts");
+                warptotals = (Array<warptotal>) map.get("warptotals");
                 blacklist = (Array<String>) map.get("blacklist");
                 banned = (Array<banned>) map.get("banned");
                 ois.close();
@@ -147,6 +152,7 @@ public class PluginData {
     }
 
     public static class warpzone implements Serializable {
+        public final String mapName;
         public final int startx;
         public final int starty;
         public final int finishx;
@@ -155,7 +161,8 @@ public class PluginData {
         public final int port;
         public final boolean touch;
 
-        public warpzone(Tile start, Tile finish, boolean touch, String ip, int port) {
+        public warpzone(String mapName, Tile start, Tile finish, boolean touch, String ip, int port) {
+            this.mapName = mapName;
             this.startx = start.x;
             this.starty = start.y;
             this.finishx = finish.x;
@@ -174,7 +181,30 @@ public class PluginData {
         }
     }
 
+    public static class warpblock implements Serializable {
+        public final String mapName;
+        public final float tilex;
+        public final float tiley;
+        public final String tileName;
+        public final Block block;
+        public final String ip;
+        public final int port;
+        public final String description;
+
+        public warpblock(String mapName, Tile tile, String ip, int port, String description) {
+            this.mapName = mapName;
+            this.tilex = tile.getX();
+            this.tiley = tile.getY();
+            this.tileName = tile.block().name;
+            this.block = tile.block();
+            this.ip = ip;
+            this.port = port;
+            this.description = description;
+        }
+    }
+
     public static class warpcount implements Serializable {
+        public final String mapName;
         public final int x;
         public final int y;
         public final String ip;
@@ -182,7 +212,8 @@ public class PluginData {
         public int players;
         public int numbersize;
 
-        public warpcount(Tile tile, String ip, int port, int players, int numbersize) {
+        public warpcount(String mapName, Tile tile, String ip, int port, int players, int numbersize) {
+            this.mapName = mapName;
             this.x = tile.x;
             this.y = tile.y;
             this.ip = ip;
@@ -197,12 +228,14 @@ public class PluginData {
     }
 
     public static class warptotal implements Serializable {
+        public final String mapName;
         public final int x;
         public final int y;
         public int totalplayers;
         public int numbersize;
 
-        public warptotal(Tile tile, int totalplayers, int numbersize) {
+        public warptotal(String mapName, Tile tile, int totalplayers, int numbersize) {
+            this.mapName = mapName;
             this.x = tile.x;
             this.y = tile.y;
             this.totalplayers = totalplayers;

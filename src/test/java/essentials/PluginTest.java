@@ -485,14 +485,14 @@ public class PluginTest {
         clientHandler.handleMessage("/info", player);
 
         clientHandler.handleMessage("/warp count 192.168.35.100 6567", player);
-        assertEquals(1, pluginData.warpcount.size);
+        assertEquals(1, pluginData.warpcounts.size);
 
         clientHandler.handleMessage("/warp zone 192.168.35.100 6567 20 true", player);
-        assertEquals(1, pluginData.warpzone.size);
+        assertEquals(1, pluginData.warpzones.size);
         sleep(4000);
 
         clientHandler.handleMessage("/warp total", player);
-        assertEquals(1, pluginData.warptotal.size);
+        assertEquals(1, pluginData.warptotals.size);
 
         Player dummy1 = createNewPlayer(true);
         clientHandler.handleMessage("/kill " + dummy1.name, player);
@@ -512,13 +512,13 @@ public class PluginTest {
         clientHandler.handleMessage("/r " + dummy1.name + " Hi!", player);
 
         clientHandler.handleMessage("/reset count 192.168.35.100", player);
-        assertEquals(0, pluginData.warpcount.size);
+        assertEquals(0, pluginData.warpcounts.size);
 
         clientHandler.handleMessage("/reset zone 192.168.35.100", player);
-        assertEquals(0, pluginData.warpzone.size);
+        assertEquals(0, pluginData.warpzones.size);
 
         clientHandler.handleMessage("/reset total", player);
-        assertEquals(0, pluginData.warptotal.size);
+        assertEquals(0, pluginData.warptotals.size);
 
         //clientHandler.handleMessage("/register testacount testas123 testas123", player);
 

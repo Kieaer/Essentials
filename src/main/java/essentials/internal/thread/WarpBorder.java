@@ -25,12 +25,12 @@ public class WarpBorder implements Runnable {
     @Override
     public void run() {
         Thread.currentThread().setName("Essential server to server work thread");
-        length = pluginData.warpzone.size;
+        length = pluginData.warpzones.size;
         start();
     }
 
     public void start() {
-        for (PluginData.warpzone data : pluginData.warpzone) {
+        for (PluginData.warpzone data : pluginData.warpzones) {
             Thread t = new Thread(() -> {
                 while (true) {
                     String ip = data.ip;

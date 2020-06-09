@@ -71,9 +71,9 @@ public class Threads implements Runnable {
                 }
 
                 // 서버 인원 확인
-                for (int i = 0; i < pluginData.warpcount.size; i++) {
+                for (int i = 0; i < pluginData.warpcounts.size; i++) {
                     int i2 = i;
-                    PluginData.warpcount value = pluginData.warpcount.get(i);
+                    PluginData.warpcount value = pluginData.warpcounts.get(i);
 
                     new PingHost(value.ip, value.port, result -> {
                         if (result.name != null) {
@@ -93,7 +93,7 @@ public class Threads implements Runnable {
                             }
                             tool.setTileText(tile, Blocks.copperWall, str);
                             // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                            pluginData.warpcount.set(i2, new PluginData.warpcount(value.getTile(), value.ip, value.port, result.players, digits.length));
+                            pluginData.warpcounts.set(i2, new PluginData.warpcount(world.getMap().name(), value.getTile(), value.ip, value.port, result.players, digits.length));
                         } else {
                             tool.setTileText(value.getTile(), Blocks.copperWall, "no");
                         }
@@ -107,6 +107,19 @@ public class Threads implements Runnable {
                         pluginData.saveAll();
                     } catch (Exception e) {
                         new CrashReport(e);
+                    }
+
+                    for (int a = 0; a < pluginData.warpblocks.size; a++) {
+                        PluginData.warpblock value = pluginData.warpblocks.get(a);
+                        new PingHost(value.ip, value.port, result -> {
+                            if (result.name != null) {
+                                float Loc = 8 * value.block.size;
+                                Call.onLabel(value.ip, 3f, value.tilex, value.tiley + Loc);
+                                Call.onLabel(value.description, 3f, value.tilex, value.tiley - Loc);
+                            } else {
+                                Call.onLabel(value.ip + " Offline", 3f, value.tilex, value.tiley);
+                            }
+                        });
                     }
                 }
 

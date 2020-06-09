@@ -680,65 +680,97 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player.pvpbreakout") + "[] : " + playerData.pvpbreakout();
             Call.onInfoMessage(player.con, datatext);
         });
-        handler.<Player>register("warp", "<zone/count/total> [ip] [port] [range] [clickable]", "Create a server-to-server warp zone.", (arg, player) -> {
+        handler.<Player>register("warp", "<zone/block/count> [parameters...]", "Create a server-to-server warp zone.", (arg, player) -> {
             if (!perm.check(player, "warp")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
 
-            String type = arg[0];
-            // boolean touchable = Boolean.parseBoolean(arg[1]);
-            // String ip = arg[2];
-            // int port = Integer.parseInt(arg[3]);
-            // int range = Integer.parseInt(arg[4]);
+            if (arg.length <= 1) {
+                player.sendMessage(bundle.get("system.warp.info"));
+            } else {
+                String type = arg[0];
+                // boolean touchable = Boolean.parseBoolean(arg[1]);
+                // String ip = arg[2];
+                // int port = Integer.parseInt(arg[3]);
+                // int range = Integer.parseInt(arg[4]);
 
-            switch (type) {
-                case "zone":
-                    if (arg.length != 5) {
-                        player.sendMessage(bundle.prefix("system.server-to-server.incorrect"));
-                        return;
-                    }
+                int x = player.tileX();
+                int y = player.tileY();
+                String name = world.getMap().name();
+                int size;
+                boolean clickable;
+                String ip;
+                int port;
 
-                    int size;
-                    boolean touchable;
-                    String ip;
-                    int port;
+                switch (type) {
+                    case "zone":
+                        //ip size clickable
+                        if (arg.length != 4) {
+                            player.sendMessage(bundle.prefix("system.warp.incorrect"));
+                        } else {
+                            try {
+                                size = Integer.parseInt(arg[2]);
+                                clickable = Boolean.parseBoolean(arg[3]);
+                                if (arg[1].contains(":")) {
+                                    String[] address = arg[1].split(":");
+                                    ip = address[0];
+                                    port = Integer.parseInt(address[1]);
+                                } else {
+                                    ip = arg[1];
+                                    port = 6567;
+                                }
+                            } catch (NumberFormatException ignored) {
+                                player.sendMessage(bundle.prefix("system.warp.not-int"));
+                                return;
+                            }
+                            pluginData.warpzones.add(new PluginData.warpzone(name, world.tile(x, y), world.tile(x + size, y + size), clickable, ip, port));
+                            warpBorder.thread.clear();
+                            warpBorder.start();
+                            player.sendMessage(bundle.prefix("system.warp.added"));
+                        }
+                        break;
+                    case "block":
+                        if (arg.length != 3) {
+                            player.sendMessage(bundle.prefix("system.warp.incorrect"));
+                        } else {
+                            try {
+                                if (arg[1].contains(":")) {
+                                    String[] address = arg[1].split(":");
+                                    ip = address[0];
+                                    port = Integer.parseInt(address[1]);
+                                } else {
+                                    ip = arg[1];
+                                    port = 6567;
+                                }
+                            } catch (NumberFormatException ignored) {
+                                player.sendMessage(bundle.prefix("system.warp.not-int"));
+                                return;
+                            }
+                            if (world.tile(x, y).block() != Blocks.air) {
+                                pluginData.warpblocks.add(new PluginData.warpblock(name, world.tile(x, y), ip, port, arg[1]));
+                            }
+                        }
+                        break;
+                    case "count":
+                        // ip
+                        try {
+                            ip = arg[1];
+                            port = Integer.parseInt(arg[2]);
+                        } catch (NumberFormatException ignored) {
+                            player.sendMessage(bundle.prefix("system.server-to-server.port-not-int"));
+                            return;
+                        }
 
-                    try {
-                        size = Integer.parseInt(arg[3]);
-                        touchable = Boolean.parseBoolean(arg[4]);
-                        ip = arg[1];
-                        port = Integer.parseInt(arg[2]);
-                    } catch (NumberFormatException ignored) {
-                        player.sendMessage(bundle.prefix("system.server-to-server.not-int"));
-                        return;
-                    }
-
-                    int tf = player.tileX() + size;
-                    int ty = player.tileY() + size;
-
-                    pluginData.warpzone.add(new PluginData.warpzone(world.tile(player.tileX(), player.tileY()), world.tile(tf, ty), touchable, ip, port));
-                    warpBorder.thread.clear();
-                    warpBorder.start();
-                    player.sendMessage(bundle.prefix("system.server-to-server.added"));
-                    break;
-                case "count":
-                    try {
-                        ip = arg[1];
-                        port = Integer.parseInt(arg[2]);
-                    } catch (NumberFormatException ignored) {
-                        player.sendMessage(bundle.prefix("system.server-to-server.port-not-int"));
-                        return;
-                    }
-
-                    pluginData.warpcount.add(new PluginData.warpcount(world.tile(player.tileX(), player.tileY()), ip, port, 0, 0));
-                    player.sendMessage(bundle.prefix("system.server-to-server.added"));
-                    break;
-                case "total":
-                    pluginData.warptotal.add(new PluginData.warptotal(world.tile(player.tileX(), player.tileY()), 0, 0));
-                    player.sendMessage(bundle.prefix("system.server-to-server.added"));
-                    break;
-                default:
-                    player.sendMessage(bundle.prefix("command.invalid"));
+                        pluginData.warpcounts.add(new PluginData.warpcount(name, world.tile(x, y), ip, port, 0, 0));
+                        player.sendMessage(bundle.prefix("system.warp.added"));
+                        break;
+                    case "total":
+                        pluginData.warptotals.add(new PluginData.warptotal(name, world.tile(x, y), 0, 0));
+                        player.sendMessage(bundle.prefix("system.warp.added"));
+                        break;
+                    default:
+                        player.sendMessage(bundle.prefix("command.invalid"));
+                }
             }
         });
         handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
@@ -871,13 +903,13 @@ public class Main extends Plugin {
             Bundle bundle = new Bundle(playerData.locale());
             switch (arg[0]) {
                 case "zone":
-                    for (int a = 0; a < pluginData.warpzone.size; a++) {
+                    for (int a = 0; a < pluginData.warpzones.size; a++) {
                         if (arg.length != 2) {
                             player.sendMessage(bundle.prefix("no-parameter"));
                             return;
                         }
-                        if (arg[1].equals(pluginData.warpzone.get(a).ip)) {
-                            pluginData.warpzone.remove(a);
+                        if (arg[1].equals(pluginData.warpzones.get(a).ip)) {
+                            pluginData.warpzones.remove(a);
                             for (Thread value : warpBorder.thread) {
                                 value.interrupt();
                             }
@@ -889,12 +921,12 @@ public class Main extends Plugin {
                     }
                     break;
                 case "count":
-                    pluginData.warpcount.clear();
-                    player.sendMessage(bundle.prefix("system.server-to-server.reset", "count"));
+                    pluginData.warpcounts.clear();
+                    player.sendMessage(bundle.prefix("system.warp.reset", "count"));
                     break;
                 case "total":
-                    pluginData.warptotal.clear();
-                    player.sendMessage(bundle.prefix("system.server-to-server.reset", "total"));
+                    pluginData.warptotals.clear();
+                    player.sendMessage(bundle.prefix("system.warp.reset", "total"));
                     break;
                 default:
                     player.sendMessage(bundle.prefix("command.invalid"));
