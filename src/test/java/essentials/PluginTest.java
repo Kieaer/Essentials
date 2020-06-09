@@ -303,7 +303,7 @@ public class PluginTest {
             client.request(Client.Request.unbanid, null, player.uuid);
 
             // Ban check test
-            try (Socket socket = new Socket("127.0.0.1", 25000);) {
+            try (Socket socket = new Socket("127.0.0.1", 25000)) {
                 KeyGenerator gen = KeyGenerator.getInstance("AES");
                 gen.init(128);
                 SecretKey key = gen.generateKey();
@@ -484,15 +484,15 @@ public class PluginTest {
 
         clientHandler.handleMessage("/info", player);
 
-        clientHandler.handleMessage("/jump count 192.168.35.100 6567", player);
-        assertEquals(1, pluginData.jumpcount.size);
+        clientHandler.handleMessage("/warp count 192.168.35.100 6567", player);
+        assertEquals(1, pluginData.warpcount.size);
 
-        clientHandler.handleMessage("/jump zone 192.168.35.100 6567 20 true", player);
-        assertEquals(1, pluginData.jumpzone.size);
+        clientHandler.handleMessage("/warp zone 192.168.35.100 6567 20 true", player);
+        assertEquals(1, pluginData.warpzone.size);
         sleep(4000);
 
-        clientHandler.handleMessage("/jump total", player);
-        assertEquals(1, pluginData.jumptotal.size);
+        clientHandler.handleMessage("/warp total", player);
+        assertEquals(1, pluginData.warptotal.size);
 
         Player dummy1 = createNewPlayer(true);
         clientHandler.handleMessage("/kill " + dummy1.name, player);
@@ -512,13 +512,13 @@ public class PluginTest {
         clientHandler.handleMessage("/r " + dummy1.name + " Hi!", player);
 
         clientHandler.handleMessage("/reset count 192.168.35.100", player);
-        assertEquals(0, pluginData.jumpcount.size);
+        assertEquals(0, pluginData.warpcount.size);
 
         clientHandler.handleMessage("/reset zone 192.168.35.100", player);
-        assertEquals(0, pluginData.jumpzone.size);
+        assertEquals(0, pluginData.warpzone.size);
 
         clientHandler.handleMessage("/reset total", player);
-        assertEquals(0, pluginData.jumptotal.size);
+        assertEquals(0, pluginData.warptotal.size);
 
         //clientHandler.handleMessage("/register testacount testas123 testas123", player);
 

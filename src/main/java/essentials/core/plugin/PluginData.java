@@ -20,24 +20,24 @@ public class PluginData {
     public Array<eventservers> eventservers = new Array<>();
     public Array<powerblock> powerblock = new Array<>();
     public Array<messagemonitor> messagemonitor = new Array<>();
-    public Array<messagejump> messagejump = new Array<>();
+    public Array<messagewarp> messagewarp = new Array<>();
     public Array<Tile> scancore = new Array<>();
     public Array<Tile> nukedata = new Array<>();
     public Array<Tile> nukeposition = new Array<>();
     public Array<Process> process = new Array<>();
 
     // 종료시 저장되는 플러그인 데이터
-    public Array<jumpzone> jumpzone = new Array<>();
-    public Array<jumpcount> jumpcount = new Array<>();
-    public Array<jumptotal> jumptotal = new Array<>();
+    public Array<warpzone> warpzone = new Array<>();
+    public Array<warpcount> warpcount = new Array<>();
+    public Array<warptotal> warptotal = new Array<>();
     public Array<String> blacklist = new Array<>();
     public Array<banned> banned = new Array<>();
 
     public void saveAll() throws Exception {
         Map<String, Object> map = new HashMap<>();
-        map.put("jumpzone", jumpzone.toArray());
-        map.put("jumpcount", jumpcount.toArray());
-        map.put("jumptotal", jumptotal.toArray());
+        map.put("warpzone", warpzone.toArray());
+        map.put("warpcount", warpcount.toArray());
+        map.put("warptotal", warptotal.toArray());
         map.put("blacklist", blacklist.toArray());
         map.put("banned", banned.toArray());
 
@@ -58,9 +58,9 @@ public class PluginData {
         try {
             if (!root.child("data/PluginData.object").exists()) {
                 Map<String, Array<Object>> map = new HashMap<>();
-                map.put("jumpzone", new Array<>());
-                map.put("jumpcount", new Array<>());
-                map.put("jumptotal", new Array<>());
+                map.put("warpzone", new Array<>());
+                map.put("warpcount", new Array<>());
+                map.put("warptotal", new Array<>());
                 map.put("blacklist", new Array<>());
                 map.put("banned", new Array<>());
 
@@ -76,9 +76,9 @@ public class PluginData {
                 fis = new ByteArrayInputStream(root.child("data/PluginData.object").readBytes());
                 ois = new ObjectInputStream(fis);
                 Map<String, Object> map = (HashMap<String, Object>) ois.readObject();
-                jumpzone = (Array<jumpzone>) map.get("jumpzone");
-                jumpcount = (Array<jumpcount>) map.get("jumpcount");
-                jumptotal = (Array<jumptotal>) map.get("jumptotal");
+                warpzone = (Array<warpzone>) map.get("warpzone");
+                warpcount = (Array<PluginData.warpcount>) map.get("warpcount");
+                warptotal = (Array<warptotal>) map.get("warptotal");
                 blacklist = (Array<String>) map.get("blacklist");
                 banned = (Array<banned>) map.get("banned");
                 ois.close();
@@ -136,17 +136,17 @@ public class PluginData {
         }
     }
 
-    public static class messagejump {
+    public static class messagewarp {
         public final Tile tile;
         public final String message;
 
-        public messagejump(Tile tile, String message) {
+        public messagewarp(Tile tile, String message) {
             this.tile = tile;
             this.message = message;
         }
     }
 
-    public static class jumpzone implements Serializable {
+    public static class warpzone implements Serializable {
         public final int startx;
         public final int starty;
         public final int finishx;
@@ -155,7 +155,7 @@ public class PluginData {
         public final int port;
         public final boolean touch;
 
-        public jumpzone(Tile start, Tile finish, boolean touch, String ip, int port) {
+        public warpzone(Tile start, Tile finish, boolean touch, String ip, int port) {
             this.startx = start.x;
             this.starty = start.y;
             this.finishx = finish.x;
@@ -174,7 +174,7 @@ public class PluginData {
         }
     }
 
-    public static class jumpcount implements Serializable {
+    public static class warpcount implements Serializable {
         public final int x;
         public final int y;
         public final String ip;
@@ -182,7 +182,7 @@ public class PluginData {
         public int players;
         public int numbersize;
 
-        public jumpcount(Tile tile, String ip, int port, int players, int numbersize) {
+        public warpcount(Tile tile, String ip, int port, int players, int numbersize) {
             this.x = tile.x;
             this.y = tile.y;
             this.ip = ip;
@@ -196,13 +196,13 @@ public class PluginData {
         }
     }
 
-    public static class jumptotal implements Serializable {
+    public static class warptotal implements Serializable {
         public final int x;
         public final int y;
         public int totalplayers;
         public int numbersize;
 
-        public jumptotal(Tile tile, int totalplayers, int numbersize) {
+        public warptotal(Tile tile, int totalplayers, int numbersize) {
             this.x = tile.x;
             this.y = tile.y;
             this.totalplayers = totalplayers;

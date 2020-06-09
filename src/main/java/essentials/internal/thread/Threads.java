@@ -50,15 +50,15 @@ public class Threads implements Runnable {
                 }
 
                 // 외부 서버 플레이어 인원 - 메세지 블럭
-                for (int a = 0; a < pluginData.messagejump.size; a++) {
+                for (int a = 0; a < pluginData.messagewarp.size; a++) {
                     if (state.is(GameState.State.playing)) {
-                        if (pluginData.messagejump.get(a).tile.entity.block != Blocks.message) {
-                            pluginData.messagejump.remove(a);
+                        if (pluginData.messagewarp.get(a).tile.entity.block != Blocks.message) {
+                            pluginData.messagewarp.remove(a);
                             break;
                         }
-                        Call.setMessageBlockText(null, pluginData.messagejump.get(a).tile, "[green]Working...");
+                        Call.setMessageBlockText(null, pluginData.messagewarp.get(a).tile, "[green]Working...");
 
-                        String[] arr = pluginData.messagejump.get(a).message.split(" ");
+                        String[] arr = pluginData.messagewarp.get(a).message.split(" ");
                         String ip = arr[0];
                         int port = 6567;
                         if (arr.length == 2) {
@@ -66,14 +66,14 @@ public class Threads implements Runnable {
                         }
 
                         int fa = a;
-                        new PingHost(ip, port, result -> Call.setMessageBlockText(null, pluginData.messagejump.get(fa).tile, result != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline"));
+                        new PingHost(ip, port, result -> Call.setMessageBlockText(null, pluginData.messagewarp.get(fa).tile, result != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline"));
                     }
                 }
 
                 // 서버 인원 확인
-                for (int i = 0; i < pluginData.jumpcount.size; i++) {
+                for (int i = 0; i < pluginData.warpcount.size; i++) {
                     int i2 = i;
-                    PluginData.jumpcount value = pluginData.jumpcount.get(i);
+                    PluginData.warpcount value = pluginData.warpcount.get(i);
 
                     new PingHost(value.ip, value.port, result -> {
                         if (result.name != null) {
@@ -93,7 +93,7 @@ public class Threads implements Runnable {
                             }
                             tool.setTileText(tile, Blocks.copperWall, str);
                             // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                            pluginData.jumpcount.set(i2, new PluginData.jumpcount(value.getTile(), value.ip, value.port, result.players, digits.length));
+                            pluginData.warpcount.set(i2, new PluginData.warpcount(value.getTile(), value.ip, value.port, result.players, digits.length));
                         } else {
                             tool.setTileText(value.getTile(), Blocks.copperWall, "no");
                         }

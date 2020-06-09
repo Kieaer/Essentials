@@ -33,7 +33,7 @@ public class TickTrigger {
     public TickTrigger() {
         Events.on(EventType.Trigger.update, new Runnable() {
             int tick = 0;
-            ObjectMap<String, Integer> resources = new ObjectMap<>();
+            final ObjectMap<String, Integer> resources = new ObjectMap<>();
 
             @Override
             public void run() {
@@ -109,18 +109,18 @@ public class TickTrigger {
                     }*/
 
                         // 모든 클라이언트 서버에 대한 인원 총합 카운트
-                        for (int a = 0; a < pluginData.jumptotal.size; a++) {
+                        for (int a = 0; a < pluginData.warptotal.size; a++) {
                             int result = 0;
-                            for (PluginData.jumpcount value : pluginData.jumpcount) result = result + value.players;
+                            for (PluginData.warpcount value : pluginData.warpcount) result = result + value.players;
 
                             String str = String.valueOf(result);
                             // TODO 인원 카운트 다시 만들기
                             int[] digits = new int[str.length()];
                             for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
-                            Tile tile = pluginData.jumptotal.get(a).getTile();
-                            if (pluginData.jumptotal.get(a).totalplayers != result) {
-                                if (pluginData.jumptotal.get(a).numbersize != digits.length) {
+                            Tile tile = pluginData.warptotal.get(a).getTile();
+                            if (pluginData.warptotal.get(a).totalplayers != result) {
+                                if (pluginData.warptotal.get(a).numbersize != digits.length) {
                                     for (int px = 0; px < 3; px++) {
                                         for (int py = 0; py < 5; py++) {
                                             Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
@@ -131,7 +131,7 @@ public class TickTrigger {
 
                             tool.setTileText(tile, Blocks.copperWall, String.valueOf(result));
 
-                            pluginData.jumptotal.set(a, new PluginData.jumptotal(tile, result, digits.length));
+                            pluginData.warptotal.set(a, new PluginData.warptotal(tile, result, digits.length));
                         }
 
                         // 플레이어 플탐 카운트 및 잠수확인
@@ -190,8 +190,8 @@ public class TickTrigger {
                                 pluginData.powerblock.add(new PluginData.powerblock(entity.tile, target));
                                 pluginData.messagemonitor.remove(a);
                                 break;
-                            } else if (msg.contains("jump")) {
-                                pluginData.messagejump.add(new PluginData.messagejump(pluginData.messagemonitor.get(a).entity.tile, msg));
+                            } else if (msg.contains("warp")) {
+                                pluginData.messagewarp.add(new PluginData.messagewarp(pluginData.messagemonitor.get(a).entity.tile, msg));
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             } else if (msg.equals("scancore")) {
@@ -202,7 +202,7 @@ public class TickTrigger {
                         }
 
                         // 서버간 이동 영역에 플레이어가 있는지 확인
-                        for (PluginData.jumpzone value : pluginData.jumpzone) {
+                        for (PluginData.warpzone value : pluginData.warpzone) {
                             if (!value.touch) {
                                 for (int ix = 0; ix < playerGroup.size(); ix++) {
                                     Player player = playerGroup.all().get(ix);
@@ -215,7 +215,7 @@ public class TickTrigger {
                                                 resultIP = temp[0];
                                                 port = Integer.parseInt(temp[1]);
                                             }
-                                            Log.info("player.jumped", player.name, resultIP + ":" + port);
+                                            Log.info("player.warped", player.name, resultIP + ":" + port);
                                             Call.onConnect(player.con, resultIP, port);
                                         }
                                     }

@@ -63,13 +63,13 @@ public class Event {
             PlayerData playerData = playerDB.get(e.player.uuid);
 
             if (!playerData.error()) {
-                for (PluginData.jumpzone data : pluginData.jumpzone) {
+                for (PluginData.warpzone data : pluginData.warpzone) {
                     int port = data.port;
                     String ip = data.ip;
 
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
-                            Log.info("player.jumped", e.player.name, data.ip + ":" + data.port);
+                            Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
                             playerData.connected(false);
                             playerData.connserver("none");
                             Call.onConnect(e.player.con, ip, port);
@@ -682,7 +682,7 @@ public class Event {
                                 mainThread.shutdown();
                                 database.dispose();
 
-                                tool.URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
+                                Tools.URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
                                         Core.settings.getDataDirectory().child("mods/Essentials.jar").file());
                                 Core.app.exit();
                             } catch (Exception ex) {

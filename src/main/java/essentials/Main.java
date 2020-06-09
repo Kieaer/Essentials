@@ -87,7 +87,7 @@ public class Main extends Plugin {
     public static final Discord discord = new Discord();
     public static final AutoRollback rollback = new AutoRollback();
     public static final EventServer eventServer = new EventServer();
-    public static final JumpBorder jumpBorder = new JumpBorder();
+    public static final WarpBorder warpBorder = new WarpBorder();
     public static final PluginVars vars = new PluginVars();
     public static final Config config = new Config();
     public static final Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
@@ -155,7 +155,7 @@ public class Main extends Plugin {
         mainThread.submit(colornick);
         timer.scheduleAtFixedRate(rollback, 600000, 600000);
         mainThread.submit(new PermissionWatch());
-        mainThread.submit(jumpBorder);
+        mainThread.submit(warpBorder);
 
         // DB 연결
         try {
@@ -680,8 +680,8 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player.pvpbreakout") + "[] : " + playerData.pvpbreakout();
             Call.onInfoMessage(player.con, datatext);
         });
-        handler.<Player>register("jump", "<zone/count/total> [ip] [port] [range] [clickable]", "Create a server-to-server jumping zone.", (arg, player) -> {
-            if (!perm.check(player, "jump")) return;
+        handler.<Player>register("warp", "<zone/count/total> [ip] [port] [range] [clickable]", "Create a server-to-server warp zone.", (arg, player) -> {
+            if (!perm.check(player, "warp")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
 
@@ -716,9 +716,9 @@ public class Main extends Plugin {
                     int tf = player.tileX() + size;
                     int ty = player.tileY() + size;
 
-                    pluginData.jumpzone.add(new PluginData.jumpzone(world.tile(player.tileX(), player.tileY()), world.tile(tf, ty), touchable, ip, port));
-                    jumpBorder.thread.clear();
-                    jumpBorder.start();
+                    pluginData.warpzone.add(new PluginData.warpzone(world.tile(player.tileX(), player.tileY()), world.tile(tf, ty), touchable, ip, port));
+                    warpBorder.thread.clear();
+                    warpBorder.start();
                     player.sendMessage(bundle.prefix("system.server-to-server.added"));
                     break;
                 case "count":
@@ -730,11 +730,11 @@ public class Main extends Plugin {
                         return;
                     }
 
-                    pluginData.jumpcount.add(new PluginData.jumpcount(world.tile(player.tileX(), player.tileY()), ip, port, 0, 0));
+                    pluginData.warpcount.add(new PluginData.warpcount(world.tile(player.tileX(), player.tileY()), ip, port, 0, 0));
                     player.sendMessage(bundle.prefix("system.server-to-server.added"));
                     break;
                 case "total":
-                    pluginData.jumptotal.add(new PluginData.jumptotal(world.tile(player.tileX(), player.tileY()), 0, 0));
+                    pluginData.warptotal.add(new PluginData.warptotal(world.tile(player.tileX(), player.tileY()), 0, 0));
                     player.sendMessage(bundle.prefix("system.server-to-server.added"));
                     break;
                 default:
@@ -865,35 +865,35 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.get("player.not-found"));
             }
         });
-        handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server jumping zone data.", (arg, player) -> {
+        handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server warp zone data.", (arg, player) -> {
             if (!perm.check(player, "reset")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
             switch (arg[0]) {
                 case "zone":
-                    for (int a = 0; a < pluginData.jumpzone.size; a++) {
+                    for (int a = 0; a < pluginData.warpzone.size; a++) {
                         if (arg.length != 2) {
                             player.sendMessage(bundle.prefix("no-parameter"));
                             return;
                         }
-                        if (arg[1].equals(pluginData.jumpzone.get(a).ip)) {
-                            pluginData.jumpzone.remove(a);
-                            for (Thread value : jumpBorder.thread) {
+                        if (arg[1].equals(pluginData.warpzone.get(a).ip)) {
+                            pluginData.warpzone.remove(a);
+                            for (Thread value : warpBorder.thread) {
                                 value.interrupt();
                             }
-                            jumpBorder.thread.clear();
-                            jumpBorder.start();
+                            warpBorder.thread.clear();
+                            warpBorder.start();
                             player.sendMessage(bundle.prefix("success"));
                             break;
                         }
                     }
                     break;
                 case "count":
-                    pluginData.jumpcount.clear();
+                    pluginData.warpcount.clear();
                     player.sendMessage(bundle.prefix("system.server-to-server.reset", "count"));
                     break;
                 case "total":
-                    pluginData.jumptotal.clear();
+                    pluginData.warptotal.clear();
                     player.sendMessage(bundle.prefix("system.server-to-server.reset", "total"));
                     break;
                 default:
