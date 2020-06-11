@@ -3,7 +3,6 @@ package essentials.core.plugin;
 import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 
@@ -183,23 +182,25 @@ public class PluginData {
 
     public static class warpblock implements Serializable {
         public final String mapName;
-        public final float tilex;
-        public final float tiley;
+        public final int tilex;
+        public final int tiley;
         public final String tileName;
-        public final Block block;
         public final String ip;
         public final int port;
         public final String description;
+        public final int size;
 
         public warpblock(String mapName, Tile tile, String ip, int port, String description) {
             this.mapName = mapName;
-            this.tilex = tile.getX();
-            this.tiley = tile.getY();
-            this.tileName = tile.block().name;
-            this.block = tile.block();
+
             this.ip = ip;
             this.port = port;
             this.description = description;
+
+            this.tilex = tile.entity.tileX();
+            this.tiley = tile.entity.tileY();
+            this.tileName = tile.entity.block.name;
+            this.size = tile.entity.block.size;
         }
     }
 

@@ -172,6 +172,7 @@ public class TickTrigger {
                                 pluginData.messagemonitor.remove(a);
                                 return;
                             }
+                            System.out.println("Message monitoring");
 
                             if (msg.equals("powerblock")) {
                                 Tile target;

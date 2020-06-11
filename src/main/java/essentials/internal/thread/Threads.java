@@ -113,9 +113,33 @@ public class Threads implements Runnable {
                         PluginData.warpblock value = pluginData.warpblocks.get(a);
                         new PingHost(value.ip, value.port, result -> {
                             if (result.name != null) {
-                                float Loc = 8 * value.block.size;
-                                Call.onLabel(value.ip, 3f, value.tilex, value.tiley + Loc);
-                                Call.onLabel(value.description, 3f, value.tilex, value.tiley - Loc);
+                                float margin = 0f;
+                                Tile tile = world.tile(value.tilex, value.tiley);
+                                float x = tile.drawx();
+                                float y = tile.drawy();
+                                boolean isDup = false;
+
+                                System.out.println(value.tileName);
+                                switch (value.size) {
+                                    case 1:
+                                        margin = 8f;
+                                        break;
+                                    case 2:
+                                        margin = 16f;
+                                        x = tile.drawx() - 4f;
+                                        isDup = true;
+                                        break;
+                                    case 3:
+                                        margin = 16f;
+                                        break;
+                                    case 4:
+                                        x = tile.drawx() - 4f;
+                                        margin = 24f;
+                                        isDup = true;
+                                        break;
+                                }
+                                Call.onLabel("[yellow]" + result.players + "[] Players", 3f, x, y + (isDup ? margin - 8 : margin));
+                                Call.onLabel(value.description, 3f, x, y - margin);
                             } else {
                                 Call.onLabel(value.ip + " Offline", 3f, value.tilex, value.tiley);
                             }

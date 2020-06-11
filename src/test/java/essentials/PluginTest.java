@@ -484,10 +484,10 @@ public class PluginTest {
 
         clientHandler.handleMessage("/info", player);
 
-        clientHandler.handleMessage("/warp count 192.168.35.100 6567", player);
+        clientHandler.handleMessage("/warp count 192.168.35.100", player);
         assertEquals(1, pluginData.warpcounts.size);
 
-        clientHandler.handleMessage("/warp zone 192.168.35.100 6567 20 true", player);
+        clientHandler.handleMessage("/warp zone 192.168.35.100 20 true", player);
         assertEquals(1, pluginData.warpzones.size);
         sleep(4000);
 

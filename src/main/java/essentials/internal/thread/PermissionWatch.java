@@ -7,15 +7,21 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 
-import static essentials.Main.perm;
-import static essentials.Main.root;
+import static essentials.Main.*;
 
 public class PermissionWatch implements Runnable {
     WatchKey watchKey;
     WatchService watchService;
     Path path;
+    boolean tried = false;
 
     public PermissionWatch() {
+        mainThread.submit(() -> {
+            if (tried) {
+                perm.update();
+                tried = false;
+            }
+        });
         try {
             this.watchService = FileSystems.getDefault().newWatchService();
             this.path = Paths.get(root.absolutePath());
@@ -35,7 +41,7 @@ public class PermissionWatch implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 watchKey = watchService.take();
-                Thread.sleep(100);
+                Thread.sleep(50);
 
                 List<WatchEvent<?>> events = watchKey.pollEvents();
                 for (WatchEvent<?> event : events) {
@@ -44,7 +50,7 @@ public class PermissionWatch implements Runnable {
                     if (paths.equals("permission_user.hjson") || paths.equals("permission.hjson")) {
                         if (kind.equals(StandardWatchEventKinds.ENTRY_MODIFY)) {
                             perm.reload(false);
-                            perm.update();
+                            tried = !tried;
                             Log.info("system.perm.updated");
                         }
                     }
