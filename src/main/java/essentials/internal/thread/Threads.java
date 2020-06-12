@@ -111,39 +111,43 @@ public class Threads implements Runnable {
 
                     for (int a = 0; a < pluginData.warpblocks.size; a++) {
                         PluginData.warpblock value = pluginData.warpblocks.get(a);
-                        new PingHost(value.ip, value.port, result -> {
-                            float margin = 0f;
-                            Tile tile = world.tile(value.tilex, value.tiley);
-                            boolean isDup = false;
-                            float x = tile.drawx();
+                        Tile tile = world.tile(value.tilex, value.tiley);
+                        if (tile.block() == Blocks.air) {
+                            pluginData.warpblocks.remove(a);
+                        } else {
+                            new PingHost(value.ip, value.port, result -> {
+                                float margin = 0f;
+                                boolean isDup = false;
+                                float x = tile.drawx();
 
-                            switch (value.size) {
-                                case 1:
-                                    margin = 8f;
-                                    break;
-                                case 2:
-                                    margin = 16f;
-                                    x = tile.drawx() - 4f;
-                                    isDup = true;
-                                    break;
-                                case 3:
-                                    margin = 16f;
-                                    break;
-                                case 4:
-                                    x = tile.drawx() - 4f;
-                                    margin = 24f;
-                                    isDup = true;
-                                    break;
-                            }
+                                switch (value.size) {
+                                    case 1:
+                                        margin = 8f;
+                                        break;
+                                    case 2:
+                                        margin = 16f;
+                                        x = tile.drawx() - 4f;
+                                        isDup = true;
+                                        break;
+                                    case 3:
+                                        margin = 16f;
+                                        break;
+                                    case 4:
+                                        x = tile.drawx() - 4f;
+                                        margin = 24f;
+                                        isDup = true;
+                                        break;
+                                }
 
-                            float y = tile.drawy() + (isDup ? margin - 8 : margin);
-                            if (result.name != null) {
-                                Call.onLabel("[yellow]" + result.players + "[] Players", 3f, x, y);
-                            } else {
-                                Call.onLabel("[scarlet]Offline", 3f, x, y);
-                            }
-                            Call.onLabel(value.description, 3f, x, y - margin);
-                        });
+                                float y = tile.drawy() + (isDup ? margin - 8 : margin);
+                                if (result.name != null) {
+                                    Call.onLabel("[yellow]" + result.players + "[] Players", 3f, x, y);
+                                } else {
+                                    Call.onLabel("[scarlet]Offline", 3f, x, y);
+                                }
+                                Call.onLabel(value.description, 3f, x, tile.drawy() - margin);
+                            });
+                        }
                     }
                 }
 

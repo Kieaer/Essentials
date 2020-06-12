@@ -64,23 +64,24 @@ public class Event {
 
             if (!playerData.error()) {
                 for (PluginData.warpzone data : pluginData.warpzones) {
-                    int port = data.port;
-                    String ip = data.ip;
-
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
                             Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
                             playerData.connected(false);
                             playerData.connserver("none");
-                            Call.onConnect(e.player.con, ip, port);
+                            Call.onConnect(e.player.con, data.ip, data.port);
+                            break;
                         }
                     }
                 }
 
                 for (PluginData.warpblock data : pluginData.warpblocks) {
-                    if (world.tile(e.tile.x, e.tile.y).link() != null && world.tile(data.tilex, data.tiley).link() != null) {
-                        Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
-                        Call.onConnect(e.player.con, data.ip, data.port);
+                    if (e.tile.x >= world.tile(data.tilex, data.tiley).link().x && e.tile.x <= world.tile(data.tilex, data.tiley).link().x) {
+                        if (e.tile.y >= world.tile(data.tilex, data.tiley).link().y && e.tile.y <= world.tile(data.tilex, data.tiley).link().y) {
+                            Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
+                            Call.onConnect(e.player.con, data.ip, data.port);
+                            break;
+                        }
                     }
                 }
             }
