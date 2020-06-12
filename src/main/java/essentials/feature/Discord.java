@@ -29,7 +29,7 @@ import static essentials.Main.*;
 import static mindustry.Vars.playerGroup;
 
 public class Discord extends ListenerAdapter {
-    static ObjectMap<String, Integer> pins = new ObjectMap<>();
+    private static final ObjectMap<String, Integer> pins = new ObjectMap<>();
     public JDA jda;
     private MessageReceivedEvent event;
 
@@ -55,6 +55,10 @@ public class Discord extends ListenerAdapter {
         player.sendMessage(bundle.prefix(true, "discord-pin-queue", pin));
     }
 
+    public ObjectMap<String, Integer> getPins() {
+        return pins;
+    }
+
     @Override
     public void onGuildMemberJoin(@Nonnull GuildMemberJoinEvent e) {
         send("Use the ``!signup <PIN>`` command to register the server.");
@@ -69,18 +73,13 @@ public class Discord extends ListenerAdapter {
             String[] arr = msg.split(" ");
             switch (arr[0]) {
                 case "!signup":
-                    send("Array length: " + arr.length);
                     if (arr.length == 3) {
-                        send("length match true");
-                        send("pins length: " + pins.size);
+                        System.out.println(pins.size);
                         for (ObjectMap.Entry<String, Integer> data : pins.entries()) {
                             String name = data.key;
-                            send("name: " + name);
                             if (data.value == Integer.parseInt(arr[1])) {
                                 String pw = arr[2];
-                                send("PW: " + pw);
                                 if (checkpw(e.getAuthor().getName(), name, pw)) {
-                                    send("check pw success");
                                     PreparedStatement pstmt = null;
                                     ResultSet rs = null;
                                     try {
@@ -94,9 +93,11 @@ public class Discord extends ListenerAdapter {
                                                 Locale lc = tool.getGeo(player);
                                                 boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", e.getAuthor().getIdLong(), name, pw);
                                                 if (register) {
-                                                    PlayerData playerData = playerDB.load(player.uuid);
+                                                    playerCore.load(player);
+
+                                                    PlayerData playerData = playerDB.get(player.uuid);
                                                     player.sendMessage(new Bundle(playerData.locale()).prefix("register-success"));
-                                                    send(new Bundle(playerData.locale()).get("register-success"));
+                                                    send(new Bundle(playerData.locale()).get("success"));
                                                     break;
                                                 }
                                             } else {

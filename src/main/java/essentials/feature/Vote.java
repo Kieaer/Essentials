@@ -26,7 +26,6 @@ public class Vote {
 
     public Player player;
     public PlayerData playerData;
-    private Bundle bundle;
 
     public Player target;
     public Gamemode gamemode;
@@ -35,46 +34,48 @@ public class Vote {
     public VoteType type;
     public Array<String> voted = new Array<>();
 
-    public int require;
-    public int time = 0;
-    public int message_time = 0;
+    int require;
+    int time = 0;
+    int message_time = 0;
+    int amount;
 
     public Vote(Player player, VoteType voteType, Object... parameters) {
         this.player = player;
         this.playerData = playerDB.get(player.uuid);
-        this.bundle = new Bundle(playerData.locale());
         this.type = voteType;
+        Bundle bundle = new Bundle(playerData.locale());
 
-        if (vars.playerData().size == 2) {
+
+        if (vars.playerData().size < 4) {
             player.sendMessage(bundle.get("vote.minimal"));
-        } else if (vars.playerData().size == 3) {
-            require = 2;
-        } else if (vars.playerData().size > 3) {
-            require = (int) Math.round((double) vars.playerData().size / 3.5);
+            return;
+        } else {
+            require = vars.playerData().size > 8 ? 6 : 2 + (vars.playerData().size > 4 ? 1 : 0);
         }
 
+        tool.sendMessageAll("vote.suggester-name", player.name);
         switch (type) {
             case kick:
                 this.target = (Player) parameters[0];
-                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.kick", target.name);
                 break;
             case gameover:
-                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.gameover");
                 break;
             case skipwave:
-                tool.sendMessageAll("vote.suggester-name", player.name);
+                try {
+                    this.amount = Integer.parseInt((String) parameters[0]);
+                } catch (NumberFormatException ignored) {
+                    this.amount = 3;
+                }
                 tool.sendMessageAll("vote.skipwave");
                 break;
             case rollback:
-                tool.sendMessageAll("vote.suggester-name", player.name);
                 tool.sendMessageAll("vote.rollback");
                 break;
             case gamemode:
                 if (parameters[0] instanceof Gamemode) {
                     this.gamemode = (Gamemode) parameters[0];
-                    tool.sendMessageAll("vote.suggester-name", player.name);
                     tool.sendMessageAll("vote-gamemode", gamemode.name());
                 } else {
                     player.sendMessage("vote.wrong-gamemode");
@@ -84,13 +85,9 @@ public class Vote {
             case map:
                 if (parameters[0] instanceof Map) {
                     this.map = (Map) parameters[0];
-                    tool.sendMessageAll("vote.suggester-name", player.name);
                     tool.sendMessageAll("vote.map", map.name());
                 }
                 break;
-            default:
-                player.sendMessage(bundle.get("vote.wrong-mode"));
-                return;
         }
 
         timer.scheduleAtFixedRate(counting, 0, 1000);
@@ -137,14 +134,14 @@ public class Vote {
                 case skipwave:
                     Log.info("Vote skipwave passed!");
                     tool.sendMessageAll("vote.skipwave.done");
-                    for (int a = 0; a < 10; a++) {
+                    for (int a = 0; a < amount; a++) {
                         logic.runWave();
                     }
                     break;
                 case kick:
                     Log.info("Vote kick passed!");
                     playerDB.get(target.uuid).kickcount(playerDB.get(target.uuid).kickcount() + 1);
-                    tool.sendMessageAll("vote.kick.done");
+                    tool.sendMessageAll("vote.kick.done", target.name);
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
                     Call.onKick(target.con, Packets.KickReason.vote);
                     Log.write(Log.LogType.player, "log.player.kick");

@@ -1,19 +1,11 @@
 package essentials.core.player;
 
-import arc.struct.Array;
-import arc.struct.ArrayMap;
-import arc.struct.ObjectMap;
 import essentials.internal.CrashReport;
-import org.slf4j.LoggerFactory;
+import essentials.internal.exception.PluginException;
+import org.h2.tools.Server;
 
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.sql.*;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.function.Consumer;
 
 import static essentials.Main.config;
 import static essentials.Main.root;
@@ -22,7 +14,8 @@ public class Database {
     public Method m;
     public Object service;
     public Connection conn;
-    public Class<?> cl = null;
+
+    public Server server;
 
     public void create() {
         String data = "CREATE TABLE IF NOT EXISTS players (" +
@@ -76,155 +69,57 @@ public class Database {
         }
     }
 
-    public void connect() throws SQLException {
-        conn = DriverManager.getConnection(config.dbUrl());
+    public void connect(boolean isServer) throws SQLException {
+        if (isServer) {
+            try {
+                Class.forName("org.h2.Driver");
+            } catch (Exception ignored) {
+            }
+            org.h2.Driver.load();
+            server = Server.createTcpServer("-tcpPort", "9079", "-tcpAllowOthers", "-tcpDaemon", "-baseDir", "./" + root.child("data").path(), "-ifNotExists");
+            server.start();
+            conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player", "", "");
+        } else {
+            conn = DriverManager.getConnection(config.dbUrl());
+        }
     }
 
     public void disconnect() throws SQLException {
         conn.close();
     }
 
-    public void server_start() {
-        // TODO H2 library 사용
-        try {
-            URLClassLoader cla = new URLClassLoader(new URL[]{root.child("Driver/h2-1.4.200.jar").file().toURI().toURL()}, this.getClass().getClassLoader());
-            cl = Class.forName("org.h2.tools.Server", true, cla);
-            Object obj = cl.getDeclaredConstructor().newInstance();
-
-            m = cl.getMethod("createTcpServer", String[].class);
-            service = m.invoke(obj, new Object[]{new String[]{"-tcp", "-tcpPort", "9090", "-baseDir", "./" + root.child("data").path(), "-tcpAllowOthers"}});
-
-            m = cl.getMethod("start");
-            m.invoke(service);
-        } catch (Exception e) {
-            new CrashReport(e);
-        }
-    }
-
-    public void server_stop() throws Exception {
-        m = cl.getMethod("stop");
-        m.invoke(service);
-        cl = null;
+    public void server_stop() {
+        server.stop();
     }
 
     public void dispose() {
         try {
             disconnect();
-            if (cl != null) server_stop();
+            if (server != null) server_stop();
         } catch (Exception e) {
             new CrashReport(e);
         }
     }
 
-    public void LegacyUpgrade() {
-        Array<PlayerData> buffer = new Array<>();
-        try (PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM players");
-             ResultSet rs = pstmt.executeQuery();
-             Statement sm = conn.createStatement()) {
-            while (rs.next()) {
-                try {
-                    try {
-                        LocalTime lc = LocalTime.parse(rs.getString("playtime"), DateTimeFormatter.ofPattern("HH:mm.ss"));
-                        PreparedStatement update = conn.prepareStatement("UPDATE players SET playtime=? WHERE uuid=?");
-                        update.setString(1, lc.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-                        update.setString(2, rs.getString("uuid"));
-                        update.execute();
-                        update.close();
-                    } catch (DateTimeParseException ignored) {
-                    }
-
-                    PlayerData data = new PlayerData(
-                            rs.getString("name"),
-                            rs.getString("uuid"),
-                            rs.getString("country"),
-                            rs.getString("country_code"),
-                            rs.getString("language"),
-                            rs.getBoolean("isAdmin"),
-                            rs.getInt("placecount"),
-                            rs.getInt("breakcount"),
-                            rs.getInt("killcount"),
-                            rs.getInt("deathcount"),
-                            rs.getInt("joincount"),
-                            rs.getInt("kickcount"),
-                            rs.getInt("level"),
-                            rs.getInt("exp"),
-                            rs.getInt("reqexp"),
-                            rs.getString("reqtotalexp"),
-                            rs.getString("firstdate"),
-                            rs.getString("lastdate"),
-                            rs.getString("lastplacename"),
-                            rs.getString("lastbreakname"),
-                            rs.getString("lastchat"),
-                            rs.getString("playtime"),
-                            rs.getInt("attackclear"),
-                            rs.getInt("pvpwincount"),
-                            rs.getInt("pvplosecount"),
-                            rs.getInt("pvpbreakout"),
-                            rs.getInt("reactorcount"),
-                            rs.getString("bantimeset"),
-                            rs.getString("bantime"),
-                            rs.getBoolean("banned"),
-                            rs.getBoolean("translate"),
-                            rs.getBoolean("crosschat"),
-                            rs.getBoolean("colornick"),
-                            rs.getBoolean("connected"),
-                            rs.getString("connserver"),
-                            rs.getString("permission"),
-                            rs.getBoolean("mute"),
-                            rs.getBoolean("alert"),
-                            rs.getLong("udid"),
-                            rs.getString("accountid"),
-                            rs.getString("accountpw")
-                    );
-                    buffer.add(data);
-                } catch (Exception e) {
-                    LoggerFactory.getLogger(Database.class).info("Database", e);
-                    break;
-                }
-            }
-
-            sm.execute("DROP TABLE players");
-            create();
-
-            for (PlayerData p : buffer) {
-                StringBuilder sql = new StringBuilder();
-                sql.append("INSERT INTO players VALUES(");
-
-                ArrayMap<String, Object> js = p.toMap();
-
-                js.forEach((s) -> sql.append("?,"));
-                sql.deleteCharAt(sql.length() - 1);
-                sql.append(")");
-
-
-                try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-                    js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
-                        int index = 1;
-
-                        @Override
-                        public void accept(ObjectMap.Entry<String, Object> o) {
-                            try {
-                                if (o.value instanceof String) {
-                                    ps.setString(index, (String) o.value);
-                                } else if (o.value instanceof Boolean) {
-                                    ps.setBoolean(index, (Boolean) o.value);
-                                } else if (o.value instanceof Integer) {
-                                    ps.setInt(index, (Integer) o.value);
-                                } else if (o.value instanceof Long) {
-                                    ps.setLong(index, (Long) o.value);
-                                }
-                            } catch (SQLException e) {
-                                new CrashReport(e);
+    public void update() {
+        // playtime HH:mm:ss -> long 0
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT uuid, playtime FROM players")) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    if (rs.getString("playtime").contains(":")) {
+                        try (PreparedStatement pstmt2 = conn.prepareStatement("UPDATE players SET playtime=? WHERE uuid=?")) {
+                            pstmt2.setLong(1, 0);
+                            pstmt2.setString(2, rs.getString("uuid"));
+                            int result = pstmt2.executeUpdate();
+                            if (result == 0) {
+                                new CrashReport(new PluginException("Database update error"));
+                                System.exit(1);
                             }
-                            index++;
                         }
-                    });
-                    ps.execute();
-                } catch (SQLException e) {
-                    new CrashReport(e);
+                    }
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             new CrashReport(e);
         }
     }

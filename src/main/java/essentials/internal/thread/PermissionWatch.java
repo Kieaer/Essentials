@@ -7,15 +7,21 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 
-import static essentials.Main.perm;
-import static essentials.Main.root;
+import static essentials.Main.*;
 
 public class PermissionWatch implements Runnable {
     WatchKey watchKey;
     WatchService watchService;
     Path path;
+    boolean tried = false;
 
     public PermissionWatch() {
+        mainThread.submit(() -> {
+            if (tried) {
+                perm.update();
+                tried = false;
+            }
+        });
         try {
             this.watchService = FileSystems.getDefault().newWatchService();
             this.path = Paths.get(root.absolutePath());
@@ -32,7 +38,7 @@ public class PermissionWatch implements Runnable {
     @Override
     public void run() {
         Thread.currentThread().setName("Essential Permission Watch thread");
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 watchKey = watchService.take();
                 Thread.sleep(50);
@@ -44,12 +50,8 @@ public class PermissionWatch implements Runnable {
                     if (paths.equals("permission_user.hjson") || paths.equals("permission.hjson")) {
                         if (kind.equals(StandardWatchEventKinds.ENTRY_MODIFY)) {
                             perm.reload(false);
-                            if (!perm.isUse) {
-                                perm.isUse = true;
-                                perm.update();
-                            } else {
-                                Log.info("system.perm.updated");
-                            }
+                            tried = !tried;
+                            Log.info("system.perm.updated");
                         }
                     }
                     /*if(kind.equals(StandardWatchEventKinds.ENTRY_CREATE)) {
@@ -74,7 +76,7 @@ public class PermissionWatch implements Runnable {
                     }
                 }
             } catch (InterruptedException e) {
-                break;
+                Thread.currentThread().interrupt();
             } catch (Exception ignored) {
             }
         }

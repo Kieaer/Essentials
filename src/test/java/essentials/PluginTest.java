@@ -9,7 +9,6 @@ import arc.files.Fi;
 import arc.util.CommandHandler;
 import arc.util.Time;
 import essentials.core.player.PlayerData;
-import essentials.external.DataMigration;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
@@ -37,29 +36,36 @@ import mindustry.net.Net;
 import mindustry.type.UnitType;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import org.jsoup.Jsoup;
 import org.junit.*;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runners.MethodSorters;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.time.LocalTime;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Locale;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static essentials.PluginTestDB.createNewPlayer;
-import static essentials.PluginTestDB.setupDB;
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PluginTest {
     static final PluginTestVars testVars = new PluginTestVars();
-    static final Random r = new Random();
+    static final SecureRandom r = new SecureRandom();
     static Fi root;
     static Fi testroot;
     static Main main;
@@ -74,14 +80,10 @@ public class PluginTest {
     @After
     public void resetLog() {
         out.clearLog();
-        try {
-            TimeUnit.MILLISECONDS.sleep(500);
-        } catch (InterruptedException ignored) {
-        }
     }
 
     @BeforeClass
-    public static void init() {
+    public static void init() throws PluginException, InterruptedException {
         Core.settings = new Settings();
         Core.settings.setDataDirectory(new Fi(""));
         Core.settings.getDataDirectory().child("locales").writeString("en");
@@ -125,7 +127,7 @@ public class PluginTest {
                     exceptionThrown[0].printStackTrace();
                     Assert.fail();
                 }
-                Thread.sleep(10);
+                sleep(10);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -152,17 +154,45 @@ public class PluginTest {
         world.loadMap(testMap[0]);
 
         state.set(GameState.State.playing);
-    }
 
-    @Test
-    public void test00_start() throws PluginException {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Time.update();
+                    unitGroup.update();
+                    puddleGroup.update();
+                    shieldGroup.update();
+                    bulletGroup.update();
+                    tileGroup.update();
+                    fireGroup.update();
+                    collisions.collideGroups(bulletGroup, unitGroup);
+                    collisions.collideGroups(bulletGroup, playerGroup);
+                    unitGroup.updateEvents();
+                    collisions.updatePhysics(unitGroup);
+                    playerGroup.update();
+                    effectGroup.update();
+                    sleep(16);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }).start();
+
+        testroot.child("locales").delete();
+        testroot.child("version.properties").delete();
+
         root.child("config.hjson").writeString(testVars.config);
 
         main = new Main();
         main.init();
         main.registerServerCommands(serverHandler);
         main.registerClientCommands(clientHandler);
+        player = createNewPlayer(true);
     }
+
+/*    @Test
+    public void test00_start() throws PluginException {
+
+    }*/
 
     @Test
     public void test01_config() {
@@ -171,7 +201,6 @@ public class PluginTest {
 
     @Test
     public void test02_register() {
-        player = createNewPlayer(true);
         assertFalse(playerDB.get(player.uuid).error());
 
         JsonObject json = JsonObject.readJSON(root.child("permission_user.hjson").readString()).asObject();
@@ -185,12 +214,8 @@ public class PluginTest {
     }
 
     @Test
-    public void test04_crashReport() {
-        try {
-            throw new Exception("Crash Report Test");
-        } catch (Exception e) {
-            new CrashReport(e);
-        }
+    public void test04_DBCheck() {
+        assertTrue(new CrashReport(new Exception("test")).success);
     }
 
     @Test
@@ -226,11 +251,10 @@ public class PluginTest {
     }
 
     @Test
-    public void test06_remoteDatabase() throws Exception {
-        database.server_start();
-        assertNotNull(database.cl);
-        database.server_stop();
-        assertNull(database.cl);
+    public void test06_remoteDatabase() {
+        if (config.dbServer()) {
+            assertNotNull(database.server);
+        }
     }
 
     @Test
@@ -248,51 +272,149 @@ public class PluginTest {
     }
 
     @Test
-    public void test09_network() throws InterruptedException {
-        Server server = new Server();
-        Client client = new Client();
-        config.clientHost("127.0.0.1");
+    public void test09_network() {
+        try {
+            Server server = new Server();
+            Client client = new Client();
 
-        // Server start test
-        mainThread.submit(server);
-        TimeUnit.SECONDS.sleep(1);
-        assertNotNull(server.serverSocket);
+            // Server start test
+            mainThread.submit(server);
+            sleep(1000);
+            assertNotNull(server.serverSocket);
 
-        // Client start test
-        mainThread.submit(client);
-        TimeUnit.SECONDS.sleep(1);
-        client.wakeup();
-        assertTrue(client.activated);
+            // Client start test
+            mainThread.submit(client);
+            client.wakeup();
+            sleep(1000);
+            assertTrue(client.activated);
 
-        // Ban data sharing test
-        client.request(Client.Request.bansync, null, null);
-        TimeUnit.SECONDS.sleep(1);
-        assertTrue(client.activated);
-        assertTrue(server.list.size != 0);
+            // Ban data sharing test
+            client.request(Client.Request.bansync, null, null);
+            TimeUnit.SECONDS.sleep(1);
+            assertTrue(client.activated);
+            assertTrue(server.list.size != 0);
 
-        out.clearLog();
-        client.request(Client.Request.chat, player, "Cross-chat message!");
-        assertTrue(out.getLogWithNormalizedLineSeparator().contains("[EssentialClient]"));
+            out.clearLog();
+            client.request(Client.Request.chat, player, "Cross-chat message!");
+            assertTrue(out.getLogWithNormalizedLineSeparator().contains("[EssentialClient]"));
 
-        client.request(Client.Request.unbanip, null, "127.0.0.1");
+            client.request(Client.Request.unbanip, null, "127.0.0.1");
 
-        client.request(Client.Request.unbanid, null, player.uuid);
+            client.request(Client.Request.unbanid, null, player.uuid);
 
-        // Connection close test
-        client.request(Client.Request.exit, null, null);
-        TimeUnit.SECONDS.sleep(1);
-        server.stop();
+            // Ban check test
+            try (Socket socket = new Socket("127.0.0.1", 25000)) {
+                KeyGenerator gen = KeyGenerator.getInstance("AES");
+                gen.init(128);
+                SecretKey key = gen.generateKey();
+
+                byte[] raw = key.getEncoded();
+                SecretKey skey = new SecretKeySpec(raw, "AES");
+                try (BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                     DataOutputStream os = new DataOutputStream(socket.getOutputStream())) {
+
+                    os.writeBytes(new String(Base64.getEncoder().encode(raw)) + "\n");
+                    os.flush();
+
+                    JsonObject json = new JsonObject();
+                    json.add("type", "checkban");
+                    json.add("target_uuid", player.uuid);
+                    json.add("target_ip", player.con.address);
+
+                    String en = tool.encrypt(json.toString(), skey);
+                    os.writeBytes(en + "\n");
+                    os.flush();
+
+                    String receive = tool.decrypt(is.readLine(), skey);
+                    boolean kick = Boolean.parseBoolean(receive);
+                    assertFalse(kick);
+                }
+            } catch (Exception ignored) {
+            }
+
+            String[] urls = {"http://127.0.0.1:25000/rank", "http://127.0.0.1:25000/rank", "http://127.0.0.1:25000", "http://127.0.0.1:25000/404test"};
+            String[] types = {"GET", "POST", "GET", "GET"};
+
+            // Server http server test
+            try {
+                for (int a = 0; a < urls.length; a++) {
+                    HttpURLConnection con = (HttpURLConnection) new URL(urls[a]).openConnection();
+                    con.setDoInput(true);
+
+                    if (types[a].equals("GET")) {
+                        con.setRequestMethod("GET");
+                    } else {
+                        String rawData = "id=" + player.name + ";pw=" + playerDB.get(player.uuid).accountpw();
+                        String type = "application/x-www-form-urlencoded";
+
+                        con.setDoOutput(true);
+                        con.setRequestMethod("POST");
+                        con.setRequestProperty("Content-Type", type);
+                        con.setRequestProperty("Content-Length", String.valueOf(rawData.length()));
+
+                        try (OutputStreamWriter os = new OutputStreamWriter(con.getOutputStream(), StandardCharsets.UTF_8);
+                             PrintWriter writer = new PrintWriter(os)) {
+                            writer.write(rawData);
+                            writer.flush();
+                        }
+                    }
+
+                    if (a == 3) {
+                        assertEquals(404, con.getResponseCode());
+                    } else {
+                        try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                            String inputLine;
+                            StringBuilder response = new StringBuilder();
+                            while ((inputLine = br.readLine()) != null) {
+                                response.append(inputLine);
+                            }
+                            switch (a) {
+                                case 0:
+                                    try {
+                                        Jsoup.parse(response.toString());
+                                    } catch (Exception e) {
+                                        fail("HTML Parsing failed");
+                                    }
+                                    break;
+                                case 1:
+                                    assertNotEquals("", response.toString());
+                                    break;
+                                case 2:
+                                    try {
+                                        JsonValue.readJSON(response.toString());
+                                    } catch (Exception e) {
+                                        fail("HTML Parsing failed");
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    con.disconnect();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+
+            // Connection close test
+            client.request(Client.Request.exit, null, null);
+            sleep(1000);
+            server.shutdown();
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Test
-    public void test10_playerLoad() {
-        playerCore.load(player);
-        assertTrue(playerDB.get(player.uuid).login());
+    public void test10_blank() {
     }
 
     @Test
     public void test11_serverCommand() {
         serverHandler.handleMessage("saveall");
+
+        serverHandler.handleMessage("edit " + player.uuid + " lastchat Manually");
+        assertEquals("Manually", playerDB.get(player.uuid).lastchat());
 
         root.child("README.md").delete();
         serverHandler.handleMessage("gendocs");
@@ -301,15 +423,19 @@ public class PluginTest {
         serverHandler.handleMessage("admin " + player.name);
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
 
+        serverHandler.handleMessage("bansync");
+
         serverHandler.handleMessage("info " + player.uuid);
         assertNotEquals("Player not found!\n", out.getLogWithNormalizedLineSeparator());
 
         serverHandler.handleMessage("setperm " + player.name + " owner");
         assertEquals("owner", playerDB.get(player.uuid).permission());
+
+        serverHandler.handleMessage("reload");
     }
 
     @Test
-    public void test12_clientCommandTest() throws InterruptedException {
+    public void test12_clientCommand() throws InterruptedException {
         playerDB.get(player.uuid).level(50);
 
         clientHandler.handleMessage("/alert", player);
@@ -321,7 +447,7 @@ public class PluginTest {
         clientHandler.handleMessage("/changepw testpw123 testpw123", player);
         assertNotEquals("none", playerDB.get(player.uuid).accountpw());
 
-        clientHandler.handleMessage("/chars hi", player);
+        clientHandler.handleMessage("/chars hobc0283qz ?!", player);
         assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall);
 
         clientHandler.handleMessage("/color", player);
@@ -333,19 +459,22 @@ public class PluginTest {
         UnitType targetUnit = tool.getUnitByName("reaper");
         BaseUnit baseUnit = targetUnit.create(Team.sharded);
         baseUnit.set(player.getX() + 20, player.getY() + 20);
-        baseUnit.add();
+        for (int a = 0; a < 20; a++) baseUnit.add();
         clientHandler.handleMessage("/killall", player);
         assertEquals(0, unitGroup.size());
 
-        // Junit 에서 UI Test 불가능
         try {
             clientHandler.handleMessage("/event host testroom maze survival", player);
-            for (int a = 0; a < 30; a++) {
+            for (int a = 0; a < 60; a++) {
                 if (pluginData.eventservers.size == 0) {
                     System.out.print("\rWaiting... " + a);
                     TimeUnit.SECONDS.sleep(1);
+                } else {
+                    break;
                 }
             }
+            clientHandler.handleMessage("/event join testroom", player);
+
             if (pluginData.eventservers.size == 0) System.out.println("\n");
         } catch (NullPointerException ignored) {
         }
@@ -355,18 +484,20 @@ public class PluginTest {
 
         clientHandler.handleMessage("/info", player);
 
-        clientHandler.handleMessage("/jump count localhost 6567", player);
-        assertEquals(1, pluginData.jumpcount.size);
+        clientHandler.handleMessage("/warp count 192.168.35.100", player);
+        assertEquals(1, pluginData.warpcounts.size);
 
-        clientHandler.handleMessage("/jump zone 127.0.0.1 6567 5 true", player);
-        assertEquals(1, pluginData.jumpzone.size);
+        clientHandler.handleMessage("/warp zone 192.168.35.100 20 true", player);
+        assertEquals(1, pluginData.warpzones.size);
+        sleep(4000);
 
-        clientHandler.handleMessage("/jump total", player);
-        assertEquals(1, pluginData.jumptotal.size);
+        clientHandler.handleMessage("/warp total", player);
+        assertEquals(1, pluginData.warptotals.size);
 
         Player dummy1 = createNewPlayer(true);
         clientHandler.handleMessage("/kill " + dummy1.name, player);
         assertTrue(dummy1.isDead());
+        dummy1.setDead(false);
 
         clientHandler.handleMessage("/maps", player);
 
@@ -378,8 +509,16 @@ public class PluginTest {
 
         clientHandler.handleMessage("/save", player);
 
-        clientHandler.handleMessage("/reset count localhost", player);
-        assertEquals(0, pluginData.jumpcount.size);
+        clientHandler.handleMessage("/r " + dummy1.name + " Hi!", player);
+
+        clientHandler.handleMessage("/reset count 192.168.35.100", player);
+        assertEquals(0, pluginData.warpcounts.size);
+
+        clientHandler.handleMessage("/reset zone 192.168.35.100", player);
+        assertEquals(0, pluginData.warpzones.size);
+
+        clientHandler.handleMessage("/reset total", player);
+        assertEquals(0, pluginData.warptotals.size);
 
         //clientHandler.handleMessage("/register testacount testas123 testas123", player);
 
@@ -389,13 +528,31 @@ public class PluginTest {
         assertEquals("newadmin", playerDB.get(player.uuid).permission());
         serverHandler.handleMessage("setperm " + player.name + " owner");
 
-        player.set(80 * 8, 80 * 8);
-        player.setNet(80 * 8, 80 * 8);
-        clientHandler.handleMessage("/spawn-core big", player);
-        assertSame(Blocks.coreNucleus, world.tile(80, 80).block());
+        player.set(80, 80);
+        player.setNet(80, 80);
+        clientHandler.handleMessage("/spawn-core smail", player);
+        assertSame(Blocks.coreShard, world.tileWorld(80, 80).block());
+
+        clientHandler.handleMessage("/setmech alpha", player);
+        assertSame(Mechs.alpha, player.mech);
+
+        clientHandler.handleMessage("/setmech dart", player);
+        assertSame(Mechs.dart, player.mech);
+
+        clientHandler.handleMessage("/setmech glaive", player);
+        assertSame(Mechs.glaive, player.mech);
+
+        clientHandler.handleMessage("/setmech javelin", player);
+        assertSame(Mechs.javelin, player.mech);
 
         clientHandler.handleMessage("/setmech omega", player);
         assertSame(Mechs.omega, player.mech);
+
+        clientHandler.handleMessage("/setmech tau", player);
+        assertSame(Mechs.tau, player.mech);
+
+        clientHandler.handleMessage("/setmech trident", player);
+        assertSame(Mechs.trident, player.mech);
 
         clientHandler.handleMessage("/status", player);
 
@@ -426,16 +583,58 @@ public class PluginTest {
         assertTrue(player.x == 50 && player.y == 50);
 
         Player dummy4 = createNewPlayer(true);
-        clientHandler.handleMessage("/vote kick " + dummy4.name, player);
+
+        System.out.println("== votekick");
+        clientHandler.handleMessage("/vote kick " + dummy4.id, player);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+        // Can't check player kicked
+
+        System.out.println("== votemap");
+        clientHandler.handleMessage("/vote map Glacier", player);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+        sleep(150);
+        assertEquals("Glacier", world.getMap().name());
+
+        System.out.println("== vote gameover");
+        clientHandler.handleMessage("/vote gameover", player);
         Events.fire(new PlayerChatEvent(player, "y"));
         Events.fire(new PlayerChatEvent(dummy1, "y"));
         Events.fire(new PlayerChatEvent(dummy3, "y"));
 
+        System.out.println("== vote rollback");
+        serverHandler.handleMessage("save 1000");
+        clientHandler.handleMessage("/vote rollback", player);
+        TimeUnit.SECONDS.sleep(1);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+
+        System.out.println("== vote skipwave");
+        clientHandler.handleMessage("/vote skipwave 5", player);
+        Events.fire(new PlayerChatEvent(player, "y"));
+        Events.fire(new PlayerChatEvent(dummy1, "y"));
+        Events.fire(new PlayerChatEvent(dummy3, "y"));
+
+        clientHandler.handleMessage("/weather day", player);
+        assertEquals(0.0f, state.rules.ambientLight.a, 0.0f);
+
         clientHandler.handleMessage("/weather eday", player);
         assertEquals(0.3f, state.rules.ambientLight.a, 0.0f);
 
-        clientHandler.handleMessage("/mute " + dummy2.name, player);
-        assertTrue(playerDB.get(dummy2.uuid).mute());
+        clientHandler.handleMessage("/weather night", player);
+        assertEquals(0.7f, state.rules.ambientLight.a, 0.0f);
+
+        clientHandler.handleMessage("/weather enight", player);
+        assertEquals(0.85f, state.rules.ambientLight.a, 0.0f);
+
+        assertNotNull(playerGroup.find(p -> p.uuid.equals(dummy3.uuid)));
+        assertEquals("owner", playerDB.get(player.uuid).permission());
+        clientHandler.handleMessage("/mute " + dummy3.name, player);
+        assertTrue(playerDB.get(dummy3.uuid).mute());
 
         //clientHandler.handleMessage("/votekick");
     }
@@ -450,14 +649,11 @@ public class PluginTest {
 
         state.rules.attackMode = true;
         Call.onSetRules(state.rules);
-
-        state.rules.attackMode = true;
-        Call.onSetRules(state.rules);
-        Events.fire(new GameOverEvent(Team.sharded));
+        Events.fire(new GameOverEvent(player.getTeam()));
         assertEquals(1, playerDB.get(player.uuid).attackclear());
 
         Events.fire(new WorldLoadEvent());
-        assertSame(LocalTime.of(0, 0, 0), vars.playtime());
+        assertEquals(0L, vars.playtime());
         assertEquals(0, pluginData.powerblock.size);
 
         Events.fire(new PlayerConnect(player));
@@ -466,19 +662,15 @@ public class PluginTest {
 
         Player dummy = createNewPlayer(false);
         Events.fire(new PlayerJoin(dummy));
-        TimeUnit.SECONDS.sleep(1);
 
         clientHandler.handleMessage("/register hello testas123", dummy);
-        TimeUnit.SECONDS.sleep(1);
 
         clientHandler.handleMessage("/logout", dummy);
-        TimeUnit.SECONDS.sleep(1);
 
         Player dummy2 = createNewPlayer(false);
         Events.fire(new PlayerJoin(dummy2));
 
         clientHandler.handleMessage("/login hello testas123", dummy2);
-        TimeUnit.SECONDS.sleep(1);
         assertTrue(playerDB.get(dummy2.uuid).login());
 
         Events.fire(new PlayerLeave(dummy2));
@@ -486,7 +678,7 @@ public class PluginTest {
 
         Events.fire(new PlayerChatEvent(player, "hi"));
 
-        Time.update();
+        /*Time.update();
         unitGroup.update();
         puddleGroup.update();
         shieldGroup.update();
@@ -498,7 +690,7 @@ public class PluginTest {
         unitGroup.updateEvents();
         collisions.updatePhysics(unitGroup);
         playerGroup.update();
-        effectGroup.update();
+        effectGroup.update();*/
 
         player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5, 0, Blocks.copperWall));
         Call.onConstructFinish(Vars.world.tile(5, 5), Blocks.copperWall, player.id, (byte) 0, Team.sharded, false);
@@ -507,7 +699,7 @@ public class PluginTest {
         player.buildQueue().clear();
         player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5));
         Call.onDeconstructFinish(Vars.world.tile(5, 5), Blocks.air, player.id);
-        Events.fire(new BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, false));
+        Events.fire(new BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true));
         player.buildQueue().clear();
 
         Events.fire(new UnitDestroyEvent(player));
@@ -529,26 +721,37 @@ public class PluginTest {
     }
 
     @Test
-    public void test14_internal() throws SQLException, ClassNotFoundException {
-        setupDB();
-
-        DataMigration dataMigration = new DataMigration();
-        dataMigration.MigrateDB();
-
+    public void test14_internal() {
         playerCore.isLocal(player);
-        config.obj = JsonValue.readHjson(testVars.json).asObject();
-        config.LegacyUpgrade();
     }
 
     @Test
     public void test16_complexCommand() {
+        //Call.onConstructFinish(world.tile(120, 120), Blocks.message, player.id, (byte) 0, Team.sharded, true);
+        //Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
+        //Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
+
+        try {
+            config.discordToken(new String(Files.readAllBytes(Paths.get("./token.txt"))));
+            discord.start();
+
+            config.loginEnable(true);
+            config.passwordMethod("discord");
+            Player p = createNewPlayer(false);
+            CommandHandler buffer = new CommandHandler("/");
+            main.registerClientCommands(buffer);
+            buffer.handleMessage("/register", p);
+
+            System.out.println("PIN: " + discord.getPins().get(p.name));
+            sleep(20000);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @AfterClass
     public static void shutdown() {
         Core.app.getListeners().get(1).dispose();
         assertTrue(out.getLogWithNormalizedLineSeparator().contains(config.bundle.get("thread-disabled")));
-        testroot.child("locales").delete();
-        testroot.child("version.properties").delete();
     }
 }

@@ -29,6 +29,7 @@ public class Config {
     private boolean realName;
     private boolean strictName;
     private int cupdatei;
+    private Long afktime;
     private boolean scanResource;
     private boolean antiGrief;
     private boolean alertAction;
@@ -42,7 +43,7 @@ public class Config {
     private boolean query;
     private boolean antiVPN;
     private boolean antiRush;
-    private LocalTime antiRushtime;
+    private long antiRushtime;
     private boolean vote;
     private boolean logging;
     private boolean update;
@@ -93,11 +94,7 @@ public class Config {
         JsonObject discord;
         try {
             obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
-            try {
-                obj.get("settings").asObject();
-            } catch (NullPointerException ignored) {
-                LegacyUpgrade();
-            }
+            obj.get("settings").asObject();
         } catch (RuntimeException e) {
             JsonObject empty = new JsonObject();
             obj = new JsonObject();
@@ -153,7 +150,7 @@ public class Config {
         antiGrief = anti.getBoolean("antigrief", false);
         antiVPN = anti.getBoolean("antivpn", false);
         antiRush = anti.getBoolean("antirush", false);
-        antiRushtime = LocalTime.parse(anti.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
+        antiRushtime = anti.get("antirushtime") == null || anti.get("antirushtime").isString() ? 0L : anti.getLong("antirushtime", 600);
         alertAction = anti.getBoolean("alert-action", false);
         realName = anti.getBoolean("realname", false);
         strictName = anti.getBoolean("strict-name", false);
@@ -173,6 +170,7 @@ public class Config {
         spawnLimit = features.getInt("spawnlimit", 500);
         eventPort = features.getString("eventport", "8000-8050");
         cupdatei = features.getInt("cupdatei", 1000);
+        afktime = features.getLong("afktime", 0);
 
         difficulty = features.get("difficulty").asObject();
         autoDifficulty = difficulty.getBoolean("auto-difficulty", false);
@@ -259,7 +257,7 @@ public class Config {
         anti.add("antigrief", antiGrief, bundle.get("config.anti-grief.desc"));
         anti.add("antivpn", antiVPN, bundle.get("config.anti-grief.vpn"));
         anti.add("antirush", antiRush, bundle.get("config.anti-grief.pvprush"));
-        anti.add("antirushtime", antiRushtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        anti.add("antirushtime", antiRushtime);
         anti.add("alert-action", alertAction, bundle.get("config-alert-action-description"));
         anti.add("realname", realName, bundle.get("config.anti-grief.realname"));
         anti.add("strict-name", strictName, bundle.get("config-strict-name-description"));
@@ -279,6 +277,7 @@ public class Config {
         features.add("spawnlimit", spawnLimit, bundle.get("config.feature.spawn-limit"));
         features.add("eventport", eventPort, bundle.get("config.feature.event.port"));
         features.add("cupdatei", cupdatei, bundle.get("config.feature.colornick"));
+        features.add("afktime", afktime, bundle.get("config.feature.afktime"));
 
         // 난이도 설정 (features 상속)
         features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
@@ -308,111 +307,6 @@ public class Config {
         root.child("config.hjson").writeString(config.toString(Stringify.HJSON_COMMENTS));
     }
 
-    public void LegacyUpgrade() {
-        JsonObject empty = new JsonObject();
-        obj = new JsonObject();
-        obj.add("settings", new JsonObject().add("database", empty));
-        obj.add("network", empty);
-        obj.add("antigrief", empty);
-        obj.add("features", new JsonObject().add("difficulty", empty).add("translate", empty));
-        obj.add("auth", new JsonObject().add("discord", empty));
-
-        locale = tool.TextToLocale(obj.getString("language", locale.toString()));
-        Bundle bundle = new Bundle(locale);
-
-        JsonObject config = new JsonObject();
-        JsonObject settings = new JsonObject();
-        JsonObject db = new JsonObject();
-        JsonObject network = new JsonObject();
-        JsonObject anti = new JsonObject();
-        JsonObject features = new JsonObject();
-        JsonObject difficulty = new JsonObject();
-        JsonObject auth = new JsonObject();
-        JsonObject discord = new JsonObject();
-        JsonObject tr = new JsonObject();
-
-        config.add("settings", settings, bundle.get("config-description"));
-        config.add("network", network);
-        config.add("antigrief", anti);
-        config.add("features", features);
-        config.add("auth", auth);
-
-        settings.add("version", obj.getInt("version", vars.configVersion()), bundle.get("config.version"));
-        settings.add("language", new Locale(obj.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country"))).toString(), bundle.get("config.language.description"));
-        settings.add("logging", obj.getBoolean("logging", true), bundle.get("config.feature.logging"));
-        settings.add("update", obj.getBoolean("update", true), bundle.get("config.update"));
-        settings.add("debug", obj.getBoolean("debug", false), bundle.get("config.debug"));
-        settings.add("debugcode", obj.getString("debugcode", "none"));
-        settings.add("crash-report", obj.getBoolean("crashreport", true));
-        settings.add("prefix", obj.getString("prefix", "[green][Essentials] []"), bundle.get("config.prefix"));
-
-        settings.add("database", db);
-        db.add("internalDB", obj.getBoolean("internalDB", true), bundle.get("config.database"));
-        db.add("DBServer", obj.getBoolean("DBServer", false));
-        db.add("DBurl", obj.getString("DBurl", "jdbc:h2:file:./config/mods/Essentials/data/player"));
-        db.add("old-db-migration", obj.getBoolean("OldDBMigration", false), bundle.get("config.database.old-database-migration"));
-        db.add("old-db-url", obj.getString("OldDBurl", "jdbc:sqlite:config/mods/Essentials/data/player.sqlite3"));
-        db.add("old-db-id", obj.getString("OldDBID", "none"));
-        db.add("old-db-pw", obj.getString("OldDBPW", "none"));
-        db.add("data-server-url", obj.getString("dataserverurl", "none"), bundle.get("config.client.data-share"));
-        db.add("data-server-id", obj.getString("dataserverid", "none"));
-        db.add("data-server-pw", obj.getString("dataserverpw", "none"));
-
-        network.add("server-enable", obj.getBoolean("serverenable", false), bundle.get("config.network"));
-        network.add("server-port", obj.getInt("serverport", 25000));
-        network.add("client-enable", obj.getBoolean("clientenable", false));
-        network.add("client-port", obj.getInt("clientport", 25000));
-        network.add("client-host", obj.getString("clienthost", "mindustry.kr"));
-        network.add("banshare", obj.getBoolean("banshare", false), bundle.get("config.server.banshare"));
-        network.add("bantrust", obj.get("bantrust") == null ? readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() : obj.get("bantrust").asArray(), bundle.get("config.server.bantrust"));
-        network.add("query", obj.getBoolean("query", false), bundle.get("config.server.query"));
-
-        JsonObject antiObject = obj.get("antigrief").asObject();
-        anti.add("antigrief", antiObject.getBoolean("antigrief", false), bundle.get("config.anti-grief.desc"));
-        anti.add("antivpn", antiObject.getBoolean("antivpn", false), bundle.get("config.anti-grief.vpn"));
-        anti.add("antirush", antiObject.getBoolean("antirush", false), bundle.get("config.anti-grief.pvprush"));
-        anti.add("antirushtime", LocalTime.parse(antiObject.getString("antirushtime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss")).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-        anti.add("alert-action", antiObject.getBoolean("alertaction", false), bundle.get("config-alert-action-description"));
-        anti.add("realname", antiObject.getBoolean("realname", false), bundle.get("config.anti-grief.realname"));
-        anti.add("strict-name", antiObject.getBoolean("strictname", false), bundle.get("config-strict-name-description"));
-        anti.add("scanresource", antiObject.getBoolean("scanresource", false), bundle.get("config.anti-grief.scan-resource"));
-
-        JsonObject featureObject = obj.get("features").asObject();
-        features.add("explimit", obj.getBoolean("explimit", false), bundle.get("config.feature.exp.limit"));
-        features.add("basexp", featureObject.getDouble("basexp", 500.0), bundle.get("config.feature.exp.basexp"));
-        features.add("exponent", featureObject.getDouble("exponent", 1.12), bundle.get("config.feature.exp.exponent"));
-        features.add("levelupalarm", featureObject.getBoolean("levelupalarm", false), bundle.get("config.feature.exp.levelup-alarm"));
-        features.add("alarm-minimal-level", featureObject.getInt("alarmlevel", 20), bundle.get("config.feature.exp.minimal-level"));
-        features.add("vote", true, bundle.get("config.feature.vote"));
-        features.add("savetime", LocalTime.parse(featureObject.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss")).format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle.get("config.feature.save-time"));
-        features.add("rollback", featureObject.getBoolean("rollback", false), bundle.get("config.feature.slot-number"));
-        features.add("slotnumber", featureObject.getInt("slotnumber", 1000));
-        features.add("border", featureObject.getBoolean("border", false), bundle.get("config.feature.border"));
-        features.add("spawnlimit", featureObject.getInt("spawnlimit", 500), bundle.get("config.feature.spawn-limit"));
-        features.add("eventport", featureObject.getString("eventport", "8000-8050"), bundle.get("config.feature.event.port"));
-        features.add("cupdatei", featureObject.getInt("cupdatei", 1000), bundle.get("config.feature.colornick"));
-
-        features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
-        difficulty.add("auto-difficulty", obj.getBoolean("autodifficulty", false));
-        difficulty.add("easy", obj.getInt("difficultyEasy", 2));
-        difficulty.add("normal", obj.getInt("difficultyNormal", 4));
-        difficulty.add("hard", obj.getInt("difficultyHard", 6));
-        difficulty.add("insane", obj.getInt("difficultyInsane", 10));
-
-        features.add("translate", tr, bundle.get("config.feature.papago"));
-        tr.add("translate", obj.getBoolean("translate", false));
-        tr.add("translateid", obj.getString("translateid", "none"));
-        tr.add("translatepw", obj.getString("translatepw", "none"));
-
-        auth.add("loginenable", obj.getBoolean("loginenable", false), bundle.get("config.account.login"));
-        auth.add("loginmethod", obj.getString("passwordmethod", "password"), bundle.get("config.account.login.method"));
-        auth.add("validconnect", obj.getBoolean("validconnect", false), bundle.get("config.account.valid-connect"));
-
-        auth.add("discord", discord, bundle.get("config.feature.discord.desc"));
-        discord.add("token", obj.getString("discordtoken", "none"));
-        discord.add("link", obj.getString("discordlink", "none"));
-    }
-
     public int version() {
         return version;
     }
@@ -433,32 +327,16 @@ public class Config {
         return serverEnable;
     }
 
-    public void serverEnable(boolean serverEnable) {
-        this.serverEnable = serverEnable;
-    }
-
     public int serverPort() {
         return serverPort;
-    }
-
-    public void serverPort(int serverPort) {
-        this.serverPort = serverPort;
     }
 
     public boolean clientEnable() {
         return clientEnable;
     }
 
-    public void clientEnable(boolean clientEnable) {
-        this.clientEnable = clientEnable;
-    }
-
     public int clientPort() {
         return clientPort;
-    }
-
-    public void clientPort(int clientPort) {
-        this.clientPort = clientPort;
     }
 
     public String clientHost() {
@@ -473,136 +351,68 @@ public class Config {
         return realName;
     }
 
-    public void realName(boolean realName) {
-        this.realName = realName;
-    }
-
     public boolean strictName() {
         return strictName;
-    }
-
-    public void strictName(boolean strictName) {
-        this.strictName = strictName;
     }
 
     public int cupdatei() {
         return cupdatei;
     }
 
-    public void cupdatei(int cupdatei) {
-        this.cupdatei = cupdatei;
-    }
-
     public boolean scanResource() {
         return scanResource;
-    }
-
-    public void scanResource(boolean scanResource) {
-        this.scanResource = scanResource;
     }
 
     public boolean antiGrief() {
         return antiGrief;
     }
 
-    public void antiGrief(boolean antiGrief) {
-        this.antiGrief = antiGrief;
-    }
-
     public boolean alertAction() {
         return alertAction;
-    }
-
-    public void alertAction(boolean alertAction) {
-        this.alertAction = alertAction;
     }
 
     public boolean expLimit() {
         return expLimit;
     }
 
-    public void expLimit(boolean expLimit) {
-        this.expLimit = expLimit;
-    }
-
     public double baseXp() {
         return baseXp;
-    }
-
-    public void baseXp(double baseXp) {
-        this.baseXp = baseXp;
     }
 
     public double exponent() {
         return exponent;
     }
 
-    public void exponent(double exponent) {
-        this.exponent = exponent;
-    }
-
     public boolean levelUpAlarm() {
         return levelUpAlarm;
-    }
-
-    public void levelUpAlarm(boolean levelUpAlarm) {
-        this.levelUpAlarm = levelUpAlarm;
     }
 
     public int alarmLevel() {
         return alarmLevel;
     }
 
-    public void alarmLevel(int alarmLevel) {
-        this.alarmLevel = alarmLevel;
-    }
-
     public boolean banShare() {
         return banShare;
-    }
-
-    public void banShare(boolean banShare) {
-        this.banShare = banShare;
     }
 
     public JsonArray banTrust() {
         return banTrust;
     }
 
-    public void banTrust(JsonArray banTrust) {
-        this.banTrust = banTrust;
-    }
-
     public boolean query() {
         return query;
-    }
-
-    public void query(boolean query) {
-        this.query = query;
     }
 
     public boolean antiVPN() {
         return antiVPN;
     }
 
-    public void antiVPN(boolean antiVpn) {
-        this.antiVPN = antiVpn;
-    }
-
     public boolean antiRush() {
         return antiRush;
     }
 
-    public void antiRush(boolean antiRush) {
-        this.antiRush = antiRush;
-    }
-
-    public LocalTime antiRushtime() {
+    public long antiRushtime() {
         return antiRushtime;
-    }
-
-    public void antiRushtime(LocalTime antiRushtime) {
-        this.antiRushtime = antiRushtime;
     }
 
     public boolean vote() {
@@ -617,10 +427,6 @@ public class Config {
         return logging;
     }
 
-    public void logging(boolean logging) {
-        this.logging = logging;
-    }
-
     public boolean update() {
         return update;
     }
@@ -633,16 +439,8 @@ public class Config {
         return internalDB;
     }
 
-    public void internalDB(boolean internalDB) {
-        this.internalDB = internalDB;
-    }
-
     public boolean dbServer() {
         return dbServer;
-    }
-
-    public void dbServer(boolean dbServer) {
-        this.dbServer = dbServer;
     }
 
     public String dbUrl() {
@@ -665,48 +463,24 @@ public class Config {
         return oldDBurl;
     }
 
-    public void oldDBurl(String oldDBurl) {
-        this.oldDBurl = oldDBurl;
-    }
-
     public String oldDBid() {
         return oldDBid;
-    }
-
-    public void oldDBid(String oldDBid) {
-        this.oldDBid = oldDBid;
     }
 
     public String oldDBpw() {
         return oldDBpw;
     }
 
-    public void oldDBpw(String oldDBpw) {
-        this.oldDBpw = oldDBpw;
-    }
-
     public String dataserverUrl() {
         return dataserverUrl;
-    }
-
-    public void dataserverUrl(String dataserverUrl) {
-        this.dataserverUrl = dataserverUrl;
     }
 
     public String dataserverId() {
         return dataserverId;
     }
 
-    public void dataserverId(String dataserverId) {
-        this.dataserverId = dataserverId;
-    }
-
     public String dataserverPw() {
         return dataserverPw;
-    }
-
-    public void dataserverPw(String dataserverPw) {
-        this.dataserverPw = dataserverPw;
     }
 
     public boolean loginEnable() {
@@ -729,16 +503,8 @@ public class Config {
         return validConnect;
     }
 
-    public void validConnect(boolean validConnect) {
-        this.validConnect = validConnect;
-    }
-
     public boolean autoLogin() {
         return autoLogin;
-    }
-
-    public void autoLogin(boolean autoLogin) {
-        this.autoLogin = autoLogin;
     }
 
     public String discordToken() {
@@ -753,10 +519,6 @@ public class Config {
         return discordLink;
     }
 
-    public void discordLink(String discordLink) {
-        this.discordLink = discordLink;
-    }
-
     public boolean translate() {
         return translate;
     }
@@ -769,135 +531,71 @@ public class Config {
         return translateId;
     }
 
-    public void translateId(String translateId) {
-        this.translateId = translateId;
-    }
-
     public String translatePw() {
         return translatePw;
-    }
-
-    public void translatePw(String translatePw) {
-        this.translatePw = translatePw;
     }
 
     public boolean debug() {
         return debug;
     }
 
-    public void debug(boolean debug) {
-        this.debug = debug;
-    }
-
     public String debugCode() {
         return debugCode;
-    }
-
-    public void debugCode(String debugCode) {
-        this.debugCode = debugCode;
     }
 
     public boolean crashReport() {
         return crashReport;
     }
 
-    public void crashReport(boolean crashReport) {
-        this.crashReport = crashReport;
-    }
-
     public LocalTime saveTime() {
         return saveTime;
-    }
-
-    public void saveTime(LocalTime saveTime) {
-        this.saveTime = saveTime;
     }
 
     public boolean rollback() {
         return rollback;
     }
 
-    public void rollback(boolean rollback) {
-        this.rollback = rollback;
-    }
-
     public int slotNumber() {
         return slotNumber;
-    }
-
-    public void slotNumber(int slotNumber) {
-        this.slotNumber = slotNumber;
     }
 
     public boolean autoDifficulty() {
         return autoDifficulty;
     }
 
-    public void autoDifficulty(boolean autoDifficulty) {
-        this.autoDifficulty = autoDifficulty;
-    }
-
     public int difficultyEasy() {
         return difficultyEasy;
-    }
-
-    public void difficultyEasy(int difficultyEasy) {
-        this.difficultyEasy = difficultyEasy;
     }
 
     public int difficultyNormal() {
         return difficultyNormal;
     }
 
-    public void difficultyNormal(int difficultyNormal) {
-        this.difficultyNormal = difficultyNormal;
-    }
-
     public int difficultyHard() {
         return difficultyHard;
-    }
-
-    public void difficultyHard(int difficultyHard) {
-        this.difficultyHard = difficultyHard;
     }
 
     public int difficultyInsane() {
         return difficultyInsane;
     }
 
-    public void difficultyInsane(int difficultyInsane) {
-        this.difficultyInsane = difficultyInsane;
-    }
-
     public boolean border() {
         return border;
-    }
-
-    public void border(boolean border) {
-        this.border = border;
     }
 
     public int spawnLimit() {
         return spawnLimit;
     }
 
-    public void spawnLimit(int spawnLimit) {
-        this.spawnLimit = spawnLimit;
-    }
-
     public String prefix() {
         return prefix;
-    }
-
-    public void prefix(String prefix) {
-        this.prefix = prefix;
     }
 
     public String eventPort() {
         return eventPort;
     }
 
-    public void eventPort(String eventPort) {
-        this.eventPort = eventPort;
+    public Long afktime() {
+        return afktime;
     }
 }

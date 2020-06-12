@@ -49,7 +49,6 @@ public class PlayerCore {
 
         String oldUUID = playerData.uuid();
         playerData.uuid(player.uuid);
-        playerData.uuid();
         playerData.connected(true);
         playerData.lastdate(tool.getTime());
         playerData.connserver(vars.serverIP());
@@ -93,7 +92,7 @@ public class PlayerCore {
                 "none",
                 "none",
                 "",
-                "00:00:00",
+                0L,
                 0,
                 0,
                 0,
@@ -136,6 +135,8 @@ public class PlayerCore {
                     return false;
                 }
             }
+        } catch (RuntimeException e) {
+            return false;
         } catch (SQLException e) {
             new CrashReport(e);
             return false;

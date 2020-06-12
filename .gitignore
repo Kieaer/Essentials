@@ -15,3 +15,5 @@ config/
 ## OS Specific
 .DS_Store
 Thumbs.db
+
+token.txt

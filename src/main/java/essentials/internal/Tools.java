@@ -14,15 +14,20 @@ import mindustry.world.Tile;
 import org.hjson.JsonObject;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,14 +60,34 @@ public class Tools {
         return DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss").format(LocalDateTime.now());
     }
 
-    public byte[] encrypt(String data, SecretKeySpec spec, Cipher cipher) throws Exception {
-        cipher.init(Cipher.ENCRYPT_MODE, spec);
-        return cipher.doFinal(data.getBytes());
+    public String encrypt(String privateString, SecretKey skey) throws Exception {
+        byte[] iv = new byte[12];
+        (new SecureRandom()).nextBytes(iv);
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec ivSpec = new GCMParameterSpec(16 * Byte.SIZE, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, skey, ivSpec);
+
+        byte[] ciphertext = cipher.doFinal(privateString.getBytes(StandardCharsets.UTF_8));
+        byte[] encrypted = new byte[iv.length + ciphertext.length];
+        System.arraycopy(iv, 0, encrypted, 0, iv.length);
+        System.arraycopy(ciphertext, 0, encrypted, iv.length, ciphertext.length);
+
+        return Base64.getEncoder().encodeToString(encrypted);
     }
 
-    public byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
-        cipher.init(Cipher.DECRYPT_MODE, spec);
-        return cipher.doFinal(data);
+    public String decrypt(String encrypted, SecretKey skey) throws Exception {
+        byte[] decoded = Base64.getDecoder().decode(encrypted);
+
+        byte[] iv = Arrays.copyOfRange(decoded, 0, 12);
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec ivSpec = new GCMParameterSpec(16 * Byte.SIZE, iv);
+        cipher.init(Cipher.DECRYPT_MODE, skey, ivSpec);
+
+        byte[] ciphertext = cipher.doFinal(decoded, 12, decoded.length - 12);
+
+        return new String(ciphertext, StandardCharsets.UTF_8);
     }
 
     public Locale getGeo(Object data) {
@@ -299,8 +324,7 @@ public class Tools {
     }
 
     public String getWebContent(String url) {
-        try {
-            Scanner sc = new Scanner(new URL(url).openStream());
+        try (Scanner sc = new Scanner(new URL(url).openStream())) {
             StringBuilder sb = new StringBuilder();
             while (sc.hasNext()) {
                 sb.append(sc.next());
@@ -310,5 +334,80 @@ public class Tools {
             new CrashReport(e);
         }
         return null;
+    }
+
+    public static void URLDownload(URL URL, File savepath) {
+        try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath))) {
+            URLConnection urlConnection = URL.openConnection();
+            InputStream is = urlConnection.getInputStream();
+            int size = urlConnection.getContentLength();
+            byte[] buf = new byte[5120];
+            int byteRead;
+            int byteWritten = 0;
+            long startTime = System.currentTimeMillis();
+            while ((byteRead = is.read(buf)) != -1) {
+                outputStream.write(buf, 0, byteRead);
+                byteWritten += byteRead;
+
+                printProgress(startTime, size, byteWritten);
+            }
+            is.close();
+        } catch (Exception e) {
+            new CrashReport(e);
+        }
+    }
+
+    public static void printProgress(long startTime, int total, int remain) {
+        long eta = remain == 0 ? 0 :
+                (total - remain) * (System.currentTimeMillis() - startTime) / remain;
+
+        String etaHms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
+                TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1));
+
+        if (remain > total) {
+            throw new IllegalArgumentException();
+        }
+
+        int maxBareSize = 20;
+        int remainPercent = ((20 * remain) / total);
+        char defaultChar = '-';
+        String icon = "*";
+        String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
+        StringBuilder bareDone = new StringBuilder();
+        bareDone.append("[");
+        for (int i = 0; i < remainPercent; i++) {
+            bareDone.append(icon);
+        }
+        String bareRemain = bare.substring(remainPercent);
+        System.out.print("\r" + humanReadableByteCount(remain, true) + "/" + humanReadableByteCount(total, true) + "\t" + bareDone + bareRemain + " " + remainPercent * 5 + "%, ETA: " + etaHms);
+        if (remain == total) {
+            System.out.print("\n");
+        }
+    }
+
+    // Source: https://programming.guide/worlds-most-copied-so-snippet.html
+    public static strictfp String humanReadableByteCount(int bytes, boolean si) {
+        int unit = si ? 1000 : 1024;
+        long absBytes = Math.abs(bytes);
+        if (absBytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(absBytes) / Math.log(unit));
+        long th = (long) (Math.pow(unit, exp) * (unit - 0.05));
+        if (exp < 6 && absBytes >= th - ((th & 0xfff) == 0xd00 ? 52 : 0)) exp++;
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+        if (exp > 4) {
+            bytes /= unit;
+            exp -= 1;
+        }
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
+
+    public String secToTime(long seconds) {
+        long sec = seconds;
+        long min = seconds / 60;
+        long hour = min / 60;
+        long days = hour / 24;
+        return String.format("%d:%02d:%02d:%02d",
+                days % 365, hour % 24, min % 60, sec % 60);
     }
 }

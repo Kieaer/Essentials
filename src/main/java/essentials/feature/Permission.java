@@ -7,10 +7,7 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import essentials.internal.exception.PluginException;
 import mindustry.entities.type.Player;
-import org.hjson.JsonArray;
-import org.hjson.JsonObject;
-import org.hjson.JsonValue;
-import org.hjson.Stringify;
+import org.hjson.*;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -23,7 +20,6 @@ public class Permission {
     public JsonObject permission;
     public JsonObject permission_user;
     public String default_group = null;
-    public boolean isUse = false;
 
     public void create(PlayerData playerData) {
         JsonObject object = new JsonObject();
@@ -135,7 +131,7 @@ public class Permission {
                 for (Player p : playerGroup.all()) {
                     p.isAdmin = isAdmin(vars.playerData().find(d -> d.name().equals(p.name)));
                 }
-            } catch (IOException e) {
+            } catch (IOException | ParseException e) {
                 // 이것도 유저들이 알아야 고침
                 LoggerFactory.getLogger(Permission.class).error("Permission parsing", e);
             }
@@ -166,9 +162,13 @@ public class Permission {
     }
 
     public boolean isAdmin(PlayerData player) {
-        if (permission_user.has(player.uuid())) {
-            return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
-        } else {
+        try {
+            if (permission_user.has(player.uuid())) {
+                return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
+            } else {
+                return false;
+            }
+        } catch (NullPointerException ignored) {
             return false;
         }
     }

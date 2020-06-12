@@ -1,8 +1,11 @@
 package essentials.core.player;
 
-import arc.struct.ArrayMap;
-import arc.struct.ObjectMap;
+import arc.Core;
 import essentials.internal.CrashReport;
+import essentials.internal.Log;
+import org.hjson.JsonObject;
+import org.hjson.JsonType;
+import org.hjson.JsonValue;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,7 +58,7 @@ public class PlayerDB {
                             rs.getString("lastplacename"),
                             rs.getString("lastbreakname"),
                             rs.getString("lastchat"),
-                            rs.getString("playtime"),
+                            rs.getLong("playtime"),
                             rs.getInt("attackclear"),
                             rs.getInt("pvpwincount"),
                             rs.getInt("pvplosecount"),
@@ -88,11 +91,12 @@ public class PlayerDB {
 
     public boolean save(PlayerData playerData) {
         StringBuilder sql = new StringBuilder();
-        ArrayMap<String, Object> js = playerData.toMap();
+        if (playerData.error()) return false;
+        JsonObject js = playerData.toMap();
         sql.append("UPDATE players SET ");
 
         js.forEach((s) -> {
-            String buf = s.key.toLowerCase() + "=?, ";
+            String buf = s.getName().toLowerCase() + "=?, ";
             sql.append(buf);
         });
 
@@ -100,22 +104,30 @@ public class PlayerDB {
         sql.append(" WHERE uuid=?");
 
         try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
-            js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
+            js.forEach(new Consumer<JsonObject.Member>() {
                 int index = 1;
 
                 @Override
-                public void accept(ObjectMap.Entry<String, Object> o) {
+                public void accept(JsonObject.Member o) {
                     try {
-                        if (o.value instanceof String) {
-                            pstmt.setString(index, (String) o.value);
-                        } else if (o.value instanceof Boolean) {
-                            pstmt.setBoolean(index, (Boolean) o.value);
-                        } else if (o.value instanceof Integer) {
-                            pstmt.setInt(index, (Integer) o.value);
-                        } else if (o.value instanceof Long) {
-                            pstmt.setLong(index, (Long) o.value);
+                        JsonValue data = o.getValue();
+                        Object value = o.getValue().asRaw();
+                        if (value instanceof String) {
+                            pstmt.setString(index, data.asString());
+                        } else if (value instanceof Boolean) {
+                            pstmt.setBoolean(index, data.asBoolean());
+                        } else if (value instanceof Integer) {
+                            pstmt.setInt(index, data.asInt());
+                        } else if (value instanceof Long) {
+                            pstmt.setLong(index, data.asLong());
                         } else {
-                            pstmt.setObject(index, o.value);
+                            if (o.getValue().getType() == JsonType.NUMBER) {
+                                pstmt.setInt(index, data.asInt());
+                            } else {
+                                Log.err(index + "/" + o.getName() + "/" + o.getValue().toString() + "/" + o.getValue().getType().name());
+                                Core.app.dispose();
+                                Core.app.exit();
+                            }
                         }
                     } catch (SQLException e) {
                         new CrashReport(e);
@@ -124,7 +136,7 @@ public class PlayerDB {
                 }
             });
 
-            pstmt.setString(js.size + 1, playerData.uuid());
+            pstmt.setString(js.size() + 1, playerData.uuid());
             return pstmt.execute();
         } catch (SQLException e) {
             new CrashReport(e);
@@ -133,7 +145,9 @@ public class PlayerDB {
     }
 
     public void saveAll() {
-        for (PlayerData p : vars.playerData()) save(p);
+        for (PlayerData p : vars.playerData()) {
+            save(p);
+        }
     }
 
     public boolean register(String name, String uuid, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String accountid, String accountpw) {
@@ -141,29 +155,37 @@ public class PlayerDB {
         sql.append("INSERT INTO players VALUES(");
 
         PlayerData newdata = playerCore.NewData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw);
-        ArrayMap<String, Object> js = newdata.toMap();
+        JsonObject js = newdata.toMap();
 
         js.forEach((s) -> sql.append("?,"));
         sql.deleteCharAt(sql.length() - 1);
         sql.append(")");
 
         try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
-            js.forEach(new Consumer<ObjectMap.Entry<String, Object>>() {
+            js.forEach(new Consumer<JsonObject.Member>() {
                 int index = 1;
 
                 @Override
-                public void accept(ObjectMap.Entry<String, Object> o) {
+                public void accept(JsonObject.Member o) {
                     try {
-                        if (o.value instanceof String) {
-                            pstmt.setString(index, (String) o.value);
-                        } else if (o.value instanceof Boolean) {
-                            pstmt.setBoolean(index, (Boolean) o.value);
-                        } else if (o.value instanceof Integer) {
-                            pstmt.setInt(index, (Integer) o.value);
-                        } else if (o.value instanceof Long) {
-                            pstmt.setLong(index, (Long) o.value);
+                        JsonValue data = o.getValue();
+                        Object value = o.getValue().asRaw();
+                        if (value instanceof String) {
+                            pstmt.setString(index, data.asString());
+                        } else if (value instanceof Boolean) {
+                            pstmt.setBoolean(index, data.asBoolean());
+                        } else if (value instanceof Integer) {
+                            pstmt.setInt(index, data.asInt());
+                        } else if (value instanceof Long) {
+                            pstmt.setLong(index, data.asLong());
                         } else {
-                            pstmt.setObject(index, o.value);
+                            if (o.getValue().getType() == JsonType.NUMBER) {
+                                pstmt.setInt(index, data.asInt());
+                            } else {
+                                Log.err(index + "/" + o.getName() + "/" + o.getValue().toString() + "/" + o.getValue().getType().name());
+                                Core.app.dispose();
+                                Core.app.exit();
+                            }
                         }
                     } catch (SQLException e) {
                         new CrashReport(e);

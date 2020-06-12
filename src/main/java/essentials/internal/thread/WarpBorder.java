@@ -18,20 +18,19 @@ import static java.lang.Thread.sleep;
 import static mindustry.Vars.state;
 import static mindustry.Vars.world;
 
-public class JumpBorder implements Runnable {
+public class WarpBorder implements Runnable {
     public int length = 0;
     public Array<Thread> thread = new Array<>();
 
     @Override
     public void run() {
         Thread.currentThread().setName("Essential server to server work thread");
-        main();
+        length = pluginData.warpzones.size;
+        start();
     }
 
-    public void main() {
-        length = pluginData.jumpzone.size;
-
-        for (PluginData.jumpzone data : pluginData.jumpzone) {
+    public void start() {
+        for (PluginData.warpzone data : pluginData.warpzones) {
             Thread t = new Thread(() -> {
                 while (true) {
                     String ip = data.ip;
@@ -64,7 +63,7 @@ public class JumpBorder implements Runnable {
                                     if (size < 5) sleep(2000);
                                 } else {
                                     if (config.debug())
-                                        Log.info("jump zone " + ip + " offline! After 1 minute, try to connect again.");
+                                        Log.info("warp zone " + ip + " offline! After 1 minute, try to connect again.");
                                     TimeUnit.MINUTES.sleep(1);
                                 }
                             } catch (InterruptedException e) {

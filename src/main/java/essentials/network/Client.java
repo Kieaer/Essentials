@@ -9,7 +9,6 @@ import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -26,18 +25,26 @@ import static essentials.Main.*;
 import static mindustry.Vars.netServer;
 import static org.hjson.JsonValue.readJSON;
 
-public class Client extends Thread {
+public class Client implements Runnable {
     public Socket socket;
     public BufferedReader is;
     public DataOutputStream os;
 
-    public Cipher cipher;
-    public SecretKeySpec spec;
+    public SecretKey skey;
 
     public boolean activated = false;
-    Base64.Encoder encoder = Base64.getEncoder();
-    Base64.Decoder decoder = Base64.getDecoder();
     private boolean disconnected = false;
+
+    public void shutdown() {
+        try {
+            Thread.currentThread().interrupt();
+            os.close();
+            is.close();
+            socket.close();
+            activated = false;
+        } catch (IOException ignored) {
+        }
+    }
 
     public void wakeup() {
         try {
@@ -48,28 +55,27 @@ public class Client extends Thread {
 
             // 키 생성
             KeyGenerator gen = KeyGenerator.getInstance("AES");
+            gen.init(128);
             SecretKey key = gen.generateKey();
 
             byte[] raw = key.getEncoded();
-            spec = new SecretKeySpec(raw, "AES");
-            cipher = Cipher.getInstance("AES");
+            skey = new SecretKeySpec(raw, "AES");
             is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             os = new DataOutputStream(socket.getOutputStream());
 
             // 키값 보내기
-            os.writeBytes(encoder.encodeToString(raw) + "\n");
+            os.writeBytes(new String(Base64.getEncoder().encode(raw)) + "\n");
             os.flush();
 
             // 데이터 전송
             JsonObject json = new JsonObject();
             json.add("type", "ping");
 
-            byte[] encrypted = tool.encrypt(json.toString(), spec, cipher);
-
-            os.writeBytes(encoder.encodeToString(encrypted) + "\n");
+            String encrypted = tool.encrypt(json.toString(), skey);
+            os.writeBytes(encrypted + "\n");
             os.flush();
 
-            String receive = new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher));
+            String receive = tool.decrypt(is.readLine(), skey);
 
             if (readJSON(receive).asObject().get("result") != null) {
                 activated = true;
@@ -85,13 +91,18 @@ public class Client extends Thread {
         } catch (SocketTimeoutException | SocketException e) {
             if (disconnected) {
                 try {
+                    socket.close();
                     TimeUnit.SECONDS.sleep(5);
                     this.wakeup();
-                } catch (InterruptedException ex) {
-                    this.interrupt();
+                } catch (InterruptedException | IOException ex) {
+                    Thread.currentThread().interrupt();
                 }
             } else {
-                Log.client("remote-server-dead");
+                try {
+                    socket.close();
+                    Log.client("remote-server-dead");
+                } catch (IOException ignored) {
+                }
             }
         } catch (Exception e) {
             new CrashReport(e);
@@ -100,9 +111,9 @@ public class Client extends Thread {
 
     public void request(Request request, Player player, String message) {
         JsonObject data = new JsonObject();
-        switch (request) {
-            case bansync:
-                try {
+        try {
+            switch (request) {
+                case bansync:
                     JsonArray ban = new JsonArray();
                     JsonArray ipban = new JsonArray();
                     JsonArray subban = new JsonArray();
@@ -126,51 +137,31 @@ public class Client extends Thread {
                     data.add("ipban", ipban);
                     data.add("subban", subban);
 
-                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
+                    os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
 
                     Log.client("client.banlist.sented");
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case chat:
-                try {
+                    break;
+                case chat:
                     data.add("type", "chat");
                     data.add("name", player.name);
                     data.add("message", message);
 
-                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
+                    os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
 
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
                     Log.client("client.message", config.clientHost(), message);
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case exit:
-                try {
+                    break;
+                case exit:
                     data.add("type", "exit");
 
-                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
+                    os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
 
-                    this.interrupt();
-                    os.close();
-                    is.close();
-                    socket.close();
-                    activated = false;
+                    shutdown();
                     return;
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case unbanip:
-                try {
+                case unbanip:
                     data.add("type", "unbanip");
 
                     boolean isip;
@@ -182,39 +173,29 @@ public class Client extends Thread {
 
                     if (isip) data.add("ip", message);
 
-                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
+                    os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case unbanid:
-                try {
+                    break;
+                case unbanid:
                     data.add("type", "unbanid");
                     data.add("uuid", message);
 
-                    byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
-                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
+                    os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
-            case datashare:
-                try {
+                    break;
+                case datashare:
                     data.add("type", "datashare");
                     data.add("data", "");
-                    byte[] encrypted = tool.encrypt("datashare", spec, cipher);
-                    os.writeBytes(encoder.encodeToString(encrypted) + "\n");
+
+                    os.writeBytes(tool.encrypt("datashare", skey) + "\n");
                     os.flush();
 
-                    /*String data = is.readLine();
-                    if (data.equals())*/
-                } catch (Exception e) {
-                    new CrashReport(e);
-                }
-                break;
+                /*String data = is.readLine();
+                if (data.equals())*/
+                    break;
+            }
+        } catch (Exception e) {
+            new CrashReport(e);
         }
     }
 
@@ -231,7 +212,7 @@ public class Client extends Thread {
             try {
                 JsonObject data;
                 try {
-                    data = readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
+                    data = readJSON(new String(tool.decrypt(is.readLine(), skey))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
                     Log.client("server.disconnected", config.clientHost());
@@ -241,14 +222,7 @@ public class Client extends Thread {
                     if (!e.getMessage().equals("Socket closed")) new CrashReport(e);
                     Log.client("server.disconnected", config.clientHost());
 
-                    activated = false;
-                    try {
-                        is.close();
-                        os.close();
-                        socket.close();
-                    } catch (IOException ex) {
-                        new CrashReport(ex);
-                    }
+                    shutdown();
                     return;
                 }
 
@@ -282,14 +256,7 @@ public class Client extends Thread {
                         Call.sendMessage("[#C77E36][RC] [orange]" + name + " [orange]:[white] " + message);
                         break;
                     case exit:
-                        activated = false;
-                        try {
-                            is.close();
-                            os.close();
-                            socket.close();
-                        } catch (IOException ex) {
-                            new CrashReport(ex);
-                        }
+                        shutdown();
                         return;
                     case unbanip:
                         netServer.admins.unbanPlayerIP(data.get("ip").asString());
@@ -306,14 +273,7 @@ public class Client extends Thread {
             } catch (Exception e) {
                 Log.client("server.disconnected", config.clientHost());
 
-                activated = false;
-                try {
-                    is.close();
-                    os.close();
-                    socket.close();
-                } catch (IOException ex) {
-                    new CrashReport(ex);
-                }
+                shutdown();
                 return;
             }
         }

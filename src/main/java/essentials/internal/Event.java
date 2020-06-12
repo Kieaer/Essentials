@@ -6,10 +6,11 @@ import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
-import essentials.external.DataMigration;
 import essentials.external.IpAddressMatcher;
+import essentials.feature.AntiGrief;
 import essentials.network.Client;
 import essentials.network.Server;
+import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.game.Difficulty;
@@ -29,12 +30,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalTime;
-import java.util.Base64;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import static essentials.Main.*;
-import static essentials.external.DriverLoader.URLDownload;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
 import static mindustry.core.NetClient.onSetRules;
@@ -64,13 +63,13 @@ public class Event {
             PlayerData playerData = playerDB.get(e.player.uuid);
 
             if (!playerData.error()) {
-                for (PluginData.jumpzone data : pluginData.jumpzone) {
+                for (PluginData.warpzone data : pluginData.warpzones) {
                     int port = data.port;
                     String ip = data.ip;
 
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
-                            Log.info("player.jumped", e.player.name, data.ip + ":" + data.port);
+                            Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
                             playerData.connected(false);
                             playerData.connserver("none");
                             Call.onConnect(e.player.con, ip, port);
@@ -136,7 +135,7 @@ public class Event {
 
         // 맵이 불러와졌을 때
         Events.on(EventType.WorldLoadEvent.class, e -> {
-            vars.playtime(LocalTime.of(0, 0, 0));
+            vars.playtime(0);
 
             // 전력 노드 정보 초기화
             pluginData.powerblock.clear();
@@ -166,7 +165,7 @@ public class Event {
                 if (e.player.name.contains("　"))
                     Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
                 if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");
-                if (e.player.name.matches(".*\\[.*.\\].*"))
+                if (Pattern.matches(".*\\[.*.].*", e.player.name))
                     Call.onKick(e.player.con, "Can't use only color tags nickname in this server.");
             }
 
@@ -289,7 +288,7 @@ public class Event {
                 }
 
                 // PvP 평화시간 설정
-                if (config.antiRush() && state.rules.pvp && vars.playtime().isBefore(config.antiRushtime())) {
+                if (config.antiRush() && state.rules.pvp && vars.playtime() < config.antiRushtime()) {
                     state.rules.playerDamageMultiplier = 0f;
                     state.rules.playerHealthMultiplier = 0.001f;
                     Call.onSetRules(state.rules);
@@ -336,8 +335,14 @@ public class Event {
 
         // 플레이어가 수다떨었을 때
         Events.on(EventType.PlayerChatEvent.class, e -> {
+            if (config.antiGrief() && (e.message.length() > Vars.maxTextLength || e.message.contains("Nexity#2671"))) {
+                Call.onKick(e.player.con, "Hacked client detected");
+            }
+
             PlayerData playerData = playerDB.get(e.player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
+
+            if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
 
             if (!playerData.error()) {
                 // 명령어인지 확인
@@ -360,7 +365,7 @@ public class Event {
                                     String msg = "[" + e.player.name + "]: " + e.message;
                                     try {
                                         for (Server.service ser : server.list) {
-                                            ser.os.writeBytes(Base64.getEncoder().encodeToString(tool.encrypt(msg, ser.spec, ser.cipher)));
+                                            ser.os.writeBytes(tool.encrypt(msg, ser.spec));
                                             ser.os.flush();
                                         }
                                     } catch (Exception ex) {
@@ -436,7 +441,7 @@ public class Event {
                                         } else {
                                             if (perm.permission_user.get(playerData.uuid()).asObject().get("prefix") != null) {
                                                 if (!playerData.crosschat())
-                                                    p.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
+                                                    p.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replace("%2", e.message));
                                             } else {
                                                 if (!playerData.crosschat())
                                                     p.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
@@ -448,17 +453,13 @@ public class Event {
                                 new CrashReport(ex);
                             }
                         }).start();
-                    } else {
-                        if (!playerData.mute() && colorizeName(e.player.id, e.player.name) != null) {
-                            Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message.replaceAll(".*\\\\.*", "")));
-                        }
+                    } else if (colorizeName(e.player.id, e.player.name) != null) {
+                        Call.sendMessage(perm.permission_user.get(playerData.uuid()).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replace("%2", e.message));
                     }
-
-                    // 마지막 대화 데이터를 DB에 저장함
-                    playerData.lastchat(e.message);
-
-                    Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
                 }
+
+                // 마지막 대화 데이터를 DB에 저장함
+                playerData.lastchat(e.message);
             }
         });
 
@@ -499,12 +500,30 @@ public class Event {
                 if (config.debug() && config.antiGrief()) {
                     Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
                 }
+
+                float range = new AntiGrief().getDistanceToCore(e.player, e.tile);
+                if (config.antiGrief() && range < 35 && e.tile.block() == Blocks.thoriumReactor) {
+                    e.player.sendMessage(new Bundle(target.locale()).get("anti-grief.reactor.close"));
+                    Call.onDeconstructFinish(e.tile, Blocks.air, e.player.id);
+                }/* else if (config.antiGrief()) {
+                    for (int rot = 0; rot < 4; rot++) {
+                        if (e.tile.getNearby(rot).block() != Blocks.liquidTank &&
+                                e.tile.getNearby(rot).block() != Blocks.conduit &&
+                                e.tile.getNearby(rot).block() != Blocks.bridgeConduit &&
+                                e.tile.getNearby(rot).block() != Blocks.phaseConduit &&
+                                e.tile.getNearby(rot).block() != Blocks.platedConduit &&
+                                e.tile.getNearby(rot).block() != Blocks.pulseConduit) {
+                            // TODO 냉각수 감지 추가
+                            Call.sendMessage("No cryofluid reactor detected");
+                        }
+                    }
+                }*/
             }
         });
 
         // 플레이어가 블럭을 뽀갰을 때
         Events.on(EventType.BuildSelectEvent.class, e -> {
-            if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
+            if (e.builder instanceof Player && e.builder.buildRequest() != null && !Pattern.matches(".*build.*", e.builder.buildRequest().block.name) && e.tile.block() != Blocks.air) {
                 if (e.breaking) {
                     Log.write(Log.LogType.block, "log.block.remove", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
 
@@ -589,9 +608,11 @@ public class Event {
             });
 
             for (Player player : playerGroup.all()) {
-                player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).get("player.banned", e.player.name));
-                if (netServer.admins.isIDBanned(player.uuid)) {
-                    player.con.kick(Packets.KickReason.banned);
+                if (player == e.player) {
+                    tool.sendMessageAll("player.banned", e.player.name);
+                    if (netServer.admins.isIDBanned(player.uuid)) {
+                        player.con.kick(Packets.KickReason.banned);
+                    }
                 }
             }
 
@@ -619,8 +640,6 @@ public class Event {
         });
 
         Events.on(EventType.ServerLoadEvent.class, e -> {
-            // 예전 DB 변환
-            if (config.oldDBMigration()) new DataMigration().MigrateDB();
             // 업데이트 확인
             if (config.update()) {
                 Log.client("client.update-check");
@@ -653,7 +672,7 @@ public class Event {
                                             ser.socket.close();
                                             server.list.remove(ser);
                                         }
-                                        server.stop();
+                                        server.shutdown();
                                     } catch (Exception ignored) {
                                     }
                                 }
@@ -663,7 +682,7 @@ public class Event {
                                 mainThread.shutdown();
                                 database.dispose();
 
-                                URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
+                                Tools.URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
                                         Core.settings.getDataDirectory().child("mods/Essentials.jar").file());
                                 Core.app.exit();
                             } catch (Exception ex) {
@@ -679,7 +698,6 @@ public class Event {
                         Log.client("version-devel");
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
                     new CrashReport(ex);
                 }
             } else {

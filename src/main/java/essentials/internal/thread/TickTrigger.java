@@ -8,7 +8,6 @@ import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
-import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
@@ -22,8 +21,8 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
 import org.hjson.JsonObject;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 import static essentials.Main.*;
@@ -34,7 +33,7 @@ public class TickTrigger {
     public TickTrigger() {
         Events.on(EventType.Trigger.update, new Runnable() {
             int tick = 0;
-            ObjectMap<String, Integer> resources = new ObjectMap<>();
+            final ObjectMap<String, Integer> resources = new ObjectMap<>();
 
             @Override
             public void run() {
@@ -54,7 +53,7 @@ public class TickTrigger {
                 // 1초마다 실행
                 if ((tick % 60) == 0) {
                     // 서버 켜진시간 카운트
-                    vars.uptime(vars.uptime().plusSeconds(1));
+                    vars.uptime(vars.uptime() + 1);
 
                     // 데이터 저장
                     JsonObject json = new JsonObject();
@@ -81,10 +80,10 @@ public class TickTrigger {
                         // new jumpzone().start();
 
                         // 맵 플탐 카운트
-                        vars.playtime(vars.playtime().plusSeconds(1));
+                        vars.playtime(vars.playtime() + 1);
 
                         // PvP 평화시간 카운트
-                        if (config.antiRush() && state.rules.pvp && vars.playtime().isAfter(config.antiRushtime()) && vars.isPvPPeace()) {
+                        if (config.antiRush() && state.rules.pvp && vars.playtime() < config.antiRushtime() && vars.isPvPPeace()) {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
@@ -110,18 +109,18 @@ public class TickTrigger {
                     }*/
 
                         // 모든 클라이언트 서버에 대한 인원 총합 카운트
-                        for (int a = 0; a < pluginData.jumptotal.size; a++) {
+                        for (int a = 0; a < pluginData.warptotals.size; a++) {
                             int result = 0;
-                            for (PluginData.jumpcount value : pluginData.jumpcount) result = result + value.players;
+                            for (PluginData.warpcount value : pluginData.warpcounts) result = result + value.players;
 
                             String str = String.valueOf(result);
                             // TODO 인원 카운트 다시 만들기
                             int[] digits = new int[str.length()];
                             for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
-                            Tile tile = pluginData.jumptotal.get(a).getTile();
-                            if (pluginData.jumptotal.get(a).totalplayers != result) {
-                                if (pluginData.jumptotal.get(a).numbersize != digits.length) {
+                            Tile tile = pluginData.warptotals.get(a).getTile();
+                            if (pluginData.warptotals.get(a).totalplayers != result) {
+                                if (pluginData.warptotals.get(a).numbersize != digits.length) {
                                     for (int px = 0; px < 3; px++) {
                                         for (int py = 0; py < 5; py++) {
                                             Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
@@ -132,7 +131,7 @@ public class TickTrigger {
 
                             tool.setTileText(tile, Blocks.copperWall, String.valueOf(result));
 
-                            pluginData.jumptotal.set(a, new PluginData.jumptotal(tile, result, digits.length));
+                            pluginData.warptotals.set(a, new PluginData.warptotal(world.getMap().name(), tile, result, digits.length));
                         }
 
                         // 플레이어 플탐 카운트 및 잠수확인
@@ -142,17 +141,17 @@ public class TickTrigger {
 
                             if (target.login()) {
                                 // Exp 계산
-                                target.exp(target.exp() + (int) (Math.random() * 5));
+                                target.exp(target.exp() + (new SecureRandom().nextInt(50)));
 
                                 // 잠수 및 플레이 시간 계산
-                                target.playtime(LocalTime.parse(target.playtime(), DateTimeFormatter.ofPattern("HH:mm:ss")).plusSeconds(1).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                                target.playtime(target.playtime() + 1);
                                 if (target.tilex() == p.tileX() && target.tiley() == p.tileY()) {
-                                    target.afk(target.afk().plusSeconds(1));
-                                    if (target.afk() == LocalTime.of(0, 5, 0)) {
+                                    target.afk(target.afk() + 1);
+                                    if (config.afktime() != 0L && config.afktime() < target.afk()) {
                                         kick = true;
                                     }
                                 } else {
-                                    target.afk(LocalTime.of(0, 0, 0));
+                                    target.afk(0L);
                                 }
                                 target.tilex(p.tileX());
                                 target.tiley(p.tileY());
@@ -173,6 +172,7 @@ public class TickTrigger {
                                 pluginData.messagemonitor.remove(a);
                                 return;
                             }
+                            System.out.println("Message monitoring");
 
                             if (msg.equals("powerblock")) {
                                 Tile target;
@@ -191,8 +191,8 @@ public class TickTrigger {
                                 pluginData.powerblock.add(new PluginData.powerblock(entity.tile, target));
                                 pluginData.messagemonitor.remove(a);
                                 break;
-                            } else if (msg.contains("jump")) {
-                                pluginData.messagejump.add(new PluginData.messagejump(pluginData.messagemonitor.get(a).entity.tile, msg));
+                            } else if (msg.contains("warp")) {
+                                pluginData.messagewarp.add(new PluginData.messagewarp(pluginData.messagemonitor.get(a).entity.tile, msg));
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             } else if (msg.equals("scancore")) {
@@ -203,7 +203,7 @@ public class TickTrigger {
                         }
 
                         // 서버간 이동 영역에 플레이어가 있는지 확인
-                        for (PluginData.jumpzone value : pluginData.jumpzone) {
+                        for (PluginData.warpzone value : pluginData.warpzones) {
                             if (!value.touch) {
                                 for (int ix = 0; ix < playerGroup.size(); ix++) {
                                     Player player = playerGroup.all().get(ix);
@@ -216,23 +216,13 @@ public class TickTrigger {
                                                 resultIP = temp[0];
                                                 port = Integer.parseInt(temp[1]);
                                             }
-                                            Log.info("player.jumped", player.name, resultIP + ":" + port);
+                                            Log.info("player.warped", player.name, resultIP + ":" + port);
                                             Call.onConnect(player.con, resultIP, port);
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-
-                // 1분마다 실행
-                if ((tick % 3600) == 0) {
-                    try {
-                        playerDB.saveAll();
-                        pluginData.saveAll();
-                    } catch (Exception e) {
-                        new CrashReport(e);
                     }
                 }
 
