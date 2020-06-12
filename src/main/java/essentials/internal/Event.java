@@ -76,6 +76,13 @@ public class Event {
                         }
                     }
                 }
+
+                for (PluginData.warpblock data : pluginData.warpblocks) {
+                    if (world.tile(e.tile.x, e.tile.y).link() != null && world.tile(data.tilex, data.tiley).link() != null) {
+                        Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
+                        Call.onConnect(e.player.con, data.ip, data.port);
+                    }
+                }
             }
         });
 

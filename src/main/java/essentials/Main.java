@@ -700,7 +700,15 @@ public class Main extends Plugin {
                 int size;
                 boolean clickable;
                 String ip;
-                int port;
+                int port = 6567;
+
+                if (arg[1].contains(":")) {
+                    String[] address = arg[1].split(":");
+                    ip = address[0];
+                    port = Integer.parseInt(address[1]);
+                } else {
+                    ip = arg[1];
+                }
 
                 String[] parameters = arg[2].split(" ");
 
@@ -713,14 +721,6 @@ public class Main extends Plugin {
                             try {
                                 size = Integer.parseInt(parameters[0]);
                                 clickable = Boolean.parseBoolean(parameters[1]);
-                                if (arg[1].contains(":")) {
-                                    String[] address = arg[1].split(":");
-                                    ip = address[0];
-                                    port = Integer.parseInt(address[1]);
-                                } else {
-                                    ip = arg[1];
-                                    port = 6567;
-                                }
                             } catch (NumberFormatException ignored) {
                                 player.sendMessage(bundle.prefix("system.warp.not-int"));
                                 return;
@@ -735,34 +735,11 @@ public class Main extends Plugin {
                         if (parameters.length != 1) {
                             player.sendMessage(bundle.prefix("system.warp.incorrect"));
                         } else {
-                            try {
-                                if (arg[1].contains(":")) {
-                                    String[] address = arg[1].split(":");
-                                    ip = address[0];
-                                    port = Integer.parseInt(address[1]);
-                                } else {
-                                    ip = arg[1];
-                                    port = 6567;
-                                }
-                            } catch (NumberFormatException ignored) {
-                                ip = arg[1];
-                                port = 6567;
-                            }
                             pluginData.warpblocks.add(new PluginData.warpblock(name, world.tile(x, y).link(), ip, port, arg[2]));
                             player.sendMessage(bundle.prefix("system.warp.added"));
                         }
                         break;
                     case "count":
-                        // ip
-                        if (arg[1].contains(":")) {
-                            String[] address = arg[1].split(":");
-                            ip = address[0];
-                            port = Integer.parseInt(address[1]);
-                        } else {
-                            ip = arg[1];
-                            port = 6567;
-                        }
-
                         pluginData.warpcounts.add(new PluginData.warpcount(name, world.tile(x, y), ip, port, 0, 0));
                         player.sendMessage(bundle.prefix("system.warp.added"));
                         break;
