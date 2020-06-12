@@ -1,8 +1,17 @@
 language: java
-os: linux
-dist: xenial
-
+jdk:
+  - openjdk8
 script:
-  - ./gradlew
-git:
-  depth: false
+  - git clone https://github.com/Kieaer/Essentials
+  - cd Essentials
+  - "./gradlew jar"
+  - mv build/libs/Essentials.jar build/libs/Essentials-nightly.jar
+deploy:
+  provider: releases
+  cleanup: false
+  api_key:
+    secure: rE+R5jWVIq0Ylm+rSEPIZzQktWon6EU2J/1RRb+s3eB0N2XI8tvDxKAOhAOp1XrreDHwwYAxsad8R+KiCzRGOuefpfCz5VREhRjdmEys4v0YymkuLz0kbjPL0h6XSzdGHDTn07WrZ2zkucd62KlEvZdLXClc7yrdXYDsumAlsf9PQ9HVowDhTAa0A1dzeK1AVyItWdL3GXGjoBQp9XiK4Zwx6zPeW9pXkcYk7vKtw9NRqcz7V9CpmD2fqZ0e6lpoQpKdN3JddRaj21+fwPhw0+XmhK0TsiBHvwQO6TziUlcX+Get+9bxw2OuFvD8HKYTVOuVLICXxJFzhWwGkqFg9elbeO2SwQo2hcTMqeLuKzo5E5+aMPalcAF222ORHuAHheGywXW94sN+FwCPkgvaBdnkjSRrLYp2O5+Ck86zfAPZgMYu0brAYSXXO5Y2njkw4iFvmQXzCl2iqcfmv+kKOX8GqfcWXW1t1Sgp/iJ/0p68hUg5oB7Wee2kGNurkB3vgZuVxxURHtLS8ffJFNx2tlYjL7w6XnPjhmU58fLmx9ELWsccv4aNa+XWz2CD641k56+mNCfpPiuaT9aBfr8T4drcbk6B/IlsTo2o00Xy3uLXhkM4J2yj/evTf3kGGyh6qfnGuwE5AoQpjDYcCwpIFw8FS3DjbMroAOgXpszhq6A=
+  file: build/libs/Essentials-nightly.jar
+  on:
+    repo: Kieaer/Essentials-nightly
+    tags: false
