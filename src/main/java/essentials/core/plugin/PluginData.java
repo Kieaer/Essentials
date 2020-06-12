@@ -1,20 +1,23 @@
 package essentials.core.plugin;
 
 import arc.struct.Array;
-import essentials.internal.CrashReport;
+import arc.util.serialization.Json;
 import essentials.internal.Log;
 import mindustry.world.Tile;
 import mindustry.world.blocks.logic.MessageBlock;
+import org.hjson.JsonArray;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
 
 import java.io.*;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import static essentials.Main.root;
 import static mindustry.Vars.world;
 
 public class PluginData {
+    private final Json json = new Json();
+
     // 일회성 플러그인 데이터
     public Array<nukeblock> nukeblock = new Array<>();
     public Array<eventservers> eventservers = new Array<>();
@@ -34,72 +37,132 @@ public class PluginData {
     public Array<String> blacklist = new Array<>();
     public Array<banned> banned = new Array<>();
 
-    public void saveAll() throws Exception {
-        Map<String, Object> map = new HashMap<>();
-        map.put("warpzones", warpzones.toArray());
-        map.put("warpblocks", warpblocks.toArray());
-        map.put("warpcounts", warpcounts.toArray());
-        map.put("warptotals", warptotals.toArray());
-        map.put("blacklist", blacklist.toArray());
-        map.put("banned", banned.toArray());
-
-        ByteArrayOutputStream b = new ByteArrayOutputStream();
-        ObjectOutputStream o = new ObjectOutputStream(b);
-        o.writeObject(map);
-        root.child("data/PluginData.object").writeBytes(b.toByteArray(), false);
-        o.close();
-        b.close();
+    public void saveAll() {
+        JsonObject data = new JsonObject();
+        JsonArray buffer = new JsonArray();
+        for (int a = 0; a < warpzones.size; a++) {
+            buffer.add(JsonValue.readHjson(json.prettyPrint(warpzones.get(a))));
+        }
+        data.add("warpzones", buffer);
+        buffer = new JsonArray();
+        for (int a = 0; a < warpblocks.size; a++) {
+            buffer.add(JsonValue.readHjson(json.prettyPrint(warpblocks.get(a))));
+        }
+        data.add("warpblocks", buffer);
+        buffer = new JsonArray();
+        for (int a = 0; a < warpcounts.size; a++) {
+            buffer.add(JsonValue.readHjson(json.prettyPrint(warpcounts.get(a))));
+        }
+        data.add("warpcounts", buffer);
+        buffer = new JsonArray();
+        for (int a = 0; a < warptotals.size; a++) {
+            buffer.add(JsonValue.readHjson(json.prettyPrint(warptotals.get(a))));
+        }
+        data.add("warptotals", buffer);
+        buffer = new JsonArray();
+        for (int a = 0; a < blacklist.size; a++) {
+            buffer.add(blacklist.get(a));
+        }
+        data.add("blacklist", buffer);
+        buffer = new JsonArray();
+        for (int a = 0; a < banned.size; a++) {
+            buffer.add(JsonValue.readHjson(json.prettyPrint(banned.get(a))));
+        }
+        data.add("banned", buffer);
+        root.child("data/PluginData.object").writeString(data.toString(), false);
     }
 
-    @SuppressWarnings("unchecked") // 의도적인 작동임
     public void loadall() {
-        ByteArrayOutputStream fos = null;
-        ObjectOutputStream oos = null;
-        ByteArrayInputStream fis = null;
-        ObjectInputStream ois = null;
         try {
             if (!root.child("data/PluginData.object").exists()) {
-                Map<String, Array<Object>> map = new HashMap<>();
-                map.put("warpzones", new Array<>());
-                map.put("warpblocks", new Array<>());
-                map.put("warpcounts", new Array<>());
-                map.put("warptotals", new Array<>());
-                map.put("blacklist", new Array<>());
-                map.put("banned", new Array<>());
-
-                fos = new ByteArrayOutputStream();
-                oos = new ObjectOutputStream(fos);
-                oos.writeObject(map);
-
-                root.child("data/PluginData.object").writeBytes(fos.toByteArray(), false);
-                oos.close();
-                fos.close();
-
+                saveAll();
             } else {
-                fis = new ByteArrayInputStream(root.child("data/PluginData.object").readBytes());
-                ois = new ObjectInputStream(fis);
-                Map<String, Object> map = (HashMap<String, Object>) ois.readObject();
-                warpzones = (Array<warpzone>) map.get("warpzones");
-                warpblocks = (Array<warpblock>) map.get("warpblocks");
-                warpcounts = (Array<PluginData.warpcount>) map.get("warpcounts");
-                warptotals = (Array<warptotal>) map.get("warptotals");
-                blacklist = (Array<String>) map.get("blacklist");
-                banned = (Array<banned>) map.get("banned");
-                ois.close();
-                fis.close();
+                JsonObject data = JsonValue.readJSON(root.child("data/PluginData.object").readString()).asObject();
+                for (int a = 0; a < data.get("warpzones").asArray().size(); a++) {
+                    JsonObject buffer = data.get("warpzones").asArray().get(a).asObject();
+                    warpzones.add(new warpzone(
+                            buffer.get("mapName").asString(),
+                            buffer.get("startx").asInt(),
+                            buffer.get("starty").asInt(),
+                            buffer.get("finishx").asInt(),
+                            buffer.get("finishy").asInt(),
+                            buffer.get("touch").asBoolean(),
+                            buffer.get("ip").asString(),
+                            buffer.get("port").asInt()
+                    ));
+                }
+
+                for (int a = 0; a < data.get("warpblocks").asArray().size(); a++) {
+                    JsonObject buffer = data.get("warpblocks").asArray().get(a).asObject();
+                    warpblocks.add(new warpblock(
+                            buffer.get("mapName").asString(),
+                            buffer.get("tilex").asInt(),
+                            buffer.get("tiley").asInt(),
+                            buffer.get("tileName").asString(),
+                            buffer.get("size").asInt(),
+                            buffer.get("ip").asString(),
+                            buffer.get("port").asInt(),
+                            buffer.get("description").asString()
+                    ));
+                }
+
+                for (int a = 0; a < data.get("warpcounts").asArray().size(); a++) {
+                    JsonObject buffer = data.get("warpcounts").asArray().get(a).asObject();
+                    warpcounts.add(new warpcount(
+                            buffer.get("mapName").asString(),
+                            buffer.get("x").asInt(),
+                            buffer.get("y").asInt(),
+                            buffer.get("ip").asString(),
+                            buffer.get("port").asInt(),
+                            buffer.get("players").asInt(),
+                            buffer.get("numbersize").asInt()
+                    ));
+                }
+
+                for (int a = 0; a < data.get("warptotals").asArray().size(); a++) {
+                    JsonObject buffer = data.get("warptotals").asArray().get(a).asObject();
+                    warptotals.add(new warptotal(
+                            buffer.get("mapName").asString(),
+                            buffer.get("x").asInt(),
+                            buffer.get("y").asInt(),
+                            buffer.get("totalplayers").asInt(),
+                            buffer.get("numbersize").asInt()
+                    ));
+                }
+
+                for (int a = 0; a < data.get("blacklist").asArray().size(); a++) {
+                    JsonArray buffer = data.get("warpzones").asArray().get(a).asArray();
+                    blacklist.add(buffer.get(a).asString());
+                }
+
+                for (int a = 0; a < data.get("banned").asArray().size(); a++) {
+                    JsonObject buffer = data.get("banned").asArray().get(a).asObject();
+                    banned.add(new banned(
+                            buffer.get("time").asString(),
+                            buffer.get("name").asString(),
+                            buffer.get("uuid").asString(),
+                            buffer.get("reason").asString()
+                    ));
+                }
                 Log.info("plugindata-loaded");
             }
         } catch (Exception i) {
-            try {
-                if (fos != null) fos.close();
-                if (oos != null) oos.close();
-                if (fis != null) fis.close();
-                if (ois != null) ois.close();
-                root.child("data/PluginData.object").delete();
-            } catch (Exception e) {
-                new CrashReport(e);
-            }
+            i.printStackTrace();
+            root.child("data/PluginData.object").delete();
         }
+    }
+
+    private static byte[] serialize(Object obj) throws IOException {
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ObjectOutputStream o = new ObjectOutputStream(b);
+        o.writeObject(obj);
+        return b.toByteArray();
+    }
+
+    public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream b = new ByteArrayInputStream(bytes);
+        ObjectInputStream o = new ObjectInputStream(b);
+        return o.readObject();
     }
 
     public static class nukeblock {
@@ -150,7 +213,7 @@ public class PluginData {
         }
     }
 
-    public static class warpzone implements Serializable {
+    public static class warpzone {
         public final String mapName;
         public final int startx;
         public final int starty;
@@ -171,6 +234,17 @@ public class PluginData {
             this.touch = touch;
         }
 
+        private warpzone(String mapName, int startx, int starty, int finishx, int finishy, boolean touch, String ip, int port) {
+            this.mapName = mapName;
+            this.startx = startx;
+            this.starty = starty;
+            this.finishx = finishx;
+            this.finishy = finishy;
+            this.ip = ip;
+            this.port = port;
+            this.touch = touch;
+        }
+
         public Tile getStartTile() {
             return world.tile(startx, starty);
         }
@@ -180,7 +254,7 @@ public class PluginData {
         }
     }
 
-    public static class warpblock implements Serializable {
+    public static class warpblock {
         public final String mapName;
         public final int tilex;
         public final int tiley;
@@ -202,9 +276,22 @@ public class PluginData {
             this.tileName = tile.entity.block.name;
             this.size = tile.entity.block.size;
         }
+
+        private warpblock(String mapName, int tilex, int tiley, String tileName, int size, String ip, int port, String description) {
+            this.mapName = mapName;
+
+            this.ip = ip;
+            this.port = port;
+            this.description = description;
+
+            this.tilex = tilex;
+            this.tiley = tiley;
+            this.tileName = tileName;
+            this.size = size;
+        }
     }
 
-    public static class warpcount implements Serializable {
+    public static class warpcount {
         public final String mapName;
         public final int x;
         public final int y;
@@ -223,12 +310,22 @@ public class PluginData {
             this.numbersize = numbersize;
         }
 
+        private warpcount(String mapName, int x, int y, String ip, int port, int players, int numbersize) {
+            this.mapName = mapName;
+            this.x = x;
+            this.y = y;
+            this.ip = ip;
+            this.port = port;
+            this.players = players;
+            this.numbersize = numbersize;
+        }
+
         public Tile getTile() {
             return world.tile(x, y);
         }
     }
 
-    public static class warptotal implements Serializable {
+    public static class warptotal {
         public final String mapName;
         public final int x;
         public final int y;
@@ -243,12 +340,20 @@ public class PluginData {
             this.numbersize = numbersize;
         }
 
+        private warptotal(String mapName, int x, int y, int totalplayers, int numbersize) {
+            this.mapName = mapName;
+            this.x = x;
+            this.y = y;
+            this.totalplayers = totalplayers;
+            this.numbersize = numbersize;
+        }
+
         public Tile getTile() {
             return world.tile(x, y);
         }
     }
 
-    public static class banned implements Serializable {
+    public static class banned {
         public final String time;
         public final String name;
         public final String uuid;
@@ -256,6 +361,13 @@ public class PluginData {
 
         public banned(LocalDateTime time, String name, String uuid, String reason) {
             this.time = time.toString();
+            this.name = name;
+            this.uuid = uuid;
+            this.reason = reason;
+        }
+
+        private banned(String time, String name, String uuid, String reason) {
+            this.time = time;
             this.name = name;
             this.uuid = uuid;
             this.reason = reason;

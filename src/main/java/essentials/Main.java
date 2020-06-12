@@ -274,11 +274,7 @@ public class Main extends Plugin {
             }
         });
         handler.register("saveall", "desc", (arg) -> {
-            try {
-                pluginData.saveAll();
-            } catch (Exception e) {
-                log.warn("PluginData save", e);
-            }
+            pluginData.saveAll();
         });
         handler.register("gendocs", "Generate Essentials README.md", (arg) -> {
             String[] servercommands = new String[]{
