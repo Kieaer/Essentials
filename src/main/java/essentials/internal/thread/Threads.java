@@ -1,6 +1,6 @@
 package essentials.internal.thread;
 
-import essentials.core.player.PlayerData;
+import arc.struct.Array;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Bundle;
@@ -14,41 +14,16 @@ import mindustry.world.Tile;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import static essentials.Main.*;
+import static essentials.Main.pluginData;
+import static essentials.Main.tool;
 import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
-    int delay = 0;
-
     @Override
     public void run() {
         Thread.currentThread().setName("Essential thread");
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                // 로그인 요청 알림
-                if (delay == 60) {
-                    for (int a = 0; a < playerGroup.size(); a++) {
-                        Player p = playerGroup.all().get(a);
-                        PlayerData playerData = playerDB.get(p.uuid);
-                        if (playerData.error()) {
-                            String message;
-                            if (playerData.locale() == null) {
-                                playerData.locale(tool.getGeo(p));
-                            }
-
-                            if (config.passwordMethod().equals("discord")) {
-                                message = new Bundle(playerData.locale()).get("system.login.require.discord") + "\n" + config.discordLink();
-                            } else {
-                                message = new Bundle(playerData.locale()).get("system.login.require.password");
-                            }
-                            p.sendMessage(message);
-                        }
-                    }
-                    delay = 0;
-                } else {
-                    delay++;
-                }
-
                 // 외부 서버 플레이어 인원 - 메세지 블럭
                 for (int a = 0; a < pluginData.messagewarp.size; a++) {
                     if (state.is(GameState.State.playing)) {
@@ -100,58 +75,56 @@ public class Threads implements Runnable {
                     });
                 }
 
-                // 3초마다 실행
-                if ((delay % 3) == 0) {
-                    try {
-                        playerDB.saveAll();
-                        pluginData.saveAll();
-                    } catch (Exception e) {
-                        new CrashReport(e);
-                    }
+                final double[] ping = {0.000};
+                Array<String> memory = new Array<>();
+                for (int a = 0; a < pluginData.warpblocks.size; a++) {
+                    PluginData.warpblock value = pluginData.warpblocks.get(a);
+                    Tile tile = world.tile(value.tilex, value.tiley);
+                    if (tile.block() == Blocks.air) {
+                        pluginData.warpblocks.remove(a);
+                    } else {
+                        new PingHost(value.ip, value.port, result -> {
+                            float margin = 0f;
+                            boolean isDup = false;
+                            float x = tile.drawx();
 
-                    for (int a = 0; a < pluginData.warpblocks.size; a++) {
-                        PluginData.warpblock value = pluginData.warpblocks.get(a);
-                        Tile tile = world.tile(value.tilex, value.tiley);
-                        if (tile.block() == Blocks.air) {
-                            pluginData.warpblocks.remove(a);
-                        } else {
-                            new PingHost(value.ip, value.port, result -> {
-                                float margin = 0f;
-                                boolean isDup = false;
-                                float x = tile.drawx();
+                            switch (value.size) {
+                                case 1:
+                                    margin = 8f;
+                                    break;
+                                case 2:
+                                    margin = 16f;
+                                    x = tile.drawx() - 4f;
+                                    isDup = true;
+                                    break;
+                                case 3:
+                                    margin = 16f;
+                                    break;
+                                case 4:
+                                    x = tile.drawx() - 4f;
+                                    margin = 24f;
+                                    isDup = true;
+                                    break;
+                            }
 
-                                switch (value.size) {
-                                    case 1:
-                                        margin = 8f;
-                                        break;
-                                    case 2:
-                                        margin = 16f;
-                                        x = tile.drawx() - 4f;
-                                        isDup = true;
-                                        break;
-                                    case 3:
-                                        margin = 16f;
-                                        break;
-                                    case 4:
-                                        x = tile.drawx() - 4f;
-                                        margin = 24f;
-                                        isDup = true;
-                                        break;
-                                }
-
-                                float y = tile.drawy() + (isDup ? margin - 8 : margin);
-                                if (result.name != null) {
-                                    Call.onLabel("[yellow]" + result.players + "[] Players", 3f, x, y);
-                                } else {
-                                    Call.onLabel("[scarlet]Offline", 3f, x, y);
-                                }
-                                Call.onLabel(value.description, 3f, x, tile.drawy() - margin);
-                            });
-                        }
+                            float y = tile.drawy() + (isDup ? margin - 8 : margin);
+                            if (result.name != null) {
+                                ping[0] = ping[0] + Double.parseDouble("0." + result.ping);
+                                memory.add("[yellow]" + result.players + "[] Players///" + x + "///" + y);
+                            } else {
+                                ping[0] = ping[0] + 1.000;
+                                memory.add("[scarlet]Offline///" + x + "///" + y);
+                            }
+                            memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin));
+                        });
                     }
                 }
+                for (String m : memory) {
+                    String[] a = m.split("///");
+                    Call.onLabel(a[0], ((float) ping[0]) + 3f, Float.parseFloat(a[1]), Float.parseFloat(a[2]));
+                }
 
-                TimeUnit.SECONDS.sleep(1);
+                TimeUnit.SECONDS.sleep(3);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {

@@ -8,6 +8,7 @@ import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
+import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
@@ -256,6 +257,36 @@ public class TickTrigger {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+
+                // 3초마다
+                if ((tick % 180) == 0) {
+                    try {
+                        playerDB.saveAll();
+                        pluginData.saveAll();
+                    } catch (Exception e) {
+                        new CrashReport(e);
+                    }
+                }
+
+                // 1분마다
+                if ((tick % 3600) == 0) {
+                    for (Player p : playerGroup.all()) {
+                        PlayerData playerData = playerDB.get(p.uuid);
+                        if (playerData.error()) {
+                            String message;
+                            if (playerData.locale() == null) {
+                                playerData.locale(tool.getGeo(p));
+                            }
+
+                            if (config.passwordMethod().equals("discord")) {
+                                message = new Bundle(playerData.locale()).get("system.login.require.discord") + "\n" + config.discordLink();
+                            } else {
+                                message = new Bundle(playerData.locale()).get("system.login.require.password");
+                            }
+                            p.sendMessage(message);
                         }
                     }
                 }
