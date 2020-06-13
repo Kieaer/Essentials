@@ -55,12 +55,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -676,37 +672,40 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player.pvpbreakout") + "[] : " + playerData.pvpbreakout();
             Call.onInfoMessage(player.con, datatext);
         });
-        handler.<Player>register("warp", "<zone/block/count> <ip> [parameters...]", "Create a server-to-server warp zone.", (arg, player) -> {
+        handler.<Player>register("warp", "<zone/block/count/total> [ip] [parameters...]", "Create a server-to-server warp zone.", (arg, player) -> {
             if (!perm.check(player, "warp")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
 
-            if (arg.length == 1) {
+            String[] types = {"zone", "block", "count", "total"};
+            if (!Arrays.asList(types).contains(arg[0])) {
                 player.sendMessage(bundle.get("system.warp.info"));
             } else {
                 String type = arg[0];
-                // boolean touchable = Boolean.parseBoolean(arg[1]);
-                // String ip = arg[2];
-                // int port = Integer.parseInt(arg[3]);
-                // int range = Integer.parseInt(arg[4]);
-
                 int x = player.tileX();
                 int y = player.tileY();
                 String name = world.getMap().name();
                 int size;
                 boolean clickable;
-                String ip;
+                String ip = "";
                 int port = 6567;
 
-                if (arg[1].contains(":")) {
-                    String[] address = arg[1].split(":");
-                    ip = address[0];
-                    port = Integer.parseInt(address[1]);
-                } else {
-                    ip = arg[1];
+                if (arg.length > 1) {
+                    if (arg[1].contains(":")) {
+                        String[] address = arg[1].split(":");
+                        ip = address[0];
+                        port = Integer.parseInt(address[1]);
+                    } else {
+                        ip = arg[1];
+                    }
                 }
 
-                String[] parameters = arg[2].split(" ");
+                String[] parameters;
+                if (arg.length > 2) {
+                    parameters = arg[2].split(" ");
+                } else {
+                    parameters = new String[]{};
+                }
 
                 switch (type) {
                     case "zone":
@@ -1248,7 +1247,7 @@ public class Main extends Plugin {
                 }
             }
             if (other != null) {
-                LocalTime bantime = LocalTime.parse(arg[1], DateTimeFormatter.ofPattern("HH"));
+                LocalDateTime bantime = LocalDateTime.now().plusHours(Integer.parseInt(arg[1]));
                 playerCore.tempban(other, bantime, arg[2]);
                 other.con.kick("Temp kicked");
                 for (int a = 0; a < playerGroup.size(); a++) {

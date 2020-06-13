@@ -1,5 +1,6 @@
 package essentials.core.player;
 
+import essentials.core.plugin.PluginData;
 import essentials.internal.CrashReport;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
@@ -11,7 +12,8 @@ import java.net.NetworkInterface;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static essentials.Main.*;
 import static mindustry.Vars.netServer;
@@ -143,8 +145,9 @@ public class PlayerCore {
         }
     }
 
-    public void tempban(Player player, LocalTime time, String reason) {
+    public void tempban(Player player, LocalDateTime time, String reason) {
         PlayerData playerData = playerDB.get(player.uuid);
-        playerData.bantimeset(time.toString());
+        playerData.bantimeset(time.format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss")));
+        pluginData.banned.add(new PluginData.banned(time, playerData.name(), playerData.uuid(), reason));
     }
 }

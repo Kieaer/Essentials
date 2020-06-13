@@ -2,6 +2,7 @@ package essentials;
 
 public class PluginTestVars {
     public final boolean clean = true;
+    public final boolean discordTest = false;
 
     public final String config = "{\n" +
             "  \"settings\": {\n" +

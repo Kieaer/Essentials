@@ -9,8 +9,8 @@ import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
-import java.io.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static essentials.Main.root;
 import static mindustry.Vars.world;
@@ -147,22 +147,9 @@ public class PluginData {
                 Log.info("plugindata-loaded");
             }
         } catch (Exception i) {
-            i.printStackTrace();
             root.child("data/PluginData.object").delete();
+            saveAll();
         }
-    }
-
-    private static byte[] serialize(Object obj) throws IOException {
-        ByteArrayOutputStream b = new ByteArrayOutputStream();
-        ObjectOutputStream o = new ObjectOutputStream(b);
-        o.writeObject(obj);
-        return b.toByteArray();
-    }
-
-    public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream b = new ByteArrayInputStream(bytes);
-        ObjectInputStream o = new ObjectInputStream(b);
-        return o.readObject();
     }
 
     public static class nukeblock {
@@ -360,7 +347,7 @@ public class PluginData {
         public final String reason;
 
         public banned(LocalDateTime time, String name, String uuid, String reason) {
-            this.time = time.toString();
+            this.time = time.format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"));
             this.name = name;
             this.uuid = uuid;
             this.reason = reason;
@@ -374,7 +361,7 @@ public class PluginData {
         }
 
         public LocalDateTime getTime() {
-            return LocalDateTime.parse(time);
+            return LocalDateTime.parse(time, DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"));
         }
     }
 }

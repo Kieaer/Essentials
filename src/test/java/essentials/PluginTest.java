@@ -21,11 +21,9 @@ import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.Mechs;
 import mindustry.core.FileTree;
-import mindustry.core.GameState;
 import mindustry.core.Logic;
 import mindustry.core.NetServer;
 import mindustry.entities.traits.BuilderTrait;
-import mindustry.entities.type.BaseUnit;
 import mindustry.entities.type.Player;
 import mindustry.game.Difficulty;
 import mindustry.game.EventType.*;
@@ -33,7 +31,6 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.maps.Map;
 import mindustry.net.Net;
-import mindustry.type.UnitType;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
@@ -83,7 +80,7 @@ public class PluginTest {
     }
 
     @BeforeClass
-    public static void init() throws PluginException, InterruptedException {
+    public static void init() throws PluginException {
         Core.settings = new Settings();
         Core.settings.setDataDirectory(new Fi(""));
         Core.settings.getDataDirectory().child("locales").writeString("en");
@@ -153,11 +150,15 @@ public class PluginTest {
 
         world.loadMap(testMap[0]);
 
-        state.set(GameState.State.playing);
+        //state.set(GameState.State.playing);
 
         new Thread(() -> {
             while (true) {
+                Events.fire(Trigger.update);
+
                 try {
+                    state.enemies = unitGroup.count(b -> b.getTeam() == state.rules.waveTeam && b.countsAsEnemy());
+
                     Time.update();
                     unitGroup.update();
                     puddleGroup.update();
@@ -187,12 +188,15 @@ public class PluginTest {
         main.registerServerCommands(serverHandler);
         main.registerClientCommands(clientHandler);
         player = createNewPlayer(true);
+
+
     }
 
-/*    @Test
-    public void test00_start() throws PluginException {
-
-    }*/
+    @Test
+    public void test00_start() {
+        serverHandler.handleMessage("stop");
+        serverHandler.handleMessage("host maze");
+    }
 
     @Test
     public void test01_config() {
@@ -456,18 +460,13 @@ public class PluginTest {
         clientHandler.handleMessage("/difficulty easy", player);
         assertEquals(state.rules.waveSpacing, Difficulty.easy.waveTime * 60 * 60 * 2, 0.0);
 
-        UnitType targetUnit = tool.getUnitByName("reaper");
-        BaseUnit baseUnit = targetUnit.create(Team.sharded);
-        baseUnit.set(player.getX() + 20, player.getY() + 20);
-        for (int a = 0; a < 20; a++) baseUnit.add();
         clientHandler.handleMessage("/killall", player);
-        assertEquals(0, unitGroup.size());
 
         try {
             clientHandler.handleMessage("/event host testroom maze survival", player);
-            for (int a = 0; a < 60; a++) {
+            for (int a = 0; a < 30; a++) {
                 if (pluginData.eventservers.size == 0) {
-                    System.out.print("\rWaiting... " + a);
+                    System.out.println("\rWaiting... " + a);
                     TimeUnit.SECONDS.sleep(1);
                 } else {
                     break;
@@ -484,10 +483,10 @@ public class PluginTest {
 
         clientHandler.handleMessage("/info", player);
 
-        clientHandler.handleMessage("/warp count 192.168.35.100", player);
+        clientHandler.handleMessage("/warp count 127.0.0.1", player);
         assertEquals(1, pluginData.warpcounts.size);
 
-        clientHandler.handleMessage("/warp zone 192.168.35.100 20 true", player);
+        clientHandler.handleMessage("/warp zone 127.0.0.1 20 true", player);
         assertEquals(1, pluginData.warpzones.size);
         sleep(4000);
 
@@ -511,10 +510,10 @@ public class PluginTest {
 
         clientHandler.handleMessage("/r " + dummy1.name + " Hi!", player);
 
-        clientHandler.handleMessage("/reset count 192.168.35.100", player);
+        clientHandler.handleMessage("/reset count 127.0.0.1", player);
         assertEquals(0, pluginData.warpcounts.size);
 
-        clientHandler.handleMessage("/reset zone 192.168.35.100", player);
+        clientHandler.handleMessage("/reset zone 127.0.0.1", player);
         assertEquals(0, pluginData.warpzones.size);
 
         clientHandler.handleMessage("/reset total", player);
@@ -696,6 +695,9 @@ public class PluginTest {
         Call.onConstructFinish(Vars.world.tile(5, 5), Blocks.copperWall, player.id, (byte) 0, Team.sharded, false);
         Events.fire(new BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false));
 
+        Call.onConstructFinish(Vars.world.tile(78, 78), Blocks.message, player.id, (byte) 0, Team.sharded, false);
+        Events.fire(new BlockBuildEndEvent(world.tile(r.nextInt(78), r.nextInt(78)), player, Team.sharded, false));
+
         player.buildQueue().clear();
         player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5));
         Call.onDeconstructFinish(Vars.world.tile(5, 5), Blocks.air, player.id);
@@ -713,11 +715,6 @@ public class PluginTest {
         Events.fire(new PlayerIpUnbanEvent("127.0.0.3"));
 
         Events.fire(new ServerLoadEvent());
-
-        for (int a = 0; a < 600; a++) {
-            Events.fire(Trigger.update);
-            TimeUnit.MILLISECONDS.sleep(16);
-        }
     }
 
     @Test
@@ -731,21 +728,23 @@ public class PluginTest {
         //Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
         //Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
 
-        try {
-            config.discordToken(new String(Files.readAllBytes(Paths.get("./token.txt"))));
-            discord.start();
+        if (testVars.discordTest) {
+            try {
+                config.discordToken(new String(Files.readAllBytes(Paths.get("./token.txt"))));
+                discord.start();
 
-            config.loginEnable(true);
-            config.passwordMethod("discord");
-            Player p = createNewPlayer(false);
-            CommandHandler buffer = new CommandHandler("/");
-            main.registerClientCommands(buffer);
-            buffer.handleMessage("/register", p);
+                config.loginEnable(true);
+                config.passwordMethod("discord");
+                Player p = createNewPlayer(false);
+                CommandHandler buffer = new CommandHandler("/");
+                main.registerClientCommands(buffer);
+                buffer.handleMessage("/register", p);
 
-            System.out.println("PIN: " + discord.getPins().get(p.name));
-            sleep(20000);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+                System.out.println("PIN: " + discord.getPins().get(p.name));
+                sleep(20000);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
