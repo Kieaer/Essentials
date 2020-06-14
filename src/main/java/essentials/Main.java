@@ -701,7 +701,7 @@ public class Main extends Plugin {
                 }
 
                 String[] parameters;
-                if (arg.length > 2) {
+                if (arg.length == 3) {
                     parameters = arg[2].split(" ");
                 } else {
                     parameters = new String[]{};
@@ -1218,22 +1218,32 @@ public class Main extends Plugin {
                 tool.sendMessageAll("suicide", player.name);
             }
         });
-        handler.<Player>register("team", "[Team...]", "Change team (PvP only)", (arg, player) -> {
+        handler.<Player>register("team", "<team_name>", "Change team", (arg, player) -> {
             if (!perm.check(player, "team")) return;
             PlayerData playerData = playerDB.get(player.uuid);
-            if (state.rules.pvp) {
-                int i = player.getTeam().id + 1;
-                while (i != player.getTeam().id) {
-                    if (i >= Team.all().length) i = 0;
-                    if (!state.teams.get(Team.all()[i]).cores.isEmpty()) {
-                        player.setTeam(Team.all()[i]);
-                        break;
-                    }
-                    i++;
-                }
-                Call.onPlayerDeath(player);
-            } else {
-                player.sendMessage(new Bundle(playerData.locale()).prefix("command.only-pvp"));
+
+            switch (arg[0]) {
+                case "derelict":
+                    player.setTeam(Team.derelict);
+                    break;
+                case "sharded":
+                    player.setTeam(Team.sharded);
+                    break;
+                case "crux":
+                    player.setTeam(Team.crux);
+                    break;
+                case "green":
+                    player.setTeam(Team.green);
+                    break;
+                case "purple":
+                    player.setTeam(Team.purple);
+                    break;
+                case "blue":
+                    player.setTeam(Team.blue);
+                    break;
+                default:
+                    player.sendMessage(new Bundle(playerData.locale()).prefix("command.team"));
+                    break;
             }
         });
         handler.<Player>register("tempban", "<player> <time> <reason>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
