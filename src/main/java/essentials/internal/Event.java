@@ -18,7 +18,6 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.net.Packets;
-import mindustry.world.blocks.logic.MessageBlock;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -494,7 +493,7 @@ public class Event {
 
                 // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                 if (e.tile.block() == Blocks.message) {
-                    pluginData.messagemonitor.add(new PluginData.messagemonitor((MessageBlock.MessageBlockEntity) e.tile.entity));
+                    pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
                 }
 
                 // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.

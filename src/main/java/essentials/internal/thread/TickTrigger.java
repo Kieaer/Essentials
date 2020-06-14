@@ -2,6 +2,7 @@ package essentials.internal.thread;
 
 import arc.Core;
 import arc.Events;
+import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
 import arc.util.Strings;
 import essentials.core.player.PlayerData;
@@ -31,10 +32,39 @@ import static mindustry.Vars.*;
 import static mindustry.core.NetClient.onSetRules;
 
 public class TickTrigger {
+    private final ArrayMap<Item, Integer> ores = new ArrayMap<>();
+
     public TickTrigger() {
+        Events.on(EventType.ServerLoadEvent.class, () -> {
+            for (Item item : content.items()) {
+                if (item.type == ItemType.material) {
+                    ores.put(item, 0);
+                }
+            }
+        });
+
         Events.on(EventType.Trigger.update, new Runnable() {
             int tick = 0;
             final ObjectMap<String, Integer> resources = new ObjectMap<>();
+
+            public String writeOreStatus(Item item, int orignal) {
+                int val;
+                String color;
+                if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                    val = orignal - ores.get(item);
+                    if (val > 0) {
+                        color = "[green]+";
+                    } else if (val < 0) {
+                        color = "[red]-";
+                    } else {
+                        color = "[yellow]";
+                    }
+                    ores.put(item, orignal);
+                    return "[]" + item.name + ": " + color + val + "/s\n";
+                }
+
+                return null;
+            }
 
             @Override
             public void run() {
@@ -44,10 +74,12 @@ public class TickTrigger {
                     tick = 0;
                 }
 
-                if (config.border()) {
-                    for (Player p : playerGroup.all()) {
-                        if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
-                            Call.onPlayerDeath(p);
+                if (state.is(GameState.State.playing)) {
+                    if (config.border()) {
+                        for (Player p : playerGroup.all()) {
+                            if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
+                                Call.onPlayerDeath(p);
+                        }
                     }
                 }
 
@@ -163,42 +195,35 @@ public class TickTrigger {
                         }
 
                         // 메세지 블럭 감시
-                        for (int a = 0; a < pluginData.messagemonitor.size; a++) {
+                        for (PluginData.messagemonitor data : pluginData.messagemonitor) {
                             String msg;
                             MessageBlock.MessageBlockEntity entity;
                             try {
-                                entity = pluginData.messagemonitor.get(a).entity;
+                                entity = (MessageBlock.MessageBlockEntity) data.tile.entity;
                                 msg = entity.message;
                             } catch (NullPointerException e) {
-                                pluginData.messagemonitor.remove(a);
+                                pluginData.messagemonitor.remove(data);
                                 return;
                             }
-                            System.out.println("Message monitoring");
+                            System.out.println("Message monitoring - " + msg);
 
                             if (msg.equals("powerblock")) {
-                                Tile target;
-
-                                if (entity.tile.getNearby(0).entity != null) {
-                                    target = entity.tile.getNearby(0);
-                                } else if (entity.tile.getNearby(1).entity != null) {
-                                    target = entity.tile.getNearby(1);
-                                } else if (entity.tile.getNearby(2).entity != null) {
-                                    target = entity.tile.getNearby(2);
-                                } else if (entity.tile.getNearby(3).entity != null) {
-                                    target = entity.tile.getNearby(3);
-                                } else {
-                                    return;
+                                for (int rot = 0; rot < 4; rot++) {
+                                    if (entity.tile.link().getNearby(rot).entity != null) {
+                                        pluginData.powerblock.add(new PluginData.powerblock(entity.tile, entity.tile.getNearby(rot).link(), rot));
+                                        Log.info("looping");
+                                        break;
+                                    }
                                 }
-                                pluginData.powerblock.add(new PluginData.powerblock(entity.tile, target));
-                                pluginData.messagemonitor.remove(a);
+                                pluginData.messagemonitor.remove(data);
                                 break;
                             } else if (msg.contains("warp")) {
-                                pluginData.messagewarp.add(new PluginData.messagewarp(pluginData.messagemonitor.get(a).entity.tile, msg));
-                                pluginData.messagemonitor.remove(a);
+                                pluginData.messagewarp.add(new PluginData.messagewarp(data.tile, msg));
+                                pluginData.messagemonitor.remove(data);
                                 break;
                             } else if (msg.equals("scancore")) {
-                                pluginData.scancore.add(pluginData.messagemonitor.get(a).entity.tile);
-                                pluginData.messagemonitor.remove(a);
+                                pluginData.scancore.add(data.tile);
+                                pluginData.messagemonitor.remove(data);
                                 break;
                             }
                         }
@@ -223,6 +248,69 @@ public class TickTrigger {
                                     }
                                 }
                             }
+                        }
+
+                        // 메세지 블럭에 있는 자원 소모량 감시
+                        StringBuilder items = new StringBuilder();
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                int amount = state.teams.get(Team.sharded).cores.first().items.get(item);
+                                if (state.teams.get(Team.sharded).cores.first().items.has(item))
+                                    items.append(writeOreStatus(item, amount));
+                            }
+                        }
+
+                        for (Tile data : pluginData.scancore) {
+                            if (data.block() != Blocks.message) {
+                                data.remove();
+                                break;
+                            }
+                            Call.setMessageBlockText(null, data, items.toString());
+                        }
+
+                        // 메세지 블럭에 있는 근처 전력 계산
+                        for (PluginData.powerblock data : pluginData.powerblock) {
+                            if (data.messageblock.block() != Blocks.message) {
+                                pluginData.powerblock.remove(data);
+                                return;
+                            }
+
+                            String arrow;
+                            switch (data.rotate) {
+                                case 0:
+                                    arrow = "⇨";
+                                    break;
+                                case 1:
+                                    arrow = "⇧";
+                                    break;
+                                case 2:
+                                    arrow = "⇦";
+                                    break;
+                                case 3:
+                                    arrow = "⇩";
+                                    break;
+                                default:
+                                    arrow = "null";
+                            }
+
+                            float current;
+                            float product;
+                            float using;
+                            try {
+                                current = data.tile.link().entity.power.graph.getPowerBalance() * 60;
+                                using = data.tile.link().entity.power.graph.getPowerNeeded() * 60;
+                                product = data.tile.link().entity.power.graph.getPowerProduced() * 60;
+                            } catch (Exception e) {
+                                pluginData.powerblock.remove(data);
+                                Call.setMessageBlockText(null, data.messageblock, arrow + " Tile doesn't have powers!");
+                                return;
+                            }
+
+                            String text = "[accent]" + arrow + "[] Power status [accent]" + arrow + "[]\n" +
+                                    "Current: [sky]" + Math.round(current) + "/s[]\n" +
+                                    "Using: [red]" + Math.round(using) + "[]/s\n" +
+                                    "Production: [green]" + Math.round(product) + "/s[]";
+                            Call.setMessageBlockText(null, data.messageblock, text);
                         }
                     }
                 }

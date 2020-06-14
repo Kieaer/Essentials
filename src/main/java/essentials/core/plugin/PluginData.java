@@ -4,7 +4,6 @@ import arc.struct.Array;
 import arc.util.serialization.Json;
 import essentials.internal.Log;
 import mindustry.world.Tile;
-import mindustry.world.blocks.logic.MessageBlock;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -175,18 +174,20 @@ public class PluginData {
     public static class powerblock {
         public final Tile messageblock;
         public final Tile tile;
+        public final int rotate;
 
-        public powerblock(Tile messageblock, Tile tile) {
+        public powerblock(Tile messageblock, Tile tile, int rotate) {
             this.messageblock = messageblock;
             this.tile = tile;
+            this.rotate = rotate;
         }
     }
 
     public static class messagemonitor {
-        public final MessageBlock.MessageBlockEntity entity;
+        public final Tile tile;
 
-        public messagemonitor(MessageBlock.MessageBlockEntity entity) {
-            this.entity = entity;
+        public messagemonitor(Tile tile) {
+            this.tile = tile;
         }
     }
 
