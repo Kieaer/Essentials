@@ -21,6 +21,7 @@ import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.Mechs;
 import mindustry.core.FileTree;
+import mindustry.core.GameState;
 import mindustry.core.Logic;
 import mindustry.core.NetServer;
 import mindustry.entities.traits.BuilderTrait;
@@ -150,7 +151,7 @@ public class PluginTest {
 
         world.loadMap(testMap[0]);
 
-        //state.set(GameState.State.playing);
+        state.set(GameState.State.playing);
 
         new Thread(() -> {
             while (true) {
@@ -188,8 +189,6 @@ public class PluginTest {
         main.registerServerCommands(serverHandler);
         main.registerClientCommands(clientHandler);
         player = createNewPlayer(true);
-
-
     }
 
     @Test
@@ -463,6 +462,7 @@ public class PluginTest {
         clientHandler.handleMessage("/killall", player);
 
         try {
+            player.isAdmin = true;
             clientHandler.handleMessage("/event host testroom maze survival", player);
             for (int a = 0; a < 30; a++) {
                 if (pluginData.eventservers.size == 0) {
@@ -483,10 +483,10 @@ public class PluginTest {
 
         clientHandler.handleMessage("/info", player);
 
-        clientHandler.handleMessage("/warp count 127.0.0.1", player);
+        clientHandler.handleMessage("/warp count mindustry.indielm.com", player);
         assertEquals(1, pluginData.warpcounts.size);
 
-        clientHandler.handleMessage("/warp zone 127.0.0.1 20 true", player);
+        clientHandler.handleMessage("/warp zone mindustry.indielm.com 20 true", player);
         assertEquals(1, pluginData.warpzones.size);
         sleep(4000);
 
@@ -510,10 +510,10 @@ public class PluginTest {
 
         clientHandler.handleMessage("/r " + dummy1.name + " Hi!", player);
 
-        clientHandler.handleMessage("/reset count 127.0.0.1", player);
+        clientHandler.handleMessage("/reset count mindustry.indielm.com", player);
         assertEquals(0, pluginData.warpcounts.size);
 
-        clientHandler.handleMessage("/reset zone 127.0.0.1", player);
+        clientHandler.handleMessage("/reset zone mindustry.indielm.com", player);
         assertEquals(0, pluginData.warpzones.size);
 
         clientHandler.handleMessage("/reset total", player);
@@ -696,7 +696,11 @@ public class PluginTest {
         Events.fire(new BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false));
 
         Call.onConstructFinish(Vars.world.tile(78, 78), Blocks.message, player.id, (byte) 0, Team.sharded, false);
-        Events.fire(new BlockBuildEndEvent(world.tile(r.nextInt(78), r.nextInt(78)), player, Team.sharded, false));
+        Events.fire(new BlockBuildEndEvent(world.tile(78, 78), player, Team.sharded, false));
+
+        Call.setMessageBlockText(player, Vars.world.tile(78, 78), "warp mindustry.indielm.com");
+
+        sleep(4000);
 
         player.buildQueue().clear();
         player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5));

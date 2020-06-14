@@ -19,6 +19,8 @@ import static essentials.Main.tool;
 import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
+    public double ping = 0.000;
+
     @Override
     public void run() {
         Thread.currentThread().setName("Essential thread");
@@ -34,14 +36,17 @@ public class Threads implements Runnable {
                         Call.setMessageBlockText(null, pluginData.messagewarp.get(a).tile, "[green]Working...");
 
                         String[] arr = pluginData.messagewarp.get(a).message.split(" ");
-                        String ip = arr[0];
+                        String ip = arr[1];
                         int port = 6567;
-                        if (arr.length == 2) {
-                            port = Integer.parseInt(arr[1]);
+                        if (ip.contains(":")) {
+                            port = Integer.parseInt(ip.split(":")[1]);
                         }
 
                         int fa = a;
-                        new PingHost(ip, port, result -> Call.setMessageBlockText(null, pluginData.messagewarp.get(fa).tile, result != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline"));
+                        new PingHost(ip, port, result -> {
+                            ping = ping + (result.name != null ? Double.parseDouble("0." + result.ping) : 1.000);
+                            Call.setMessageBlockText(null, pluginData.messagewarp.get(fa).tile, result.name != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline");
+                        });
                     }
                 }
 
@@ -52,6 +57,8 @@ public class Threads implements Runnable {
 
                     new PingHost(value.ip, value.port, result -> {
                         if (result.name != null) {
+                            ping = ping + Double.parseDouble("0." + result.ping);
+
                             String str = String.valueOf(result.players);
                             int[] digits = new int[str.length()];
                             for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
@@ -70,12 +77,13 @@ public class Threads implements Runnable {
                             // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
                             pluginData.warpcounts.set(i2, new PluginData.warpcount(world.getMap().name(), value.getTile(), value.ip, value.port, result.players, digits.length));
                         } else {
+                            ping = ping + 1.000;
                             tool.setTileText(value.getTile(), Blocks.copperWall, "no");
                         }
                     });
                 }
 
-                final double[] ping = {0.000};
+
                 Array<String> memory = new Array<>();
                 for (int a = 0; a < pluginData.warpblocks.size; a++) {
                     PluginData.warpblock value = pluginData.warpblocks.get(a);
@@ -109,10 +117,10 @@ public class Threads implements Runnable {
 
                             float y = tile.drawy() + (isDup ? margin - 8 : margin);
                             if (result.name != null) {
-                                ping[0] = ping[0] + Double.parseDouble("0." + result.ping);
+                                ping = ping + Double.parseDouble("0." + result.ping);
                                 memory.add("[yellow]" + result.players + "[] Players///" + x + "///" + y);
                             } else {
-                                ping[0] = ping[0] + 1.000;
+                                ping = ping + 1.000;
                                 memory.add("[scarlet]Offline///" + x + "///" + y);
                             }
                             memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin));
@@ -121,7 +129,7 @@ public class Threads implements Runnable {
                 }
                 for (String m : memory) {
                     String[] a = m.split("///");
-                    Call.onLabel(a[0], ((float) ping[0]) + 3f, Float.parseFloat(a[1]), Float.parseFloat(a[2]));
+                    Call.onLabel(a[0], ((float) ping) + 3f, Float.parseFloat(a[1]), Float.parseFloat(a[2]));
                 }
 
                 TimeUnit.SECONDS.sleep(3);
