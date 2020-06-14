@@ -29,6 +29,23 @@ public class WarpBorder implements Runnable {
         start();
     }
 
+    public void interrupt() {
+        for (Thread t : thread) {
+            t.interrupt();
+        }
+    }
+
+    public boolean isInterrupted() {
+        boolean interrupt = true;
+        for (Thread t : thread) {
+            if (!t.isInterrupted()) {
+                interrupt = false;
+                break;
+            }
+        }
+        return interrupt;
+    }
+
     public void start() {
         for (PluginData.warpzone data : pluginData.warpzones) {
             Thread t = new Thread(() -> {

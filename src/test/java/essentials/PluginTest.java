@@ -755,6 +755,6 @@ public class PluginTest {
     @AfterClass
     public static void shutdown() {
         Core.app.getListeners().get(1).dispose();
-        assertTrue(out.getLogWithNormalizedLineSeparator().contains(config.bundle.get("thread-disabled")));
+        assertTrue(out.getLogWithNormalizedLineSeparator().contains(config.bundle.get("thread-disable-waiting")));
     }
 }

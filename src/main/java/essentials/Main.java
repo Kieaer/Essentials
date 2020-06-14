@@ -182,6 +182,7 @@ public class Main extends Plugin {
                     discord.shutdownNow(); // Discord 서비스 종료
                     playerDB.saveAll(); // 플레이어 데이터 저장
                     pluginData.saveAll(); // 플러그인 데이터 저장
+                    warpBorder.interrupt(); // 서버간 이동 영역표시 종료
                     mainThread.shutdownNow(); // 스레드 종료
                     // config.singleService.shutdownNow(); // 로그 스레드 종료
                     timer.cancel(); // 일정 시간마다 실행되는 스레드 종료
@@ -209,8 +210,10 @@ public class Main extends Plugin {
 
                     // 모든 이벤트 서버 종료
                     for (Process value : eventServer.servers) value.destroy();
-                    if ((server.serverSocket == null || server.serverSocket.isClosed()) || (client.socket == null || client.socket.isClosed())) {
-                        Log.info("thread-disabled");
+                    if ((server.serverSocket == null || server.serverSocket.isClosed()) ||
+                            (client.socket == null || client.socket.isClosed()) ||
+                            warpBorder.isInterrupted() || !database.conn.isClosed()) {
+                        Log.info("thread-disable-waiting");
                     } else {
                         Log.warn("thread-not-dead");
                     }

@@ -205,13 +205,11 @@ public class TickTrigger {
                                 pluginData.messagemonitor.remove(data);
                                 return;
                             }
-                            System.out.println("Message monitoring - " + msg);
 
                             if (msg.equals("powerblock")) {
                                 for (int rot = 0; rot < 4; rot++) {
                                     if (entity.tile.link().getNearby(rot).entity != null) {
                                         pluginData.powerblock.add(new PluginData.powerblock(entity.tile, entity.tile.getNearby(rot).link(), rot));
-                                        Log.info("looping");
                                         break;
                                     }
                                 }

@@ -74,7 +74,6 @@ public class Discord extends ListenerAdapter {
             switch (arr[0]) {
                 case "!signup":
                     if (arr.length == 3) {
-                        System.out.println(pins.size);
                         for (ObjectMap.Entry<String, Integer> data : pins.entries()) {
                             String name = data.key;
                             if (data.value == Integer.parseInt(arr[1])) {
