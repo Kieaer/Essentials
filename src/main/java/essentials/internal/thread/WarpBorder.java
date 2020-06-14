@@ -32,7 +32,7 @@ public class WarpBorder implements Runnable {
     public void start() {
         for (PluginData.warpzone data : pluginData.warpzones) {
             Thread t = new Thread(() -> {
-                while (true) {
+                while (!Thread.currentThread().isInterrupted()) {
                     String ip = data.ip;
                     if (state.is(GameState.State.playing)) {
                         new PingHost(ip, data.port, result -> {
