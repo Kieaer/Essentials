@@ -1,6 +1,9 @@
 package essentials.internal.thread;
 
+import arc.Core;
 import arc.struct.Array;
+import arc.struct.ArrayMap;
+import arc.struct.ObjectMap;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Bundle;
@@ -20,6 +23,7 @@ import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
     public double ping = 0.000;
+    private final ArrayMap<String, Integer> servers = new ArrayMap<>();
 
     @Override
     public void run() {
@@ -43,9 +47,11 @@ public class Threads implements Runnable {
                         }
 
                         int fa = a;
+                        int finalPort = port;
                         new PingHost(ip, port, result -> {
                             ping = ping + (result.name != null ? Double.parseDouble("0." + result.ping) : 1.000);
                             Call.setMessageBlockText(null, pluginData.messagewarp.get(fa).tile, result.name != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline");
+                            addPlayers(ip, finalPort, result.players);
                         });
                     }
                 }
@@ -76,6 +82,7 @@ public class Threads implements Runnable {
                             tool.setTileText(tile, Blocks.copperWall, str);
                             // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
                             pluginData.warpcounts.set(i2, new PluginData.warpcount(world.getMap().name(), value.getTile(), value.ip, value.port, result.players, digits.length));
+                            addPlayers(value.ip, value.port, result.players);
                         } else {
                             ping = ping + 1.000;
                             tool.setTileText(value.getTile(), Blocks.copperWall, "no");
@@ -124,12 +131,17 @@ public class Threads implements Runnable {
                                 memory.add("[scarlet]Offline///" + x + "///" + y);
                             }
                             memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin));
+                            addPlayers(value.ip, value.port, result.players);
                         });
                     }
                 }
                 for (String m : memory) {
                     String[] a = m.split("///");
                     Call.onLabel(a[0], ((float) ping) + 3f, Float.parseFloat(a[1]), Float.parseFloat(a[2]));
+                }
+
+                if (Core.settings.getBool("isLobby")) {
+                    Core.settings.putSave("totalPlayers", getTotalPlayers());
                 }
 
                 TimeUnit.SECONDS.sleep(3);
@@ -141,5 +153,20 @@ public class Threads implements Runnable {
                 new CrashReport(e);
             }
         }
+    }
+
+    private void addPlayers(String ip, int port, int players) {
+        String mip = ip + ":" + port;
+        if (!servers.containsKey(mip)) {
+            servers.put(mip, players);
+        }
+    }
+
+    private int getTotalPlayers() {
+        int total = 0;
+        for (ObjectMap.Entry<String, Integer> v : servers) {
+            total = total + v.value;
+        }
+        return total;
     }
 }

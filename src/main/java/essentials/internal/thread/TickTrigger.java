@@ -127,20 +127,6 @@ public class TickTrigger {
                             vars.setPvPPeace(false);
                         }
 
-                    /*if(config.isDebug()code.contains("jumptotal_count")){
-                        int result = 0;
-                        for (PluginData.jumpcount value : data.jumpcount) result = result + value.players;
-                        String name = "[#FFA]Lobby server [green]|[white] Anti griefing\n" +
-                                "[#F32]Using Discord Authentication";
-                        String desc = "[white]"+config.getDiscordlink()+"\n" +
-                                "[green]Total [white]"+result+" Players\n" +
-                                "[sky]POWERED BY Essentials 9.0.0";
-                        Administration.Config c = Administration.Config.desc;
-                        Administration.Config s = Administration.Config.name;
-                        c.set(desc);
-                        s.set(name);
-                    }*/
-
                         // 모든 클라이언트 서버에 대한 인원 총합 카운트
                         for (int a = 0; a < pluginData.warptotals.size; a++) {
                             int result = 0;

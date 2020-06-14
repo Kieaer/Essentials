@@ -135,6 +135,14 @@ public class Main extends Plugin {
             throw new PluginException(e);
         }
 
+        // 서버 로비기능 설정
+        if (!Core.settings.has("isLobby")) {
+            Core.settings.putSave("isLobby", false);
+        } else {
+            Log.info("system.lobby");
+            Log.info("Lobby server can only be built by admins!"); //TODO 언어별 추가
+        }
+
         // 설정 불러오기
         config.init();
         Log.info("config.language", config.language().getDisplayLanguage());
@@ -232,11 +240,15 @@ public class Main extends Plugin {
         netServer.admins.addChatFilter((player, text) -> null);
 
         // 비 로그인 유저 통제
-        netServer.admins.addActionFilter(action -> {
-            if (action.player == null) return true;
+        netServer.admins.addActionFilter(a -> {
+            if (a.player == null) return true;
 
-            PlayerData playerData = playerDB.get(action.player.uuid);
-            return playerData.login();
+            if (Core.settings.getBool("isLobby")) {
+                return a.player.isAdmin;
+            } else {
+                PlayerData playerData = playerDB.get(a.player.uuid);
+                return playerData.login();
+            }
         });
     }
 
