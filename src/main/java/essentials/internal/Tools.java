@@ -101,8 +101,8 @@ public class Tools {
         } else {
             String lc = result.get("languages").asString().split(",")[0];
 
-            if (lc.split("-").length == 2) {
-                String[] array = lc.split("-");
+            if (lc.split("_").length == 2) {
+                String[] array = lc.split("_");
                 loc = new Locale(array[0], array[1]);
 
                 if (array[0].equals("zh")) {

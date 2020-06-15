@@ -109,8 +109,8 @@ public class Config {
         version = settings.getInt("version", vars.configVersion());
 
         String lc = settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")).split(",")[0];
-        if (lc.split("-").length == 2) {
-            String[] array = lc.split("-");
+        if (lc.split("_").length == 2) {
+            String[] array = lc.split("_");
             language = new Locale(array[0], array[1]);
         } else {
             language = new Locale(System.getProperty("user.language") + "_" + System.getProperty("user.country"));
@@ -222,7 +222,7 @@ public class Config {
 
         // 플러그인 설정
         settings.add("version", version, bundle.get("config.version"));
-        settings.add("language", language.toLanguageTag(), bundle.get("config.language.description"));
+        settings.add("language", language.toString(), bundle.get("config.language.description"));
         settings.add("logging", logging, bundle.get("config.feature.logging"));
         settings.add("update", update, bundle.get("config.update"));
         settings.add("debug", debug, bundle.get("config.debug"));
