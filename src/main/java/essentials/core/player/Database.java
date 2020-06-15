@@ -70,12 +70,9 @@ public class Database {
     }
 
     public void connect(boolean isServer) throws SQLException {
+        org.h2.Driver.load();
+
         if (isServer) {
-            try {
-                Class.forName("org.h2.Driver");
-            } catch (Exception ignored) {
-            }
-            org.h2.Driver.load();
             server = Server.createTcpServer("-tcpPort", "9079", "-tcpAllowOthers", "-tcpDaemon", "-baseDir", "./" + root.child("data").path(), "-ifNotExists");
             server.start();
             conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player", "", "");
