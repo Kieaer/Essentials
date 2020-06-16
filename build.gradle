@@ -7,8 +7,8 @@ plugins {
 
 version '8.0'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_14
+targetCompatibility = JavaVersion.VERSION_14
 
 repositories {
     mavenCentral()
@@ -17,8 +17,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:v104.6'
-    compileOnly 'com.github.Anuken.Mindustry:core:v104.6'
+    compileOnly 'com.github.Anuken.Arc:arc-core:-SNAPSHOT'
+    compileOnly 'com.github.Anuken.Mindustry:core:-SNAPSHOT'
     implementation 'com.github.PersonTheCat:hjson-java:master'
     implementation 'de.svenkubiak:jBCrypt:0.4.1'
     implementation('net.dv8tion:JDA:4.1.1_141') {
@@ -29,9 +29,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-nop:1.7.30'
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
 
-    testCompile 'com.github.Anuken.Arc:arc-core:v104.6'
-    testCompile 'com.github.Anuken.Mindustry:core:v104.6'
-    testCompile 'com.github.Anuken.Mindustry:server:v104.6'
+    testCompile 'com.github.Anuken.Mindustry:server:-SNAPSHOT'
     testCompile group: 'junit', name: 'junit', version: '4.13'
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testCompile group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
