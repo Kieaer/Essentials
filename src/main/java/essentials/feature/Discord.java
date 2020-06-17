@@ -5,7 +5,8 @@ import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.entities.type.Player;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
@@ -26,7 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Main.*;
-import static mindustry.Vars.playerGroup;
 
 public class Discord extends ListenerAdapter {
     private static final ObjectMap<String, Integer> pins = new ObjectMap<>();
@@ -47,11 +47,11 @@ public class Discord extends ListenerAdapter {
         }
     }
 
-    public void queue(Player player) {
-        PlayerData playerData = playerDB.get(player.uuid);
+    public void queue(Playerc player) {
+        PlayerData playerData = playerDB.get(player.uuid());
         Bundle bundle = new Bundle(playerData.error() ? config.locale : playerData.locale());
         int pin = new Random().nextInt(9999);
-        pins.put(player.name, pin);
+        pins.put(player.name(), pin);
         player.sendMessage(bundle.prefix(true, "discord-pin-queue", pin));
     }
 
@@ -87,14 +87,14 @@ public class Discord extends ListenerAdapter {
                                         pstmt.setString(1, name);
                                         rs = pstmt.executeQuery();
                                         if (!rs.next()) {
-                                            Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(name));
+                                            Playerc player = Groups.player.find(p -> p.name().equalsIgnoreCase(name));
                                             if (player != null) {
                                                 Locale lc = tool.getGeo(player);
-                                                boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", e.getAuthor().getIdLong(), name, pw);
+                                                boolean register = playerDB.register(player.name(), player.uuid(), lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", e.getAuthor().getIdLong(), name, pw);
                                                 if (register) {
                                                     playerCore.load(player);
 
-                                                    PlayerData playerData = playerDB.get(player.uuid);
+                                                    PlayerData playerData = playerDB.get(player.uuid());
                                                     player.sendMessage(new Bundle(playerData.locale()).prefix("register-success"));
                                                     send(new Bundle(playerData.locale()).get("success"));
                                                     break;

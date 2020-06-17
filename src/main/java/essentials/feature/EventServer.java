@@ -2,10 +2,11 @@ package essentials.feature;
 
 import arc.ApplicationListener;
 import arc.Core;
-import arc.struct.Array;
+import arc.struct.Seq;
 import essentials.external.PingHost;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import essentials.internal.Tools;
 import mindustry.game.Gamemode;
 import org.hjson.JsonObject;
 
@@ -19,14 +20,14 @@ import static essentials.Main.*;
 import static org.hjson.JsonValue.readJSON;
 
 public class EventServer {
-    public Array<Process> servers = new Array<>();
+    public Seq<Process> servers = new Seq<>();
 
     public boolean create(String roomname, String map, String gamemode, int port) {
         try {
             JsonObject json = readJSON(tool.getWebContent("https://api.github.com/repos/anuken/Mindustry/releases/latest")).asObject();
             String url = json.get("assets").asArray().get(0).asObject().get("browser_download_url").asString();
             root.child("temp").child(roomname).mkdirs();
-            tool.URLDownload(new URL(url), root.child("temp/" + roomname + "/server.jar").file());
+            Tools.URLDownload(new URL(url), root.child("temp/" + roomname + "/server.jar").file());
             EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
             service.start();
             Thread.sleep(5000);

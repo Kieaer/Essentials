@@ -104,7 +104,7 @@ public class PlayerDB {
         sql.append(" WHERE uuid=?");
 
         try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
-            js.forEach(new Consumer<JsonObject.Member>() {
+            js.forEach(new Consumer<>() {
                 int index = 1;
 
                 @Override
@@ -162,7 +162,7 @@ public class PlayerDB {
         sql.append(")");
 
         try (PreparedStatement pstmt = database.conn.prepareStatement(sql.toString())) {
-            js.forEach(new Consumer<JsonObject.Member>() {
+            js.forEach(new Consumer<>() {
                 int index = 1;
 
                 @Override

@@ -1,7 +1,7 @@
 package essentials.internal.thread;
 
 import arc.graphics.Color;
-import arc.struct.Array;
+import arc.struct.Seq;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Log;
@@ -20,7 +20,7 @@ import static mindustry.Vars.world;
 
 public class WarpBorder implements Runnable {
     public int length = 0;
-    public Array<Thread> thread = new Array<>();
+    public Seq<Thread> thread = new Seq<>();
 
     @Override
     public void run() {

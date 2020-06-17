@@ -147,7 +147,7 @@ public class PluginTest {
             e.printStackTrace();
         }
 
-        Vars.playerGroup = entities.add(Player.class).enableMapping();
+        Vars.Groups.player = entities.add(Player.class).enableMapping();
 
         world.loadMap(testMap[0]);
 
@@ -168,10 +168,10 @@ public class PluginTest {
                     tileGroup.update();
                     fireGroup.update();
                     collisions.collideGroups(bulletGroup, unitGroup);
-                    collisions.collideGroups(bulletGroup, playerGroup);
+                    collisions.collideGroups(bulletGroup, Groups.player);
                     unitGroup.updateEvents();
                     collisions.updatePhysics(unitGroup);
-                    playerGroup.update();
+                    Groups.player.update();
                     effectGroup.update();
                     sleep(16);
                 } catch (InterruptedException ignored) {
@@ -204,10 +204,10 @@ public class PluginTest {
 
     @Test
     public void test02_register() {
-        assertFalse(playerDB.get(player.uuid).error());
+        assertFalse(playerDB.get(player.uuid()).error());
 
         JsonObject json = JsonObject.readJSON(root.child("permission_user.hjson").readString()).asObject();
-        assertNotNull(json.get(player.uuid).asObject());
+        assertNotNull(json.get(player.uuid()).asObject());
     }
 
     @Test
@@ -303,7 +303,7 @@ public class PluginTest {
 
             client.request(Client.Request.unbanip, null, "127.0.0.1");
 
-            client.request(Client.Request.unbanid, null, player.uuid);
+            client.request(Client.Request.unbanid, null, player.uuid());
 
             // Ban check test
             try (Socket socket = new Socket("127.0.0.1", 25000)) {
@@ -321,7 +321,7 @@ public class PluginTest {
 
                     JsonObject json = new JsonObject();
                     json.add("type", "checkban");
-                    json.add("target_uuid", player.uuid);
+                    json.add("target_uuid", player.uuid());
                     json.add("target_ip", player.con.address);
 
                     String en = tool.encrypt(json.toString(), skey);
@@ -347,7 +347,7 @@ public class PluginTest {
                     if (types[a].equals("GET")) {
                         con.setRequestMethod("GET");
                     } else {
-                        String rawData = "id=" + player.name + ";pw=" + playerDB.get(player.uuid).accountpw();
+                        String rawData = "id=" + player.name + ";pw=" + playerDB.get(player.uuid()).accountpw();
                         String type = "application/x-www-form-urlencoded";
 
                         con.setDoOutput(true);
@@ -417,44 +417,44 @@ public class PluginTest {
         serverHandler.handleMessage("saveall");
 
         serverHandler.handleMessage("edit " + player.uuid + " lastchat Manually");
-        assertEquals("Manually", playerDB.get(player.uuid).lastchat());
+        assertEquals("Manually", playerDB.get(player.uuid()).lastchat());
 
         root.child("README.md").delete();
         serverHandler.handleMessage("gendocs");
         assertTrue(root.child("README.md").exists());
 
-        serverHandler.handleMessage("admin " + player.name);
-        assertEquals("newadmin", playerDB.get(player.uuid).permission());
+        serverHandler.handleMessage("admin " + player.name());
+        assertEquals("newadmin", playerDB.get(player.uuid()).permission());
 
         serverHandler.handleMessage("bansync");
 
-        serverHandler.handleMessage("info " + player.uuid);
+        serverHandler.handleMessage("info " + player.uuid());
         assertNotEquals("Player not found!\n", out.getLogWithNormalizedLineSeparator());
 
         serverHandler.handleMessage("setperm " + player.name + " owner");
-        assertEquals("owner", playerDB.get(player.uuid).permission());
+        assertEquals("owner", playerDB.get(player.uuid()).permission());
 
         serverHandler.handleMessage("reload");
     }
 
     @Test
     public void test12_clientCommand() throws InterruptedException {
-        playerDB.get(player.uuid).level(50);
+        playerDB.get(player.uuid()).level(50);
 
         clientHandler.handleMessage("/alert", player);
-        assertTrue(playerDB.get(player.uuid).alert());
+        assertTrue(playerDB.get(player.uuid()).alert());
 
         clientHandler.handleMessage("/ch", player);
-        assertTrue(playerDB.get(player.uuid).crosschat());
+        assertTrue(playerDB.get(player.uuid()).crosschat());
 
         clientHandler.handleMessage("/changepw testpw123 testpw123", player);
-        assertNotEquals("none", playerDB.get(player.uuid).accountpw());
+        assertNotEquals("none", playerDB.get(player.uuid()).accountpw());
 
         clientHandler.handleMessage("/chars hobc0283qz ?!", player);
         assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall);
 
         clientHandler.handleMessage("/color", player);
-        assertTrue(playerDB.get(player.uuid).colornick());
+        assertTrue(playerDB.get(player.uuid()).colornick());
 
         clientHandler.handleMessage("/difficulty easy", player);
         assertEquals(state.rules.waveSpacing, Difficulty.easy.waveTime * 60 * 60 * 2, 0.0);
@@ -524,7 +524,7 @@ public class PluginTest {
         clientHandler.handleMessage("/spawn dagger 5 crux", player);
 
         clientHandler.handleMessage("/setperm " + player.name + " newadmin", player);
-        assertEquals("newadmin", playerDB.get(player.uuid).permission());
+        assertEquals("newadmin", playerDB.get(player.uuid()).permission());
         serverHandler.handleMessage("setperm " + player.name + " owner");
 
         player.set(80, 80);
@@ -630,8 +630,8 @@ public class PluginTest {
         clientHandler.handleMessage("/weather enight", player);
         assertEquals(0.85f, state.rules.ambientLight.a, 0.0f);
 
-        assertNotNull(playerGroup.find(p -> p.uuid.equals(dummy3.uuid)));
-        assertEquals("owner", playerDB.get(player.uuid).permission());
+        assertNotNull(Groups.player.find(p -> p.uuid().equals(dummy3.uuid)));
+        assertEquals("owner", playerDB.get(player.uuid()).permission());
         clientHandler.handleMessage("/mute " + dummy3.name, player);
         assertTrue(playerDB.get(dummy3.uuid).mute());
 
@@ -649,7 +649,7 @@ public class PluginTest {
         state.rules.attackMode = true;
         Call.onSetRules(state.rules);
         Events.fire(new GameOverEvent(player.getTeam()));
-        assertEquals(1, playerDB.get(player.uuid).attackclear());
+        assertEquals(1, playerDB.get(player.uuid()).attackclear());
 
         Events.fire(new WorldLoadEvent());
         assertEquals(0L, vars.playtime());
@@ -685,10 +685,10 @@ public class PluginTest {
         tileGroup.update();
         fireGroup.update();
         collisions.collideGroups(bulletGroup, unitGroup);
-        collisions.collideGroups(bulletGroup, playerGroup);
+        collisions.collideGroups(bulletGroup, Groups.player);
         unitGroup.updateEvents();
         collisions.updatePhysics(unitGroup);
-        playerGroup.update();
+        Groups.player.update();
         effectGroup.update();*/
 
         player.addBuildRequest(new BuilderTrait.BuildRequest(5, 5, 0, Blocks.copperWall));

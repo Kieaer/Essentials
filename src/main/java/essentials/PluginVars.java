@@ -1,9 +1,9 @@
 package essentials;
 
 import arc.func.Boolf;
-import arc.struct.Array;
+import arc.struct.Seq;
 import essentials.core.player.PlayerData;
-import mindustry.entities.type.Player;
+import mindustry.gen.Playerc;
 
 import static essentials.Main.tool;
 
@@ -15,8 +15,8 @@ public class PluginVars {
     private String pluginVersion;
     private long uptime = 0L;
     private long playtime = 0L;
-    private Array<PlayerData> playerData = new Array<>();
-    private Array<Player> players = new Array<>();
+    private final Seq<PlayerData> playerData = new Seq<>();
+    private Seq<Playerc> players = new Seq<>();
     private boolean PvPPeace = false;
 
     public int buildVersion() {
@@ -63,7 +63,7 @@ public class PluginVars {
         this.playtime = playtime;
     }
 
-    public Array<PlayerData> playerData() {
+    public Seq<PlayerData> playerData() {
         return playerData;
     }
 
@@ -75,19 +75,19 @@ public class PluginVars {
         playerData.remove(p);
     }
 
-    public Array<Player> players() {
+    public Seq<Playerc> players() {
         return players;
     }
 
-    public void addPlayers(Player player) {
+    public void addPlayers(Playerc player) {
         players.add(player);
     }
 
-    public void removePlayers(Player player) {
+    public void removePlayers(Playerc player) {
         players.remove(player);
     }
 
-    public void players(Array<Player> players) {
+    public void players(Seq<Playerc> players) {
         this.players = players;
     }
 

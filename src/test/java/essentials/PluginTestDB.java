@@ -8,7 +8,6 @@ import mindustry.net.NetConnection;
 
 import static essentials.Main.*;
 import static essentials.PluginTest.r;
-import static mindustry.Vars.playerGroup;
 
 public class PluginTestDB {
     public static String randomString(int length) {
@@ -45,14 +44,14 @@ public class PluginTestDB {
         player.color.set(Color.rgb(r.nextInt(255), r.nextInt(255), r.nextInt(255)));
         player.color.a = r.nextFloat();
         player.add();
-        playerGroup.updateEvents();
+        Groups.player.updateEvents();
 
         if (isFull) {
             playerDB.register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, password.length != 0 ? password[0] : "none");
             playerCore.load(player);
-            //playerDB.load(player.uuid);
+            //playerDB.load(player.uuid());
 
-            perm.create(playerDB.get(player.uuid));
+            perm.create(playerDB.get(player.uuid()));
             perm.saveAll();
         }
 
