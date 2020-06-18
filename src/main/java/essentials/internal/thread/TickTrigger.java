@@ -78,7 +78,7 @@ public class TickTrigger {
                     if (config.border()) {
                         for (Playerc p : Groups.player) {
                             if (p.x() > world.width() * 8 || p.x() < 0 || p.y() > world.height() * 8 || p.y() < 0)
-                                p.dead();
+                                p.unit().kill();
                         }
                     }
                 }
@@ -194,8 +194,8 @@ public class TickTrigger {
 
                             if (msg.equals("powerblock")) {
                                 for (int rot = 0; rot < 4; rot++) {
-                                    if (entity.tile.link().getNearby(rot).entity != null) {
-                                        pluginData.powerblock.add(new PluginData.powerblock(entity.tile, entity.tile.getNearby(rot).link(), rot));
+                                    if (entity.tile.getNearby(rot).entity != null) {
+                                        pluginData.powerblock.add(new PluginData.powerblock(entity.tile, entity.tile.getNearby(rot), rot));
                                         break;
                                     }
                                 }
@@ -249,7 +249,7 @@ public class TickTrigger {
                                 data.remove();
                                 break;
                             }
-                            Call.setMessageBlockText(null, data, items.toString());
+                            data.entity.configureAny(items.toString());
                         }
 
                         // 메세지 블럭에 있는 근처 전력 계산
@@ -271,20 +271,19 @@ public class TickTrigger {
                             float product;
                             float using;
                             try {
-                                current = data.tile.link().entity.power.graph.getPowerBalance() * 60;
-                                using = data.tile.link().entity.power.graph.getPowerNeeded() * 60;
-                                product = data.tile.link().entity.power.graph.getPowerProduced() * 60;
+                                current = data.tile.entity.power().graph.getPowerBalance() * 60;
+                                using = data.tile.entity.power().graph.getPowerNeeded() * 60;
+                                product = data.tile.entity.power().graph.getPowerProduced() * 60;
                             } catch (Exception e) {
                                 pluginData.powerblock.remove(data);
-                                Call.setMessageBlockText(null, data.messageblock, arrow + " Tile doesn't have powers!");
+                                data.tile.entity.configureAny(arrow + " Tile doesn't have powers!");
                                 return;
                             }
 
-                            String text = "[accent]" + arrow + "[] Power status [accent]" + arrow + "[]\n" +
+                            data.tile.entity.configureAny("[accent]" + arrow + "[] Power status [accent]" + arrow + "[]\n" +
                                     "Current: [sky]" + Math.round(current) + "/s[]\n" +
                                     "Using: [red]" + Math.round(using) + "[]/s\n" +
-                                    "Production: [green]" + Math.round(product) + "/s[]";
-                            Call.setMessageBlockText(null, data.messageblock, text);
+                                    "Production: [green]" + Math.round(product) + "/s[]");
                         }
                     }
                 }

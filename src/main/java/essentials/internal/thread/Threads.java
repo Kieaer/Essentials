@@ -39,7 +39,7 @@ public class Threads implements Runnable {
                             pluginData.messagewarp.remove(a);
                             break;
                         }
-                        Call.setMessageBlockText(null, pluginData.messagewarp.get(a).tile, "[green]Working...");
+                        pluginData.messagewarp.get(a).tile.entity.configureAny("[green]Working...");
 
                         String[] arr = pluginData.messagewarp.get(a).message.split(" ");
                         String ip = arr[1];
@@ -52,7 +52,7 @@ public class Threads implements Runnable {
                         int finalPort = port;
                         new PingHost(ip, port, result -> {
                             ping = ping + (result.name != null ? Double.parseDouble("0." + result.ping) : 1.000);
-                            Call.setMessageBlockText(null, pluginData.messagewarp.get(fa).tile, result.name != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline");
+                            pluginData.messagewarp.get(fa).tile.entity.configureAny(result.name != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline");
                             addPlayers(ip, finalPort, result.players);
                         });
                     }

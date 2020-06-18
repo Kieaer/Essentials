@@ -2,7 +2,7 @@ package essentials;
 
 import arc.graphics.Color;
 import com.github.javafaker.Faker;
-import mindustry.entities.type.Player;
+import mindustry.gen.Playerc;
 import mindustry.net.Net;
 import mindustry.net.NetConnection;
 
@@ -21,8 +21,8 @@ public class PluginTestDB {
                 .toString();
     }
 
-    public static Player createNewPlayer(boolean isFull, String... password) {
-        Player player = new Player();
+    public static Playerc createNewPlayer(boolean isFull, String... password) {
+        Playerc player = new Playerc();
         player.isAdmin = false;
         player.con = new NetConnection(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
             @Override

@@ -25,9 +25,7 @@ import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.content.UnitTypes;
 import mindustry.core.Version;
-import mindustry.entities.type.BaseUnit;
 import mindustry.game.Gamemode;
 import mindustry.game.Team;
 import mindustry.gen.Call;
@@ -39,7 +37,6 @@ import mindustry.maps.Map;
 import mindustry.mod.Plugin;
 import mindustry.net.Administration;
 import mindustry.net.Packets;
-import mindustry.type.UnitType;
 import mindustry.world.Block;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
@@ -159,7 +156,7 @@ public class Main extends Plugin {
         mainThread.submit(colornick);
         timer.scheduleAtFixedRate(rollback, 600000, 600000);
         mainThread.submit(new PermissionWatch());
-        mainThread.submit(warpBorder);
+        // mainThread.submit(warpBorder);
 
         // DB 연결
         try {
@@ -688,7 +685,7 @@ public class Main extends Plugin {
                 String type = arg[0];
                 int x = player.tileX();
                 int y = player.tileY();
-                String name = world.getMap().name();
+                String name = state.map.name();
                 int size;
                 boolean clickable;
                 String ip = "";
@@ -734,7 +731,7 @@ public class Main extends Plugin {
                         if (parameters.length != 1) {
                             player.sendMessage(bundle.prefix("system.warp.incorrect"));
                         } else {
-                            pluginData.warpblocks.add(new PluginData.warpblock(name, world.tile(x, y).link(), ip, port, arg[2]));
+                            pluginData.warpblocks.add(new PluginData.warpblock(name, world.tile(x, y), ip, port, arg[2]));
                             player.sendMessage(bundle.prefix("system.warp.added"));
                         }
                         break;
@@ -760,13 +757,13 @@ public class Main extends Plugin {
         handler.<Playerc>register("kill", "[player]", "Kill player.", (arg, player) -> {
             if (!perm.check(player, "kill")) return;
             if (arg.length == 0) {
-                player.dead();
+                player.unit().kill();
             } else {
                 Playerc other = Groups.player.find(p -> p.name().equalsIgnoreCase(arg[0]));
                 if (other == null) {
                     player.sendMessage(new Bundle(playerDB.get(player.uuid()).locale()).prefix("player.not-found"));
                 } else {
-                    other.dead();
+                    other.unit().kill();
                 }
             }
         });
@@ -1065,7 +1062,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerDB.get(player.uuid()) == null ? playerDB.get(player.uuid()).locale() : config.locale).prefix("system.login.disabled"));
             }
         });
-        handler.<Playerc>register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", (arg, player) -> {
+        /*handler.<Playerc>register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", (arg, player) -> {
             if (!perm.check(player, "spawn")) return;
             PlayerData playerData = playerDB.get(player.uuid());
             Bundle bundle = new Bundle(playerData.locale());
@@ -1101,7 +1098,7 @@ public class Main extends Plugin {
                 baseUnit.set(targetPlayer.getX(), targetPlayer.getY());
                 baseUnit.add();
             }
-        });
+        });*/
 
         handler.<Playerc>register("setperm", "<player_name> <group>", "Set player permission", (arg, player) -> {
             if (!perm.check(player, "setperm")) return;
@@ -1129,18 +1126,14 @@ public class Main extends Plugin {
         });
         handler.<Playerc>register("spawn-core", "<smail/normal/big>", "Make new core", (arg, player) -> {
             if (!perm.check(player, "spawn-core")) return;
-            Block core = Blocks.coreShard;
-            switch (arg[0]) {
-                case "normal":
-                    core = Blocks.coreFoundation;
-                    break;
-                case "big":
-                    core = Blocks.coreNucleus;
-                    break;
-            }
-            Call.onConstructFinish(world.tile(player.tileX(), player.tileY()), core, 0, (byte) 0, player.getTeam(), false);
+            Block core = switch (arg[0]) {
+                case "normal" -> Blocks.coreFoundation;
+                case "big" -> Blocks.coreNucleus;
+                default -> Blocks.coreShard;
+            };
+            Call.onConstructFinish(world.tile(player.tileX(), player.tileY()), core, 0, (byte) 0, player.team(), false);
         });
-        handler.<Playerc>register("setmech", "<Mech> [player]", "Set player mech", (arg, player) -> {
+        /*handler.<Playerc>register("setmech", "<Mech> [player]", "Set player mech", (arg, player) -> {
             if (!perm.check(player, "setmech")) return;
             PlayerData playerData = playerDB.get(player.uuid());
             Bundle bundle = new Bundle(playerData.locale());
@@ -1184,7 +1177,7 @@ public class Main extends Plugin {
                 target.unit(mech);
             }
             player.sendMessage(bundle.prefix("success"));
-        });
+        });*/
         handler.<Playerc>register("status", "Show server status", (arg, player) -> {
             if (!perm.check(player, "status")) return;
             PlayerData playerData = playerDB.get(player.uuid());
@@ -1217,7 +1210,7 @@ public class Main extends Plugin {
         });
         handler.<Playerc>register("suicide", "Kill yourself.", (arg, player) -> {
             if (!perm.check(player, "suicide")) return;
-            player.dead();
+            player.unit().kill();
             if (Groups.player != null && Groups.player.size() > 0) {
                 tool.sendMessageAll("suicide", player.name());
             }
@@ -1285,10 +1278,10 @@ public class Main extends Plugin {
             if (!perm.check(player, "tp")) return;
             PlayerData playerData = playerDB.get(player.uuid());
             Bundle bundle = new Bundle(playerData.locale());
-            if (player.isMobile) {
+            /*if (player.isMobile) {
                 player.sendMessage(bundle.prefix("tp-not-support"));
                 return;
-            }
+            }*/
             Playerc other = null;
             for (Playerc p : Groups.player) {
                 boolean result = p.name().contains(arg[0]);
@@ -1322,11 +1315,11 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("player.not-found"));
                 return;
             }
-            if (!other1.isMobile || !other2.isMobile) {
+            /*if (!other1.isMobile || !other2.isMobile) {
                 other1.set(other2.x, other2.y);
-            } else {
+            } else {*/
                 player.sendMessage(new Bundle(playerData.locale()).prefix("tp-ismobile"));
-            }
+            //}
         });
         handler.<Playerc>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
             if (!perm.check(player, "tppos")) return;
@@ -1478,12 +1471,12 @@ public class Main extends Plugin {
         });
         handler.<Playerc>register("mute", "<Player_name>", "Mute/unmute player", (arg, player) -> {
             if (!perm.check(player, "mute")) return;
-            Playerc other = Groups.player.find(p -> p.name.equalsIgnoreCase(arg[0]));
+            Playerc other = Groups.player.find(p -> p.name().equalsIgnoreCase(arg[0]));
             PlayerData playerData = playerDB.get(player.uuid());
             if (other == null) {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("player.not-found"));
             } else {
-                PlayerData target = playerDB.get(other.uuid);
+                PlayerData target = playerDB.get(other.uuid());
                 target.mute(!target.mute());
                 player.sendMessage(new Bundle(target.locale()).prefix(target.mute() ? "player.muted" : "player.unmute", target.name()));
             }

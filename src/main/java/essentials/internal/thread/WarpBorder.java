@@ -1,13 +1,10 @@
 package essentials.internal.thread;
 
-import arc.graphics.Color;
 import arc.struct.Seq;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Log;
-import mindustry.content.Fx;
 import mindustry.core.GameState;
-import mindustry.gen.Call;
 import mindustry.world.Tile;
 
 import java.util.concurrent.TimeUnit;
@@ -59,22 +56,22 @@ public class WarpBorder implements Runnable {
 
                                     for (int x = 0; x < size; x++) {
                                         Tile tile = world.tile(data.getStartTile().x + x, data.getStartTile().y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        //Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
                                         sleep(96);
                                     }
                                     for (int y = 0; y < size; y++) {
                                         Tile tile = world.tile(data.getFinishTile().x, data.getStartTile().y + y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        //Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
                                         sleep(96);
                                     }
                                     for (int x = 0; x < size; x++) {
                                         Tile tile = world.tile(data.getFinishTile().x - x, data.getFinishTile().y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        //Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
                                         sleep(96);
                                     }
                                     for (int y = 0; y < size; y++) {
                                         Tile tile = world.tile(data.getStartTile().x, data.getFinishTile().y - y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        //Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
                                         sleep(96);
                                     }
                                     if (size < 5) sleep(2000);

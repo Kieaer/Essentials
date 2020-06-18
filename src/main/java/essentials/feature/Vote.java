@@ -164,7 +164,7 @@ public class Vote {
                     Seq<Playerc> players = new Seq<>();
                     for (Playerc p : Groups.player) {
                         players.add(p);
-                        p.dead();
+                        p.unit().kill();
                     }
                     logic.reset();
                     Gamemode current = Gamemode.survival;

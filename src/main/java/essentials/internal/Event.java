@@ -75,8 +75,8 @@ public class Event {
                 }
 
                 for (PluginData.warpblock data : pluginData.warpblocks) {
-                    if (e.tile.x() >= world.tile(data.tilex, data.tiley).link().x && e.tile.x() <= world.tile(data.tilex, data.tiley).link().x) {
-                        if (e.tile.y() >= world.tile(data.tilex, data.tiley).link().y && e.tile.y() <= world.tile(data.tilex, data.tiley).link().y) {
+                    if (e.tile.x() >= world.tile(data.tilex, data.tiley).x && e.tile.x() <= world.tile(data.tilex, data.tiley).x) {
+                        if (e.tile.y() >= world.tile(data.tilex, data.tiley).y && e.tile.y() <= world.tile(data.tilex, data.tiley).y) {
                             Log.info("player.warped", e.player.name(), data.ip + ":" + data.port);
                             Call.onConnect(e.player.con(), data.ip, data.port);
                             break;
@@ -101,7 +101,7 @@ public class Event {
                 if (state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
                         e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid()).locale()).get("system.flammable.disabled"));
-                        e.player.dead();
+                        e.player.unit().kill();
                     }
                 }
             }
