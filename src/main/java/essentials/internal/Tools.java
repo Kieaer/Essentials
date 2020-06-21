@@ -199,11 +199,11 @@ public class Tools {
             return false;
         } else if (password.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
-            player.sendMessage("""
-                    [green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!
-                    [green][Essentials] [sky]Use /register password
-                    [green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!
-                    [green][Essentials] [sky]/register password 형식으로 사용하세요.""");
+            player.sendMessage(
+                    "[green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!\n" +
+                            "[green][Essentials] [sky]Use /register password\n" +
+                            "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
+                            "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
             Log.player("system.password.match.invalid", player.name());
             return false;
         }

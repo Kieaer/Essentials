@@ -56,7 +56,7 @@ sourceSets{
 
 compileJava {
     options.encoding = "UTF-8"
-    options.compilerArgs += ["--enable-preview"]
+    //options.compilerArgs += ["--enable-preview"]
 }
 
 configurations.all {
@@ -65,7 +65,7 @@ configurations.all {
 
 test {
     testLogging.showStandardStreams = true
-    jvmArgs '--enable-preview'
+    //jvmArgs '--enable-preview'
 }
 
 sonarqube {

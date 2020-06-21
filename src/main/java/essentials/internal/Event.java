@@ -591,7 +591,7 @@ public class Event {
         // 유닛을 박살냈을 때
         Events.on(EventType.UnitDestroyEvent.class, e -> {
             // 뒤진(?) 유닛이 플레이어일때
-            if (e.unit instanceof Playerc player) {
+            if (e.unit instanceof Playerc) {
                 PlayerData target = playerDB.get(player.uuid());
                 if (!state.teams.get(player.team()).cores.isEmpty()) target.deathcount(target.deathcount() + 1);
             }
