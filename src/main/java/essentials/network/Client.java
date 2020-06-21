@@ -2,8 +2,8 @@ package essentials.network;
 
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.gen.Playerc;
 import mindustry.net.Administration.PlayerInfo;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
@@ -109,7 +109,7 @@ public class Client implements Runnable {
         }
     }
 
-    public void request(Request request, Playerc player, String message) {
+    public void request(Request request, Player player, String message) {
         JsonObject data = new JsonObject();
         try {
             switch (request) {
@@ -144,13 +144,13 @@ public class Client implements Runnable {
                     break;
                 case chat:
                     data.add("type", "chat");
-                    data.add("name", player.name());
+                    data.add("name", player.name);
                     data.add("message", message);
 
                     os.writeBytes(tool.encrypt(data.toString(), skey) + "\n");
                     os.flush();
 
-                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name() + "[orange]: [white]" + message);
+                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
                     Log.client("client.message", config.clientHost(), message);
                     break;
                 case exit:

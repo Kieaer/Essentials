@@ -13,15 +13,14 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
+import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
 import mindustry.world.Tile;
-import mindustry.world.blocks.storage.MessageBlock;
+import mindustry.world.blocks.logic.MessageBlock;
 import org.hjson.JsonObject;
 
 import java.security.SecureRandom;
@@ -30,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
+import static mindustry.core.NetClient.onSetRules;
 
 public class TickTrigger {
     private final ArrayMap<Item, Integer> ores = new ArrayMap<>();
@@ -76,9 +76,9 @@ public class TickTrigger {
 
                 if (state.is(GameState.State.playing)) {
                     if (config.border()) {
-                        for (Playerc p : Groups.player) {
-                            if (p.x() > world.width() * 8 || p.x() < 0 || p.y() > world.height() * 8 || p.y() < 0)
-                                p.unit().kill();
+                        for (Player p : playerGroup.all()) {
+                            if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
+                                Call.onPlayerDeath(p);
                         }
                     }
                 }
@@ -116,16 +116,16 @@ public class TickTrigger {
                         vars.playtime(vars.playtime() + 1);
 
                         // PvP 평화시간 카운트
-                        /*if (config.antiRush() && state.rules.pvp && vars.playtime() < config.antiRushtime() && vars.isPvPPeace()) {
+                        if (config.antiRush() && state.rules.pvp && vars.playtime() < config.antiRushtime() && vars.isPvPPeace()) {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
-                            for (Playerc p : Groups.player) {
-                                player.sendMessage(new Bundle(playerDB.get(p.uuid()).locale()).get("pvp-peacetime"));
+                            for (Player p : playerGroup.all()) {
+                                player.sendMessage(new Bundle(playerDB.get(p.uuid).locale()).get("pvp-peacetime"));
                                 player.kill();
                             }
                             vars.setPvPPeace(false);
-                        }*/
+                        }
 
                         // 모든 클라이언트 서버에 대한 인원 총합 카운트
                         for (int a = 0; a < pluginData.warptotals.size; a++) {
@@ -150,12 +150,12 @@ public class TickTrigger {
 
                             tool.setTileText(tile, Blocks.copperWall, String.valueOf(result));
 
-                            pluginData.warptotals.set(a, new PluginData.warptotal(state.map.name(), tile, result, digits.length));
+                            pluginData.warptotals.set(a, new PluginData.warptotal(world.getMap().name(), tile, result, digits.length));
                         }
 
                         // 플레이어 플탐 카운트 및 잠수확인
-                        for (Playerc p : Groups.player) {
-                            PlayerData target = playerDB.get(p.uuid());
+                        for (Player p : playerGroup.all()) {
+                            PlayerData target = playerDB.get(p.uuid);
                             boolean kick = false;
 
                             if (target.login()) {
@@ -176,7 +176,7 @@ public class TickTrigger {
                                 target.tiley(p.tileY());
 
                                 if (!state.rules.editor) new Exp(target);
-                                if (kick) Call.onKick(p.con(), "AFK");
+                                if (kick) Call.onKick(p.con, "AFK");
                             }
                         }
 
@@ -194,8 +194,8 @@ public class TickTrigger {
 
                             if (msg.equals("powerblock")) {
                                 for (int rot = 0; rot < 4; rot++) {
-                                    if (entity.tile.getNearby(rot).entity != null) {
-                                        pluginData.powerblock.add(new PluginData.powerblock(entity.tile, entity.tile.getNearby(rot), rot));
+                                    if (entity.tile.link().getNearby(rot).entity != null) {
+                                        pluginData.powerblock.add(new PluginData.powerblock(entity.tile, entity.tile.getNearby(rot).link(), rot));
                                         break;
                                     }
                                 }
@@ -215,8 +215,8 @@ public class TickTrigger {
                         // 서버간 이동 영역에 플레이어가 있는지 확인
                         for (PluginData.warpzone value : pluginData.warpzones) {
                             if (!value.touch) {
-                                for (int ix = 0; ix < Groups.player.size(); ix++) {
-                                    Playerc player = Groups.player.getByID(ix);
+                                for (int ix = 0; ix < playerGroup.size(); ix++) {
+                                    Player player = playerGroup.all().get(ix);
                                     if (player.tileX() > value.startx && player.tileX() < value.finishx) {
                                         if (player.tileY() > value.starty && player.tileY() < value.finishy) {
                                             String resultIP = value.ip;
@@ -226,8 +226,8 @@ public class TickTrigger {
                                                 resultIP = temp[0];
                                                 port = Integer.parseInt(temp[1]);
                                             }
-                                            Log.info("player.warped", player.name(), resultIP + ":" + port);
-                                            Call.onConnect(player.con(), resultIP, port);
+                                            Log.info("player.warped", player.name, resultIP + ":" + port);
+                                            Call.onConnect(player.con, resultIP, port);
                                         }
                                     }
                                 }
@@ -249,7 +249,7 @@ public class TickTrigger {
                                 data.remove();
                                 break;
                             }
-                            data.entity.configureAny(items.toString());
+                            Call.setMessageBlockText(null, data, items.toString());
                         }
 
                         // 메세지 블럭에 있는 근처 전력 계산
@@ -259,31 +259,42 @@ public class TickTrigger {
                                 return;
                             }
 
-                            String arrow = switch (data.rotate) {
-                                case 0 -> "⇨";
-                                case 1 -> "⇧";
-                                case 2 -> "⇦";
-                                case 3 -> "⇩";
-                                default -> "null";
-                            };
+                            String arrow;
+                            switch (data.rotate) {
+                                case 0:
+                                    arrow = "⇨";
+                                    break;
+                                case 1:
+                                    arrow = "⇧";
+                                    break;
+                                case 2:
+                                    arrow = "⇦";
+                                    break;
+                                case 3:
+                                    arrow = "⇩";
+                                    break;
+                                default:
+                                    arrow = "null";
+                            }
 
                             float current;
                             float product;
                             float using;
                             try {
-                                current = data.tile.entity.power().graph.getPowerBalance() * 60;
-                                using = data.tile.entity.power().graph.getPowerNeeded() * 60;
-                                product = data.tile.entity.power().graph.getPowerProduced() * 60;
+                                current = data.tile.link().entity.power.graph.getPowerBalance() * 60;
+                                using = data.tile.link().entity.power.graph.getPowerNeeded() * 60;
+                                product = data.tile.link().entity.power.graph.getPowerProduced() * 60;
                             } catch (Exception e) {
                                 pluginData.powerblock.remove(data);
-                                data.tile.entity.configureAny(arrow + " Tile doesn't have powers!");
+                                Call.setMessageBlockText(null, data.messageblock, arrow + " Tile doesn't have powers!");
                                 return;
                             }
 
-                            data.tile.entity.configureAny("[accent]" + arrow + "[] Power status [accent]" + arrow + "[]\n" +
+                            String text = "[accent]" + arrow + "[] Power status [accent]" + arrow + "[]\n" +
                                     "Current: [sky]" + Math.round(current) + "/s[]\n" +
                                     "Using: [red]" + Math.round(using) + "[]/s\n" +
-                                    "Production: [green]" + Math.round(product) + "/s[]");
+                                    "Production: [green]" + Math.round(product) + "/s[]";
+                            Call.setMessageBlockText(null, data.messageblock, text);
                         }
                     }
                 }
@@ -300,11 +311,11 @@ public class TickTrigger {
                                         if (resources.get(item.name) != null) {
                                             if ((cur - resources.get(item.name)) <= -55) {
                                                 StringBuilder using = new StringBuilder();
-                                                for (Playerc p : Groups.player) {
-                                                    if (p.builder().buildPlan() != null) {
-                                                        for (int c = 0; c < p.builder().buildPlan().block.requirements.length; c++) {
-                                                            if (p.builder().buildPlan().block.requirements[c].item.name.equals(item.name)) {
-                                                                using.append(p.name()).append(", ");
+                                                for (Player p : playerGroup) {
+                                                    if (p.buildRequest() != null) {
+                                                        for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
+                                                            if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {
+                                                                using.append(p.name).append(", ");
                                                             }
                                                         }
                                                     }
@@ -334,8 +345,8 @@ public class TickTrigger {
 
                 // 1분마다
                 if ((tick % 3600) == 0) {
-                    for (Playerc p : Groups.player) {
-                        PlayerData playerData = playerDB.get(p.uuid());
+                    for (Player p : playerGroup.all()) {
+                        PlayerData playerData = playerDB.get(p.uuid);
                         if (playerData.error()) {
                             String message;
                             if (playerData.locale() == null) {

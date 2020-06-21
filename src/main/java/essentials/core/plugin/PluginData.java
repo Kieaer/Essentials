@@ -1,6 +1,6 @@
 package essentials.core.plugin;
 
-import arc.struct.Seq;
+import arc.struct.Array;
 import arc.util.serialization.Json;
 import essentials.internal.Log;
 import mindustry.world.Tile;
@@ -18,23 +18,23 @@ public class PluginData {
     private final Json json = new Json();
 
     // 일회성 플러그인 데이터
-    public Seq<nukeblock> nukeblock = new Seq<>();
-    public Seq<eventservers> eventservers = new Seq<>();
-    public Seq<powerblock> powerblock = new Seq<>();
-    public Seq<messagemonitor> messagemonitor = new Seq<>();
-    public Seq<messagewarp> messagewarp = new Seq<>();
-    public Seq<Tile> scancore = new Seq<>();
-    public Seq<Tile> nukedata = new Seq<>();
-    public Seq<Tile> nukeposition = new Seq<>();
-    public Seq<Process> process = new Seq<>();
+    public Array<nukeblock> nukeblock = new Array<>();
+    public Array<eventservers> eventservers = new Array<>();
+    public Array<powerblock> powerblock = new Array<>();
+    public Array<messagemonitor> messagemonitor = new Array<>();
+    public Array<messagewarp> messagewarp = new Array<>();
+    public Array<Tile> scancore = new Array<>();
+    public Array<Tile> nukedata = new Array<>();
+    public Array<Tile> nukeposition = new Array<>();
+    public Array<Process> process = new Array<>();
 
     // 종료시 저장되는 플러그인 데이터
-    public Seq<warpzone> warpzones = new Seq<>();
-    public Seq<warpblock> warpblocks = new Seq<>();
-    public Seq<warpcount> warpcounts = new Seq<>();
-    public Seq<warptotal> warptotals = new Seq<>();
-    public Seq<String> blacklist = new Seq<>();
-    public Seq<banned> banned = new Seq<>();
+    public Array<warpzone> warpzones = new Array<>();
+    public Array<warpblock> warpblocks = new Array<>();
+    public Array<warpcount> warpcounts = new Array<>();
+    public Array<warptotal> warptotals = new Array<>();
+    public Array<String> blacklist = new Array<>();
+    public Array<banned> banned = new Array<>();
 
     public void saveAll() {
         JsonObject data = new JsonObject();
@@ -259,10 +259,10 @@ public class PluginData {
             this.port = port;
             this.description = description;
 
-            this.tilex = tile.x;
-            this.tiley = tile.y;
-            this.tileName = tile.block().name;
-            this.size = tile.block().size;
+            this.tilex = tile.entity.tileX();
+            this.tiley = tile.entity.tileY();
+            this.tileName = tile.entity.block.name;
+            this.size = tile.entity.block.size;
         }
 
         private warpblock(String mapName, int tilex, int tiley, String tileName, int size, String ip, int port, String description) {

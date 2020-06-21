@@ -1,18 +1,18 @@
 package essentials.internal.thread;
 
 import arc.files.Fi;
-import arc.struct.Seq;
+import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.core.GameState;
+import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
 import mindustry.io.SaveIO;
 
 import java.util.TimerTask;
 
 import static essentials.Main.config;
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class AutoRollback extends TimerTask {
@@ -26,10 +26,10 @@ public class AutoRollback extends TimerTask {
     }
 
     public void load() {
-        Seq<Playerc> players = new Seq<>();
-        for (Playerc p : Groups.player) {
+        Array<Player> players = new Array<>();
+        for (Player p : playerGroup.all()) {
             players.add(p);
-            p.unit().kill();
+            p.setDead(true);
         }
 
         logic.reset();
@@ -42,12 +42,12 @@ public class AutoRollback extends TimerTask {
 
             logic.play();
 
-            for (Playerc p : players) {
-                if (p.con() == null) continue;
+            for (Player p : players) {
+                if (p.con == null) continue;
 
                 p.reset();
                 if (state.rules.pvp) {
-                    p.team(netServer.assignTeam(p, new Seq.SeqIterable<>(players)));
+                    p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
                 }
                 netServer.sendWorldData(p);
             }
@@ -55,7 +55,7 @@ public class AutoRollback extends TimerTask {
             new CrashReport(e);
         }
         Log.info("Map rollbacked.");
-        /*new Thread(() -> {
+        new Thread(() -> {
             try {
                 float orignal = state.rules.respawnTime;
                 state.rules.respawnTime = 0f;
@@ -67,7 +67,7 @@ public class AutoRollback extends TimerTask {
                 Thread.currentThread().interrupt();
             }
 
-        }).start();*/
+        }).start();
         if (state.is(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.");
     }
 

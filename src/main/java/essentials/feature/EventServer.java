@@ -2,7 +2,7 @@ package essentials.feature;
 
 import arc.ApplicationListener;
 import arc.Core;
-import arc.struct.Seq;
+import arc.struct.Array;
 import essentials.external.PingHost;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
@@ -20,7 +20,7 @@ import static essentials.Main.*;
 import static org.hjson.JsonValue.readJSON;
 
 public class EventServer {
-    public Seq<Process> servers = new Seq<>();
+    public Array<Process> servers = new Array<>();
 
     public boolean create(String roomname, String map, String gamemode, int port) {
         try {

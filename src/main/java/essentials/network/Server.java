@@ -1,16 +1,15 @@
 package essentials.network;
 
 import arc.Core;
-import arc.struct.Seq;
+import arc.struct.Array;
 import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.core.GameState;
 import mindustry.core.Version;
+import mindustry.entities.type.Player;
 import mindustry.game.Team;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
 import mindustry.net.Administration;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
@@ -44,7 +43,7 @@ import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
 public class Server implements Runnable {
-    public Seq<service> list = new Seq<>();
+    public Array<service> list = new Array<>();
     public ServerSocket serverSocket;
 
     Bundle bundle = new Bundle();
@@ -229,8 +228,8 @@ public class Server implements Runnable {
                             break;
                         case chat:
                             String message = data.get("message").asString();
-                            for (Playerc p : Groups.player) {
-                                p.sendMessage(p.admin() ? "[#C77E36][" + ip + "][RC] " + message : "[#C77E36][RC] " + message);
+                            for (Player p : playerGroup) {
+                                p.sendMessage(p.isAdmin ? "[#C77E36][" + ip + "][RC] " + message : "[#C77E36][RC] " + message);
                             }
 
                             for (service ser : list) {
@@ -291,18 +290,18 @@ public class Server implements Runnable {
 
         private String query() {
             JsonObject result = new JsonObject();
-            result.add("players", Groups.player.size()); // 플레이어 인원
+            result.add("players", playerGroup.size()); // 플레이어 인원
             result.add("version", Version.build); // 버전
             result.add("plugin-version", vars.pluginVersion());
             result.add("playtime", tool.secToTime(vars.playtime()));
             result.add("name", Core.settings.getString("servername"));
-            result.add("mapname", state.map.name());
+            result.add("mapname", world.getMap().name());
             result.add("wave", state.wave);
             result.add("enemy-count", state.enemies);
 
             boolean online = false;
-            for (Playerc p : Groups.player) {
-                if (p.admin()) {
+            for (Player p : playerGroup.all()) {
+                if (p.isAdmin) {
                     online = true;
                     break;
                 }
@@ -310,8 +309,8 @@ public class Server implements Runnable {
             result.add("admin_online", online);
 
             JsonArray array = new JsonArray();
-            for (Playerc p : Groups.player) {
-                array.add(p.name()); // player list
+            for (Player p : playerGroup.all()) {
+                array.add(p.name); // player list
             }
             result.add("playerlist", array);
 
@@ -343,10 +342,10 @@ public class Server implements Runnable {
 
         private String serverinfo() {
             if (state.is(GameState.State.playing)) {
-                int playercount = Groups.player.size();
+                int playercount = playerGroup.size();
                 StringBuilder playerdata = new StringBuilder();
-                for (Playerc p : Groups.player) {
-                    playerdata.append(p.name()).append(",");
+                for (Player p : playerGroup.all()) {
+                    playerdata.append(p.name).append(",");
                 }
                 if (playerdata.length() != 0) {
                     playerdata.substring(playerdata.length() - 1, playerdata.length());
@@ -526,7 +525,7 @@ public class Server implements Runnable {
                                     ranking[11] = "SELECT uuid, pvpbreakout, RANK() over (ORDER BY pvpbreakout desc) valrank FROM players";
 
                                     String datatext;
-                                    Seq<String> array = new Seq<>();
+                                    Array<String> array = new Array<>();
                                     for (String s : ranking) {
                                         try (PreparedStatement pstmt = database.conn.prepareStatement(s);
                                              ResultSet rs1 = pstmt.executeQuery()) {

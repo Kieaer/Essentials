@@ -1,18 +1,17 @@
 package essentials.internal.thread;
 
 import arc.Core;
+import arc.struct.Array;
 import arc.struct.ArrayMap;
 import arc.struct.ObjectMap;
-import arc.struct.Seq;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
+import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
 import mindustry.world.Tile;
 
 import java.util.Locale;
@@ -35,11 +34,11 @@ public class Threads implements Runnable {
                 // 외부 서버 플레이어 인원 - 메세지 블럭
                 for (int a = 0; a < pluginData.messagewarp.size; a++) {
                     if (state.is(GameState.State.playing)) {
-                        if (pluginData.messagewarp.get(a).tile.entity.block() != Blocks.message) {
+                        if (pluginData.messagewarp.get(a).tile.entity.block != Blocks.message) {
                             pluginData.messagewarp.remove(a);
                             break;
                         }
-                        pluginData.messagewarp.get(a).tile.entity.configureAny("[green]Working...");
+                        Call.setMessageBlockText(null, pluginData.messagewarp.get(a).tile, "[green]Working...");
 
                         String[] arr = pluginData.messagewarp.get(a).message.split(" ");
                         String ip = arr[1];
@@ -52,7 +51,7 @@ public class Threads implements Runnable {
                         int finalPort = port;
                         new PingHost(ip, port, result -> {
                             ping = ping + (result.name != null ? Double.parseDouble("0." + result.ping) : 1.000);
-                            pluginData.messagewarp.get(fa).tile.entity.configureAny(result.name != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline");
+                            Call.setMessageBlockText(null, pluginData.messagewarp.get(fa).tile, result.name != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline");
                             addPlayers(ip, finalPort, result.players);
                         });
                     }
@@ -83,7 +82,7 @@ public class Threads implements Runnable {
                             }
                             tool.setTileText(tile, Blocks.copperWall, str);
                             // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                            pluginData.warpcounts.set(i2, new PluginData.warpcount(state.map.name(), value.getTile(), value.ip, value.port, result.players, digits.length));
+                            pluginData.warpcounts.set(i2, new PluginData.warpcount(world.getMap().name(), value.getTile(), value.ip, value.port, result.players, digits.length));
                             addPlayers(value.ip, value.port, result.players);
                         } else {
                             ping = ping + 1.000;
@@ -93,7 +92,7 @@ public class Threads implements Runnable {
                 }
 
 
-                Seq<String> memory = new Seq<>();
+                Array<String> memory = new Array<>();
                 for (int a = 0; a < pluginData.warpblocks.size; a++) {
                     PluginData.warpblock value = pluginData.warpblocks.get(a);
                     Tile tile = world.tile(value.tilex, value.tiley);
@@ -106,18 +105,22 @@ public class Threads implements Runnable {
                             float x = tile.drawx();
 
                             switch (value.size) {
-                                case 1 -> margin = 8f;
-                                case 2 -> {
+                                case 1:
+                                    margin = 8f;
+                                    break;
+                                case 2:
                                     margin = 16f;
                                     x = tile.drawx() - 4f;
                                     isDup = true;
-                                }
-                                case 3 -> margin = 16f;
-                                case 4 -> {
+                                    break;
+                                case 3:
+                                    margin = 16f;
+                                    break;
+                                case 4:
                                     x = tile.drawx() - 4f;
                                     margin = 24f;
                                     isDup = true;
-                                }
+                                    break;
                             }
 
                             float y = tile.drawy() + (isDup ? margin - 8 : margin);
@@ -139,16 +142,15 @@ public class Threads implements Runnable {
                 }
 
                 if (Core.settings.getBool("isLobby")) {
-                    Core.settings.put("totalPlayers", getTotalPlayers());
-                    Core.settings.saveValues();
+                    Core.settings.putSave("totalPlayers", getTotalPlayers());
                 }
 
                 TimeUnit.SECONDS.sleep(3);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                for (Playerc p : Groups.player)
-                    Call.onKick(p.con(), new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
+                for (Player p : playerGroup.all())
+                    Call.onKick(p.con, new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
                 new CrashReport(e);
             }
         }
