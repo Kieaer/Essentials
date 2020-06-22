@@ -19,8 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.pluginData;
 import static essentials.Main.tool;
-import static mindustry.Vars.state;
-import static mindustry.Vars.world;
+import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
     public double ping = 0.000;
