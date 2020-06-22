@@ -33,6 +33,7 @@ import static mindustry.Vars.*;
 
 public class TickTrigger {
     private final ArrayMap<Item, Integer> ores = new ArrayMap<>();
+    private final SecureRandom random = new SecureRandom();
 
     public TickTrigger() {
         Events.on(EventType.ServerLoadEvent.class, () -> {
@@ -160,7 +161,7 @@ public class TickTrigger {
 
                             if (target.login()) {
                                 // Exp 계산
-                                target.exp(target.exp() + (new SecureRandom().nextInt(50)));
+                                target.exp(target.exp() + (random.nextInt(50)));
 
                                 // 잠수 및 플레이 시간 계산
                                 target.playtime(target.playtime() + 1);
@@ -290,31 +291,31 @@ public class TickTrigger {
 
                 // 1.5초마다 실행
                 if ((tick % 90) == 0) {
-                    if (state.is(GameState.State.playing)) {
-                        if (config.scanResource()) {
-                            for (Item item : content.items()) {
-                                if (item.type == ItemType.material) {
-                                    if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                                    if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                        int cur = state.teams.get(Team.sharded).cores.first().items.get(item);
-                                        if (resources.get(item.name) != null) {
-                                            if ((cur - resources.get(item.name)) <= -55) {
-                                                StringBuilder using = new StringBuilder();
-                                                for (Playerc p : Groups.player) {
-                                                    if (p.builder().buildPlan() != null) {
-                                                        for (int c = 0; c < p.builder().buildPlan().block.requirements.length; c++) {
-                                                            if (p.builder().buildPlan().block.requirements[c].item.name.equals(item.name)) {
-                                                                using.append(p.name()).append(", ");
-                                                            }
+                    if (state.is(GameState.State.playing) && config.scanResource() && state.rules.waves && Groups.player.size() > 0) {
+                        for (Item item : content.items()) {
+                            if (item.type == ItemType.material) {
+                                Team team = Groups.player.getByID(random.nextInt(Groups.player.size())).team();
+
+                                if (state.teams.get(team).cores.isEmpty()) return;
+                                if (state.teams.get(team).cores.first().items.has(item)) {
+                                    int cur = state.teams.get(team).cores.first().items.get(item);
+                                    if (resources.get(item.name) != null) {
+                                        if ((cur - resources.get(item.name)) <= -55) {
+                                            StringBuilder using = new StringBuilder();
+                                            for (Playerc p : Groups.player) {
+                                                if (p.builder().buildPlan() != null) {
+                                                    for (int c = 0; c < p.builder().buildPlan().block.requirements.length; c++) {
+                                                        if (p.builder().buildPlan().block.requirements[c].item.name.equals(item.name)) {
+                                                            using.append(p.name()).append(", ");
                                                         }
                                                     }
                                                 }
-                                                if (using.length() > 2)
-                                                    tool.sendMessageAll("resource-fast-use", item.name, using);
                                             }
-                                        } else {
-                                            resources.put(item.name, cur);
+                                            if (using.length() > 2)
+                                                tool.sendMessageAll("resource-fast-use", item.name, using);
                                         }
+                                    } else {
+                                        resources.put(item.name, cur);
                                     }
                                 }
                             }
