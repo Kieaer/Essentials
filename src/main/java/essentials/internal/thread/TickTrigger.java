@@ -302,7 +302,7 @@ public class TickTrigger {
 
                 // 1.5초마다 실행
                 if ((tick % 90) == 0) {
-                    if (state.is(GameState.State.playing) && config.scanResource() && state.rules.waves) {
+                    if (state.is(GameState.State.playing) && config.scanResource() && state.rules.waves && playerGroup.size() > 0) {
                         for (Item item : content.items()) {
                             if (item.type == ItemType.material) {
                                 Team team = playerGroup.all().get(random.nextInt(playerGroup.size())).getTeam();
