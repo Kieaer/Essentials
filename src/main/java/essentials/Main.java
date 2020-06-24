@@ -102,16 +102,16 @@ public class Main extends Plugin {
                 throw new PluginException("Essentials " + version + " plugin only works with Build " + vars.buildVersion() + "." + vars.buildRevision() + " or higher.");
             }
             vars.pluginVersion(version);
-        } catch (IOException e) {
-            log.warn("Plugin", e);
+        } catch (IOException ignored) {
         }
 
-        if (!root.exists() && Desktop.isDesktopSupported()) {
+        if (!root.exists()) {
             // 처음 플러그인을 사용하는 유저에게 wiki 오픈
             try {
                 final String url = "https://github.com/Kieaer/Essentials/wiki/How-to-edit-config.hjson";
                 Desktop.getDesktop().browse(new URI(url));
-            } catch (IOException | URISyntaxException ignored) {
+            } catch (IOException | UnsupportedOperationException | URISyntaxException | AWTError ignored) {
+                Log.info("Please visit https://github.com/Kieaer/Essentials/wiki/How-to-edit-config.hjson to how to edit config file.");
             }
         }
 
