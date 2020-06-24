@@ -242,7 +242,7 @@ public class TickTrigger {
                                 if (item.type == ItemType.material) {
                                     Player player = playerGroup.all().get(random.nextInt(playerGroup.size()));
                                     Team team;
-                                    if (player != null && state.teams.get(player.getTeam()).cores.isEmpty()) {
+                                    if (player != null && !state.teams.get(player.getTeam()).cores.isEmpty()) {
                                         team = player.getTeam();
                                     } else {
                                         return;
