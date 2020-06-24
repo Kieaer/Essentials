@@ -236,29 +236,31 @@ public class TickTrigger {
                         }
 
                         // 메세지 블럭에 있는 자원 소모량 감시
-                        StringBuilder items = new StringBuilder();
-                        for (Item item : content.items()) {
-                            if (item.type == ItemType.material) {
-                                Player player = playerGroup.all().get(random.nextInt(playerGroup.size()));
-                                Team team;
-                                if (player != null && state.teams.get(player.getTeam()).cores.isEmpty()) {
-                                    team = player.getTeam();
-                                } else {
-                                    return;
+                        if (playerGroup.size() > 0) {
+                            StringBuilder items = new StringBuilder();
+                            for (Item item : content.items()) {
+                                if (item.type == ItemType.material) {
+                                    Player player = playerGroup.all().get(random.nextInt(playerGroup.size()));
+                                    Team team;
+                                    if (player != null && state.teams.get(player.getTeam()).cores.isEmpty()) {
+                                        team = player.getTeam();
+                                    } else {
+                                        return;
+                                    }
+
+                                    int amount = state.teams.get(team).cores.first().items.get(item);
+                                    if (state.teams.get(team).cores.first().items.has(item))
+                                        items.append(writeOreStatus(item, amount));
                                 }
-
-                                int amount = state.teams.get(team).cores.first().items.get(item);
-                                if (state.teams.get(team).cores.first().items.has(item))
-                                    items.append(writeOreStatus(item, amount));
                             }
-                        }
 
-                        for (Tile data : pluginData.scancore) {
-                            if (data.block() != Blocks.message) {
-                                data.remove();
-                                break;
+                            for (Tile data : pluginData.scancore) {
+                                if (data.block() != Blocks.message) {
+                                    data.remove();
+                                    break;
+                                }
+                                Call.setMessageBlockText(null, data, items.toString());
                             }
-                            Call.setMessageBlockText(null, data, items.toString());
                         }
 
                         // 메세지 블럭에 있는 근처 전력 계산
