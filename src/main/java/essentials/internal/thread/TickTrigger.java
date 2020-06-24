@@ -239,8 +239,16 @@ public class TickTrigger {
                         StringBuilder items = new StringBuilder();
                         for (Item item : content.items()) {
                             if (item.type == ItemType.material) {
-                                int amount = state.teams.get(Team.sharded).cores.first().items.get(item);
-                                if (state.teams.get(Team.sharded).cores.first().items.has(item))
+                                Player player = playerGroup.all().get(random.nextInt(playerGroup.size()));
+                                Team team;
+                                if (player != null && state.teams.get(player.getTeam()).cores.isEmpty()) {
+                                    team = player.getTeam();
+                                } else {
+                                    return;
+                                }
+
+                                int amount = state.teams.get(team).cores.first().items.get(item);
+                                if (state.teams.get(team).cores.first().items.has(item))
                                     items.append(writeOreStatus(item, amount));
                             }
                         }
@@ -305,9 +313,14 @@ public class TickTrigger {
                     if (state.is(GameState.State.playing) && config.scanResource() && state.rules.waves && playerGroup.size() > 0) {
                         for (Item item : content.items()) {
                             if (item.type == ItemType.material) {
-                                Team team = playerGroup.all().get(random.nextInt(playerGroup.size())).getTeam();
+                                Player player = playerGroup.all().get(random.nextInt(playerGroup.size()));
+                                Team team;
+                                if (player != null && state.teams.get(player.getTeam()).cores.isEmpty()) {
+                                    team = player.getTeam();
+                                } else {
+                                    return;
+                                }
 
-                                if (state.teams.get(team).cores.isEmpty()) return;
                                 if (state.teams.get(team).cores.first().items.has(item)) {
                                     int cur = state.teams.get(team).cores.first().items.get(item);
                                     if (resources.get(item.name) != null) {
