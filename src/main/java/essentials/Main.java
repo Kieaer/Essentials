@@ -44,8 +44,6 @@ import mindustry.type.UnitType;
 import mindustry.world.Block;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.*;
@@ -90,8 +88,6 @@ public class Main extends Plugin {
 
     public final ApplicationListener listener;
     public final Array<EventServer.EventService> eventServers = new Array<>();
-
-    final Logger log = LoggerFactory.getLogger(Main.class);
 
     public Main() throws PluginException {
         // 서버 버전 확인
@@ -1411,7 +1407,11 @@ public class Main extends Plugin {
                         if (world == null) {
                             try {
                                 world = Vars.maps.all().get(Integer.parseInt(arg[1]));
-                                vote.add(new Vote(player, Vote.VoteType.map, world));
+                                if (world != null) {
+                                    vote.add(new Vote(player, Vote.VoteType.map, world));
+                                } else {
+                                    player.sendMessage(bundle.prefix("vote.map.not-found"));
+                                }
                             } catch (NumberFormatException ignored) {
                                 player.sendMessage(bundle.prefix("vote.map.not-found"));
                             }
