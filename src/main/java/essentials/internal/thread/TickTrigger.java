@@ -51,7 +51,7 @@ public class TickTrigger {
             public String writeOreStatus(Item item, int orignal) {
                 int val;
                 String color;
-                if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                if (state.teams.get(playerGroup.all().get(random.nextInt(playerGroup.size())).getTeam()).cores.first().items.has(item)) {
                     val = orignal - ores.get(item);
                     if (val > 0) {
                         color = "[green]+";
