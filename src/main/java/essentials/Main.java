@@ -738,7 +738,7 @@ public class Main extends Plugin {
                         }
                         break;
                     case "block":
-                        if (parameters.length != 1) {
+                        if (parameters.length < 1) {
                             player.sendMessage(bundle.prefix("system.warp.incorrect"));
                         } else {
                             pluginData.warpblocks.add(new PluginData.warpblock(name, world.tile(x, y).link(), ip, port, arg[2]));
