@@ -134,7 +134,7 @@ public class Main extends Plugin {
         // 서버 로비기능 설정
         if (!Core.settings.has("isLobby")) {
             Core.settings.putSave("isLobby", false);
-        } else {
+        } else if (Core.settings.getBool("isLobby")) {
             Log.info("system.lobby");
             Log.info("Lobby server can only be built by admins!"); //TODO 언어별 추가
         }
