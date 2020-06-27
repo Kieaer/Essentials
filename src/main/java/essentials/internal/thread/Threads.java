@@ -17,8 +17,7 @@ import mindustry.world.Tile;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import static essentials.Main.pluginData;
-import static essentials.Main.tool;
+import static essentials.Main.*;
 import static mindustry.Vars.*;
 
 public class Threads implements Runnable {
@@ -150,9 +149,16 @@ public class Threads implements Runnable {
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                for (Player p : playerGroup.all())
-                    Call.onKick(p.con, new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
+                for (Player p : playerGroup.all()) {
+                    if (playerDB.get(p.uuid).login()) {
+                        Call.onKick(p.con, new Bundle(playerDB.get(p.uuid).locale()).get("plugin-error-kick"));
+                    } else {
+                        Call.onKick(p.con, new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
+                    }
+                }
                 new CrashReport(e);
+                Core.app.dispose();
+                Core.app.exit();
             }
         }
     }
