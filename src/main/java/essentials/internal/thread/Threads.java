@@ -30,9 +30,9 @@ public class Threads implements Runnable {
         Thread.currentThread().setName("Essential thread");
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                // 외부 서버 플레이어 인원 - 메세지 블럭
-                for (int a = 0; a < pluginData.messagewarp.size; a++) {
-                    if (state.is(GameState.State.playing)) {
+                if (state.is(GameState.State.playing)) {
+                    // 외부 서버 플레이어 인원 - 메세지 블럭
+                    for (int a = 0; a < pluginData.messagewarp.size; a++) {
                         if (pluginData.messagewarp.get(a).tile.entity.block != Blocks.message) {
                             pluginData.messagewarp.remove(a);
                             break;
@@ -54,94 +54,96 @@ public class Threads implements Runnable {
                             addPlayers(ip, finalPort, result.players);
                         });
                     }
-                }
 
-                // 서버 인원 확인
-                for (int i = 0; i < pluginData.warpcounts.size; i++) {
-                    int i2 = i;
-                    PluginData.warpcount value = pluginData.warpcounts.get(i);
+                    // 서버 인원 확인
+                    for (int i = 0; i < pluginData.warpcounts.size; i++) {
+                        int i2 = i;
+                        PluginData.warpcount value = pluginData.warpcounts.get(i);
 
-                    new PingHost(value.ip, value.port, result -> {
-                        if (result.name != null) {
-                            ping = ping + Double.parseDouble("0." + result.ping);
+                        new PingHost(value.ip, value.port, result -> {
+                            if (result.name != null) {
+                                ping = ping + Double.parseDouble("0." + result.ping);
 
-                            String str = String.valueOf(result.players);
-                            int[] digits = new int[str.length()];
-                            for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
+                                String str = String.valueOf(result.players);
+                                int[] digits = new int[str.length()];
+                                for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
 
-                            Tile tile = value.getTile();
-                            if (value.players != result.players) {
-                                if (value.numbersize != digits.length) {
-                                    for (int px = 0; px < 3; px++) {
-                                        for (int py = 0; py < 5; py++) {
-                                            Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
+                                Tile tile = value.getTile();
+                                if (value.players != result.players) {
+                                    if (value.numbersize != digits.length) {
+                                        for (int px = 0; px < 3; px++) {
+                                            for (int py = 0; py < 5; py++) {
+                                                Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            tool.setTileText(tile, Blocks.copperWall, str);
-                            // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                            pluginData.warpcounts.set(i2, new PluginData.warpcount(world.getMap().name(), value.getTile(), value.ip, value.port, result.players, digits.length));
-                            addPlayers(value.ip, value.port, result.players);
-                        } else {
-                            ping = ping + 1.000;
-                            tool.setTileText(value.getTile(), Blocks.copperWall, "no");
-                        }
-                    });
-                }
-
-
-                Array<String> memory = new Array<>();
-                for (int a = 0; a < pluginData.warpblocks.size; a++) {
-                    PluginData.warpblock value = pluginData.warpblocks.get(a);
-                    Tile tile = world.tile(value.tilex, value.tiley);
-                    if (tile.block() == Blocks.air) {
-                        pluginData.warpblocks.remove(a);
-                    } else {
-                        new PingHost(value.ip, value.port, result -> {
-                            float margin = 0f;
-                            boolean isDup = false;
-                            float x = tile.drawx();
-
-                            switch (value.size) {
-                                case 1:
-                                    margin = 8f;
-                                    break;
-                                case 2:
-                                    margin = 16f;
-                                    x = tile.drawx() - 4f;
-                                    isDup = true;
-                                    break;
-                                case 3:
-                                    margin = 16f;
-                                    break;
-                                case 4:
-                                    x = tile.drawx() - 4f;
-                                    margin = 24f;
-                                    isDup = true;
-                                    break;
-                            }
-
-                            float y = tile.drawy() + (isDup ? margin - 8 : margin);
-                            if (result.name != null) {
-                                ping = ping + Double.parseDouble("0." + result.ping);
-                                memory.add("[yellow]" + result.players + "[] Players///" + x + "///" + y);
+                                tool.setTileText(tile, Blocks.copperWall, str);
+                                // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                                pluginData.warpcounts.set(i2, new PluginData.warpcount(world.getMap().name(), value.getTile(), value.ip, value.port, result.players, digits.length));
+                                addPlayers(value.ip, value.port, result.players);
                             } else {
                                 ping = ping + 1.000;
-                                memory.add("[scarlet]Offline///" + x + "///" + y);
+                                tool.setTileText(value.getTile(), Blocks.copperWall, "no");
                             }
-                            memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin));
-                            addPlayers(value.ip, value.port, result.players);
                         });
                     }
-                }
-                for (String m : memory) {
-                    String[] a = m.split("///");
-                    Call.onLabel(a[0], ((float) ping) + 3f, Float.parseFloat(a[1]), Float.parseFloat(a[2]));
-                }
 
-                if (Core.settings.getBool("isLobby")) {
-                    Core.settings.putSave("totalPlayers", getTotalPlayers());
+
+                    Array<String> memory = new Array<>();
+                    for (int a = 0; a < pluginData.warpblocks.size; a++) {
+                        PluginData.warpblock value = pluginData.warpblocks.get(a);
+                        Tile tile = world.tile(value.tilex, value.tiley);
+                        if (tile.block() == Blocks.air) {
+                            pluginData.warpblocks.remove(a);
+                        } else {
+                            new PingHost(value.ip, value.port, result -> {
+                                float margin = 0f;
+                                boolean isDup = false;
+                                float x = tile.drawx();
+
+                                switch (value.size) {
+                                    case 1:
+                                        margin = 8f;
+                                        break;
+                                    case 2:
+                                        margin = 16f;
+                                        x = tile.drawx() - 4f;
+                                        isDup = true;
+                                        break;
+                                    case 3:
+                                        margin = 16f;
+                                        break;
+                                    case 4:
+                                        x = tile.drawx() - 4f;
+                                        margin = 24f;
+                                        isDup = true;
+                                        break;
+                                }
+
+                                float y = tile.drawy() + (isDup ? margin - 8 : margin);
+                                if (result.name != null) {
+                                    ping = ping + Double.parseDouble("0." + result.ping);
+                                    memory.add("[yellow]" + result.players + "[] Players///" + x + "///" + y);
+                                } else {
+                                    ping = ping + 1.000;
+                                    memory.add("[scarlet]Offline///" + x + "///" + y);
+                                }
+                                memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin));
+                                addPlayers(value.ip, value.port, result.players);
+                            });
+                        }
+                    }
+                    for (String m : memory) {
+                        String[] a = m.split("///");
+                        Call.onLabel(a[0], ((float) ping) + 3f, Float.parseFloat(a[1]), Float.parseFloat(a[2]));
+                    }
+
+                    if (Core.settings.getBool("isLobby")) {
+                        Core.settings.putSave("totalPlayers", getTotalPlayers());
+                    }
+
+                    ping = 0.000;
                 }
 
                 TimeUnit.SECONDS.sleep(3);
