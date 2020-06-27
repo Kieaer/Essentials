@@ -882,7 +882,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.get("player.not-found"));
             }
         });
-        handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server warp zone data.", (arg, player) -> {
+        handler.<Player>register("reset", "<zone/count/total/block> [ip]", "Remove a server-to-server warp zone data.", (arg, player) -> {
             if (!perm.check(player, "reset")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -912,6 +912,10 @@ public class Main extends Plugin {
                 case "total":
                     pluginData.warptotals.clear();
                     player.sendMessage(bundle.prefix("system.warp.reset", "total"));
+                    break;
+                case "block":
+                    pluginData.warpblocks.clear();
+                    player.sendMessage(bundle.prefix("system.warp.reset", "block"));
                     break;
                 default:
                     player.sendMessage(bundle.prefix("command.invalid"));
