@@ -687,14 +687,22 @@ public class Event {
                                 mainThread.shutdown();
                                 database.dispose();
 
+                                System.out.println(new Bundle().get("plugin-downloading"));
+
                                 Tools.URLDownload(new URL(json.get("assets").asArray().get(0).asObject().getString("browser_download_url", null)),
                                         Core.settings.getDataDirectory().child("mods/Essentials.jar").file());
-                                Core.app.exit();
                             } catch (Exception ex) {
                                 System.out.println("\n" + new Bundle().get("plugin-downloading-fail"));
                                 new CrashReport(ex);
-                                Core.app.exit();
                             }
+
+                            // TODO make checksum
+                            /*try {
+                                checksum sum = new checksum();
+                                sum.check()
+                                System.out.println(new Bundle().get("plugin-downloading-done"));
+                            } catch (Exception ignored){}*/
+                            Core.app.exit();
                         });
                         t.start();
                     } else if (latest.compareTo(current) == 0) {

@@ -26,7 +26,6 @@ public class Config {
     private boolean clientEnable;
     private int clientPort;
     private String clientHost;
-    private boolean realName;
     private boolean strictName;
     private int cupdatei;
     private Long afktime;
@@ -47,19 +46,10 @@ public class Config {
     private boolean vote;
     private boolean logging;
     private boolean update;
-    private boolean internalDB;
     private boolean dbServer;
     private String dbUrl;
-    private boolean oldDBMigration;
-    private String oldDBurl;
-    private String oldDBid;
-    private String oldDBpw;
-    private String dataserverUrl;
-    private String dataserverId;
-    private String dataserverPw;
     private boolean loginEnable;
     private String passwordMethod;
-    private boolean validConnect;
     private boolean autoLogin;
     private String discordToken;
     private String discordLink;
@@ -67,7 +57,6 @@ public class Config {
     private String translateId;
     private String translatePw;
     private boolean debug;
-    private String debugCode;
     private boolean crashReport;
     private LocalTime saveTime;
     private boolean rollback;
@@ -120,21 +109,12 @@ public class Config {
         logging = settings.getBoolean("logging", true);
         update = settings.getBoolean("update", true);
         debug = settings.getBoolean("debug", false);
-        debugCode = settings.getString("debugcode", "none");
         crashReport = settings.getBoolean("crashreport", true);
         prefix = settings.getString("prefix", "[green][Essentials] []");
 
         database = settings.get("database").asObject();
-        internalDB = database.getBoolean("internalDB", true);
         dbServer = database.getBoolean("DBServer", false);
         dbUrl = database.getString("DBurl", "jdbc:h2:file:./config/mods/Essentials/data/player");
-        oldDBMigration = database.getBoolean("old-db-migration", false);
-        oldDBurl = database.getString("old-db-url", "jdbc:sqlite:config/mods/Essentials/data/player.sqlite3");
-        oldDBid = database.getString("old-db-id", "none");
-        oldDBpw = database.getString("old-db-pw", "none");
-        dataserverUrl = database.getString("data-server-url", "none");
-        dataserverId = database.getString("data-server-id", "none");
-        dataserverPw = database.getString("data-server-pw", "none");
 
         network = obj.get("network").asObject();
         serverEnable = network.getBoolean("server-enable", false);
@@ -152,7 +132,6 @@ public class Config {
         antiRush = anti.getBoolean("antirush", false);
         antiRushtime = anti.get("antirushtime") == null || anti.get("antirushtime").isString() ? 0L : anti.getLong("antirushtime", 600);
         alertAction = anti.getBoolean("alert-action", false);
-        realName = anti.getBoolean("realname", false);
         strictName = anti.getBoolean("strict-name", false);
         scanResource = anti.getBoolean("scanresource", false);
 
@@ -187,7 +166,6 @@ public class Config {
         auth = obj.get("auth").asObject();
         loginEnable = auth.getBoolean("loginenable", false);
         passwordMethod = auth.getString("loginmethod", "password");
-        validConnect = auth.getBoolean("validconnect", false);
         autoLogin = auth.getBoolean("autologin", true);
 
         discord = auth.get("discord").asObject();
@@ -226,22 +204,13 @@ public class Config {
         settings.add("logging", logging, bundle.get("config.feature.logging"));
         settings.add("update", update, bundle.get("config.update"));
         settings.add("debug", debug, bundle.get("config.debug"));
-        settings.add("debugcode", debugCode);
         settings.add("crash-report", crashReport);
         settings.add("prefix", prefix, bundle.get("config.prefix"));
 
         // DB 설정 (settings 상속)
         settings.add("database", db);
-        db.add("internalDB", internalDB, bundle.get("config.database"));
         db.add("DBServer", dbServer);
         db.add("DBurl", dbUrl);
-        db.add("old-db-migration", oldDBMigration, bundle.get("config.database.old-database-migration"));
-        db.add("old-db-url", oldDBurl);
-        db.add("old-db-id", oldDBid);
-        db.add("old-db-pw", oldDBpw);
-        db.add("data-server-url", dataserverUrl, bundle.get("config.client.data-share"));
-        db.add("data-server-id", dataserverId);
-        db.add("data-server-pw", dataserverPw);
 
         // 네트워크 설정
         network.add("server-enable", serverEnable, bundle.get("config.network"));
@@ -259,7 +228,6 @@ public class Config {
         anti.add("antirush", antiRush, bundle.get("config.anti-grief.pvprush"));
         anti.add("antirushtime", antiRushtime);
         anti.add("alert-action", alertAction, bundle.get("config-alert-action-description"));
-        anti.add("realname", realName, bundle.get("config.anti-grief.realname"));
         anti.add("strict-name", strictName, bundle.get("config-strict-name-description"));
         anti.add("scanresource", scanResource, bundle.get("config.anti-grief.scan-resource"));
 
@@ -296,7 +264,6 @@ public class Config {
         // 로그인 설정
         auth.add("loginenable", loginEnable, bundle.get("config.account.login"));
         auth.add("loginmethod", passwordMethod, bundle.get("config.account.login.method"));
-        auth.add("validconnect", validConnect, bundle.get("config.account.valid-connect"));
         auth.add("autologin", autoLogin);
 
         // Discord 설정 (auth 상속)
@@ -317,10 +284,6 @@ public class Config {
 
     public Locale language() {
         return language;
-    }
-
-    public void language(Locale language) {
-        this.language = language;
     }
 
     public boolean serverEnable() {
@@ -345,10 +308,6 @@ public class Config {
 
     public void clientHost(String clientHost) {
         this.clientHost = clientHost;
-    }
-
-    public boolean realName() {
-        return realName;
     }
 
     public boolean strictName() {
@@ -435,52 +394,12 @@ public class Config {
         this.update = update;
     }
 
-    public boolean internalDB() {
-        return internalDB;
-    }
-
     public boolean dbServer() {
         return dbServer;
     }
 
     public String dbUrl() {
         return dbUrl;
-    }
-
-    public void dbUrl(String dbUrl) {
-        this.dbUrl = dbUrl;
-    }
-
-    public boolean oldDBMigration() {
-        return oldDBMigration;
-    }
-
-    public void oldDBMigration(boolean oldDBMigration) {
-        this.oldDBMigration = oldDBMigration;
-    }
-
-    public String oldDBurl() {
-        return oldDBurl;
-    }
-
-    public String oldDBid() {
-        return oldDBid;
-    }
-
-    public String oldDBpw() {
-        return oldDBpw;
-    }
-
-    public String dataserverUrl() {
-        return dataserverUrl;
-    }
-
-    public String dataserverId() {
-        return dataserverId;
-    }
-
-    public String dataserverPw() {
-        return dataserverPw;
     }
 
     public boolean loginEnable() {
@@ -497,10 +416,6 @@ public class Config {
 
     public void passwordMethod(String passwordMethod) {
         this.passwordMethod = passwordMethod;
-    }
-
-    public boolean validConnect() {
-        return validConnect;
     }
 
     public boolean autoLogin() {
@@ -537,10 +452,6 @@ public class Config {
 
     public boolean debug() {
         return debug;
-    }
-
-    public String debugCode() {
-        return debugCode;
     }
 
     public boolean crashReport() {

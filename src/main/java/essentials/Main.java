@@ -153,7 +153,8 @@ public class Main extends Plugin {
         new TickTrigger();
         mainThread.submit(new Threads());
         mainThread.submit(colornick);
-        timer.scheduleAtFixedRate(rollback, 600000, 600000);
+        if (config.rollback())
+            timer.scheduleAtFixedRate(rollback, config.saveTime().toSecondOfDay(), config.saveTime().toSecondOfDay());
         mainThread.submit(new PermissionWatch());
         mainThread.submit(warpBorder);
 
@@ -1427,7 +1428,11 @@ public class Main extends Plugin {
                         vote.add(new Vote(player, Vote.VoteType.gameover));
                         break;
                     case "rollback":
-                        vote.add(new Vote(player, Vote.VoteType.rollback));
+                        if (config.rollback()) {
+                            vote.add(new Vote(player, Vote.VoteType.rollback));
+                        } else {
+                            player.sendMessage(bundle.get("vote.rollback.disabled"));
+                        }
                         break;
                     case "gamemode":
                         if (arg.length < 2) {
