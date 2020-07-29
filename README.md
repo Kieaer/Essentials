@@ -5,19 +5,37 @@ Add more commands to the server.
 I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
 
-## Requirements for running this plugin
-Minimum require java version: Only __Java 8__<br>
-This plugin does a lot of disk read/write operations depending on the features usage.
-
-### Minimum
-CPU: Athlon 200GE or Intel i5 2300<br>
-RAM: 20MB<br>
-Disk: HDD capable of more than 2MB/s random read/write.
-
-### Recommend
-CPU: Ryzen 3 2200G or Intel i3 8100<br>
-RAM: 50MB<br>
-Disk: HDD capable of more than 5MB/s random read/write.
+## Essentials 11 Plans
+- [ ] Fix bugs
+  - [ ] Voting not working
+  - [ ] Sometimes an account system not working
+- [ ] Fix many typos
+- [ ] Features separation
+  - [ ] Rest API
+    - [ ] Information
+      - [ ] Add players detail information
+      - [ ] Add a gamemode
+      - [ ] Add a server online time
+      - [ ] Add other team core resource status
+      - [ ] Add a server map list
+    - [ ] Communication
+      - [ ] Communicate a chat message to server
+        - [ ] Send
+        - [ ] Receive
+  - [ ] Web server
+    - [ ] Fix a sometimes ranking site not loaded
+  - [ ] Auto Rollback (Not remove)
+- [ ] New features
+  - [ ] Web console
+    - [ ] Control plugin database
+    - [ ] Check world status
+      - [ ] Dynmap (idea from Minecraft)
+      - [ ] Rest API
+- [ ] Remove external API services
+  - [x] IP API (Due to traffic excess)
+  - [ ] Translate (Due to paid service)
+- [ ] Security patches
+- [ ] All code clean
 
 ## Installation
 
