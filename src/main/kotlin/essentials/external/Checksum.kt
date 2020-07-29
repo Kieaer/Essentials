@@ -8,7 +8,7 @@ import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
-class checksum {
+class Checksum {
     private var sum: String
     fun check(hash: String): Boolean {
         return hash == sum

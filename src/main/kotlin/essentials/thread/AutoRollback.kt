@@ -1,4 +1,4 @@
-package essentials.internal.thread
+package essentials.thread
 
 import arc.struct.Array
 import arc.struct.Array.ArrayIterable
@@ -49,7 +49,7 @@ class AutoRollback : TimerTask() {
             CrashReport(e)
         }
         Log.info("Map rollbacked.")
-        Thread(Runnable {
+        Thread {
             try {
                 val orignal = Vars.state.rules.respawnTime
                 Vars.state.rules.respawnTime = 0f
@@ -60,7 +60,7 @@ class AutoRollback : TimerTask() {
             } catch (ignored: InterruptedException) {
                 Thread.currentThread().interrupt()
             }
-        }).start()
+        }.start()
         if (Vars.state.`is`(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.")
     }
 

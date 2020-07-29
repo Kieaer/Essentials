@@ -1,7 +1,6 @@
 package essentials
 
 import arc.Core
-import arc.func.Boolf
 import essentials.Main.Companion.colorNickname
 import essentials.Main.Companion.playerCore
 import essentials.Main.Companion.pluginData
@@ -80,7 +79,7 @@ class PlayerCore {
         playerData.exp = playerData.exp + playerData.joincount
         playerData.login = true
 
-        Main.perm.setPermission_user(oldUUID, p.uuid)
+        Main.perm.setUserPerm(oldUUID, p.uuid)
         if (Main.perm.user[p.uuid] == null) {
             Main.perm.create(playerData)
             Main.perm.saveAll()
@@ -173,7 +172,7 @@ class PlayerCore {
     }
 
     fun remove(uuid: String) {
-        pluginVars.removePlayerData(Boolf { p: PlayerData -> p.uuid == uuid })
+        pluginVars.removePlayerData { p: PlayerData -> p.uuid == uuid }
     }
 
     fun load(uuid: String, id: String?): PlayerData {

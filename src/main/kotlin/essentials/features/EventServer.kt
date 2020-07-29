@@ -4,6 +4,7 @@ import arc.ApplicationListener
 import arc.Core
 import arc.struct.Array
 import essentials.Main
+import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.tool
 import essentials.external.PingHost
 import essentials.internal.CrashReport
@@ -16,16 +17,15 @@ import java.io.IOException
 import java.net.URL
 import java.nio.file.Paths
 import java.util.*
-import java.util.function.Consumer
 
 class EventServer {
     var servers = Array<Process>()
     fun create(roomname: String, map: String, gamemode: String?, port: Int): Boolean {
         return try {
-            val json = JsonValue.readJSON(Main.tool.getWebContent("https://api.github.com/repos/anuken/Mindustry/releases/latest")).asObject()
+            val json = JsonValue.readJSON(tool.getWebContent("https://api.github.com/repos/anuken/Mindustry/releases/latest")).asObject()
             val url = json["assets"].asArray()[0].asObject()["browser_download_url"].asString()
-            Main.pluginRoot.child("temp").child(roomname).mkdirs()
-            tool.download(URL(url), Main.pluginRoot.child("temp/$roomname/server.jar").file())
+            pluginRoot.child("temp").child(roomname).mkdirs()
+            tool.download(URL(url), pluginRoot.child("temp/$roomname/server.jar").file())
             val service = EventService(roomname, map, Gamemode.valueOf(gamemode!!), port)
             service.start()
             Thread.sleep(5000)
@@ -50,14 +50,14 @@ class EventServer {
                 if (p.isAlive) Log.info("$roomname Event serer online!")
                 val t: TimerTask = object : TimerTask() {
                     override fun run() {
-                        PingHost("127.0.0.1", port, Consumer { result: Host ->
+                        PingHost("127.0.0.1", port) { result: Host ->
                             if (disablecount > 300) {
                                 try {
-                                    val settings = JsonValue.readJSON(Main.pluginRoot.child("data/data.json").reader()).asObject()
+                                    val settings = JsonValue.readJSON(pluginRoot.child("data/data.json").reader()).asObject()
                                     for (a in 0 until settings["servers"].asArray().size()) {
                                         if (settings["servers"].asArray()[a].asObject().getInt("port", 0) == port) {
                                             settings["servers"].asArray().remove(a)
-                                            Main.pluginRoot.child("data/data.json").writeString(settings.toString())
+                                            pluginRoot.child("data/data.json").writeString(settings.toString())
                                             break
                                         }
                                     }
@@ -70,7 +70,7 @@ class EventServer {
                             } else if (result.players == 0) {
                                 disablecount++
                             }
-                        })
+                        }
                     }
                 }
                 Main.timer.scheduleAtFixedRate(t, 1000, 1000)

@@ -2,7 +2,6 @@ package essentials.features
 
 import arc.Core
 import arc.Events
-import arc.func.Boolf
 import arc.struct.ArrayMap
 import essentials.Main.Companion.client
 import essentials.Main.Companion.configs
@@ -37,6 +36,7 @@ import mindustry.gen.Call
 import mindustry.net.Packets
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.DataOutputStream
@@ -47,9 +47,10 @@ import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
+import kotlin.math.abs
 
 class Event {
-    var log = LoggerFactory.getLogger(Event::class.java)
+    var log: Logger = LoggerFactory.getLogger(Event::class.java)
 
     init {
         Events.on(TapConfigEvent::class.java) { e: TapConfigEvent ->
@@ -73,9 +74,9 @@ class Event {
                     val newgraph = other!!.entity.power.graph
                     val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all={"), oldGraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
                     val newGraphCount = newgraph.toString().substring(newgraph.toString().indexOf("all={"), newgraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
-                    if (Math.abs(oldGraphCount - newGraphCount) > 10) {
+                    if (abs(oldGraphCount - newGraphCount) > 10) {
                         //tool.sendMessageAll("anti-grief.powernode", e.player.name, "[green] " + Math.max(oldGraphCount, newGraphCount) + " [cyan]->[scarlet] " + Math.min(oldGraphCount, newGraphCount) + " [white](" + e.tile.x + ", " + e.tile.y + ")");
-                        Call.sendMessage(e.player.name + " [white]player has [scarlet]unlinked[] the [yellow]power node[]. Number of connected buildings: [green] " + Math.max(oldGraphCount, newGraphCount) + " [cyan]->[scarlet] " + Math.min(oldGraphCount, newGraphCount) + " [white](" + e.tile.x + ", " + e.tile.y + ")")
+                        Call.sendMessage(e.player.name + " [white]player has [scarlet]unlinked[] the [yellow]power node[]. Number of connected buildings: [green] " + oldGraphCount.coerceAtLeast(newGraphCount) + " [cyan]->[scarlet] " + oldGraphCount.coerceAtMost(newGraphCount) + " [white](" + e.tile.x + ", " + e.tile.y + ")")
                     }
                 }
             }
@@ -164,7 +165,7 @@ class Event {
         }
 
         // 맵이 불러와졌을 때
-        Events.on(WorldLoadEvent::class.java) { e: WorldLoadEvent? ->
+        Events.on(WorldLoadEvent::class.java) {
             pluginVars.playtime = 0L
 
             // 전력 노드 정보 초기화
@@ -215,7 +216,7 @@ class Event {
             if (configs.logging) Log.write(LogType.player, "log.player.join", e.player.name, e.player.uuid, e.player.con.address)
             pluginVars.players.add(e.player)
             e.player.isAdmin = false
-            val t = Thread(Runnable {
+            val t = Thread {
                 Thread.currentThread().name = e.player.name + " Player Join thread"
                 val playerData = playerCore.load(e.player.uuid, null)
                 val bundle = Bundle(playerData.locale)
@@ -223,7 +224,7 @@ class Event {
                     if (configs.passwordMethod == "mixed") {
                         if (!playerData.error && configs.autoLogin) {
                             if (playerData.udid != 0L) {
-                                Thread(Runnable { Call.onConnect(e.player.con, pluginVars.serverIP, 7060) }).start()
+                                Thread { Call.onConnect(e.player.con, pluginVars.serverIP, 7060) }.start()
                             } else {
                                 e.player.sendMessage(bundle["account.autologin"])
                                 playerCore.playerLoad(e.player, null)
@@ -311,22 +312,27 @@ class Event {
                 // 플레이어 인원별 난이도 설정
                 if (configs.autoDifficulty) {
                     val total = Vars.playerGroup.size()
-                    if (configs.difficultyEasy >= total) {
-                        Vars.state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2
-                        //tool.sendMessageAll("system.difficulty.easy");
-                    } else if (configs.difficultyNormal == total) {
-                        Vars.state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2
-                        //tool.sendMessageAll("system.difficulty.normal");
-                    } else if (configs.difficultyHard == total) {
-                        Vars.state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2
-                        //tool.sendMessageAll("system.difficulty.hard");
-                    } else if (configs.difficultyInsane <= total) {
-                        Vars.state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2
-                        //tool.sendMessageAll("system.difficulty.insane");
+                    when {
+                        configs.difficultyEasy >= total -> {
+                            Vars.state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2
+                            //tool.sendMessageAll("system.difficulty.easy");
+                        }
+                        configs.difficultyNormal == total -> {
+                            Vars.state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2
+                            //tool.sendMessageAll("system.difficulty.normal");
+                        }
+                        configs.difficultyHard == total -> {
+                            Vars.state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2
+                            //tool.sendMessageAll("system.difficulty.hard");
+                        }
+                        configs.difficultyInsane <= total -> {
+                            Vars.state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2
+                            //tool.sendMessageAll("system.difficulty.insane");
+                        }
                     }
                     NetClient.onSetRules(Vars.state.rules)
                 }
-            })
+            }
             t.start()
         }
 
@@ -340,7 +346,7 @@ class Event {
                 if (Vars.state.rules.pvp && !Vars.state.gameOver) player.pvpbreakout = player.pvpbreakout + 1
             }
             playerCore.save(player)
-            pluginVars.removePlayerData(Boolf { p: PlayerData -> p.uuid == e.player.uuid })
+            pluginVars.removePlayerData { p: PlayerData -> p.uuid == e.player.uuid }
             pluginVars.players.remove(e.player)
         }
 
@@ -366,28 +372,32 @@ class Event {
                         if (!playerData.mute) {
                             // 서버간 대화기능 작동
                             if (playerData.crosschat) {
-                                if (configs.clientEnable) {
-                                    client.request(Client.Request.Chat, e.player, e.message)
-                                } else if (configs.serverEnable) {
-                                    // 메세지를 모든 클라이언트에게 전송함
-                                    val msg = "[" + e.player.name + "]: " + e.message
-                                    try {
-                                        for (ser in server.list) {
-                                            ser!!.os.writeBytes(tool.encrypt(msg, ser.spec))
-                                            ser.os.flush()
-                                        }
-                                    } catch (ex: Exception) {
-                                        log.warn("Crosschat", ex)
+                                when {
+                                    configs.clientEnable -> {
+                                        client.request(Client.Request.Chat, e.player, e.message)
                                     }
-                                } else {
-                                    e.player.sendMessage(bundle["no-any-network"])
-                                    playerData.crosschat = false
+                                    configs.serverEnable -> {
+                                        // 메세지를 모든 클라이언트에게 전송함
+                                        val msg = "[" + e.player.name + "]: " + e.message
+                                        try {
+                                            for (ser in server.list) {
+                                                ser!!.os.writeBytes(tool.encrypt(msg, ser.spec))
+                                                ser.os.flush()
+                                            }
+                                        } catch (ex: Exception) {
+                                            log.warn("Crosschat", ex)
+                                        }
+                                    }
+                                    else -> {
+                                        e.player.sendMessage(bundle["no-any-network"])
+                                        playerData.crosschat = false
+                                    }
                                 }
                             }
                         }
                     }
                     if (configs.translate) {
-                        Thread(Runnable {
+                        Thread {
                             val buf = ArrayMap<String, String>()
                             try {
                                 for (p in Vars.playerGroup.all()) {
@@ -454,7 +464,7 @@ class Event {
                             } catch (ex: Exception) {
                                 CrashReport(ex)
                             }
-                        }).start()
+                        }.start()
                     } else if (NetClient.colorizeName(e.player.id, e.player.name) != null) {
                         Call.sendMessage(perm.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
                     }
@@ -595,11 +605,11 @@ class Event {
 
         // 플레이어가 밴당했을 때 공유기능 작동
         Events.on(PlayerBanEvent::class.java) { e: PlayerBanEvent ->
-            val bansharing = Thread(Runnable {
+            val bansharing = Thread {
                 if (configs.banShare && configs.clientEnable) {
                     client.request(Client.Request.BanSync, null, null)
                 }
-            })
+            }
             for (player in Vars.playerGroup.all()) {
                 if (player === e.player) {
                     tool.sendMessageAll("player.banned", e.player.name)
@@ -612,12 +622,12 @@ class Event {
         }
 
         // 이건 IP 밴당했을때 작동
-        Events.on(PlayerIpBanEvent::class.java) { e: PlayerIpBanEvent? ->
-            val bansharing = Thread(Runnable {
+        Events.on(PlayerIpBanEvent::class.java) {
+            val bansharing = Thread {
                 if (configs.banShare && client.activated) {
                     client.request(Client.Request.BanSync, null, null)
                 }
-            })
+            }
             mainThread.submit(bansharing)
         }
 
@@ -626,7 +636,7 @@ class Event {
 
         // 이건 IP 밴이 해제되었을 때 작동
         Events.on(PlayerIpUnbanEvent::class.java) { e: PlayerIpUnbanEvent -> if (client.activated) client.request(Client.Request.UnbanIP, null, "<unknown>|" + e.ip) }
-        Events.on(ServerLoadEvent::class.java) { e: ServerLoadEvent? ->
+        Events.on(ServerLoadEvent::class.java) { _: ServerLoadEvent? ->
             // 업데이트 확인
             if (configs.update) {
                 Log.client("client.update-check")
@@ -639,52 +649,56 @@ class Event {
                     }
                     val latest = DefaultArtifactVersion(json.getString("tag_name", pluginVars.pluginVersion))
                     val current = DefaultArtifactVersion(pluginVars.pluginVersion)
-                    if (latest.compareTo(current) > 0) {
-                        Log.client("version-new")
-                        val t = Thread(Runnable {
-                            try {
-                                Log.info(Bundle()["update-description", json["tag_name"]])
-                                println(json.getString("body", "No description found."))
-                                println(Bundle()["plugin-downloading-standby"])
-                                timer.cancel()
-                                if (configs.serverEnable) {
-                                    try {
-                                        for (ser in server.list) {
-                                            ser!!.interrupt()
-                                            ser.os.close()
-                                            ser.br.close()
-                                            ser.socket.close()
-                                            server.list.remove(ser)
+                    when {
+                        latest > current -> {
+                            Log.client("version-new")
+                            val t = Thread {
+                                try {
+                                    Log.info(Bundle()["update-description", json["tag_name"]])
+                                    println(json.getString("body", "No description found."))
+                                    println(Bundle()["plugin-downloading-standby"])
+                                    timer.cancel()
+                                    if (configs.serverEnable) {
+                                        try {
+                                            for (ser in server.list) {
+                                                ser!!.interrupt()
+                                                ser.os.close()
+                                                ser.br.close()
+                                                ser.socket.close()
+                                                server.list.remove(ser)
+                                            }
+                                            server.shutdown()
+                                        } catch (ignored: Exception) {
                                         }
-                                        server.shutdown()
-                                    } catch (ignored: Exception) {
                                     }
+                                    if (configs.clientEnable && client.activated) {
+                                        client.request(Client.Request.Exit, null, null)
+                                    }
+                                    mainThread.shutdown()
+                                    playerCore.dispose()
+                                    println(Bundle()["plugin-downloading"])
+                                    tool.download(URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),
+                                            Core.settings.dataDirectory.child("mods/Essentials.jar").file())
+                                } catch (ex: Exception) {
+                                    println(Bundle()["plugin-downloading-fail"].trimIndent())
+                                    CrashReport(ex)
                                 }
-                                if (configs.clientEnable && client.activated) {
-                                    client.request(Client.Request.Exit, null, null)
-                                }
-                                mainThread.shutdown()
-                                playerCore.dispose()
-                                println(Bundle()["plugin-downloading"])
-                                tool.download(URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),
-                                        Core.settings.dataDirectory.child("mods/Essentials.jar").file())
-                            } catch (ex: Exception) {
-                                println("""${Bundle()["plugin-downloading-fail"]}""".trimIndent())
-                                CrashReport(ex)
-                            }
 
-                            // TODO make checksum
-                            /*try {
-                                checksum sum = new checksum();
-                                sum.check()
-                                System.out.println(new Bundle().get("plugin-downloading-done"));
-                            } catch (Exception ignored){}*/Core.app.exit()
-                        })
-                        t.start()
-                    } else if (latest.compareTo(current) == 0) {
-                        Log.client("version-current")
-                    } else if (latest.compareTo(current) < 0) {
-                        Log.client("version-devel")
+                                // TODO make checksum
+                                /*try {
+                                            checksum sum = new checksum();
+                                            sum.check()
+                                            System.out.println(new Bundle().get("plugin-downloading-done"));
+                                        } catch (Exception ignored){}*/Core.app.exit()
+                            }
+                            t.start()
+                        }
+                        latest.compareTo(current) == 0 -> {
+                            Log.client("version-current")
+                        }
+                        latest.compareTo(current) < 0 -> {
+                            Log.client("version-devel")
+                        }
                     }
                 } catch (ex: Exception) {
                     CrashReport(ex)

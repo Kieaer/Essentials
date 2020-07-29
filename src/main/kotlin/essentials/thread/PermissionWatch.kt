@@ -1,4 +1,4 @@
-package essentials.internal.thread
+package essentials.thread
 
 import essentials.Main
 import essentials.internal.CrashReport

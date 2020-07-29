@@ -7,7 +7,7 @@ Please submit your idea to this repository issues or Mindustry official discord!
 
 ## Requirements for running this plugin
 Minimum require java version: Only __Java 8__<br>
-This plugin does a lot of disk read/write operations depending on the essentials.features usage.
+This plugin does a lot of disk read/write operations depending on the features usage.
 
 ### Minimum
 CPU: Athlon 200GE or Intel i5 2300<br>
@@ -27,7 +27,6 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| vote | &lt;y/n&gt; | Vote to kick the current player. |
 | alert |  | Turn on/off alerts |
 | ch |  | Send chat to another server. |
 | changepw | &lt;new_password&gt; &lt;new_password_repeat&gt; | Change account password |
@@ -37,7 +36,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | killall |  | Kill all enemy units |
 | event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
 | info |  | Show your information |
-| jump | &lt;zone/count/total&gt; [ip] [port] [range] [clickable] | Create a server-to-server jumping zone. |
+| warp | &lt;zone/block/count/total&gt; [ip] [parameters...] | Create a server-to-server warp zone. |
 | kickall |  | Kick all players |
 | kill | [player] | Kill player. |
 | login | &lt;id&gt; &lt;password&gt; | Access your account |
@@ -47,7 +46,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | motd |  | Show server motd. |
 | save |  | Auto rollback map early save |
 | r | &lt;player&gt; [message] | Send Direct message to target player |
-| reset | &lt;zone/count/total&gt; [ip] | Remove a server-to-server jumping zone data. |
+| reset | &lt;zone/count/total/block&gt; [ip] | Remove a server-to-server warp zone data. |
 | router |  | Router |
 | register | &lt;accountid&gt; &lt;password&gt; | Register account |
 | spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playerName] | Spawn mob in player position |
@@ -56,8 +55,8 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | setmech | &lt;Mech&gt; [player] | Set player mech |
 | status |  | Show server status |
 | suicide |  | Kill yourself. |
-| team | [Team...] | Change team (PvP only) |
-| tempban | &lt;player&gt; &lt;time&gt; &lt;reason&gt; | Temporarily ban player. time unit: 1 hours |
+| team | &lt;team_name&gt; | Change team |
+| tempban | &lt;player&gt; &lt;time&gt; &lt;reason&gt; | Temporarily ban player. time unit: 1 minute |
 | time |  | Show server time |
 | tp | &lt;player&gt; | Teleport to other players |
 | tpp | &lt;source&gt; &lt;target&gt; | Teleport to other players |
@@ -70,10 +69,11 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
+| lobby |  | Toggle lobby server essentials.features |
 | edit | &lt;uuid&gt; &lt;name&gt; [value] | Edit PlayerData directly |
 | saveall |  | desc |
 | bansync |  | Synchronize ban list with server |
 | setperm | &lt;player_name/uuid&gt; &lt;group&gt; | Set player permission |
 | reload |  | Reload Essential plugin data |
 
-README.md Generated time: 2020-05-31 00:27:02
+README.md Generated time: 2020-07-29 23:09:08

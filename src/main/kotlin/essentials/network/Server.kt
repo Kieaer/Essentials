@@ -33,20 +33,17 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.regex.Pattern
-import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
 class Server : Runnable {
-    var list = Array<service?>()
+    var list = Array<Service?>()
     lateinit var serverSocket: ServerSocket
     var bundle = Bundle()
     fun shutdown() {
         try {
-            if (serverSocket != null) {
-                Thread.currentThread().interrupt()
-                serverSocket.close()
-            }
+            Thread.currentThread().interrupt()
+            serverSocket.close()
         } catch (e: IOException) {
             CrashReport(e)
         }
@@ -54,12 +51,12 @@ class Server : Runnable {
 
     override fun run() {
         try {
-            serverSocket = ServerSocket(Main.configs.serverPort)
+            serverSocket = ServerSocket(configs.serverPort)
             Log.info("server.enabled")
             while (!serverSocket.isClosed) {
                 val socket = serverSocket.accept()
                 try {
-                    val service = service(socket)
+                    val service = Service(socket)
                     service.start()
                     list.add(service)
                 } catch (ignored: PluginException) {
@@ -75,15 +72,14 @@ class Server : Runnable {
     }
 
     internal enum class Request {
-        ping, bansync, chat, exit, unbanip, unbanid, datashare, checkban
+        Ping, BanSync, Chat, Exit, UnbanIP, UnbanID, DataShare, CheckBan
     }
 
-    inner class service(var socket: Socket) : Thread() {
-        lateinit var br: BufferedReader
-        lateinit var os: DataOutputStream
+    inner class Service(var socket: Socket) : Thread() {
+        var br: BufferedReader
+        var os: DataOutputStream
         lateinit var spec: SecretKey
-        lateinit var cipher: Cipher
-        lateinit var ip: String
+        var ip: String
 
         fun shutdown(bundle: String?, vararg parameter: String?) {
             try {
@@ -104,9 +100,8 @@ class Server : Runnable {
                     val value = Main.tool.decrypt(br.readLine(), spec)
                     val answer = JsonObject()
                     val data = JsonValue.readJSON(value).asObject()
-                    val type = Request.valueOf(data["type"].asString())
-                    when (type) {
-                        Request.ping -> {
+                    when (Request.valueOf(data["type"].asString())) {
+                        Request.Ping -> {
                             val msg = arrayOf("Hi $ip! Your connection is successful!", "Hello $ip! I'm server!", "Welcome to the server $ip!")
                             val rnd = SecureRandom().nextInt(msg.size)
                             answer.add("result", msg[rnd])
@@ -114,7 +109,7 @@ class Server : Runnable {
                             os.flush()
                             Log.server("client.connected", ip)
                         }
-                        Request.bansync -> {
+                        Request.BanSync -> {
                             Log.server("client.request.banlist", ip)
 
                             // 적용
@@ -159,7 +154,7 @@ class Server : Runnable {
                                 }
                             }
                         }
-                        Request.chat -> {
+                        Request.Chat -> {
                             val message = data["message"].asString()
                             for (p in Vars.playerGroup) {
                                 p.sendMessage(if (p.isAdmin) "[#C77E36][$ip][RC] $message" else "[#C77E36][RC] $message")
@@ -172,27 +167,27 @@ class Server : Runnable {
                             }
                             Log.server("server-message-received", ip, message)
                         }
-                        Request.exit -> {
+                        Request.Exit -> {
                             shutdown("client.disconnected", ip, bundle["client.disconnected.reason.exit"])
                             interrupt()
                             return
                         }
-                        Request.unbanip -> Vars.netServer.admins.unbanPlayerIP(data["ip"].asString())
-                        Request.unbanid -> Vars.netServer.admins.unbanPlayerID(data["uuid"].asString())
-                        Request.datashare -> {
+                        Request.UnbanIP -> Vars.netServer.admins.unbanPlayerIP(data["ip"].asString())
+                        Request.UnbanID -> Vars.netServer.admins.unbanPlayerID(data["uuid"].asString())
+                        Request.DataShare -> {
                         }
-                        Request.checkban -> {
+                        Request.CheckBan -> {
                             var found = false
-                            val target_uuid = data["target_uuid"].asString()
-                            val target_ip = data["target_ip"].asString()
+                            val uuid = data["target_uuid"].asString()
+                            val ip = data["target_ip"].asString()
                             for (info in Vars.netServer.admins.banned) {
-                                if (info.id == target_uuid) {
+                                if (info.id == uuid) {
                                     found = true
                                     break
                                 }
                             }
                             for (info in Vars.netServer.admins.bannedIPs) {
-                                if (info == target_ip) {
+                                if (info == ip) {
                                     found = true
                                     break
                                 }
@@ -267,7 +262,7 @@ class Server : Runnable {
                 for (p in Vars.playerGroup.all()) {
                     playerdata.append(p.name).append(",")
                 }
-                if (playerdata.length != 0) {
+                if (playerdata.isNotEmpty()) {
                     playerdata.substring(playerdata.length - 1, playerdata.length)
                 }
                 val version = Version.build
@@ -326,8 +321,7 @@ class Server : Runnable {
                         val header = "<tr><th>$name</th><th>$country</th><th>$win</th><th>$lose</th><th>$rate</th></tr>"
                         array.add(header)
                         while (rs.next()) {
-                            var percent: Int
-                            percent = try {
+                            val percent: Int = try {
                                 rs.getInt("pvpwincount") / rs.getInt("pvplosecount") * 100
                             } catch (e: Exception) {
                                 0
@@ -561,7 +555,7 @@ class Server : Runnable {
                 headers.append(authkey).append("\n")
                 headers.append("Remote IP: ").append(ip).append("\n")
                 var headerLine: String?
-                while (br.readLine().also { headerLine = it }.length != 0) {
+                while (br.readLine().also { headerLine = it }.isNotEmpty()) {
                     headers.append(headerLine).append("\n")
                 }
                 headers.append("========================")
@@ -579,9 +573,9 @@ class Server : Runnable {
                     } finally {
                         shutdown("client.disconnected.http", ip)
                     }
-                } else if (Main.configs.query) {
+                } else if (configs.query) {
                     httpserver(authkey, payload.toString())
-                } else if (!Main.configs.query) {
+                } else if (!configs.query) {
                     try {
                         BufferedWriter(OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)).use { bw ->
                             bw.write("HTTP/1.1 403 Forbidden\r\n")

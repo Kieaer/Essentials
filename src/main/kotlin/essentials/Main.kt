@@ -10,13 +10,9 @@ import arc.util.Time
 import essentials.external.StringUtils
 import essentials.features.*
 import essentials.internal.*
-import essentials.internal.thread.AutoRollback
-import essentials.internal.thread.PermissionWatch
-import essentials.internal.thread.Threads
-import essentials.internal.thread.WarpBorder
 import essentials.network.Client
 import essentials.network.Server
-import essentials.thread.TickTrigger
+import essentials.thread.*
 import mindustry.Vars
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -275,8 +271,8 @@ class Main : Plugin() {
                 Please submit your idea to this repository issues or Mindustry official discord!
                 
                 ## Requirements for running this plugin
-                Minimum require java version: Only __Java 8__<br>
-                This plugin does a lot of disk read/write operations depending on the essentials.features usage.
+                Minimum require java version: Java 8
+                This plugin does a lot of disk read/write operations depending on the features usage.
                 
                 ### Minimum
                 CPU: Athlon 200GE or Intel i5 2300<br>
@@ -360,6 +356,7 @@ class Main : Plugin() {
                 Log.client("client.disabled")
             }
         }
+
         handler.register<Any>("info", "<player/uuid>", "Show player information", object : CommandHandler.CommandRunner<Any?> {
             fun execute(uuid: String) {
                 try {
@@ -384,9 +381,8 @@ class Main : Plugin() {
                                         "level: ${rs.getInt("level")}\n" +
                                         "exp: ${rs.getInt("exp")}\n" +
                                         "reqexp: ${rs.getInt("reqexp")}\n" +
-                                        "reqtotalexp: ${rs.getString("reqtotalexp")}\n" +
-                                        "firstdate: ${rs.getString("firstdate")}\n" +
-                                        "lastdate: ${rs.getString("lastdate")}\n" +
+                                        "firstdate: ${tool.longToDateTime(rs.getLong("firstdate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
+                                        "lastdate: ${tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
                                         "lastplacename: ${rs.getString("lastplacename")}\n" +
                                         "lastbreakname: ${rs.getString("lastbreakname")}\n" +
                                         "lastchat: ${rs.getString("lastchat")}\n" +
@@ -396,9 +392,7 @@ class Main : Plugin() {
                                         "pvplosecount: ${rs.getInt("pvplosecount")}\n" +
                                         "pvpbreakout: ${rs.getInt("pvpbreakout")}\n" +
                                         "reactorcount: ${rs.getInt("reactorcount")}\n" +
-                                        "bantimeset: ${rs.getString("bantimeset")}\n" +
                                         "bantime: ${rs.getString("bantime")}\n" +
-                                        "banned: ${rs.getBoolean("banned")}\n" +
                                         "translate: ${rs.getBoolean("translate")}\n" +
                                         "crosschat: ${rs.getBoolean("crosschat")}\n" +
                                         "colornick: ${rs.getBoolean("colornick")}\n" +
@@ -416,8 +410,8 @@ class Main : Plugin() {
                                             "== ${current.name} Player internal data ==\n" + " +" +
                                             "isLogin: ${current.login}\n" +
                                             "afk: ${tool.longToTime(current.afk)}\n" +
-                                            "afk_tilex: ${current.x}\n" + " +" +
-                                            "afk_tiley: ${current.y}"
+                                            "afk_x: ${current.x}\n" + " +" +
+                                            "afk_y: ${current.y}"
                                 }
                                 Log.info(datatext)
                             } else {
@@ -868,7 +862,7 @@ class Main : Plugin() {
         }
         handler.register("router", "Router") { _: Array<String?>?, player: Player ->
             if (!perm.check(player, "router")) return@register
-            Thread(Runnable {
+            Thread {
                 val zero = arrayOf("""
     [stat][#404040][]
     [stat][#404040][]
@@ -1010,7 +1004,7 @@ class Main : Plugin() {
                 } catch (e: InterruptedException) {
                     Thread.currentThread().interrupt()
                 }
-            }).start()
+            }.start()
         }
         handler.register("register", if (configs.passwordMethod.equals("password", ignoreCase = true)) "<accountid> <password>" else "", "Register account") { arg: Array<String>, player: Player ->
             if (configs.loginEnable) {

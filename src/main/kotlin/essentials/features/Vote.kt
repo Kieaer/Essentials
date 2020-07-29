@@ -59,35 +59,35 @@ class Vote : Thread() {
             when (type) {
                 VoteType.kick -> {
                     this.target = parameters[0] as Player
-                    Main.tool.sendMessageAll("vote.kick", target!!.name)
+                    tool.sendMessageAll("vote.kick", target!!.name)
                 }
-                VoteType.gameover -> Main.tool.sendMessageAll("vote.gameover")
+                VoteType.gameover -> tool.sendMessageAll("vote.gameover")
                 VoteType.skipwave -> {
-                    try {
-                        amount = parameters[0] as Int
+                    amount = try {
+                        parameters[0] as Int
                     } catch (ignored: NumberFormatException) {
-                        amount = 3
+                        3
                     }
-                    Main.tool.sendMessageAll("vote.skipwave", amount)
+                    tool.sendMessageAll("vote.skipwave", amount)
                 }
-                VoteType.rollback -> Main.tool.sendMessageAll("vote.rollback")
+                VoteType.rollback -> tool.sendMessageAll("vote.rollback")
                 VoteType.gamemode -> if (parameters[0] is Gamemode) {
                     val gamemode = parameters[0] as Gamemode
-                    Main.tool.sendMessageAll("vote-gamemode", gamemode.name)
+                    tool.sendMessageAll("vote-gamemode", gamemode.name)
                 } else {
                     player!!.sendMessage("vote.wrong-gamemode")
                     return
                 }
                 VoteType.map -> if (parameters[0] is Map) {
                     map = parameters[0] as Map
-                    Main.tool.sendMessageAll("vote.map", map!!.name())
+                    tool.sendMessageAll("vote.map", map!!.name())
                 }
             }
             counting.start()
             alert.start()
         }
 
-        var counting = Thread(Runnable {
+        var counting = Thread {
             var time = 0
             while (!currentThread().isInterrupted) {
                 time++
@@ -102,15 +102,15 @@ class Vote : Thread() {
                     }
                 }
             }
-        })
-        var alert = Thread(Runnable {
+        }
+        var alert = Thread {
             currentThread().name = "Vote alert timertask"
             var time = 0
             while (!currentThread().isInterrupted) {
                 val bundles = arrayOf("vote.count.50", "vote.count.40", "vote.count.30", "vote.count.20", "vote.count.10")
                 if (time <= 4) {
                     if (Vars.playerGroup.size() > 0) {
-                        Main.tool.sendMessageAll(bundles[time])
+                        tool.sendMessageAll(bundles[time])
                     }
                     time++
                 }
@@ -120,7 +120,7 @@ class Vote : Thread() {
                     interrupt()
                 }
             }
-        })
+        }
 
         fun success(success: Boolean) {
             // TODO 투표 성공 메세지 bundle 추가
@@ -128,12 +128,12 @@ class Vote : Thread() {
                 when (type) {
                     VoteType.gameover -> {
                         Log.info("Vote gameover passed!")
-                        Main.tool.sendMessageAll("vote.gameover.done")
+                        tool.sendMessageAll("vote.gameover.done")
                         Events.fire(GameOverEvent(Team.crux))
                     }
                     VoteType.skipwave -> {
                         Log.info("Vote skipwave passed!")
-                        Main.tool.sendMessageAll("vote.skipwave.done")
+                        tool.sendMessageAll("vote.skipwave.done")
                         var a = 0
                         while (a < amount) {
                             Vars.logic.runWave()
@@ -143,14 +143,14 @@ class Vote : Thread() {
                     VoteType.kick -> {
                         Log.info("Vote kick passed!")
                         playerCore[target!!.uuid].kickcount = playerCore[target!!.uuid].kickcount + 1
-                        Main.tool.sendMessageAll("vote.kick.done", target!!.name)
+                        tool.sendMessageAll("vote.kick.done", target!!.name)
                         target!!.info.lastKicked = Time.millis() + 30 * 60 * 1000
                         Call.onKick(target!!.con, Packets.KickReason.vote)
                         Log.write(LogType.player, "log.player.kick")
                     }
                     VoteType.rollback -> {
                         Log.info("Vote rollback passed!")
-                        Main.tool.sendMessageAll("vote.rollback.done")
+                        tool.sendMessageAll("vote.rollback.done")
                         Main.rollback.load()
                     }
                     VoteType.gamemode -> {
@@ -161,19 +161,19 @@ class Vote : Thread() {
                     }
                     VoteType.map -> {
                         Log.info("Vote map passed!")
-                        Main.tool.sendMessageAll("vote.map.done")
+                        tool.sendMessageAll("vote.map.done")
                         Main.rollback.load(map)
-                        Main.tool.sendMessageAll("vote.map.done")
+                        tool.sendMessageAll("vote.map.done")
                     }
                 }
             } else {
                 when (type) {
-                    VoteType.gameover -> Main.tool.sendMessageAll("vote.gameover.fail")
-                    VoteType.skipwave -> Main.tool.sendMessageAll("vote.skipwave.fail")
-                    VoteType.kick -> Main.tool.sendMessageAll("vote.kick.fail", target!!.name)
-                    VoteType.rollback -> Main.tool.sendMessageAll("vote.rollback.fail")
-                    VoteType.gamemode -> Main.tool.sendMessageAll("vote.gamemode.fail")
-                    VoteType.map -> Main.tool.sendMessageAll("vote.map.fail")
+                    VoteType.gameover -> tool.sendMessageAll("vote.gameover.fail")
+                    VoteType.skipwave -> tool.sendMessageAll("vote.skipwave.fail")
+                    VoteType.kick -> tool.sendMessageAll("vote.kick.fail", target!!.name)
+                    VoteType.rollback -> tool.sendMessageAll("vote.rollback.fail")
+                    VoteType.gamemode -> tool.sendMessageAll("vote.gamemode.fail")
+                    VoteType.map -> tool.sendMessageAll("vote.map.fail")
                 }
             }
             voted.clear()

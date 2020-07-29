@@ -4,12 +4,14 @@ import essentials.Main
 import essentials.PlayerData
 import essentials.internal.Bundle
 import mindustry.gen.Call
+import kotlin.math.floor
+import kotlin.math.pow
 
 class Exp(target: PlayerData) {
     val baseXP = Main.configs.baseXp
     val exponent = Main.configs.exponent
     private fun calcXpForLevel(level: Int): Double {
-        return baseXP + baseXP * Math.pow(level.toDouble(), exponent)
+        return baseXP + baseXP * level.toDouble().pow(exponent)
     }
 
     private fun calculateFullTargetXp(level: Int): Double {
@@ -35,8 +37,8 @@ class Exp(target: PlayerData) {
         val xp = target.exp
         val levelXp = max - xp
         val level = calculateLevel(xp.toDouble())
-        val reqexp = Math.floor(max.toDouble()).toInt()
-        val reqtotalexp = xp.toString() + "(" + Math.floor(levelXp.toDouble()).toInt() + ") / " + Math.floor(max.toDouble()).toInt()
+        val reqexp = floor(max.toDouble()).toInt()
+        val reqtotalexp = xp.toString() + "(" + floor(levelXp.toDouble()).toInt() + ") / " + floor(max.toDouble()).toInt()
         target.reqexp = reqexp
         target.level = level
         target.reqtotalexp = reqtotalexp

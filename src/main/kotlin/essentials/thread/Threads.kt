@@ -1,4 +1,4 @@
-package essentials.internal.thread
+package essentials.thread
 
 import arc.Core
 import arc.struct.Array
@@ -19,7 +19,6 @@ import mindustry.net.Host
 import mindustry.world.Tile
 import java.util.*
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 
 class Threads : Runnable {
     private var ping = 0.000
@@ -46,17 +45,17 @@ class Threads : Runnable {
                             port = ip.split(":").toTypedArray()[1].toInt()
                         }
                         val finalPort = port
-                        PingHost(ip, port, Consumer { result: Host ->
+                        PingHost(ip, port) { result: Host ->
                             ping += if (result.name != null) ("0." + result.ping).toDouble() else 1.000
                             Call.setMessageBlockText(null, tile, if (result.name != null) "[green]" + result.players + " Players in this server." else "[scarlet]Server offline")
                             addPlayers(ip, finalPort, result.players)
-                        })
+                        }
                     }
 
                     // 서버 인원 확인
                     for (i in 0 until pluginData.warpcounts.size) {
                         val value = pluginData.warpcounts[i]
-                        PingHost(value!!.ip, value.port, Consumer { result: Host ->
+                        PingHost(value!!.ip, value.port) { result: Host ->
                             if (result.name != null) {
                                 ping += ("0." + result.ping).toDouble()
                                 val str = result.players.toString()
@@ -80,7 +79,7 @@ class Threads : Runnable {
                                 ping += 1.000
                                 tool.setTileText(value.tile, Blocks.copperWall, "no")
                             }
-                        })
+                        }
                     }
                     val memory = Array<String>()
                     for (a in 0 until pluginData.warpblocks.size) {
@@ -89,7 +88,7 @@ class Threads : Runnable {
                         if (tile.block() === Blocks.air) {
                             pluginData.warpblocks.remove(a)
                         } else {
-                            PingHost(value.ip, value.port, Consumer { result: Host ->
+                            PingHost(value.ip, value.port) { result: Host ->
                                 var margin = 0f
                                 var isDup = false
                                 var x = tile.drawx()
@@ -119,7 +118,7 @@ class Threads : Runnable {
                                 }
                                 memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin))
                                 addPlayers(value.ip, value.port, result.players)
-                            })
+                            }
                         }
                     }
                     for (m in memory) {

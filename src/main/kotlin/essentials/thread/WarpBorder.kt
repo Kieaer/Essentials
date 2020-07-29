@@ -1,4 +1,4 @@
-package essentials.internal.thread
+package essentials.thread
 
 import arc.graphics.Color
 import arc.struct.Array
@@ -12,7 +12,6 @@ import mindustry.core.GameState
 import mindustry.gen.Call
 import mindustry.net.Host
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 
 class WarpBorder : Runnable {
     var length = 0
@@ -43,11 +42,11 @@ class WarpBorder : Runnable {
 
     fun start() {
         for (data in Main.pluginData.warpzones) {
-            val t = Thread(Runnable {
+            val t = Thread {
                 while (!Thread.currentThread().isInterrupted) {
                     val ip = data!!.ip
                     if (Vars.state.`is`(GameState.State.playing)) {
-                        PingHost(ip, data.port, Consumer { result: Host ->
+                        PingHost(ip, data.port) { result: Host ->
                             try {
                                 if (result.name != null) {
                                     val size = data.finishTile.x - data.startTile.x
@@ -79,7 +78,7 @@ class WarpBorder : Runnable {
                             } catch (e: InterruptedException) {
                                 Thread.currentThread().interrupt()
                             }
-                        })
+                        }
                     } else {
                         try {
                             TimeUnit.SECONDS.sleep(1)
@@ -88,7 +87,7 @@ class WarpBorder : Runnable {
                         }
                     }
                 }
-            })
+            }
             thread.add(t)
             t.start()
         }

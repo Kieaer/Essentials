@@ -161,7 +161,7 @@ class Permissions {
         }
     }
 
-    fun setPermission_user(old: String, newid: String) {
+    fun setUserPerm(old: String, newid: String) {
         if (old != newid) {
             val oldJson = user[old].asObject()
             user[newid] = oldJson

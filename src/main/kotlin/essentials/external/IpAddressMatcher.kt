@@ -73,18 +73,18 @@ class IpAddressMatcher(ipAddress: String) {
      * come.
      */
     init {
-        var ipAddress = ipAddress
-        if (ipAddress.indexOf('/') > 0) {
-            val addressAndMask = ipAddress.split("/").toTypedArray()
-            ipAddress = addressAndMask[0]
+        var address = ipAddress
+        if (address.indexOf('/') > 0) {
+            val addressAndMask = address.split("/").toTypedArray()
+            address = addressAndMask[0]
             nMaskBits = addressAndMask[1].toInt()
         } else {
             nMaskBits = -1
         }
-        requiredAddress = parseAddress(ipAddress)
+        requiredAddress = parseAddress(address)
         assert(requiredAddress.address.size * 8 >= nMaskBits) {
             String.format("IP address %s is too short for bitmask of length %d",
-                    ipAddress, nMaskBits)
+                    address, nMaskBits)
         }
     }
 }
