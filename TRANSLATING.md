@@ -8,7 +8,7 @@ Chinese: 30~40%
 If it's not on the list, you'll need to create a file.
 Download the [Bundle.properties](https://raw.githubusercontent.com/Kieaer/Essentials/master/src/main/resources/bundle/bundle_en.properties) file to the ``config/mods/Esentials`` folder.
 
-When you run server, the plugin retrieves the files from the external instead of the files internal.
+When you run server, the plugin retrieves the files from the essentials.external instead of the files internal.
 
 ### Useful Information
 * When you see text surrounded by square brackets, such as ``[RED]``, ``[]`` or ``[accent]``, this indicates a color code. Don't translate it.

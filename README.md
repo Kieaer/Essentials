@@ -7,7 +7,7 @@ Please submit your idea to this repository issues or Mindustry official discord!
 
 ## Requirements for running this plugin
 Minimum require java version: Only __Java 8__<br>
-This plugin does a lot of disk read/write operations depending on the features usage.
+This plugin does a lot of disk read/write operations depending on the essentials.features usage.
 
 ### Minimum
 CPU: Athlon 200GE or Intel i5 2300<br>

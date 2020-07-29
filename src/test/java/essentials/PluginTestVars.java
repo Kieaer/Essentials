@@ -50,7 +50,7 @@ public class PluginTestVars {
             "    \"strict-name\": true,\n" +
             "    \"scanresource\": true\n" +
             "  },\n" +
-            "  \"features\": {\n" +
+            "  \"essentials.features\": {\n" +
             "    \"explimit\": true,\n" +
             "    \"basexp\": 500,\n" +
             "    \"exponent\": 1.12,\n" +
