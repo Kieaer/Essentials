@@ -6,12 +6,13 @@ import mindustry.entities.type.Player;
 import mindustry.net.Net;
 import mindustry.net.NetConnection;
 
-import static essentials.Main.perm;
-import static essentials.Main.playerCore;
-import static essentials.PluginTest.r;
+import java.security.SecureRandom;
+
 import static mindustry.Vars.playerGroup;
 
 public class PluginTestDB {
+    static SecureRandom r = new SecureRandom();
+
     public static String randomString(int length) {
         int leftLimit = 48;
         int rightLimit = 122;
@@ -49,12 +50,12 @@ public class PluginTestDB {
         playerGroup.updateEvents();
 
         if (isFull) {
-            playerCore.register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, password.length != 0 ? password[0] : "none");
-            playerCore.load(player);
+            Main.Companion.getPlayerCore().register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, password.length != 0 ? password[0] : "none", false);
+            Main.Companion.getPlayerCore().playerLoad(player, null);
             //playerCore.load(player.uuid);
 
-            perm.create(playerCore.get(player.uuid));
-            perm.saveAll();
+            Main.Companion.getPerm().create(Main.Companion.getPlayerCore().get(player.uuid));
+            Main.Companion.getPerm().saveAll();
         }
 
         return player;
