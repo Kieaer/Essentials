@@ -37,7 +37,6 @@ class Config {
     var alarmLevel = 0
     var banShare = false
     var banTrust: JsonArray = JsonArray()
-    var query = false
     var antiVPN = false
     var antiRush = false
     var antiRushtime: Long = 0
@@ -67,7 +66,6 @@ class Config {
     var border = false
     var spawnLimit = 0
     var prefix: String = "[green][Essentials] []"
-    var eventPort: String = "8000-8050"
 
     fun init() {
         val settings: JsonObject
@@ -120,7 +118,6 @@ class Config {
         clientHost = network.getString("client-host", "mindustry.kr")
         banShare = network.getBoolean("banshare", false)
         banTrust = if (network["bantrust"] == null) JsonValue.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() else network["bantrust"].asArray()
-        query = network.getBoolean("query", false)
 
         anti = obj["antigrief"].asObject()
         antiGrief = anti.getBoolean("antigrief", false)
@@ -143,7 +140,6 @@ class Config {
         slotNumber = features.getInt("slotnumber", 1000)
         border = features.getBoolean("border", false)
         spawnLimit = features.getInt("spawnlimit", 500)
-        eventPort = features.getString("eventport", "8000-8050")
         cupdatei = features.getInt("cupdatei", 1000)
         afktime = features.getLong("afktime", 0)
 
@@ -212,7 +208,6 @@ class Config {
         network.add("client-host", clientHost)
         network.add("banshare", banShare, bundle["config.server.banshare"])
         network.add("bantrust", banTrust, bundle["config.server.bantrust"])
-        network.add("query", query, bundle["config.server.query"])
 
         // 테러방지 설정
         anti.add("antigrief", antiGrief, bundle["config.anti-grief.desc"])
@@ -235,7 +230,6 @@ class Config {
         features.add("slotnumber", slotNumber)
         features.add("border", border, bundle["config.feature.border"])
         features.add("spawnlimit", spawnLimit, bundle["config.feature.spawn-limit"])
-        features.add("eventport", eventPort, bundle["config.feature.event.port"])
         features.add("cupdatei", cupdatei, bundle["config.feature.colornick"])
         features.add("afktime", afktime, bundle["config.feature.afktime"])
 

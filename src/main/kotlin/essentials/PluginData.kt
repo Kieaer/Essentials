@@ -15,7 +15,6 @@ class PluginData {
 
     // 일회성 플러그인 데이터
     var nukeblock = Array<ReactorBlock>()
-    var eventservers = Array<EventServer>()
     var powerblocks = Array<PowerBlock>()
     var messagemonitors = Array<MessageMonitor>()
     var messagewarps = Array<MessageWarp>()
@@ -144,8 +143,6 @@ class PluginData {
     }
 
     class ReactorBlock(val pos: Tile, val name: String)
-
-    class EventServer(val roomname: String, var port: Int)
 
     class PowerBlock(val messageblock: Tile, val pos: Int, val rotate: Int)
 

@@ -40,7 +40,10 @@ import java.sql.SQLException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.concurrent.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
 import kotlin.math.roundToLong
 import kotlin.system.exitProcess
@@ -56,7 +59,6 @@ class Main : Plugin() {
         val client = Client()
         val discord = Discord()
         val rollback = AutoRollback()
-        val eventServer = EventServer()
         val warpBorder = WarpBorder()
         val vars = PluginVars()
         val vote = Vote()
@@ -186,8 +188,6 @@ class Main : Plugin() {
                         Log.info("client.shutdown")
                     }
 
-                    // 모든 이벤트 서버 종료
-                    for (value in eventServer.servers) value.destroy()
                     if (server.serverSocket.isClosed || client.socket.isClosed || warpBorder.isInterrupted || !playerCore.conn.isClosed) {
                         Log.info("thread-disable-waiting")
                     } else {
@@ -289,7 +289,7 @@ class Main : Plugin() {
                         - [ ] Receive
                   - [ ] Web server
                     - [ ] Fix a sometimes ranking site not loaded
-                  - [ ] Auto Rollback (Not remove)
+                  - [x] Auto Rollback (Not remove) [Plugin Link](https://github.com/Kieaer/AutoRollback)
                 - [ ] New features
                   - [ ] Web console
                     - [ ] Control plugin database
@@ -551,57 +551,6 @@ class Main : Plugin() {
             if (!perm.check(player, "killall")) return@register
             for (a in Team.all().indices) Vars.unitGroup.all().each { obj: BaseUnit -> obj.kill() }
             player.sendMessage(Bundle(playerCore[player.uuid].locale).prefix("success"))
-        }
-        handler.register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server") { arg: Array<String>, player: Player ->
-            if (!perm.check(player, "event")) return@register
-            val playerData = playerCore[player.uuid]
-            when (arg[0]) {
-                "host" -> if (playerData.level > 20 || player.isAdmin) {
-                    if (arg.size == 2) {
-                        player.sendMessage(Bundle(playerData.locale).prefix("system.event.host.no-mapname"))
-                        return@register
-                    }
-                    if (arg.size == 3) {
-                        player.sendMessage(Bundle(playerData.locale).prefix("system.event.host.no-gamemode"))
-                        return@register
-                    }
-                    try {
-                        Gamemode.valueOf(arg[3])
-                    } catch (e: IllegalArgumentException) {
-                        player.sendMessage(Bundle(playerData.locale).prefix("system.event.host.no-gamemode"))
-                        return@register
-                    }
-                    player.sendMessage(Bundle(playerData.locale).prefix("system.event.making"))
-                    val range = configs.eventPort.split("-").toTypedArray()
-                    val firstport = range[0].toInt()
-                    val lastport = range[1].toInt()
-                    val customport = ThreadLocalRandom.current().nextInt(firstport, lastport + 1)
-                    pluginData.eventservers.add(PluginData.EventServer(arg[1], customport))
-
-                    // TODO 이벤트 서버 생성 성공/실패 여부 수정
-                    val result = eventServer.create(arg[1], arg[2], arg[3], customport)
-                    if (result) {
-                        Log.info("event.host.opened", player.name, customport)
-                        playerData.connected = false
-                        playerData.connserver = "none"
-                        Call.onConnect(player.con, vars.serverIP, customport)
-                        Log.info("Player " + playerData.name + " joined to " + customport + " port")
-                    }
-                } else {
-                    player.sendMessage(Bundle(playerData.locale).prefix("system.event.level"))
-                }
-                "join" -> for (server in pluginData.eventservers) {
-                    if (server.roomname == arg[1]) {
-                        val data = playerCore[player.uuid]
-                        data.connected = false
-                        data.connserver = "none"
-                        Call.onConnect(player.con, vars.serverIP, server.port)
-                        Log.info(vars.serverIP + ":" + server.port)
-                        break
-                    }
-                }
-                else -> player.sendMessage(Bundle(playerData.locale).prefix("system.wrong-command"))
-            }
         }
         handler.register("help", "[page]", "Show command lists") { arg: Array<String?>, player: Player ->
             if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {

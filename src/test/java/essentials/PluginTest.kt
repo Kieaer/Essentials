@@ -16,7 +16,7 @@ import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.pluginVars
 import essentials.network.Client
 import essentials.network.Server
-import mindustry.Vars
+import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.Mechs
@@ -34,8 +34,6 @@ import mindustry.gen.Call
 import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
-import org.hjson.JsonValue
-import org.jsoup.Jsoup
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -47,9 +45,7 @@ import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
 import java.io.*
-import java.net.HttpURLConnection
 import java.net.Socket
-import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.util.*
@@ -87,20 +83,20 @@ class PluginTest {
                 Log.setUseColors(false)
                 val core: ApplicationCore = object : ApplicationCore() {
                     override fun setup() {
-                        Vars.headless = true
-                        Vars.net = Net(null)
-                        Vars.tree = FileTree()
-                        Vars.init()
-                        Vars.content.createBaseContent()
-                        add(Logic().also { Vars.logic = it })
-                        add(NetServer().also { Vars.netServer = it })
-                        Vars.content.init()
+                        headless = true
+                        net = Net(null)
+                        tree = FileTree()
+                        init()
+                        content.createBaseContent()
+                        add(Logic().also { logic = it })
+                        add(NetServer().also { netServer = it })
+                        content.init()
                     }
 
                     override fun init() {
                         super.init()
                         begins[0] = true
-                        testMap[0] = Vars.maps.loadInternalMap("maze")
+                        testMap[0] = maps.loadInternalMap("maze")
                         Thread.currentThread().interrupt()
                     }
                 }
@@ -132,27 +128,27 @@ class PluginTest {
             } catch (e: IOException) {
                 e.printStackTrace()
             }
-            Vars.playerGroup = Vars.entities.add(Player::class.java).enableMapping()
-            Vars.world.loadMap(testMap[0])
-            Vars.state.set(GameState.State.playing)
+            playerGroup = entities.add(Player::class.java).enableMapping()
+            world.loadMap(testMap[0])
+            state.set(GameState.State.playing)
             Thread {
                 while (true) {
                     Events.fire(Trigger.update)
                     try {
-                        Vars.state.enemies = Vars.unitGroup.count { b: BaseUnit -> b.team === Vars.state.rules.waveTeam && b.countsAsEnemy() }
+                        state.enemies = unitGroup.count { b: BaseUnit -> b.team === state.rules.waveTeam && b.countsAsEnemy() }
                         Time.update()
-                        Vars.unitGroup.update()
-                        Vars.puddleGroup.update()
-                        Vars.shieldGroup.update()
-                        Vars.bulletGroup.update()
-                        Vars.tileGroup.update()
-                        Vars.fireGroup.update()
-                        Vars.collisions.collideGroups(Vars.bulletGroup, Vars.unitGroup)
-                        Vars.collisions.collideGroups(Vars.bulletGroup, Vars.playerGroup)
-                        Vars.unitGroup.updateEvents()
-                        Vars.collisions.updatePhysics(Vars.unitGroup)
-                        Vars.playerGroup.update()
-                        Vars.effectGroup.update()
+                        unitGroup.update()
+                        puddleGroup.update()
+                        shieldGroup.update()
+                        bulletGroup.update()
+                        tileGroup.update()
+                        fireGroup.update()
+                        collisions.collideGroups(bulletGroup, unitGroup)
+                        collisions.collideGroups(bulletGroup, playerGroup)
+                        unitGroup.updateEvents()
+                        collisions.updatePhysics(unitGroup)
+                        playerGroup.update()
+                        effectGroup.update()
                         Thread.sleep(16)
                     } catch (ignored: InterruptedException) {
                     }
@@ -221,20 +217,14 @@ class PluginTest {
                     val skey: SecretKey = SecretKeySpec(raw, "AES")
                     BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)).use { `is` ->
                         DataOutputStream(socket.getOutputStream()).use { os ->
-                            os.writeBytes("""
-    ${String(Base64.getEncoder().encode(raw))}
-    
-    """.trimIndent())
+                            os.writeBytes(String(Base64.getEncoder().encode(raw)).trimIndent())
                             os.flush()
                             val json = JsonObject()
                             json.add("type", "checkban")
                             json.add("target_uuid", player.uuid)
                             json.add("target_ip", player.con.address)
                             val en = Main.tool.encrypt(json.toString(), skey)
-                            os.writeBytes("""
-    $en
-    
-    """.trimIndent())
+                            os.writeBytes(en.trimIndent())
                             os.flush()
                             val receive = Main.tool.decrypt(`is`.readLine(), skey)
                             val kick = receive.toBoolean()
@@ -243,61 +233,7 @@ class PluginTest {
                     }
                 }
             } catch (ignored: Exception) {
-            }
-            val urls = arrayOf("http://127.0.0.1:25000/rank", "http://127.0.0.1:25000/rank", "http://127.0.0.1:25000", "http://127.0.0.1:25000/404test")
-            val types = arrayOf("GET", "POST", "GET", "GET")
 
-            // Server http server test
-            try {
-                for (a in urls.indices) {
-                    val con = URL(urls[a]).openConnection() as HttpURLConnection
-                    con.doInput = true
-                    if (types[a] == "GET") {
-                        con.requestMethod = "GET"
-                    } else {
-                        val rawData = "id=" + player.name + ";pw=" + playerCore[player.uuid].accountpw
-                        val type = "application/x-www-form-urlencoded"
-                        con.doOutput = true
-                        con.requestMethod = "POST"
-                        con.setRequestProperty("Content-Type", type)
-                        con.setRequestProperty("Content-Length", rawData.length.toString())
-                        OutputStreamWriter(con.outputStream, StandardCharsets.UTF_8).use { os ->
-                            PrintWriter(os).use { writer ->
-                                writer.write(rawData)
-                                writer.flush()
-                            }
-                        }
-                    }
-                    if (a == 3) {
-                        assertEquals(404, con.responseCode.toLong())
-                    } else {
-                        BufferedReader(InputStreamReader(con.inputStream, StandardCharsets.UTF_8)).use { br ->
-                            var inputLine: String?
-                            val response = StringBuilder()
-                            while (br.readLine().also { inputLine = it } != null) {
-                                response.append(inputLine)
-                            }
-                            when (a) {
-                                0 -> try {
-                                    Jsoup.parse(response.toString())
-                                } catch (e: Exception) {
-                                    Assert.fail("HTML Parsing failed")
-                                }
-                                1 -> assertNotEquals("", response.toString())
-                                2 -> try {
-                                    JsonValue.readJSON(response.toString())
-                                } catch (e: Exception) {
-                                    Assert.fail("HTML Parsing failed")
-                                }
-                                else -> Assert.fail()
-                            }
-                        }
-                    }
-                    con.disconnect()
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-                Assert.fail(e.message)
             }
 
             // Connection close test
@@ -342,28 +278,12 @@ class PluginTest {
         clientHandler.handleMessage("/changepw testpw123 testpw123", player)
         assertNotEquals("none", playerCore[player.uuid].accountpw)
         clientHandler.handleMessage("/chars hobc0283qz ?!", player)
-        Assert.assertSame(Vars.world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall)
+        Assert.assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall)
         clientHandler.handleMessage("/color", player)
         Assert.assertTrue(playerCore[player.uuid].colornick)
         clientHandler.handleMessage("/difficulty easy", player)
-        assertEquals(Vars.state.rules.waveSpacing.toDouble(), Difficulty.easy.waveTime * 60 * 60 * 2.toDouble(), 0.0)
+        assertEquals(state.rules.waveSpacing.toDouble(), Difficulty.easy.waveTime * 60 * 60 * 2.toDouble(), 0.0)
         clientHandler.handleMessage("/killall", player)
-        try {
-            player.isAdmin = true
-            clientHandler.handleMessage("/event host testroom maze survival", player)
-            for (a in 0..29) {
-                if (pluginData.eventservers.size == 0) {
-                    println("\rWaiting... $a")
-                    TimeUnit.SECONDS.sleep(1)
-                } else {
-                    break
-                }
-            }
-            clientHandler.handleMessage("/event join testroom", player)
-            if (pluginData.eventservers.size == 0) println("\n")
-        } catch (ignored: NullPointerException) {
-        }
-        assertEquals(1, pluginData.eventservers.size)
         clientHandler.handleMessage("/help", player)
         clientHandler.handleMessage("/info", player)
         clientHandler.handleMessage("/warp count mindustry.indielm.com", player)
@@ -398,7 +318,7 @@ class PluginTest {
         player[80f] = 80f
         player.setNet(80f, 80f)
         clientHandler.handleMessage("/spawn-core smail", player)
-        Assert.assertSame(Blocks.coreShard, Vars.world.tileWorld(80f, 80f).block())
+        Assert.assertSame(Blocks.coreShard, world.tileWorld(80f, 80f).block())
         clientHandler.handleMessage("/setmech alpha", player)
         Assert.assertSame(Mechs.alpha, player.mech)
         clientHandler.handleMessage("/setmech dart", player)
@@ -417,11 +337,11 @@ class PluginTest {
         clientHandler.handleMessage("/suicide", player)
         Assert.assertTrue(player.isDead)
         player.dead = false
-        Vars.state.rules.pvp = true
-        Call.onConstructFinish(Vars.world.tile(100, 40), Blocks.coreFoundation, 1, 0.toByte(), Team.crux, true)
+        state.rules.pvp = true
+        Call.onConstructFinish(world.tile(100, 40), Blocks.coreFoundation, 1, 0.toByte(), Team.crux, true)
         clientHandler.handleMessage("/team crux", player)
         Assert.assertSame(Team.crux, player.team)
-        Vars.state.rules.pvp = false
+        state.rules.pvp = false
         val dummy2 = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/tempban " + dummy2.name + " 10 test", player)
         assertNotEquals(0L, playerCore[dummy2.uuid].bantime)
@@ -481,14 +401,14 @@ class PluginTest {
         Events.fire(PlayerChatEvent(dummy3, "y"))
         TimeUnit.SECONDS.sleep(1)
         clientHandler.handleMessage("/weather day", player)
-        assertEquals(0.0f, Vars.state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.0f, state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather eday", player)
-        assertEquals(0.3f, Vars.state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.3f, state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather night", player)
-        assertEquals(0.7f, Vars.state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.7f, state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather enight", player)
-        assertEquals(0.85f, Vars.state.rules.ambientLight.a, 0.0f)
-        Assert.assertNotNull(Vars.playerGroup.find { p: Player -> p.uuid == dummy3.uuid })
+        assertEquals(0.85f, state.rules.ambientLight.a, 0.0f)
+        Assert.assertNotNull(playerGroup.find { p: Player -> p.uuid == dummy3.uuid })
         assertEquals("owner", playerCore[player.uuid].permission)
         clientHandler.handleMessage("/mute " + dummy3.name, player)
         Assert.assertTrue(playerCore[dummy3.uuid].mute)
@@ -497,18 +417,18 @@ class PluginTest {
     @Test
     @Throws(InterruptedException::class)
     fun test13_events() {
-        Events.fire(TapConfigEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, 5))
-        Events.fire(TapEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player))
-        Events.fire(WithdrawEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10))
-        Vars.state.rules.attackMode = true
-        Call.onSetRules(Vars.state.rules)
+        Events.fire(TapConfigEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, 5))
+        Events.fire(TapEvent(world.tile(r.nextInt(50), r.nextInt(50)), player))
+        Events.fire(WithdrawEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10))
+        state.rules.attackMode = true
+        Call.onSetRules(state.rules)
         Events.fire(GameOverEvent(player.team))
         assertEquals(1, playerCore[player.uuid].attackclear)
         Events.fire(WorldLoadEvent())
         assertEquals(0L, pluginVars.playtime)
         assertEquals(0, pluginData.powerblocks.size)
         Events.fire(PlayerConnect(player))
-        Events.fire(DepositEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5))
+        Events.fire(DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5))
         val dummy = PluginTestDB.createNewPlayer(false)
         Events.fire(PlayerJoin(dummy))
         clientHandler.handleMessage("/register hello testas123", dummy)
@@ -521,29 +441,17 @@ class PluginTest {
         Assert.assertTrue(playerCore[dummy2.uuid].error)
         Events.fire(PlayerChatEvent(player, "hi"))
 
-        /*Time.update();
-        unitGroup.update();
-        puddleGroup.update();
-        shieldGroup.update();
-        bulletGroup.update();
-        tileGroup.update();
-        fireGroup.update();
-        collisions.collideGroups(bulletGroup, unitGroup);
-        collisions.collideGroups(bulletGroup, playerGroup);
-        unitGroup.updateEvents();
-        collisions.updatePhysics(unitGroup);
-        playerGroup.update();
-        effectGroup.update();*/player.addBuildRequest(BuildRequest(5, 5, 0, Blocks.copperWall))
-        Call.onConstructFinish(Vars.world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
-        Events.fire(BlockBuildEndEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false))
-        Call.onConstructFinish(Vars.world.tile(78, 78), Blocks.message, player.id, 0.toByte(), Team.sharded, false)
-        Events.fire(BlockBuildEndEvent(Vars.world.tile(78, 78), player, Team.sharded, false))
-        Call.setMessageBlockText(player, Vars.world.tile(78, 78), "warp mindustry.indielm.com")
+        player.addBuildRequest(BuildRequest(5, 5, 0, Blocks.copperWall))
+        Call.onConstructFinish(world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
+        Events.fire(BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false))
+        Call.onConstructFinish(world.tile(78, 78), Blocks.message, player.id, 0.toByte(), Team.sharded, false)
+        Events.fire(BlockBuildEndEvent(world.tile(78, 78), player, Team.sharded, false))
+        Call.setMessageBlockText(player, world.tile(78, 78), "warp mindustry.indielm.com")
         Thread.sleep(4000)
         player.buildQueue().clear()
         player.addBuildRequest(BuildRequest(5, 5))
-        Call.onDeconstructFinish(Vars.world.tile(5, 5), Blocks.air, player.id)
-        Events.fire(BuildSelectEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true))
+        Call.onDeconstructFinish(world.tile(5, 5), Blocks.air, player.id)
+        Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true))
         player.buildQueue().clear()
         Events.fire(UnitDestroyEvent(player))
         Events.fire(PlayerBanEvent(dummy))
@@ -552,34 +460,4 @@ class PluginTest {
         Events.fire(PlayerIpUnbanEvent("127.0.0.3"))
         Events.fire(ServerLoadEvent())
     }
-
-    @Test
-    fun test14_internal() {
-        playerCore.isLocal(player)
-    }
-
-    /*@Test
-    fun test16_complexCommand() {
-        //Call.onConstructFinish(world.tile(120, 120), Blocks.message, player.id, (byte) 0, Team.sharded, true);
-        //Events.fire(new BlockBuildEndEvent(world.tile(120, 120), player, Team.sharded, false));
-        //Call.setMessageBlockText(player, world.tile(120, 120), "powerblock");
-        if (testVars.discordTest) {
-            try {
-                configs.discordToken(String(Files.readAllBytes(Paths.get("./token.txt"))))
-                Main.discord.start()
-                configs.loginEnable(true)
-                configs.passwordMethod("discord")
-                val p = PluginTestDB.createNewPlayer(false)
-                val buffer = CommandHandler("/")
-                main.registerClientCommands(buffer)
-                buffer.handleMessage("/register", p)
-                println("PIN: " + Main.discord.pins[p.name])
-                Thread.sleep(20000)
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }
-    }*/
 }

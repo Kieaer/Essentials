@@ -19,7 +19,7 @@ Please submit your idea to this repository issues or Mindustry official discord!
       - [x] Add a server map list
   - [ ] Web server
     - [ ] Fix a sometimes ranking site not loaded
-  - [ ] Auto Rollback (Not remove)
+  - [x] Auto Rollback (Not remove) [Plugin Link](https://github.com/Kieaer/AutoRollback)
 - [ ] New features
   - [ ] Web console
     - [ ] Control plugin database
