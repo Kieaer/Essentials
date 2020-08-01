@@ -14,15 +14,6 @@ import essentials.Main.Companion.playerCore
 import essentials.Main.Companion.pluginData
 import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.pluginVars
-import essentials.features.Exp
-import essentials.internal.Bundle
-import essentials.internal.CrashReport
-import essentials.internal.Log.client
-import essentials.internal.Log.info
-import essentials.internal.Log.player
-import essentials.internal.Log.server
-import essentials.internal.Log.warn
-import essentials.internal.Log.write
 import essentials.network.Client
 import essentials.network.Server
 import mindustry.Vars
@@ -52,6 +43,9 @@ import org.junit.Assert.assertNotEquals
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.contrib.java.lang.system.SystemOutRule
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
+import org.junit.jupiter.api.TestMethodOrder
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.Socket
@@ -64,14 +58,14 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class PluginTest {
-
     companion object {
         val out = SystemOutRule()
         val testVars = PluginTestVars()
         val r = SecureRandom()
-        var root: Fi? = null
-        var testroot: Fi? = null
+        lateinit var root: Fi
+        lateinit var testroot: Fi
         lateinit var main: Main
         var serverHandler = CommandHandler("")
         var clientHandler = CommandHandler("/")
@@ -125,7 +119,7 @@ class PluginTest {
             root = Core.settings.dataDirectory.child("mods/Essentials")
 
             // Reset status
-            if (testVars.clean) pluginRoot.deleteDirectory()
+            if (testVars.clean) testroot.deleteDirectory()
             try {
                 FileInputStream("./build/libs/Essentials.jar").use { fis ->
                     FileOutputStream("./config/mods/Essentials.jar").use { fos ->
@@ -183,83 +177,14 @@ class PluginTest {
     }
 
     @Test
-    fun test00_start() {
-        serverHandler.handleMessage("stop")
-        serverHandler.handleMessage("host maze")
-    }
-
-    @Test
-    fun test01_config() {
+    @Order(1)
+    fun configTest() {
         assertEquals(configs.dbUrl, "jdbc:h2:file:./config/mods/Essentials/data/player")
     }
 
     @Test
-    fun test02_register() {
-        Assert.assertFalse(playerCore[player.uuid].error)
-        val json = JsonObject.readJSON(pluginRoot.child("permission_user.hjson").readString()).asObject()
-        Assert.assertNotNull(json[player.uuid].asObject())
-    }
-
-    @Test
-    fun test03_motd() {
-        val playerData = playerCore["fakeuuid"]
-        Assert.assertNotNull(Main.tool.getMotd(playerData.locale))
-    }
-
-    @Test
-    fun test04_DBCheck() {
-        Assert.assertTrue(CrashReport(Exception("test")).success)
-    }
-
-    @Test
-    fun test05_log() {
-        info("Info Test")
-        assertEquals("Info Test\n", out.logWithNormalizedLineSeparator)
-        out.clearLog()
-        info("success")
-        assertEquals(Bundle()["success"].trimIndent(), out.logWithNormalizedLineSeparator)
-        out.clearLog()
-        warn("warning")
-        assertEquals("warning\n", out.logWithNormalizedLineSeparator)
-        out.clearLog()
-        server("server")
-        assertEquals("[EssentialServer] server\n", out.logWithNormalizedLineSeparator)
-        out.clearLog()
-        client("client")
-        assertEquals("[EssentialClient] client\n", out.logWithNormalizedLineSeparator)
-        out.clearLog()
-        player("player")
-        assertEquals("[EssentialPlayer] player\n", out.logWithNormalizedLineSeparator)
-        out.clearLog()
-        pluginRoot.child("log/player.log").delete()
-        pluginRoot.child("log/player.log").writeString("")
-        write(essentials.internal.Log.LogType.player, "Log write test")
-        Assert.assertTrue(pluginRoot.child("log/player.log").readString().contains("Log write test"))
-    }
-
-    @Test
-    fun test06_remoteDatabase() {
-        if (configs.dbServer) {
-            Assert.assertNotNull(playerCore.server)
-        }
-    }
-
-    @Test
-    fun test07_geo() {
-        val locale = Main.tool.getGeo(pluginVars.serverIP)
-        assertNotEquals(locale.displayCountry, "")
-    }
-
-    @Test
-    fun test08_exp() {
-        val playerData = playerCore["fakeuuid"]
-        val buf: Int = playerData.reqexp
-        Exp(playerData)
-        assertNotEquals(playerData.reqexp, buf)
-    }
-
-    @Test
-    fun test09_network() {
+    @Order(2)
+    fun networkTest() {
         try {
             val server = Server()
             val client = Client()

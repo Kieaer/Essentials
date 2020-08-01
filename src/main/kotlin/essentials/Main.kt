@@ -209,7 +209,7 @@ class Main : Plugin() {
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
-        handler.register("lobby", "Toggle lobby server essentials.features") {
+        handler.register("lobby", "Toggle lobby server features") {
             Core.settings.putSave("isLobby", !Core.settings.getBool("isLobby"))
             Log.info("success")
         }
@@ -276,13 +276,13 @@ class Main : Plugin() {
                   - [ ] Sometimes an account system not working
                 - [ ] Fix many typos
                 - [ ] Features separation
-                  - [ ] Rest API
-                    - [ ] Information
-                      - [ ] Add players detail information
-                      - [ ] Add a gamemode
-                      - [ ] Add a server online time
-                      - [ ] Add other team core resource status
-                      - [ ] Add a server map list
+                  - [ ] Features separation
+                    - [x] Rest API [Plugin Link](https://github.com/Kieaer/Essential-REST_API) 
+                        - [x] Information 
+                        - [x] Add players detail information 
+                        - [x] Add a gamemode 
+                        - [x] Add other team core resource status 
+                        - [x] Add a server map list
                     - [ ] Communication
                       - [ ] Communicate a chat message to server
                         - [ ] Send

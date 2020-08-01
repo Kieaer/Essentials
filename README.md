@@ -11,17 +11,12 @@ Please submit your idea to this repository issues or Mindustry official discord!
   - [ ] Sometimes an account system not working
 - [ ] Fix many typos
 - [ ] Features separation
-  - [ ] Rest API
-    - [ ] Information
-      - [ ] Add players detail information
-      - [ ] Add a gamemode
-      - [ ] Add a server online time
-      - [ ] Add other team core resource status
-      - [ ] Add a server map list
-    - [ ] Communication
-      - [ ] Communicate a chat message to server
-        - [ ] Send
-        - [ ] Receive
+  - [x] Rest API [Plugin Link](https://github.com/Kieaer/Essential-REST_API)
+    - [x] Information
+      - [x] Add players detail information
+      - [x] Add a gamemode
+      - [x] Add other team core resource status
+      - [x] Add a server map list
   - [ ] Web server
     - [ ] Fix a sometimes ranking site not loaded
   - [ ] Auto Rollback (Not remove)
@@ -87,7 +82,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| lobby |  | Toggle lobby server essentials.features |
+| lobby |  | Toggle lobby server features |
 | edit | &lt;uuid&gt; &lt;name&gt; [value] | Edit PlayerData directly |
 | saveall |  | desc |
 | bansync |  | Synchronize ban list with server |

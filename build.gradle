@@ -26,33 +26,28 @@ dependencies {
         exclude module: 'opus-java'
     }
     implementation 'org.apache.maven:maven-artifact:3.6.3'
-    implementation 'org.jsoup:jsoup:1.13.1'
     implementation 'org.slf4j:slf4j-nop:1.7.30'
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
-    implementation 'com.neovisionaries:nv-i18n:1.27'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation files('ip2location.jar')
 
-    testCompile 'com.github.Anuken.Arc:arc-core:v104.6'
-    testCompile 'com.github.Anuken.Mindustry:core:v104.6'
-    testCompile 'com.github.Anuken.Mindustry:server:v104.6'
+    testImplementation 'com.github.Anuken.Arc:arc-core:v104.6'
+    testImplementation 'com.github.Anuken.Mindustry:core:v104.6'
+    testImplementation 'com.github.Anuken.Mindustry:server:v104.6'
     //testCompile group: 'junit', name: 'junit', version: '4.13'
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
-    testCompile group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
+    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
 
     //testCompile "org.jetbrains.kotlin:kotlin-test:1.4.0-rc"
     //testCompile "org.jetbrains.kotlin:kotlin-test-junit:1.4.0-rc"
-    testCompile 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.2.0'
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.7.0-M1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0-M1'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.7.0-M1'
 }
 
 jar {
-    version = null
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-    //enabled = false // disable original
-    //dependsOn(shadowJar) // add new task
+    enabled = false // disable original
+    dependsOn(shadowJar) // add new task
 }
 
 shadowJar {

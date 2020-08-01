@@ -143,47 +143,6 @@ class Tool {
         ipre.Close()
 
         return if (code == null) configs.locale else code.toLocale()
-
-        /*val buf = getWebContent("https://ipapi.co/$ip/json")
-        val result: JsonObject
-        result = if (buf == null) {
-            return configs.locale
-        } else {
-            JsonValue.readJSON(buf).asObject()
-        }
-        if (result["reserved"] != null) {
-            return configs.locale
-        } else {
-            val lc = result["languages"].asString().split(",").toTypedArray()[0]
-            if (lc.split("_").toTypedArray().size == 2) {
-                val array = lc.split("_").toTypedArray()
-                loc = Locale(array[0], array[1])
-                if (array[0] == "zh") {
-                    return Locale.SIMPLIFIED_CHINESE
-                }
-            }
-
-            // TODO Bundle 검증 다시 만들기
-            *//*try {
-                ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
-                RESOURCE_BUNDLE.getString("success");
-            } catch (Exception e) {
-                for (int a = 0; a < result.get("country_code").asString().split(",").length; a++) {
-                    try {
-                        lc = result.get("country_code").asString().split(",")[a];
-                        if (lc.split("-").length == 2) {
-                            String[] array = lc.split("-");
-                            loc = new Locale(array[0], array[1]);
-                        }
-                        ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
-                        RESOURCE_BUNDLE.getString("success");
-                        return loc;
-                    } catch (Exception ignored) {
-                    }
-                }
-            }*//*
-        }*/
-        //return loc
     }
 
     fun download(url: URL, savepath: File) {

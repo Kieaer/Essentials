@@ -239,7 +239,7 @@ class Config {
         features.add("cupdatei", cupdatei, bundle["config.feature.colornick"])
         features.add("afktime", afktime, bundle["config.feature.afktime"])
 
-        // 난이도 설정 (essentials.features 상속)
+        // 난이도 설정 (features 상속)
         features.add("difficulty", difficulty, bundle["config.auto-difficulty"])
         difficulty.add("auto-difficulty", autoDifficulty)
         difficulty.add("easy", difficultyEasy)
@@ -247,7 +247,7 @@ class Config {
         difficulty.add("hard", difficultyHard)
         difficulty.add("insane", difficultyInsane)
 
-        // 번역 설정 (essentials.features 상속)
+        // 번역 설정 (features 상속)
         features.add("translate", tr, bundle["config.feature.papago"])
         tr.add("translate", translate)
         tr.add("translateid", translateId)
