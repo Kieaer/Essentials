@@ -1,5 +1,6 @@
 package essentials.features
 
+import arc.Core
 import arc.Events
 import arc.util.Time
 import essentials.Main
@@ -144,7 +145,7 @@ class Vote : Thread() {
                         Log.info("Vote kick passed!")
                         playerCore[target!!.uuid].kickcount = playerCore[target!!.uuid].kickcount + 1
                         tool.sendMessageAll("vote.kick.done", target!!.name)
-                        target!!.info.lastKicked = Time.millis() + 30 * 60 * 1000
+                        Core.app.post { target!!.info.lastKicked = Time.millis() + 30 * 60 * 1000 }
                         Call.onKick(target!!.con, Packets.KickReason.vote)
                         Log.write(LogType.player, "log.player.kick")
                     }

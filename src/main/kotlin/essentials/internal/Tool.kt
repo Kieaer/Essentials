@@ -224,7 +224,7 @@ class Tool {
         return null
     }
 
-    fun setTileText(tile: Tile?, block: Block?, text: String) {
+    fun setTileText(tile: Tile, block: Block, text: String) {
         var t = tile
         val letters = ObjectMap<String, IntArray>()
         letters.put("A", intArrayOf(0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1))
@@ -266,10 +266,10 @@ class Tool {
         letters.put("!", intArrayOf(1, 1, 1, 1, 0, 1))
         letters.put("?", intArrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0))
         letters.put(" ", intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-        val texts = text.split("").toTypedArray()
-        for (txt in texts) {
+        val texts = text.toCharArray()
+        for (i in texts) {
             val pos = Array<IntArray>()
-            val target = letters[txt.toUpperCase()]
+            val target = letters[i.toUpperCase().toString()]
             var xv = 0
             var yv = 0
             when (target.size) {
@@ -304,14 +304,14 @@ class Tool {
                 }
             }
             for (a in 0 until pos.size) {
-                val tar = world.tile(t!!.x + pos[a][0], t.y + pos[a][1])
+                val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
                 if (target[a] == 1) {
                     Call.onConstructFinish(tar, block, 100, 0.toByte(), Team.sharded, false)
                 } else if (tar != null) {
                     Call.onDeconstructFinish(tar, Blocks.air, 100)
                 }
             }
-            t = world.tile(t!!.x + (xv + 1), t.y.toInt())
+            t = world.tile(t.x + (xv + 1), t.y.toInt())
         }
     }
 

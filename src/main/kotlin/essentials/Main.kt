@@ -14,9 +14,11 @@ import essentials.network.Client
 import essentials.network.Server
 import essentials.thread.*
 import mindustry.Vars
+import mindustry.Vars.netServer
 import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.content.Mechs
+import mindustry.core.NetServer
 import mindustry.core.Version
 import mindustry.entities.type.BaseUnit
 import mindustry.entities.type.Player
@@ -29,6 +31,7 @@ import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.plugin.Plugin
 import mindustry.world.Tile
+import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.mindrot.jbcrypt.BCrypt
@@ -72,6 +75,9 @@ class Main : Plugin() {
         val pluginRoot: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         var listener: ApplicationListener? = null
     }
+
+    val serverCommands = JsonArray()
+    val clientCommands = JsonArray()
 
     init {
         // 서버 버전 확인
@@ -209,6 +215,95 @@ class Main : Plugin() {
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
+        for(c in netServer.clientCommands.commandList){
+            serverCommands.add(c.text)
+        }
+
+        handler.register("gendocs", "Generate Essentials README.md") {
+            val serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+            val clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+            val gentime = "README.md Generated time: ${DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())}"
+            Log.info("readme-generating")
+            val header = """
+                [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=Kieaer_Essentials) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=alert_status)](https://sonarcloud.io/dashboard?id=Kieaer_Essentials)
+                # Essentials
+                Add more commands to the server.
+                
+                I'm getting a lot of suggestions.<br>
+                Please submit your idea to this repository issues or Mindustry official discord!
+                
+                ## Essentials 11 Plans
+                - [ ] Fix bugs
+                - [ ] Voting not working
+                  - [ ] Sometimes an account system not working
+                - [ ] Fix many typos
+                - [ ] Features separation
+                  - [ ] Features separation
+                    - [x] Rest API [Plugin Link](https://github.com/Kieaer/Essential-REST_API) 
+                        - [x] Information 
+                        - [x] Add players detail information 
+                        - [x] Add a gamemode 
+                        - [x] Add other team core resource status 
+                        - [x] Add a server map list
+                  - [ ] Web server
+                    - [ ] Fix a sometimes ranking site not loaded
+                  - [x] Auto Rollback (Not remove) [Plugin Link](https://github.com/Kieaer/AutoRollback)
+                - [ ] New features
+                  - [ ] Web console
+                    - [ ] Control plugin database
+                    - [ ] Check world status
+                      - [ ] Dynmap (idea from Minecraft)
+                      - [ ] Rest API
+                - [ ] Remove external API services
+                  - [x] IP API (Due to traffic excess)
+                  - [ ] Translate (Due to paid service)
+                - [ ] Security patches
+                - [ ] All code clean
+                
+                ### Recommend
+                CPU: Ryzen 3 2200G or Intel i3 8100<br>
+                RAM: 50MB<br>
+                Disk: HDD capable of more than 5MB/s random read/write.
+                
+                ## Installation
+                
+                Put this plugin in the ``<server folder location>/config/mods`` folder.
+                
+                
+                """.trimIndent()
+            var tempbuild = StringBuilder()
+            for (a in 0 until netServer.clientCommands.commandList.size) {
+                val command = netServer.clientCommands.commandList[a]
+                var dup = false
+                for (b in clientCommands) {
+                    if (command.text == b.asString()) {
+                        dup = true
+                        break
+                    }
+                }
+                if (!dup) {
+                    val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"""
+                    tempbuild.append(temp)
+                }
+            }
+            val tmp = """$header$clientdoc$tempbuild""".trimIndent()
+            tempbuild = StringBuilder()
+            for (command in handler.commandList) {
+                var dup = false
+                for (b in serverCommands) {
+                    if (command.text == b.asString()) {
+                        dup = true
+                        break
+                    }
+                }
+                if (!dup) {
+                    val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"""
+                    tempbuild.append(temp)
+                }
+            }
+            pluginRoot.child("README.md").writeString(tmp + serverdoc + tempbuild.toString() + gentime)
+            Log.info("success")
+        }
         handler.register("lobby", "Toggle lobby server features") {
             Core.settings.putSave("isLobby", !Core.settings.getBool("isLobby"))
             Log.info("success")
@@ -243,114 +338,7 @@ class Main : Plugin() {
             }
         }
         handler.register("saveall", "desc") { pluginData.saveAll() }
-        handler.register("gendocs", "Generate Essentials README.md") {
-            val servercommands = arrayOf(
-                    "help", "version", "exit", "stop", "host", "maps", "reloadmaps", "status",
-                    "mods", "mod", "js", "say", "difficulty", "rules", "fillitems", "playerlimit",
-                    "config", "subnet-ban", "whitelisted", "whitelist-add", "whitelist-remove",
-                    "shuffle", "nextmap", "kick", "ban", "bans", "unban", "admin", "unadmin",
-                    "admins", "runwave", "load", "save", "saves", "gameover", "info", "search", "gc",
-                    "pardon", "players", "gendocs", "cha"
-            )
-            val clientcommands = arrayOf(
-                    "help", "t", "sync", "pardon", "players", "votekick"
-            )
-            val serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-            val clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-            val gentime = """
-                
-                README.md Generated time: ${DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())}
-                """.trimIndent()
-            Log.info("readme-generating")
-            val header = """
-                [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=Kieaer_Essentials) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=alert_status)](https://sonarcloud.io/dashboard?id=Kieaer_Essentials)
-                # Essentials
-                Add more commands to the server.
-                
-                I'm getting a lot of suggestions.<br>
-                Please submit your idea to this repository issues or Mindustry official discord!
-                
-                ## Essentials 11 Plans
-                - [ ] Fix bugs
-                - [ ] Voting not working
-                  - [ ] Sometimes an account system not working
-                - [ ] Fix many typos
-                - [ ] Features separation
-                  - [ ] Features separation
-                    - [x] Rest API [Plugin Link](https://github.com/Kieaer/Essential-REST_API) 
-                        - [x] Information 
-                        - [x] Add players detail information 
-                        - [x] Add a gamemode 
-                        - [x] Add other team core resource status 
-                        - [x] Add a server map list
-                    - [ ] Communication
-                      - [ ] Communicate a chat message to server
-                        - [ ] Send
-                        - [ ] Receive
-                  - [ ] Web server
-                    - [ ] Fix a sometimes ranking site not loaded
-                  - [x] Auto Rollback (Not remove) [Plugin Link](https://github.com/Kieaer/AutoRollback)
-                - [ ] New features
-                  - [ ] Web console
-                    - [ ] Control plugin database
-                    - [ ] Check world status
-                      - [ ] Dynmap (idea from Minecraft)
-                      - [ ] Rest API
-                - [ ] Remove external API services
-                  - [x] IP API (Due to traffic excess)
-                  - [ ] Translate (Due to paid service)
-                - [ ] Security patches
-                - [ ] All code clean
-                
-                ### Recommend
-                CPU: Ryzen 3 2200G or Intel i3 8100<br>
-                RAM: 50MB<br>
-                Disk: HDD capable of more than 5MB/s random read/write.
-                
-                ## Installation
-                
-                Put this plugin in the ``<server folder location>/config/mods`` folder.
-                
-                
-                """.trimIndent()
-            var tempbuild = StringBuilder()
-            for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
-                val command = Vars.netServer.clientCommands.commandList[a]
-                var dup = false
-                for (`as` in clientcommands) {
-                    if (command.text == `as`) {
-                        dup = true
-                        break
-                    }
-                }
-                if (!dup) {
-                    val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |
-"""
-                    tempbuild.append(temp)
-                }
-            }
-            val tmp = """
-                $header$clientdoc$tempbuild
-                
-                """.trimIndent()
-            tempbuild = StringBuilder()
-            for (command in handler.commandList) {
-                var dup = false
-                for (`as` in servercommands) {
-                    if (command.text == `as`) {
-                        dup = true
-                        break
-                    }
-                }
-                if (!dup) {
-                    val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |
-"""
-                    tempbuild.append(temp)
-                }
-            }
-            pluginRoot.child("README.md").writeString(tmp + serverdoc + tempbuild.toString() + gentime)
-            Log.info("success")
-        }
+
         handler.register("admin", "<name>", "Set admin status to player.") { arg: Array<String> ->
             if (arg.isNotEmpty()) {
                 val player = Vars.playerGroup.find { p: Player -> p.name == arg[0] }
@@ -1139,7 +1127,7 @@ class Main : Plugin() {
                     """.trimIndent()
                 s.append(d)
             }
-            player.sendMessage(s.substring(0, s.length - 1))
+            player.sendMessage(if(s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString())
         }
         handler.register("suicide", "Kill yourself.") { _: Array<String?>?, player: Player ->
             if (!perm.check(player, "suicide")) return@register

@@ -1,9 +1,6 @@
 package essentials
 
-import arc.ApplicationCore
-import arc.Core
-import arc.Events
-import arc.Settings
+import arc.*
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.util.CommandHandler
@@ -16,7 +13,7 @@ import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.pluginVars
 import essentials.network.Client
 import essentials.network.Server
-import mindustry.Vars.*
+import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.Mechs
@@ -34,18 +31,20 @@ import mindustry.gen.Call
 import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
-import org.junit.AfterClass
-import org.junit.Assert
+import org.hjson.JsonValue
+import org.jsoup.Jsoup
+import org.junit.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import org.junit.BeforeClass
-import org.junit.Test
 import org.junit.contrib.java.lang.system.SystemOutRule
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
 import java.io.*
+import java.lang.Thread.sleep
+import java.net.HttpURLConnection
 import java.net.Socket
+import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.util.*
@@ -58,7 +57,6 @@ import javax.crypto.spec.SecretKeySpec
 class PluginTest {
     companion object {
         val out = SystemOutRule()
-        val testVars = PluginTestVars()
         val r = SecureRandom()
         lateinit var root: Fi
         lateinit var testroot: Fi
@@ -66,6 +64,8 @@ class PluginTest {
         var serverHandler = CommandHandler("")
         var clientHandler = CommandHandler("/")
         lateinit var player: Player
+
+        const val clean = false
 
         @BeforeClass
         @JvmStatic
@@ -83,20 +83,20 @@ class PluginTest {
                 Log.setUseColors(false)
                 val core: ApplicationCore = object : ApplicationCore() {
                     override fun setup() {
-                        headless = true
-                        net = Net(null)
-                        tree = FileTree()
-                        init()
-                        content.createBaseContent()
-                        add(Logic().also { logic = it })
-                        add(NetServer().also { netServer = it })
-                        content.init()
+                        Vars.headless = true
+                        Vars.net = Net(null)
+                        Vars.tree = FileTree()
+                        Vars.init()
+                        Vars.content.createBaseContent()
+                        add(Logic().also { Vars.logic = it })
+                        add(NetServer().also { Vars.netServer = it })
+                        Vars.content.init()
                     }
 
                     override fun init() {
                         super.init()
                         begins[0] = true
-                        testMap[0] = maps.loadInternalMap("maze")
+                        testMap[0] = Vars.maps.loadInternalMap("maze")
                         Thread.currentThread().interrupt()
                     }
                 }
@@ -115,7 +115,7 @@ class PluginTest {
             root = Core.settings.dataDirectory.child("mods/Essentials")
 
             // Reset status
-            if (testVars.clean) testroot.deleteDirectory()
+            if (clean) testroot.deleteDirectory()
             try {
                 FileInputStream("./build/libs/Essentials.jar").use { fis ->
                     FileOutputStream("./config/mods/Essentials.jar").use { fos ->
@@ -128,128 +128,46 @@ class PluginTest {
             } catch (e: IOException) {
                 e.printStackTrace()
             }
-            playerGroup = entities.add(Player::class.java).enableMapping()
-            world.loadMap(testMap[0])
-            state.set(GameState.State.playing)
-            Thread {
-                while (true) {
-                    Events.fire(Trigger.update)
-                    try {
-                        state.enemies = unitGroup.count { b: BaseUnit -> b.team === state.rules.waveTeam && b.countsAsEnemy() }
-                        Time.update()
-                        unitGroup.update()
-                        puddleGroup.update()
-                        shieldGroup.update()
-                        bulletGroup.update()
-                        tileGroup.update()
-                        fireGroup.update()
-                        collisions.collideGroups(bulletGroup, unitGroup)
-                        collisions.collideGroups(bulletGroup, playerGroup)
-                        unitGroup.updateEvents()
-                        collisions.updatePhysics(unitGroup)
-                        playerGroup.update()
-                        effectGroup.update()
-                        Thread.sleep(16)
-                    } catch (ignored: InterruptedException) {
-                    }
+            Vars.playerGroup = Vars.entities.add(Player::class.java).enableMapping()
+            Vars.world.loadMap(testMap[0])
+            Vars.state.set(GameState.State.playing)
+            Core.app.addListener(object : ApplicationListener{
+                override fun update() {
+                    Vars.state.enemies = Vars.unitGroup.count { b: BaseUnit -> b.team === Vars.state.rules.waveTeam && b.countsAsEnemy() }
+                    Time.update()
+                    Vars.unitGroup.update()
+                    Vars.puddleGroup.update()
+                    Vars.shieldGroup.update()
+                    Vars.bulletGroup.update()
+                    Vars.tileGroup.update()
+                    Vars.fireGroup.update()
+                    Vars.collisions.collideGroups(Vars.bulletGroup, Vars.unitGroup)
+                    Vars.collisions.collideGroups(Vars.bulletGroup, Vars.playerGroup)
+                    Vars.unitGroup.updateEvents()
+                    Vars.collisions.updatePhysics(Vars.unitGroup)
+                    Vars.playerGroup.update()
+                    Vars.effectGroup.update()
                 }
-            }.start()
-            //testpluginRoot.child("locales").delete()
-            //testpluginRoot.child("version.properties").delete()
-            pluginRoot.child("config.hjson").writeString(testVars.config)
+            })
+            testroot.child("locales").delete()
+            testroot.child("version.properties").delete()
+            pluginRoot.child("config.hjson").writeString(testroot.child("src/test/kotlin/essentials/config.hjson").readString("UTF-8"))
             main = Main()
             main.init()
             main.registerServerCommands(serverHandler)
             main.registerClientCommands(clientHandler)
             player = PluginTestDB.createNewPlayer(true)
         }
-
-        @AfterClass
-        @JvmStatic
-        fun shutdown() {
-            Core.app.listeners[1].dispose()
-            Assert.assertTrue(out.logWithNormalizedLineSeparator.contains(configs.bundle["thread-disable-waiting"]))
-        }
     }
+
+    /*@Test
+    @Order(999)
+    fun shutdown() {
+        Core.app.listeners[1].dispose()
+    }*/
 
     @Test
     @Order(1)
-    fun configTest() {
-        assertEquals(configs.dbUrl, "jdbc:h2:file:./config/mods/Essentials/data/player")
-    }
-
-    @Test
-    @Order(2)
-    fun networkTest() {
-        try {
-            val server = Server()
-            val client = Client()
-
-            // Server start test
-            Main.mainThread.submit(server)
-            Thread.sleep(1000)
-            Assert.assertNotNull(server.serverSocket)
-
-            // Client start test
-            Main.mainThread.submit(client)
-            client.wakeup()
-            Thread.sleep(1000)
-            Assert.assertTrue(client.activated)
-
-            // Ban data sharing test
-            client.request(Client.Request.BanSync, null, null)
-            TimeUnit.SECONDS.sleep(1)
-            Assert.assertTrue(client.activated)
-            Assert.assertTrue(server.list.size != 0)
-            out.clearLog()
-            client.request(Client.Request.Chat, player, "Cross-chat message!")
-            Assert.assertTrue(out.logWithNormalizedLineSeparator.contains("[EssentialClient]"))
-            client.request(Client.Request.UnbanIP, null, "127.0.0.1")
-            client.request(Client.Request.UnbanID, null, player.uuid)
-
-            // Ban check test
-            try {
-                Socket("127.0.0.1", 25000).use { socket ->
-                    val gen = KeyGenerator.getInstance("AES")
-                    gen.init(128)
-                    val key = gen.generateKey()
-                    val raw = key.encoded
-                    val skey: SecretKey = SecretKeySpec(raw, "AES")
-                    BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)).use { `is` ->
-                        DataOutputStream(socket.getOutputStream()).use { os ->
-                            os.writeBytes(String(Base64.getEncoder().encode(raw)).trimIndent())
-                            os.flush()
-                            val json = JsonObject()
-                            json.add("type", "checkban")
-                            json.add("target_uuid", player.uuid)
-                            json.add("target_ip", player.con.address)
-                            val en = Main.tool.encrypt(json.toString(), skey)
-                            os.writeBytes(en.trimIndent())
-                            os.flush()
-                            val receive = Main.tool.decrypt(`is`.readLine(), skey)
-                            val kick = receive.toBoolean()
-                            Assert.assertFalse(kick)
-                        }
-                    }
-                }
-            } catch (ignored: Exception) {
-
-            }
-
-            // Connection close test
-            client.request(Client.Request.Exit, null, null)
-            Thread.sleep(1000)
-            server.shutdown()
-        } catch (ignored: InterruptedException) {
-            Thread.currentThread().interrupt()
-        }
-    }
-
-    @Test
-    fun test10_blank() {
-    }
-
-    @Test
     fun test11_serverCommand() {
         serverHandler.handleMessage("saveall")
         serverHandler.handleMessage("edit " + player.uuid + " lastchat Manually")
@@ -268,6 +186,7 @@ class PluginTest {
     }
 
     @Test
+    @Order(2)
     @Throws(InterruptedException::class)
     fun test12_clientCommand() {
         playerCore[player.uuid].level = 50
@@ -278,11 +197,12 @@ class PluginTest {
         clientHandler.handleMessage("/changepw testpw123 testpw123", player)
         assertNotEquals("none", playerCore[player.uuid].accountpw)
         clientHandler.handleMessage("/chars hobc0283qz ?!", player)
-        Assert.assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall)
+        sleep(1000)
+        Assert.assertSame(Vars.world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall)
         clientHandler.handleMessage("/color", player)
         Assert.assertTrue(playerCore[player.uuid].colornick)
         clientHandler.handleMessage("/difficulty easy", player)
-        assertEquals(state.rules.waveSpacing.toDouble(), Difficulty.easy.waveTime * 60 * 60 * 2.toDouble(), 0.0)
+        assertEquals(Vars.state.rules.waveSpacing.toDouble(), Difficulty.easy.waveTime * 60 * 60 * 2.toDouble(), 0.0)
         clientHandler.handleMessage("/killall", player)
         clientHandler.handleMessage("/help", player)
         clientHandler.handleMessage("/info", player)
@@ -318,7 +238,7 @@ class PluginTest {
         player[80f] = 80f
         player.setNet(80f, 80f)
         clientHandler.handleMessage("/spawn-core smail", player)
-        Assert.assertSame(Blocks.coreShard, world.tileWorld(80f, 80f).block())
+        Assert.assertSame(Blocks.coreShard, Vars.world.tileWorld(80f, 80f).block())
         clientHandler.handleMessage("/setmech alpha", player)
         Assert.assertSame(Mechs.alpha, player.mech)
         clientHandler.handleMessage("/setmech dart", player)
@@ -337,11 +257,11 @@ class PluginTest {
         clientHandler.handleMessage("/suicide", player)
         Assert.assertTrue(player.isDead)
         player.dead = false
-        state.rules.pvp = true
-        Call.onConstructFinish(world.tile(100, 40), Blocks.coreFoundation, 1, 0.toByte(), Team.crux, true)
+        Vars.state.rules.pvp = true
+        Call.onConstructFinish(Vars.world.tile(100, 40), Blocks.coreFoundation, 1, 0.toByte(), Team.crux, true)
         clientHandler.handleMessage("/team crux", player)
         Assert.assertSame(Team.crux, player.team)
-        state.rules.pvp = false
+        Vars.state.rules.pvp = false
         val dummy2 = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/tempban " + dummy2.name + " 10 test", player)
         assertNotEquals(0L, playerCore[dummy2.uuid].bantime)
@@ -401,34 +321,35 @@ class PluginTest {
         Events.fire(PlayerChatEvent(dummy3, "y"))
         TimeUnit.SECONDS.sleep(1)
         clientHandler.handleMessage("/weather day", player)
-        assertEquals(0.0f, state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.0f, Vars.state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather eday", player)
-        assertEquals(0.3f, state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.3f, Vars.state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather night", player)
-        assertEquals(0.7f, state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.7f, Vars.state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather enight", player)
-        assertEquals(0.85f, state.rules.ambientLight.a, 0.0f)
-        Assert.assertNotNull(playerGroup.find { p: Player -> p.uuid == dummy3.uuid })
+        assertEquals(0.85f, Vars.state.rules.ambientLight.a, 0.0f)
+        Assert.assertNotNull(Vars.playerGroup.find { p: Player -> p.uuid == dummy3.uuid })
         assertEquals("owner", playerCore[player.uuid].permission)
         clientHandler.handleMessage("/mute " + dummy3.name, player)
         Assert.assertTrue(playerCore[dummy3.uuid].mute)
     }
 
     @Test
+    @Order(3)
     @Throws(InterruptedException::class)
     fun test13_events() {
-        Events.fire(TapConfigEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, 5))
-        Events.fire(TapEvent(world.tile(r.nextInt(50), r.nextInt(50)), player))
-        Events.fire(WithdrawEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10))
-        state.rules.attackMode = true
-        Call.onSetRules(state.rules)
+        Events.fire(TapConfigEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, 5))
+        Events.fire(TapEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player))
+        Events.fire(WithdrawEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10))
+        Vars.state.rules.attackMode = true
+        Call.onSetRules(Vars.state.rules)
         Events.fire(GameOverEvent(player.team))
         assertEquals(1, playerCore[player.uuid].attackclear)
         Events.fire(WorldLoadEvent())
         assertEquals(0L, pluginVars.playtime)
         assertEquals(0, pluginData.powerblocks.size)
         Events.fire(PlayerConnect(player))
-        Events.fire(DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5))
+        Events.fire(DepositEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5))
         val dummy = PluginTestDB.createNewPlayer(false)
         Events.fire(PlayerJoin(dummy))
         clientHandler.handleMessage("/register hello testas123", dummy)
@@ -442,16 +363,16 @@ class PluginTest {
         Events.fire(PlayerChatEvent(player, "hi"))
 
         player.addBuildRequest(BuildRequest(5, 5, 0, Blocks.copperWall))
-        Call.onConstructFinish(world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
-        Events.fire(BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false))
-        Call.onConstructFinish(world.tile(78, 78), Blocks.message, player.id, 0.toByte(), Team.sharded, false)
-        Events.fire(BlockBuildEndEvent(world.tile(78, 78), player, Team.sharded, false))
-        Call.setMessageBlockText(player, world.tile(78, 78), "warp mindustry.indielm.com")
+        Call.onConstructFinish(Vars.world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
+        Events.fire(BlockBuildEndEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false))
+        Call.onConstructFinish(Vars.world.tile(78, 78), Blocks.message, player.id, 0.toByte(), Team.sharded, false)
+        Events.fire(BlockBuildEndEvent(Vars.world.tile(78, 78), player, Team.sharded, false))
+        Call.setMessageBlockText(player, Vars.world.tile(78, 78), "warp mindustry.indielm.com")
         Thread.sleep(4000)
         player.buildQueue().clear()
         player.addBuildRequest(BuildRequest(5, 5))
-        Call.onDeconstructFinish(world.tile(5, 5), Blocks.air, player.id)
-        Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true))
+        Call.onDeconstructFinish(Vars.world.tile(5, 5), Blocks.air, player.id)
+        Events.fire(BuildSelectEvent(Vars.world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true))
         player.buildQueue().clear()
         Events.fire(UnitDestroyEvent(player))
         Events.fire(PlayerBanEvent(dummy))
@@ -460,4 +381,80 @@ class PluginTest {
         Events.fire(PlayerIpUnbanEvent("127.0.0.3"))
         Events.fire(ServerLoadEvent())
     }
+
+    /*
+    @Test
+    @Order(1)
+    fun configTest() {
+        assertEquals(configs.dbUrl, "jdbc:h2:file:./config/mods/Essentials/data/player")
+    }
+
+
+    @Test
+    @Order(2)
+    fun networkTest() {
+        try {
+            val server = Server()
+            val client = Client()
+
+            // Server start test
+            Main.mainThread.submit(server)
+            Thread.sleep(1000)
+            Assert.assertNotNull(server.serverSocket)
+
+            // Client start test
+            Main.mainThread.submit(client)
+            client.wakeup()
+            Thread.sleep(1000)
+            Assert.assertTrue(client.activated)
+
+            // Ban data sharing test
+            client.request(Client.Request.BanSync, null, null)
+            TimeUnit.SECONDS.sleep(1)
+            Assert.assertTrue(client.activated)
+            Assert.assertTrue(server.list.size != 0)
+            out.clearLog()
+            client.request(Client.Request.Chat, player, "Cross-chat message!")
+            Assert.assertTrue(out.logWithNormalizedLineSeparator.contains("[EssentialClient]"))
+            client.request(Client.Request.UnbanIP, null, "127.0.0.1")
+            client.request(Client.Request.UnbanID, null, player.uuid)
+
+            // Ban check test
+            try {
+                Socket("127.0.0.1", 25000).use { socket ->
+                    val gen = KeyGenerator.getInstance("AES")
+                    gen.init(128)
+                    val key = gen.generateKey()
+                    val raw = key.encoded
+                    val skey: SecretKey = SecretKeySpec(raw, "AES")
+                    BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)).use { `is` ->
+                        DataOutputStream(socket.getOutputStream()).use { os ->
+                            os.writeBytes("""${String(Base64.getEncoder().encode(raw))}""".trimIndent())
+                            os.flush()
+                            val json = JsonObject()
+                            json.add("type", "checkban")
+                            json.add("target_uuid", player.uuid)
+                            json.add("target_ip", player.con.address)
+                            val en = Main.tool.encrypt(json.toString(), skey)
+                            os.writeBytes("""$en""".trimIndent())
+                            os.flush()
+                            val receive = Main.tool.decrypt(`is`.readLine(), skey)
+                            val kick = receive.toBoolean()
+                            Assert.assertFalse(kick)
+                        }
+                    }
+                }
+            } catch (ignored: Exception) {
+
+            }
+
+            // Connection close test
+            client.request(Client.Request.Exit, null, null)
+            Thread.sleep(1000)
+            server.shutdown()
+        } catch (ignored: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+    }
+    */
 }

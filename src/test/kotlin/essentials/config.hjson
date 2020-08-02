@@ -1,0 +1,126 @@
+{
+  # Essentials 플러그인 설정 파일
+  # 이 설정들 일부는 안전하지만, 다른 것들은 잘못 수정되면 서버에 오류를 일으킬 수 있습니다.
+  # 플러그인이 업데이트 되면, 이 설정 파일도 자동으로 업그레이드 됩니다.
+  settings:
+  {
+    # 설정파일 버전
+    version: 13
+    # 플러그인 언어
+    language: ko_KR
+    # 서버 로그 활성화 (이 기능을 켜면 많은 디스크 작업이 일어납니다!)
+    logging: true
+    # 플러그인 업데이트 확인 기능
+    update: true
+    # 이 기능을 켜면 오류 메세지가 저장되지 않고 즉시 콘솔로 출력됩니다.
+    debug: false
+    crash-report: true
+    # 게임 내 플러그인 접두사 설정
+    prefix: "[green][Essentials] []"
+    database:
+    {
+      DBServer: true
+      DBurl: jdbc:h2:file:./config/mods/Essentials/data/player
+    }
+  }
+  network:
+  {
+    # 네트워크 설정
+    # 이 플러그인을 사용하고 있는 다른 서버와 연결하여, 서버간 채팅이나 밴 데이터 공유 기능들을 사용할 수 있습니다.
+    server-enable: false
+    server-port: 25000
+    client-enable: false
+    client-port: 25000
+    client-host: mindustry.kr
+    # 밴 공유서버 설정
+    # 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.
+    banshare: false
+    # 신뢰가능한 밴 공유 IP 설정
+    # 예시 - ["127.0.0.1","localhost","192.168.0.0"]
+    bantrust:
+    [
+      127.0.0.1
+      localhost
+    ]
+    # 이 기능을 켜면 서버 포트에서 서버 정보를 얻어올 수 있게 됩니다.
+    # 랭킹 사이트는 http://localhost:서버포트/rank/kr 으로 들어가면 됩니다.
+    query: false
+  }
+  antigrief:
+  {
+    # 이 기능을 켜면 각 플레이어의 블럭 설치/파괴에 대한 테러방지 기능이 작동합니다.
+    antigrief: false
+    # 이 기능을 켜면 VPN 서비스가 켜집니다.
+    antivpn: false
+    # 초반 러시 방지 시간을 설정합니다. 00:10:00 -> 10분, 00:00:30 -> 30초
+    antirush: false
+    antirushtime: 0
+    # alert-action 는 플레이어의 특정 활동을 다른 플레이어에게 알려줍니다.
+    alert-action: false
+    # strict-name 를 활성화 할 경우, 플레이어를 특정하기 어렵게 만드는 특수문자를 모두 제거합니다.
+    strict-name: false
+    # 빠른 자원소모 감지를 켜면 한 자원이 매우 빠르게 소모가 되고 있을때, 그 자원을 사용하고 있는 플레이어의 명단을 띄워줍니다.
+    scanresource: false
+  }
+  features:
+  {
+    # 경험치 값 설정.
+    # explimit를 켜면, 플레이어가 건설하려는 블록 요구 레벨이 되지 않을경우 건설 자체를 취소시킵니다.
+    explimit: false
+    # Base xp는 레벨 1에서 2로 오르는데 필요한 경험치 수치입니다.
+    basexp: 500
+    # exponent는 다음 레벨로 올리기 위한 요구 경험치 배수입니다.
+    exponent: 1.12
+    # levelupalarm 를 활성화 하면 일정레벨 이상에서 레벨이 오를때, 메세지로 띄워줍니다.
+    levelupalarm: false
+    # 레벨업 알람을 활성화 했을때, 일정 레벨 이상이 되어야 알람이 나타나게 합니다.
+    alarm-minimal-level: 20
+    # 투표 기능을 켜고 끕니다.
+    vote: true
+    # 맵 자동저장 시간. 시간 단위는 1분입니다.
+    savetime: 00:10:00
+    # 빽섭할 맵 저장 슬롯을 설정합니다. 만약 값을 1000으로 설정한다면, 빽섭할 맵의 파일명이 1000.msav 으로 저장됩니다.
+    rollback: false
+    slotnumber: 1000
+    # 플레이어가 맵 밖으로 나가면 즉시 사망처리 합니다.
+    border: false
+    # spawn 명령어 유닛 개수 제한
+    spawnlimit: 500
+    # /event 명령어에서 사용하는 포트의 범위를 설정합니다.
+    eventport: 8000-8050
+    # 컬러닉 갱신 시간설정. 1초 = 1000
+    cupdatei: 1000
+    # 잠수 강퇴시간을 설정합니다. 시간 단위: 초
+    afktime: 0
+    # 플레이어 인원별 난이도 조절
+    difficulty:
+    {
+      auto-difficulty: false
+      easy: 2
+      normal: 4
+      hard: 6
+      insane: 10
+    }
+    # 파파고 번역 API 키
+    translate:
+    {
+      translate: false
+      translateid: none
+      translatepw: none
+    }
+  }
+  auth:
+  {
+    # 로그인 기능 설정
+    loginenable: false
+    # loginmethod 는 계정 등록방식 입니다. (password, discord 방법 사용가능)
+    loginmethod: password
+    autologin: true
+    # 만약 비밀번호 방식을 "discord" 으로 설정했다면 반드시 이 값들을 설정해야 합니다.
+    discord:
+    {
+      token: none
+      link: none
+    }
+  }
+}

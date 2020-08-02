@@ -1,0 +1,74 @@
+{
+  owner:
+  {
+    admin: true
+    prefix: "[sky][Owner] %1[orange] > [white]%2"
+    permission:
+    [
+      ALL
+    ]
+  }
+  admin:
+  {
+    inheritance: newadmin
+    admin: true
+    prefix: "[yellow][Admin] %1[orange] > [white]%2"
+    permission:
+    [
+      color
+      difficulty
+      save
+      tempban
+      save
+      spawn
+      weather
+    ]
+  }
+  newadmin:
+  {
+    inheritance: default
+    admin: true
+    prefix: "[yellow][New admin] %1[orange] > [white]%2"
+    permission:
+    [
+      kill
+      me
+      tp
+      team
+      tempban
+      tpp
+      mute
+      setmech
+      spawn-core
+    ]
+  }
+  default:
+  {
+    default: true
+    permission:
+    [
+      alert
+      ch
+      changepw
+      event
+      getpos
+      info
+      login
+      logout
+      maps
+      me
+      motd
+      r
+      register
+      players
+      status
+      suicide
+      time
+      tp
+      tppos
+      tr
+      vote
+      votekick
+    ]
+  }
+}

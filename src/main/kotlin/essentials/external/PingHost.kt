@@ -8,8 +8,8 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.function.Consumer
 
-class PingHost(ip: String?, port: Int, listener: Consumer<Host>) {
-    fun readServerData(ip: String?, buffer: ByteBuffer?, ping: Long): Host {
+class PingHost(ip: String, port: Int, listener: Consumer<Host>) {
+    fun readServerData(ip: String, buffer: ByteBuffer, ping: Long): Host {
         val host = NetworkIO.readServerData(ip, buffer)
         host.ping = ping.toInt()
         return host
