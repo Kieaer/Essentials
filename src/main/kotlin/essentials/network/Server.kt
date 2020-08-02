@@ -165,18 +165,20 @@ class Server : Runnable {
                         }
                         Request.CheckBan -> {
                             var found = false
-                            val uuid = data["target_uuid"].asString()
-                            val ip = data["target_ip"].asString()
+                            val uuid = data["uuid"].asString()
+                            val ip = data["ip"].asString()
                             for (info in Vars.netServer.admins.banned) {
                                 if (info.id == uuid) {
                                     found = true
                                     break
                                 }
                             }
-                            for (info in Vars.netServer.admins.bannedIPs) {
-                                if (info == ip) {
-                                    found = true
-                                    break
+                            if(!found) {
+                                for (info in Vars.netServer.admins.bannedIPs) {
+                                    if (info == ip) {
+                                        found = true
+                                        break
+                                    }
                                 }
                             }
                             answer.add("result", if (found) "true" else "false")
