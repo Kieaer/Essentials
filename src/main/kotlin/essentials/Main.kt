@@ -1060,14 +1060,14 @@ class Main : Plugin() {
             }
             player.sendMessage(Bundle(playerData.locale).prefix("perm-group-not-found"))
         }
-        handler.register("spawn-core", "<smail/normal/big>", "Make new core") { arg: Array<String?>, player: Player ->
+        handler.register("spawn-core", "<small/normal/big>", "Make new core") { arg: Array<String?>, player: Player ->
             if (!perm.check(player, "spawn-core")) return@register
             var core = Blocks.coreShard
             when (arg[0]) {
                 "normal" -> core = Blocks.coreFoundation
                 "big" -> core = Blocks.coreNucleus
             }
-            Call.onConstructFinish(world.tile(player.tileX(), player.tileY()), core, 0, 0.toByte(), player.team, false)
+            if(player.tileOn().breakable()) Call.onConstructFinish(world.tile(player.tileX(), player.tileY()), core, 0, 0.toByte(), player.team, false)
         }
         handler.register("setmech", "<Mech> [player]", "Set player mech") { arg: Array<String>, player: Player ->
             if (!perm.check(player, "setmech")) return@register
