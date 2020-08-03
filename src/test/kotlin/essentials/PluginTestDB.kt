@@ -42,9 +42,6 @@ object PluginTestDB {
         if (isFull) {
             playerCore.register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, (if (password.size != 0) password[0] else "none")!!, false)
             playerCore.playerLoad(player, null)
-            //playerCore.load(player.uuid);
-            perm.create(playerCore[player.uuid])
-            perm.saveAll()
         }
         return player
     }

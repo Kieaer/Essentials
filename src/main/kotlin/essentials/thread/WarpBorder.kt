@@ -12,6 +12,7 @@ import mindustry.core.GameState
 import mindustry.gen.Call
 import mindustry.net.Host
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 class WarpBorder : Runnable {
     var length = 0
@@ -46,7 +47,7 @@ class WarpBorder : Runnable {
                 while (!Thread.currentThread().isInterrupted) {
                     val ip = data!!.ip
                     if (Vars.state.`is`(GameState.State.playing)) {
-                        PingHost(ip, data.port) { result: Host ->
+                        PingHost(ip, data.port, Consumer { result: Host ->
                             try {
                                 if (result.name != null) {
                                     val size = data.finishTile.x - data.startTile.x
@@ -78,7 +79,7 @@ class WarpBorder : Runnable {
                             } catch (e: InterruptedException) {
                                 Thread.currentThread().interrupt()
                             }
-                        }
+                        })
                     } else {
                         try {
                             TimeUnit.SECONDS.sleep(1)

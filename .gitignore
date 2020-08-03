@@ -4,6 +4,7 @@
 *.ear
 hs_err_pid*
 crash-report-*
+out/
 
 .github/
 .gradle/

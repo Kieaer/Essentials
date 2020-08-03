@@ -2,6 +2,7 @@ package essentials.features
 
 import arc.Core
 import arc.Events
+import arc.func.Boolf
 import arc.struct.ArrayMap
 import essentials.Main.Companion.client
 import essentials.Main.Companion.configs
@@ -346,7 +347,7 @@ class Event {
                 if (Vars.state.rules.pvp && !Vars.state.gameOver) player.pvpbreakout = player.pvpbreakout + 1
             }
             playerCore.save(player)
-            pluginVars.removePlayerData { p: PlayerData -> p.uuid == e.player.uuid }
+            pluginVars.removePlayerData(Boolf { p: PlayerData -> p.uuid == e.player.uuid })
             pluginVars.players.remove(e.player)
         }
 

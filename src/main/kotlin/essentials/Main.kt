@@ -337,7 +337,7 @@ class Main : Plugin() {
                 CrashReport(e)
             }
         }
-        handler.register("saveall", "desc") { pluginData.saveAll() }
+        handler.register("saveall", "Manually save all plugin data") { pluginData.saveAll() }
 
         handler.register("admin", "<name>", "Set admin status to player.") { arg: Array<String> ->
             if (arg.isNotEmpty()) {

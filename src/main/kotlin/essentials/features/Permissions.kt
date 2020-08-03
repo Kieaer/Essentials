@@ -149,14 +149,14 @@ class Permissions {
         return false
     }
 
-    fun isAdmin(player: PlayerData): Boolean {
-        return try {
+    fun isAdmin(player: PlayerData?): Boolean {
+        return if (player != null) {
             if (user.has(player.uuid)) {
                 user[player.uuid].asObject().getBoolean("admin", false)
             } else {
                 false
             }
-        } catch (ignored: NullPointerException) {
+        } else {
             false
         }
     }
