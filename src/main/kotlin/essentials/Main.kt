@@ -702,19 +702,6 @@ class Main : Plugin() {
                 player.sendMessage(Bundle(playerData.locale).prefix("system.login.disabled"))
             }
         }
-        handler.register("logout", "Log-out of your account.") { _: Array<String?>?, player: Player ->
-            if (!perm.check(player, "logout")) return@register
-            val playerData = playerCore[player.uuid]
-            val bundle = Bundle(playerData.locale)
-            if (configs.loginEnable && !playerData.error) {
-                playerData.connected = false
-                playerData.connserver = "none"
-                playerData.uuid = "Logout"
-                Call.onKick(player.con, Bundle(playerData.locale)["system.logout"])
-            } else {
-                player.sendMessage(bundle.prefix("system.login.disabled"))
-            }
-        }
         handler.register("maps", "[page]", "Show server maps") { arg: Array<String?>, player: Player ->
             if (!perm.check(player, "maps")) return@register
             val maplist = Vars.maps.all()
