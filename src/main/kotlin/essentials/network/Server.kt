@@ -26,7 +26,6 @@ import javax.crypto.spec.SecretKeySpec
 class Server : Runnable {
     var list = Array<Service?>()
     lateinit var serverSocket: ServerSocket
-    var bundle = Bundle()
     fun shutdown() {
         try {
             Thread.currentThread().interrupt()
@@ -68,6 +67,17 @@ class Server : Runnable {
         var spec: SecretKey
         var ip: String
 
+        init {
+            ip = socket.inetAddress.toString()
+            br = BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
+            os = DataOutputStream(socket.getOutputStream())
+
+            // 키 값 읽기
+            val authkey = br.readLine() ?: throw PluginException("Auth key is null")
+            spec = SecretKeySpec(Base64.getDecoder().decode(authkey), "AES")
+            println(authkey)
+        }
+
         fun shutdown(bundle: String?, vararg parameter: String?) {
             try {
                 os.close()
@@ -92,7 +102,7 @@ class Server : Runnable {
                             val msg = arrayOf("Hi $ip! Your connection is successful!", "Hello $ip! I'm server!", "Welcome to the server $ip!")
                             val rnd = SecureRandom().nextInt(msg.size)
                             answer.add("result", msg[rnd])
-                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec).trimIndent())
+                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec)+"\n")
                             os.flush()
                             Log.server("client.connected", ip)
                         }
@@ -126,7 +136,7 @@ class Server : Runnable {
                             for (b in Vars.netServer.admins.subnetBans) {
                                 subbans.add(b)
                             }
-                            answer.add("type", "bansync")
+                            answer.add("type", "BanSync")
                             answer.add("ban", ban)
                             answer.add("ipban", ipban)
                             answer.add("subban", subban)
@@ -134,7 +144,7 @@ class Server : Runnable {
                                 val remoteip = ser!!.socket.inetAddress.toString().replace("/", "")
                                 for (b in configs.banTrust) {
                                     if (b.asString() == remoteip) {
-                                        ser.os.writeBytes(Main.tool.encrypt(answer.toString(), ser.spec).trimIndent())
+                                        ser.os.writeBytes(Main.tool.encrypt(answer.toString(), ser.spec)+"\n")
                                         ser.os.flush()
                                         Log.server("server.data-sented", ser.socket.inetAddress.toString())
                                     }
@@ -148,14 +158,14 @@ class Server : Runnable {
                             }
                             for (ser in list) {
                                 if (ser!!.spec !== spec) {
-                                    ser!!.os.writeBytes(Main.tool.encrypt(value, ser.spec).trimIndent())
+                                    ser!!.os.writeBytes(Main.tool.encrypt(value, ser.spec)+"\n")
                                     ser.os.flush()
                                 }
                             }
                             Log.server("server-message-received", ip, message)
                         }
                         Request.Exit -> {
-                            shutdown("client.disconnected", ip, bundle["client.disconnected.reason.exit"])
+                            shutdown("client.disconnected", ip, Bundle().get("client.disconnected.reason.exit"))
                             interrupt()
                             return
                         }
@@ -182,7 +192,7 @@ class Server : Runnable {
                                 }
                             }
                             answer.add("result", if (found) "true" else "false")
-                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec).trimIndent())
+                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec)+"\n")
                             os.flush()
                         }
                     }
@@ -191,18 +201,9 @@ class Server : Runnable {
             } catch (e: IOException) {
                 if (e.message != "Stream closed") CrashReport(e)
             } catch (e: Exception) {
-                Log.server("client.disconnected", ip, bundle["client.disconnected.reason.error"])
+                e.printStackTrace()
+                Log.server("client.disconnected", ip, Bundle().get("client.disconnected.reason.error"))
             }
-        }
-
-        init {
-            ip = socket.inetAddress.toString()
-            br = BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
-            os = DataOutputStream(socket.getOutputStream())
-
-            // 키 값 읽기
-            val authkey = br.readLine() ?: throw PluginException("Auth key is null")
-            spec = SecretKeySpec(Base64.getDecoder().decode(authkey), "AES")
         }
     }
 }

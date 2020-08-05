@@ -3,6 +3,7 @@ package essentials
 import arc.Core
 import arc.func.Boolf
 import essentials.Main.Companion.colorNickname
+import essentials.Main.Companion.perm
 import essentials.Main.Companion.playerCore
 import essentials.Main.Companion.pluginData
 import essentials.Main.Companion.pluginRoot
@@ -80,14 +81,14 @@ class PlayerCore {
         playerData.exp = playerData.exp + playerData.joincount
         playerData.login = true
 
-        Main.perm.setUserPerm(oldUUID, p.uuid)
-        if (Main.perm.user[p.uuid] == null) {
-            Main.perm.create(playerData)
-            Main.perm.saveAll()
+        perm.setUserPerm(oldUUID, p.uuid)
+        if (perm.user[p.uuid] == null) {
+            perm.create(playerData)
+            perm.saveAll()
         } else {
-            p.name = Main.perm.user[playerData.uuid].asObject()["name"].asString()
+            p.name = perm.user[playerData.uuid].asObject()["name"].asString()
         }
-        p.isAdmin = Main.perm.isAdmin(playerData)
+        p.isAdmin = perm.isAdmin(playerData)
         return true
     }
 

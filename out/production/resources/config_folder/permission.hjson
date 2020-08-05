@@ -50,11 +50,9 @@
       alert
       ch
       changepw
-      event
       getpos
       info
       login
-      logout
       maps
       me
       motd

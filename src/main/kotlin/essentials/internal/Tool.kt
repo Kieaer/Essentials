@@ -34,6 +34,8 @@ import kotlin.math.pow
 
 
 class Tool {
+    val ipre = IP2Location()
+
     fun hostIP(): String {
         val ip = URL("http://checkip.amazonaws.com")
         val br = BufferedReader(InputStreamReader(ip.openStream()))
@@ -88,7 +90,7 @@ class Tool {
         val iv = ByteArray(12)
         SecureRandom().nextBytes(iv)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val ivSpec = GCMParameterSpec(16 * Byte.SIZE_BYTES, iv)
+        val ivSpec = GCMParameterSpec(128, iv)
         cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec)
         val text = cipher.doFinal(privateString.toByteArray(StandardCharsets.UTF_8))
         val encrypted = ByteArray(iv.size + text.size)
@@ -101,7 +103,7 @@ class Tool {
         val decoded = Base64.getDecoder().decode(encrypted)
         val iv = Arrays.copyOfRange(decoded, 0, 12)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val ivSpec = GCMParameterSpec(16 * Byte.SIZE_BYTES, iv)
+        val ivSpec = GCMParameterSpec(128, iv)
         cipher.init(Cipher.DECRYPT_MODE, key, ivSpec)
         val text = cipher.doFinal(decoded, 12, decoded.size - 12)
         return String(text, StandardCharsets.UTF_8)
@@ -134,13 +136,8 @@ class Tool {
     fun getGeo(data: Any): Locale {
         val ip = if (data is Player) netServer.admins.getInfo(data.uuid).lastIP else (data as String?)!!
 
-        val ipre = IP2Location()
-        ipre.IPDatabasePath = pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").absolutePath()
-        ipre.UseMemoryMappedFile = true
-
         val res = ipre.IPQuery(ip)
         val code = CountryCode.getByCode(res.countryShort)
-        ipre.Close()
 
         return if (code == null) configs.locale else code.toLocale()
     }

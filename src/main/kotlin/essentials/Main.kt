@@ -7,6 +7,7 @@ import arc.math.Mathf
 import arc.util.CommandHandler
 import arc.util.Strings
 import arc.util.Time
+import arc.util.async.Threads.sleep
 import essentials.external.StringUtils
 import essentials.features.*
 import essentials.internal.*
@@ -18,7 +19,6 @@ import mindustry.Vars.netServer
 import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.content.Mechs
-import mindustry.core.NetServer
 import mindustry.core.Version
 import mindustry.entities.type.BaseUnit
 import mindustry.entities.type.Player
@@ -147,11 +147,15 @@ class Main : Plugin() {
             CrashReport(e)
         }
 
-        // Client 연결
-        if (configs.clientEnable) mainThread.submit(client)
-
         // Server 시작
         if (configs.serverEnable) mainThread.submit(server)
+
+        // Client 연결
+        if (configs.clientEnable) {
+            if(configs.serverEnable) sleep(1000)
+            mainThread.submit(client)
+            client.wakeup()
+        }
 
         // 기록 시작
         // if (configs.logging) ActivityLog()
@@ -211,7 +215,22 @@ class Main : Plugin() {
     }
 
     override fun init() {
+        tool.ipre.IPDatabasePath = pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").absolutePath()
+        tool.ipre.UseMemoryMappedFile = true
 
+        // 채팅 포맷 변경
+        netServer.admins.addChatFilter { _, _ -> null }
+
+        // 비 로그인 유저 통제
+        netServer.admins.addActionFilter { a ->
+            if (a.player == null) return@addActionFilter true
+            if (Core.settings.getBool("isLobby")) {
+                return@addActionFilter a.player.isAdmin
+            } else {
+                val playerData: PlayerData = playerCore.get(a.player.uuid)
+                return@addActionFilter playerData.login
+            }
+        }
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
@@ -1054,7 +1073,10 @@ class Main : Plugin() {
                 "normal" -> core = Blocks.coreFoundation
                 "big" -> core = Blocks.coreNucleus
             }
-            if(player.tileOn().breakable()) Call.onConstructFinish(world.tile(player.tileX(), player.tileY()), core, 0, 0.toByte(), player.team, false)
+            if(player.tileOn().breakable()) {
+                player.tileOn().set(core, player.team)
+                Call.onConstructFinish(player.tileOn(), core, 0, 0.toByte(), player.team, false)
+            }
         }
         handler.register("setmech", "<Mech> [player]", "Set player mech") { arg: Array<String>, player: Player ->
             if (!perm.check(player, "setmech")) return@register

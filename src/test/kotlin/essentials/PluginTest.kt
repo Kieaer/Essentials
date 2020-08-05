@@ -1,17 +1,22 @@
 package essentials
 
-import arc.*
+import arc.ApplicationCore
+import arc.Core
+import arc.Events
+import arc.Settings
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.Time
+import essentials.Main.Companion.client
+import essentials.Main.Companion.configs
 import essentials.Main.Companion.playerCore
 import essentials.Main.Companion.pluginData
 import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.pluginVars
+import essentials.Main.Companion.server
 import essentials.network.Client
-import essentials.network.Server
 import mindustry.Vars
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -31,12 +36,13 @@ import mindustry.gen.Call
 import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
-import org.junit.*
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.BeforeClass
+import org.junit.Test
 import org.junit.contrib.java.lang.system.SystemOutRule
 import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
 import java.io.*
 import java.lang.Thread.sleep
@@ -56,11 +62,11 @@ class PluginTest {
         lateinit var root: Fi
         lateinit var testroot: Fi
         lateinit var main: Main
-        var serverHandler = CommandHandler("")
-        var clientHandler = CommandHandler("/")
+        val serverHandler = CommandHandler("")
+        val clientHandler = CommandHandler("/")
         lateinit var player: Player
 
-        const val clean = false
+        const val clean = true
 
         @BeforeClass
         @JvmStatic
@@ -71,6 +77,10 @@ class PluginTest {
             Core.settings.dataDirectory.child("locales").writeString("en")
             Core.settings.dataDirectory.child("version.properties").writeString("modifier=release\ntype=official\nnumber=5\nbuild=custom build")
             testroot = Core.settings.dataDirectory
+
+            // Reset status
+            if (clean) testroot.child("config/mods/Essentials").deleteDirectory()
+
             val testMap = arrayOfNulls<Map>(1)
             try {
                 val begins = booleanArrayOf(false)
@@ -101,7 +111,7 @@ class PluginTest {
                         exceptionThrown[0]!!.printStackTrace()
                         Assert.fail()
                     }
-                    Thread.sleep(10)
+                    sleep(10)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -109,8 +119,6 @@ class PluginTest {
             Core.settings.dataDirectory = Fi("config")
             root = Core.settings.dataDirectory.child("mods/Essentials")
 
-            // Reset status
-            if (clean) testroot.deleteDirectory()
             try {
                 FileInputStream("./build/libs/Essentials.jar").use { fis ->
                     FileOutputStream("./config/mods/Essentials.jar").use { fos ->
@@ -163,6 +171,9 @@ class PluginTest {
     @Order(999)
     fun shutdown() {
         Core.app.listeners[1].dispose()
+        client.request(Client.Request.Exit, null, null)
+        sleep(1000)
+        server.shutdown()
     }*/
 
     @Test
@@ -277,8 +288,9 @@ class PluginTest {
     fun client_kill(){
         val dummy = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/kill " + dummy.name, player)
-        Assert.assertTrue(dummy.isDead)
-        dummy.isDead = false
+        Assert.assertTrue(dummy.dead)
+        dummy.dead = false
+        Events.fire(PlayerLeave(dummy))
     }
 
     @Test
@@ -310,6 +322,8 @@ class PluginTest {
     fun client_r(){
         val dummy = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/r " + dummy.name + " Hi!", player)
+
+        Events.fire(PlayerLeave(dummy))
     }
 
     @Test
@@ -335,6 +349,11 @@ class PluginTest {
 
     @Test
     fun client_spawncore(){
+        if(world.map.name().equals("Glacier")){
+            player.set(648f,312f)
+        } else {
+            player.set(912f,720f)
+        }
         clientHandler.handleMessage("/spawn-core small", player)
         Assert.assertSame(Blocks.coreShard, player.tileOn().block())
     }
@@ -381,6 +400,8 @@ class PluginTest {
         val dummy = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/tempban " + dummy.name + " 10 test", player)
         assertNotEquals(0L, playerCore[dummy.uuid].bantime)
+
+        Events.fire(PlayerLeave(dummy))
     }
 
     @Test
@@ -393,6 +414,8 @@ class PluginTest {
         val dummy = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/tp " + dummy.name, player)
         Assert.assertTrue(player.x == dummy.x && player.y == dummy.y)
+
+        Events.fire(PlayerLeave(dummy))
     }
 
     @Test
@@ -401,6 +424,9 @@ class PluginTest {
         val dummy2 = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/tpp " + dummy1.name + " " + dummy2.name, player)
         Assert.assertTrue(dummy1.x == dummy2.x && dummy1.y == dummy2.y)
+
+        Events.fire(PlayerLeave(dummy1))
+        Events.fire(PlayerLeave(dummy2))
     }
 
     @Test
@@ -411,41 +437,89 @@ class PluginTest {
 
     @Test
     fun client_vote() {
-        val dummy1 = PluginTestDB.createNewPlayer(false)
-        val dummy2 = PluginTestDB.createNewPlayer(false)
-        val dummy3 = PluginTestDB.createNewPlayer(false)
+        val dummy1 = PluginTestDB.createNewPlayer(true)
+        val dummy2 = PluginTestDB.createNewPlayer(true)
+        val dummy3 = PluginTestDB.createNewPlayer(true)
+        val dummy4 = PluginTestDB.createNewPlayer(true)
+        val dummy5 = PluginTestDB.createNewPlayer(true)
 
         println("== votekick")
         clientHandler.handleMessage("/vote kick " + dummy3.id, player)
+        sleep(500)
         Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy2, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
 
         println("== votemap")
         clientHandler.handleMessage("/vote map Glacier", player);
+        sleep(500)
         Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy2, "y"))
-        assertEquals("Glacier", world.getMap().name());
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
+        assertEquals("Glacier", world.map.name());
 
         println("== vote gameover")
         clientHandler.handleMessage("/vote gameover", player)
+        sleep(500)
         Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy2, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
 
         println("== vote rollback")
         serverHandler.handleMessage("save 1000")
         clientHandler.handleMessage("/vote rollback", player)
+        sleep(500)
         Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy2, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
 
         println("== vote skipwave")
         clientHandler.handleMessage("/vote skipwave 5", player)
+        sleep(500)
         Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
         Events.fire(PlayerChatEvent(dummy2, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
+
+        Events.fire(PlayerLeave(dummy1))
+        Events.fire(PlayerLeave(dummy2))
+        Events.fire(PlayerLeave(dummy3))
+        Events.fire(PlayerLeave(dummy4))
+        Events.fire(PlayerLeave(dummy5))
     }
 
     @Test
@@ -465,6 +539,8 @@ class PluginTest {
         val dummy = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/mute " + dummy.name, player)
         Assert.assertTrue(playerCore[dummy.uuid].mute)
+
+        Events.fire(PlayerLeave(dummy))
     }
 
     @Test
@@ -513,17 +589,27 @@ class PluginTest {
         Events.fire(PlayerJoin(dummy))
         clientHandler.handleMessage("/register hello testas123", dummy)
         clientHandler.handleMessage("/logout", dummy)
+
+        Events.fire(PlayerLeave(dummy))
     }
 
     @Test
     fun event_PlayerJoin_Leave(){
-        val dummy = PluginTestDB.createNewPlayer(false)
-        Events.fire(PlayerJoin(dummy))
-        clientHandler.handleMessage("/login hello testas123", dummy)
-        Assert.assertTrue(playerCore[dummy.uuid].login)
+        val dummy1 = PluginTestDB.createNewPlayer(false)
+        Events.fire(PlayerJoin(dummy1))
+        clientHandler.handleMessage("/register hello testas123", dummy1)
+        clientHandler.handleMessage("/logout", dummy1)
 
-        Events.fire(PlayerLeave(dummy))
-        Assert.assertTrue(playerCore[dummy.uuid].error)
+        val dummy2 = PluginTestDB.createNewPlayer(false)
+        Events.fire(PlayerJoin(dummy2))
+        clientHandler.handleMessage("/login hello testas123", dummy2)
+        Assert.assertTrue(playerCore[dummy2.uuid].login)
+
+        Events.fire(PlayerLeave(dummy2))
+        Assert.assertTrue(playerCore[dummy2.uuid].error)
+
+        Events.fire(PlayerLeave(dummy1))
+        Events.fire(PlayerLeave(dummy2))
     }
 
     @Test
@@ -586,67 +672,52 @@ class PluginTest {
     }
 
     @Test
-    fun networkTest() {
+    fun network_online() {
+        Assert.assertTrue(configs.clientEnable)
+        Assert.assertTrue(configs.serverEnable)
+
+        Assert.assertNotNull(server.serverSocket)
+        Assert.assertTrue(client.activated)
+    }
+
+    @Test
+    fun network_banSharing(){
+        client.request(Client.Request.BanSync, null, null)
+        Assert.assertTrue(client.activated)
+        Assert.assertTrue(server.list.size != 0)
+        client.request(Client.Request.Chat, player, "Cross-chat message!")
+        client.request(Client.Request.UnbanIP, null, "127.0.0.1")
+        client.request(Client.Request.UnbanID, null, player.uuid)
+    }
+
+    @Test
+    fun network_banChecking(){
         try {
-            val server = Server()
-            val client = Client()
-
-            // Server start test
-            Main.mainThread.submit(server)
-            Thread.sleep(1000)
-            Assert.assertNotNull(server.serverSocket)
-
-            // Client start test
-            Main.mainThread.submit(client)
-            client.wakeup()
-            Thread.sleep(1000)
-            Assert.assertTrue(client.activated)
-
-            // Ban data sharing test
-            client.request(Client.Request.BanSync, null, null)
-            Assert.assertTrue(client.activated)
-            Assert.assertTrue(server.list.size != 0)
-            out.clearLog()
-            client.request(Client.Request.Chat, player, "Cross-chat message!")
-            Assert.assertTrue(out.logWithNormalizedLineSeparator.contains("[EssentialClient]"))
-            client.request(Client.Request.UnbanIP, null, "127.0.0.1")
-            client.request(Client.Request.UnbanID, null, player.uuid)
-
-            // Ban check test
-            try {
-                Socket("127.0.0.1", 25000).use { socket ->
-                    val gen = KeyGenerator.getInstance("AES")
-                    gen.init(128)
-                    val key = gen.generateKey()
-                    val raw = key.encoded
-                    val skey: SecretKey = SecretKeySpec(raw, "AES")
-                    BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)).use { `is` ->
-                        DataOutputStream(socket.getOutputStream()).use { os ->
-                            os.writeBytes(String(Base64.getEncoder().encode(raw)).trimIndent())
-                            os.flush()
-                            val json = JsonObject()
-                            json.add("type", "checkban")
-                            json.add("target_uuid", player.uuid)
-                            json.add("target_ip", player.con.address)
-                            val en = Main.tool.encrypt(json.toString(), skey)
-                            os.writeBytes(en.trimIndent())
-                            os.flush()
-                            val receive = Main.tool.decrypt(`is`.readLine(), skey)
-                            val kick = receive.toBoolean()
-                            Assert.assertFalse(kick)
-                        }
+            Socket("127.0.0.1", 25000).use { socket ->
+                val gen = KeyGenerator.getInstance("AES")
+                gen.init(128)
+                val key = gen.generateKey()
+                val raw = key.encoded
+                val skey: SecretKey = SecretKeySpec(raw, "AES")
+                BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)).use { `is` ->
+                    DataOutputStream(socket.getOutputStream()).use { os ->
+                        os.writeBytes(String(Base64.getEncoder().encode(raw))+"\n")
+                        os.flush()
+                        val json = JsonObject()
+                        json.add("type", "CheckBan")
+                        json.add("uuid", player.uuid)
+                        json.add("ip", player.con.address)
+                        val en = Main.tool.encrypt(json.toString(), skey)
+                        os.writeBytes(en+"\n")
+                        os.flush()
+                        val receive = Main.tool.decrypt(`is`.readLine(), skey)
+                        val kick = receive.toBoolean()
+                        Assert.assertFalse(kick)
                     }
                 }
-            } catch (ignored: Exception) {
-
             }
+        } catch (ignored: Exception) {
 
-            // Connection close test
-            client.request(Client.Request.Exit, null, null)
-            Thread.sleep(1000)
-            server.shutdown()
-        } catch (ignored: InterruptedException) {
-            Thread.currentThread().interrupt()
         }
     }
 }

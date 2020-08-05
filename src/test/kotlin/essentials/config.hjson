@@ -27,14 +27,14 @@
   {
     # 네트워크 설정
     # 이 플러그인을 사용하고 있는 다른 서버와 연결하여, 서버간 채팅이나 밴 데이터 공유 기능들을 사용할 수 있습니다.
-    server-enable: false
+    server-enable: true
     server-port: 25000
-    client-enable: false
+    client-enable: true
     client-port: 25000
-    client-host: mindustry.kr
+    client-host: 127.0.0.1
     # 밴 공유서버 설정
     # 이 기능을 켜면, 다른 공용 서버와 밴 목록을 공유하게 됩니다.
-    banshare: false
+    banshare: true
     # 신뢰가능한 밴 공유 IP 설정
     # 예시 - ["127.0.0.1","localhost","192.168.0.0"]
     bantrust:
@@ -80,7 +80,7 @@
     # 맵 자동저장 시간. 시간 단위는 1분입니다.
     savetime: 00:10:00
     # 빽섭할 맵 저장 슬롯을 설정합니다. 만약 값을 1000으로 설정한다면, 빽섭할 맵의 파일명이 1000.msav 으로 저장됩니다.
-    rollback: false
+    rollback: true
     slotnumber: 1000
     # 플레이어가 맵 밖으로 나가면 즉시 사망처리 합니다.
     border: false
@@ -112,7 +112,7 @@
   auth:
   {
     # 로그인 기능 설정
-    loginenable: false
+    loginenable: true
     # loginmethod 는 계정 등록방식 입니다. (password, discord 방법 사용가능)
     loginmethod: password
     autologin: true

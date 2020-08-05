@@ -32,13 +32,14 @@ class Vote : Thread() {
         try {
             while (!currentThread().isInterrupted) {
                 while (!currentThread().isInterrupted && pause) {
-                    sleep(16)
+                    sleep(6)
                 }
                 if (pluginVars.playerData.size < 4) {
                     player!!.sendMessage(Bundle(playerCore[player!!.uuid].locale)["vote.minimal"])
                 } else {
                     require = if (pluginVars.playerData.size > 8) 6 else 2 + if (pluginVars.playerData.size > 4) 1 else 0
                     service.init()
+                    println("Type: "+type.toString())
                 }
                 pause = true
             }
@@ -195,7 +196,7 @@ class Vote : Thread() {
                     others.sendMessage(Bundle(p.locale).prefix("vote.current-voted", voted.size, require - voted.size))
                 }
             }
-            println("투표 인원: " + voted.size)
+            println("투표 인원: " + voted.size + "/ $require /" + (voted.size >= require))
             if (voted.size >= require) {
                 interrupt()
                 success(voted.size >= require)
