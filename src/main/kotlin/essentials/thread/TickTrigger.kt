@@ -20,6 +20,7 @@ import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.core.GameState
 import mindustry.core.NetClient
+import mindustry.entities.type.TileEntity
 import mindustry.game.EventType
 import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.Team
@@ -186,7 +187,7 @@ class TickTrigger {
                         for (data in pluginData.messagemonitors) {
                             val tile: Tile = world.tile(data.pos)
 
-                            if (tile.block() !== Blocks.message) {
+                            if (tile.block() !== Blocks.message && tile.entity !is MessageBlockEntity) {
                                 pluginData.messagemonitors.remove(data)
                                 return
                             }
