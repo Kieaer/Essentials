@@ -8,6 +8,7 @@ import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Strings
 import arc.util.Time
+import arc.util.Time.delta
 import arc.util.async.Threads.sleep
 import essentials.external.StringUtils
 import essentials.features.*
@@ -18,16 +19,19 @@ import essentials.thread.*
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
+import mindustry.content.UnitTypes
 import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
+import mindustry.gen.Unit
 import mindustry.io.SaveIO
 import mindustry.maps.Map
 import mindustry.mod.Plugin
 import mindustry.net.Packets
+import mindustry.type.UnitType
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
@@ -668,7 +672,7 @@ class Main : Plugin() {
                     "block" -> if (parameters.isEmpty()) {
                         player.sendMessage(bundle.prefix("system.warp.incorrect"))
                     } else {
-                        val t: Tile = world.tile(x, y).link()
+                        val t: Tile = world.tile(x, y)
                         pluginData.warpblocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
                         player.sendMessage(bundle.prefix("system.warp.added"))
                     }
@@ -693,13 +697,13 @@ class Main : Plugin() {
         handler.register("kill", "[player]", "Kill player.") { arg: Array<String?>, player: Playerc ->
             if (!perm.check(player, "kill")) return@register
             if (arg.isEmpty()) {
-                player.kill()
+                player.dead()
             } else {
                 val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
                 if (other == null) {
                     player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("player.not-found"))
                 } else {
-                    other.kill()
+                    other.dead()
                 }
             }
         }
@@ -1086,20 +1090,40 @@ class Main : Plugin() {
             if (!perm.check(player, "setmech")) return@register
             val playerData = playerCore[player.uuid()]
             val bundle = Bundle(playerData.locale)
-            var mech = Mechs.starter
+            var mech : UnitType = UnitTypes.mace
             when (arg[0]) {
-                "alpha" -> mech = Mechs.alpha
-                "dart" -> mech = Mechs.dart
-                "glaive" -> mech = Mechs.glaive
-                "delta" -> mech = Mechs.delta
-                "javelin" -> mech = Mechs.javelin
-                "omega" -> mech = Mechs.omega
-                "tau" -> mech = Mechs.tau
-                "trident" -> mech = Mechs.trident
+                "mace" -> mech = UnitTypes.mace
+                "dagger" -> mech = UnitTypes.dagger
+                "crawler" -> mech = UnitTypes.crawler
+                "fortress" -> mech = UnitTypes.fortress
+                "scepter" -> mech = UnitTypes.scepter
+                "reign" -> mech = UnitTypes.reign
+                "nova" -> mech = UnitTypes.nova
+                "pulsar" -> mech = UnitTypes.pulsar
+                "quasar" -> mech = UnitTypes.quasar
+                "atrax" -> mech = UnitTypes.atrax
+                "spiroct" -> mech = UnitTypes.spiroct
+                "arkyid" -> mech = UnitTypes.arkyid
+                "toxopid" -> mech = UnitTypes.toxopid
+                "flare" -> mech = UnitTypes.flare
+                "eclipse" -> mech = UnitTypes.eclipse
+                "horizon" -> mech = UnitTypes.horizon
+                "zenith" -> mech = UnitTypes.zenith
+                "antumbra" -> mech = UnitTypes.antumbra
+                "mono" -> mech = UnitTypes.mono
+                "poly" -> mech = UnitTypes.poly
+                "mega" -> mech = UnitTypes.mega
+                "alpha" -> mech = UnitTypes.alpha
+                "beta" -> mech = UnitTypes.beta
+                "gamma" -> mech = UnitTypes.gamma
+                "risso" -> mech = UnitTypes.risso
+                "minke" -> mech = UnitTypes.minke
+                "bryde" -> mech = UnitTypes.bryde
+                "block" -> mech = UnitTypes.block
             }
             if (arg.size == 1) {
                 for (p in Groups.player) {
-                    p.mech = mech
+                    p.unit(mech)
                 }
             } else {
                 val target = Groups.player.find { p: Playerc -> p.name() == arg[1] }
@@ -1107,7 +1131,7 @@ class Main : Plugin() {
                     player.sendMessage(bundle.prefix("player.not-found"))
                     return@register
                 }
-                target.mech = mech
+                target.unit(mech)
             }
             player.sendMessage(bundle.prefix("success"))
         }
@@ -1117,9 +1141,9 @@ class Main : Plugin() {
             val bundle = Bundle(playerData.locale)
             player.sendMessage(bundle.prefix("server.status"))
             player.sendMessage("[#2B60DE]========================================[]")
-            val fps = (60f.toInt() / Time.delta()).roundToLong()
-            val bans = Vars.netServer.admins.banned.size
-            val ipbans = Vars.netServer.admins.bannedIPs.size
+            val fps = Core.graphics.framesPerSecond
+            val bans = netServer.admins.banned.size
+            val ipbans = netServer.admins.bannedIPs.size
             val bancount = bans + ipbans
             val playtime = tool.longToTime(vars.playtime)
             val uptime = tool.longToTime(vars.uptime)
@@ -1144,7 +1168,7 @@ class Main : Plugin() {
         }
         handler.register("suicide", "Kill yourself.") { _: Array<String?>?, player: Playerc ->
             if (!perm.check(player, "suicide")) return@register
-            player.kill()
+            player.dead()
             if (Groups.player != null && Groups.player.size() > 0) {
                 tool.sendMessageAll("suicide", player.name())
             }
@@ -1178,7 +1202,7 @@ class Main : Plugin() {
                 Call.kick(other.con(), "Temp kicked")
                 for (a in 0 until Groups.player.size()) {
                     val current = Groups.player.getByID(a)
-                    val target = playerCore[current.uuid]
+                    val target = playerCore[current.uuid()]
                     current.sendMessage(Bundle(target.locale).prefix("account.ban.temp", other.name(), player.name()))
                 }
             } else {
@@ -1197,6 +1221,7 @@ class Main : Plugin() {
             if (!perm.check(player, "tp")) return@register
             val playerData = playerCore[player.uuid()]
             val bundle = Bundle(playerData.locale)
+            // TODO 모바일 유저 확인
             if (player.isMobile) {
                 player.sendMessage(bundle.prefix("tp-not-support"))
                 return@register
@@ -1235,7 +1260,7 @@ class Main : Plugin() {
             }
             // TODO 모바일 유저도 tp 되는지 확인
             if (!other1.isMobile || !other2.isMobile) {
-                other1.setNet(other2.x, other2.y)
+                other1.set(other2.x, other2.y)
             } else {
                 player.sendMessage(Bundle(playerData.locale).prefix("tp-ismobile"))
             }

@@ -16,6 +16,7 @@ import mindustry.gen.Playerc
 import mindustry.type.UnitType
 import mindustry.world.Block
 import mindustry.world.Tile
+import mindustry.world.blocks.logic.MessageBlock
 import java.io.*
 import java.net.URL
 import java.nio.charset.StandardCharsets
@@ -371,5 +372,9 @@ class Tool {
             return false
         }
         return true
+    }
+
+    fun setMessage(tile: Tile, message: String){
+        (tile.block() as MessageBlock).MessageBuild().configure(message)
     }
 }

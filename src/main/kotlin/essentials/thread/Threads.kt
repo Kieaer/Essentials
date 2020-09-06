@@ -1,7 +1,6 @@
 package essentials.thread
 
 import arc.Core
-import arc.struct.Array
 import arc.struct.ArrayMap
 import arc.struct.Seq
 import essentials.Main.Companion.playerCore
@@ -37,11 +36,11 @@ class Threads : Runnable {
                     for (a in 0 until pluginData.messagewarps.size) {
                         val tile: Tile = world.tile(pluginData.messagewarps[a].pos)
 
-                        if (tile.entity.block !== Blocks.message) {
+                        if (tile.block() !== Blocks.message) {
                             pluginData.messagewarps.remove(a)
                             break
                         }
-                        Call.setMessageBlockText(null, tile, "[green]Working...")
+                        tool.setMessage(tile, "[green]Working...")
                         val arr = pluginData.messagewarps[a]!!.message.split(" ").toTypedArray()
                         val ip = arr[1]
                         var port = 6567
@@ -51,7 +50,7 @@ class Threads : Runnable {
                         val finalPort = port
                         PingHost(ip, port, Consumer { result: Host ->
                             ping += if (result.name != null) ("0." + result.ping).toDouble() else 1.000
-                            Call.setMessageBlockText(null, tile, if (result.name != null) "[green]" + result.players + " Players in this server." else "[scarlet]Server offline")
+                            tool.setMessage(tile, if (result.name != null) "[green]" + result.players + " Players in this server." else "[scarlet]Server offline")
                             addPlayers(ip, finalPort, result.players)
                         })
                     }

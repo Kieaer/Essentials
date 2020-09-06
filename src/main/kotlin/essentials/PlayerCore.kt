@@ -40,7 +40,7 @@ class PlayerCore {
         return PlayerData()
     }
 
-    fun playerLoad(p: Playercc, id: String?): Boolean {
+    fun playerLoad(p: Playerc, id: String?): Boolean {
         if(pluginVars.playerData.contains(get(p.uuid()))) pluginVars.removePlayerData(get(p.uuid()))
 
         val playerData: PlayerData? = if (id == null) {

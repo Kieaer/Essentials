@@ -20,6 +20,7 @@ import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.core.GameState
 import mindustry.core.NetClient
+import mindustry.ctype.ContentType
 import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.EventType.Trigger.update
 import mindustry.game.Team
@@ -27,6 +28,7 @@ import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.type.Item
 import mindustry.world.Tile
+import mindustry.world.blocks.logic.MessageBlock
 import org.hjson.JsonObject
 import java.security.SecureRandom
 import java.time.LocalDateTime
@@ -71,7 +73,7 @@ class TickTrigger {
     init {
         Events.on(ServerLoadEvent::class.java) {
             for (item in content.items()) {
-                if (item.type == ItemType.material) {
+                if (item.contentType == ContentType.item) {
                     ores.put(item, 0)
                 }
             }
@@ -85,7 +87,7 @@ class TickTrigger {
                 if (state.`is`(GameState.State.playing)) {
                     if (configs.border) {
                         for (p in Groups.player) {
-                            if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0) Call.onPlayerDeath(p)
+                            if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0) p.dead()
                         }
                     }
                 }
@@ -124,12 +126,12 @@ class TickTrigger {
 
                         // PvP 평화시간 카운트
                         if (configs.antiRush && state.rules.pvp && pluginVars.playtime < configs.antiRushtime && pluginVars.isPvPPeace) {
-                            state.rules.playerDamageMultiplier = 0.66f
-                            state.rules.playerHealthMultiplier = 0.8f
-                            NetClient.onSetRules(state.rules)
+                            state.rules.unitDamageMultiplier = 0.66f
+                            state.rules.unitHealthMultiplier = 0.8f
+                            NetClient.setRules(state.rules)
                             for (p in Groups.player) {
                                 player.sendMessage(Bundle(playerCore[p.uuid()].locale)["pvp-peacetime"])
-                                player.kill()
+                                player.dead()
                             }
                             pluginVars.isPvPPeace = false
                         }
@@ -177,37 +179,36 @@ class TickTrigger {
                                 target.x = p.tileX()
                                 target.y = p.tileY()
                                 if (!state.rules.editor) Exp(target)
-                                if (kick) Call.onKick(p.con, "AFK")
+                                if (kick) Call.kick(p.con, "AFK")
                             }
                         }
 
                         // 메세지 블럭 감시
                         for (data in pluginData.messagemonitors) {
                             val tile: Tile = world.tile(data.pos)
-
-                            if (tile.block() !== Blocks.message && tile.entity !is MessageBlockEntity) {
+                            if (tile.block() !== Blocks.message && tile.block() !is MessageBlock) {
                                 pluginData.messagemonitors.remove(data)
-                                return
-                            }
-                            val entity = tile.entity as MessageBlockEntity
-                            val msg = entity.message
-                            if (msg == "powerblock") {
-                                for (rot in 0..3) {
-                                    if (entity.tile.link().getNearby(rot).entity != null) {
-                                        pluginData.powerblocks.add(PluginData.PowerBlock(entity.tile, entity.tile.getNearby(rot).link().pos(), rot))
-                                        break
+                            } else {
+                                val entity = tile.block() as MessageBlock
+                                val msg = entity.MessageBuild().message.toString()
+                                if (msg == "powerblock") {
+                                    for (rot in 0..3) {
+                                        if (tile.getNearby(rot).block().hasPower) {
+                                            pluginData.powerblocks.add(PluginData.PowerBlock(tile, tile.getNearby(rot).pos(), rot))
+                                            break
+                                        }
                                     }
+                                    pluginData.messagemonitors.remove(data)
+                                    break
+                                } else if (msg.contains("warp")) {
+                                    pluginData.messagewarps.add(PluginData.MessageWarp(data.pos, msg))
+                                    pluginData.messagemonitors.remove(data)
+                                    break
+                                } else if (msg == "scancore") {
+                                    pluginData.scancore.add(tile)
+                                    pluginData.messagemonitors.remove(data)
+                                    break
                                 }
-                                pluginData.messagemonitors.remove(data)
-                                break
-                            } else if (msg.contains("warp")) {
-                                pluginData.messagewarps.add(PluginData.MessageWarp(data.pos, msg))
-                                pluginData.messagemonitors.remove(data)
-                                break
-                            } else if (msg == "scancore") {
-                                pluginData.scancore.add(tile)
-                                pluginData.messagemonitors.remove(data)
-                                break
                             }
                         }
 
@@ -215,12 +216,12 @@ class TickTrigger {
                         for (value in pluginData.warpzones) {
                             if (!value!!.touch) {
                                 for (ix in 0 until Groups.player.size()) {
-                                    val player = Groups.player[ix]
+                                    val player = Groups.player.getByID(ix)
                                     if (player.tileX() > value.startTile.x && player.tileX() < value.finishTile.x) {
                                         if (player.tileY() > value.startTile.y && player.tileY() < value.finishTile.y) {
                                             var resultIP = value.ip
                                             var port = 6567
-                                            if (resultIP.contains(":") && Strings.canParsePostiveInt(resultIP.split(":").toTypedArray()[1])) {
+                                            if (resultIP.contains(":") && Strings.canParsePositiveInt(resultIP.split(":").toTypedArray()[1])) {
                                                 val temp = resultIP.split(":").toTypedArray()
                                                 resultIP = temp[0]
                                                 port = temp[1].toInt()
@@ -237,13 +238,13 @@ class TickTrigger {
                         if (Groups.player.size() > 0) {
                             val items = StringBuilder()
                             for (item in content.items()) {
-                                if (item.type == ItemType.material) {
+                                if (item.contentType == ContentType.item) {
                                     val player = Groups.player.getByID(random.nextInt(Groups.player.size()))
-                                    var team: Team?
-                                    team = if (player != null && !state.teams[player.team].cores.isEmpty) {
-                                        player.team
+                                    var team: Team
+                                    team = if (player != null && !state.teams[player.team()].cores.isEmpty) {
+                                        player.team()
                                     } else {
-                                        return
+                                        break
                                     }
                                     val amount = state.teams[team].cores.first().items[item]
                                     if (state.teams[team].cores.first().items.has(item)) items.append(writeOreStatus(item, amount))
@@ -254,7 +255,7 @@ class TickTrigger {
                                     data!!.remove()
                                     break
                                 }
-                                Call.setMessageBlockText(null, data, items.toString())
+                                tool.setMessage(data, items.toString())
                             }
                         }
 
@@ -262,7 +263,7 @@ class TickTrigger {
                         for (data in pluginData.powerblocks) {
                             if (data!!.messageblock.block() !== Blocks.message) {
                                 pluginData.powerblocks.remove(data)
-                                return@on
+                                break
                             }
 
                             val tile: Tile = world.tile(data.pos)
@@ -278,13 +279,13 @@ class TickTrigger {
                             var product: Float
                             var using: Float
                             try {
-                                current = tile.link().entity.power.graph.powerBalance * 60
-                                using = tile.link().entity.power.graph.powerNeeded * 60
-                                product = tile.link().entity.power.graph.powerProduced * 60
+                                current = tile.build.power.graph.powerBalance * 60
+                                using = tile.build.power.graph.powerNeeded * 60
+                                product = tile.build.power.graph.powerProduced * 60
                             } catch (e: Exception) {
                                 pluginData.powerblocks.remove(data)
-                                Call.setMessageBlockText(null, data.messageblock, "$arrow Tile doesn't have powers!")
-                                return
+                                tool.setMessage(data.messageblock, "$arrow Tile doesn't have powers!")
+                                break
                             }
                             val text = """
                                 [accent]$arrow[] Power status [accent]$arrow[]
@@ -292,7 +293,7 @@ class TickTrigger {
                                 Using: [red]${using.roundToInt()}[]/s
                                 Production: [green]${product.roundToInt()}/s[]
                                 """.trimIndent()
-                            Call.setMessageBlockText(null, data.messageblock, text)
+                            tool.setMessage(data.messageblock, text)
                         }
                     }
                 }
@@ -301,13 +302,13 @@ class TickTrigger {
                 if (tick % 90 == 0) {
                     if (state.`is`(GameState.State.playing) && configs.scanResource && state.rules.waves && Groups.player.size() > 0) {
                         for (item in content.items()) {
-                            if (item.type == ItemType.material) {
+                            if (item.contentType == ContentType.item) {
                                 val player = Groups.player.getByID(random.nextInt(Groups.player.size()))
                                 val team : Team ?
-                                team = if (player != null && state.teams[player.team].cores.isEmpty) {
-                                    return player.team
+                                team = if (player != null && state.teams[player.team()].cores.isEmpty) {
+                                    player.team()
                                 } else {
-                                    return
+                                    break
                                 }
                                 if (state.teams[team].cores.first().items.has(item)) {
                                     val cur = state.teams[team].cores.first().items[item]
@@ -315,9 +316,9 @@ class TickTrigger {
                                         if (cur - resources[item.name]!! <= -55) {
                                             val using = StringBuilder()
                                             for (p in Groups.player) {
-                                                if (p.buildRequest() != null) {
-                                                    for (c in p.buildRequest().block.requirements.indices) {
-                                                        if (p.buildRequest().block.requirements[c].item.name == item.name) {
+                                                if (p.builder().buildPlan().block != null) {
+                                                    for (c in p.builder().buildPlan().block.requirements.indices) {
+                                                        if (p.builder().buildPlan().block.requirements[c].item.name == item.name) {
                                                             using.append(p.name).append(", ")
                                                         }
                                                     }
