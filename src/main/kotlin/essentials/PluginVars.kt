@@ -1,8 +1,6 @@
 package essentials
 
-import arc.func.Boolf
-import arc.struct.Array
-import mindustry.entities.type.Player
+import mindustry.gen.Playerc
 
 class PluginVars {
     val buildVersion = 104
@@ -12,13 +10,9 @@ class PluginVars {
     var pluginVersion: String? = null
     var uptime = 0L
     var playtime = 0L
-    val playerData = Array<PlayerData>()
-    var players = Array<Player>()
+    val playerData = ArrayList<PlayerData>()
+    var players = ArrayList<Playerc>()
     var isPvPPeace = false
-
-    fun removePlayerData(d: Boolf<PlayerData>) {
-        playerData.remove(d)
-    }
 
     fun removePlayerData(d: PlayerData) {
         playerData.remove(d)

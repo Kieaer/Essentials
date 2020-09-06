@@ -1,6 +1,6 @@
 package essentials.network
 
-import arc.struct.Array
+import arc.struct.Seq
 import essentials.Main
 import essentials.Main.Companion.configs
 import essentials.internal.Bundle
@@ -8,6 +8,7 @@ import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
 import mindustry.Vars
+import mindustry.gen.Groups
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
@@ -24,7 +25,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
 class Server : Runnable {
-    var list = Array<Service?>()
+    var list = Seq<Service?>()
     lateinit var serverSocket: ServerSocket
     fun shutdown() {
         try {
@@ -153,8 +154,8 @@ class Server : Runnable {
                         }
                         Request.Chat -> {
                             val message = data["message"].asString()
-                            for (p in Vars.playerGroup) {
-                                p.sendMessage(if (p.isAdmin) "[#C77E36][$ip][RC] $message" else "[#C77E36][RC] $message")
+                            for (p in Groups.player) {
+                                p.sendMessage(if (p.admin) "[#C77E36][$ip][RC] $message" else "[#C77E36][RC] $message")
                             }
                             for (ser in list) {
                                 if (ser!!.spec !== spec) {

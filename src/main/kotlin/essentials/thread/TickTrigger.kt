@@ -20,15 +20,13 @@ import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.core.GameState
 import mindustry.core.NetClient
-import mindustry.entities.type.TileEntity
-import mindustry.game.EventType
 import mindustry.game.EventType.ServerLoadEvent
+import mindustry.game.EventType.Trigger.update
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.type.Item
-import mindustry.type.ItemType
 import mindustry.world.Tile
-import mindustry.world.blocks.logic.MessageBlock.MessageBlockEntity
 import org.hjson.JsonObject
 import java.security.SecureRandom
 import java.time.LocalDateTime
@@ -38,6 +36,37 @@ import kotlin.math.roundToInt
 class TickTrigger {
     private val ores = ArrayMap<Item, Int?>()
     private val random = SecureRandom()
+    var tick = 0
+    val resources = ObjectMap<String, Int?>()
+
+    fun writeOreStatus(item: Item, orignal: Int): String? {
+        val `val`: Int
+        val color: String
+        val player = if (Groups.player.size() > 0) random.nextInt(Groups.player.size()) else 0
+        if (Groups.player.size() > 0 && !state.teams[Groups.player.getByID(player).team()].cores.isEmpty) {
+            if (state.teams[Groups.player.getByID(player).team()].cores.first().items.has(item) && ores[item] != null) {
+                `val` = orignal - ores[item]!!
+                color = when {
+                    `val` > 0 -> {
+                        "[green]+"
+                    }
+                    `val` < 0 -> {
+                        "[red]-"
+                    }
+                    else -> {
+                        "[yellow]"
+                    }
+                }
+                ores.put(item, orignal)
+                return """
+                            []${item.name}: $color$`val`/s
+                            
+                            """.trimIndent()
+            }
+        }
+        return null
+    }
+
 
     init {
         Events.on(ServerLoadEvent::class.java) {
@@ -47,38 +76,7 @@ class TickTrigger {
                 }
             }
         }
-        Events.on(EventType.Trigger.update, object : Runnable {
-            var tick = 0
-            val resources = ObjectMap<String, Int?>()
-            fun writeOreStatus(item: Item, orignal: Int): String? {
-                val `val`: Int
-                val color: String
-                val player = if (playerGroup.size() > 0) random.nextInt(playerGroup.size()) else 0
-                if (playerGroup.size() > 0 && !state.teams[playerGroup.all()[player].team].cores.isEmpty) {
-                    if (state.teams[playerGroup.all()[player].team].cores.first().items.has(item) && ores[item] != null) {
-                        `val` = orignal - ores[item]!!
-                        color = when {
-                            `val` > 0 -> {
-                                "[green]+"
-                            }
-                            `val` < 0 -> {
-                                "[red]-"
-                            }
-                            else -> {
-                                "[yellow]"
-                            }
-                        }
-                        ores.put(item, orignal)
-                        return """
-                            []${item.name}: $color$`val`/s
-                            
-                            """.trimIndent()
-                    }
-                }
-                return null
-            }
-
-            override fun run() {
+        Events.on(update::class.java) {
                 if (tick < 86400) {
                     tick++
                 } else {
@@ -86,7 +84,7 @@ class TickTrigger {
                 }
                 if (state.`is`(GameState.State.playing)) {
                     if (configs.border) {
-                        for (p in playerGroup.all()) {
+                        for (p in Groups.player) {
                             if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0) Call.onPlayerDeath(p)
                         }
                     }
@@ -129,8 +127,8 @@ class TickTrigger {
                             state.rules.playerDamageMultiplier = 0.66f
                             state.rules.playerHealthMultiplier = 0.8f
                             NetClient.onSetRules(state.rules)
-                            for (p in playerGroup.all()) {
-                                player.sendMessage(Bundle(playerCore[p.uuid].locale)["pvp-peacetime"])
+                            for (p in Groups.player) {
+                                player.sendMessage(Bundle(playerCore[p.uuid()].locale)["pvp-peacetime"])
                                 player.kill()
                             }
                             pluginVars.isPvPPeace = false
@@ -149,18 +147,18 @@ class TickTrigger {
                                 if (pluginData.warptotals[a]!!.numbersize != digits.size) {
                                     for (px in 0..2) {
                                         for (py in 0..4) {
-                                            Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0)
+                                            Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0)
                                         }
                                     }
                                 }
                             }
                             tool.setTileText(tile, Blocks.copperWall, result.toString())
-                            pluginData.warptotals[a] = PluginData.WarpTotal(world.map.name(), tile.pos(), result, digits.size)
+                            pluginData.warptotals[a] = PluginData.WarpTotal(state.map.name(), tile.pos(), result, digits.size)
                         }
 
                         // 플레이어 플탐 카운트 및 잠수확인
-                        for (p in playerGroup.all()) {
-                            val target = playerCore[p.uuid]
+                        for (p in Groups.player) {
+                            val target = playerCore[p.uuid()]
                             var kick = false
                             if (target.login) {
                                 // Exp 계산
@@ -216,8 +214,8 @@ class TickTrigger {
                         // 서버간 이동 영역에 플레이어가 있는지 확인
                         for (value in pluginData.warpzones) {
                             if (!value!!.touch) {
-                                for (ix in 0 until playerGroup.size()) {
-                                    val player = playerGroup.all()[ix]
+                                for (ix in 0 until Groups.player.size()) {
+                                    val player = Groups.player[ix]
                                     if (player.tileX() > value.startTile.x && player.tileX() < value.finishTile.x) {
                                         if (player.tileY() > value.startTile.y && player.tileY() < value.finishTile.y) {
                                             var resultIP = value.ip
@@ -228,7 +226,7 @@ class TickTrigger {
                                                 port = temp[1].toInt()
                                             }
                                             Log.info("player.warped", player.name, "$resultIP:$port")
-                                            Call.onConnect(player.con, resultIP, port)
+                                            Call.connect(player.con, resultIP, port)
                                         }
                                     }
                                 }
@@ -236,11 +234,11 @@ class TickTrigger {
                         }
 
                         // 메세지 블럭에 있는 자원 소모량 감시
-                        if (playerGroup.size() > 0) {
+                        if (Groups.player.size() > 0) {
                             val items = StringBuilder()
                             for (item in content.items()) {
                                 if (item.type == ItemType.material) {
-                                    val player = playerGroup.all()[random.nextInt(playerGroup.size())]
+                                    val player = Groups.player.getByID(random.nextInt(Groups.player.size()))
                                     var team: Team?
                                     team = if (player != null && !state.teams[player.team].cores.isEmpty) {
                                         player.team
@@ -264,7 +262,7 @@ class TickTrigger {
                         for (data in pluginData.powerblocks) {
                             if (data!!.messageblock.block() !== Blocks.message) {
                                 pluginData.powerblocks.remove(data)
-                                return
+                                return@on
                             }
 
                             val tile: Tile = world.tile(data.pos)
@@ -301,13 +299,13 @@ class TickTrigger {
 
                 // 1.5초마다 실행
                 if (tick % 90 == 0) {
-                    if (state.`is`(GameState.State.playing) && configs.scanResource && state.rules.waves && playerGroup.size() > 0) {
+                    if (state.`is`(GameState.State.playing) && configs.scanResource && state.rules.waves && Groups.player.size() > 0) {
                         for (item in content.items()) {
                             if (item.type == ItemType.material) {
-                                val player = playerGroup.all()[random.nextInt(playerGroup.size())]
-                                var team: Team?
+                                val player = Groups.player.getByID(random.nextInt(Groups.player.size()))
+                                val team : Team ?
                                 team = if (player != null && state.teams[player.team].cores.isEmpty) {
-                                    player.team
+                                    return player.team
                                 } else {
                                     return
                                 }
@@ -316,7 +314,7 @@ class TickTrigger {
                                     if (resources[item.name] != null) {
                                         if (cur - resources[item.name]!! <= -55) {
                                             val using = StringBuilder()
-                                            for (p in playerGroup) {
+                                            for (p in Groups.player) {
                                                 if (p.buildRequest() != null) {
                                                     for (c in p.buildRequest().block.requirements.indices) {
                                                         if (p.buildRequest().block.requirements[c].item.name == item.name) {
@@ -348,8 +346,8 @@ class TickTrigger {
 
                 // 1분마다
                 if (tick % 3600 == 0) {
-                    for (p in playerGroup.all()) {
-                        val playerData = playerCore[p.uuid]
+                    for (p in Groups.player) {
+                        val playerData = playerCore[p.uuid()]
                         if (playerData.error) {
                             val message: String? = if (configs.passwordMethod == "discord") {
                                 """
@@ -363,7 +361,6 @@ class TickTrigger {
                         }
                     }
                 }
-            }
-        })
+        }
     }
 }

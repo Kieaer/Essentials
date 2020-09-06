@@ -1,15 +1,16 @@
+import org.gradle.api.JavaVersion
+
 plugins {
     id 'java-library'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id "org.sonarqube" version "2.8"
     id 'jacoco'
-    id 'org.jetbrains.kotlin.jvm' version '1.3.72'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.0'
 }
 
 version '8.0'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_14
 
 repositories {
     mavenCentral()
@@ -18,8 +19,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:v104.6'
-    compileOnly 'com.github.Anuken.Mindustry:core:v104.6'
+    compileOnly 'com.github.Anuken.Arc:arc-core:-SNAPSHOT'
+    compileOnly 'com.github.Anuken.Mindustry:core:-SNAPSHOT'
     implementation 'com.github.PersonTheCat:hjson-java:master'
     implementation 'de.svenkubiak:jBCrypt:0.4.1'
     implementation('net.dv8tion:JDA:4.1.1_141') {
@@ -33,9 +34,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation files('libs/ip2location.jar')
 
-    testImplementation 'com.github.Anuken.Arc:arc-core:v104.6'
-    testImplementation 'com.github.Anuken.Mindustry:core:v104.6'
-    testImplementation 'com.github.Anuken.Mindustry:server:v104.6'
+    testImplementation 'com.github.Anuken.Arc:arc-core:-SNAPSHOT'
+    testImplementation 'com.github.Anuken.Mindustry:core:-SNAPSHOT'
+    testImplementation 'com.github.Anuken.Mindustry:server:-SNAPSHOT'
     //testCompile group: 'junit', name: 'junit', version: '4.13'
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
@@ -93,11 +94,11 @@ jacocoTestReport{
 }
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "1.14"
     }
 }
 compileTestKotlin {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "1.14"
     }
 }

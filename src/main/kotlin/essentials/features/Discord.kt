@@ -45,7 +45,7 @@ class Discord : ListenerAdapter() {
     }
 
     fun queue(player: Player) {
-        val playerData = playerCore[player.uuid]
+        val playerData = playerCore[player.uuid()]
         val bundle = Bundle(if (playerData.error) configs.locale else playerData.locale)
         val pin = Random().nextInt(9999)
         pins.put(player.name, pin)
@@ -76,13 +76,13 @@ class Discord : ListenerAdapter() {
                                     pstmt.setString(1, name)
                                     rs = pstmt.executeQuery()
                                     if (!rs.next()) {
-                                        val player = Vars.playerGroup.find { p: Player -> p.name.equals(name, ignoreCase = true) }
+                                        val player = Groups.player.find { p: Playerc -> p.name.equals(name, ignoreCase = true) }
                                         if (player != null) {
                                             val lc = Main.tool.getGeo(player)
                                             val register = playerCore.register(player.name, player.uuid, lc.displayCountry, lc.toString(), lc.displayLanguage, true, vars.serverIP, "default", e.author.idLong, name, pw, false)
                                             if (register) {
                                                 playerCore.playerLoad(player, null)
-                                                val playerData = playerCore[player.uuid]
+                                                val playerData = playerCore[player.uuid()]
                                                 player.sendMessage(Bundle(playerData.locale).prefix("register-success"))
                                                 send(Bundle(playerData.locale)["success"])
                                                 break

@@ -1,7 +1,6 @@
 package essentials
 
 import arc.Core
-import arc.func.Boolf
 import essentials.Main.Companion.colorNickname
 import essentials.Main.Companion.perm
 import essentials.Main.Companion.playerCore
@@ -13,8 +12,8 @@ import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
 import mindustry.Vars
-import mindustry.entities.type.Player
 import mindustry.gen.Call
+import mindustry.gen.Playerc
 import mindustry.net.Packets
 import org.h2.Driver
 import org.h2.tools.Server
@@ -41,13 +40,13 @@ class PlayerCore {
         return PlayerData()
     }
 
-    fun playerLoad(p: Player, id: String?): Boolean {
-        remove(p.uuid)
+    fun playerLoad(p: Playercc, id: String?): Boolean {
+        if(pluginVars.playerData.contains(get(p.uuid()))) pluginVars.removePlayerData(get(p.uuid()))
 
         val playerData: PlayerData? = if (id == null) {
-            load(p.uuid, null)
+            load(p.uuid(), null)
         } else {
-            load(p.uuid, id)
+            load(p.uuid(), id)
         }
 
         if (playerData == null || playerData.error) {
@@ -56,15 +55,15 @@ class PlayerCore {
         }
 
         if (LocalDateTime.now().isBefore(tool.longToDateTime(playerData.bantime))) {
-            Vars.netServer.admins.banPlayerID(p.uuid)
-            Call.onKick(p.con, Packets.KickReason.banned)
+            Vars.netServer.admins.banPlayerID(p.uuid())
+            Call.kick(p.con(), Packets.KickReason.banned)
             return false
         }
 
         val motd = tool.getMotd(playerData.locale)
         val count = motd.split("\r\n|\r|\n").toTypedArray().size
         if (count > 10) {
-            Call.onInfoMessage(p.con, motd)
+            Call.infoMessage(p.con(), motd)
         } else if (motd.isNotEmpty()) {
             p.sendMessage(motd)
         }
@@ -73,7 +72,7 @@ class PlayerCore {
 
         val oldUUID = playerData.uuid
 
-        playerData.uuid = p.uuid
+        playerData.uuid = p.uuid()
         playerData.connected = true
         playerData.lastdate = System.currentTimeMillis()
         playerData.connserver = pluginVars.serverIP
@@ -81,14 +80,14 @@ class PlayerCore {
         playerData.exp = playerData.exp + playerData.joincount
         playerData.login = true
 
-        perm.setUserPerm(oldUUID, p.uuid)
-        if (perm.user[p.uuid] == null) {
+        perm.setUserPerm(oldUUID, p.uuid())
+        if (perm.user[p.uuid()] == null) {
             perm.create(playerData)
             perm.saveAll()
         } else {
-            p.name = perm.user[playerData.uuid].asObject()["name"].asString()
+            p.name(perm.user[playerData.uuid].asObject()["name"].asString())
         }
-        p.isAdmin = perm.isAdmin(playerData)
+        p.admin(perm.isAdmin(playerData))
         return true
     }
 
@@ -136,9 +135,9 @@ class PlayerCore {
         )
     }
 
-    fun isLocal(player: Player): Boolean {
+    fun isLocal(player: Playerc): Boolean {
         return try {
-            val addr = InetAddress.getByName(player.con.address)
+            val addr = InetAddress.getByName(player.con().address)
             if (addr.isAnyLocalAddress || addr.isLoopbackAddress) true else NetworkInterface.getByInetAddress(addr) != null
         } catch (e: Exception) {
             false
@@ -165,16 +164,12 @@ class PlayerCore {
         }
     }
 
-    fun ban(player: Player, hours: Long, reason: String) {
-        val playerData = playerCore[player.uuid]
+    fun ban(player: Playerc, hours: Long, reason: String) {
+        val playerData = playerCore[player.uuid()]
         val banTime = System.currentTimeMillis() + 1000 * 60 * 60 * hours
 
         playerData.bantime = banTime
         pluginData.banned.add(PluginData.Banned(banTime, playerData.name, playerData.uuid, reason))
-    }
-
-    fun remove(uuid: String) {
-        pluginVars.removePlayerData(Boolf { p: PlayerData -> p.uuid == uuid })
     }
 
     fun load(uuid: String, id: String?): PlayerData {

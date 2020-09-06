@@ -1,7 +1,7 @@
 package essentials.internal
 
-import arc.struct.Array
 import arc.struct.ObjectMap
+import arc.struct.Seq
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
 import essentials.Main.Companion.configs
@@ -9,9 +9,10 @@ import essentials.Main.Companion.playerCore
 import essentials.Main.Companion.pluginRoot
 import mindustry.Vars.*
 import mindustry.content.Blocks
-import mindustry.entities.type.Player
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Groups
+import mindustry.gen.Playerc
 import mindustry.type.UnitType
 import mindustry.world.Block
 import mindustry.world.Tile
@@ -110,8 +111,8 @@ class Tool {
     }
 
     fun sendMessageAll(value: String, vararg parameter: Any?) {
-        for (p in playerGroup.all()) {
-            val playerData = playerCore[p.uuid]
+        for (p in Groups.player) {
+            val playerData = playerCore[p.uuid()]
             if (!playerData.error) {
                 p.sendMessage(Bundle(playerData.locale).prefix(value, *parameter))
             }
@@ -134,7 +135,7 @@ class Tool {
     }
 
     fun getGeo(data: Any): Locale {
-        val ip = if (data is Player) netServer.admins.getInfo(data.uuid).lastIP else (data as String?)!!
+        val ip = if (data is Playerc) netServer.admins.getInfo(data.uuid()).lastIP else (data as String?)!!
 
         val res = ipre.IPQuery(ip)
         val code = CountryCode.getByCode(res.countryShort)
@@ -208,12 +209,12 @@ class Tool {
         return content.units().find { unitType: UnitType -> unitType.name == name }
     }
 
-    fun findPlayer(name: String): Player? {
-        return playerGroup.find { p: Player -> p.name == name }
+    fun findPlayer(name: String): Playerc? {
+        return Groups.player.find { p: Playerc -> p.name() == name }
     }
 
     fun getTeamByName(name: String): Team? {
-        for (t in Team.all()) {
+        for (t in Team.all) {
             if (t.name == name) {
                 return t
             }
@@ -265,7 +266,7 @@ class Tool {
         letters.put(" ", intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         val texts = text.toCharArray()
         for (i in texts) {
-            val pos = Array<IntArray>()
+            val pos = Seq<IntArray>()
             val target = letters[i.toUpperCase().toString()]
             var xv = 0
             var yv = 0
@@ -303,16 +304,16 @@ class Tool {
             for (a in 0 until pos.size) {
                 val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
                 if (target[a] == 1) {
-                    Call.onConstructFinish(tar, block, 100, 0.toByte(), Team.sharded, false)
+                    Call.constructFinish(tar, block, 100, 0.toByte(), Team.sharded, false)
                 } else if (tar != null) {
-                    Call.onDeconstructFinish(tar, Blocks.air, 100)
+                    Call.deconstructFinish(tar, Blocks.air, 100)
                 }
             }
             t = world.tile(t.x + (xv + 1), t.y.toInt())
         }
     }
 
-    fun checkPassword(player: Player, id: String?, password: String, password_repeat: String): Boolean {
+    fun checkPassword(player: Playerc, id: String?, password: String, password_repeat: String): Boolean {
         // 영문(소문자), 숫자, 7~20자리
         var pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$"
         val matcher = Pattern.compile(pwPattern).matcher(password)
@@ -333,7 +334,7 @@ class Tool {
     [green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!
     [green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!
     """.trimIndent())*/
-            Log.player("system.password.match.regex", player.name)
+            Log.player("system.password.match.regex", player.name())
             return false
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
@@ -341,7 +342,7 @@ class Tool {
     [green][Essentials] [sky]Passwords should not be similar to nicknames!
     [green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!
     """.trimIndent())*/
-            Log.player("system.password.match.name", player.name)
+            Log.player("system.password.match.name", player.name())
             return false
         } else if (password.contains(id!!)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -356,7 +357,7 @@ class Tool {
     [green][Essentials] [sky]Password must not contain spaces!
     [green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!
     """.trimIndent())*/
-            Log.player("system.password.match.blank", player.name)
+            Log.player("system.password.match.blank", player.name())
             return false
         } else if (password.matches(Regex("<(.*?)>"))) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
@@ -366,7 +367,7 @@ class Tool {
     [green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!
     [green][Essentials] [sky]/register password 형식으로 사용하세요.
     """.trimIndent())*/
-            Log.player("system.password.match.invalid", player.name)
+            Log.player("system.password.match.invalid", player.name())
             return false
         }
         return true

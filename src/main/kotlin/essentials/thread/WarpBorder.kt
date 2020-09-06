@@ -1,7 +1,7 @@
 package essentials.thread
 
 import arc.graphics.Color
-import arc.struct.Array
+import arc.struct.Seq
 import essentials.Main
 import essentials.external.PingHost
 import essentials.internal.Log
@@ -16,7 +16,7 @@ import java.util.function.Consumer
 
 class WarpBorder : Runnable {
     var length = 0
-    var thread = Array<Thread>()
+    var thread = Seq<Thread>()
     override fun run() {
         Thread.currentThread().name = "Essential server to server work thread"
         length = Main.pluginData.warpzones.size

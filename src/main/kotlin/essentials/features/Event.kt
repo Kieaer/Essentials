@@ -56,7 +56,7 @@ class Event {
     init {
         Events.on(TapConfigEvent::class.java) { e: TapConfigEvent ->
             if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && configs.alertAction) {
-                for (p in Vars.playerGroup.all()) {
+                for (p in Groups.player) {
                     val playerData = playerCore[p.uuid]
                     if (playerData.alert) {
                         p.sendMessage(Bundle(playerData.locale)["tap-config", e.player.name, e.tile.entity.block.name])
@@ -115,7 +115,7 @@ class Event {
         }
         Events.on(WithdrawEvent::class.java) { e: WithdrawEvent ->
             if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && configs.antiGrief) {
-                for (p in Vars.playerGroup.all()) {
+                for (p in Groups.player) {
                     val playerData = playerCore[p.uuid]
                     if (playerData.alert) {
                         p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name])
@@ -142,9 +142,9 @@ class Event {
                     }
                 }
                 if (index == 1) {
-                    for (i in 0 until Vars.playerGroup.size()) {
-                        val player = Vars.playerGroup.all()[i]
-                        val target = playerCore[player.uuid]
+                    for (i in 0 until Groups.player.size()) {
+                        val player = Groups.player.all()[i]
+                        val target = playerCore[player.uuid()]
                         if (target.login) {
                             if (player.team.name == e.winner.name) {
                                 target.pvpwincount = target.pvpwincount + 1
@@ -155,9 +155,9 @@ class Event {
                     }
                 }
             } else if (Vars.state.rules.attackMode) {
-                for (i in 0 until Vars.playerGroup.size()) {
-                    val player = Vars.playerGroup.all()[i]
-                    val target = playerCore[player.uuid]
+                for (i in 0 until Groups.player.size()) {
+                    val player = Groups.player.all()[i]
+                    val target = playerCore[player.uuid()]
                     if (target.login) {
                         target.attackclear = target.attackclear + 1
                     }
@@ -203,7 +203,7 @@ class Event {
                 Vars.player.con.kick("Invalid request!")
                 return@on
             }
-            for (p in Vars.playerGroup.all()) {
+            for (p in Groups.player) {
                 val playerData = playerCore[p.uuid]
                 if (playerData.alert) {
                     p.sendMessage(Bundle(playerData.locale)["anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name])
@@ -287,9 +287,8 @@ class Event {
 
                 // VPN을 사용중인지 확인
                 if (configs.antiVPN) {
-                    try {
-                        val reader = javaClass.getResourceAsStream("/ipv4.txt")
-                        val br = BufferedReader(InputStreamReader(reader))
+                    val br = BufferedReader(InputStreamReader(javaClass.getResourceAsStream("/ipv4.txt")))
+                    br.use {
                         var line: String
                         while (br.readLine().also { line = it } != null) {
                             val match = IpAddressMatcher(line)
@@ -297,10 +296,9 @@ class Event {
                                 Call.onKick(e.player.con, Bundle()["anti-grief.vpn"])
                             }
                         }
-                    } catch (ex: IOException) {
-                        log.warn("VPN File", ex)
                     }
                 }
+
 
                 // PvP 평화시간 설정
                 if (configs.antiRush && Vars.state.rules.pvp && pluginVars.playtime < configs.antiRushtime) {
@@ -312,7 +310,7 @@ class Event {
 
                 // 플레이어 인원별 난이도 설정
                 if (configs.autoDifficulty) {
-                    val total = Vars.playerGroup.size()
+                    val total = Groups.player.size()
                     when {
                         configs.difficultyEasy >= total -> {
                             Vars.state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2
@@ -347,7 +345,7 @@ class Event {
                 if (Vars.state.rules.pvp && !Vars.state.gameOver) player.pvpbreakout = player.pvpbreakout + 1
             }
             playerCore.save(player)
-            pluginVars.removePlayerData(Boolf { p: PlayerData -> p.uuid == e.player.uuid })
+            pluginVars.removePlayerData(Boolf { p: PlayercData -> p.uuid == e.player.uuid })
             pluginVars.players.remove(e.player)
         }
 
@@ -401,7 +399,7 @@ class Event {
                         Thread {
                             val buf = ArrayMap<String, String>()
                             try {
-                                for (p in Vars.playerGroup.all()) {
+                                for (p in Groups.player) {
                                     val target = playerCore[p.uuid]
                                     if (!target.error && !target.mute) {
                                         var original = playerData.locale.language
@@ -590,15 +588,15 @@ class Event {
             // 뒤진(?) 유닛이 플레이어일때
             if (e.unit is Player) {
                 val player = e.unit as Player
-                val target = playerCore[player.uuid]
+                val target = playerCore[player.uuid()]
                 if (!Vars.state.teams[player.team].cores.isEmpty) target.deathcount = target.deathcount + 1
             }
 
             // 터진 유닛수만큼 카운트해줌
-            if (Vars.playerGroup != null && Vars.playerGroup.size() > 0) {
-                for (i in 0 until Vars.playerGroup.size()) {
-                    val player = Vars.playerGroup.all()[i]
-                    val target = playerCore[player.uuid]
+            if (Groups.player != null && Groups.player.size() > 0) {
+                for (i in 0 until Groups.player.size()) {
+                    val player = Groups.player.all()[i]
+                    val target = playerCore[player.uuid()]
                     if (!Vars.state.teams[player.team].cores.isEmpty) target.killcount = target.killcount + 1
                 }
             }
@@ -611,7 +609,7 @@ class Event {
                     client.request(Client.Request.BanSync, null, null)
                 }
             }
-            for (player in Vars.playerGroup.all()) {
+            for (player in Groups.player.all()) {
                 if (player === e.player) {
                     tool.sendMessageAll("player.banned", e.player.name)
                     if (Vars.netServer.admins.isIDBanned(player.uuid)) {

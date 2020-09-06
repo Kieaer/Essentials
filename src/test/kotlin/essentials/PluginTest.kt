@@ -16,6 +16,7 @@ import essentials.Main.Companion.pluginData
 import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.pluginVars
 import essentials.Main.Companion.server
+import essentials.Main.Companion.vote
 import essentials.network.Client
 import mindustry.Vars
 import mindustry.Vars.world
@@ -37,8 +38,7 @@ import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
 import org.junit.Assert
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
+import org.junit.Assert.*
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.contrib.java.lang.system.SystemOutRule
@@ -446,6 +446,7 @@ class PluginTest {
         println("== votekick")
         clientHandler.handleMessage("/vote kick " + dummy3.id, player)
         sleep(500)
+        assertTrue(vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -456,10 +457,61 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
+        assertFalse(vote.service.process)
+
+        println("== vote gameover")
+        clientHandler.handleMessage("/vote gameover", player)
+        sleep(500)
+        assertTrue(vote.service.process)
+        Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy2, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
+        assertFalse(vote.service.process)
+
+        println("== vote skipwave")
+        clientHandler.handleMessage("/vote skipwave 5", player)
+        sleep(500)
+        assertTrue(vote.service.process)
+        Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy2, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
+        assertFalse(vote.service.process)
+
+        println("== vote rollback")
+        serverHandler.handleMessage("save 1000")
+        clientHandler.handleMessage("/vote rollback", player)
+        sleep(500)
+        assertTrue(vote.service.process)
+        Events.fire(PlayerChatEvent(player, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy1, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy2, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy4, "y"))
+        sleep(100)
+        Events.fire(PlayerChatEvent(dummy5, "y"))
+        sleep(1000)
+        assertFalse(vote.service.process)
 
         println("== votemap")
         clientHandler.handleMessage("/vote map Glacier", player);
         sleep(500)
+        assertTrue(vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -471,49 +523,7 @@ class PluginTest {
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
         assertEquals("Glacier", world.map.name());
-
-        println("== vote gameover")
-        clientHandler.handleMessage("/vote gameover", player)
-        sleep(500)
-        Events.fire(PlayerChatEvent(player, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy1, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy2, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy4, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy5, "y"))
-        sleep(1000)
-
-        println("== vote rollback")
-        serverHandler.handleMessage("save 1000")
-        clientHandler.handleMessage("/vote rollback", player)
-        sleep(500)
-        Events.fire(PlayerChatEvent(player, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy1, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy2, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy4, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy5, "y"))
-        sleep(1000)
-
-        println("== vote skipwave")
-        clientHandler.handleMessage("/vote skipwave 5", player)
-        sleep(500)
-        Events.fire(PlayerChatEvent(player, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy1, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy2, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy4, "y"))
-        sleep(100)
-        Events.fire(PlayerChatEvent(dummy5, "y"))
-        sleep(1000)
+        assertFalse(vote.service.process)
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))

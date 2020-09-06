@@ -43,7 +43,7 @@ class Permissions {
                 }
             }
             if (!isMatch) user[p.name].asObject()["group"] = default
-            val player = Vars.playerGroup.find { pl: Player -> pl.uuid == p.name }
+            val player = Groups.player.find { pl: Player -> pl.uuid == p.name }
             if (player != null && p.value.asObject()["name"].asString() != player.name) {
                 player.name = `object`.getString("name", player.name)
             }
@@ -118,7 +118,7 @@ class Permissions {
         if (pluginRoot.child("permission_user.hjson").exists()) {
             try {
                 user = JsonValue.readHjson(pluginRoot.child("permission_user.hjson").reader()).asObject()
-                for (p in Vars.playerGroup.all()) {
+                for (p in Groups.player) {
                     p.isAdmin = isAdmin(pluginVars.playerData.find { d: PlayerData -> d.name == p.name })
                 }
             } catch (e: PluginException) {
@@ -130,7 +130,7 @@ class Permissions {
     }
 
     fun check(player: Player, command: String): Boolean {
-        val p = playerCore[player.uuid]
+        val p = playerCore[player.uuid()]
         if (!p.error) {
             val `object` = user[player.uuid]
             if (`object` != null) {

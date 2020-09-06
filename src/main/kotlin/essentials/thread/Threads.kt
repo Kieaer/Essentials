@@ -3,6 +3,7 @@ package essentials.thread
 import arc.Core
 import arc.struct.Array
 import arc.struct.ArrayMap
+import arc.struct.Seq
 import essentials.Main.Companion.playerCore
 import essentials.Main.Companion.pluginData
 import essentials.Main.Companion.tool
@@ -11,10 +12,12 @@ import essentials.external.PingHost
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import mindustry.Vars
+import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.core.GameState
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.net.Host
 import mindustry.world.Tile
 import java.util.*
@@ -67,14 +70,14 @@ class Threads : Runnable {
                                     if (value.numbersize != digits.size) {
                                         for (px in 0..2) {
                                             for (py in 0..4) {
-                                                Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0)
+                                                Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0)
                                             }
                                         }
                                     }
                                 }
                                 tool.setTileText(tile, Blocks.copperWall, str)
                                 // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                pluginData.warpcounts[i] = PluginData.WarpCount(world.map.name(), value.tile.pos(), value.ip, value.port, result.players, digits.size)
+                                pluginData.warpcounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, result.players, digits.size)
                                 addPlayers(value.ip, value.port, result.players)
                             } else {
                                 ping += 1.000
@@ -82,7 +85,7 @@ class Threads : Runnable {
                             }
                         })
                     }
-                    val memory = Array<String>()
+                    val memory = Seq<String>()
                     for (a in 0 until pluginData.warpblocks.size) {
                         val value = pluginData.warpblocks[a]
                         val tile = world.tile(value.pos)
@@ -124,10 +127,11 @@ class Threads : Runnable {
                     }
                     for (m in memory) {
                         val a = m.split("///").toTypedArray()
-                        Call.onLabel(a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
+                        Call.label(a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
                     }
                     if (Core.settings.getBool("isLobby")) {
-                        Core.settings.putSave("totalPlayers", totalPlayers)
+                        Core.settings.put("totalPlayers", totalPlayers)
+                        Core.settings.saveValues()
                     }
                     ping = 0.000
                 }
@@ -135,11 +139,11 @@ class Threads : Runnable {
             } catch (ignored: InterruptedException) {
                 Thread.currentThread().interrupt()
             } catch (e: Exception) {
-                for (p in Vars.playerGroup.all()) {
-                    if (playerCore[p.uuid].login) {
-                        Call.onKick(p.con, Bundle(playerCore[p.uuid].locale)["plugin-error-kick"])
+                for (p in Groups.player) {
+                    if (playerCore[p.uuid()].login) {
+                        Call.kick(p.con, Bundle(playerCore[p.uuid()].locale)["plugin-error-kick"])
                     } else {
-                        Call.onKick(p.con, Bundle(Locale.ENGLISH)["plugin-error-kick"])
+                        Call.kick(p.con, Bundle(Locale.ENGLISH)["plugin-error-kick"])
                     }
                 }
                 CrashReport(e)

@@ -34,6 +34,7 @@ class Vote : Thread() {
                 while (!currentThread().isInterrupted && pause) {
                     sleep(6)
                 }
+                println("** LOOP **")
                 if (pluginVars.playerData.size < 4) {
                     player!!.sendMessage(Bundle(playerCore[player!!.uuid].locale)["vote.minimal"])
                 } else {
@@ -55,6 +56,7 @@ class Vote : Thread() {
         private var amount = 0
         var process = false
         var voted = arc.struct.Array<String>()
+
         fun init() {
             process = true
             tool.sendMessageAll("vote.suggester-name", player!!.name)
@@ -111,7 +113,7 @@ class Vote : Thread() {
             while (!currentThread().isInterrupted) {
                 val bundles = arrayOf("vote.count.50", "vote.count.40", "vote.count.30", "vote.count.20", "vote.count.10")
                 if (time <= 4) {
-                    if (Vars.playerGroup.size() > 0) {
+                    if (Groups.player.size() > 0) {
                         tool.sendMessageAll(bundles[time])
                     }
                     time++
@@ -178,7 +180,12 @@ class Vote : Thread() {
                     VoteType.map -> tool.sendMessageAll("vote.map.fail")
                 }
             }
-            voted.clear()
+
+            target =  null
+            map = null
+            amount = 0
+            process = false
+            voted = arc.struct.Array()
             process = false
         }
 
@@ -190,7 +197,7 @@ class Vote : Thread() {
 
         fun set(uuid: String) {
             voted.add(uuid)
-            for (others in Vars.playerGroup.all()) {
+            for (others in Groups.player.all()) {
                 val p = playerCore[others.uuid]
                 if (!p.error && require - voted.size != -1) {
                     others.sendMessage(Bundle(p.locale).prefix("vote.current-voted", voted.size, require - voted.size))

@@ -1,6 +1,6 @@
 package essentials
 
-import arc.struct.Array
+import arc.struct.Seq
 import arc.util.serialization.Json
 import essentials.Main.Companion.pluginRoot
 import essentials.internal.Log
@@ -14,22 +14,22 @@ class PluginData {
     private val json = Json()
 
     // 일회성 플러그인 데이터
-    var nukeblock = Array<ReactorBlock>()
-    var powerblocks = Array<PowerBlock>()
-    var messagemonitors = Array<MessageMonitor>()
-    var messagewarps = Array<MessageWarp>()
-    var scancore = Array<Tile>()
-    var nukedata = Array<Tile>()
-    var nukeposition = Array<Tile>()
-    var process = Array<Process?>()
+    var nukeblock = Seq<ReactorBlock>()
+    var powerblocks = Seq<PowerBlock>()
+    var messagemonitors = Seq<MessageMonitor>()
+    var messagewarps = Seq<MessageWarp>()
+    var scancore = Seq<Tile>()
+    var nukedata = Seq<Tile>()
+    var nukeposition = Seq<Tile>()
+    var process = Seq<Process?>()
 
     // 종료시 저장되는 플러그인 데이터
-    var warpzones = Array<WarpZone>()
-    var warpblocks = Array<WarpBlock>()
-    var warpcounts = Array<WarpCount>()
-    var warptotals = Array<WarpTotal>()
-    var blacklist = Array<String>()
-    var banned = Array<Banned>()
+    var warpzones = Seq<WarpZone>()
+    var warpblocks = Seq<WarpBlock>()
+    var warpcounts = Seq<WarpCount>()
+    var warptotals = Seq<WarpTotal>()
+    var blacklist = Seq<String>()
+    var banned = Seq<Banned>()
 
     fun saveAll() {
         val data = JsonObject()

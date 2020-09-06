@@ -12,7 +12,7 @@ class ColorNickname : Runnable {
     override fun run() {
         while (!Thread.currentThread().isInterrupted) {
             for (player in targets) {
-                val p = playerCore[player.uuid]
+                val p = playerCore[player.uuid()]
                 if (p.connected) {
                     val name = p.name.replace("\\[(.*?)]".toRegex(), "")
                     nickcolor(name, player)

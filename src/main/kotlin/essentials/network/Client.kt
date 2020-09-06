@@ -5,8 +5,8 @@ import essentials.Main.Companion.mainThread
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import mindustry.Vars
-import mindustry.entities.type.Player
 import mindustry.gen.Call
+import mindustry.gen.Playerc
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
@@ -119,7 +119,7 @@ class Client : Runnable {
         }
     }
 
-    fun request(request: Request?, player: Player?, message: String?) {
+    fun request(request: Request?, player: Playerc?, message: String?) {
         val data = JsonObject()
         try {
             when (request) {
@@ -149,11 +149,11 @@ class Client : Runnable {
                 }
                 Request.Chat -> {
                     data.add("type", "Chat")
-                    data.add("name", player!!.name)
+                    data.add("name", player!!.name())
                     data.add("message", message)
                     os.writeBytes(Main.tool.encrypt(data.toString(), skey)+"\n")
                     os.flush()
-                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message)
+                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name() + "[orange]: [white]" + message)
                     Log.client("client.message", Main.configs.clientHost, message)
                 }
                 Request.Exit -> {
