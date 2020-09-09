@@ -7,8 +7,6 @@ import arc.math.Mathf
 import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Strings
-import arc.util.Time
-import arc.util.Time.delta
 import arc.util.async.Threads.sleep
 import essentials.external.StringUtils
 import essentials.features.*
@@ -550,17 +548,6 @@ class Main : Plugin() {
             playerData.colornick = !playerData.colornick
             if (playerData.colornick) colorNickname.targets.add(player)
             player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.colornick) "feature.colornick.enable" else "feature.colornick.disable"))
-        }
-        handler.register("difficulty", "<difficulty>", "Set server difficulty") { arg: Array<String?>, player: Playerc ->
-            if (!perm.check(player, "difficulty")) return@register
-            val playerData = playerCore[player.uuid()]
-            try {
-                Vars.state.rules.waveSpacing = Difficulty.valueOf(arg[0]!!).waveTime * 60 * 60 * 2
-                Call.setRules(Vars.state.rules)
-                player.sendMessage(Bundle(playerData.locale).prefix("system.difficulty.set", arg[0]))
-            } catch (e: IllegalArgumentException) {
-                player.sendMessage(Bundle(playerData.locale).prefix("system.difficulty.not-found", arg[0]))
-            }
         }
         handler.register("killall", "Kill all enemy units") { _: Array<String?>?, player: Playerc ->
             if (!perm.check(player, "killall")) return@register
@@ -1164,7 +1151,7 @@ class Main : Plugin() {
                     """.trimIndent()
                 s.append(d)
             }
-            player.sendMessage(if(s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString())
+            player.sendMessage(if (s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString())
         }
         handler.register("suicide", "Kill yourself.") { _: Array<String?>?, player: Playerc ->
             if (!perm.check(player, "suicide")) return@register
