@@ -1,13 +1,13 @@
 package essentials.features
 
-import arc.struct.Array
+import arc.struct.Seq
 import essentials.Main
 import essentials.Main.Companion.playerCore
-import mindustry.entities.type.Player
+import mindustry.gen.Playerc
 
 class ColorNickname : Runnable {
     var colorOffset = 0
-    var targets = Array<Player>()
+    var targets = Seq<Playerc>()
 
     override fun run() {
         while (!Thread.currentThread().isInterrupted) {
@@ -22,7 +22,7 @@ class ColorNickname : Runnable {
         }
     }
 
-    private fun nickcolor(name: String, player: Player) {
+    private fun nickcolor(name: String, player: Playerc) {
         val stringBuilder = StringBuilder()
         val colors = arrayOfNulls<String>(11)
         colors[0] = "[#ff0000]"
@@ -50,6 +50,6 @@ class ColorNickname : Runnable {
         for (s in newName) {
             stringBuilder.append(s)
         }
-        player.name = stringBuilder.toString()
+        player.name(stringBuilder.toString())
     }
 }

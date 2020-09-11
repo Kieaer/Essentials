@@ -8,8 +8,8 @@ import essentials.Main.Companion.vars
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
-import mindustry.Vars
-import mindustry.entities.type.Player
+import mindustry.gen.Groups
+import mindustry.gen.Playerc
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.ChannelType
@@ -44,11 +44,11 @@ class Discord : ListenerAdapter() {
         }
     }
 
-    fun queue(player: Player) {
+    fun queue(player: Playerc) {
         val playerData = playerCore[player.uuid()]
         val bundle = Bundle(if (playerData.error) configs.locale else playerData.locale)
         val pin = Random().nextInt(9999)
-        pins.put(player.name, pin)
+        pins.put(player.name(), pin)
         player.sendMessage(bundle.prefix("discord-pin-queue", pin))
     }
 
@@ -76,10 +76,10 @@ class Discord : ListenerAdapter() {
                                     pstmt.setString(1, name)
                                     rs = pstmt.executeQuery()
                                     if (!rs.next()) {
-                                        val player = Groups.player.find { p: Playerc -> p.name.equals(name, ignoreCase = true) }
+                                        val player = Groups.player.find { p: Playerc -> p.name().equals(name, ignoreCase = true) }
                                         if (player != null) {
                                             val lc = Main.tool.getGeo(player)
-                                            val register = playerCore.register(player.name, player.uuid, lc.displayCountry, lc.toString(), lc.displayLanguage, true, vars.serverIP, "default", e.author.idLong, name, pw, false)
+                                            val register = playerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, vars.serverIP, "default", e.author.idLong, name, pw, false)
                                             if (register) {
                                                 playerCore.playerLoad(player, null)
                                                 val playerData = playerCore[player.uuid()]

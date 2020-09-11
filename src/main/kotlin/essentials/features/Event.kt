@@ -29,11 +29,11 @@ import mindustry.Vars
 import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.core.NetClient
-import mindustry.entities.type.Player
-import mindustry.game.Difficulty
 import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Groups
+import mindustry.gen.Playerc
 import mindustry.net.Packets
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
@@ -41,7 +41,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.IOException
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -51,28 +50,32 @@ import java.util.regex.Pattern
 import kotlin.math.abs
 
 class Event {
-    var log: Logger = LoggerFactory.getLogger(Event::class.java)
-
     init {
-        Events.on(TapConfigEvent::class.java) { e: TapConfigEvent ->
-            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && configs.alertAction) {
+        Events.on(CommandIssueEvent::class.java) { e: CommandIssueEvent ->
+
+        }
+        Events.on(ClientPreConnectEvent::class.java) { e: ClientPreConnectEvent ->
+
+        }
+        Events.on(ConfigEvent::class.java) { e: ConfigEvent ->
+            if (e.tile != null && e.tile.block() != null && e.player != null && configs.alertAction) {
                 for (p in Groups.player) {
-                    val playerData = playerCore[p.uuid]
+                    val playerData = playerCore[p.uuid()]
                     if (playerData.alert) {
-                        p.sendMessage(Bundle(playerData.locale)["tap-config", e.player.name, e.tile.entity.block.name])
+                        p.sendMessage(Bundle(playerData.locale)["tap-config", e.player.name, e.tile.block().name])
                     }
                 }
                 if (configs.debug) Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.pos())
                 if (configs.logging) Log.write(LogType.tap, "log.tap-config", e.player.name, e.tile.block().name)
 
                 // Source by BasedUser(router)
-                val entity = e.tile.entity
+                val entity = e.tile
                 val value = e.value
-                val other = world.tile(value)
-                val valid = other?.entity != null && other.entity.power != null
+                val other = world.tile(value as Int)
+                val valid = other != null && other.block().hasPower
                 if (valid) {
                     val oldGraph = entity.power.graph
-                    val newgraph = other!!.entity.power.graph
+                    val newgraph = other.build.power.graph
                     val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all={"), oldGraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
                     val newGraphCount = newgraph.toString().substring(newgraph.toString().indexOf("all={"), newgraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
                     if (abs(oldGraphCount - newGraphCount) > 10) {
@@ -82,7 +85,10 @@ class Event {
                 }
             }
         }
-        Events.on(TapEvent::class.java) { e: TapEvent ->
+        Events.on(TileChangeEvent::class.java) { e: TileChangeEvent ->
+
+        }
+        /*Events.on(TapEvent::class.java) { e: TapEvent ->
             if (configs.logging) Log.write(LogType.tap, "log.tap", e.player.name, e.tile.block().name)
             val playerData = playerCore[e.player.uuid]
             if (!playerData.error) {
@@ -93,40 +99,40 @@ class Event {
                                 Log.info("player.warped", e.player.name, data.ip + ":" + data.port)
                                 playerData.connected = false
                                 playerData.connserver = "none"
-                                Call.onConnect(e.player.con, data.ip, data.port)
+                                Call.Connect(e.player.con, data.ip, data.port)
                             }
                             break
                         }
                     }
                 }
 
-                /*for (PluginData.warpzone data : pluginData.warpzones) {
+                for (PluginData.warpzone data : pluginData.warpzones) {
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
                             Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
                             playerData.connected(false);
                             playerData.connserver("none");
-                            Call.onConnect(e.player.con, data.ip, data.port);
+                            Call.Connect(e.player.con, data.ip, data.port);
                             break;
                         }
                     }
-                }*/
+                }
             }
-        }
+        }*/
         Events.on(WithdrawEvent::class.java) { e: WithdrawEvent ->
-            if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && configs.antiGrief) {
+            if (e.tile != null && e.player.miner().item() != null && e.player.name != null && configs.antiGrief) {
                 for (p in Groups.player) {
-                    val playerData = playerCore[p.uuid]
+                    val playerData = playerCore[p.uuid()]
                     if (playerData.alert) {
-                        p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name])
+                        p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name])
                     }
                 }
-                if (configs.debug) Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name)
-                if (configs.logging) Log.write(LogType.withdraw, "log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name)
+                if (configs.debug) Log.info("log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
+                if (configs.logging) Log.write(LogType.withdraw, "log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
                 if (Vars.state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
-                        e.player.sendMessage(Bundle(playerCore[e.player.uuid].locale)["system.flammable.disabled"])
-                        e.player.clearItem()
+                        e.player.sendMessage(Bundle(playerCore[e.player.uuid()].locale)["system.flammable.disabled"])
+                        e.player.miner().clearItem()
                     }
                 }
             }
@@ -137,18 +143,18 @@ class Event {
             if (Vars.state.rules.pvp) {
                 var index = 5
                 for (a in 0..4) {
-                    if (Vars.state.teams[Team.all()[index]].cores.isEmpty) {
+                    if (Vars.state.teams[Team.all[index]].cores.isEmpty) {
                         index--
                     }
                 }
                 if (index == 1) {
                     for (i in 0 until Groups.player.size()) {
-                        val player = Groups.player.all()[i]
+                        val player = Groups.player.getByID(i)
                         val target = playerCore[player.uuid()]
                         if (target.login) {
-                            if (player.team.name == e.winner.name) {
+                            if (player.team().name == e.winner.name) {
                                 target.pvpwincount = target.pvpwincount + 1
-                            } else if (player.team.name != e.winner.name) {
+                            } else if (player.team().name != e.winner.name) {
                                 target.pvplosecount = target.pvplosecount + 1
                             }
                         }
@@ -156,7 +162,7 @@ class Event {
                 }
             } else if (Vars.state.rules.attackMode) {
                 for (i in 0 until Groups.player.size()) {
-                    val player = Groups.player.all()[i]
+                    val player = Groups.player.getByID(i)
                     val target = playerCore[player.uuid()]
                     if (target.login) {
                         target.attackclear = target.attackclear + 1
@@ -173,14 +179,14 @@ class Event {
             pluginData.powerblocks.clear()
         }
         Events.on(PlayerConnect::class.java) { e: PlayerConnect ->
-            if (configs.logging) Log.write(LogType.player, "log.player.connect", e.player.name, e.player.uuid, e.player.con.address)
+            if (configs.logging) Log.write(LogType.player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (s in pluginData.blacklist) {
                 if (e.player.name.matches(Regex(s))) {
                     try {
                         val locale = tool.getGeo(e.player)
-                        Call.onKick(e.player.con, Bundle(locale)["system.nickname.blacklisted.kick"])
+                        Call.kick(e.player.con, Bundle(locale)["system.nickname.blacklisted.kick"])
                         Log.info("system.nickname.blacklisted", e.player.name)
                     } catch (ex: Exception) {
                         CrashReport(ex)
@@ -188,54 +194,50 @@ class Event {
                 }
             }
             if (configs.strictName) {
-                if (e.player.name.length > 32) Call.onKick(e.player.con, "Nickname too long!")
+                if (e.player.name.length > 32) Call.kick(e.player.con, "Nickname too long!")
                 //if (e.player.name.matches(".*\\[.*].*"))
-                //    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
-                if (e.player.name.contains("　")) Call.onKick(e.player.con, "Don't use blank speical charactor nickname!")
-                if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!")
-                if (Pattern.matches(".*\\[.*.].*", e.player.name)) Call.onKick(e.player.con, "Can't use only color tags nickname in this server.")
+                //    Call.Kick(e.player.con, "Color tags can't be used for nicknames on this server.");
+                if (e.player.name.contains("　")) Call.kick(e.player.con, "Don't use blank speical charactor nickname!")
+                if (e.player.name.contains(" ")) Call.kick(e.player.con, "Nicknames can't be used on this server!")
+                if (Pattern.matches(".*\\[.*.].*", e.player.name)) Call.kick(e.player.con, "Can't use only color tags nickname in this server.")
             }
         }
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(DepositEvent::class.java) { e: DepositEvent ->
-            if (e.player.item().amount > e.player.mech.itemCapacity) {
-                Vars.player.con.kick("Invalid request!")
-                return@on
-            }
             for (p in Groups.player) {
-                val playerData = playerCore[p.uuid]
+                val playerData = playerCore[p.uuid()]
                 if (playerData.alert) {
-                    p.sendMessage(Bundle(playerData.locale)["anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name])
+                    p.sendMessage(Bundle(playerData.locale)["anti-grief.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name])
                 }
             }
-            if (configs.logging) Log.write(LogType.deposit, "log.deposit", e.player.name, e.player.item().item.name, e.tile.block().name)
+            if (configs.logging) Log.write(LogType.deposit, "log.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name)
         }
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(PlayerJoin::class.java) { e: PlayerJoin ->
-            if (configs.logging) Log.write(LogType.player, "log.player.join", e.player.name, e.player.uuid, e.player.con.address)
+            if (configs.logging) Log.write(LogType.player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
             pluginVars.players.add(e.player)
-            e.player.isAdmin = false
+            e.player.admin(false)
             val t = Thread {
                 Thread.currentThread().name = e.player.name + " Player Join thread"
-                val playerData = playerCore.load(e.player.uuid, null)
+                val playerData = playerCore.load(e.player.uuid(), null)
                 val bundle = Bundle(playerData.locale)
                 if (configs.loginEnable) {
                     if (configs.passwordMethod == "mixed") {
                         if (!playerData.error && configs.autoLogin) {
                             if (playerData.udid != 0L) {
-                                Thread { Call.onConnect(e.player.con, pluginVars.serverIP, 7060) }.start()
+                                Thread { Call.connect(e.player.con, pluginVars.serverIP, 7060) }.start()
                             } else {
                                 e.player.sendMessage(bundle["account.autologin"])
                                 playerCore.playerLoad(e.player, null)
                             }
                         } else {
                             val lc = tool.getGeo(e.player)
-                            if (playerCore.register(e.player.name, e.player.uuid, lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, e.player.name, "none", false)) {
+                            if (playerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, e.player.name, "none", false)) {
                                 playerCore.playerLoad(e.player, null)
                             } else {
-                                Call.onKick(e.player.con, Bundle()["plugin-error-kick"])
+                                Call.kick(e.player.con, Bundle()["plugin-error-kick"])
                             }
                         }
                     } else if (configs.passwordMethod == "discord") {
@@ -252,7 +254,7 @@ class Event {
                             } else {
                                 Bundle(language)["system.login.require.password"]
                             }
-                            Call.onInfoMessage(e.player.con, message)
+                            Call.infoMessage(e.player.con, message)
                         }
                     } else {
                         if (!playerData.error && configs.autoLogin) {
@@ -268,7 +270,7 @@ class Event {
                             } else {
                                 Bundle(language)["system.login.require.password"]
                             }
-                            Call.onInfoMessage(e.player.con, message)
+                            Call.infoMessage(e.player.con, message)
                         }
                     }
                 } else {
@@ -278,9 +280,9 @@ class Event {
                         playerCore.playerLoad(e.player, null)
                     } else {
                         val lc = tool.getGeo(e.player.con.address)
-                        val register = playerCore.register(e.player.name, e.player.uuid, lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, e.player.name, "none", false)
+                        val register = playerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, e.player.name, "none", false)
                         if (!register || playerCore.playerLoad(e.player, null)) {
-                            Call.onKick(e.player.con, Bundle()["plugin-error-kick"])
+                            Call.kick(e.player.con, Bundle()["plugin-error-kick"])
                         }
                     }
                 }
@@ -293,7 +295,7 @@ class Event {
                         while (br.readLine().also { line = it } != null) {
                             val match = IpAddressMatcher(line)
                             if (match.matches(e.player.con.address)) {
-                                Call.onKick(e.player.con, Bundle()["anti-grief.vpn"])
+                                Call.kick(e.player.con, Bundle()["anti-grief.vpn"])
                             }
                         }
                     }
@@ -302,34 +304,10 @@ class Event {
 
                 // PvP 평화시간 설정
                 if (configs.antiRush && Vars.state.rules.pvp && pluginVars.playtime < configs.antiRushtime) {
-                    Vars.state.rules.playerDamageMultiplier = 0f
-                    Vars.state.rules.playerHealthMultiplier = 0.001f
-                    Call.onSetRules(Vars.state.rules)
+                    Vars.state.rules.unitDamageMultiplier = 0f
+                    Vars.state.rules.unitHealthMultiplier = 0.001f
+                    Call.setRules(Vars.state.rules)
                     pluginVars.isPvPPeace = true
-                }
-
-                // 플레이어 인원별 난이도 설정
-                if (configs.autoDifficulty) {
-                    val total = Groups.player.size()
-                    when {
-                        configs.difficultyEasy >= total -> {
-                            Vars.state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2
-                            //tool.sendMessageAll("system.difficulty.easy");
-                        }
-                        configs.difficultyNormal == total -> {
-                            Vars.state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2
-                            //tool.sendMessageAll("system.difficulty.normal");
-                        }
-                        configs.difficultyHard == total -> {
-                            Vars.state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2
-                            //tool.sendMessageAll("system.difficulty.hard");
-                        }
-                        configs.difficultyInsane <= total -> {
-                            Vars.state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2
-                            //tool.sendMessageAll("system.difficulty.insane");
-                        }
-                    }
-                    NetClient.onSetRules(Vars.state.rules)
                 }
             }
             t.start()
@@ -337,24 +315,24 @@ class Event {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave::class.java) { e: PlayerLeave ->
-            if (configs.logging) Log.write(LogType.player, "log.player.leave", e.player.name, e.player.uuid, e.player.con.address)
-            val player = playerCore[e.player.uuid]
+            if (configs.logging) Log.write(LogType.player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
+            val player = playerCore[e.player.uuid()]
             if (player.login) {
                 player.connected = false
                 player.connserver = "none"
                 if (Vars.state.rules.pvp && !Vars.state.gameOver) player.pvpbreakout = player.pvpbreakout + 1
             }
             playerCore.save(player)
-            pluginVars.removePlayerData(Boolf { p: PlayercData -> p.uuid == e.player.uuid })
+            pluginVars.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }?.let { pluginVars.removePlayerData(it) }
             pluginVars.players.remove(e.player)
         }
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent::class.java) { e: PlayerChatEvent ->
             if (configs.antiGrief && (e.message.length > Vars.maxTextLength || e.message.contains("Nexity#2671"))) {
-                Call.onKick(e.player.con, "Hacked client detected")
+                Call.kick(e.player.con, "Hacked client detected")
             }
-            val playerData = playerCore[e.player.uuid]
+            val playerData = playerCore[e.player.uuid()]
             val bundle = Bundle(playerData.locale)
             if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>")
             if (!playerData.error) {
@@ -362,10 +340,10 @@ class Event {
                 if (!e.message.startsWith("/")) {
                     if (e.message == "y" && vote.service.process) {
                         // 투표가 진행중일때
-                        if (vote.service.voted.contains(e.player.uuid)) {
+                        if (vote.service.voted.contains(e.player.uuid())) {
                             e.player.sendMessage(bundle["vote.already-voted"])
                         } else {
-                            vote.service.set(e.player.uuid)
+                            vote.service.set(e.player.uuid())
                         }
                     } else {
                         if (!playerData.mute) {
@@ -384,7 +362,7 @@ class Event {
                                                 ser.os.flush()
                                             }
                                         } catch (ex: Exception) {
-                                            log.warn("Crosschat", ex)
+                                            Log.warn("Crosschat", ex)
                                         }
                                     }
                                     else -> {
@@ -400,7 +378,7 @@ class Event {
                             val buf = ArrayMap<String, String>()
                             try {
                                 for (p in Groups.player) {
-                                    val target = playerCore[p.uuid]
+                                    val target = playerCore[p.uuid()]
                                     if (!target.error && !target.mute) {
                                         var original = playerData.locale.language
                                         var language = target.locale.language
@@ -476,40 +454,42 @@ class Event {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent::class.java) { e: BlockBuildEndEvent ->
-            if (e.player == null) return@on   // 만약 건설자가 드론일경우
-            Log.write(LogType.block, "log.block.place", e.player.name, e.tile.block().name)
-            val target = playerCore[e.player.uuid]
-            if (!e.breaking && e.player.buildRequest() != null && !target.error && e.tile.block() != null) {
-                val name = e.tile.block().name
-                try {
-                    val obj = JsonValue.readHjson(pluginRoot.child("Exp.hjson").reader()).asObject()
-                    val blockexp = obj.getInt(name, 0)
-                    target.lastplacename = e.tile.block().name
-                    target.placecount = target.placecount + 1
-                    target.exp = target.exp + blockexp
-                    if (e.player.buildRequest().block === Blocks.thoriumReactor) target.reactorcount = target.reactorcount + 1
-                } catch (ex: Exception) {
-                    CrashReport(ex)
-                }
+            if (e.unit.isPlayer) {
+                val player = e.unit.player
 
-                // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
-                if (e.tile.block() === Blocks.message) {
-                    pluginData.messagemonitors.add(PluginData.MessageMonitor(e.tile.pos()))
-                }
+                Log.write(LogType.block, "log.block.place", player.name, e.tile.block().name)
+                val target = playerCore[player.uuid()]
+                if (!e.breaking && player.builder().buildPlan().block != null && !target.error && e.tile.block() != null) {
+                    val name = e.tile.block().name
+                    try {
+                        val obj = JsonValue.readHjson(pluginRoot.child("Exp.hjson").reader()).asObject()
+                        val blockexp = obj.getInt(name, 0)
+                        target.lastplacename = e.tile.block().name
+                        target.placecount = target.placecount + 1
+                        target.exp = target.exp + blockexp
+                        if (player.builder().buildPlan().block === Blocks.thoriumReactor) target.reactorcount = target.reactorcount + 1
+                    } catch (ex: Exception) {
+                        CrashReport(ex)
+                    }
 
-                // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
-                if (e.tile.block() === Blocks.thoriumReactor) {
-                    pluginData.nukeposition.add(e.tile)
-                    pluginData.nukedata.add(e.tile)
-                }
-                if (configs.debug && configs.antiGrief) {
-                    Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y)
-                }
+                    // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
+                    if (e.tile.block() === Blocks.message) {
+                        pluginData.messagemonitors.add(PluginData.MessageMonitor(e.tile.pos()))
+                    }
 
-                /*float range = new AntiGrief().getDistanceToCore(e.player, e.tile);
+                    // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
+                    if (e.tile.block() === Blocks.thoriumReactor) {
+                        pluginData.nukeposition.add(e.tile)
+                        pluginData.nukedata.add(e.tile)
+                    }
+                    if (configs.debug && configs.antiGrief) {
+                        Log.info("anti-grief.build.finish", player.name, e.tile.block().name, e.tile.x, e.tile.y)
+                    }
+
+                    /*float range = new AntiGrief().getDistanceToCore(e.player, e.tile);
                 if (config.antiGrief() && range < 35 && e.tile.block() == Blocks.thoriumReactor) {
                     e.player.sendMessage(new Bundle(target.locale).get("anti-grief.reactor.close"));
-                    Call.onDeconstructFinish(e.tile, Blocks.air, e.player.id);
+                    Call.DeconstructFinish(e.tile, Blocks.air, e.player.id);
                 } else if (config.antiGrief()) {
                     for (int rot = 0; rot < 4; rot++) {
                         if (e.tile.getNearby(rot).block() != Blocks.liquidTank &&
@@ -523,15 +503,16 @@ class Event {
                         }
                     }
                 }*/
+                }
             }
         }
 
         // 플레이어가 블럭을 뽀갰을 때
         Events.on(BuildSelectEvent::class.java) { e: BuildSelectEvent ->
-            if (e.builder is Player && e.builder.buildRequest() != null && !Pattern.matches(".*build.*", e.builder.buildRequest().block.name) && e.tile.block() !== Blocks.air) {
+            if (e.builder is Playerc && e.builder.buildPlan() != null && !Pattern.matches(".*build.*", e.builder.buildPlan().block.name) && e.tile.block() !== Blocks.air) {
                 if (e.breaking) {
-                    Log.write(LogType.block, "log.block.remove", (e.builder as Player).name, e.tile.block().name, e.tile.x, e.tile.y)
-                    val target = playerCore[(e.builder as Player).uuid]
+                    Log.write(LogType.block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
+                    val target = playerCore[(e.builder as Playerc).uuid()]
                     val name = e.tile.block().name
                     try {
                         val obj = JsonValue.readHjson(pluginRoot.child("Exp.hjson").reader()).asObject()
@@ -541,11 +522,11 @@ class Event {
                         target.exp = target.exp + blockexp
                     } catch (ex: Exception) {
                         CrashReport(ex)
-                        Call.onKick((e.builder as Player).con, Bundle(target.locale)["not-logged"])
+                        Call.kick((e.builder as Playerc).con(), Bundle(target.locale)["not-logged"])
                     }
 
                     // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
-                    if (e.builder.buildRequest().block === Blocks.message) {
+                    if (e.builder.buildPlan().block === Blocks.message) {
                         try {
                             for (i in 0 until pluginData.powerblocks.size) {
                                 if (pluginData.powerblocks[i].pos == e.tile.pos()) {
@@ -566,8 +547,8 @@ class Event {
                             if (obj[name] != null) {
                                 val blockreqlevel = obj.getInt(name, 999)
                                 if (level < blockreqlevel) {
-                                    Call.onDeconstructFinish(e.tile, e.tile.block(), (e.builder as Player).id)
-                                    (e.builder as Player).sendMessage(Bundle(playerCore[(e.builder as Player).uuid].locale)["system.epg.block-require", name, blockreqlevel])
+                                    Call.deconstructFinish(e.tile, e.tile.block(), (e.builder as Playerc).unit())
+                                    (e.builder as Playerc).sendMessage(Bundle(playerCore[(e.builder as Playerc).uuid()].locale)["system.epg.block-require", name, blockreqlevel])
                                 }
                             } else {
                                 Log.err("system.epg.block-not-valid", name)
@@ -578,7 +559,7 @@ class Event {
                     }
                 }
                 if (configs.debug && configs.antiGrief) {
-                    Log.info("anti-grief.destroy", (e.builder as Player).name, e.tile.block().name, e.tile.x, e.tile.y)
+                    Log.info("anti-grief.destroy", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
                 }
             }
         }
@@ -586,18 +567,18 @@ class Event {
         // 유닛을 박살냈을 때
         Events.on(UnitDestroyEvent::class.java) { e: UnitDestroyEvent ->
             // 뒤진(?) 유닛이 플레이어일때
-            if (e.unit is Player) {
-                val player = e.unit as Player
+            if (e.unit is Playerc) {
+                val player = e.unit as Playerc
                 val target = playerCore[player.uuid()]
-                if (!Vars.state.teams[player.team].cores.isEmpty) target.deathcount = target.deathcount + 1
+                if (!Vars.state.teams[player.team()].cores.isEmpty) target.deathcount = target.deathcount + 1
             }
 
             // 터진 유닛수만큼 카운트해줌
             if (Groups.player != null && Groups.player.size() > 0) {
                 for (i in 0 until Groups.player.size()) {
-                    val player = Groups.player.all()[i]
+                    val player = Groups.player.getByID(i)
                     val target = playerCore[player.uuid()]
-                    if (!Vars.state.teams[player.team].cores.isEmpty) target.killcount = target.killcount + 1
+                    if (!Vars.state.teams[player.team()].cores.isEmpty) target.killcount = target.killcount + 1
                 }
             }
         }
@@ -609,10 +590,10 @@ class Event {
                     client.request(Client.Request.BanSync, null, null)
                 }
             }
-            for (player in Groups.player.all()) {
+            for (player in Groups.player) {
                 if (player === e.player) {
                     tool.sendMessageAll("player.banned", e.player.name)
-                    if (Vars.netServer.admins.isIDBanned(player.uuid)) {
+                    if (Vars.netServer.admins.isIDBanned(player.uuid())) {
                         player.con.kick(Packets.KickReason.banned)
                     }
                 }
@@ -631,7 +612,7 @@ class Event {
         }
 
         // 이건 밴 해제되었을 때 작동
-        Events.on(PlayerUnbanEvent::class.java) { e: PlayerUnbanEvent -> if (client.activated) client.request(Client.Request.UnbanID, null, e.player.uuid + "|<unknown>") }
+        Events.on(PlayerUnbanEvent::class.java) { e: PlayerUnbanEvent -> if (client.activated) client.request(Client.Request.UnbanID, null, e.player.uuid() + "|<unknown>") }
 
         // 이건 IP 밴이 해제되었을 때 작동
         Events.on(PlayerIpUnbanEvent::class.java) { e: PlayerIpUnbanEvent -> if (client.activated) client.request(Client.Request.UnbanIP, null, "<unknown>|" + e.ip) }

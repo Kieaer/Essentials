@@ -2,6 +2,7 @@ package essentials.features
 
 import arc.Core
 import arc.Events
+import arc.struct.Seq
 import arc.util.Time
 import essentials.Main
 import essentials.Main.Companion.playerCore
@@ -11,17 +12,18 @@ import essentials.internal.Bundle
 import essentials.internal.Log
 import essentials.internal.Log.LogType
 import mindustry.Vars
-import mindustry.entities.type.Player
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Groups
+import mindustry.gen.Playerc
 import mindustry.maps.Map
 import mindustry.net.Packets
 import java.util.concurrent.TimeUnit
 
 class Vote : Thread() {
-    var player: Player? = null
+    var player: Playerc? = null
     var type: VoteType? = null
     lateinit var parameters: Array<Any>
     var pause = true
@@ -36,7 +38,7 @@ class Vote : Thread() {
                 }
                 println("** LOOP **")
                 if (pluginVars.playerData.size < 4) {
-                    player!!.sendMessage(Bundle(playerCore[player!!.uuid].locale)["vote.minimal"])
+                    player!!.sendMessage(Bundle(playerCore[player!!.uuid()].locale)["vote.minimal"])
                 } else {
                     require = if (pluginVars.playerData.size > 8) 6 else 2 + if (pluginVars.playerData.size > 4) 1 else 0
                     service.init()
@@ -51,19 +53,19 @@ class Vote : Thread() {
     }
 
     inner class Service {
-        private var target: Player? = null
+        private var target: Playerc? = null
         private var map: Map? = null
         private var amount = 0
         var process = false
-        var voted = arc.struct.Array<String>()
+        var voted = Seq<String>()
 
         fun init() {
             process = true
-            tool.sendMessageAll("vote.suggester-name", player!!.name)
+            tool.sendMessageAll("vote.suggester-name", player!!.name())
             when (type) {
                 VoteType.kick -> {
-                    this.target = parameters[0] as Player
-                    tool.sendMessageAll("vote.kick", target!!.name)
+                    this.target = parameters[0] as Playerc
+                    tool.sendMessageAll("vote.kick", target!!.name())
                 }
                 VoteType.gameover -> tool.sendMessageAll("vote.gameover")
                 VoteType.skipwave -> {
@@ -146,10 +148,10 @@ class Vote : Thread() {
                     }
                     VoteType.kick -> {
                         Log.info("Vote kick passed!")
-                        playerCore[target!!.uuid].kickcount = playerCore[target!!.uuid].kickcount + 1
-                        tool.sendMessageAll("vote.kick.done", target!!.name)
+                        playerCore[target!!.uuid()].kickcount = playerCore[target!!.uuid()].kickcount + 1
+                        tool.sendMessageAll("vote.kick.done", target!!.name())
                         Core.app.post { target!!.info.lastKicked = Time.millis() + 30 * 60 * 1000 }
-                        Call.onKick(target!!.con, Packets.KickReason.vote)
+                        Call.kick(target!!.con(), Packets.KickReason.vote)
                         Log.write(LogType.player, "log.player.kick")
                     }
                     VoteType.rollback -> {
@@ -158,10 +160,10 @@ class Vote : Thread() {
                         Main.rollback.load()
                     }
                     VoteType.gamemode -> {
-                        val m = Vars.world.map
+                        /*val m = Vars.world.map
                         val rules = Vars.world.map.rules()
                         if (rules.attackMode) rules.attackMode = false
-                        Vars.world.loadMap(Vars.world.map, rules)
+                        Vars.world.loadMap(Vars.world.map, rules)*/
                     }
                     VoteType.map -> {
                         Log.info("Vote map passed!")
@@ -174,7 +176,7 @@ class Vote : Thread() {
                 when (type) {
                     VoteType.gameover -> tool.sendMessageAll("vote.gameover.fail")
                     VoteType.skipwave -> tool.sendMessageAll("vote.skipwave.fail")
-                    VoteType.kick -> tool.sendMessageAll("vote.kick.fail", target!!.name)
+                    VoteType.kick -> tool.sendMessageAll("vote.kick.fail", target!!.name())
                     VoteType.rollback -> tool.sendMessageAll("vote.rollback.fail")
                     VoteType.gamemode -> tool.sendMessageAll("vote.gamemode.fail")
                     VoteType.map -> tool.sendMessageAll("vote.map.fail")
@@ -185,7 +187,7 @@ class Vote : Thread() {
             map = null
             amount = 0
             process = false
-            voted = arc.struct.Array()
+            voted = Seq()
             process = false
         }
 
@@ -197,8 +199,8 @@ class Vote : Thread() {
 
         fun set(uuid: String) {
             voted.add(uuid)
-            for (others in Groups.player.all()) {
-                val p = playerCore[others.uuid]
+            for (others in Groups.player) {
+                val p = playerCore[others.uuid()]
                 if (!p.error && require - voted.size != -1) {
                     others.sendMessage(Bundle(p.locale).prefix("vote.current-voted", voted.size, require - voted.size))
                 }

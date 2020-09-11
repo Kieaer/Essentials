@@ -1,5 +1,6 @@
 package essentials.external
 
+import mindustry.game.Gamemode
 import mindustry.net.Host
 import mindustry.net.NetworkIO
 import java.net.DatagramPacket
@@ -10,7 +11,7 @@ import java.util.function.Consumer
 
 class PingHost(ip: String, port: Int, listener: Consumer<Host>) {
     fun readServerData(ip: String, buffer: ByteBuffer, ping: Long): Host {
-        val host = NetworkIO.readServerData(ip, buffer)
+        val host = NetworkIO.readServerData(0, ip, buffer)
         host.ping = ping.toInt()
         return host
     }
@@ -29,7 +30,7 @@ class PingHost(ip: String, port: Int, listener: Consumer<Host>) {
                 socket.disconnect()
             }
         } catch (e: Exception) {
-            listener.accept(Host(null, ip, null, 0, 0, 0, null, null, 0, null))
+            listener.accept(Host(0, ip, null, "invaild", 0, 0, 0, null, Gamemode.editor, 0, "invalid description", "invalid modename"))
         }
     }
 }

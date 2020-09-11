@@ -10,8 +10,8 @@ import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
-import mindustry.Vars
-import mindustry.entities.type.Player
+import mindustry.gen.Groups
+import mindustry.gen.Playerc
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
@@ -43,9 +43,9 @@ class Permissions {
                 }
             }
             if (!isMatch) user[p.name].asObject()["group"] = default
-            val player = Groups.player.find { pl: Player -> pl.uuid == p.name }
+            val player = Groups.player.find { pl: Playerc -> pl.uuid() == p.name }
             if (player != null && p.value.asObject()["name"].asString() != player.name) {
-                player.name = `object`.getString("name", player.name)
+                player.name(`object`.getString("name", player.name))
             }
         }
         if (isSave) saveAll()
@@ -119,7 +119,7 @@ class Permissions {
             try {
                 user = JsonValue.readHjson(pluginRoot.child("permission_user.hjson").reader()).asObject()
                 for (p in Groups.player) {
-                    p.isAdmin = isAdmin(pluginVars.playerData.find { d: PlayerData -> d.name == p.name })
+                    p.admin(isAdmin(pluginVars.playerData.find { d: PlayerData -> d.name == p.name }))
                 }
             } catch (e: PluginException) {
                 Log.err("Permissing parsing: " + CrashReport(e).print())
@@ -129,10 +129,10 @@ class Permissions {
         }
     }
 
-    fun check(player: Player, command: String): Boolean {
+    fun check(player: Playerc, command: String): Boolean {
         val p = playerCore[player.uuid()]
         if (!p.error) {
-            val `object` = user[player.uuid]
+            val `object` = user[player.uuid()]
             if (`object` != null) {
                 val obj = `object`.asObject()
                 val size = perm[obj["group"].asString()].asObject()["permission"].asArray().size()

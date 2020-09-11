@@ -69,7 +69,7 @@ class Threads : Runnable {
                                     if (value.numbersize != digits.size) {
                                         for (px in 0..2) {
                                             for (py in 0..4) {
-                                                Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0)
+                                                Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, null)
                                             }
                                         }
                                     }

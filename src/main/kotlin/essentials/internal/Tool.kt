@@ -305,9 +305,9 @@ class Tool {
             for (a in 0 until pos.size) {
                 val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
                 if (target[a] == 1) {
-                    Call.constructFinish(tar, block, 100, 0.toByte(), Team.sharded, false)
+                    Call.constructFinish(tar, block, null, 0.toByte(), Team.sharded, false)
                 } else if (tar != null) {
-                    Call.deconstructFinish(tar, Blocks.air, 100)
+                    Call.deconstructFinish(tar, Blocks.air, null)
                 }
             }
             t = world.tile(t.x + (xv + 1), t.y.toInt())

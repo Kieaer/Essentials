@@ -551,7 +551,7 @@ class Main : Plugin() {
         }
         handler.register("killall", "Kill all enemy units") { _: Array<String?>?, player: Playerc ->
             if (!perm.check(player, "killall")) return@register
-            for (a in Team.all.indices) Groups.unit.each { obj: BaseUnit -> obj.kill() }
+            for (a in Team.all.indices) Groups.unit.each { u: Unit -> u.kill() }
             player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("success"))
         }
         handler.register("help", "[page]", "Show command lists") { arg: Array<String?>, player: Playerc ->
@@ -1014,7 +1014,7 @@ class Main : Plugin() {
             count = try {
                 arg[1].toInt()
             } catch (e: NumberFormatException) {
-                player.sendMessage(bundle.prefix("syttem.mob.not-number"))
+                player.sendMessage(bundle.prefix("system.mob.not-number"))
                 return@register
             }
             if (configs.spawnLimit == count) {
@@ -1070,7 +1070,7 @@ class Main : Plugin() {
             }
             if(player.tileOn().breakable()) {
                 player.tileOn().setBlock(core, player.team())
-                Call.constructFinish(player.tileOn(), core, 0, 0.toByte(), player.team(), false)
+                Call.constructFinish(player.tileOn(), core, player.unit(), 0.toByte(), player.team(), false)
             }
         }
         handler.register("setmech", "<Mech> [player]", "Set player mech") { arg: Array<String>, player: Playerc ->
@@ -1110,7 +1110,7 @@ class Main : Plugin() {
             }
             if (arg.size == 1) {
                 for (p in Groups.player) {
-                    p.unit(mech)
+                    p.unit(mech.create(p.team()))
                 }
             } else {
                 val target = Groups.player.find { p: Playerc -> p.name() == arg[1] }
@@ -1118,7 +1118,7 @@ class Main : Plugin() {
                     player.sendMessage(bundle.prefix("player.not-found"))
                     return@register
                 }
-                target.unit(mech)
+                target.unit(mech.create(target.team()))
             }
             player.sendMessage(bundle.prefix("success"))
         }
@@ -1208,11 +1208,11 @@ class Main : Plugin() {
             if (!perm.check(player, "tp")) return@register
             val playerData = playerCore[player.uuid()]
             val bundle = Bundle(playerData.locale)
-            // TODO 모바일 유저 확인
+            /*// TODO 모바일 유저 확인
             if (player.isMobile) {
                 player.sendMessage(bundle.prefix("tp-not-support"))
                 return@register
-            }
+            }*/
             var other: Playerc? = null
             for (p in Groups.player) {
                 val result = p.name.contains(arg[0]!!)
@@ -1245,12 +1245,12 @@ class Main : Plugin() {
                 player.sendMessage(Bundle(playerData.locale).prefix("player.not-found"))
                 return@register
             }
-            // TODO 모바일 유저도 tp 되는지 확인
+            /*// TODO 모바일 유저도 tp 되는지 확인
             if (!other1.isMobile || !other2.isMobile) {
                 other1.set(other2.x, other2.y)
-            } else {
+            } else {*/
                 player.sendMessage(Bundle(playerData.locale).prefix("tp-ismobile"))
-            }
+            //}
         }
         handler.register("tppos", "<x> <y>", "Teleport to coordinates") { arg: Array<String>, player: Playerc ->
             if (!perm.check(player, "tppos")) return@register

@@ -1,20 +1,23 @@
 package essentials.thread
 
 import arc.struct.Seq
+import arc.struct.Seq.SeqIterable
 import essentials.Main.Companion.configs
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import mindustry.Vars
+import mindustry.Vars.netServer
 import mindustry.core.GameState
-import mindustry.entities.type.Player
 import mindustry.game.Gamemode
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.io.SaveIO
 import mindustry.io.SaveIO.SaveException
 import mindustry.maps.Map
 import java.util.*
+
 
 class AutoRollback : TimerTask() {
     fun save() {
@@ -27,7 +30,7 @@ class AutoRollback : TimerTask() {
     }
 
     fun load() {
-        val players = Seq<Playerc>()
+        val players = Seq<Player>()
         for (p in Groups.player) {
             players.add(p)
             p.dead()
@@ -42,7 +45,7 @@ class AutoRollback : TimerTask() {
                 if (p.con() == null) continue
                 p.reset()
                 if (Vars.state.rules.pvp) {
-                    p.team(Vars.netServer.assignTeam(p, ArrayIterable(players)))
+                    p.team(netServer.assignTeam(p, SeqIterable(players)))
                 }
                 Vars.netServer.sendWorldData(p)
             }
@@ -50,23 +53,11 @@ class AutoRollback : TimerTask() {
             CrashReport(e)
         }
         Log.info("Map rollbacked.")
-        Thread {
-            try {
-                val orignal = Vars.state.rules.respawnTime
-                Vars.state.rules.respawnTime = 0f
-                Call.setRules(Vars.state.rules)
-                Thread.sleep(3000)
-                Vars.state.rules.respawnTime = orignal
-                Call.setRules(Vars.state.rules)
-            } catch (ignored: InterruptedException) {
-                Thread.currentThread().interrupt()
-            }
-        }.start()
         if (Vars.state.`is`(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.")
     }
 
     fun load(map: Map?) {
-        val players = Seq<Playerc>()
+        val players = Seq<Player>()
         for (p in Groups.player) {
             players.add(p)
             p.dead()
@@ -81,7 +72,7 @@ class AutoRollback : TimerTask() {
                 if (p.con() == null) continue
                 p.reset()
                 if (Vars.state.rules.pvp) {
-                    p.team = Vars.netServer.assignTeam(p, ArrayIterable(players))
+                    p.team(netServer.assignTeam(p, SeqIterable(players)))
                 }
                 Vars.netServer.sendWorldData(p)
             }

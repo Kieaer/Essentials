@@ -42,6 +42,6 @@ class Exp(target: PlayerData) {
         target.reqexp = reqexp
         target.level = level
         target.reqtotalexp = reqtotalexp
-        if (currentlevel < level && currentlevel > Main.configs.alarmLevel && Main.configs.levelUpAlarm) Call.onInfoToast(Bundle(target.locale)["player.levelup", target.name, level], 600f)
+        if (currentlevel < level && currentlevel > Main.configs.alarmLevel && Main.configs.levelUpAlarm) Call.infoToast(Bundle(target.locale)["player.levelup", target.name, level], 600f)
     }
 }
