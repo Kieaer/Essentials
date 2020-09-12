@@ -17,6 +17,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 object ServerCommander {
+    lateinit var commands: CommandHandler
+
     fun register(handler: CommandHandler) {
         handler.register("gendocs", "Generate Essentials README.md", ::genDocs)
         handler.register("lobby", "Toggle lobby server features", ::lobby)
@@ -27,6 +29,8 @@ object ServerCommander {
         handler.register("info", "<player/uuid>", "Show player information", ::info)
         handler.register("setperm", "<player_name/uuid> <group>", "Set player permission", ::setperm)
         handler.register("reload", "Reload Essential plugin data", ::reload)
+
+        commands = handler
     }
 
     private fun genDocs(arg: Array<String>) {
@@ -85,8 +89,8 @@ object ServerCommander {
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
             var dup = false
-            for (b in clientCommands) {
-                if (command.text == b.asString()) {
+            for (b in ClientCommander.commands.commandList) {
+                if (command.text == b.text) {
                     dup = true
                     break
                 }
@@ -98,29 +102,18 @@ object ServerCommander {
         }
         val tmp = """$header$clientdoc$tempbuild""".trimIndent()
         tempbuild = StringBuilder()
-        for (command in handler.commandList) {
-            var dup = false
-            for (b in serverCommands) {
-                if (command.text == b.asString()) {
-                    dup = true
-                    break
-                }
-            }
-            if (!dup) {
-                val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"""
-                tempbuild.append(temp)
-            }
+        for (command in commands.commandList) {
+            val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"""
+            tempbuild.append(temp)
         }
         Main.pluginRoot.child("README.md").writeString(tmp + serverdoc + tempbuild.toString() + gentime)
         Log.info("success")
     }
 
     private fun lobby(arg: Array<String>) {
-        handler.register("lobby", "Toggle lobby server features") {
-            Core.settings.put("isLobby", !Core.settings.getBool("isLobby"))
-            Core.settings.saveValues()
-            Log.info("success")
-        }
+        Core.settings.put("isLobby", !Core.settings.getBool("isLobby"))
+        Core.settings.saveValues()
+        Log.info("success")
     }
 
     private fun edit(arg: Array<String>){
@@ -269,7 +262,7 @@ object ServerCommander {
         val playerData: PlayerData
         if (target == null) {
             Log.warn(bundle["player.not-found"])
-            return@register
+            return
         }
         for (p in Main.perm.perm) {
             if (p.name == arg[1]) {
@@ -281,7 +274,7 @@ object ServerCommander {
                 target.admin(Main.perm.isAdmin(playerData))
                 Log.info(bundle["success"])
                 target.sendMessage(Bundle(Main.playerCore[target.uuid()].locale).prefix("perm-changed"))
-                return@register
+                return
             }
         }
         Log.warn(bundle["perm-group-not-found"])

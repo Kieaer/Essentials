@@ -30,6 +30,7 @@ import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.io.SaveIO
+import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.type.UnitType
 import mindustry.world.Tile
@@ -37,10 +38,11 @@ import org.hjson.JsonObject
 import org.mindrot.jbcrypt.BCrypt
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.collections.Map as Map1
 
 object ClientCommander {
-    fun register(handler: CommandHandler){
+    lateinit var commands: CommandHandler
+
+    fun register(handler: CommandHandler) {
         handler.register("alert", "Turn on/off alerts", ::alert)
         handler.register("ch", "Send chat to another server.", ::ch)
         handler.register("changepw", "<new_password> <new_password_repeat>", "Change account password", ::changepw)
@@ -77,6 +79,8 @@ object ClientCommander {
         handler.register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", ::voteService)
         handler.register("weather", "<day/eday/night/enight>", "Change map light", ::weather)
         handler.register("mute", "<Player_name>", "Mute/unmute player", ::mute)
+
+        commands = handler
     }
 
     private fun alert(arg: Array<String>, player: Playerc) {
@@ -90,12 +94,14 @@ object ClientCommander {
             player.sendMessage(Bundle(playerData.locale).prefix("anti-grief.alert.enable"))
         }
     }
+
     private fun ch(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "ch")) return
         val playerData = playerCore[player.uuid()]
         playerData.crosschat = !playerData.crosschat
         player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.crosschat) "player.crosschat.disable" else "player.crosschat.enabled"))
     }
+
     private fun changepw(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "changepw")) return
         val playerData = playerCore[player.uuid()]
@@ -112,10 +118,12 @@ object ClientCommander {
             CrashReport(e)
         }
     }
+
     private fun chars(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "chars")) return
         if (world != null) tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[0])
     }
+
     private fun color(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "color")) return
         val playerData = playerCore[player.uuid()]
@@ -123,11 +131,13 @@ object ClientCommander {
         if (playerData.colornick) colorNickname.targets.add(player)
         player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.colornick) "feature.colornick.enable" else "feature.colornick.disable"))
     }
+
     private fun killall(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "killall")) return
         for (a in Team.all.indices) Groups.unit.each { u: Unit -> u.kill() }
         player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("success"))
     }
+
     private fun help(arg: Array<String>, player: Playerc) {
         if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
             player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("page-number"))
@@ -155,6 +165,7 @@ object ClientCommander {
         }
         player.sendMessage(result.toString().substring(0, result.length - 1))
     }
+
     private fun info(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "info")) return
         val playerData = playerCore[player.uuid()]
@@ -183,6 +194,7 @@ object ClientCommander {
                 """.trimIndent()
         Call.infoMessage(player.con(), datatext)
     }
+
     private fun warp(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "warp")) return
         val playerData = playerCore[player.uuid()]
@@ -249,12 +261,14 @@ object ClientCommander {
             }
         }
     }
+
     private fun kickall(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "kickall")) return
         for (p in Groups.player) {
             if (player !== p) Call.kick(p.con, Packets.KickReason.kick)
         }
     }
+
     private fun kill(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "kill")) return
         if (arg.isEmpty()) {
@@ -268,6 +282,7 @@ object ClientCommander {
             }
         }
     }
+
     private fun login(arg: Array<String>, player: Playerc) {
         val playerData = playerCore[player.uuid()]
         if (configs.loginEnable) {
@@ -290,6 +305,7 @@ object ClientCommander {
             player.sendMessage(Bundle(playerData.locale).prefix("system.login.disabled"))
         }
     }
+
     private fun maps(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "maps")) return
         val maplist = maps.all()
@@ -307,10 +323,12 @@ object ClientCommander {
         }
         player.sendMessage(build.toString())
     }
+
     private fun me(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "me")) return
         Call.sendMessage("[orange]*[] " + player.name() + "[white] : " + arg[0])
     }
+
     private fun motd(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "motd")) return
         val motd = tool.getMotd(playerCore[player.uuid()].locale)
@@ -321,6 +339,7 @@ object ClientCommander {
             player.sendMessage(motd)
         }
     }
+
     private fun players(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "players")) return
         val build = StringBuilder()
@@ -337,12 +356,14 @@ object ClientCommander {
         }
         player.sendMessage(build.toString())
     }
+
     private fun save(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "save")) return
         val file = Vars.saveDirectory.child(configs.slotNumber.toString() + "." + Vars.saveExtension)
         SaveIO.save(file)
         player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("system.map-saved"))
     }
+
     private fun r(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "r")) return
         val playerData = playerCore[player.uuid()]
@@ -355,6 +376,7 @@ object ClientCommander {
             player.sendMessage(bundle["player.not-found"])
         }
     }
+
     private fun reset(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "reset")) return
         val playerData = playerCore[player.uuid()]
@@ -395,6 +417,7 @@ object ClientCommander {
             else -> player.sendMessage(bundle.prefix("command.invalid"))
         }
     }
+
     private fun router(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "router")) return
         Thread {
@@ -541,6 +564,7 @@ object ClientCommander {
             }
         }.start()
     }
+
     private fun register(arg: Array<String>, player: Playerc) {
         if (configs.loginEnable) {
             when (configs.passwordMethod) {
@@ -575,6 +599,7 @@ object ClientCommander {
             player.sendMessage(Bundle(configs.locale).prefix("system.login.disabled"))
         }
     }
+
     private fun spawn(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "spawn")) return
         val playerData = playerCore[player.uuid()]
@@ -613,6 +638,7 @@ object ClientCommander {
             i++
         }
     }
+
     private fun setperm(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "setperm")) return
         val playerData = playerCore[player.uuid()]
@@ -635,6 +661,7 @@ object ClientCommander {
         }
         player.sendMessage(Bundle(playerData.locale).prefix("perm-group-not-found"))
     }
+
     private fun spawncore(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "spawn-core")) return
         var core = Blocks.coreShard
@@ -642,16 +669,17 @@ object ClientCommander {
             "normal" -> core = Blocks.coreFoundation
             "big" -> core = Blocks.coreNucleus
         }
-        if(player.tileOn().breakable()) {
+        if (player.tileOn().breakable()) {
             player.tileOn().setBlock(core, player.team())
             Call.constructFinish(player.tileOn(), core, player.unit(), 0.toByte(), player.team(), false)
         }
     }
+
     private fun setmech(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "setmech")) return
         val playerData = playerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
-        var mech : UnitType = UnitTypes.mace
+        var mech: UnitType = UnitTypes.mace
         when (arg[0]) {
             "mace" -> mech = UnitTypes.mace
             "dagger" -> mech = UnitTypes.dagger
@@ -696,6 +724,7 @@ object ClientCommander {
         }
         player.sendMessage(bundle.prefix("success"))
     }
+
     private fun status(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "status")) return
         val playerData = playerCore[player.uuid()]
@@ -727,6 +756,7 @@ object ClientCommander {
         }
         player.sendMessage(if (s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString())
     }
+
     private fun suicide(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "suicide")) return
         player.dead()
@@ -734,6 +764,7 @@ object ClientCommander {
             tool.sendMessageAll("suicide", player.name())
         }
     }
+
     private fun team(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "team")) return
         val playerData = playerCore[player.uuid()]
@@ -747,6 +778,7 @@ object ClientCommander {
             else -> player.sendMessage(Bundle(playerData.locale).prefix("command.team"))
         }
     }
+
     private fun tempban(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "tempban")) return
         val playerData = playerCore[player.uuid()]
@@ -770,6 +802,7 @@ object ClientCommander {
             player.sendMessage(Bundle(playerData.locale).prefix("player.not-found"))
         }
     }
+
     private fun time(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "time")) return
         val playerData = playerCore[player.uuid()]
@@ -778,6 +811,7 @@ object ClientCommander {
         val nowString = now.format(dateTimeFormatter)
         player.sendMessage(Bundle(playerData.locale).prefix("servertime", nowString))
     }
+
     private fun tp(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "tp")) return
         val playerData = playerCore[player.uuid()]
@@ -800,6 +834,7 @@ object ClientCommander {
         }
         player.set(other!!.getX(), other!!.getY())
     }
+
     private fun tpp(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "tpp")) return
         val playerData = playerCore[player.uuid()]
@@ -826,6 +861,7 @@ object ClientCommander {
         player.sendMessage(Bundle(playerData.locale).prefix("tp-ismobile"))
         //}
     }
+
     private fun tppos(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "tppos")) return
         val playerData = playerCore[player.uuid()]
@@ -840,131 +876,132 @@ object ClientCommander {
         }
         player.set(x.toFloat(), y.toFloat())
     }
+
     /*handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
         if (!perm.check(player, "tr")) return;
         PlayerData playerData = playerCore.get(player.uuid);
         playerCore.get(player.uuid).translate(!playerData.translate());
         player.sendMessage(new Bundle(playerData.locale).prefix(playerData.translate() ? "translate" : "translate-disable", player.name));
     });*/
-        private fun voteService(arg: Array<String>, player: Playerc) {
-            if (!perm.check(player, "vote") || Core.settings.getBool("isLobby")) return
-            val playerData = playerCore[player.uuid()]
-            val bundle = Bundle(playerData.locale)
-            if (vote.service.process) {
-                player.sendMessage(bundle.prefix("vote.in-processing"))
-                return
-            }
-            vote.player = player
-            when (arg[0]) {
-                "kick" -> {
-                    // vote kick <player name>
-                    if (arg.size < 2) {
-                        player.sendMessage(bundle["no-parameter"])
-                        return
-                    }
-                    var target = Groups.player.find { p: Playerc -> p.name().equals(arg[1], ignoreCase = true) }
-                    try {
-                        if (target == null) target = Groups.player.find { p: Playerc -> p.id() == arg[1].toInt() }
-                    } catch (e: NumberFormatException) {
+    private fun voteService(arg: Array<String>, player: Playerc) {
+        if (!perm.check(player, "vote") || Core.settings.getBool("isLobby")) return
+        val playerData = playerCore[player.uuid()]
+        val bundle = Bundle(playerData.locale)
+        if (vote.service.process) {
+            player.sendMessage(bundle.prefix("vote.in-processing"))
+            return
+        }
+        vote.player = player
+        when (arg[0]) {
+            "kick" -> {
+                // vote kick <player name>
+                if (arg.size < 2) {
+                    player.sendMessage(bundle["no-parameter"])
+                    return
+                }
+                var target = Groups.player.find { p: Playerc -> p.name().equals(arg[1], ignoreCase = true) }
+                try {
+                    if (target == null) target = Groups.player.find { p: Playerc -> p.id() == arg[1].toInt() }
+                } catch (e: NumberFormatException) {
+                    player.sendMessage(bundle.prefix("player.not-found"))
+                    return
+                }
+                when {
+                    target == null -> {
                         player.sendMessage(bundle.prefix("player.not-found"))
                         return
                     }
-                    when {
-                        target == null -> {
-                            player.sendMessage(bundle.prefix("player.not-found"))
-                            return
-                        }
-                        target.admin -> {
-                            player.sendMessage(bundle.prefix("vote.target-admin"))
-                            return
-                        }
-                        target === player -> {
-                            player.sendMessage(bundle.prefix("vote.target-own"))
-                            return
-                        }
-
-
-                        // 강퇴 투표
-                        else -> {
-                            vote.type = Vote.VoteType.kick
-                            vote.parameters = arrayOf(target, arg[1])
-                        }
+                    target.admin -> {
+                        player.sendMessage(bundle.prefix("vote.target-admin"))
+                        return
                     }
-
-                }
-                "map" -> {
-                    // vote map <map name>
-                    if (arg.size < 2) {
-                        player.sendMessage(bundle["no-parameter"])
+                    target === player -> {
+                        player.sendMessage(bundle.prefix("vote.target-own"))
                         return
                     }
 
-                    // 맵 투표
-                    var world = maps.all().find { map: Map1 -> map.name().equals(arg[1].replace('_', ' '), ignoreCase = true) || map.name().equals(arg[1], ignoreCase = true) }
-                    if (world == null) {
-                        try {
-                            world = maps.all()[arg[1].toInt()]
-                            if (world != null) {
-                                vote.type = Vote.VoteType.map
-                                vote.parameters = arrayOf(world)
-                            } else {
-                                player.sendMessage(bundle.prefix("vote.map.not-found"))
-                            }
-                        } catch (ignored: NumberFormatException) {
-                            player.sendMessage(bundle.prefix("vote.map.not-found"))
-                        }
-                    } else {
-                        vote.type = Vote.VoteType.map
-                        vote.parameters = arrayOf(world)
+
+                    // 강퇴 투표
+                    else -> {
+                        vote.type = Vote.VoteType.kick
+                        vote.parameters = arrayOf(target, arg[1])
                     }
                 }
-                "gameover" -> {
-                    // vote gameover
-                    vote.type = Vote.VoteType.gameover
-                    vote.parameters = arrayOf()
-                }
-                "rollback" ->                         // vote rollback
-                    if (configs.rollback) {
-                        vote.type = Vote.VoteType.rollback
-                        vote.parameters = arrayOf()
-                    } else {
-                        player.sendMessage(bundle["vote.rollback.disabled"])
-                    }
-                "gamemode" -> {
-                    // vote gamemode <gamemode>
-                    if (arg.size < 2) {
-                        player.sendMessage(bundle["no-parameter"])
-                        return
-                    }
-                    try {
-                        vote.type = Vote.VoteType.gamemode
-                        vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
-                    } catch (e: IllegalArgumentException) {
-                        player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
-                    }
-                }
-                "skipwave" -> {
-                    // vote skipwave <wave>
-                    if (arg.size != 2) {
-                        player.sendMessage(bundle["no-parameter"])
-                        return
-                    }
-                    vote.type = Vote.VoteType.skipwave
-                    vote.parameters = arrayOf(arg[1])
-                }
-                else -> {
-                    when (arg[0]) {
-                        "gamemode" -> player.sendMessage(bundle.prefix("vote.list.gamemode"))
-                        "map" -> player.sendMessage(bundle.prefix("vote.map.not-found"))
-                        "kick" -> player.sendMessage(bundle.prefix("vote.kick.parameter"))
-                        else -> player.sendMessage(bundle.prefix("vote.list"))
-                    }
+
+            }
+            "map" -> {
+                // vote map <map name>
+                if (arg.size < 2) {
+                    player.sendMessage(bundle["no-parameter"])
                     return
                 }
+
+                // 맵 투표
+                var world = maps.all().find { map: Map -> map.name().equals(arg[1].replace('_', ' '), ignoreCase = true) || map.name().equals(arg[1], ignoreCase = true) }
+                if (world == null) {
+                    try {
+                        world = maps.all()[arg[1].toInt()]
+                        if (world != null) {
+                            vote.type = Vote.VoteType.map
+                            vote.parameters = arrayOf(world)
+                        } else {
+                            player.sendMessage(bundle.prefix("vote.map.not-found"))
+                        }
+                    } catch (ignored: NumberFormatException) {
+                        player.sendMessage(bundle.prefix("vote.map.not-found"))
+                    }
+                } else {
+                    vote.type = Vote.VoteType.map
+                    vote.parameters = arrayOf(world)
+                }
             }
-            vote.pause = false
+            "gameover" -> {
+                // vote gameover
+                vote.type = Vote.VoteType.gameover
+                vote.parameters = arrayOf()
+            }
+            "rollback" ->                         // vote rollback
+                if (configs.rollback) {
+                    vote.type = Vote.VoteType.rollback
+                    vote.parameters = arrayOf()
+                } else {
+                    player.sendMessage(bundle["vote.rollback.disabled"])
+                }
+            "gamemode" -> {
+                // vote gamemode <gamemode>
+                if (arg.size < 2) {
+                    player.sendMessage(bundle["no-parameter"])
+                    return
+                }
+                try {
+                    vote.type = Vote.VoteType.gamemode
+                    vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
+                } catch (e: IllegalArgumentException) {
+                    player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
+                }
+            }
+            "skipwave" -> {
+                // vote skipwave <wave>
+                if (arg.size != 2) {
+                    player.sendMessage(bundle["no-parameter"])
+                    return
+                }
+                vote.type = Vote.VoteType.skipwave
+                vote.parameters = arrayOf(arg[1])
+            }
+            else -> {
+                when (arg[0]) {
+                    "gamemode" -> player.sendMessage(bundle.prefix("vote.list.gamemode"))
+                    "map" -> player.sendMessage(bundle.prefix("vote.map.not-found"))
+                    "kick" -> player.sendMessage(bundle.prefix("vote.kick.parameter"))
+                    else -> player.sendMessage(bundle.prefix("vote.list"))
+                }
+                return
+            }
         }
+        vote.pause = false
     }
+
     private fun weather(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "weather")) return
         // Command idea from Minecraft EssentialsX and Quezler's plugin!
@@ -980,6 +1017,7 @@ object ClientCommander {
         Call.setRules(Vars.state.rules)
         player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("success"))
     }
+
     private fun mute(arg: Array<String>, player: Playerc) {
         if (!perm.check(player, "mute")) return
         val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }

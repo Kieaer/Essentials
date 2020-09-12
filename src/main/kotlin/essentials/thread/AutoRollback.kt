@@ -12,7 +12,6 @@ import mindustry.game.Gamemode
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import mindustry.gen.Playerc
 import mindustry.io.SaveIO
 import mindustry.io.SaveIO.SaveException
 import mindustry.maps.Map

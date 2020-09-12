@@ -3,46 +3,27 @@ package essentials
 import arc.ApplicationListener
 import arc.Core
 import arc.files.Fi
-import arc.math.Mathf
-import arc.struct.Seq
 import arc.util.CommandHandler
-import arc.util.Strings
 import arc.util.async.Threads.sleep
+import essentials.command.ClientCommander
 import essentials.command.ServerCommander
-import essentials.external.StringUtils
 import essentials.features.*
-import essentials.internal.*
+import essentials.internal.CrashReport
+import essentials.internal.Log
+import essentials.internal.PluginException
+import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
 import essentials.thread.*
-import mindustry.Vars
-import mindustry.Vars.*
-import mindustry.content.Blocks
-import mindustry.content.UnitTypes
+import mindustry.Vars.netServer
 import mindustry.core.Version
-import mindustry.game.Gamemode
-import mindustry.game.Team
-import mindustry.gen.Call
-import mindustry.gen.Groups
-import mindustry.gen.Playerc
-import mindustry.gen.Unit
-import mindustry.io.SaveIO
-import mindustry.maps.Map
 import mindustry.mod.Plugin
-import mindustry.net.Packets
-import mindustry.type.UnitType
-import mindustry.world.Tile
-import org.hjson.JsonArray
-import org.hjson.JsonObject
 import org.hjson.JsonValue
-import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.sql.SQLException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.SynchronousQueue
@@ -75,9 +56,6 @@ class Main : Plugin() {
         val pluginRoot: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         var listener: ApplicationListener? = null
     }
-
-    val serverCommands = JsonArray()
-    val clientCommands = JsonArray()
 
     init {
         // 서버 버전 확인
@@ -162,7 +140,7 @@ class Main : Plugin() {
         // if (configs.logging) ActivityLog()
 
         // 이벤트 시작
-        Event()
+        Event.register()
 
         // 서버 종료 이벤트 설정
         listener = object : ApplicationListener {
@@ -224,30 +202,15 @@ class Main : Plugin() {
         // 비 로그인 유저 통제
         netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
-
-            // TODO 터치/클릭으로 서버 이동기능 구현
-            /*if (Core.settings.getBool("isLobby")) {
-                if(e.type == Administration.ActionType.tapTile){
-                    return@addActionFilter true
-                } else {
-                    return@addActionFilter e.player.admin
-                }
-            } else {*/
-                val playerData: PlayerData = playerCore[e.player.uuid()]
-                return@addActionFilter playerData.login
-            //}
+            return@addActionFilter playerCore[e.player.uuid()].login
         }
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
-        for(c in netServer.clientCommands.commandList){
-            serverCommands.add(c.text)
-        }
-
         ServerCommander.register(handler)
     }
 
     override fun registerClientCommands(handler: CommandHandler) {
-
+        ClientCommander.register(handler)
     }
 }
