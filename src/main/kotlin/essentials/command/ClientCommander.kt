@@ -29,6 +29,7 @@ import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
+import mindustry.gen.Unit
 import mindustry.io.SaveIO
 import mindustry.maps.Map
 import mindustry.net.Packets
@@ -633,7 +634,7 @@ object ClientCommander {
         var i = 0
         while (count > i) {
             val baseUnit = targetUnit.create(targetTeam)
-            baseUnit[targetPlayer.getX()] = targetPlayer.getY()
+            baseUnit[targetPlayer.getX()] = targetPlayer.y
             baseUnit.add()
             i++
         }
@@ -823,7 +824,7 @@ object ClientCommander {
         }*/
         var other: Playerc? = null
         for (p in Groups.player) {
-            val result = p.name.contains(arg[0]!!)
+            val result = p.name.contains(arg[0])
             if (result) {
                 other = p
             }
@@ -832,7 +833,7 @@ object ClientCommander {
             player.sendMessage(bundle.prefix("player.not-found"))
             return
         }
-        player.set(other!!.getX(), other!!.getY())
+        player.set(other.x, other.y)
     }
 
     private fun tpp(arg: Array<String>, player: Playerc) {
@@ -841,11 +842,11 @@ object ClientCommander {
         var other1: Playerc? = null
         var other2: Playerc? = null
         for (p in Groups.player) {
-            val result1 = p.name.contains(arg[0]!!)
+            val result1 = p.name.contains(arg[0])
             if (result1) {
                 other1 = p
             }
-            val result2 = p.name.contains(arg[1]!!)
+            val result2 = p.name.contains(arg[1])
             if (result2) {
                 other2 = p
             }

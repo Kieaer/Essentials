@@ -374,7 +374,7 @@ class Tool {
         return true
     }
 
-    fun setMessage(tile: Tile, message: String){
+    fun setMessage(tile: Tile, message: String) {
         (tile.block() as MessageBlock).MessageBuild().configure(message)
     }
 }

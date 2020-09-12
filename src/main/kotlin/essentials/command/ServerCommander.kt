@@ -116,7 +116,7 @@ object ServerCommander {
         Log.info("success")
     }
 
-    private fun edit(arg: Array<String>){
+    private fun edit(arg: Array<String>) {
         val sql = "UPDATE players SET " + arg[1] + "=? WHERE uuid=?"
         try {
             Main.playerCore.conn.prepareStatement(sql).use { pstmt ->
@@ -146,7 +146,7 @@ object ServerCommander {
         }
     }
 
-    private fun saveall(arg: Array<String>){
+    private fun saveall(arg: Array<String>) {
         Main.pluginData.saveAll()
     }
 
@@ -168,7 +168,7 @@ object ServerCommander {
         }
     }
 
-    private fun bansync(arg: Array<String>){
+    private fun bansync(arg: Array<String>) {
         if (Main.client.activated) {
             Main.client.request(Client.Request.BanSync, null, null)
         } else {
@@ -176,87 +176,79 @@ object ServerCommander {
         }
     }
 
-    private fun info(arg: Array<String>){
-        fun execute(uuid: String) {
-            try {
-                Main.playerCore.conn.prepareStatement("SELECT * from players WHERE uuid=?").use { pstmt ->
-                    pstmt.setString(1, uuid)
-                    pstmt.executeQuery().use { rs ->
-                        if (rs.next()) {
-                            var datatext = "${rs.getString("name")} Player information\n" +
-                                    "=====================================\n" +
-                                    "name: ${rs.getString("name")}\n" +
-                                    "uuid: ${rs.getString("uuid")}\n" +
-                                    "country: ${rs.getString("country")}\n" +
-                                    "country_code: ${rs.getString("country_code")}\n" +
-                                    "language: ${rs.getString("language")}\n" +
-                                    "isAdmin: ${rs.getBoolean("isAdmin")}\n" +
-                                    "placecount: ${rs.getInt("placecount")}\n" +
-                                    "breakcount: ${rs.getInt("breakcount")}\n" +
-                                    "killcount: ${rs.getInt("killcount")}\n" +
-                                    "deathcount: ${rs.getInt("deathcount")}\n" +
-                                    "joincount: ${rs.getInt("joincount")}\n" +
-                                    "kickcount: ${rs.getInt("kickcount")}\n" +
-                                    "level: ${rs.getInt("level")}\n" +
-                                    "exp: ${rs.getInt("exp")}\n" +
-                                    "reqexp: ${rs.getInt("reqexp")}\n" +
-                                    "firstdate: ${Main.tool.longToDateTime(rs.getLong("firstdate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
-                                    "lastdate: ${Main.tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
-                                    "lastplacename: ${rs.getString("lastplacename")}\n" +
-                                    "lastbreakname: ${rs.getString("lastbreakname")}\n" +
-                                    "lastchat: ${rs.getString("lastchat")}\n" +
-                                    "playtime: ${Main.tool.longToTime(rs.getLong("playtime"))}\n" +
-                                    "attackclear: ${rs.getInt("attackclear")}\n" +
-                                    "pvpwincount: ${rs.getInt("pvpwincount")}\n" +
-                                    "pvplosecount: ${rs.getInt("pvplosecount")}\n" +
-                                    "pvpbreakout: ${rs.getInt("pvpbreakout")}\n" +
-                                    "reactorcount: ${rs.getInt("reactorcount")}\n" +
-                                    "bantime: ${rs.getString("bantime")}\n" +
-                                    "translate: ${rs.getBoolean("translate")}\n" +
-                                    "crosschat: ${rs.getBoolean("crosschat")}\n" +
-                                    "colornick: ${rs.getBoolean("colornick")}\n" +
-                                    "connected: ${rs.getBoolean("connected")}\n" +
-                                    "connserver: ${rs.getString("connserver")}\n" +
-                                    "permission: ${rs.getString("permission")}\n" +
-                                    "mute: ${rs.getBoolean("mute")}\n" +
-                                    "alert: ${rs.getBoolean("alert")}\n" +
-                                    "udid: ${rs.getLong("udid")}\n" +
-                                    "accountid: ${rs.getString("accountid")}"
+    private fun info(arg: Array<String>) {
+        val players = Vars.netServer.admins.findByName(arg[0])
+        if (players.size != 0) {
+            for (p in players) {
+                try {
+                    Main.playerCore.conn.prepareStatement("SELECT * from players WHERE uuid=?").use { pstmt ->
+                        pstmt.setString(1, p.id)
+                        pstmt.executeQuery().use { rs ->
+                            if (rs.next()) {
+                                var datatext = "${rs.getString("name")} Player information\n" +
+                                        "=====================================\n" +
+                                        "name: ${rs.getString("name")}\n" +
+                                        "uuid: ${rs.getString("uuid")}\n" +
+                                        "country: ${rs.getString("country")}\n" +
+                                        "country_code: ${rs.getString("country_code")}\n" +
+                                        "language: ${rs.getString("language")}\n" +
+                                        "isAdmin: ${rs.getBoolean("isAdmin")}\n" +
+                                        "placecount: ${rs.getInt("placecount")}\n" +
+                                        "breakcount: ${rs.getInt("breakcount")}\n" +
+                                        "killcount: ${rs.getInt("killcount")}\n" +
+                                        "deathcount: ${rs.getInt("deathcount")}\n" +
+                                        "joincount: ${rs.getInt("joincount")}\n" +
+                                        "kickcount: ${rs.getInt("kickcount")}\n" +
+                                        "level: ${rs.getInt("level")}\n" +
+                                        "exp: ${rs.getInt("exp")}\n" +
+                                        "reqexp: ${rs.getInt("reqexp")}\n" +
+                                        "firstdate: ${Main.tool.longToDateTime(rs.getLong("firstdate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
+                                        "lastdate: ${Main.tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
+                                        "lastplacename: ${rs.getString("lastplacename")}\n" +
+                                        "lastbreakname: ${rs.getString("lastbreakname")}\n" +
+                                        "lastchat: ${rs.getString("lastchat")}\n" +
+                                        "playtime: ${Main.tool.longToTime(rs.getLong("playtime"))}\n" +
+                                        "attackclear: ${rs.getInt("attackclear")}\n" +
+                                        "pvpwincount: ${rs.getInt("pvpwincount")}\n" +
+                                        "pvplosecount: ${rs.getInt("pvplosecount")}\n" +
+                                        "pvpbreakout: ${rs.getInt("pvpbreakout")}\n" +
+                                        "reactorcount: ${rs.getInt("reactorcount")}\n" +
+                                        "bantime: ${rs.getString("bantime")}\n" +
+                                        "translate: ${rs.getBoolean("translate")}\n" +
+                                        "crosschat: ${rs.getBoolean("crosschat")}\n" +
+                                        "colornick: ${rs.getBoolean("colornick")}\n" +
+                                        "connected: ${rs.getBoolean("connected")}\n" +
+                                        "connserver: ${rs.getString("connserver")}\n" +
+                                        "permission: ${rs.getString("permission")}\n" +
+                                        "mute: ${rs.getBoolean("mute")}\n" +
+                                        "alert: ${rs.getBoolean("alert")}\n" +
+                                        "udid: ${rs.getLong("udid")}\n" +
+                                        "accountid: ${rs.getString("accountid")}"
 
-                            val current = Main.playerCore[uuid]
-                            if (!current.error) {
-                                datatext = "$datatext\n" +
-                                        "== ${current.name} Player internal data ==\n" + " +" +
-                                        "isLogin: ${current.login}\n" +
-                                        "afk: ${Main.tool.longToTime(current.afk)}\n" +
-                                        "afk_x: ${current.x}\n" + " +" +
-                                        "afk_y: ${current.y}"
+                                val current = Main.playerCore[p.id]
+                                if (!current.error) {
+                                    datatext = "$datatext\n" +
+                                            "== ${current.name} Player internal data ==\n" + " +" +
+                                            "isLogin: ${current.login}\n" +
+                                            "afk: ${Main.tool.longToTime(current.afk)}\n" +
+                                            "afk_x: ${current.x}\n" + " +" +
+                                            "afk_y: ${current.y}"
+                                }
+                                Log.info(datatext)
+                            } else {
+                                Log.info("Player not found!")
                             }
-                            Log.info(datatext)
-                        } else {
-                            Log.info("Player not found!")
                         }
                     }
+                } catch (e: SQLException) {
+                    CrashReport(e)
                 }
-            } catch (e: SQLException) {
-                CrashReport(e)
-            }
-        }
-
-        override fun accept(strings: Array<String>, o: Any?) {
-            val players = Vars.netServer.admins.findByName(strings[0])
-            if (players.size != 0) {
-                for (p in players) {
-                    execute(p.id)
-                }
-            } else {
-                execute(strings[0])
             }
         }
     }
 
     // TODO 모든 권한 그룹 변경 만들기
-    private fun setperm(arg: Array<String>){
+    private fun setperm(arg: Array<String>) {
         val target = Groups.player.find { p: Playerc -> p.name() == arg[0] }
         val bundle = Bundle()
         val playerData: PlayerData
@@ -280,7 +272,7 @@ object ServerCommander {
         Log.warn(bundle["perm-group-not-found"])
     }
 
-    private fun reload(arg: Array<String>){
+    private fun reload(arg: Array<String>) {
         Main.perm.reload(false)
         Main.perm.update(false)
         Log.info("plugin-reloaded")

@@ -22,18 +22,15 @@ import mindustry.Vars
 import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.content.Items
-import mindustry.content.Mechs
 import mindustry.core.FileTree
 import mindustry.core.GameState
 import mindustry.core.Logic
 import mindustry.core.NetServer
-import mindustry.entities.traits.BuilderTrait.BuildRequest
-import mindustry.entities.type.BaseUnit
-import mindustry.entities.type.Player
-import mindustry.game.Difficulty
 import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
@@ -131,28 +128,9 @@ class PluginTest {
             } catch (e: IOException) {
                 e.printStackTrace()
             }
-            Vars.playerGroup = Vars.entities.add(Player::class.java).enableMapping()
+            Groups.init()
             world.loadMap(testMap[0])
             Vars.state.set(GameState.State.playing)
-            Thread(Runnable {
-                while (true) {
-                    Vars.state.enemies = Vars.unitGroup.count { b: BaseUnit -> b.team === Vars.state.rules.waveTeam && b.countsAsEnemy() }
-                    Time.update()
-                    Vars.unitGroup.update()
-                    Vars.puddleGroup.update()
-                    Vars.shieldGroup.update()
-                    Vars.bulletGroup.update()
-                    Vars.tileGroup.update()
-                    Vars.fireGroup.update()
-                    Vars.collisions.collideGroups(Vars.bulletGroup, Vars.unitGroup)
-                    Vars.collisions.collideGroups(Vars.bulletGroup, Vars.playerGroup)
-                    Vars.unitGroup.updateEvents()
-                    Vars.collisions.updatePhysics(Vars.unitGroup)
-                    Vars.playerGroup.update()
-                    Vars.effectGroup.update()
-                    sleep(16)
-                }
-            })
             testroot.child("locales").delete()
             testroot.child("version.properties").delete()
             pluginRoot.child("config.hjson").writeString(testroot.child("src/test/kotlin/essentials/config.hjson").readString("UTF-8"))
@@ -183,8 +161,8 @@ class PluginTest {
 
     @Test
     fun server_edit(){
-        serverHandler.handleMessage("edit " + player.uuid + " lastchat Manually")
-        assertEquals("Manually", playerCore[player.uuid].lastchat)
+        serverHandler.handleMessage("edit " + player.uuid() + " lastchat Manually")
+        assertEquals("Manually", playerCore[player.uuid()].lastchat)
     }
 
     @Test
@@ -197,7 +175,7 @@ class PluginTest {
     @Test
     fun server_admin(){
         serverHandler.handleMessage("admin " + player.name)
-        assertEquals("newadmin", playerCore[player.uuid].permission)
+        assertEquals("newadmin", playerCore[player.uuid()].permission)
     }
 
     @Test
@@ -207,14 +185,14 @@ class PluginTest {
 
     @Test
     fun server_info(){
-        serverHandler.handleMessage("info " + player.uuid)
+        serverHandler.handleMessage("info " + player.uuid())
         assertNotEquals("Player not found!\n", out.logWithNormalizedLineSeparator)
     }
 
     @Test
     fun server_setperm(){
         serverHandler.handleMessage("setperm " + player.name + " owner")
-        assertEquals("owner", playerCore[player.uuid].permission)
+        assertEquals("owner", playerCore[player.uuid()].permission)
     }
 
     @Test
@@ -225,19 +203,19 @@ class PluginTest {
     @Test
     fun client_alert(){
         clientHandler.handleMessage("/alert", player)
-        Assert.assertTrue(playerCore[player.uuid].alert)
+        Assert.assertTrue(playerCore[player.uuid()].alert)
     }
 
     @Test
     fun client_ch(){
         clientHandler.handleMessage("/ch", player)
-        Assert.assertTrue(playerCore[player.uuid].crosschat)
+        Assert.assertTrue(playerCore[player.uuid()].crosschat)
     }
 
     @Test
     fun client_changepw(){
         clientHandler.handleMessage("/changepw testpw123 testpw123", player)
-        assertNotEquals("none", playerCore[player.uuid].accountpw)
+        assertNotEquals("none", playerCore[player.uuid()].accountpw)
     }
 
     @Test
@@ -250,13 +228,7 @@ class PluginTest {
     @Test
     fun client_color() {
         clientHandler.handleMessage("/color", player)
-        Assert.assertTrue(playerCore[player.uuid].colornick)
-    }
-
-    @Test
-    fun client_difficulty() {
-        clientHandler.handleMessage("/difficulty easy", player)
-        assertEquals(Vars.state.rules.waveSpacing.toDouble(), Difficulty.easy.waveTime * 60 * 60 * 2.toDouble(), 0.0)
+        Assert.assertTrue(playerCore[player.uuid()].colornick)
     }
 
     @Test
@@ -289,7 +261,7 @@ class PluginTest {
         val dummy = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/kill " + dummy.name, player)
         Assert.assertTrue(dummy.dead)
-        dummy.dead = false
+        dummy.dead
         Events.fire(PlayerLeave(dummy))
     }
 
@@ -344,7 +316,7 @@ class PluginTest {
     @Test
     fun client_setperm(){
         clientHandler.handleMessage("/setperm " + player.name + " newadmin", player)
-        assertEquals("newadmin", playerCore[player.uuid].permission)
+        assertEquals("newadmin", playerCore[player.uuid()].permission)
     }
 
     @Test
@@ -384,7 +356,7 @@ class PluginTest {
     @Test
     fun client_suicide(){
         clientHandler.handleMessage("/suicide", player)
-        Assert.assertTrue(player.isDead)
+        Assert.assertTrue(player.dead())
 
         player.dead = false // Reset status
     }
@@ -653,7 +625,7 @@ class PluginTest {
 
     @Test
     fun event_UnitDestroy(){
-        Events.fire(UnitDestroyEvent(player))
+        Events.fire(UnitDestroyEvent(player.unit()))
     }
 
     @Test
@@ -697,7 +669,7 @@ class PluginTest {
         Assert.assertTrue(server.list.size != 0)
         client.request(Client.Request.Chat, player, "Cross-chat message!")
         client.request(Client.Request.UnbanIP, null, "127.0.0.1")
-        client.request(Client.Request.UnbanID, null, player.uuid)
+        client.request(Client.Request.UnbanID, null, player.uuid())
     }
 
     @Test
@@ -715,7 +687,7 @@ class PluginTest {
                         os.flush()
                         val json = JsonObject()
                         json.add("type", "CheckBan")
-                        json.add("uuid", player.uuid)
+                        json.add("uuid", player.uuid())
                         json.add("ip", player.con.address)
                         val en = Main.tool.encrypt(json.toString(), skey)
                         os.writeBytes(en+"\n")

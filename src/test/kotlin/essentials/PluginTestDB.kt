@@ -6,6 +6,7 @@ import essentials.Main.Companion.perm
 import essentials.Main.Companion.playerCore
 import mindustry.Vars
 import mindustry.entities.type.Player
+import mindustry.gen.Player
 import mindustry.net.Net.SendMode
 import mindustry.net.NetConnection
 import java.security.SecureRandom
@@ -24,7 +25,7 @@ object PluginTestDB {
 
     fun createNewPlayer(isFull: Boolean, vararg password: String?): Player {
         val player = Player()
-        player.isAdmin = false
+        player.admin(false)
         player.con = object : NetConnection(r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
             override fun send(o: Any, sendMode: SendMode) {}
             override fun close() {}

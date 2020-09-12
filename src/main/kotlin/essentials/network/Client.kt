@@ -57,14 +57,14 @@ class Client : Runnable {
             val key = gen.generateKey()
             val raw = key.encoded
             skey = SecretKeySpec(raw, "AES")
-            os.writeBytes(String(Base64.getEncoder().encode(raw))+"\n")
+            os.writeBytes(String(Base64.getEncoder().encode(raw)) + "\n")
             os.flush()
 
             // 데이터 전송
             val json = JsonObject()
             json.add("type", "Ping")
             val encrypted = Main.tool.encrypt(json.toString(), skey)
-            os.writeBytes(encrypted+"\n")
+            os.writeBytes(encrypted + "\n")
             os.flush()
             val receive = Main.tool.decrypt(br.readLine(), skey)
             if (JsonValue.readJSON(receive).asObject()["result"] != null) {
@@ -143,7 +143,7 @@ class Client : Runnable {
                     data.add("ban", ban)
                     data.add("ipban", ipban)
                     data.add("subban", subban)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey)+"\n")
+                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                     Log.client("client.banlist.sented")
                 }
@@ -151,14 +151,14 @@ class Client : Runnable {
                     data.add("type", "Chat")
                     data.add("name", player!!.name())
                     data.add("message", message)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey)+"\n")
+                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name() + "[orange]: [white]" + message)
                     Log.client("client.message", Main.configs.clientHost, message)
                 }
                 Request.Exit -> {
                     data.add("type", "Exit")
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey)+"\n")
+                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                     shutdown()
                     return
@@ -171,19 +171,19 @@ class Client : Runnable {
                         false
                     }
                     if (isIP) data.add("ip", message)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey)+"\n")
+                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                 }
                 Request.UnbanID -> {
                     data.add("type", "UnbanID")
                     data.add("uuid", message)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey)+"\n")
+                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                 }
                 Request.DataShare -> {
                     data.add("type", "DataShare")
                     data.add("data", "")
-                    os.writeBytes(Main.tool.encrypt("datashare", skey)+"\n")
+                    os.writeBytes(Main.tool.encrypt("datashare", skey) + "\n")
                     os.flush()
                 }
             }

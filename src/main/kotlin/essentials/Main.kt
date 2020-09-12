@@ -131,7 +131,7 @@ class Main : Plugin() {
 
         // Client 연결
         if (configs.clientEnable) {
-            if(configs.serverEnable) sleep(1000)
+            if (configs.serverEnable) sleep(1000)
             mainThread.submit(client)
             client.wakeup()
         }

@@ -42,7 +42,7 @@ class Vote : Thread() {
                 } else {
                     require = if (pluginVars.playerData.size > 8) 6 else 2 + if (pluginVars.playerData.size > 4) 1 else 0
                     service.init()
-                    println("Type: "+type.toString())
+                    println("Type: " + type.toString())
                 }
                 pause = true
             }
@@ -183,7 +183,7 @@ class Vote : Thread() {
                 }
             }
 
-            target =  null
+            target = null
             map = null
             amount = 0
             process = false

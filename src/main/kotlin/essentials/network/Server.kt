@@ -103,7 +103,7 @@ class Server : Runnable {
                             val msg = arrayOf("Hi $ip! Your connection is successful!", "Hello $ip! I'm server!", "Welcome to the server $ip!")
                             val rnd = SecureRandom().nextInt(msg.size)
                             answer.add("result", msg[rnd])
-                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec)+"\n")
+                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec) + "\n")
                             os.flush()
                             Log.server("client.connected", ip)
                         }
@@ -145,7 +145,7 @@ class Server : Runnable {
                                 val remoteip = ser!!.socket.inetAddress.toString().replace("/", "")
                                 for (b in configs.banTrust) {
                                     if (b.asString() == remoteip) {
-                                        ser.os.writeBytes(Main.tool.encrypt(answer.toString(), ser.spec)+"\n")
+                                        ser.os.writeBytes(Main.tool.encrypt(answer.toString(), ser.spec) + "\n")
                                         ser.os.flush()
                                         Log.server("server.data-sented", ser.socket.inetAddress.toString())
                                     }
@@ -159,7 +159,7 @@ class Server : Runnable {
                             }
                             for (ser in list) {
                                 if (ser!!.spec !== spec) {
-                                    ser!!.os.writeBytes(Main.tool.encrypt(value, ser.spec)+"\n")
+                                    ser!!.os.writeBytes(Main.tool.encrypt(value, ser.spec) + "\n")
                                     ser.os.flush()
                                 }
                             }
@@ -184,7 +184,7 @@ class Server : Runnable {
                                     break
                                 }
                             }
-                            if(!found) {
+                            if (!found) {
                                 for (info in Vars.netServer.admins.bannedIPs) {
                                     if (info == ip) {
                                         found = true
@@ -193,7 +193,7 @@ class Server : Runnable {
                                 }
                             }
                             answer.add("result", if (found) "true" else "false")
-                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec)+"\n")
+                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec) + "\n")
                             os.flush()
                         }
                     }
