@@ -5,17 +5,16 @@ import arc.Events
 import arc.struct.ArrayMap
 import arc.struct.ObjectMap
 import arc.util.Strings
-import essentials.Main.Companion.configs
-import essentials.Main.Companion.playerCore
-import essentials.Main.Companion.pluginData
+import essentials.Config
+import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
-import essentials.Main.Companion.pluginVars
-import essentials.Main.Companion.tool
 import essentials.PluginData
+import essentials.PluginVars
 import essentials.features.Exp
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
+import essentials.internal.Tool
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.core.GameState
@@ -35,13 +34,13 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-class TickTrigger {
+object TickTrigger {
     private val ores = ArrayMap<Item, Int?>()
     private val random = SecureRandom()
     var tick = 0
     val resources = ObjectMap<String, Int?>()
 
-    fun writeOreStatus(item: Item, orignal: Int): String? {
+    private fun writeOreStatus(item: Item, orignal: Int): String? {
         val `val`: Int
         val color: String
         val player = if (Groups.player.size() > 0) random.nextInt(Groups.player.size()) else 0
@@ -70,7 +69,7 @@ class TickTrigger {
     }
 
 
-    init {
+    fun init() {
         Events.on(ServerLoadEvent::class.java) {
             for (item in content.items()) {
                 if (item.contentType == ContentType.item) {
@@ -85,7 +84,7 @@ class TickTrigger {
                 tick = 0
             }
             if (state.`is`(GameState.State.playing)) {
-                if (configs.border) {
+                if (Config.border) {
                     for (p in Groups.player) {
                         if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0) p.dead()
                     }
@@ -95,7 +94,7 @@ class TickTrigger {
             // 1초마다 실행
             if (tick % 60 == 0) {
                 // 서버 켜진시간 카운트
-                pluginVars.uptime = pluginVars.uptime + 1
+                PluginVars.uptime = PluginVars.uptime + 1
 
                 // 데이터 저장
                 val json = JsonObject()
@@ -106,12 +105,12 @@ class TickTrigger {
                 // new changename().start();
 
                 // 임시로 밴당한 유저 감시
-                for (a in 0 until pluginData.banned.size) {
+                for (a in 0 until PluginData.banned.size) {
                     val time = LocalDateTime.now()
-                    if (time.isAfter(tool.longToDateTime(pluginData.banned[a].time))) {
-                        pluginData.banned.remove(a)
-                        netServer.admins.unbanPlayerID(pluginData.banned[a]!!.uuid)
-                        Log.info("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + pluginData.banned[a]!!.name + "/" + pluginData.banned[a]!!.uuid + " player unbanned!")
+                    if (time.isAfter(Tool.longToDateTime(PluginData.banned[a].time))) {
+                        PluginData.banned.remove(a)
+                        netServer.admins.unbanPlayerID(PluginData.banned[a]!!.uuid)
+                        Log.info("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + PluginData.banned[a]!!.name + "/" + PluginData.banned[a]!!.uuid + " player unbanned!")
                         break
                     }
                 }
@@ -122,31 +121,31 @@ class TickTrigger {
                     // new jumpzone().start();
 
                     // 맵 플탐 카운트
-                    pluginVars.playtime = pluginVars.playtime + 1
+                    PluginVars.playtime = PluginVars.playtime + 1
 
                     // PvP 평화시간 카운트
-                    if (configs.antiRush && state.rules.pvp && pluginVars.playtime < configs.antiRushtime && pluginVars.isPvPPeace) {
+                    if (Config.antiRush && state.rules.pvp && PluginVars.playtime < Config.antiRushtime && PluginVars.isPvPPeace) {
                         state.rules.unitDamageMultiplier = 0.66f
                         state.rules.unitHealthMultiplier = 0.8f
                         NetClient.setRules(state.rules)
                         for (p in Groups.player) {
-                            player.sendMessage(Bundle(playerCore[p.uuid()].locale)["pvp-peacetime"])
+                            player.sendMessage(Bundle(PlayerCore[p.uuid()].locale)["pvp-peacetime"])
                             player.dead()
                         }
-                        pluginVars.isPvPPeace = false
+                        PluginVars.isPvPPeace = false
                     }
 
                     // 모든 클라이언트 서버에 대한 인원 총합 카운트
-                    for (a in 0 until pluginData.warptotals.size) {
+                    for (a in 0 until PluginData.warptotals.size) {
                         var result = 0
-                        for (value in pluginData.warpcounts) result += value!!.players
+                        for (value in PluginData.warpcounts) result += value!!.players
                         val str = result.toString()
                         // TODO 인원 카운트 다시 만들기
                         val digits = IntArray(str.length)
                         for (b in str.indices) digits[b] = str[b] - '0'
-                        val tile = pluginData.warptotals[a].tile
-                        if (pluginData.warptotals[a]!!.totalplayers != result) {
-                            if (pluginData.warptotals[a]!!.numbersize != digits.size) {
+                        val tile = PluginData.warptotals[a].tile
+                        if (PluginData.warptotals[a]!!.totalplayers != result) {
+                            if (PluginData.warptotals[a]!!.numbersize != digits.size) {
                                 for (px in 0..2) {
                                     for (py in 0..4) {
                                         Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, null)
@@ -154,13 +153,13 @@ class TickTrigger {
                                 }
                             }
                         }
-                        tool.setTileText(tile, Blocks.copperWall, result.toString())
-                        pluginData.warptotals[a] = PluginData.WarpTotal(state.map.name(), tile.pos(), result, digits.size)
+                        Tool.setTileText(tile, Blocks.copperWall, result.toString())
+                        PluginData.warptotals[a] = PluginData.WarpTotal(state.map.name(), tile.pos(), result, digits.size)
                     }
 
                     // 플레이어 플탐 카운트 및 잠수확인
                     for (p in Groups.player) {
-                        val target = playerCore[p.uuid()]
+                        val target = PlayerCore[p.uuid()]
                         var kick = false
                         if (target.login) {
                             // Exp 계산
@@ -170,7 +169,7 @@ class TickTrigger {
                             target.playtime = target.playtime + 1
                             if (target.x == p.tileX() && target.y == p.tileY()) {
                                 target.afk = target.afk + 1
-                                if (configs.afktime != 0L && configs.afktime < target.afk) {
+                                if (Config.afktime != 0L && Config.afktime < target.afk) {
                                     kick = true
                                 }
                             } else {
@@ -184,36 +183,36 @@ class TickTrigger {
                     }
 
                     // 메세지 블럭 감시
-                    for (data in pluginData.messagemonitors) {
+                    for (data in PluginData.messagemonitors) {
                         val tile: Tile = world.tile(data.pos)
                         if (tile.block() !== Blocks.message && tile.block() !is MessageBlock) {
-                            pluginData.messagemonitors.remove(data)
+                            PluginData.messagemonitors.remove(data)
                         } else {
                             val entity = tile.block() as MessageBlock
                             val msg = entity.MessageBuild().message.toString()
                             if (msg == "powerblock") {
                                 for (rot in 0..3) {
                                     if (tile.getNearby(rot).block().hasPower) {
-                                        pluginData.powerblocks.add(PluginData.PowerBlock(tile, tile.getNearby(rot).pos(), rot))
+                                        PluginData.powerblocks.add(PluginData.PowerBlock(tile, tile.getNearby(rot).pos(), rot))
                                         break
                                     }
                                 }
-                                pluginData.messagemonitors.remove(data)
+                                PluginData.messagemonitors.remove(data)
                                 break
                             } else if (msg.contains("warp")) {
-                                pluginData.messagewarps.add(PluginData.MessageWarp(data.pos, msg))
-                                pluginData.messagemonitors.remove(data)
+                                PluginData.messagewarps.add(PluginData.MessageWarp(data.pos, msg))
+                                PluginData.messagemonitors.remove(data)
                                 break
                             } else if (msg == "scancore") {
-                                pluginData.scancore.add(tile)
-                                pluginData.messagemonitors.remove(data)
+                                PluginData.scancore.add(tile)
+                                PluginData.messagemonitors.remove(data)
                                 break
                             }
                         }
                     }
 
                     // 서버간 이동 영역에 플레이어가 있는지 확인
-                    for (value in pluginData.warpzones) {
+                    for (value in PluginData.warpzones) {
                         if (!value!!.touch) {
                             for (ix in 0 until Groups.player.size()) {
                                 val player = Groups.player.getByID(ix)
@@ -250,19 +249,19 @@ class TickTrigger {
                                 if (state.teams[team].cores.first().items.has(item)) items.append(writeOreStatus(item, amount))
                             }
                         }
-                        for (data in pluginData.scancore) {
+                        for (data in PluginData.scancore) {
                             if (data!!.block() !== Blocks.message) {
                                 data!!.remove()
                                 break
                             }
-                            tool.setMessage(data, items.toString())
+                            Tool.setMessage(data, items.toString())
                         }
                     }
 
                     // 메세지 블럭에 있는 근처 전력 계산
-                    for (data in pluginData.powerblocks) {
+                    for (data in PluginData.powerblocks) {
                         if (data!!.messageblock.block() !== Blocks.message) {
-                            pluginData.powerblocks.remove(data)
+                            PluginData.powerblocks.remove(data)
                             break
                         }
 
@@ -283,8 +282,8 @@ class TickTrigger {
                             using = tile.build.power.graph.powerNeeded * 60
                             product = tile.build.power.graph.powerProduced * 60
                         } catch (e: Exception) {
-                            pluginData.powerblocks.remove(data)
-                            tool.setMessage(data.messageblock, "$arrow Tile doesn't have powers!")
+                            PluginData.powerblocks.remove(data)
+                            Tool.setMessage(data.messageblock, "$arrow Tile doesn't have powers!")
                             break
                         }
                         val text = """
@@ -293,14 +292,14 @@ class TickTrigger {
                                 Using: [red]${using.roundToInt()}[]/s
                                 Production: [green]${product.roundToInt()}/s[]
                                 """.trimIndent()
-                        tool.setMessage(data.messageblock, text)
+                        Tool.setMessage(data.messageblock, text)
                     }
                 }
             }
 
             // 1.5초마다 실행
             if (tick % 90 == 0) {
-                if (state.`is`(GameState.State.playing) && configs.scanResource && state.rules.waves && Groups.player.size() > 0) {
+                if (state.`is`(GameState.State.playing) && Config.scanResource && state.rules.waves && Groups.player.size() > 0) {
                     for (item in content.items()) {
                         if (item.contentType == ContentType.item) {
                             val player = Groups.player.getByID(random.nextInt(Groups.player.size()))
@@ -324,7 +323,7 @@ class TickTrigger {
                                                 }
                                             }
                                         }
-                                        if (using.length > 2) tool.sendMessageAll("resource-fast-use", item.name, using)
+                                        if (using.length > 2) Tool.sendMessageAll("resource-fast-use", item.name, using)
                                     }
                                 } else {
                                     resources.put(item.name, cur)
@@ -338,8 +337,8 @@ class TickTrigger {
             // 3초마다
             if (tick % 180 == 0) {
                 try {
-                    playerCore.saveAll()
-                    pluginData.saveAll()
+                    PlayerCore.saveAll()
+                    PluginData.saveAll()
                 } catch (e: Exception) {
                     CrashReport(e)
                 }
@@ -348,12 +347,12 @@ class TickTrigger {
             // 1분마다
             if (tick % 3600 == 0) {
                 for (p in Groups.player) {
-                    val playerData = playerCore[p.uuid()]
+                    val playerData = PlayerCore[p.uuid()]
                     if (playerData.error) {
-                        val message: String? = if (configs.passwordMethod == "discord") {
+                        val message: String? = if (Config.passwordMethod == "discord") {
                             """
                                 ${Bundle(playerData.locale)["system.login.require.discord"]}
-                                ${configs.discordLink}
+                                ${Config.discordLink}
                                 """.trimIndent()
                         } else {
                             Bundle(playerData.locale)["system.login.require.password"]

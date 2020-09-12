@@ -3,13 +3,12 @@ package essentials.thread
 import arc.Core
 import arc.struct.ArrayMap
 import arc.struct.Seq
-import essentials.Main.Companion.playerCore
-import essentials.Main.Companion.pluginData
-import essentials.Main.Companion.tool
+import essentials.PlayerCore
 import essentials.PluginData
 import essentials.external.PingHost
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
+import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.Vars.world
@@ -23,7 +22,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
-class Threads : Runnable {
+object Threads : Runnable {
     private var ping = 0.000
     private val servers = ArrayMap<String, Int>()
 
@@ -33,32 +32,32 @@ class Threads : Runnable {
             try {
                 if (Vars.state.`is`(GameState.State.playing)) {
                     // 외부 서버 플레이어 인원 - 메세지 블럭
-                    for (a in 0 until pluginData.messagewarps.size) {
-                        val tile: Tile = world.tile(pluginData.messagewarps[a].pos)
+                    for (a in 0 until PluginData.messagewarps.size) {
+                        val tile: Tile = world.tile(PluginData.messagewarps[a].pos)
 
                         if (tile.block() !== Blocks.message) {
-                            pluginData.messagewarps.remove(a)
+                            PluginData.messagewarps.remove(a)
                             break
                         }
-                        tool.setMessage(tile, "[green]Working...")
-                        val arr = pluginData.messagewarps[a]!!.message.split(" ").toTypedArray()
+                        Tool.setMessage(tile, "[green]Working...")
+                        val arr = PluginData.messagewarps[a]!!.message.split(" ").toTypedArray()
                         val ip = arr[1]
                         var port = 6567
                         if (ip.contains(":")) {
                             port = ip.split(":").toTypedArray()[1].toInt()
                         }
                         val finalPort = port
-                        PingHost(ip, port, Consumer { result: Host ->
+                        PingHost[ip, port, Consumer { result: Host ->
                             ping += if (result.name != null) ("0." + result.ping).toDouble() else 1.000
-                            tool.setMessage(tile, if (result.name != null) "[green]" + result.players + " Players in this server." else "[scarlet]Server offline")
+                            Tool.setMessage(tile, if (result.name != null) "[green]" + result.players + " Players in this server." else "[scarlet]Server offline")
                             addPlayers(ip, finalPort, result.players)
-                        })
+                        }]
                     }
 
                     // 서버 인원 확인
-                    for (i in 0 until pluginData.warpcounts.size) {
-                        val value = pluginData.warpcounts[i]
-                        PingHost(value!!.ip, value.port, Consumer { result: Host ->
+                    for (i in 0 until PluginData.warpcounts.size) {
+                        val value = PluginData.warpcounts[i]
+                        PingHost[value!!.ip, value.port, Consumer { result: Host ->
                             if (result.name != null) {
                                 ping += ("0." + result.ping).toDouble()
                                 val str = result.players.toString()
@@ -74,24 +73,24 @@ class Threads : Runnable {
                                         }
                                     }
                                 }
-                                tool.setTileText(tile, Blocks.copperWall, str)
+                                Tool.setTileText(tile, Blocks.copperWall, str)
                                 // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                pluginData.warpcounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, result.players, digits.size)
+                                PluginData.warpcounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, result.players, digits.size)
                                 addPlayers(value.ip, value.port, result.players)
                             } else {
                                 ping += 1.000
-                                tool.setTileText(value.tile, Blocks.copperWall, "no")
+                                Tool.setTileText(value.tile, Blocks.copperWall, "no")
                             }
-                        })
+                        }]
                     }
                     val memory = Seq<String>()
-                    for (a in 0 until pluginData.warpblocks.size) {
-                        val value = pluginData.warpblocks[a]
+                    for (a in 0 until PluginData.warpblocks.size) {
+                        val value = PluginData.warpblocks[a]
                         val tile = world.tile(value.pos)
                         if (tile.block() === Blocks.air) {
-                            pluginData.warpblocks.remove(a)
+                            PluginData.warpblocks.remove(a)
                         } else {
-                            PingHost(value.ip, value.port, Consumer { result: Host ->
+                            PingHost[value.ip, value.port, Consumer { result: Host ->
                                 var margin = 0f
                                 var isDup = false
                                 var x = tile.drawx()
@@ -121,7 +120,7 @@ class Threads : Runnable {
                                 }
                                 memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin))
                                 addPlayers(value.ip, value.port, result.players)
-                            })
+                            }]
                         }
                     }
                     for (m in memory) {
@@ -139,8 +138,8 @@ class Threads : Runnable {
                 Thread.currentThread().interrupt()
             } catch (e: Exception) {
                 for (p in Groups.player) {
-                    if (playerCore[p.uuid()].login) {
-                        Call.kick(p.con, Bundle(playerCore[p.uuid()].locale)["plugin-error-kick"])
+                    if (PlayerCore[p.uuid()].login) {
+                        Call.kick(p.con, Bundle(PlayerCore[p.uuid()].locale)["plugin-error-kick"])
                     } else {
                         Call.kick(p.con, Bundle(Locale.ENGLISH)["plugin-error-kick"])
                     }

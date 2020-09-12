@@ -1,9 +1,9 @@
 package essentials
 
 import essentials.Main.Companion.pluginRoot
-import essentials.Main.Companion.pluginVars
 import essentials.internal.Bundle
 import essentials.internal.Log
+import essentials.internal.Tool
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
@@ -12,7 +12,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class Config {
+object Config {
     lateinit var obj: JsonObject
     var locale: Locale = Locale.getDefault()
     var bundle: Bundle = Bundle(locale)
@@ -91,7 +91,7 @@ class Config {
         }
 
         settings = obj["settings"].asObject()
-        version = settings.getInt("version", pluginVars.configVersion)
+        version = settings.getInt("version", PluginVars.configVersion)
         val lc = settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")).split(",").toTypedArray()[0]
         language = if (lc.split("_").toTypedArray().size == 2) {
             val array = lc.split("_").toTypedArray()
@@ -167,9 +167,9 @@ class Config {
     }
 
     fun updateConfig() {
-        locale = Main.tool.textToLocale(obj.getString("language", locale.toString()))
+        locale = Tool.textToLocale(obj.getString("language", locale.toString()))
         bundle = Bundle(locale)
-        if (obj.getInt("version", 0) < pluginVars.configVersion) Log.info("config.updated")
+        if (obj.getInt("version", 0) < PluginVars.configVersion) Log.info("config.updated")
         val config = JsonObject()
         val settings = JsonObject()
         val db = JsonObject()

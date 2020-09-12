@@ -1,6 +1,7 @@
 package essentials.internal
 
 import arc.util.Log
+import essentials.Config
 import essentials.Main
 import essentials.Main.Companion.pluginRoot
 import java.io.IOException
@@ -58,7 +59,7 @@ object Log {
             mainlog = null
         }
         if (mainlog == null) mainlog = logfolder.child("$type.log")
-        mainlog!!.writeString("""[${Main.tool.getLocalTime()}] ${Main.configs.bundle[value, params]}""".trimIndent(), true)
+        mainlog!!.writeString("""[${Tool.getLocalTime()}] ${Config.bundle[value, params]}""".trimIndent(), true)
     }
 
     enum class LogType {

@@ -9,15 +9,9 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.function.Consumer
 
-class PingHost(ip: String, port: Int, listener: Consumer<Host>) {
-    fun readServerData(ip: String, buffer: ByteBuffer, ping: Long): Host {
-        val host = NetworkIO.readServerData(0, ip, buffer)
-        host.ping = ping.toInt()
-        return host
-    }
-
+object PingHost {
     // source from https://github.com/Anuken/CoreBot/blob/master/src/corebot/Net.java#L57-L84
-    init {
+    operator fun get(ip: String, port: Int, listener: Consumer<Host>){
         try {
             DatagramSocket().use { socket ->
                 socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(ip), port))
@@ -32,5 +26,11 @@ class PingHost(ip: String, port: Int, listener: Consumer<Host>) {
         } catch (e: Exception) {
             listener.accept(Host(0, ip, null, "invaild", 0, 0, 0, null, Gamemode.editor, 0, "invalid description", "invalid modename"))
         }
+    }
+
+    private fun readServerData(ip: String, buffer: ByteBuffer, ping: Long): Host {
+        val host = NetworkIO.readServerData(0, ip, buffer)
+        host.ping = ping.toInt()
+        return host
     }
 }

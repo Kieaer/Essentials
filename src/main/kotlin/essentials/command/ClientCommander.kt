@@ -5,21 +5,18 @@ import arc.math.Mathf
 import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Strings
-import essentials.Main.Companion.colorNickname
-import essentials.Main.Companion.configs
-import essentials.Main.Companion.discord
-import essentials.Main.Companion.perm
-import essentials.Main.Companion.playerCore
-import essentials.Main.Companion.pluginData
-import essentials.Main.Companion.pluginVars
-import essentials.Main.Companion.tool
-import essentials.Main.Companion.vars
-import essentials.Main.Companion.vote
-import essentials.Main.Companion.warpBorder
+import essentials.Config
+import essentials.features.Permissions
+import essentials.PlayerCore
 import essentials.PluginData
 import essentials.features.Vote
+import essentials.PluginVars
+import essentials.features.ColorNickname
+import essentials.features.Discord
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
+import essentials.internal.Tool
+import essentials.thread.WarpBorder
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
@@ -64,7 +61,7 @@ object ClientCommander {
         handler.register("r", "<player> [message]", "Send Direct message to target player", ::r)
         handler.register("reset", "<zone/count/total/block> [ip]", "Remove a server-to-server warp zone data.", ::reset)
         handler.register("router", "Router", ::router)
-        handler.register("register", if (configs.passwordMethod.equals("password", ignoreCase = true)) "<accountid> <password>" else "", "Register account", ::register)
+        handler.register("register", if (Config.passwordMethod.equals("password", ignoreCase = true)) "<accountid> <password>" else "", "Register account", ::register)
         handler.register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", ::spawn)
         handler.register("setperm", "<player_name> <group>", "Set player permission", ::setperm)
         handler.register("spawn-core", "<small/normal/big>", "Make new core", ::spawncore)
@@ -85,8 +82,8 @@ object ClientCommander {
     }
 
     private fun alert(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "alert")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "alert")) return
+        val playerData = PlayerCore[player.uuid()]
         if (playerData.alert) {
             playerData.alert = false
             player.sendMessage(Bundle(playerData.locale).prefix("anti-grief.alert.disable"))
@@ -97,17 +94,17 @@ object ClientCommander {
     }
 
     private fun ch(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "ch")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "ch")) return
+        val playerData = PlayerCore[player.uuid()]
         playerData.crosschat = !playerData.crosschat
         player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.crosschat) "player.crosschat.disable" else "player.crosschat.enabled"))
     }
 
     private fun changepw(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "changepw")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "changepw")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
-        if (!tool.checkPassword(player, playerData.accountid, arg[0], arg[1])) {
+        if (!Tool.checkPassword(player, playerData.accountid, arg[0], arg[1])) {
             player.sendMessage(bundle.prefix("system.account.need-new-password"))
             return
         }
@@ -121,33 +118,33 @@ object ClientCommander {
     }
 
     private fun chars(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "chars")) return
-        if (world != null) tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[0])
+        if (!Permissions.check(player, "chars")) return
+        if (world != null) Tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[0])
     }
 
     private fun color(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "color")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "color")) return
+        val playerData = PlayerCore[player.uuid()]
         playerData.colornick = !playerData.colornick
-        if (playerData.colornick) colorNickname.targets.add(player)
+        if (playerData.colornick) ColorNickname.targets.add(player)
         player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.colornick) "feature.colornick.enable" else "feature.colornick.disable"))
     }
 
     private fun killall(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "killall")) return
+        if (!Permissions.check(player, "killall")) return
         for (a in Team.all.indices) Groups.unit.each { u: Unit -> u.kill() }
-        player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("success"))
+        player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("success"))
     }
 
     private fun help(arg: Array<String>, player: Playerc) {
         if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
-            player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("page-number"))
+            player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("page-number"))
             return
         }
         val temp = Seq<String>()
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
-            if (perm.check(player, command.text) || command.text == "t" || command.text == "sync") {
+            if (Permissions.check(player, command.text) || command.text == "t" || command.text == "sync") {
                 temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}")
             }
         }
@@ -168,8 +165,8 @@ object ClientCommander {
     }
 
     private fun info(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "info")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "info")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         val datatext = """
                 [#DEA82A]${Bundle(playerData.locale)["player.info"]}[]
@@ -185,9 +182,9 @@ object ClientCommander {
                 [green]${bundle["player.kickcount"]}[] : ${playerData.kickcount}
                 [green]${bundle["player.level"]}[] : ${playerData.level}
                 [green]${bundle["player.reqtotalexp"]}[] : ${playerData.reqtotalexp}
-                [green]${bundle["player.firstdate"]}[] : ${tool.longToDateTime(playerData.firstdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                [green]${bundle["player.lastdate"]}[] : ${tool.longToDateTime(playerData.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                [green]${bundle["player.playtime"]}[] : ${tool.longToTime(playerData.playtime)}
+                [green]${bundle["player.firstdate"]}[] : ${Tool.longToDateTime(playerData.firstdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                [green]${bundle["player.lastdate"]}[] : ${Tool.longToDateTime(playerData.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                [green]${bundle["player.playtime"]}[] : ${Tool.longToTime(playerData.playtime)}
                 [green]${bundle["player.attackclear"]}[] : ${playerData.attackclear}
                 [green]${bundle["player.pvpwincount"]}[] : ${playerData.pvpwincount}
                 [green]${bundle["player.pvplosecount"]}[] : ${playerData.pvplosecount}
@@ -197,8 +194,8 @@ object ClientCommander {
     }
 
     private fun warp(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "warp")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "warp")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         val types = arrayOf("zone", "block", "count", "total")
         if (!listOf(*types).contains(arg[0])) {
@@ -238,24 +235,24 @@ object ClientCommander {
                             player.sendMessage(bundle.prefix("system.warp.not-int"))
                             return
                         }
-                        pluginData.warpzones.add(PluginData.WarpZone(name, world.tile(x, y).pos(), world.tile(x + size, y + size).pos(), clickable, ip, port))
-                        warpBorder.thread.clear()
-                        warpBorder.start()
+                        PluginData.warpzones.add(PluginData.WarpZone(name, world.tile(x, y).pos(), world.tile(x + size, y + size).pos(), clickable, ip, port))
+                        WarpBorder.thread.clear()
+                        WarpBorder.start()
                         player.sendMessage(bundle.prefix("system.warp.added"))
                     }
                 "block" -> if (parameters.isEmpty()) {
                     player.sendMessage(bundle.prefix("system.warp.incorrect"))
                 } else {
                     val t: Tile = world.tile(x, y)
-                    pluginData.warpblocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
+                    PluginData.warpblocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
                     player.sendMessage(bundle.prefix("system.warp.added"))
                 }
                 "count" -> {
-                    pluginData.warpcounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 0))
+                    PluginData.warpcounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 0))
                     player.sendMessage(bundle.prefix("system.warp.added"))
                 }
                 "total" -> {
-                    pluginData.warptotals.add(PluginData.WarpTotal(name, world.tile(x, y).pos(), 0, 0))
+                    PluginData.warptotals.add(PluginData.WarpTotal(name, world.tile(x, y).pos(), 0, 0))
                     player.sendMessage(bundle.prefix("system.warp.added"))
                 }
                 else -> player.sendMessage(bundle.prefix("command.invalid"))
@@ -264,20 +261,20 @@ object ClientCommander {
     }
 
     private fun kickall(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "kickall")) return
+        if (!Permissions.check(player, "kickall")) return
         for (p in Groups.player) {
             if (player !== p) Call.kick(p.con, Packets.KickReason.kick)
         }
     }
 
     private fun kill(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "kill")) return
+        if (!Permissions.check(player, "kill")) return
         if (arg.isEmpty()) {
             player.dead()
         } else {
             val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
             if (other == null) {
-                player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("player.not-found"))
+                player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("player.not-found"))
             } else {
                 other.dead()
             }
@@ -285,19 +282,19 @@ object ClientCommander {
     }
 
     private fun login(arg: Array<String>, player: Playerc) {
-        val playerData = playerCore[player.uuid()]
-        if (configs.loginEnable) {
+        val playerData = PlayerCore[player.uuid()]
+        if (Config.loginEnable) {
             if (playerData.error) {
-                if (playerCore.login(arg[0], arg[1])) {
-                    if (playerCore.playerLoad(player, arg[0])) {
+                if (PlayerCore.login(arg[0], arg[1])) {
+                    if (PlayerCore.playerLoad(player, arg[0])) {
                         player.sendMessage(Bundle(playerData.locale).prefix("system.login.success"))
                     }
                 } else {
                     player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!")
                 }
             } else {
-                if (configs.passwordMethod == "mixed") {
-                    if (playerCore.login(arg[0], arg[1])) Call.connect(player.con(), vars.serverIP, 7060)
+                if (Config.passwordMethod == "mixed") {
+                    if (PlayerCore.login(arg[0], arg[1])) Call.connect(player.con(), PluginVars.serverIP, 7060)
                 } else {
                     player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.")
                 }
@@ -308,7 +305,7 @@ object ClientCommander {
     }
 
     private fun maps(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "maps")) return
+        if (!Permissions.check(player, "maps")) return
         val maplist = maps.all()
         val build = StringBuilder()
         var page = if (arg.isNotEmpty()) Strings.parseInt(arg[0]) else 1
@@ -326,13 +323,13 @@ object ClientCommander {
     }
 
     private fun me(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "me")) return
+        if (!Permissions.check(player, "me")) return
         Call.sendMessage("[orange]*[] " + player.name() + "[white] : " + arg[0])
     }
 
     private fun motd(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "motd")) return
-        val motd = tool.getMotd(playerCore[player.uuid()].locale)
+        if (!Permissions.check(player, "motd")) return
+        val motd = Tool.getMotd(PlayerCore[player.uuid()].locale)
         val count = motd.split("\r\n|\r|\n").toTypedArray().size
         if (count > 10) {
             Call.infoMessage(player.con(), motd)
@@ -342,7 +339,7 @@ object ClientCommander {
     }
 
     private fun players(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "players")) return
+        if (!Permissions.check(player, "players")) return
         val build = StringBuilder()
         var page = if (arg.isNotEmpty()) Strings.parseInt(arg[0]) else 1
         val pages = Mathf.ceil(Groups.player.size().toFloat() / 6)
@@ -359,15 +356,15 @@ object ClientCommander {
     }
 
     private fun save(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "save")) return
-        val file = Vars.saveDirectory.child(configs.slotNumber.toString() + "." + Vars.saveExtension)
+        if (!Permissions.check(player, "save")) return
+        val file = Vars.saveDirectory.child(Config.slotNumber.toString() + "." + Vars.saveExtension)
         SaveIO.save(file)
-        player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("system.map-saved"))
+        player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("system.map-saved"))
     }
 
     private fun r(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "r")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "r")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         val target = Groups.player.find { p: Playerc -> p.name().contains(arg[0]) }
         if (target != null) {
@@ -379,24 +376,24 @@ object ClientCommander {
     }
 
     private fun reset(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "reset")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "reset")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         when (arg[0]) {
             "zone" -> {
                 var a = 0
-                while (a < pluginData.warpzones.size) {
+                while (a < PluginData.warpzones.size) {
                     if (arg.size != 2) {
                         player.sendMessage(bundle.prefix("no-parameter"))
                         return
                     }
-                    if (arg[1] == pluginData.warpzones[a].ip) {
-                        pluginData.warpzones.remove(a)
-                        for (value in warpBorder.thread) {
+                    if (arg[1] == PluginData.warpzones[a].ip) {
+                        PluginData.warpzones.remove(a)
+                        for (value in WarpBorder.thread) {
                             value.interrupt()
                         }
-                        warpBorder.thread.clear()
-                        warpBorder.start()
+                        WarpBorder.thread.clear()
+                        WarpBorder.start()
                         player.sendMessage(bundle.prefix("success"))
                         break
                     }
@@ -404,15 +401,15 @@ object ClientCommander {
                 }
             }
             "count" -> {
-                pluginData.warpcounts.clear()
+                PluginData.warpcounts.clear()
                 player.sendMessage(bundle.prefix("system.warp.reset", "count"))
             }
             "total" -> {
-                pluginData.warptotals.clear()
+                PluginData.warptotals.clear()
                 player.sendMessage(bundle.prefix("system.warp.reset", "total"))
             }
             "block" -> {
-                pluginData.warpblocks.clear()
+                PluginData.warpblocks.clear()
                 player.sendMessage(bundle.prefix("system.warp.reset", "block"))
             }
             else -> player.sendMessage(bundle.prefix("command.invalid"))
@@ -420,7 +417,7 @@ object ClientCommander {
     }
 
     private fun router(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "router")) return
+        if (!Permissions.check(player, "router")) return
         Thread {
             val zero = arrayOf("""
     [stat][#404040][]
@@ -567,45 +564,45 @@ object ClientCommander {
     }
 
     private fun register(arg: Array<String>, player: Playerc) {
-        if (configs.loginEnable) {
-            when (configs.passwordMethod) {
+        if (Config.loginEnable) {
+            when (Config.passwordMethod) {
                 "discord" -> {
-                    player.sendMessage("""Join discord and use !register command!${configs.discordLink}""".trimIndent())
-                    if (!discord.pins.containsKey(player.name())) discord.queue(player)
+                    player.sendMessage("""Join discord and use !register command!${Config.discordLink}""".trimIndent())
+                    if (!Discord.pins.containsKey(player.name())) Discord.queue(player)
                 }
                 "password" -> {
-                    val lc = tool.getGeo(player)
+                    val lc = Tool.getGeo(player)
                     val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                    val register = playerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, arg[0], hash, false)
+                    val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
                     if (register) {
-                        playerCore.playerLoad(player, null)
-                        player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("register-success"))
+                        PlayerCore.playerLoad(player, null)
+                        player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
                     } else {
                         player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!")
                     }
                 }
                 else -> {
-                    val lc = tool.getGeo(player)
+                    val lc = Tool.getGeo(player)
                     val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                    val register = playerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, arg[0], hash, false)
+                    val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
                     if (register) {
-                        playerCore.playerLoad(player, null)
-                        player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("register-success"))
+                        PlayerCore.playerLoad(player, null)
+                        player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
                     } else {
                         player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!")
                     }
                 }
             }
         } else {
-            player.sendMessage(Bundle(configs.locale).prefix("system.login.disabled"))
+            player.sendMessage(Bundle(Config.locale).prefix("system.login.disabled"))
         }
     }
 
     private fun spawn(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "spawn")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "spawn")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
-        val targetUnit = tool.getUnitByName(arg[0])
+        val targetUnit = Tool.getUnitByName(arg[0])
         if (targetUnit == null) {
             player.sendMessage(bundle.prefix("system.mob.not-found"))
             return
@@ -617,16 +614,16 @@ object ClientCommander {
             player.sendMessage(bundle.prefix("system.mob.not-number"))
             return
         }
-        if (configs.spawnLimit == count) {
+        if (Config.spawnLimit == count) {
             player.sendMessage(bundle.prefix("spawn-limit"))
             return
         }
-        var targetPlayer = if (arg.size > 3) tool.findPlayer(arg[3]) else player
+        var targetPlayer = if (arg.size > 3) Tool.findPlayer(arg[3]) else player
         if (targetPlayer == null) {
             player.sendMessage(bundle.prefix("player.not-found"))
             targetPlayer = player
         }
-        var targetTeam = if (arg.size > 2) tool.getTeamByName(arg[2]) else targetPlayer.team()
+        var targetTeam = if (arg.size > 2) Tool.getTeamByName(arg[2]) else targetPlayer.team()
         if (targetTeam == null) {
             player.sendMessage(bundle.prefix("team-not-found"))
             targetTeam = targetPlayer.team()
@@ -641,20 +638,20 @@ object ClientCommander {
     }
 
     private fun setperm(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "setperm")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "setperm")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         val target = Groups.player.find { p: Playerc -> p.name() == arg[0] }
         if (target == null) {
             player.sendMessage(bundle.prefix("player.not-found"))
             return
         }
-        for (permission in perm.perm) {
+        for (permission in Permissions.perm) {
             if (permission.name == arg[1]) {
-                val data = playerCore[target.uuid()]
+                val data = PlayerCore[target.uuid()]
                 data.permission = arg[1]
-                perm.user[data.uuid].asObject()["group"] = arg[1]
-                perm.update(true)
+                Permissions.user[data.uuid].asObject()["group"] = arg[1]
+                Permissions.update(true)
                 player.sendMessage(bundle.prefix("success"))
                 target.sendMessage(Bundle(data.locale).prefix("perm-changed"))
                 return
@@ -664,7 +661,7 @@ object ClientCommander {
     }
 
     private fun spawncore(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "spawn-core")) return
+        if (!Permissions.check(player, "spawn-core")) return
         var core = Blocks.coreShard
         when (arg[0]) {
             "normal" -> core = Blocks.coreFoundation
@@ -677,8 +674,8 @@ object ClientCommander {
     }
 
     private fun setmech(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "setmech")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "setmech")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         var mech: UnitType = UnitTypes.mace
         when (arg[0]) {
@@ -727,8 +724,8 @@ object ClientCommander {
     }
 
     private fun status(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "status")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "status")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         player.sendMessage(bundle.prefix("server.status"))
         player.sendMessage("[#2B60DE]========================================[]")
@@ -736,11 +733,11 @@ object ClientCommander {
         val bans = netServer.admins.banned.size
         val ipbans = netServer.admins.bannedIPs.size
         val bancount = bans + ipbans
-        val playtime = tool.longToTime(vars.playtime)
-        val uptime = tool.longToTime(vars.uptime)
-        player.sendMessage(bundle["server.status.result", fps, Groups.player.size(), bancount, bans, ipbans, playtime, uptime, vars.pluginVersion])
+        val playtime = Tool.longToTime(PluginVars.playtime)
+        val uptime = Tool.longToTime(PluginVars.uptime)
+        player.sendMessage(bundle["server.status.result", fps, Groups.player.size(), bancount, bans, ipbans, playtime, uptime, PluginVars.pluginVersion])
         val result = JsonObject()
-        for (p in vars.playerData) {
+        for (p in PluginVars.playerData) {
             if (result[p.locale.getDisplayCountry(playerData.locale)] == null) {
                 result.add(p.locale.getDisplayCountry(playerData.locale), 1)
             } else {
@@ -759,16 +756,16 @@ object ClientCommander {
     }
 
     private fun suicide(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "suicide")) return
+        if (!Permissions.check(player, "suicide")) return
         player.dead()
         if (Groups.player != null && Groups.player.size() > 0) {
-            tool.sendMessageAll("suicide", player.name())
+            Tool.sendMessageAll("suicide", player.name())
         }
     }
 
     private fun team(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "team")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "team")) return
+        val playerData = PlayerCore[player.uuid()]
         when (arg[0]) {
             "derelict" -> player.team(Team.derelict)
             "sharded" -> player.team(Team.sharded)
@@ -781,8 +778,8 @@ object ClientCommander {
     }
 
     private fun tempban(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "tempban")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "tempban")) return
+        val playerData = PlayerCore[player.uuid()]
         var other: Playerc? = null
         for (p in Groups.player) {
             val result = p.name.contains(arg[0])
@@ -792,11 +789,11 @@ object ClientCommander {
         }
         if (other != null) {
             val bantime = System.currentTimeMillis() + 1000 * 60 * (arg[1].toInt())
-            playerCore.ban(other, bantime, arg[2])
+            PlayerCore.ban(other, bantime, arg[2])
             Call.kick(other.con(), "Temp kicked")
             for (a in 0 until Groups.player.size()) {
                 val current = Groups.player.getByID(a)
-                val target = playerCore[current.uuid()]
+                val target = PlayerCore[current.uuid()]
                 current.sendMessage(Bundle(target.locale).prefix("account.ban.temp", other.name(), player.name()))
             }
         } else {
@@ -805,8 +802,8 @@ object ClientCommander {
     }
 
     private fun time(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "time")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "time")) return
+        val playerData = PlayerCore[player.uuid()]
         val now = LocalDateTime.now()
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss")
         val nowString = now.format(dateTimeFormatter)
@@ -814,8 +811,8 @@ object ClientCommander {
     }
 
     private fun tp(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "tp")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "tp")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         /*// TODO 모바일 유저 확인
         if (player.isMobile) {
@@ -837,8 +834,8 @@ object ClientCommander {
     }
 
     private fun tpp(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "tpp")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "tpp")) return
+        val playerData = PlayerCore[player.uuid()]
         var other1: Playerc? = null
         var other2: Playerc? = null
         for (p in Groups.player) {
@@ -864,8 +861,8 @@ object ClientCommander {
     }
 
     private fun tppos(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "tppos")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "tppos")) return
+        val playerData = PlayerCore[player.uuid()]
         val x: Int
         val y: Int
         try {
@@ -879,20 +876,20 @@ object ClientCommander {
     }
 
     /*handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
-        if (!perm.check(player, "tr")) return;
-        PlayerData playerData = playerCore.get(player.uuid);
-        playerCore.get(player.uuid).translate(!playerData.translate());
+        if (!Permissions.check(player, "tr")) return;
+        PlayerData playerData = PlayerCore.get(player.uuid);
+        PlayerCore.get(player.uuid).translate(!playerData.translate());
         player.sendMessage(new Bundle(playerData.locale).prefix(playerData.translate() ? "translate" : "translate-disable", player.name));
     });*/
     private fun voteService(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "vote") || Core.settings.getBool("isLobby")) return
-        val playerData = playerCore[player.uuid()]
+        if (!Permissions.check(player, "vote") || Core.settings.getBool("isLobby")) return
+        val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
-        if (vote.service.process) {
+        if (Vote.service.process) {
             player.sendMessage(bundle.prefix("vote.in-processing"))
             return
         }
-        vote.player = player
+        Vote.player = player
         when (arg[0]) {
             "kick" -> {
                 // vote kick <player name>
@@ -924,8 +921,8 @@ object ClientCommander {
 
                     // 강퇴 투표
                     else -> {
-                        vote.type = Vote.VoteType.kick
-                        vote.parameters = arrayOf(target, arg[1])
+                        Vote.type = Vote.VoteType.kick
+                        Vote.parameters = arrayOf(target, arg[1])
                     }
                 }
 
@@ -943,8 +940,8 @@ object ClientCommander {
                     try {
                         world = maps.all()[arg[1].toInt()]
                         if (world != null) {
-                            vote.type = Vote.VoteType.map
-                            vote.parameters = arrayOf(world)
+                            Vote.type = Vote.VoteType.map
+                            Vote.parameters = arrayOf(world)
                         } else {
                             player.sendMessage(bundle.prefix("vote.map.not-found"))
                         }
@@ -952,19 +949,19 @@ object ClientCommander {
                         player.sendMessage(bundle.prefix("vote.map.not-found"))
                     }
                 } else {
-                    vote.type = Vote.VoteType.map
-                    vote.parameters = arrayOf(world)
+                    Vote.type = Vote.VoteType.map
+                    Vote.parameters = arrayOf(world)
                 }
             }
             "gameover" -> {
                 // vote gameover
-                vote.type = Vote.VoteType.gameover
-                vote.parameters = arrayOf()
+                Vote.type = Vote.VoteType.gameover
+                Vote.parameters = arrayOf()
             }
             "rollback" ->                         // vote rollback
-                if (configs.rollback) {
-                    vote.type = Vote.VoteType.rollback
-                    vote.parameters = arrayOf()
+                if (Config.rollback) {
+                    Vote.type = Vote.VoteType.rollback
+                    Vote.parameters = arrayOf()
                 } else {
                     player.sendMessage(bundle["vote.rollback.disabled"])
                 }
@@ -975,8 +972,8 @@ object ClientCommander {
                     return
                 }
                 try {
-                    vote.type = Vote.VoteType.gamemode
-                    vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
+                    Vote.type = Vote.VoteType.gamemode
+                    Vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
                 } catch (e: IllegalArgumentException) {
                     player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
                 }
@@ -987,8 +984,8 @@ object ClientCommander {
                     player.sendMessage(bundle["no-parameter"])
                     return
                 }
-                vote.type = Vote.VoteType.skipwave
-                vote.parameters = arrayOf(arg[1])
+                Vote.type = Vote.VoteType.skipwave
+                Vote.parameters = arrayOf(arg[1])
             }
             else -> {
                 when (arg[0]) {
@@ -1000,11 +997,11 @@ object ClientCommander {
                 return
             }
         }
-        vote.pause = false
+        Vote.pause = false
     }
 
     private fun weather(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "weather")) return
+        if (!Permissions.check(player, "weather")) return
         // Command idea from Minecraft EssentialsX and Quezler's plugin!
         // Useful with the Quezler's plugin.
         state.rules.lighting = true
@@ -1016,17 +1013,17 @@ object ClientCommander {
             else -> return
         }
         Call.setRules(Vars.state.rules)
-        player.sendMessage(Bundle(playerCore[player.uuid()].locale).prefix("success"))
+        player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("success"))
     }
 
     private fun mute(arg: Array<String>, player: Playerc) {
-        if (!perm.check(player, "mute")) return
+        if (!Permissions.check(player, "mute")) return
         val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
-        val playerData = playerCore[player.uuid()]
+        val playerData = PlayerCore[player.uuid()]
         if (other == null) {
             player.sendMessage(Bundle(playerData.locale).prefix("player.not-found"))
         } else {
-            val target = playerCore[other.uuid()]
+            val target = PlayerCore[other.uuid()]
             target.mute = !target.mute
             player.sendMessage(Bundle(target.locale).prefix(if (target.mute) "player.muted" else "player.unmute", target.name))
         }

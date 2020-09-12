@@ -2,7 +2,7 @@ package essentials.thread
 
 import arc.struct.Seq
 import arc.struct.Seq.SeqIterable
-import essentials.Main.Companion.configs
+import essentials.Config
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import mindustry.Vars
@@ -18,10 +18,10 @@ import mindustry.maps.Map
 import java.util.*
 
 
-class AutoRollback : TimerTask() {
+object AutoRollback : TimerTask() {
     fun save() {
         try {
-            val file = Vars.saveDirectory.child(configs.slotNumber.toString() + "." + Vars.saveExtension)
+            val file = Vars.saveDirectory.child(Config.slotNumber.toString() + "." + Vars.saveExtension)
             if (Vars.state.`is`(GameState.State.playing)) SaveIO.save(file)
         } catch (e: Exception) {
             CrashReport(e)
@@ -37,7 +37,7 @@ class AutoRollback : TimerTask() {
         Vars.logic.reset()
         Call.worldDataBegin()
         try {
-            val file = Vars.saveDirectory.child(configs.slotNumber.toString() + "." + Vars.saveExtension)
+            val file = Vars.saveDirectory.child(Config.slotNumber.toString() + "." + Vars.saveExtension)
             SaveIO.load(file)
             Vars.logic.play()
             for (p in players) {

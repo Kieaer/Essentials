@@ -1,12 +1,8 @@
 package essentials.network
 
 import arc.struct.Seq
-import essentials.Main
-import essentials.Main.Companion.configs
-import essentials.internal.Bundle
-import essentials.internal.CrashReport
-import essentials.internal.Log
-import essentials.internal.PluginException
+import essentials.Config
+import essentials.internal.*
 import mindustry.Vars
 import mindustry.gen.Groups
 import org.hjson.JsonArray
@@ -24,8 +20,8 @@ import java.util.*
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
-class Server : Runnable {
-    var list = Seq<Service?>()
+object Server : Runnable {
+    var list = Seq<Service>()
     lateinit var serverSocket: ServerSocket
     fun shutdown() {
         try {
@@ -38,7 +34,7 @@ class Server : Runnable {
 
     override fun run() {
         try {
-            serverSocket = ServerSocket(configs.serverPort)
+            serverSocket = ServerSocket(Config.serverPort)
             Log.info("server.enabled")
             while (!serverSocket.isClosed) {
                 val socket = serverSocket.accept()
@@ -62,7 +58,7 @@ class Server : Runnable {
         Ping, BanSync, Chat, Exit, UnbanIP, UnbanID, DataShare, CheckBan
     }
 
-    inner class Service(var socket: Socket) : Thread() {
+    class Service(var socket: Socket) : Thread() {
         var br: BufferedReader
         var os: DataOutputStream
         var spec: SecretKey
@@ -95,7 +91,7 @@ class Server : Runnable {
                 while (!currentThread().isInterrupted) {
                     currentThread().name = "$ip Client Thread"
                     ip = socket.inetAddress.toString().replace("/", "")
-                    val value = Main.tool.decrypt(br.readLine(), spec)
+                    val value = Tool.decrypt(br.readLine(), spec)
                     val answer = JsonObject()
                     val data = JsonValue.readJSON(value).asObject()
                     when (Request.valueOf(data["type"].asString())) {
@@ -103,7 +99,7 @@ class Server : Runnable {
                             val msg = arrayOf("Hi $ip! Your connection is successful!", "Hello $ip! I'm server!", "Welcome to the server $ip!")
                             val rnd = SecureRandom().nextInt(msg.size)
                             answer.add("result", msg[rnd])
-                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec) + "\n")
+                            os.writeBytes(Tool.encrypt(answer.toString(), spec) + "\n")
                             os.flush()
                             Log.server("client.connected", ip)
                         }
@@ -143,9 +139,9 @@ class Server : Runnable {
                             answer.add("subban", subban)
                             for (ser in list) {
                                 val remoteip = ser!!.socket.inetAddress.toString().replace("/", "")
-                                for (b in configs.banTrust) {
+                                for (b in Config.banTrust) {
                                     if (b.asString() == remoteip) {
-                                        ser.os.writeBytes(Main.tool.encrypt(answer.toString(), ser.spec) + "\n")
+                                        ser.os.writeBytes(Tool.encrypt(answer.toString(), ser.spec) + "\n")
                                         ser.os.flush()
                                         Log.server("server.data-sented", ser.socket.inetAddress.toString())
                                     }
@@ -159,7 +155,7 @@ class Server : Runnable {
                             }
                             for (ser in list) {
                                 if (ser!!.spec !== spec) {
-                                    ser!!.os.writeBytes(Main.tool.encrypt(value, ser.spec) + "\n")
+                                    ser!!.os.writeBytes(Tool.encrypt(value, ser.spec) + "\n")
                                     ser.os.flush()
                                 }
                             }
@@ -193,7 +189,7 @@ class Server : Runnable {
                                 }
                             }
                             answer.add("result", if (found) "true" else "false")
-                            os.writeBytes(Main.tool.encrypt(answer.toString(), spec) + "\n")
+                            os.writeBytes(Tool.encrypt(answer.toString(), spec) + "\n")
                             os.flush()
                         }
                     }

@@ -1,5 +1,6 @@
 package essentials.features
 
+import essentials.Config
 import essentials.Main
 import essentials.PlayerData
 import essentials.internal.Bundle
@@ -8,8 +9,8 @@ import kotlin.math.floor
 import kotlin.math.pow
 
 class Exp(target: PlayerData) {
-    val baseXP = Main.configs.baseXp
-    val exponent = Main.configs.exponent
+    val baseXP = Config.baseXp
+    val exponent = Config.exponent
     private fun calcXpForLevel(level: Int): Double {
         return baseXP + baseXP * level.toDouble().pow(exponent)
     }
@@ -42,6 +43,6 @@ class Exp(target: PlayerData) {
         target.reqexp = reqexp
         target.level = level
         target.reqtotalexp = reqtotalexp
-        if (currentlevel < level && currentlevel > Main.configs.alarmLevel && Main.configs.levelUpAlarm) Call.infoToast(Bundle(target.locale)["player.levelup", target.name, level], 600f)
+        if (currentlevel < level && currentlevel > Config.alarmLevel && Config.levelUpAlarm) Call.infoToast(Bundle(target.locale)["player.levelup", target.name, level], 600f)
     }
 }

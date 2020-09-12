@@ -1,16 +1,15 @@
 package essentials
 
 import arc.Core
-import essentials.Main.Companion.colorNickname
-import essentials.Main.Companion.perm
-import essentials.Main.Companion.playerCore
-import essentials.Main.Companion.pluginData
+import essentials.features.Permissions
+import essentials.PlayerCore
+import essentials.PluginData
 import essentials.Main.Companion.pluginRoot
-import essentials.Main.Companion.pluginVars
-import essentials.Main.Companion.tool
+import essentials.features.ColorNickname
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
+import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Playerc
@@ -29,19 +28,19 @@ import java.time.LocalDateTime
 import java.util.function.Consumer
 import kotlin.system.exitProcess
 
-class PlayerCore {
+object PlayerCore {
     lateinit var conn: Connection
     var server: Server? = null
 
     operator fun get(uuid: String): PlayerData {
-        for (p in pluginVars.playerData) {
+        for (p in PluginVars.playerData) {
             if (p.uuid == uuid) return p
         }
         return PlayerData()
     }
 
     fun playerLoad(p: Playerc, id: String?): Boolean {
-        if (pluginVars.playerData.contains(get(p.uuid()))) pluginVars.removePlayerData(get(p.uuid()))
+        if (PluginVars.playerData.contains(get(p.uuid()))) PluginVars.removePlayerData(get(p.uuid()))
 
         val playerData: PlayerData? = if (id == null) {
             load(p.uuid(), null)
@@ -54,13 +53,13 @@ class PlayerCore {
             return false
         }
 
-        if (LocalDateTime.now().isBefore(tool.longToDateTime(playerData.bantime))) {
+        if (LocalDateTime.now().isBefore(Tool.longToDateTime(playerData.bantime))) {
             Vars.netServer.admins.banPlayerID(p.uuid())
             Call.kick(p.con(), Packets.KickReason.banned)
             return false
         }
 
-        val motd = tool.getMotd(playerData.locale)
+        val motd = Tool.getMotd(playerData.locale)
         val count = motd.split("\r\n|\r|\n").toTypedArray().size
         if (count > 10) {
             Call.infoMessage(p.con(), motd)
@@ -68,26 +67,26 @@ class PlayerCore {
             p.sendMessage(motd)
         }
 
-        if (playerData.colornick) colorNickname.targets.add(p)
+        if (playerData.colornick) ColorNickname.targets.add(p)
 
         val oldUUID = playerData.uuid
 
         playerData.uuid = p.uuid()
         playerData.connected = true
         playerData.lastdate = System.currentTimeMillis()
-        playerData.connserver = pluginVars.serverIP
+        playerData.connserver = PluginVars.serverIP
         playerData.joincount = playerData.joincount + 1
         playerData.exp = playerData.exp + playerData.joincount
         playerData.login = true
 
-        perm.setUserPerm(oldUUID, p.uuid())
-        if (perm.user[p.uuid()] == null) {
-            perm.create(playerData)
-            perm.saveAll()
+        Permissions.setUserPerm(oldUUID, p.uuid())
+        if (Permissions.user[p.uuid()] == null) {
+            Permissions.create(playerData)
+            Permissions.saveAll()
         } else {
-            p.name(perm.user[playerData.uuid].asObject()["name"].asString())
+            p.name(Permissions.user[playerData.uuid].asObject()["name"].asString())
         }
-        p.admin(perm.isAdmin(playerData))
+        p.admin(Permissions.isAdmin(playerData))
         return true
     }
 
@@ -146,7 +145,7 @@ class PlayerCore {
 
     fun login(id: String, pw: String): Boolean {
         try {
-            playerCore.conn.prepareStatement("SELECT * from players WHERE accountid=?").use { pstmt ->
+            PlayerCore.conn.prepareStatement("SELECT * from players WHERE accountid=?").use { pstmt ->
                 pstmt.setString(1, id)
                 pstmt.executeQuery().use { rs ->
                     return if (rs.next()) {
@@ -165,11 +164,11 @@ class PlayerCore {
     }
 
     fun ban(player: Playerc, hours: Long, reason: String) {
-        val playerData = playerCore[player.uuid()]
+        val playerData = get(player.uuid())
         val banTime = System.currentTimeMillis() + 1000 * 60 * 60 * hours
 
         playerData.bantime = banTime
-        pluginData.banned.add(PluginData.Banned(banTime, playerData.name, playerData.uuid, reason))
+        PluginData.banned.add(PluginData.Banned(banTime, playerData.name, playerData.uuid, reason))
     }
 
     fun load(uuid: String, id: String?): PlayerData {
@@ -223,7 +222,7 @@ class PlayerCore {
                                 rs.getString("accountpw"),
                                 false
                         )
-                        pluginVars.playerData.add(data)
+                        PluginVars.playerData.add(data)
                         return data
                     }
                 }
@@ -246,7 +245,7 @@ class PlayerCore {
         sql.deleteCharAt(sql.length - 2)
         sql.append(" WHERE uuid=?")
         try {
-            playerCore.conn.prepareStatement(sql.toString()).use { p ->
+            PlayerCore.conn.prepareStatement(sql.toString()).use { p ->
                 js.forEach(object : Consumer<JsonObject.Member> {
                     var index = 1
                     override fun accept(o: JsonObject.Member) {
@@ -286,7 +285,7 @@ class PlayerCore {
     }
 
     fun saveAll() {
-        for (p in pluginVars.playerData) {
+        for (p in PluginVars.playerData) {
             save(p)
         }
     }
@@ -294,13 +293,13 @@ class PlayerCore {
     fun register(name: String, uuid: String, country: String, country_code: String, language: String, connected: Boolean, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): Boolean {
         val sql = StringBuilder()
         sql.append("INSERT INTO players VALUES(")
-        val newdata = playerCore.newData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw, isLogin)
+        val newdata = PlayerCore.newData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw, isLogin)
         val js = newdata.toMap()
         js.forEach(Consumer { sql.append("?,") })
         sql.deleteCharAt(sql.length - 1)
         sql.append(")")
         try {
-            playerCore.conn.prepareStatement(sql.toString()).use { p ->
+            PlayerCore.conn.prepareStatement(sql.toString()).use { p ->
                 js.forEach(object : Consumer<JsonObject.Member> {
                     var index = 1
                     override fun accept(o: JsonObject.Member) {
@@ -394,7 +393,7 @@ class PlayerCore {
             server = Server.createTcpServer("-tcpPort", "9079", "-tcpAllowOthers", "-tcpDaemon", "-baseDir", "./" + pluginRoot.child("data").path(), "-ifNotExists").start()
             conn = DriverManager.getConnection("jdbc:h2:tcp://localhost:9079/player", "", "")
         } else {
-            conn = DriverManager.getConnection(Main.configs.dbUrl)
+            conn = DriverManager.getConnection(Config.dbUrl)
         }
     }
 

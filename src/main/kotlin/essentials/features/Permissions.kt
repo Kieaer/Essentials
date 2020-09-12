@@ -1,11 +1,12 @@
 package essentials.features
 
 import arc.Core
+import essentials.Config
 import essentials.Main
-import essentials.Main.Companion.playerCore
+import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
-import essentials.Main.Companion.pluginVars
 import essentials.PlayerData
+import essentials.PluginVars
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -17,10 +18,14 @@ import org.hjson.JsonValue
 import org.hjson.Stringify
 import java.io.IOException
 
-class Permissions {
+object Permissions {
     var perm: JsonObject = JsonObject()
     var user: JsonObject = JsonObject()
     var default: String = "default"
+    
+    operator fun get(name: String): JsonObject {
+        return user.get(name).asObject()
+    }
 
     fun create(playerData: PlayerData) {
         val obj = JsonObject()
@@ -73,18 +78,18 @@ class Permissions {
                 perm = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
                 for (data in perm) {
                     val name = data.name
-                    if (perm.get(name).asObject()["default"] != null) {
-                        if (perm.get(name).asObject()["default"].asBoolean()) {
+                    if (get(name)["default"] != null) {
+                        if (get(name)["default"].asBoolean()) {
                             default = name
                         }
                     }
-                    if (perm.get(name).asObject()["inheritance"] != null) {
-                        var inheritance = perm.get(name).asObject().getString("inheritance", null)
+                    if (get(name)["inheritance"] != null) {
+                        var inheritance = get(name).getString("inheritance", null)
                         while (inheritance != null) {
-                            for (a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()) {
-                                perm.get(name).asObject()["permission"].asArray().add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
+                            for (a in 0 until get(inheritance).asObject()["permission"].asArray().size()) {
+                                get(name)["permission"].asArray().add(get(inheritance).asObject()["permission"].asArray()[a].asString())
                             }
-                            inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
+                            inheritance = get(inheritance).asObject().getString("inheritance", null)
                         }
                     }
                 }
@@ -103,7 +108,7 @@ class Permissions {
                     }
                 }
                 if (default == null) {
-                    throw PluginException(Bundle(Main.configs.locale)["system.perm.no-default"])
+                    throw PluginException(Bundle(Config.locale)["system.Permissions.no-default"])
                 }
             } catch (e: IOException) {
                 Log.err(e.message!!)
@@ -119,7 +124,7 @@ class Permissions {
             try {
                 user = JsonValue.readHjson(pluginRoot.child("permission_user.hjson").reader()).asObject()
                 for (p in Groups.player) {
-                    p.admin(isAdmin(pluginVars.playerData.find { d: PlayerData -> d.name == p.name }))
+                    p.admin(isAdmin(PluginVars.playerData.find { d: PlayerData -> d.name == p.name }))
                 }
             } catch (e: PluginException) {
                 Log.err("Permissing parsing: " + CrashReport(e).print())
@@ -130,7 +135,7 @@ class Permissions {
     }
 
     fun check(player: Playerc, command: String): Boolean {
-        val p = playerCore[player.uuid()]
+        val p = PlayerCore[player.uuid()]
         if (!p.error) {
             val `object` = user[player.uuid()]
             if (`object` != null) {

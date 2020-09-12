@@ -1,12 +1,13 @@
 package essentials.thread
 
 import essentials.Main
+import essentials.features.Permissions
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import java.io.IOException
 import java.nio.file.*
 
-class PermissionWatch : Runnable {
+object PermissionWatch : Runnable {
     lateinit var watchKey: WatchKey
     lateinit var path: Path
 
@@ -25,8 +26,8 @@ class PermissionWatch : Runnable {
                     val paths = (event.context() as Path).fileName.toString()
                     if (paths == "permission_user.hjson" || paths == "permission.hjson") {
                         if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                            Main.perm.reload(false)
-                            Main.perm.update(false)
+                            Permissions.reload(false)
+                            Permissions.update(false)
                             tried = !tried
                             Log.info("system.perm.updated")
                         }
@@ -61,7 +62,7 @@ class PermissionWatch : Runnable {
     init {
         Main.mainThread.submit {
             if (tried) {
-                Main.perm.update(true)
+                Permissions.update(true)
                 tried = false
             }
         }

@@ -4,8 +4,8 @@ import arc.struct.ObjectMap
 import arc.struct.Seq
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
-import essentials.Main.Companion.configs
-import essentials.Main.Companion.playerCore
+import essentials.Config
+import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
 import mindustry.Vars.*
 import mindustry.content.Blocks
@@ -35,7 +35,7 @@ import kotlin.math.ln
 import kotlin.math.pow
 
 
-class Tool {
+object Tool {
     val ipre = IP2Location()
 
     fun hostIP(): String {
@@ -79,7 +79,7 @@ class Tool {
         return if (pluginRoot.child("motd/$l.txt").exists()) {
             pluginRoot.child("motd/$l.txt").readString()
         } else {
-            val file = pluginRoot.child("motd/" + configs.locale.toString() + ".txt")
+            val file = pluginRoot.child("motd/" + Config.locale.toString() + ".txt")
             if (file.exists()) file.readString() else ""
         }
     }
@@ -113,7 +113,7 @@ class Tool {
 
     fun sendMessageAll(value: String, vararg parameter: Any?) {
         for (p in Groups.player) {
-            val playerData = playerCore[p.uuid()]
+            val playerData = PlayerCore[p.uuid()]
             if (!playerData.error) {
                 p.sendMessage(Bundle(playerData.locale).prefix(value, *parameter))
             }
@@ -141,7 +141,7 @@ class Tool {
         val res = ipre.IPQuery(ip)
         val code = CountryCode.getByCode(res.countryShort)
 
-        return if (code == null) configs.locale else code.toLocale()
+        return if (code == null) Config.locale else code.toLocale()
     }
 
     fun download(url: URL, savepath: File) {

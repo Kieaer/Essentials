@@ -1,6 +1,6 @@
 package essentials
 
-import essentials.Main.Companion.tool
+import essentials.internal.Tool
 import org.hjson.JsonObject
 import java.util.*
 
@@ -94,7 +94,7 @@ class PlayerData {
         this.accountpw = accountpw
         this.login = login
         error = false
-        locale = tool.textToLocale(country_code)
+        locale = Tool.textToLocale(country_code)
     }
 
     fun toMap(): JsonObject {

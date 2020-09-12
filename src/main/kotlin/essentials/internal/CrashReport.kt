@@ -1,8 +1,9 @@
 package essentials.internal
 
+import essentials.Config
 import essentials.Main
 import essentials.Main.Companion.pluginRoot
-import essentials.Main.Companion.pluginVars
+import essentials.PluginVars
 import mindustry.Vars
 import mindustry.core.Version
 import org.hjson.JsonValue
@@ -32,7 +33,7 @@ class CrashReport {
     private fun send() {
         var socket: Socket? = null
         try {
-            if (!Main.configs.debug) {
+            if (!Config.debug) {
                 var sb = StringBuilder()
                 sb.append(e.toString()).append("\n")
                 val element = e.stackTrace
@@ -42,7 +43,7 @@ class CrashReport {
                 Log.write(Log.LogType.error, text)
                 Log.err("Plugin internal error! - " + e.message)
                 Log.err(text)
-                if (Main.configs.crashReport) {
+                if (Config.crashReport) {
                     val address = InetAddress.getByName("mindustry.kr")
                     socket = Socket(address, 6560)
                     BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)).use { `is` ->
@@ -53,7 +54,7 @@ class CrashReport {
                             for (error in element) sb.append("at ").append(error.toString()).append("\n")
                             val plugins = StringBuilder()
                             for (a in 0 until Vars.mods.list().size) plugins.append(Vars.mods.list()[a].name).append(", ")
-                            val logs = "플러그인 버전: ${pluginVars.pluginVersion}\n" + "" +
+                            val logs = "플러그인 버전: ${PluginVars.pluginVersion}\n" + "" +
                                     "서버 버전: ${Version.build}.${Version.revision} ${Version.modifier}\n" +
                                     "OS: ${System.getProperty("os.name")}\n" +
                                     "플러그인 목록: ${if (plugins.toString().contains(", ")) plugins.toString().substring(0, plugins.length - 2) else plugins.toString()}\n" +

@@ -1,9 +1,11 @@
 package essentials.network
 
+import essentials.Config
 import essentials.Main
 import essentials.Main.Companion.mainThread
 import essentials.internal.CrashReport
 import essentials.internal.Log
+import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Playerc
@@ -22,7 +24,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
-class Client : Runnable {
+object Client : Runnable {
     lateinit var socket: Socket
     lateinit var br: BufferedReader
     lateinit var os: DataOutputStream
@@ -43,8 +45,8 @@ class Client : Runnable {
 
     fun wakeup() {
         try {
-            val address = InetAddress.getByName(Main.configs.clientHost)
-            socket = Socket(address, Main.configs.clientPort)
+            val address = InetAddress.getByName(Config.clientHost)
+            socket = Socket(address, Config.clientPort)
             socket.soTimeout = if (disconnected) 2000 else 10000
 
             // 키 생성
@@ -63,10 +65,10 @@ class Client : Runnable {
             // 데이터 전송
             val json = JsonObject()
             json.add("type", "Ping")
-            val encrypted = Main.tool.encrypt(json.toString(), skey)
+            val encrypted = Tool.encrypt(json.toString(), skey)
             os.writeBytes(encrypted + "\n")
             os.flush()
-            val receive = Main.tool.decrypt(br.readLine(), skey)
+            val receive = Tool.decrypt(br.readLine(), skey)
             if (JsonValue.readJSON(receive).asObject()["result"] != null) {
                 activated = true
                 mainThread.execute(Thread(this))
@@ -143,7 +145,7 @@ class Client : Runnable {
                     data.add("ban", ban)
                     data.add("ipban", ipban)
                     data.add("subban", subban)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
+                    os.writeBytes(Tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                     Log.client("client.banlist.sented")
                 }
@@ -151,14 +153,14 @@ class Client : Runnable {
                     data.add("type", "Chat")
                     data.add("name", player!!.name())
                     data.add("message", message)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
+                    os.writeBytes(Tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name() + "[orange]: [white]" + message)
-                    Log.client("client.message", Main.configs.clientHost, message)
+                    Log.client("client.message", Config.clientHost, message)
                 }
                 Request.Exit -> {
                     data.add("type", "Exit")
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
+                    os.writeBytes(Tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                     shutdown()
                     return
@@ -171,19 +173,19 @@ class Client : Runnable {
                         false
                     }
                     if (isIP) data.add("ip", message)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
+                    os.writeBytes(Tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                 }
                 Request.UnbanID -> {
                     data.add("type", "UnbanID")
                     data.add("uuid", message)
-                    os.writeBytes(Main.tool.encrypt(data.toString(), skey) + "\n")
+                    os.writeBytes(Tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                 }
                 Request.DataShare -> {
                     data.add("type", "DataShare")
                     data.add("data", "")
-                    os.writeBytes(Main.tool.encrypt("datashare", skey) + "\n")
+                    os.writeBytes(Tool.encrypt("datashare", skey) + "\n")
                     os.flush()
                 }
             }
@@ -203,20 +205,20 @@ class Client : Runnable {
             try {
                 var data: JsonObject
                 try {
-                    data = JsonValue.readJSON(Main.tool.decrypt(br.readLine(), skey)).asObject()
+                    data = JsonValue.readJSON(Tool.decrypt(br.readLine(), skey)).asObject()
                 } catch (e: IllegalArgumentException) {
                     disconnected = true
-                    Log.client("server.disconnected", Main.configs.clientHost)
+                    Log.client("server.disconnected", Config.clientHost)
                     if (!Thread.currentThread().isInterrupted) wakeup()
                     return
                 } catch (e: SocketException) {
                     disconnected = true
-                    Log.client("server.disconnected", Main.configs.clientHost)
+                    Log.client("server.disconnected", Config.clientHost)
                     if (!Thread.currentThread().isInterrupted) wakeup()
                     return
                 } catch (e: Exception) {
                     if (e.message != "Socket closed") CrashReport(e)
-                    Log.client("server.disconnected", Main.configs.clientHost)
+                    Log.client("server.disconnected", Config.clientHost)
                     shutdown()
                     return
                 }
@@ -254,7 +256,7 @@ class Client : Runnable {
                     }
                 }
             } catch (e: Exception) {
-                Log.client("server.disconnected", Main.configs.clientHost)
+                Log.client("server.disconnected", Config.clientHost)
                 shutdown()
                 return
             }

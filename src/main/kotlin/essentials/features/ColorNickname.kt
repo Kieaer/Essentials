@@ -1,24 +1,25 @@
 package essentials.features
 
 import arc.struct.Seq
+import essentials.Config
 import essentials.Main
-import essentials.Main.Companion.playerCore
+import essentials.PlayerCore
 import mindustry.gen.Playerc
 
-class ColorNickname : Runnable {
+object ColorNickname : Runnable {
     var colorOffset = 0
     var targets = Seq<Playerc>()
 
     override fun run() {
         while (!Thread.currentThread().isInterrupted) {
             for (player in targets) {
-                val p = playerCore[player.uuid()]
+                val p = PlayerCore[player.uuid()]
                 if (p.connected) {
                     val name = p.name.replace("\\[(.*?)]".toRegex(), "")
                     nickcolor(name, player)
                 }
             }
-            Thread.sleep(Main.configs.cupdatei.toLong())
+            Thread.sleep(Config.cupdatei.toLong())
         }
     }
 

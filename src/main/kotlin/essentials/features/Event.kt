@@ -3,27 +3,23 @@ package essentials.features
 import arc.Core
 import arc.Events
 import arc.struct.ArrayMap
-import essentials.Main.Companion.client
-import essentials.Main.Companion.configs
-import essentials.Main.Companion.discord
+import essentials.Config
 import essentials.Main.Companion.mainThread
-import essentials.Main.Companion.perm
-import essentials.Main.Companion.playerCore
-import essentials.Main.Companion.pluginData
-import essentials.Main.Companion.pluginRoot
-import essentials.Main.Companion.pluginVars
-import essentials.Main.Companion.server
-import essentials.Main.Companion.timer
-import essentials.Main.Companion.tool
-import essentials.Main.Companion.vote
-import essentials.PlayerData
+import essentials.features.Permissions
+import essentials.PlayerCore
 import essentials.PluginData
+import essentials.Main.Companion.pluginRoot
+import essentials.Main.Companion.timer
+import essentials.PlayerData
+import essentials.PluginVars
 import essentials.external.IpAddressMatcher
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.Log.LogType
+import essentials.internal.Tool
 import essentials.network.Client
+import essentials.network.Server
 import mindustry.Vars
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -55,15 +51,15 @@ object Event {
 
         }
         Events.on(ConfigEvent::class.java) { e: ConfigEvent ->
-            if (e.tile != null && e.tile.block() != null && e.player != null && configs.alertAction) {
+            if (e.tile != null && e.tile.block() != null && e.player != null && Config.alertAction) {
                 for (p in Groups.player) {
-                    val playerData = playerCore[p.uuid()]
+                    val playerData = PlayerCore[p.uuid()]
                     if (playerData.alert) {
                         p.sendMessage(Bundle(playerData.locale)["tap-config", e.player.name, e.tile.block().name])
                     }
                 }
-                if (configs.debug) Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.pos())
-                if (configs.logging) Log.write(LogType.tap, "log.tap-config", e.player.name, e.tile.block().name)
+                if (Config.debug) Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.pos())
+                if (Config.logging) Log.write(LogType.tap, "log.tap-config", e.player.name, e.tile.block().name)
 
                 // Source by BasedUser(router)
                 val entity = e.tile
@@ -76,7 +72,7 @@ object Event {
                     val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all={"), oldGraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
                     val newGraphCount = newgraph.toString().substring(newgraph.toString().indexOf("all={"), newgraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
                     if (abs(oldGraphCount - newGraphCount) > 10) {
-                        //tool.sendMessageAll("anti-grief.powernode", e.player.name, "[green] " + Math.max(oldGraphCount, newGraphCount) + " [cyan]->[scarlet] " + Math.min(oldGraphCount, newGraphCount) + " [white](" + e.tile.x + ", " + e.tile.y + ")");
+                        //Tool.sendMessageAll("anti-grief.powernode", e.player.name, "[green] " + Math.max(oldGraphCount, newGraphCount) + " [cyan]->[scarlet] " + Math.min(oldGraphCount, newGraphCount) + " [white](" + e.tile.x + ", " + e.tile.y + ")");
                         Call.sendMessage(e.player.name + " [white]player has [scarlet]unlinked[] the [yellow]power node[]. Number of connected buildings: [green] " + oldGraphCount.coerceAtLeast(newGraphCount) + " [cyan]->[scarlet] " + oldGraphCount.coerceAtMost(newGraphCount) + " [white](" + e.tile.x + ", " + e.tile.y + ")")
                     }
                 }
@@ -86,10 +82,10 @@ object Event {
 
         }
         /*Events.on(TapEvent::class.java) { e: TapEvent ->
-            if (configs.logging) Log.write(LogType.tap, "log.tap", e.player.name, e.tile.block().name)
-            val playerData = playerCore[e.player.uuid]
+            if (Config.logging) Log.write(LogType.tap, "log.tap", e.player.name, e.tile.block().name)
+            val playerData = PlayerCore[e.player.uuid]
             if (!playerData.error) {
-                for (data in pluginData.warpblocks) {
+                for (data in PluginData.warpblocks) {
                     if (e.tile.x >= world.tile(data.pos).link().x && e.tile.x <= world.tile(data.pos).link().x) {
                         if (e.tile.y >= world.tile(data.pos).link().y && e.tile.y <= world.tile(data.pos).link().y) {
                             if (data.online) {
@@ -103,7 +99,7 @@ object Event {
                     }
                 }
 
-                for (PluginData.warpzone data : pluginData.warpzones) {
+                for (PluginData.warpzone data : PluginData.warpzones) {
                     if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
                         if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
                             Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
@@ -117,18 +113,18 @@ object Event {
             }
         }*/
         Events.on(WithdrawEvent::class.java) { e: WithdrawEvent ->
-            if (e.tile != null && e.player.miner().item() != null && e.player.name != null && configs.antiGrief) {
+            if (e.tile != null && e.player.miner().item() != null && e.player.name != null && Config.antiGrief) {
                 for (p in Groups.player) {
-                    val playerData = playerCore[p.uuid()]
+                    val playerData = PlayerCore[p.uuid()]
                     if (playerData.alert) {
                         p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name])
                     }
                 }
-                if (configs.debug) Log.info("log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
-                if (configs.logging) Log.write(LogType.withdraw, "log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
+                if (Config.debug) Log.info("log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
+                if (Config.logging) Log.write(LogType.withdraw, "log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
                 if (Vars.state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
-                        e.player.sendMessage(Bundle(playerCore[e.player.uuid()].locale)["system.flammable.disabled"])
+                        e.player.sendMessage(Bundle(PlayerCore[e.player.uuid()].locale)["system.flammable.disabled"])
                         e.player.miner().clearItem()
                     }
                 }
@@ -147,7 +143,7 @@ object Event {
                 if (index == 1) {
                     for (i in 0 until Groups.player.size()) {
                         val player = Groups.player.getByID(i)
-                        val target = playerCore[player.uuid()]
+                        val target = PlayerCore[player.uuid()]
                         if (target.login) {
                             if (player.team().name == e.winner.name) {
                                 target.pvpwincount = target.pvpwincount + 1
@@ -160,7 +156,7 @@ object Event {
             } else if (Vars.state.rules.attackMode) {
                 for (i in 0 until Groups.player.size()) {
                     val player = Groups.player.getByID(i)
-                    val target = playerCore[player.uuid()]
+                    val target = PlayerCore[player.uuid()]
                     if (target.login) {
                         target.attackclear = target.attackclear + 1
                     }
@@ -170,19 +166,19 @@ object Event {
 
         // 맵이 불러와졌을 때
         Events.on(WorldLoadEvent::class.java) {
-            pluginVars.playtime = 0L
+            PluginVars.playtime = 0L
 
             // 전력 노드 정보 초기화
-            pluginData.powerblocks.clear()
+            PluginData.powerblocks.clear()
         }
         Events.on(PlayerConnect::class.java) { e: PlayerConnect ->
-            if (configs.logging) Log.write(LogType.player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
+            if (Config.logging) Log.write(LogType.player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
-            for (s in pluginData.blacklist) {
+            for (s in PluginData.blacklist) {
                 if (e.player.name.matches(Regex(s))) {
                     try {
-                        val locale = tool.getGeo(e.player)
+                        val locale = Tool.getGeo(e.player)
                         Call.kick(e.player.con, Bundle(locale)["system.nickname.blacklisted.kick"])
                         Log.info("system.nickname.blacklisted", e.player.name)
                     } catch (ex: Exception) {
@@ -190,63 +186,63 @@ object Event {
                     }
                 }
             }
-            if (configs.strictName) {
+            if (Config.strictName) {
                 if (e.player.name.length > 32) Call.kick(e.player.con, "Nickname too long!")
                 //if (e.player.name.matches(".*\\[.*].*"))
-                //    Call.Kick(e.player.con, "Color tags can't be used for nicknames on this server.");
+                //    Call.Kick(e.player.con, "Color tags can't be used for nicknames on this Server.");
                 if (e.player.name.contains("　")) Call.kick(e.player.con, "Don't use blank speical charactor nickname!")
                 if (e.player.name.contains(" ")) Call.kick(e.player.con, "Nicknames can't be used on this server!")
-                if (Pattern.matches(".*\\[.*.].*", e.player.name)) Call.kick(e.player.con, "Can't use only color tags nickname in this server.")
+                if (Pattern.matches(".*\\[.*.].*", e.player.name)) Call.kick(e.player.con, "Can't use only color tags nickname in this Server.")
             }
         }
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(DepositEvent::class.java) { e: DepositEvent ->
             for (p in Groups.player) {
-                val playerData = playerCore[p.uuid()]
+                val playerData = PlayerCore[p.uuid()]
                 if (playerData.alert) {
                     p.sendMessage(Bundle(playerData.locale)["anti-grief.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name])
                 }
             }
-            if (configs.logging) Log.write(LogType.deposit, "log.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name)
+            if (Config.logging) Log.write(LogType.deposit, "log.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name)
         }
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(PlayerJoin::class.java) { e: PlayerJoin ->
-            if (configs.logging) Log.write(LogType.player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
-            pluginVars.players.add(e.player)
+            if (Config.logging) Log.write(LogType.player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
+            PluginVars.players.add(e.player)
             e.player.admin(false)
             val t = Thread {
                 Thread.currentThread().name = e.player.name + " Player Join thread"
-                val playerData = playerCore.load(e.player.uuid(), null)
+                val playerData = PlayerCore.load(e.player.uuid(), null)
                 val bundle = Bundle(playerData.locale)
-                if (configs.loginEnable) {
-                    if (configs.passwordMethod == "mixed") {
-                        if (!playerData.error && configs.autoLogin) {
+                if (Config.loginEnable) {
+                    if (Config.passwordMethod == "mixed") {
+                        if (!playerData.error && Config.autoLogin) {
                             if (playerData.udid != 0L) {
-                                Thread { Call.connect(e.player.con, pluginVars.serverIP, 7060) }.start()
+                                Thread { Call.connect(e.player.con, PluginVars.serverIP, 7060) }.start()
                             } else {
                                 e.player.sendMessage(bundle["account.autologin"])
-                                playerCore.playerLoad(e.player, null)
+                                PlayerCore.playerLoad(e.player, null)
                             }
                         } else {
-                            val lc = tool.getGeo(e.player)
-                            if (playerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, e.player.name, "none", false)) {
-                                playerCore.playerLoad(e.player, null)
+                            val lc = Tool.getGeo(e.player)
+                            if (PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)) {
+                                PlayerCore.playerLoad(e.player, null)
                             } else {
                                 Call.kick(e.player.con, Bundle()["plugin-error-kick"])
                             }
                         }
-                    } else if (configs.passwordMethod == "discord") {
-                        if (!playerData.error && configs.autoLogin) {
+                    } else if (Config.passwordMethod == "discord") {
+                        if (!playerData.error && Config.autoLogin) {
                             e.player.sendMessage(bundle["account.autologin"])
-                            playerCore.playerLoad(e.player, null)
+                            PlayerCore.playerLoad(e.player, null)
                         } else {
                             val message: String?
-                            val language = tool.getGeo(e.player)
-                            message = if (configs.passwordMethod == "discord") {
+                            val language = Tool.getGeo(e.player)
+                            message = if (Config.passwordMethod == "discord") {
                                 """${Bundle(language)["system.login.require.discord"]}
-                                    ${configs.discordLink}
+                                    ${Config.discordLink}
                                     """.trimIndent()
                             } else {
                                 Bundle(language)["system.login.require.password"]
@@ -254,15 +250,15 @@ object Event {
                             Call.infoMessage(e.player.con, message)
                         }
                     } else {
-                        if (!playerData.error && configs.autoLogin) {
+                        if (!playerData.error && Config.autoLogin) {
                             e.player.sendMessage(bundle["account.autologin"])
-                            playerCore.playerLoad(e.player, null)
+                            PlayerCore.playerLoad(e.player, null)
                         } else {
                             val message: String?
-                            val language = tool.getGeo(e.player)
-                            message = if (configs.passwordMethod == "discord") {
+                            val language = Tool.getGeo(e.player)
+                            message = if (Config.passwordMethod == "discord") {
                                 """${Bundle(language)["system.login.require.discord"]}
-                                    ${configs.discordLink}
+                                    ${Config.discordLink}
                                     """.trimIndent()
                             } else {
                                 Bundle(language)["system.login.require.password"]
@@ -272,20 +268,20 @@ object Event {
                     }
                 } else {
                     // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                    if (!playerData.error && configs.autoLogin) {
+                    if (!playerData.error && Config.autoLogin) {
                         e.player.sendMessage(bundle["account.autologin"])
-                        playerCore.playerLoad(e.player, null)
+                        PlayerCore.playerLoad(e.player, null)
                     } else {
-                        val lc = tool.getGeo(e.player.con.address)
-                        val register = playerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, pluginVars.serverIP, "default", 0L, e.player.name, "none", false)
-                        if (!register || playerCore.playerLoad(e.player, null)) {
+                        val lc = Tool.getGeo(e.player.con.address)
+                        val register = PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)
+                        if (!register || PlayerCore.playerLoad(e.player, null)) {
                             Call.kick(e.player.con, Bundle()["plugin-error-kick"])
                         }
                     }
                 }
 
                 // VPN을 사용중인지 확인
-                if (configs.antiVPN) {
+                if (Config.antiVPN) {
                     val br = BufferedReader(InputStreamReader(javaClass.getResourceAsStream("/ipv4.txt")))
                     br.use {
                         var line: String
@@ -300,11 +296,11 @@ object Event {
 
 
                 // PvP 평화시간 설정
-                if (configs.antiRush && Vars.state.rules.pvp && pluginVars.playtime < configs.antiRushtime) {
+                if (Config.antiRush && Vars.state.rules.pvp && PluginVars.playtime < Config.antiRushtime) {
                     Vars.state.rules.unitDamageMultiplier = 0f
                     Vars.state.rules.unitHealthMultiplier = 0.001f
                     Call.setRules(Vars.state.rules)
-                    pluginVars.isPvPPeace = true
+                    PluginVars.isPvPPeace = true
                 }
             }
             t.start()
@@ -312,50 +308,50 @@ object Event {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave::class.java) { e: PlayerLeave ->
-            if (configs.logging) Log.write(LogType.player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
-            val player = playerCore[e.player.uuid()]
+            if (Config.logging) Log.write(LogType.player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
+            val player = PlayerCore[e.player.uuid()]
             if (player.login) {
                 player.connected = false
                 player.connserver = "none"
                 if (Vars.state.rules.pvp && !Vars.state.gameOver) player.pvpbreakout = player.pvpbreakout + 1
             }
-            playerCore.save(player)
-            pluginVars.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }?.let { pluginVars.removePlayerData(it) }
-            pluginVars.players.remove(e.player)
+            PlayerCore.save(player)
+            PluginVars.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }?.let { PluginVars.removePlayerData(it) }
+            PluginVars.players.remove(e.player)
         }
 
         // 플레이어가 수다떨었을 때
         Events.on(PlayerChatEvent::class.java) { e: PlayerChatEvent ->
-            if (configs.antiGrief && (e.message.length > Vars.maxTextLength || e.message.contains("Nexity#2671"))) {
+            if (Config.antiGrief && (e.message.length > Vars.maxTextLength || e.message.contains("Nexity#2671"))) {
                 Call.kick(e.player.con, "Hacked client detected")
             }
-            val playerData = playerCore[e.player.uuid()]
+            val playerData = PlayerCore[e.player.uuid()]
             val bundle = Bundle(playerData.locale)
             if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>")
             if (!playerData.error) {
                 // 명령어인지 확인
                 if (!e.message.startsWith("/")) {
-                    if (e.message == "y" && vote.service.process) {
+                    if (e.message == "y" && Vote.service.process) {
                         // 투표가 진행중일때
-                        if (vote.service.voted.contains(e.player.uuid())) {
+                        if (Vote.service.voted.contains(e.player.uuid())) {
                             e.player.sendMessage(bundle["vote.already-voted"])
                         } else {
-                            vote.service.set(e.player.uuid())
+                            Vote.service.set(e.player.uuid())
                         }
                     } else {
                         if (!playerData.mute) {
                             // 서버간 대화기능 작동
                             if (playerData.crosschat) {
                                 when {
-                                    configs.clientEnable -> {
-                                        client.request(Client.Request.Chat, e.player, e.message)
+                                    Config.clientEnable -> {
+                                        Client.request(Client.Request.Chat, e.player, e.message)
                                     }
-                                    configs.serverEnable -> {
+                                    Config.serverEnable -> {
                                         // 메세지를 모든 클라이언트에게 전송함
                                         val msg = "[" + e.player.name + "]: " + e.message
                                         try {
-                                            for (ser in server.list) {
-                                                ser!!.os.writeBytes(tool.encrypt(msg, ser.spec))
+                                            for (ser in Server.list) {
+                                                ser!!.os.writeBytes(Tool.encrypt(msg, ser.spec))
                                                 ser.os.flush()
                                             }
                                         } catch (ex: Exception) {
@@ -370,12 +366,12 @@ object Event {
                             }
                         }
                     }
-                    if (configs.translate) {
+                    if (Config.translate) {
                         Thread {
                             val buf = ArrayMap<String, String>()
                             try {
                                 for (p in Groups.player) {
-                                    val target = playerCore[p.uuid()]
+                                    val target = PlayerCore[p.uuid()]
                                     if (!target.error && !target.mute) {
                                         var original = playerData.locale.language
                                         var language = target.locale.language
@@ -392,8 +388,8 @@ object Event {
                                         if (language != original && !match) {
                                             val con = URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation").openConnection() as HttpURLConnection
                                             con.requestMethod = "POST"
-                                            con.setRequestProperty("X-NCP-APIGW-API-KEY-ID", configs.translateId)
-                                            con.setRequestProperty("X-NCP-APIGW-API-KEY", configs.translatePw)
+                                            con.setRequestProperty("X-NCP-APIGW-API-KEY-ID", Config.translateId)
+                                            con.setRequestProperty("X-NCP-APIGW-API-KEY", Config.translatePw)
                                             con.doOutput = true
                                             try {
                                                 DataOutputStream(con.outputStream).use { wr ->
@@ -427,8 +423,8 @@ object Event {
                                                 CrashReport(ex)
                                             }
                                         } else {
-                                            if (perm.user[playerData.uuid].asObject()["prefix"] != null) {
-                                                if (!playerData.crosschat) p.sendMessage(perm.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
+                                            if (Permissions.user[playerData.uuid].asObject()["prefix"] != null) {
+                                                if (!playerData.crosschat) p.sendMessage(Permissions.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
                                             } else {
                                                 if (!playerData.crosschat) p.sendMessage("[orange]" + NetClient.colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message)
                                             }
@@ -440,7 +436,7 @@ object Event {
                             }
                         }.start()
                     } else if (NetClient.colorizeName(e.player.id, e.player.name) != null) {
-                        Call.sendMessage(perm.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
+                        Call.sendMessage(Permissions.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
                     }
                 }
 
@@ -455,7 +451,7 @@ object Event {
                 val player = e.unit.player
 
                 Log.write(LogType.block, "log.block.place", player.name, e.tile.block().name)
-                val target = playerCore[player.uuid()]
+                val target = PlayerCore[player.uuid()]
                 if (!e.breaking && player.builder().buildPlan().block != null && !target.error && e.tile.block() != null) {
                     val name = e.tile.block().name
                     try {
@@ -471,15 +467,15 @@ object Event {
 
                     // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
                     if (e.tile.block() === Blocks.message) {
-                        pluginData.messagemonitors.add(PluginData.MessageMonitor(e.tile.pos()))
+                        PluginData.messagemonitors.add(PluginData.MessageMonitor(e.tile.pos()))
                     }
 
                     // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
                     if (e.tile.block() === Blocks.thoriumReactor) {
-                        pluginData.nukeposition.add(e.tile)
-                        pluginData.nukedata.add(e.tile)
+                        PluginData.nukeposition.add(e.tile)
+                        PluginData.nukedata.add(e.tile)
                     }
-                    if (configs.debug && configs.antiGrief) {
+                    if (Config.debug && Config.antiGrief) {
                         Log.info("anti-grief.build.finish", player.name, e.tile.block().name, e.tile.x, e.tile.y)
                     }
 
@@ -509,7 +505,7 @@ object Event {
             if (e.builder is Playerc && e.builder.buildPlan() != null && !Pattern.matches(".*build.*", e.builder.buildPlan().block.name) && e.tile.block() !== Blocks.air) {
                 if (e.breaking) {
                     Log.write(LogType.block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
-                    val target = playerCore[(e.builder as Playerc).uuid()]
+                    val target = PlayerCore[(e.builder as Playerc).uuid()]
                     val name = e.tile.block().name
                     try {
                         val obj = JsonValue.readHjson(pluginRoot.child("Exp.hjson").reader()).asObject()
@@ -525,9 +521,9 @@ object Event {
                     // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
                     if (e.builder.buildPlan().block === Blocks.message) {
                         try {
-                            for (i in 0 until pluginData.powerblocks.size) {
-                                if (pluginData.powerblocks[i].pos == e.tile.pos()) {
-                                    pluginData.powerblocks.remove(i)
+                            for (i in 0 until PluginData.powerblocks.size) {
+                                if (PluginData.powerblocks[i].pos == e.tile.pos()) {
+                                    PluginData.powerblocks.remove(i)
                                     break
                                 }
                             }
@@ -537,7 +533,7 @@ object Event {
                     }
 
                     // Exp Playing Game (EPG)
-                    if (configs.expLimit) {
+                    if (Config.expLimit) {
                         val level = target.level
                         try {
                             val obj = JsonValue.readHjson(pluginRoot.child("Exp.hjson").reader()).asObject()
@@ -545,7 +541,7 @@ object Event {
                                 val blockreqlevel = obj.getInt(name, 999)
                                 if (level < blockreqlevel) {
                                     Call.deconstructFinish(e.tile, e.tile.block(), (e.builder as Playerc).unit())
-                                    (e.builder as Playerc).sendMessage(Bundle(playerCore[(e.builder as Playerc).uuid()].locale)["system.epg.block-require", name, blockreqlevel])
+                                    (e.builder as Playerc).sendMessage(Bundle(PlayerCore[(e.builder as Playerc).uuid()].locale)["system.epg.block-require", name, blockreqlevel])
                                 }
                             } else {
                                 Log.err("system.epg.block-not-valid", name)
@@ -555,7 +551,7 @@ object Event {
                         }
                     }
                 }
-                if (configs.debug && configs.antiGrief) {
+                if (Config.debug && Config.antiGrief) {
                     Log.info("anti-grief.destroy", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
                 }
             }
@@ -566,7 +562,7 @@ object Event {
             // 뒤진(?) 유닛이 플레이어일때
             if (e.unit is Playerc) {
                 val player = e.unit as Playerc
-                val target = playerCore[player.uuid()]
+                val target = PlayerCore[player.uuid()]
                 if (!Vars.state.teams[player.team()].cores.isEmpty) target.deathcount = target.deathcount + 1
             }
 
@@ -574,7 +570,7 @@ object Event {
             if (Groups.player != null && Groups.player.size() > 0) {
                 for (i in 0 until Groups.player.size()) {
                     val player = Groups.player.getByID(i)
-                    val target = playerCore[player.uuid()]
+                    val target = PlayerCore[player.uuid()]
                     if (!Vars.state.teams[player.team()].cores.isEmpty) target.killcount = target.killcount + 1
                 }
             }
@@ -583,13 +579,13 @@ object Event {
         // 플레이어가 밴당했을 때 공유기능 작동
         Events.on(PlayerBanEvent::class.java) { e: PlayerBanEvent ->
             val bansharing = Thread {
-                if (configs.banShare && configs.clientEnable) {
-                    client.request(Client.Request.BanSync, null, null)
+                if (Config.banShare && Config.clientEnable) {
+                    Client.request(Client.Request.BanSync, null, null)
                 }
             }
             for (player in Groups.player) {
                 if (player === e.player) {
-                    tool.sendMessageAll("player.banned", e.player.name)
+                    Tool.sendMessageAll("player.banned", e.player.name)
                     if (Vars.netServer.admins.isIDBanned(player.uuid())) {
                         player.con.kick(Packets.KickReason.banned)
                     }
@@ -601,31 +597,31 @@ object Event {
         // 이건 IP 밴당했을때 작동
         Events.on(PlayerIpBanEvent::class.java) {
             val bansharing = Thread {
-                if (configs.banShare && client.activated) {
-                    client.request(Client.Request.BanSync, null, null)
+                if (Config.banShare && Client.activated) {
+                    Client.request(Client.Request.BanSync, null, null)
                 }
             }
             mainThread.submit(bansharing)
         }
 
         // 이건 밴 해제되었을 때 작동
-        Events.on(PlayerUnbanEvent::class.java) { e: PlayerUnbanEvent -> if (client.activated) client.request(Client.Request.UnbanID, null, e.player.uuid() + "|<unknown>") }
+        Events.on(PlayerUnbanEvent::class.java) { e: PlayerUnbanEvent -> if (Client.activated) Client.request(Client.Request.UnbanID, null, e.player.uuid() + "|<unknown>") }
 
         // 이건 IP 밴이 해제되었을 때 작동
-        Events.on(PlayerIpUnbanEvent::class.java) { e: PlayerIpUnbanEvent -> if (client.activated) client.request(Client.Request.UnbanIP, null, "<unknown>|" + e.ip) }
+        Events.on(PlayerIpUnbanEvent::class.java) { e: PlayerIpUnbanEvent -> if (Client.activated) Client.request(Client.Request.UnbanIP, null, "<unknown>|" + e.ip) }
         Events.on(ServerLoadEvent::class.java) { _: ServerLoadEvent? ->
             // 업데이트 확인
-            if (configs.update) {
-                Log.client("client.update-check")
+            if (Config.update) {
+                Log.client("Client.update-check")
                 try {
-                    val json = JsonValue.readJSON(tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")).asObject()
+                    val json = JsonValue.readJSON(Tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")).asObject()
                     for (a in 0 until Vars.mods.list().size) {
                         if (Vars.mods.list()[a].meta.name == "Essentials") {
-                            pluginVars.pluginVersion = Vars.mods.list()[a].meta.version
+                            PluginVars.pluginVersion = Vars.mods.list()[a].meta.version
                         }
                     }
-                    val latest = DefaultArtifactVersion(json.getString("tag_name", pluginVars.pluginVersion))
-                    val current = DefaultArtifactVersion(pluginVars.pluginVersion)
+                    val latest = DefaultArtifactVersion(json.getString("tag_name", PluginVars.pluginVersion))
+                    val current = DefaultArtifactVersion(PluginVars.pluginVersion)
                     when {
                         latest > current -> {
                             Log.client("version-new")
@@ -635,26 +631,26 @@ object Event {
                                     println(json.getString("body", "No description found."))
                                     println(Bundle()["plugin-downloading-standby"])
                                     timer.cancel()
-                                    if (configs.serverEnable) {
+                                    if (Config.serverEnable) {
                                         try {
-                                            for (ser in server.list) {
+                                            for (ser in Server.list) {
                                                 ser!!.interrupt()
                                                 ser.os.close()
                                                 ser.br.close()
                                                 ser.socket.close()
-                                                server.list.remove(ser)
+                                                Server.list.remove(ser)
                                             }
-                                            server.shutdown()
+                                            Server.shutdown()
                                         } catch (ignored: Exception) {
                                         }
                                     }
-                                    if (configs.clientEnable && client.activated) {
-                                        client.request(Client.Request.Exit, null, null)
+                                    if (Config.clientEnable && Client.activated) {
+                                        Client.request(Client.Request.Exit, null, null)
                                     }
                                     mainThread.shutdown()
-                                    playerCore.dispose()
+                                    PlayerCore.dispose()
                                     println(Bundle()["plugin-downloading"])
-                                    tool.download(URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),
+                                    Tool.download(URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),
                                             Core.settings.dataDirectory.child("mods/Essentials.jar").file())
                                 } catch (ex: Exception) {
                                     println(Bundle()["plugin-downloading-fail"].trimIndent())
@@ -683,15 +679,15 @@ object Event {
             } else {
                 for (a in 0 until Vars.mods.list().size) {
                     if (Vars.mods.list()[a].meta.name == "Essentials") {
-                        pluginVars.pluginVersion = Vars.mods.list()[a].meta.version
+                        PluginVars.pluginVersion = Vars.mods.list()[a].meta.version
                         break
                     }
                 }
             }
 
             // Discord 봇 시작
-            if (configs.passwordMethod == "discord" || configs.passwordMethod == "mixed") {
-                discord.start()
+            if (Config.passwordMethod == "discord" || Config.passwordMethod == "mixed") {
+                Discord.start()
             }
         }
     }

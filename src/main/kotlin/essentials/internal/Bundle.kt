@@ -1,6 +1,6 @@
 package essentials.internal
 
-import essentials.Main.Companion.configs
+import essentials.Config
 import essentials.Main.Companion.pluginRoot
 import essentials.external.UTF8Control
 import java.nio.file.Files
@@ -13,7 +13,7 @@ class Bundle {
 
     constructor() {
         resource = try {
-            if (pluginRoot.child("bundle.properties").exists()) PropertyResourceBundle(Files.newInputStream(Paths.get(pluginRoot.child("bundle.properties").path()))) else ResourceBundle.getBundle("bundle.bundle", configs.locale, UTF8Control())
+            if (pluginRoot.child("bundle.properties").exists()) PropertyResourceBundle(Files.newInputStream(Paths.get(pluginRoot.child("bundle.properties").path()))) else ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
         } catch (e: Exception) {
             ResourceBundle.getBundle("bundle.bundle", Locale.US, UTF8Control())
         }
@@ -37,7 +37,7 @@ class Bundle {
 
     fun prefix(key: String, vararg params: Any?): String {
         return try {
-            MessageFormat.format(configs.prefix + resource.getString(key), *params)
+            MessageFormat.format(Config.prefix + resource.getString(key), *params)
         } catch (e: MissingResourceException) {
             key
         }

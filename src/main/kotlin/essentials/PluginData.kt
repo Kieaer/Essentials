@@ -10,7 +10,7 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 
-class PluginData {
+object PluginData {
     private val json = Json()
 
     // 일회성 플러그인 데이터

@@ -8,16 +8,11 @@ import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Log
-import arc.util.Time
-import essentials.Main.Companion.client
-import essentials.Main.Companion.configs
-import essentials.Main.Companion.playerCore
-import essentials.Main.Companion.pluginData
 import essentials.Main.Companion.pluginRoot
-import essentials.Main.Companion.pluginVars
-import essentials.Main.Companion.server
-import essentials.Main.Companion.vote
+import essentials.features.Vote
+import essentials.internal.Tool
 import essentials.network.Client
+import essentials.network.Server
 import mindustry.Vars
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -35,6 +30,7 @@ import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
 import org.junit.Assert
+import org.junit.*
 import org.junit.Assert.*
 import org.junit.BeforeClass
 import org.junit.Test
@@ -54,14 +50,14 @@ import javax.crypto.spec.SecretKeySpec
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class PluginTest {
     companion object {
-        val out = SystemOutRule()
-        val r = SecureRandom()
-        lateinit var root: Fi
-        lateinit var testroot: Fi
-        lateinit var main: Main
-        val serverHandler = CommandHandler("")
-        val clientHandler = CommandHandler("/")
-        lateinit var player: Player
+        private val out = SystemOutRule()
+        private val r = SecureRandom()
+        private lateinit var root: Fi
+        private lateinit var testroot: Fi
+        private lateinit var main: Main
+        private val serverHandler = CommandHandler("")
+        private val clientHandler = CommandHandler("/")
+        private lateinit var player: Player
 
         const val clean = true
 
@@ -106,7 +102,7 @@ class PluginTest {
                 while (!begins[0]) {
                     if (exceptionThrown[0] != null) {
                         exceptionThrown[0]!!.printStackTrace()
-                        Assert.fail()
+                        fail()
                     }
                     sleep(10)
                 }
@@ -149,9 +145,9 @@ class PluginTest {
     @Order(999)
     fun shutdown() {
         Core.app.listeners[1].dispose()
-        client.request(Client.Request.Exit, null, null)
+        Client.request(Client.Request.Exit, null, null)
         sleep(1000)
-        server.shutdown()
+        Server.shutdown()
     }*/
 
     @Test
@@ -162,20 +158,20 @@ class PluginTest {
     @Test
     fun server_edit(){
         serverHandler.handleMessage("edit " + player.uuid() + " lastchat Manually")
-        assertEquals("Manually", playerCore[player.uuid()].lastchat)
+        assertEquals("Manually", PlayerCore[player.uuid()].lastchat)
     }
 
     @Test
     fun server_gendocs(){
         pluginRoot.child("README.md").delete()
         serverHandler.handleMessage("gendocs")
-        Assert.assertTrue(pluginRoot.child("README.md").exists())
+        assertTrue(pluginRoot.child("README.md").exists())
     }
 
     @Test
     fun server_admin(){
         serverHandler.handleMessage("admin " + player.name)
-        assertEquals("newadmin", playerCore[player.uuid()].permission)
+        assertEquals("newadmin", PlayerCore[player.uuid()].permission)
     }
 
     @Test
@@ -192,7 +188,7 @@ class PluginTest {
     @Test
     fun server_setperm(){
         serverHandler.handleMessage("setperm " + player.name + " owner")
-        assertEquals("owner", playerCore[player.uuid()].permission)
+        assertEquals("owner", PlayerCore[player.uuid()].permission)
     }
 
     @Test
@@ -203,32 +199,32 @@ class PluginTest {
     @Test
     fun client_alert(){
         clientHandler.handleMessage("/alert", player)
-        Assert.assertTrue(playerCore[player.uuid()].alert)
+        assertTrue(PlayerCore[player.uuid()].alert)
     }
 
     @Test
     fun client_ch(){
         clientHandler.handleMessage("/ch", player)
-        Assert.assertTrue(playerCore[player.uuid()].crosschat)
+        assertTrue(PlayerCore[player.uuid()].crosschat)
     }
 
     @Test
     fun client_changepw(){
         clientHandler.handleMessage("/changepw testpw123 testpw123", player)
-        assertNotEquals("none", playerCore[player.uuid()].accountpw)
+        assertNotEquals("none", PlayerCore[player.uuid()].accountpw)
     }
 
     @Test
     @Throws(InterruptedException::class)
     fun client_chars() {
         clientHandler.handleMessage("/chars hobc0283qz ?!", player)
-        Assert.assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall)
+        assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall)
     }
 
     @Test
     fun client_color() {
         clientHandler.handleMessage("/color", player)
-        Assert.assertTrue(playerCore[player.uuid()].colornick)
+        assertTrue(PlayerCore[player.uuid()].colornick)
     }
 
     @Test
@@ -249,19 +245,19 @@ class PluginTest {
     @Test
     fun client_warp(){
         clientHandler.handleMessage("/warp count mindustry.indielm.com", player)
-        assertEquals(1, pluginData.warpcounts.size.toLong())
+        assertEquals(1, PluginData.warpcounts.size.toLong())
         clientHandler.handleMessage("/warp zone mindustry.indielm.com 20 true", player)
-        assertEquals(1, pluginData.warpzones.size.toLong())
+        assertEquals(1, PluginData.warpzones.size.toLong())
         clientHandler.handleMessage("/warp total", player)
-        assertEquals(1, pluginData.warptotals.size.toLong())
+        assertEquals(1, PluginData.warptotals.size.toLong())
     }
 
     @Test
     fun client_kill(){
         val dummy = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/kill " + dummy.name, player)
-        Assert.assertTrue(dummy.dead)
-        dummy.dead
+        assertTrue(dummy.dead())
+        dummy.unit().kill()
         Events.fire(PlayerLeave(dummy))
     }
 
@@ -301,11 +297,11 @@ class PluginTest {
     @Test
     fun client_reset(){
         clientHandler.handleMessage("/reset count mindustry.indielm.com", player)
-        assertEquals(0, pluginData.warpcounts.size.toLong())
+        assertEquals(0, PluginData.warpcounts.size.toLong())
         clientHandler.handleMessage("/reset zone mindustry.indielm.com", player)
-        assertEquals(0, pluginData.warpzones.size.toLong())
+        assertEquals(0, PluginData.warpzones.size.toLong())
         clientHandler.handleMessage("/reset total", player)
-        assertEquals(0, pluginData.warptotals.size.toLong())
+        assertEquals(0, PluginData.warptotals.size.toLong())
     }
 
     @Test
@@ -316,7 +312,7 @@ class PluginTest {
     @Test
     fun client_setperm(){
         clientHandler.handleMessage("/setperm " + player.name + " newadmin", player)
-        assertEquals("newadmin", playerCore[player.uuid()].permission)
+        assertEquals("newadmin", PlayerCore[player.uuid()].permission)
     }
 
     @Test
@@ -327,25 +323,25 @@ class PluginTest {
             player.set(912f,720f)
         }
         clientHandler.handleMessage("/spawn-core small", player)
-        Assert.assertSame(Blocks.coreShard, player.tileOn().block())
+        assertSame(Blocks.coreShard, player.tileOn().block())
     }
 
     @Test
     fun client_setmech(){
         clientHandler.handleMessage("/setmech alpha", player)
-        Assert.assertSame(Mechs.alpha, player.mech)
+        assertSame(Mechs.alpha, player.mech)
         clientHandler.handleMessage("/setmech dart", player)
-        Assert.assertSame(Mechs.dart, player.mech)
+        assertSame(Mechs.dart, player.mech)
         clientHandler.handleMessage("/setmech glaive", player)
-        Assert.assertSame(Mechs.glaive, player.mech)
+        assertSame(Mechs.glaive, player.mech)
         clientHandler.handleMessage("/setmech javelin", player)
-        Assert.assertSame(Mechs.javelin, player.mech)
+        assertSame(Mechs.javelin, player.mech)
         clientHandler.handleMessage("/setmech omega", player)
-        Assert.assertSame(Mechs.omega, player.mech)
+        assertSame(Mechs.omega, player.mech)
         clientHandler.handleMessage("/setmech tau", player)
-        Assert.assertSame(Mechs.tau, player.mech)
+        assertSame(Mechs.tau, player.mech)
         clientHandler.handleMessage("/setmech trident", player)
-        Assert.assertSame(Mechs.trident, player.mech)
+        assertSame(Mechs.trident, player.mech)
     }
 
     @Test
@@ -356,22 +352,22 @@ class PluginTest {
     @Test
     fun client_suicide(){
         clientHandler.handleMessage("/suicide", player)
-        Assert.assertTrue(player.dead())
+        assertTrue(player.dead())
 
-        player.dead = false // Reset status
+        player.unit().kill() // Reset status
     }
 
     @Test
     fun client_team(){
         clientHandler.handleMessage("/team crux", player)
-        Assert.assertSame(Team.crux, player.team)
+        assertSame(Team.crux, player.team())
     }
 
     @Test
     fun client_tempban() {
         val dummy = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/tempban " + dummy.name + " 10 test", player)
-        assertNotEquals(0L, playerCore[dummy.uuid].bantime)
+        assertNotEquals(0L, PlayerCore[dummy.uuid()].bantime)
 
         Events.fire(PlayerLeave(dummy))
     }
@@ -385,7 +381,7 @@ class PluginTest {
     fun client_tp() {
         val dummy = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/tp " + dummy.name, player)
-        Assert.assertTrue(player.x == dummy.x && player.y == dummy.y)
+        assertTrue(player.x == dummy.x && player.y == dummy.y)
 
         Events.fire(PlayerLeave(dummy))
     }
@@ -395,7 +391,7 @@ class PluginTest {
         val dummy1 = PluginTestDB.createNewPlayer(false)
         val dummy2 = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/tpp " + dummy1.name + " " + dummy2.name, player)
-        Assert.assertTrue(dummy1.x == dummy2.x && dummy1.y == dummy2.y)
+        assertTrue(dummy1.x == dummy2.x && dummy1.y == dummy2.y)
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))
@@ -404,7 +400,7 @@ class PluginTest {
     @Test
     fun client_tppos() {
         clientHandler.handleMessage("/tppos 50 50", player)
-        Assert.assertTrue(player.x == 50f && player.y == 50f)
+        assertTrue(player.x == 50f && player.y == 50f)
     }
 
     @Test
@@ -418,7 +414,7 @@ class PluginTest {
         println("== votekick")
         clientHandler.handleMessage("/vote kick " + dummy3.id, player)
         sleep(500)
-        assertTrue(vote.service.process)
+        assertTrue(Vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -429,12 +425,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(vote.service.process)
+        assertFalse(Vote.service.process)
 
         println("== vote gameover")
         clientHandler.handleMessage("/vote gameover", player)
         sleep(500)
-        assertTrue(vote.service.process)
+        assertTrue(Vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -445,12 +441,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(vote.service.process)
+        assertFalse(Vote.service.process)
 
         println("== vote skipwave")
         clientHandler.handleMessage("/vote skipwave 5", player)
         sleep(500)
-        assertTrue(vote.service.process)
+        assertTrue(Vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -461,13 +457,13 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(vote.service.process)
+        assertFalse(Vote.service.process)
 
         println("== vote rollback")
         serverHandler.handleMessage("save 1000")
         clientHandler.handleMessage("/vote rollback", player)
         sleep(500)
-        assertTrue(vote.service.process)
+        assertTrue(Vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -478,12 +474,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(vote.service.process)
+        assertFalse(Vote.service.process)
 
         println("== votemap")
         clientHandler.handleMessage("/vote map Glacier", player);
         sleep(500)
-        assertTrue(vote.service.process)
+        assertTrue(Vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -495,7 +491,7 @@ class PluginTest {
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
         assertEquals("Glacier", world.map.name());
-        assertFalse(vote.service.process)
+        assertFalse(Vote.service.process)
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))
@@ -520,7 +516,7 @@ class PluginTest {
     fun client_mute() {
         val dummy = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/mute " + dummy.name, player)
-        Assert.assertTrue(playerCore[dummy.uuid].mute)
+        assertTrue(PlayerCore[dummy.uuid()].mute)
 
         Events.fire(PlayerLeave(dummy))
     }
@@ -543,16 +539,16 @@ class PluginTest {
     @Test
     fun event_Gameover(){
         Vars.state.rules.attackMode = true
-        Call.onSetRules(Vars.state.rules)
+        Call.setRules(Vars.state.rules)
         Events.fire(GameOverEvent(player.team))
-        assertEquals(1, playerCore[player.uuid].attackclear)
+        assertEquals(1, PlayerCore[player.uuid].attackclear)
     }
 
     @Test
     fun event_WorldLoad(){
         Events.fire(WorldLoadEvent())
-        assertEquals(0L, pluginVars.playtime)
-        assertEquals(0, pluginData.powerblocks.size)
+        assertEquals(0L, PluginVars.playtime)
+        assertEquals(0, PluginData.powerblocks.size)
     }
 
     @Test
@@ -585,10 +581,10 @@ class PluginTest {
         val dummy2 = PluginTestDB.createNewPlayer(false)
         Events.fire(PlayerJoin(dummy2))
         clientHandler.handleMessage("/login hello testas123", dummy2)
-        Assert.assertTrue(playerCore[dummy2.uuid].login)
+        assertTrue(PlayerCore[dummy2.uuid()].login)
 
         Events.fire(PlayerLeave(dummy2))
-        Assert.assertTrue(playerCore[dummy2.uuid].error)
+        assertTrue(PlayerCore[dummy2.uuid()].error)
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))
@@ -602,10 +598,10 @@ class PluginTest {
     @Test
     fun event_BlockBuildEnd(){
         player.addBuildRequest(BuildRequest(5, 5, 0, Blocks.copperWall))
-        Call.onConstructFinish(world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
+        Call.constructFinish(world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
         Events.fire(BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false))
 
-        Call.onConstructFinish(world.tile(78, 78), Blocks.message, player.id, 0.toByte(), Team.sharded, false)
+        Call.constructFinish(world.tile(78, 78), Blocks.message, player.id, 0.toByte(), Team.sharded, false)
         Events.fire(BlockBuildEndEvent(world.tile(78, 78), player, Team.sharded, false))
         Call.setMessageBlockText(player, world.tile(78, 78), "warp mindustry.indielm.com")
     }
@@ -614,7 +610,7 @@ class PluginTest {
     fun event_DeconstructFinish(){
         player.buildQueue().clear()
         player.addBuildRequest(BuildRequest(5, 5))
-        Call.onDeconstructFinish(world.tile(5, 5), Blocks.air, player.id)
+        Call.deconstructFinish(world.tile(5, 5), Blocks.air, player.id)
     }
 
     @Test
@@ -655,21 +651,21 @@ class PluginTest {
 
     @Test
     fun network_online() {
-        Assert.assertTrue(configs.clientEnable)
-        Assert.assertTrue(configs.serverEnable)
+        assertTrue(Config.clientEnable)
+        assertTrue(Config.serverEnable)
 
-        Assert.assertNotNull(server.serverSocket)
-        Assert.assertTrue(client.activated)
+        assertNotNull(Server.serverSocket)
+        assertTrue(Client.activated)
     }
 
     @Test
     fun network_banSharing(){
-        client.request(Client.Request.BanSync, null, null)
-        Assert.assertTrue(client.activated)
-        Assert.assertTrue(server.list.size != 0)
-        client.request(Client.Request.Chat, player, "Cross-chat message!")
-        client.request(Client.Request.UnbanIP, null, "127.0.0.1")
-        client.request(Client.Request.UnbanID, null, player.uuid())
+        Client.request(Client.Request.BanSync, null, null)
+        assertTrue(Client.activated)
+        assertTrue(Server.list.size != 0)
+        Client.request(Client.Request.Chat, player, "Cross-chat message!")
+        Client.request(Client.Request.UnbanIP, null, "127.0.0.1")
+        Client.request(Client.Request.UnbanID, null, player.uuid())
     }
 
     @Test
@@ -689,12 +685,12 @@ class PluginTest {
                         json.add("type", "CheckBan")
                         json.add("uuid", player.uuid())
                         json.add("ip", player.con.address)
-                        val en = Main.tool.encrypt(json.toString(), skey)
+                        val en = Tool.encrypt(json.toString(), skey)
                         os.writeBytes(en+"\n")
                         os.flush()
-                        val receive = Main.tool.decrypt(`is`.readLine(), skey)
+                        val receive = Tool.decrypt(`is`.readLine(), skey)
                         val kick = receive.toBoolean()
-                        Assert.assertFalse(kick)
+                        assertFalse(kick)
                     }
                 }
             }

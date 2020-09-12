@@ -2,7 +2,7 @@ package essentials
 
 import mindustry.gen.Playerc
 
-class PluginVars {
+object PluginVars {
     val buildVersion = 104
     val buildRevision = 6
     val configVersion = 13

@@ -2,12 +2,13 @@ package essentials.command
 
 import arc.Core
 import arc.util.CommandHandler
-import essentials.Main
-import essentials.PlayerData
+import essentials.*
 import essentials.external.StringUtils
+import essentials.features.Permissions
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
+import essentials.internal.Tool
 import essentials.network.Client
 import mindustry.Vars
 import mindustry.gen.Groups
@@ -119,23 +120,23 @@ object ServerCommander {
     private fun edit(arg: Array<String>) {
         val sql = "UPDATE players SET " + arg[1] + "=? WHERE uuid=?"
         try {
-            Main.playerCore.conn.prepareStatement(sql).use { pstmt ->
+            PlayerCore.conn.prepareStatement(sql).use { pstmt ->
                 pstmt.setString(1, arg[2])
                 pstmt.setString(2, arg[0])
-                val playerData = Main.playerCore[arg[0]]
+                val playerData = PlayerCore[arg[0]]
                 val player = Groups.player.find { p: Playerc -> p.uuid() == arg[0] }
                 if (!playerData.error) {
-                    Main.playerCore.save(playerData)
+                    PlayerCore.save(playerData)
                     playerData.toData(playerData.toMap().set(arg[1], arg[2]))
-                    Main.perm.user[playerData.uuid].asObject()[arg[1]] = arg[2]
-                    Main.perm.saveAll()
+                    Permissions.user[playerData.uuid].asObject()[arg[1]] = arg[2]
+                    Permissions.saveAll()
                 }
                 val count = pstmt.executeUpdate()
                 if (count < 1 && !playerData.error) {
                     Log.info("success")
-                    Main.vars.removePlayerData(playerData)
-                    Main.vars.players.remove(player)
-                    Main.playerCore.playerLoad(player, null)
+                    PluginVars.removePlayerData(playerData)
+                    PluginVars.players.remove(player)
+                    PlayerCore.playerLoad(player, null)
                     player.sendMessage(Bundle(playerData.locale)["player.reloaded"])
                 } else {
                     Log.info("failed")
@@ -147,7 +148,7 @@ object ServerCommander {
     }
 
     private fun saveall(arg: Array<String>) {
-        Main.pluginData.saveAll()
+        PluginData.saveAll()
     }
 
     private fun admin(arg: Array<String>) {
@@ -155,11 +156,11 @@ object ServerCommander {
         if (player == null) {
             Log.warn("player.not-found")
         } else {
-            for (data in Main.perm.perm) {
+            for (data in Permissions.perm) {
                 if (data.name == "newadmin") {
-                    val p = Main.playerCore[player.uuid()]
+                    val p = PlayerCore[player.uuid()]
                     p.permission = "newadmin"
-                    player.admin(Main.perm.isAdmin(p))
+                    player.admin(Permissions.isAdmin(p))
                     Log.info("success")
                     break
                 }
@@ -169,8 +170,8 @@ object ServerCommander {
     }
 
     private fun bansync(arg: Array<String>) {
-        if (Main.client.activated) {
-            Main.client.request(Client.Request.BanSync, null, null)
+        if (Client.activated) {
+            Client.request(Client.Request.BanSync, null, null)
         } else {
             Log.client("client.disabled")
         }
@@ -181,7 +182,7 @@ object ServerCommander {
         if (players.size != 0) {
             for (p in players) {
                 try {
-                    Main.playerCore.conn.prepareStatement("SELECT * from players WHERE uuid=?").use { pstmt ->
+                    PlayerCore.conn.prepareStatement("SELECT * from players WHERE uuid=?").use { pstmt ->
                         pstmt.setString(1, p.id)
                         pstmt.executeQuery().use { rs ->
                             if (rs.next()) {
@@ -202,12 +203,12 @@ object ServerCommander {
                                         "level: ${rs.getInt("level")}\n" +
                                         "exp: ${rs.getInt("exp")}\n" +
                                         "reqexp: ${rs.getInt("reqexp")}\n" +
-                                        "firstdate: ${Main.tool.longToDateTime(rs.getLong("firstdate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
-                                        "lastdate: ${Main.tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
+                                        "firstdate: ${Tool.longToDateTime(rs.getLong("firstdate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
+                                        "lastdate: ${Tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n" +
                                         "lastplacename: ${rs.getString("lastplacename")}\n" +
                                         "lastbreakname: ${rs.getString("lastbreakname")}\n" +
                                         "lastchat: ${rs.getString("lastchat")}\n" +
-                                        "playtime: ${Main.tool.longToTime(rs.getLong("playtime"))}\n" +
+                                        "playtime: ${Tool.longToTime(rs.getLong("playtime"))}\n" +
                                         "attackclear: ${rs.getInt("attackclear")}\n" +
                                         "pvpwincount: ${rs.getInt("pvpwincount")}\n" +
                                         "pvplosecount: ${rs.getInt("pvplosecount")}\n" +
@@ -225,12 +226,12 @@ object ServerCommander {
                                         "udid: ${rs.getLong("udid")}\n" +
                                         "accountid: ${rs.getString("accountid")}"
 
-                                val current = Main.playerCore[p.id]
+                                val current = PlayerCore[p.id]
                                 if (!current.error) {
                                     datatext = "$datatext\n" +
                                             "== ${current.name} Player internal data ==\n" + " +" +
                                             "isLogin: ${current.login}\n" +
-                                            "afk: ${Main.tool.longToTime(current.afk)}\n" +
+                                            "afk: ${Tool.longToTime(current.afk)}\n" +
                                             "afk_x: ${current.x}\n" + " +" +
                                             "afk_y: ${current.y}"
                                 }
@@ -256,16 +257,16 @@ object ServerCommander {
             Log.warn(bundle["player.not-found"])
             return
         }
-        for (p in Main.perm.perm) {
+        for (p in Permissions.perm) {
             if (p.name == arg[1]) {
-                playerData = Main.playerCore[target.uuid()]
+                playerData = PlayerCore[target.uuid()]
                 playerData.permission = arg[1]
-                Main.perm.user[playerData.uuid].asObject()["group"] = arg[1]
-                Main.perm.update(true)
-                Main.perm.reload(false)
-                target.admin(Main.perm.isAdmin(playerData))
+                Permissions.user[playerData.uuid].asObject()["group"] = arg[1]
+                Permissions.update(true)
+                Permissions.reload(false)
+                target.admin(Permissions.isAdmin(playerData))
                 Log.info(bundle["success"])
-                target.sendMessage(Bundle(Main.playerCore[target.uuid()].locale).prefix("perm-changed"))
+                target.sendMessage(Bundle(PlayerCore[target.uuid()].locale).prefix("perm-changed"))
                 return
             }
         }
@@ -273,8 +274,8 @@ object ServerCommander {
     }
 
     private fun reload(arg: Array<String>) {
-        Main.perm.reload(false)
-        Main.perm.update(false)
+        Permissions.reload(false)
+        Permissions.update(false)
         Log.info("plugin-reloaded")
     }
 }

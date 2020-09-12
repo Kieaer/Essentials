@@ -1,13 +1,13 @@
 package essentials.features
 
 import arc.struct.ObjectMap
-import essentials.Main
-import essentials.Main.Companion.configs
-import essentials.Main.Companion.playerCore
-import essentials.Main.Companion.vars
+import essentials.Config
+import essentials.PlayerCore
+import essentials.PluginVars
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
+import essentials.internal.Tool
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import net.dv8tion.jda.api.JDA
@@ -25,7 +25,7 @@ import java.util.*
 import java.util.regex.Pattern
 import javax.security.auth.login.LoginException
 
-class Discord : ListenerAdapter() {
+object Discord : ListenerAdapter() {
     var jda: JDA? = null
     var event: MessageReceivedEvent? = null
     val pins: ObjectMap<String, Int> = ObjectMap()
@@ -33,9 +33,9 @@ class Discord : ListenerAdapter() {
     fun start() {
         // TODO discord 방식 변경
         try {
-            jda = JDABuilder.createDefault(configs.discordToken).build()
+            jda = JDABuilder.createDefault(Config.discordToken).build()
             jda!!.awaitReady()
-            jda!!.addEventListener(Discord())
+            jda!!.addEventListener(Discord)
             Log.info("system.discord.enabled")
         } catch (e: LoginException) {
             Log.err("system.discord.error")
@@ -45,8 +45,8 @@ class Discord : ListenerAdapter() {
     }
 
     fun queue(player: Playerc) {
-        val playerData = playerCore[player.uuid()]
-        val bundle = Bundle(if (playerData.error) configs.locale else playerData.locale)
+        val playerData = PlayerCore[player.uuid()]
+        val bundle = Bundle(if (playerData.error) Config.locale else playerData.locale)
         val pin = Random().nextInt(9999)
         pins.put(player.name(), pin)
         player.sendMessage(bundle.prefix("discord-pin-queue", pin))
@@ -72,17 +72,17 @@ class Discord : ListenerAdapter() {
                                 var rs: ResultSet? = null
                                 try {
                                     pw = BCrypt.gensalt(12, SecureRandom.getInstanceStrong())
-                                    pstmt = playerCore.conn.prepareStatement("SELECT * FROM players WHERE accountid=?")
+                                    pstmt = PlayerCore.conn.prepareStatement("SELECT * FROM players WHERE accountid=?")
                                     pstmt.setString(1, name)
                                     rs = pstmt.executeQuery()
                                     if (!rs.next()) {
                                         val player = Groups.player.find { p: Playerc -> p.name().equals(name, ignoreCase = true) }
                                         if (player != null) {
-                                            val lc = Main.tool.getGeo(player)
-                                            val register = playerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, vars.serverIP, "default", e.author.idLong, name, pw, false)
+                                            val lc = Tool.getGeo(player)
+                                            val register = PlayerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", e.author.idLong, name, pw, false)
                                             if (register) {
-                                                playerCore.playerLoad(player, null)
-                                                val playerData = playerCore[player.uuid()]
+                                                PlayerCore.playerLoad(player, null)
+                                                val playerData = PlayerCore[player.uuid()]
                                                 player.sendMessage(Bundle(playerData.locale).prefix("register-success"))
                                                 send(Bundle(playerData.locale)["success"])
                                                 break
