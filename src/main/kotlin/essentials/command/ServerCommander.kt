@@ -191,7 +191,7 @@ object ServerCommander {
                                         "name: ${rs.getString("name")}\n" +
                                         "uuid: ${rs.getString("uuid")}\n" +
                                         "country: ${rs.getString("country")}\n" +
-                                        "country_code: ${rs.getString("country_code")}\n" +
+                                        "countryCode: ${rs.getString("countryCode")}\n" +
                                         "language: ${rs.getString("language")}\n" +
                                         "isAdmin: ${rs.getBoolean("isAdmin")}\n" +
                                         "placecount: ${rs.getInt("placecount")}\n" +

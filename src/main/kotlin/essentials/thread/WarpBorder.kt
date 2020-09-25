@@ -3,7 +3,6 @@ package essentials.thread
 import arc.graphics.Color
 import arc.struct.Seq
 import essentials.Config
-import essentials.Main
 import essentials.PluginData
 import essentials.external.PingHost
 import essentials.internal.Log

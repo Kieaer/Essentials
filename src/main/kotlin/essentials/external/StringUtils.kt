@@ -11,26 +11,26 @@ object StringUtils {
 
     private fun encode(source: String?): String? {
         if (null == source) return null
-        var encoded_string: StringBuffer? = null
-        val string_to_encode_array = source.toCharArray()
-        var last_match = -1
+        var encode: StringBuffer? = null
+        val encodeArray = source.toCharArray()
+        var match = -1
         var difference: Int
-        for (i in string_to_encode_array.indices) {
-            val char_to_encode = string_to_encode_array[i]
-            if (htmlEncodeChars.containsKey(char_to_encode)) {
-                if (null == encoded_string) encoded_string = StringBuffer(source.length)
-                difference = i - (last_match + 1)
-                if (difference > 0) encoded_string.append(string_to_encode_array, last_match + 1, difference)
-                encoded_string.append(htmlEncodeChars[char_to_encode])
-                last_match = i
+        for (i in encodeArray.indices) {
+            val charEncode = encodeArray[i]
+            if (htmlEncodeChars.containsKey(charEncode)) {
+                if (null == encode) encode = StringBuffer(source.length)
+                difference = i - (match + 1)
+                if (difference > 0) encode.append(encodeArray, match + 1, difference)
+                encode.append(htmlEncodeChars[charEncode])
+                match = i
             }
         }
-        return if (null == encoded_string) {
+        return if (null == encode) {
             source
         } else {
-            difference = string_to_encode_array.size - (last_match + 1)
-            if (difference > 0) encoded_string.append(string_to_encode_array, last_match + 1, difference)
-            encoded_string.toString()
+            difference = encodeArray.size - (match + 1)
+            if (difference > 0) encode.append(encodeArray, match + 1, difference)
+            encode.toString()
         }
     }
 

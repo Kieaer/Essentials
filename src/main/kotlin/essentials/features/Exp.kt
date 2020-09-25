@@ -1,7 +1,6 @@
 package essentials.features
 
 import essentials.Config
-import essentials.Main
 import essentials.PlayerData
 import essentials.internal.Bundle
 import mindustry.gen.Call
@@ -9,8 +8,8 @@ import kotlin.math.floor
 import kotlin.math.pow
 
 class Exp(target: PlayerData) {
-    val baseXP = Config.baseXp
-    val exponent = Config.exponent
+    private val baseXP = Config.baseXp
+    private val exponent = Config.exponent
     private fun calcXpForLevel(level: Int): Double {
         return baseXP + baseXP * level.toDouble().pow(exponent)
     }

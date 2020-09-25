@@ -8,7 +8,7 @@ class PlayerData {
     var name: String = "none"
     var uuid: String = "none"
     var country: String = Locale.getDefault().displayCountry
-    var country_code: String = Locale.getDefault().toLanguageTag()
+    var countryCode: String = Locale.getDefault().toLanguageTag()
     var language: String = Locale.getDefault().displayLanguage
     var isAdmin: Boolean = false
     var placecount: Int = 0
@@ -53,11 +53,11 @@ class PlayerData {
 
     constructor()
 
-    constructor(name: String, uuid: String, country: String, country_code: String, language: String, isAdmin: Boolean, placecount: Int, breakcount: Int, killcount: Int, deathcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, reqexp: Int, firstdate: Long, lastdate: Long, lastplacename: String, lastbreakname: String, lastchat: String, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, pvpbreakout: Int, reactorcount: Int, bantime: Long, translate: Boolean, crosschat: Boolean, colornick: Boolean, connected: Boolean, connserver: String, permission: String, mute: Boolean, alert: Boolean, udid: Long, accountid: String, accountpw: String, login: Boolean) {
+    constructor(name: String, uuid: String, country: String, countryCode: String, language: String, isAdmin: Boolean, placecount: Int, breakcount: Int, killcount: Int, deathcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, reqexp: Int, firstdate: Long, lastdate: Long, lastplacename: String, lastbreakname: String, lastchat: String, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, pvpbreakout: Int, reactorcount: Int, bantime: Long, translate: Boolean, crosschat: Boolean, colornick: Boolean, connected: Boolean, connserver: String, permission: String, mute: Boolean, alert: Boolean, udid: Long, accountid: String, accountpw: String, login: Boolean) {
         this.name = name
         this.uuid = uuid
         this.country = country
-        this.country_code = country_code
+        this.countryCode = countryCode
         this.language = language
         this.isAdmin = isAdmin
         this.placecount = placecount
@@ -94,7 +94,7 @@ class PlayerData {
         this.accountpw = accountpw
         this.login = login
         error = false
-        locale = Tool.textToLocale(country_code)
+        locale = Tool.textToLocale(countryCode)
     }
 
     fun toMap(): JsonObject {
@@ -102,7 +102,7 @@ class PlayerData {
         map.add("name", name)
         map.add("uuid", uuid)
         map.add("country", country)
-        map.add("country_code", country_code)
+        map.add("countryCode", countryCode)
         map.add("language", language)
         map.add("isAdmin", isAdmin)
         map.add("placecount", placecount)
@@ -144,7 +144,7 @@ class PlayerData {
         name = data["name"].asString()
         uuid = data["uuid"].asString()
         country = data["country"].asString()
-        country_code = data["country_code"].asString()
+        countryCode = data["countryCode"].asString()
         language = data["language"].asString()
         isAdmin = data["isAdmin"].asBoolean()
         placecount = data["placecount"].asInt()

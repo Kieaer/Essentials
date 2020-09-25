@@ -5,7 +5,6 @@ import arc.Events
 import arc.struct.ArrayMap
 import essentials.Config
 import essentials.Main.Companion.mainThread
-import essentials.features.Permissions
 import essentials.PlayerCore
 import essentials.PluginData
 import essentials.Main.Companion.pluginRoot
@@ -59,7 +58,7 @@ object Event {
                     }
                 }
                 if (Config.debug) Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.pos())
-                if (Config.logging) Log.write(LogType.tap, "log.tap-config", e.player.name, e.tile.block().name)
+                if (Config.logging) Log.write(LogType.Tap, "log.tap-config", e.player.name, e.tile.block().name)
 
                 // Source by BasedUser(router)
                 val entity = e.tile
@@ -121,7 +120,7 @@ object Event {
                     }
                 }
                 if (Config.debug) Log.info("log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
-                if (Config.logging) Log.write(LogType.withdraw, "log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
+                if (Config.logging) Log.write(LogType.WithDraw, "log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
                 if (Vars.state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
                         e.player.sendMessage(Bundle(PlayerCore[e.player.uuid()].locale)["system.flammable.disabled"])
@@ -172,7 +171,7 @@ object Event {
             PluginData.powerblocks.clear()
         }
         Events.on(PlayerConnect::class.java) { e: PlayerConnect ->
-            if (Config.logging) Log.write(LogType.player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
+            if (Config.logging) Log.write(LogType.Player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (s in PluginData.blacklist) {
@@ -204,12 +203,12 @@ object Event {
                     p.sendMessage(Bundle(playerData.locale)["anti-grief.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name])
                 }
             }
-            if (Config.logging) Log.write(LogType.deposit, "log.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name)
+            if (Config.logging) Log.write(LogType.Deposit, "log.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name)
         }
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(PlayerJoin::class.java) { e: PlayerJoin ->
-            if (Config.logging) Log.write(LogType.player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
+            if (Config.logging) Log.write(LogType.Player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
             PluginVars.players.add(e.player)
             e.player.admin(false)
             val t = Thread {
@@ -227,7 +226,7 @@ object Event {
                             }
                         } else {
                             val lc = Tool.getGeo(e.player)
-                            if (PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)) {
+                            if (PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)) {
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
                                 Call.kick(e.player.con, Bundle()["plugin-error-kick"])
@@ -273,7 +272,7 @@ object Event {
                         PlayerCore.playerLoad(e.player, null)
                     } else {
                         val lc = Tool.getGeo(e.player.con.address)
-                        val register = PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)
+                        val register = PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)
                         if (!register || PlayerCore.playerLoad(e.player, null)) {
                             Call.kick(e.player.con, Bundle()["plugin-error-kick"])
                         }
@@ -308,7 +307,7 @@ object Event {
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(PlayerLeave::class.java) { e: PlayerLeave ->
-            if (Config.logging) Log.write(LogType.player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
+            if (Config.logging) Log.write(LogType.Player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
             val player = PlayerCore[e.player.uuid()]
             if (player.login) {
                 player.connected = false
@@ -403,7 +402,7 @@ object Event {
                                                             while (br.readLine().also { inputLine = it } != null) {
                                                                 response.append(inputLine)
                                                             }
-                                                            Log.write(LogType.error, response.toString())
+                                                            Log.write(LogType.Error, response.toString())
                                                         }
                                                     } else {
                                                         BufferedReader(InputStreamReader(con.inputStream, StandardCharsets.UTF_8)).use { br ->
@@ -450,7 +449,7 @@ object Event {
             if (e.unit.isPlayer) {
                 val player = e.unit.player
 
-                Log.write(LogType.block, "log.block.place", player.name, e.tile.block().name)
+                Log.write(LogType.Block, "log.block.place", player.name, e.tile.block().name)
                 val target = PlayerCore[player.uuid()]
                 if (!e.breaking && player.builder().buildPlan().block != null && !target.error && e.tile.block() != null) {
                     val name = e.tile.block().name
@@ -504,7 +503,7 @@ object Event {
         Events.on(BuildSelectEvent::class.java) { e: BuildSelectEvent ->
             if (e.builder is Playerc && e.builder.buildPlan() != null && !Pattern.matches(".*build.*", e.builder.buildPlan().block.name) && e.tile.block() !== Blocks.air) {
                 if (e.breaking) {
-                    Log.write(LogType.block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
+                    Log.write(LogType.Block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
                     val target = PlayerCore[(e.builder as Playerc).uuid()]
                     val name = e.tile.block().name
                     try {
@@ -612,65 +611,68 @@ object Event {
         Events.on(ServerLoadEvent::class.java) { _: ServerLoadEvent? ->
             // 업데이트 확인
             if (Config.update) {
-                Log.client("Client.update-check")
+                Log.client("client.update-check")
                 try {
-                    val json = JsonValue.readJSON(Tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")).asObject()
-                    for (a in 0 until Vars.mods.list().size) {
-                        if (Vars.mods.list()[a].meta.name == "Essentials") {
-                            PluginVars.pluginVersion = Vars.mods.list()[a].meta.version
+                    val web = Tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")
+                    if(web != null) {
+                        val json = JsonValue.readJSON(web).asObject()
+                        for (a in 0 until Vars.mods.list().size) {
+                            if (Vars.mods.list()[a].meta.name == "Essentials") {
+                                PluginVars.pluginVersion = Vars.mods.list()[a].meta.version
+                            }
                         }
-                    }
-                    val latest = DefaultArtifactVersion(json.getString("tag_name", PluginVars.pluginVersion))
-                    val current = DefaultArtifactVersion(PluginVars.pluginVersion)
-                    when {
-                        latest > current -> {
-                            Log.client("version-new")
-                            val t = Thread {
-                                try {
-                                    Log.info(Bundle()["update-description", json["tag_name"]])
-                                    println(json.getString("body", "No description found."))
-                                    println(Bundle()["plugin-downloading-standby"])
-                                    timer.cancel()
-                                    if (Config.serverEnable) {
-                                        try {
-                                            for (ser in Server.list) {
-                                                ser!!.interrupt()
-                                                ser.os.close()
-                                                ser.br.close()
-                                                ser.socket.close()
-                                                Server.list.remove(ser)
+                        val latest = DefaultArtifactVersion(json.getString("tag_name", PluginVars.pluginVersion))
+                        val current = DefaultArtifactVersion(PluginVars.pluginVersion)
+                        when {
+                            latest > current -> {
+                                Log.client("version-new")
+                                val t = Thread {
+                                    try {
+                                        Log.info(Bundle()["update-description", json["tag_name"]])
+                                        println(json.getString("body", "No description found."))
+                                        println(Bundle()["plugin-downloading-standby"])
+                                        timer.cancel()
+                                        if (Config.serverEnable) {
+                                            try {
+                                                for (ser in Server.list) {
+                                                    ser!!.interrupt()
+                                                    ser.os.close()
+                                                    ser.br.close()
+                                                    ser.socket.close()
+                                                    Server.list.remove(ser)
+                                                }
+                                                Server.shutdown()
+                                            } catch (ignored: Exception) {
                                             }
-                                            Server.shutdown()
-                                        } catch (ignored: Exception) {
                                         }
+                                        if (Config.clientEnable && Client.activated) {
+                                            Client.request(Client.Request.Exit, null, null)
+                                        }
+                                        mainThread.shutdown()
+                                        PlayerCore.dispose()
+                                        println(Bundle()["plugin-downloading"])
+                                        Tool.download(URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),
+                                                Core.settings.dataDirectory.child("mods/Essentials.jar").file())
+                                    } catch (ex: Exception) {
+                                        println(Bundle()["plugin-downloading-fail"].trimIndent())
+                                        CrashReport(ex)
                                     }
-                                    if (Config.clientEnable && Client.activated) {
-                                        Client.request(Client.Request.Exit, null, null)
-                                    }
-                                    mainThread.shutdown()
-                                    PlayerCore.dispose()
-                                    println(Bundle()["plugin-downloading"])
-                                    Tool.download(URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),
-                                            Core.settings.dataDirectory.child("mods/Essentials.jar").file())
-                                } catch (ex: Exception) {
-                                    println(Bundle()["plugin-downloading-fail"].trimIndent())
-                                    CrashReport(ex)
-                                }
 
-                                // TODO make checksum
-                                /*try {
+                                    // TODO make checksum
+                                    /*try {
                                             checksum sum = new checksum();
                                             sum.check()
                                             System.out.println(new Bundle().get("plugin-downloading-done"));
                                         } catch (Exception ignored){}*/Core.app.exit()
+                                }
+                                t.start()
                             }
-                            t.start()
-                        }
-                        latest.compareTo(current) == 0 -> {
-                            Log.client("version-current")
-                        }
-                        latest.compareTo(current) < 0 -> {
-                            Log.client("version-devel")
+                            latest.compareTo(current) == 0 -> {
+                                Log.client("version-current")
+                            }
+                            latest < current -> {
+                                Log.client("version-devel")
+                            }
                         }
                     }
                 } catch (ex: Exception) {

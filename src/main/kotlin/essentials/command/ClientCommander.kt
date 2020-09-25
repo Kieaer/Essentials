@@ -6,18 +6,17 @@ import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Strings
 import essentials.Config
-import essentials.features.Permissions
 import essentials.PlayerCore
 import essentials.PluginData
-import essentials.features.Vote
 import essentials.PluginVars
 import essentials.features.ColorNickname
 import essentials.features.Discord
+import essentials.features.Permissions
+import essentials.features.Vote
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
 import essentials.thread.WarpBorder
-import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.UnitTypes
@@ -36,11 +35,15 @@ import org.hjson.JsonObject
 import org.mindrot.jbcrypt.BCrypt
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.abs
 
 object ClientCommander {
     lateinit var commands: CommandHandler
 
     fun register(handler: CommandHandler) {
+        handler.removeCommand("votekick")
+        handler.removeCommand("vote")
+
         handler.register("alert", "Turn on/off alerts", ::alert)
         handler.register("ch", "Send chat to another server.", ::ch)
         handler.register("changepw", "<new_password> <new_password_repeat>", "Change account password", ::changepw)
@@ -56,7 +59,7 @@ object ClientCommander {
         handler.register("maps", "[page]", "Show server maps", ::maps)
         handler.register("me", "<text...>", "broadcast * message", ::me)
         handler.register("motd", "Show server motd.", ::motd)
-        handler.register("players", "Show players list", ::players)
+        handler.register("players", "[page]", "Show players list", ::players)
         handler.register("save", "Auto rollback map early save", ::save)
         handler.register("r", "<player> [message]", "Send Direct message to target player", ::r)
         handler.register("reset", "<zone/count/total/block> [ip]", "Remove a server-to-server warp zone data.", ::reset)
@@ -142,22 +145,26 @@ object ClientCommander {
             return
         }
         val temp = Seq<String>()
-        for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
-            val command = Vars.netServer.clientCommands.commandList[a]
-            if (Permissions.check(player, command.text) || command.text == "t" || command.text == "sync") {
-                temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}")
+        for (a in 0 until netServer.clientCommands.commandList.size) {
+            val command = netServer.clientCommands.commandList[a]
+            if (Permissions.check(player, command.text)) {
+                temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}\n")
             }
         }
         val result = StringBuilder()
         val perpage = 8
-        var page = if (arg.isNotEmpty()) Strings.parseInt(arg[0]) else 1
+        var page = if (arg.isNotEmpty()) {
+            abs(Strings.parseInt(arg[0]))
+        } else 1
         val pages = Mathf.ceil(temp.size.toFloat() / perpage)
-        page--
-        if (page > pages || page < 0) {
-            player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
+
+        if (pages < page) {
+            player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
             return
         }
-        result.append(Strings.format("[orange]-- Commands Page[lightgray] {0}[gray]/[lightgray]{1}[orange] --\n", page + 1, pages))
+
+        page--
+        result.append(Strings.format("[orange]-- Commands Page[lightgray] ${page + 1}[gray]/[lightgray]${pages}[orange] --\n"))
         for (a in perpage * page until (perpage * (page + 1)).coerceAtMost(temp.size)) {
             result.append(temp[a])
         }
@@ -341,23 +348,34 @@ object ClientCommander {
     private fun players(arg: Array<String>, player: Playerc) {
         if (!Permissions.check(player, "players")) return
         val build = StringBuilder()
-        var page = if (arg.isNotEmpty()) Strings.parseInt(arg[0]) else 1
+
+        var page = if (arg.isNotEmpty()) {
+            abs(Strings.parseInt(arg[0]))
+        } else 1
         val pages = Mathf.ceil(Groups.player.size().toFloat() / 6)
-        page--
-        if (page > pages || page < 0) {
+
+        if (pages < page) {
             player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
             return
         }
+        page--
         build.append("[green]==[white] Players list page ").append(page).append("/").append(pages).append(" [green]==[white]\n")
-        for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Groups.player.size())) {
-            build.append("[gray]").append(Groups.player.getByID(a).id).append("[] ").append(Groups.player.getByID(a).name).append("\n")
+
+        val buf: Seq<Playerc> = Seq<Playerc>()
+        Groups.player.each {e: Playerc ->
+            buf.add(e)
         }
+
+        for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Groups.player.size())) {
+            build.append("[gray]").append(buf.get(a).id()).append("[] ").append(buf.get(a).name()).append("\n")
+        }
+
         player.sendMessage(build.toString())
     }
 
     private fun save(arg: Array<String>, player: Playerc) {
         if (!Permissions.check(player, "save")) return
-        val file = Vars.saveDirectory.child(Config.slotNumber.toString() + "." + Vars.saveExtension)
+        val file = saveDirectory.child(Config.slotNumber.toString() + "." + saveExtension)
         SaveIO.save(file)
         player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("system.map-saved"))
     }
@@ -573,7 +591,7 @@ object ClientCommander {
                 "password" -> {
                     val lc = Tool.getGeo(player)
                     val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                    val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
+                    val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
                     if (register) {
                         PlayerCore.playerLoad(player, null)
                         player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
@@ -584,7 +602,7 @@ object ClientCommander {
                 else -> {
                     val lc = Tool.getGeo(player)
                     val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                    val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
+                    val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
                     if (register) {
                         PlayerCore.playerLoad(player, null)
                         player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
@@ -631,7 +649,7 @@ object ClientCommander {
         var i = 0
         while (count > i) {
             val baseUnit = targetUnit.create(targetTeam)
-            baseUnit[targetPlayer.getX()] = targetPlayer.y
+            baseUnit[targetPlayer.x] = targetPlayer.y
             baseUnit.add()
             i++
         }
@@ -757,7 +775,7 @@ object ClientCommander {
 
     private fun suicide(arg: Array<String>, player: Playerc) {
         if (!Permissions.check(player, "suicide")) return
-        player.dead()
+        player.unit().kill()
         if (Groups.player != null && Groups.player.size() > 0) {
             Tool.sendMessageAll("suicide", player.name())
         }
@@ -805,7 +823,7 @@ object ClientCommander {
         if (!Permissions.check(player, "time")) return
         val playerData = PlayerCore[player.uuid()]
         val now = LocalDateTime.now()
-        val dateTimeFormatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss")
+        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         val nowString = now.format(dateTimeFormatter)
         player.sendMessage(Bundle(playerData.locale).prefix("servertime", nowString))
     }
@@ -921,7 +939,7 @@ object ClientCommander {
 
                     // 강퇴 투표
                     else -> {
-                        Vote.type = Vote.VoteType.kick
+                        Vote.type = Vote.VoteType.Kick
                         Vote.parameters = arrayOf(target, arg[1])
                     }
                 }
@@ -940,7 +958,7 @@ object ClientCommander {
                     try {
                         world = maps.all()[arg[1].toInt()]
                         if (world != null) {
-                            Vote.type = Vote.VoteType.map
+                            Vote.type = Vote.VoteType.Map
                             Vote.parameters = arrayOf(world)
                         } else {
                             player.sendMessage(bundle.prefix("vote.map.not-found"))
@@ -949,18 +967,18 @@ object ClientCommander {
                         player.sendMessage(bundle.prefix("vote.map.not-found"))
                     }
                 } else {
-                    Vote.type = Vote.VoteType.map
+                    Vote.type = Vote.VoteType.Map
                     Vote.parameters = arrayOf(world)
                 }
             }
             "gameover" -> {
                 // vote gameover
-                Vote.type = Vote.VoteType.gameover
+                Vote.type = Vote.VoteType.Gameover
                 Vote.parameters = arrayOf()
             }
             "rollback" ->                         // vote rollback
                 if (Config.rollback) {
-                    Vote.type = Vote.VoteType.rollback
+                    Vote.type = Vote.VoteType.Rollback
                     Vote.parameters = arrayOf()
                 } else {
                     player.sendMessage(bundle["vote.rollback.disabled"])
@@ -972,7 +990,7 @@ object ClientCommander {
                     return
                 }
                 try {
-                    Vote.type = Vote.VoteType.gamemode
+                    Vote.type = Vote.VoteType.Gamemode
                     Vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
                 } catch (e: IllegalArgumentException) {
                     player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
@@ -984,7 +1002,7 @@ object ClientCommander {
                     player.sendMessage(bundle["no-parameter"])
                     return
                 }
-                Vote.type = Vote.VoteType.skipwave
+                Vote.type = Vote.VoteType.SkipWave
                 Vote.parameters = arrayOf(arg[1])
             }
             else -> {
@@ -1012,7 +1030,7 @@ object ClientCommander {
             "enight" -> state.rules.ambientLight.a = 0.85f
             else -> return
         }
-        Call.setRules(Vars.state.rules)
+        Call.setRules(state.rules)
         player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("success"))
     }
 

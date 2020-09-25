@@ -50,7 +50,7 @@ object Log {
         var mainlog = pluginRoot.child("log/$type.log")
         val logfolder = pluginRoot.child("log")
         if (mainlog != null && mainlog.length() > 1024 * 256) {
-            mainlog.writeString(Bundle().get("log.file-end", date), true)
+            mainlog.writeString(Bundle()["log.file-end", date], true)
             try {
                 Files.move(newlog, oldlog, StandardCopyOption.REPLACE_EXISTING)
             } catch (e: IOException) {
@@ -63,6 +63,6 @@ object Log {
     }
 
     enum class LogType {
-        log, warn, error, debug, server, serverwarn, servererr, client, clientwarn, clienterr, config, player, playerwarn, playererr, tap, withdraw, block, deposit, chat, griefer, web
+        Log, Warn, Error, Debug, Server, ServerWarn0, ServerError, Client, ClientWarn, ClientError, Config, Player, PlayerWarn, PlayerError, Tap, WithDraw, Block, Deposit, Chat, Griefer, Web
     }
 }

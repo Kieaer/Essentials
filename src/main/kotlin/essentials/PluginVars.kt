@@ -3,9 +3,9 @@ package essentials
 import mindustry.gen.Playerc
 
 object PluginVars {
-    val buildVersion = 104
-    val buildRevision = 6
-    val configVersion = 13
+    const val buildVersion = 104
+    const val buildRevision = 6
+    const val configVersion = 13
     var serverIP: String = "127.0.0.1"
     var pluginVersion: String? = null
     var uptime = 0L

@@ -1,11 +1,9 @@
 package essentials
 
 import arc.Core
-import essentials.features.Permissions
-import essentials.PlayerCore
-import essentials.PluginData
 import essentials.Main.Companion.pluginRoot
 import essentials.features.ColorNickname
+import essentials.features.Permissions
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
@@ -19,8 +17,6 @@ import org.h2.tools.Server
 import org.hjson.JsonObject
 import org.hjson.JsonType
 import org.mindrot.jbcrypt.BCrypt
-import java.net.InetAddress
-import java.net.NetworkInterface
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -90,12 +86,12 @@ object PlayerCore {
         return true
     }
 
-    fun newData(name: String, uuid: String, country: String, country_code: String, language: String, connected: Boolean, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): PlayerData {
+    fun newData(name: String, uuid: String, country: String, countryCode: String, language: String, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): PlayerData {
         return PlayerData(
                 name,
                 uuid,
                 country,
-                country_code,
+                countryCode,
                 language,
                 false,
                 0,
@@ -134,18 +130,9 @@ object PlayerCore {
         )
     }
 
-    fun isLocal(player: Playerc): Boolean {
-        return try {
-            val addr = InetAddress.getByName(player.con().address)
-            if (addr.isAnyLocalAddress || addr.isLoopbackAddress) true else NetworkInterface.getByInetAddress(addr) != null
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     fun login(id: String, pw: String): Boolean {
         try {
-            PlayerCore.conn.prepareStatement("SELECT * from players WHERE accountid=?").use { pstmt ->
+            conn.prepareStatement("SELECT * from players WHERE accountid=?").use { pstmt ->
                 pstmt.setString(1, id)
                 pstmt.executeQuery().use { rs ->
                     return if (rs.next()) {
@@ -185,7 +172,7 @@ object PlayerCore {
                                 rs.getString("name"),
                                 rs.getString("uuid"),
                                 rs.getString("country"),
-                                rs.getString("country_code"),
+                                rs.getString("countryCode"),
                                 rs.getString("language"),
                                 rs.getBoolean("isAdmin"),
                                 rs.getInt("placecount"),
@@ -245,7 +232,7 @@ object PlayerCore {
         sql.deleteCharAt(sql.length - 2)
         sql.append(" WHERE uuid=?")
         try {
-            PlayerCore.conn.prepareStatement(sql.toString()).use { p ->
+            conn.prepareStatement(sql.toString()).use { p ->
                 js.forEach(object : Consumer<JsonObject.Member> {
                     var index = 1
                     override fun accept(o: JsonObject.Member) {
@@ -290,16 +277,16 @@ object PlayerCore {
         }
     }
 
-    fun register(name: String, uuid: String, country: String, country_code: String, language: String, connected: Boolean, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): Boolean {
+    fun register(name: String, uuid: String, country: String, countryCode: String, language: String, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): Boolean {
         val sql = StringBuilder()
         sql.append("INSERT INTO players VALUES(")
-        val newdata = PlayerCore.newData(name, uuid, country, country_code, language, connected, connserver, permission, udid, accountid, accountpw, isLogin)
+        val newdata = newData(name, uuid, country, countryCode, language, connserver, permission, udid, accountid, accountpw, isLogin)
         val js = newdata.toMap()
         js.forEach(Consumer { sql.append("?,") })
         sql.deleteCharAt(sql.length - 1)
         sql.append(")")
         try {
-            PlayerCore.conn.prepareStatement(sql.toString()).use { p ->
+            conn.prepareStatement(sql.toString()).use { p ->
                 js.forEach(object : Consumer<JsonObject.Member> {
                     var index = 1
                     override fun accept(o: JsonObject.Member) {
@@ -343,7 +330,7 @@ object PlayerCore {
                 "name TEXT NOT NULL," +
                 "uuid TEXT NOT NULL," +
                 "country TEXT NOT NULL," +
-                "country_code TEXT NOT NULL," +
+                "countryCode TEXT NOT NULL," +
                 "language TEXT NOT NULL," +
                 "isadmin TINYINT(4) NOT NULL," +
                 "placecount INT(11) NOT NULL," +

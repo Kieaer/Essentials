@@ -162,7 +162,7 @@ object Server : Runnable {
                             Log.server("server-message-received", ip, message)
                         }
                         Request.Exit -> {
-                            shutdown("client.disconnected", ip, Bundle().get("client.disconnected.reason.exit"))
+                            shutdown("client.disconnected", ip, Bundle()["client.disconnected.reason.exit"])
                             interrupt()
                             return
                         }
@@ -199,7 +199,7 @@ object Server : Runnable {
                 if (e.message != "Stream closed") CrashReport(e)
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.server("client.disconnected", ip, Bundle().get("client.disconnected.reason.error"))
+                Log.server("client.disconnected", ip, Bundle()["client.disconnected.reason.error"])
             }
         }
     }

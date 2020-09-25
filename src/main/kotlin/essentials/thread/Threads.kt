@@ -9,7 +9,6 @@ import essentials.external.PingHost
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
-import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -30,7 +29,7 @@ object Threads : Runnable {
         Thread.currentThread().name = "Essential thread"
         while (!Thread.currentThread().isInterrupted) {
             try {
-                if (Vars.state.`is`(GameState.State.playing)) {
+                if (state.`is`(GameState.State.playing)) {
                     // 외부 서버 플레이어 인원 - 메세지 블럭
                     for (a in 0 until PluginData.messagewarps.size) {
                         val tile: Tile = world.tile(PluginData.messagewarps[a].pos)

@@ -1,7 +1,6 @@
 package essentials.internal
 
 import essentials.Config
-import essentials.Main
 import essentials.Main.Companion.pluginRoot
 import essentials.PluginVars
 import mindustry.Vars
@@ -40,7 +39,7 @@ class CrashReport {
                 for (error in element) sb.append("\tat ").append(error.toString()).append("\n")
                 sb.append("=================================================\n")
                 val text = sb.toString()
-                Log.write(Log.LogType.error, text)
+                Log.write(Log.LogType.Error, text)
                 Log.err("Plugin internal error! - " + e.message)
                 Log.err(text)
                 if (Config.crashReport) {

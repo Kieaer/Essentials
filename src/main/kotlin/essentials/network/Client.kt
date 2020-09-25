@@ -1,7 +1,6 @@
 package essentials.network
 
 import essentials.Config
-import essentials.Main
 import essentials.Main.Companion.mainThread
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -26,10 +25,11 @@ import javax.crypto.spec.SecretKeySpec
 
 object Client : Runnable {
     lateinit var socket: Socket
-    lateinit var br: BufferedReader
-    lateinit var os: DataOutputStream
-    lateinit var skey: SecretKey
     var activated = false
+
+    private lateinit var br: BufferedReader
+    private lateinit var os: DataOutputStream
+    private lateinit var skey: SecretKey
     private var disconnected = false
 
     fun shutdown() {

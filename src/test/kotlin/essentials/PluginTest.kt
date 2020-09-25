@@ -14,6 +14,7 @@ import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
 import mindustry.Vars
+import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.content.Items
@@ -317,7 +318,7 @@ class PluginTest {
 
     @Test
     fun client_spawncore(){
-        if(world.map.name().equals("Glacier")){
+        if(state.map.name().equals("Glacier")){
             player.set(648f,312f)
         } else {
             player.set(912f,720f)
@@ -326,7 +327,7 @@ class PluginTest {
         assertSame(Blocks.coreShard, player.tileOn().block())
     }
 
-    @Test
+    /*@Test
     fun client_setmech(){
         clientHandler.handleMessage("/setmech alpha", player)
         assertSame(Mechs.alpha, player.mech)
@@ -342,7 +343,7 @@ class PluginTest {
         assertSame(Mechs.tau, player.mech)
         clientHandler.handleMessage("/setmech trident", player)
         assertSame(Mechs.trident, player.mech)
-    }
+    }*/
 
     @Test
     fun client_status(){
@@ -490,7 +491,7 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertEquals("Glacier", world.map.name());
+        assertEquals("Glacier", state.map.name());
         assertFalse(Vote.service.process)
 
         Events.fire(PlayerLeave(dummy1))
@@ -521,7 +522,7 @@ class PluginTest {
         Events.fire(PlayerLeave(dummy))
     }
 
-    @Test
+    /*@Test
     fun event_TapConfig(){
         Events.fire(TapConfigEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, 5))
     }
@@ -534,14 +535,14 @@ class PluginTest {
     @Test
     fun event_Withdraw(){
         Events.fire(WithdrawEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10))
-    }
+    }*/
 
     @Test
     fun event_Gameover(){
         Vars.state.rules.attackMode = true
         Call.setRules(Vars.state.rules)
-        Events.fire(GameOverEvent(player.team))
-        assertEquals(1, PlayerCore[player.uuid].attackclear)
+        Events.fire(GameOverEvent(player.team()))
+        assertEquals(1, PlayerCore[player.uuid()].attackclear)
     }
 
     @Test
@@ -556,10 +557,10 @@ class PluginTest {
         Events.fire(PlayerConnect(player))
     }
 
-    @Test
+    /*@Test
     fun event_Deposit(){
         Events.fire(DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5))
-    }
+    }*/
 
     @Test
     fun event_PlayerJoin(){
@@ -595,7 +596,7 @@ class PluginTest {
         Events.fire(PlayerChatEvent(player, "hi"))
     }
 
-    @Test
+    /*@Test
     fun event_BlockBuildEnd(){
         player.addBuildRequest(BuildRequest(5, 5, 0, Blocks.copperWall))
         Call.constructFinish(world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
@@ -617,7 +618,7 @@ class PluginTest {
     fun event_BuildSelect(){
         Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true))
         player.buildQueue().clear()
-    }
+    }*/
 
     @Test
     fun event_UnitDestroy(){

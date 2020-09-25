@@ -46,7 +46,7 @@ object AutoRollback : TimerTask() {
                 if (Vars.state.rules.pvp) {
                     p.team(netServer.assignTeam(p, SeqIterable(players)))
                 }
-                Vars.netServer.sendWorldData(p)
+                netServer.sendWorldData(p)
             }
         } catch (e: SaveException) {
             CrashReport(e)
@@ -73,7 +73,7 @@ object AutoRollback : TimerTask() {
                 if (Vars.state.rules.pvp) {
                     p.team(netServer.assignTeam(p, SeqIterable(players)))
                 }
-                Vars.netServer.sendWorldData(p)
+                netServer.sendWorldData(p)
             }
         } catch (e: SaveException) {
             CrashReport(e)

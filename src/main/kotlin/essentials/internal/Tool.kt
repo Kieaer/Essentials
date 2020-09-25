@@ -130,9 +130,8 @@ object Tool {
                 return sb.toString()
             }
         } catch (e: IOException) {
-            CrashReport(e)
+            return null
         }
-        return null
     }
 
     fun getGeo(data: Any): Locale {

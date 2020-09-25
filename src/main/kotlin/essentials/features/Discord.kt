@@ -26,8 +26,8 @@ import java.util.regex.Pattern
 import javax.security.auth.login.LoginException
 
 object Discord : ListenerAdapter() {
-    var jda: JDA? = null
-    var event: MessageReceivedEvent? = null
+    private var jda: JDA? = null
+    private var event: MessageReceivedEvent? = null
     val pins: ObjectMap<String, Int> = ObjectMap()
 
     fun start() {
@@ -79,7 +79,7 @@ object Discord : ListenerAdapter() {
                                         val player = Groups.player.find { p: Playerc -> p.name().equals(name, ignoreCase = true) }
                                         if (player != null) {
                                             val lc = Tool.getGeo(player)
-                                            val register = PlayerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, true, PluginVars.serverIP, "default", e.author.idLong, name, pw, false)
+                                            val register = PlayerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", e.author.idLong, name, pw, false)
                                             if (register) {
                                                 PlayerCore.playerLoad(player, null)
                                                 val playerData = PlayerCore[player.uuid()]

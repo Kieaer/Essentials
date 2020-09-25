@@ -4,7 +4,6 @@ import arc.Core
 import arc.Events
 import arc.struct.Seq
 import arc.util.Time
-import essentials.Main
 import essentials.PlayerCore
 import essentials.PluginVars
 import essentials.internal.Bundle
@@ -63,12 +62,12 @@ object Vote : Thread() {
             process = true
             Tool.sendMessageAll("vote.suggester-name", player!!.name())
             when (type) {
-                VoteType.kick -> {
+                VoteType.Kick -> {
                     this.target = parameters[0] as Playerc
                     Tool.sendMessageAll("vote.kick", target!!.name())
                 }
-                VoteType.gameover -> Tool.sendMessageAll("vote.gameover")
-                VoteType.skipwave -> {
+                VoteType.Gameover -> Tool.sendMessageAll("vote.gameover")
+                VoteType.SkipWave -> {
                     amount = try {
                         parameters[0] as Int
                     } catch (ignored: NumberFormatException) {
@@ -76,15 +75,15 @@ object Vote : Thread() {
                     }
                     Tool.sendMessageAll("vote.skipwave", amount)
                 }
-                VoteType.rollback -> Tool.sendMessageAll("vote.rollback")
-                VoteType.gamemode -> if (parameters[0] is Gamemode) {
+                VoteType.Rollback -> Tool.sendMessageAll("vote.rollback")
+                VoteType.Gamemode -> if (parameters[0] is Gamemode) {
                     val gamemode = parameters[0] as Gamemode
                     Tool.sendMessageAll("vote-gamemode", gamemode.name)
                 } else {
                     player!!.sendMessage("vote.wrong-gamemode")
                     return
                 }
-                VoteType.map -> if (parameters[0] is Map) {
+                VoteType.Map -> if (parameters[0] is Map) {
                     map = parameters[0] as Map
                     Tool.sendMessageAll("vote.map", map!!.name())
                 }
@@ -93,7 +92,7 @@ object Vote : Thread() {
             alert.start()
         }
 
-        var counting = Thread {
+        private var counting = Thread {
             var time = 0
             while (!currentThread().isInterrupted) {
                 time++
@@ -109,7 +108,7 @@ object Vote : Thread() {
                 }
             }
         }
-        var alert = Thread {
+        private var alert = Thread {
             currentThread().name = "Vote alert timertask"
             var time = 0
             while (!currentThread().isInterrupted) {
@@ -132,12 +131,12 @@ object Vote : Thread() {
             // TODO 투표 성공 메세지 bundle 추가
             if (success) {
                 when (type) {
-                    VoteType.gameover -> {
+                    VoteType.Gameover -> {
                         Log.info("Vote gameover passed!")
                         Tool.sendMessageAll("vote.gameover.done")
                         Events.fire(GameOverEvent(Team.crux))
                     }
-                    VoteType.skipwave -> {
+                    VoteType.SkipWave -> {
                         Log.info("Vote skipwave passed!")
                         Tool.sendMessageAll("vote.skipwave.done")
                         var a = 0
@@ -146,26 +145,26 @@ object Vote : Thread() {
                             a++
                         }
                     }
-                    VoteType.kick -> {
+                    VoteType.Kick -> {
                         Log.info("Vote kick passed!")
                         PlayerCore[target!!.uuid()].kickcount = PlayerCore[target!!.uuid()].kickcount + 1
                         Tool.sendMessageAll("vote.kick.done", target!!.name())
                         Core.app.post { target!!.info.lastKicked = Time.millis() + 30 * 60 * 1000 }
                         Call.kick(target!!.con(), Packets.KickReason.vote)
-                        Log.write(LogType.player, "log.player.kick")
+                        Log.write(LogType.Player, "log.player.kick")
                     }
-                    VoteType.rollback -> {
+                    VoteType.Rollback -> {
                         Log.info("Vote rollback passed!")
                         Tool.sendMessageAll("vote.rollback.done")
                         AutoRollback.load()
                     }
-                    VoteType.gamemode -> {
+                    VoteType.Gamemode -> {
                         /*val m = Vars.world.map
                         val rules = Vars.world.map.rules()
                         if (rules.attackMode) rules.attackMode = false
                         Vars.world.loadMap(Vars.world.map, rules)*/
                     }
-                    VoteType.map -> {
+                    VoteType.Map -> {
                         Log.info("Vote map passed!")
                         Tool.sendMessageAll("vote.map.done")
                         AutoRollback.load(map)
@@ -174,12 +173,12 @@ object Vote : Thread() {
                 }
             } else {
                 when (type) {
-                    VoteType.gameover -> Tool.sendMessageAll("vote.gameover.fail")
-                    VoteType.skipwave -> Tool.sendMessageAll("vote.skipwave.fail")
-                    VoteType.kick -> Tool.sendMessageAll("vote.kick.fail", target!!.name())
-                    VoteType.rollback -> Tool.sendMessageAll("vote.rollback.fail")
-                    VoteType.gamemode -> Tool.sendMessageAll("vote.gamemode.fail")
-                    VoteType.map -> Tool.sendMessageAll("vote.map.fail")
+                    VoteType.Gameover -> Tool.sendMessageAll("vote.gameover.fail")
+                    VoteType.SkipWave -> Tool.sendMessageAll("vote.skipwave.fail")
+                    VoteType.Kick -> Tool.sendMessageAll("vote.kick.fail", target!!.name())
+                    VoteType.Rollback -> Tool.sendMessageAll("vote.rollback.fail")
+                    VoteType.Gamemode -> Tool.sendMessageAll("vote.gamemode.fail")
+                    VoteType.Map -> Tool.sendMessageAll("vote.map.fail")
                 }
             }
 
@@ -214,6 +213,6 @@ object Vote : Thread() {
     }
 
     enum class VoteType {
-        gameover, skipwave, kick, rollback, gamemode, map
+        Gameover, SkipWave, Kick, Rollback, Gamemode, Map
     }
 }

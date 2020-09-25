@@ -2,7 +2,6 @@ package essentials.features
 
 import arc.Core
 import essentials.Config
-import essentials.Main
 import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
 import essentials.PlayerData
@@ -23,8 +22,8 @@ object Permissions {
     var user: JsonObject = JsonObject()
     var default: String = "default"
     
-    operator fun get(name: String): JsonObject {
-        return user.get(name).asObject()
+    operator fun get(name: String): JsonObject? {
+        return user.get(name)?.asObject()
     }
 
     fun create(playerData: PlayerData) {
@@ -78,18 +77,20 @@ object Permissions {
                 perm = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
                 for (data in perm) {
                     val name = data.name
-                    if (get(name)["default"] != null) {
-                        if (get(name)["default"].asBoolean()) {
-                            default = name
-                        }
-                    }
-                    if (get(name)["inheritance"] != null) {
-                        var inheritance = get(name).getString("inheritance", null)
-                        while (inheritance != null) {
-                            for (a in 0 until get(inheritance).asObject()["permission"].asArray().size()) {
-                                get(name)["permission"].asArray().add(get(inheritance).asObject()["permission"].asArray()[a].asString())
+                    if(get(name) != null) {
+                        if (get(name)!!.has("default")) {
+                            if (get(name)!!["default"].asBoolean()) {
+                                default = name
                             }
-                            inheritance = get(inheritance).asObject().getString("inheritance", null)
+                        }
+                        if (get(name)!!["inheritance"] != null) {
+                            var inheritance = get(name)!!.getString("inheritance", null)
+                            while (inheritance != null) {
+                                for (a in 0 until get(inheritance)!!.asObject()["permission"].asArray().size()) {
+                                    get(name)!!["permission"].asArray().add(get(inheritance)!!.asObject()["permission"].asArray()[a].asString())
+                                }
+                                inheritance = get(inheritance)!!.asObject().getString("inheritance", null)
+                            }
                         }
                     }
                 }
@@ -98,11 +99,11 @@ object Permissions {
                         val name = data.name
                         if (name == "default") {
                             default = name
-                            val json = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
-                            val perms = json["default"].asObject()["permission"].asArray()
-                            json["default"].asObject().remove("permission")
-                            json["default"].asObject().add("default", true)
-                            json["default"].asObject().add("permission", perms)
+                            val json = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()["default"].asObject()
+                            val perms = json["permission"].asArray()
+                            json.remove("permission")
+                            if(!json.has("default")) json.add("default", true)
+                            json.add("permission", perms)
                             pluginRoot.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
                         }
                     }
@@ -155,14 +156,14 @@ object Permissions {
     }
 
     fun isAdmin(player: PlayerData?): Boolean {
-        if (player != null) {
-            return if (user.has(player.uuid)) {
+        return if (player != null) {
+            if (user.has(player.uuid)) {
                 user[player.uuid].asObject().getBoolean("admin", false)
             } else {
                 false
             }
         } else {
-            return false
+            false
         }
     }
 

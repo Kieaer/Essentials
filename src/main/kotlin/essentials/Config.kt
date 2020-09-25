@@ -58,11 +58,6 @@ object Config {
     var saveTime: LocalTime = LocalTime.of(0, 10)
     var rollback = false
     var slotNumber = 0
-    var autoDifficulty = false
-    var difficultyEasy = 0
-    var difficultyNormal = 0
-    var difficultyHard = 0
-    var difficultyInsane = 0
     var border = false
     var spawnLimit = 0
     var prefix: String = "[green][Essentials] []"
@@ -142,13 +137,6 @@ object Config {
         spawnLimit = features.getInt("spawnlimit", 500)
         cupdatei = features.getInt("cupdatei", 1000)
         afktime = features.getLong("afktime", 0)
-
-        difficulty = features["difficulty"].asObject()
-        autoDifficulty = difficulty.getBoolean("auto-difficulty", false)
-        difficultyEasy = difficulty.getInt("easy", 2)
-        difficultyNormal = difficulty.getInt("normal", 4)
-        difficultyHard = difficulty.getInt("hard", 6)
-        difficultyInsane = difficulty.getInt("insane", 10)
 
         tr = features["translate"].asObject()
         translate = tr.getBoolean("translate", false)
@@ -232,14 +220,6 @@ object Config {
         features.add("spawnlimit", spawnLimit, bundle["config.feature.spawn-limit"])
         features.add("cupdatei", cupdatei, bundle["config.feature.colornick"])
         features.add("afktime", afktime, bundle["config.feature.afktime"])
-
-        // 난이도 설정 (features 상속)
-        features.add("difficulty", difficulty, bundle["config.auto-difficulty"])
-        difficulty.add("auto-difficulty", autoDifficulty)
-        difficulty.add("easy", difficultyEasy)
-        difficulty.add("normal", difficultyNormal)
-        difficulty.add("hard", difficultyHard)
-        difficulty.add("insane", difficultyInsane)
 
         // 번역 설정 (features 상속)
         features.add("translate", tr, bundle["config.feature.papago"])

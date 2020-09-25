@@ -8,11 +8,11 @@ import java.io.IOException
 import java.nio.file.*
 
 object PermissionWatch : Runnable {
-    lateinit var watchKey: WatchKey
-    lateinit var path: Path
+    private lateinit var watchKey: WatchKey
+    private lateinit var path: Path
 
-    var watchService: WatchService? = null
-    var tried = false
+    private var watchService: WatchService? = null
+    private var tried = false
 
     override fun run() {
         Thread.currentThread().name = "Essential Permission Watch thread"

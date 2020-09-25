@@ -2,11 +2,10 @@ package essentials
 
 import arc.graphics.Color
 import com.github.javafaker.Faker
-import essentials.Main.Companion.perm
-import essentials.Main.Companion.playerCore
 import mindustry.Vars
-import mindustry.entities.type.Player
+import mindustry.gen.Groups
 import mindustry.gen.Player
+import mindustry.gen.Playerc
 import mindustry.net.Net.SendMode
 import mindustry.net.NetConnection
 import java.security.SecureRandom
@@ -24,25 +23,23 @@ object PluginTestDB {
     }
 
     fun createNewPlayer(isFull: Boolean, vararg password: String?): Player {
-        val player = Player()
+        val player = Player.create()
         player.admin(false)
         player.con = object : NetConnection(r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
             override fun send(o: Any, sendMode: SendMode) {}
             override fun close() {}
         }
-        player.usid = randomString(22) + "=="
+        player.con.usid = randomString(22) + "=="
         player.name = Faker().cat().name()
-        player.uuid = randomString(22) + "=="
-        player.isMobile = false
-        player.dead = false
-        player.setNet(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
+        player.con.uuid = randomString(22) + "=="
+        player.set(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
         player.color.set(Color.rgb(r.nextInt(255), r.nextInt(255), r.nextInt(255)))
         player.color.a = r.nextFloat()
         player.add()
-        Vars.playerGroup.updateEvents()
+        Groups.player.update()
         if (isFull) {
-            playerCore.register(player.name, player.uuid, "South Korea", "ko_KR", "ko-KR", true, "127.0.0.1", "default", 0L, player.name, (if (password.size != 0) password[0] else "none")!!, false)
-            playerCore.playerLoad(player, null)
+            PlayerCore.register(player.name, player.uuid(), "South Korea", "ko_KR", "ko-KR", "none", "default",0L, player.name, (if (password.isNotEmpty()) password[0] else "none")!!, false)
+            PlayerCore.playerLoad(player, null)
         }
         return player
     }

@@ -37,8 +37,8 @@ import kotlin.math.roundToInt
 object TickTrigger {
     private val ores = ArrayMap<Item, Int?>()
     private val random = SecureRandom()
-    var tick = 0
-    val resources = ObjectMap<String, Int?>()
+    private var tick = 0
+    private val resources = ObjectMap<String, Int?>()
 
     private fun writeOreStatus(item: Item, orignal: Int): String? {
         val `val`: Int
