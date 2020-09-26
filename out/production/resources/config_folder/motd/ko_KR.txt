@@ -1,1 +1,0 @@
-이 메시지를 바꿀려면 [green]config/mods/Essentials/[] 폴더에서 [green]motd.txt[] 파일을 수정하세요.
