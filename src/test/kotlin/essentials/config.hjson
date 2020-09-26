@@ -101,13 +101,6 @@
       hard: 6
       insane: 10
     }
-    # 파파고 번역 API 키
-    translate:
-    {
-      translate: false
-      translateid: none
-      translatepw: none
-    }
   }
   auth:
   {

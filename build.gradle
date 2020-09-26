@@ -27,9 +27,10 @@ dependencies {
     implementation 'com.neovisionaries:nv-i18n:1.27'
     implementation files('libs/ip2location.jar')
 
-    testCompileOnly 'com.github.Anuken.Arc:arc-core:-SNAPSHOT'
+    testCompileOnly 'com.github.Anuken.arc:arc-core:-SNAPSHOT'
     testCompileOnly 'com.github.Anuken.Mindustry:core:-SNAPSHOT'
     testCompileOnly 'com.github.Anuken.Mindustry:server:-SNAPSHOT'
+    testCompileOnly 'com.github.Anuken.arc:backend-headless:-SNAPSHOT'
     //testCompile group: 'junit', name: 'junit', version: '4.13'
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'

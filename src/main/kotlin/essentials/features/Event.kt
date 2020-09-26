@@ -43,12 +43,6 @@ import kotlin.math.abs
 
 object Event {
     fun register() {
-        Events.on(CommandIssueEvent::class.java) { e: CommandIssueEvent ->
-
-        }
-        Events.on(ClientPreConnectEvent::class.java) { e: ClientPreConnectEvent ->
-
-        }
         Events.on(ConfigEvent::class.java) { e: ConfigEvent ->
             if (e.tile != null && e.tile.block() != null && e.player != null && Config.alertAction) {
                 for (p in Groups.player) {
@@ -76,9 +70,6 @@ object Event {
                     }
                 }
             }
-        }
-        Events.on(TileChangeEvent::class.java) { e: TileChangeEvent ->
-
         }
         /*Events.on(TapEvent::class.java) { e: TapEvent ->
             if (Config.logging) Log.write(LogType.tap, "log.tap", e.player.name, e.tile.block().name)
@@ -365,76 +356,7 @@ object Event {
                             }
                         }
                     }
-                    if (Config.translate) {
-                        Thread {
-                            val buf = ArrayMap<String, String>()
-                            try {
-                                for (p in Groups.player) {
-                                    val target = PlayerCore[p.uuid()]
-                                    if (!target.error && !target.mute) {
-                                        var original = playerData.locale.language
-                                        var language = target.locale.language
-                                        if (original == "zh") original = "zh-CN"
-                                        if (language == "zh") language = "zh-CN"
-                                        var match = false
-                                        for (b in buf) {
-                                            if (language == b.key) {
-                                                match = true
-                                                p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + b.value)
-                                                break
-                                            }
-                                        }
-                                        if (language != original && !match) {
-                                            val con = URL("https://naveropenapi.apigw.ntruss.com/nmt/v1/translation").openConnection() as HttpURLConnection
-                                            con.requestMethod = "POST"
-                                            con.setRequestProperty("X-NCP-APIGW-API-KEY-ID", Config.translateId)
-                                            con.setRequestProperty("X-NCP-APIGW-API-KEY", Config.translatePw)
-                                            con.doOutput = true
-                                            try {
-                                                DataOutputStream(con.outputStream).use { wr ->
-                                                    wr.writeBytes("source=" + original + "&target=" + language + "&text=" + URLEncoder.encode(e.message, "UTF-8"))
-                                                    wr.flush()
-                                                    wr.close()
-                                                    if (con.responseCode != 200) {
-                                                        BufferedReader(InputStreamReader(con.errorStream, StandardCharsets.UTF_8)).use { br ->
-                                                            var inputLine: String?
-                                                            val response = StringBuilder()
-                                                            while (br.readLine().also { inputLine = it } != null) {
-                                                                response.append(inputLine)
-                                                            }
-                                                            Log.write(LogType.Error, response.toString())
-                                                        }
-                                                    } else {
-                                                        BufferedReader(InputStreamReader(con.inputStream, StandardCharsets.UTF_8)).use { br ->
-                                                            var inputLine: String?
-                                                            val response = StringBuilder()
-                                                            while (br.readLine().also { inputLine = it } != null) {
-                                                                response.append(inputLine)
-                                                            }
-                                                            val `object` = JsonValue.readJSON(response.toString()).asObject()
-                                                            val result = `object`["message"].asObject()["result"].asObject()["translatedText"].asString()
-                                                            buf.put(language, result)
-                                                            p.sendMessage("[orange][TR] [green]" + e.player.name + "[orange] >[white] " + result)
-                                                        }
-                                                    }
-                                                }
-                                            } catch (ex: Exception) {
-                                                CrashReport(ex)
-                                            }
-                                        } else {
-                                            if (Permissions.user[playerData.uuid].asObject()["prefix"] != null) {
-                                                if (!playerData.crosschat) p.sendMessage(Permissions.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
-                                            } else {
-                                                if (!playerData.crosschat) p.sendMessage("[orange]" + NetClient.colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message)
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (ex: Exception) {
-                                CrashReport(ex)
-                            }
-                        }.start()
-                    } else if (NetClient.colorizeName(e.player.id, e.player.name) != null) {
+                    if (NetClient.colorizeName(e.player.id, e.player.name) != null) {
                         Call.sendMessage(Permissions.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
                     }
                 }

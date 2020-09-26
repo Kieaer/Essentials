@@ -17,7 +17,6 @@ import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
-import mindustry.content.Items
 import mindustry.core.FileTree
 import mindustry.core.GameState
 import mindustry.core.Logic
@@ -30,8 +29,6 @@ import mindustry.gen.Player
 import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
-import org.junit.Assert
-import org.junit.*
 import org.junit.Assert.*
 import org.junit.BeforeClass
 import org.junit.Test
@@ -127,7 +124,7 @@ class PluginTest {
             }
             Groups.init()
             world.loadMap(testMap[0])
-            Vars.state.set(GameState.State.playing)
+            state.set(GameState.State.playing)
             testroot.child("locales").delete()
             testroot.child("version.properties").delete()
             pluginRoot.child("config.hjson").writeString(testroot.child("src/test/kotlin/essentials/config.hjson").readString("UTF-8"))
@@ -216,7 +213,6 @@ class PluginTest {
     }
 
     @Test
-    @Throws(InterruptedException::class)
     fun client_chars() {
         clientHandler.handleMessage("/chars hobc0283qz ?!", player)
         assertSame(world.tile(player.tileX(), player.tileY()).block(), Blocks.copperWall)
@@ -478,7 +474,7 @@ class PluginTest {
         assertFalse(Vote.service.process)
 
         println("== votemap")
-        clientHandler.handleMessage("/vote map Glacier", player);
+        clientHandler.handleMessage("/vote map Glacier", player)
         sleep(500)
         assertTrue(Vote.service.process)
         Events.fire(PlayerChatEvent(player, "y"))
@@ -491,7 +487,7 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertEquals("Glacier", state.map.name());
+        assertEquals("Glacier", state.map.name())
         assertFalse(Vote.service.process)
 
         Events.fire(PlayerLeave(dummy1))
@@ -504,13 +500,13 @@ class PluginTest {
     @Test
     fun client_weather() {
         clientHandler.handleMessage("/weather day", player)
-        assertEquals(0.0f, Vars.state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.0f, state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather eday", player)
-        assertEquals(0.3f, Vars.state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.3f, state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather night", player)
-        assertEquals(0.7f, Vars.state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.7f, state.rules.ambientLight.a, 0.0f)
         clientHandler.handleMessage("/weather enight", player)
-        assertEquals(0.85f, Vars.state.rules.ambientLight.a, 0.0f)
+        assertEquals(0.85f, state.rules.ambientLight.a, 0.0f)
     }
 
     @Test
@@ -539,8 +535,8 @@ class PluginTest {
 
     @Test
     fun event_Gameover(){
-        Vars.state.rules.attackMode = true
-        Call.setRules(Vars.state.rules)
+        state.rules.attackMode = true
+        Call.setRules(state.rules)
         Events.fire(GameOverEvent(player.team()))
         assertEquals(1, PlayerCore[player.uuid()].attackclear)
     }

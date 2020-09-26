@@ -33,7 +33,6 @@ class PlayerData {
     var pvpbreakout: Int = 0
     var reactorcount: Int = 0
     var bantime: Long = 0L
-    var translate: Boolean = false
     var crosschat: Boolean = false
     var colornick: Boolean = false
     var connected: Boolean = false
@@ -53,7 +52,7 @@ class PlayerData {
 
     constructor()
 
-    constructor(name: String, uuid: String, country: String, countryCode: String, language: String, isAdmin: Boolean, placecount: Int, breakcount: Int, killcount: Int, deathcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, reqexp: Int, firstdate: Long, lastdate: Long, lastplacename: String, lastbreakname: String, lastchat: String, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, pvpbreakout: Int, reactorcount: Int, bantime: Long, translate: Boolean, crosschat: Boolean, colornick: Boolean, connected: Boolean, connserver: String, permission: String, mute: Boolean, alert: Boolean, udid: Long, accountid: String, accountpw: String, login: Boolean) {
+    constructor(name: String, uuid: String, country: String, countryCode: String, language: String, isAdmin: Boolean, placecount: Int, breakcount: Int, killcount: Int, deathcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, reqexp: Int, firstdate: Long, lastdate: Long, lastplacename: String, lastbreakname: String, lastchat: String, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, pvpbreakout: Int, reactorcount: Int, bantime: Long, crosschat: Boolean, colornick: Boolean, connected: Boolean, connserver: String, permission: String, mute: Boolean, alert: Boolean, udid: Long, accountid: String, accountpw: String, login: Boolean) {
         this.name = name
         this.uuid = uuid
         this.country = country
@@ -81,7 +80,6 @@ class PlayerData {
         this.pvpbreakout = pvpbreakout
         this.reactorcount = reactorcount
         this.bantime = bantime
-        this.translate = translate
         this.crosschat = crosschat
         this.colornick = colornick
         this.connected = connected
@@ -126,7 +124,6 @@ class PlayerData {
         map.add("pvpbreakout", pvpbreakout)
         map.add("reactorcount", reactorcount)
         map.add("bantime", bantime)
-        map.add("translate", translate)
         map.add("crosschat", crosschat)
         map.add("colornick", colornick)
         map.add("connected", connected)
@@ -168,7 +165,6 @@ class PlayerData {
         pvpbreakout = data["pvpbreakout"].asInt()
         reactorcount = data["reactorcount"].asInt()
         bantime = data["bantime"].asLong()
-        translate = data["translate"].asBoolean()
         crosschat = data["crosschat"].asBoolean()
         colornick = data["colornick"].asBoolean()
         connected = data["connected"].asBoolean()

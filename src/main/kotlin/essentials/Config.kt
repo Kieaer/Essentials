@@ -50,9 +50,6 @@ object Config {
     var autoLogin = false
     var discordToken: String = "none"
     var discordLink: String = "none"
-    var translate = false
-    var translateId: String = "none"
-    var translatePw: String = "none"
     var debug = false
     var crashReport = false
     var saveTime: LocalTime = LocalTime.of(0, 10)
@@ -68,8 +65,6 @@ object Config {
         val network: JsonObject
         val anti: JsonObject
         val features: JsonObject
-        val difficulty: JsonObject
-        val tr: JsonObject
         val auth: JsonObject
         val discord: JsonObject
 
@@ -79,7 +74,7 @@ object Config {
             obj.add("settings", JsonObject().add("database", empty))
             obj.add("network", empty)
             obj.add("antigrief", empty)
-            obj.add("features", JsonObject().add("difficulty", empty).add("translate", empty))
+            obj.add("features", JsonObject().add("difficulty", empty))
             obj.add("auth", JsonObject().add("discord", empty))
         } else {
             obj = JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).asObject()
@@ -138,11 +133,6 @@ object Config {
         cupdatei = features.getInt("cupdatei", 1000)
         afktime = features.getLong("afktime", 0)
 
-        tr = features["translate"].asObject()
-        translate = tr.getBoolean("translate", false)
-        translateId = tr.getString("translateid", "none")
-        translatePw = tr.getString("translatepw", "none")
-
         auth = obj["auth"].asObject()
         loginEnable = auth.getBoolean("loginenable", false)
         passwordMethod = auth.getString("loginmethod", "password")
@@ -164,10 +154,8 @@ object Config {
         val network = JsonObject()
         val anti = JsonObject()
         val features = JsonObject()
-        val difficulty = JsonObject()
         val auth = JsonObject()
         val discord = JsonObject()
-        val tr = JsonObject()
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
         config.add("antigrief", anti)
@@ -220,12 +208,6 @@ object Config {
         features.add("spawnlimit", spawnLimit, bundle["config.feature.spawn-limit"])
         features.add("cupdatei", cupdatei, bundle["config.feature.colornick"])
         features.add("afktime", afktime, bundle["config.feature.afktime"])
-
-        // 번역 설정 (features 상속)
-        features.add("translate", tr, bundle["config.feature.papago"])
-        tr.add("translate", translate)
-        tr.add("translateid", translateId)
-        tr.add("translatepw", translatePw)
 
         // 로그인 설정
         auth.add("loginenable", loginEnable, bundle["config.account.login"])

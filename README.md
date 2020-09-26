@@ -28,7 +28,7 @@ Please submit your idea to this repository issues or Mindustry official discord!
       - [ ] Rest API
 - [ ] Remove external API services
   - [x] IP API (Due to traffic excess)
-  - [ ] Translate (Due to paid service)
+  - [x] Translate (Due to paid service)
 - [ ] Security patches
 - [ ] All code clean
 

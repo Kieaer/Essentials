@@ -64,7 +64,7 @@ object ClientCommander {
         handler.register("r", "<player> [message]", "Send Direct message to target player", ::r)
         handler.register("reset", "<zone/count/total/block> [ip]", "Remove a server-to-server warp zone data.", ::reset)
         handler.register("router", "Router", ::router)
-        handler.register("register", if (Config.passwordMethod.equals("password", ignoreCase = true)) "<accountid> <password>" else "", "Register account", ::register)
+        handler.register("register", if (Config.passwordMethod.equals("password", ignoreCase = true)) "<accountid> <password>" else "", "Register account", ::reg)
         handler.register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", ::spawn)
         handler.register("setperm", "<player_name> <group>", "Set player permission", ::setperm)
         handler.register("spawn-core", "<small/normal/big>", "Make new core", ::spawncore)
@@ -581,7 +581,7 @@ object ClientCommander {
         }.start()
     }
 
-    private fun register(arg: Array<String>, player: Playerc) {
+    private fun reg(arg: Array<String>, player: Playerc) {
         if (Config.loginEnable) {
             when (Config.passwordMethod) {
                 "discord" -> {
@@ -892,13 +892,6 @@ object ClientCommander {
         }
         player.set(x.toFloat(), y.toFloat())
     }
-
-    /*handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
-        if (!Permissions.check(player, "tr")) return;
-        PlayerData playerData = PlayerCore.get(player.uuid);
-        PlayerCore.get(player.uuid).translate(!playerData.translate());
-        player.sendMessage(new Bundle(playerData.locale).prefix(playerData.translate() ? "translate" : "translate-disable", player.name));
-    });*/
     private fun voteService(arg: Array<String>, player: Playerc) {
         if (!Permissions.check(player, "vote") || Core.settings.getBool("isLobby")) return
         val playerData = PlayerCore[player.uuid()]

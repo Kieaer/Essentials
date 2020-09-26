@@ -22,6 +22,7 @@ import java.sql.DriverManager
 import java.sql.SQLException
 import java.time.LocalDateTime
 import java.util.function.Consumer
+import kotlin.jvm.Throws
 import kotlin.system.exitProcess
 
 object PlayerCore {
@@ -115,7 +116,6 @@ object PlayerCore {
                 0,
                 0,
                 0L,
-                translate = false,
                 crosschat = false,
                 colornick = false,
                 connected = false,
@@ -196,7 +196,6 @@ object PlayerCore {
                                 rs.getInt("pvpbreakout"),
                                 rs.getInt("reactorcount"),
                                 rs.getLong("bantime"),
-                                rs.getBoolean("translate"),
                                 rs.getBoolean("crosschat"),
                                 rs.getBoolean("colornick"),
                                 rs.getBoolean("connected"),
@@ -354,7 +353,6 @@ object PlayerCore {
                 "pvpbreakout INT(11) NOT NULL," +
                 "reactorcount INT(11) NOT NULL," +
                 "bantime TINYTEXT NOT NULL," +
-                "translate TINYINT(4) NOT NULL," +
                 "crosschat TINYINT(4) NOT NULL," +
                 "colornick TINYINT(4) NOT NULL," +
                 "connected TINYINT(4) NOT NULL," +

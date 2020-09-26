@@ -71,7 +71,7 @@ object ServerCommander {
                       - [ ] Rest API
                 - [ ] Remove external API services
                   - [x] IP API (Due to traffic excess)
-                  - [ ] Translate (Due to paid service)
+                  - [x] Translate (Due to paid service)
                 - [ ] Security patches
                 - [ ] All code clean
                 
@@ -215,7 +215,6 @@ object ServerCommander {
                                         "pvpbreakout: ${rs.getInt("pvpbreakout")}\n" +
                                         "reactorcount: ${rs.getInt("reactorcount")}\n" +
                                         "bantime: ${rs.getString("bantime")}\n" +
-                                        "translate: ${rs.getBoolean("translate")}\n" +
                                         "crosschat: ${rs.getBoolean("crosschat")}\n" +
                                         "colornick: ${rs.getBoolean("colornick")}\n" +
                                         "connected: ${rs.getBoolean("connected")}\n" +
