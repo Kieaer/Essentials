@@ -94,22 +94,26 @@ object Permissions {
                         }
                     }
                 }
-                if (default == null) {
+                if (default == null || init) {
                     for (data in perm) {
                         val name = data.name
                         if (name == "default") {
                             default = name
-                            val json = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()["default"].asObject()
-                            val perms = json["permission"].asArray()
+                            val json = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
+                            val perms = json["default"].asObject()["permission"].asArray()
                             json.remove("permission")
                             if(!json.has("default")) json.add("default", true)
                             json.add("permission", perms)
-                            pluginRoot.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
+                            if(init){
+                                pluginRoot.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
+                            } else {
+                                perm = json
+                            }
                         }
                     }
                 }
                 if (default == null) {
-                    throw PluginException(Bundle(Config.locale)["system.Permissions.no-default"])
+                    throw PluginException(Bundle(Config.locale)["system.permissions.no-default"])
                 }
             } catch (e: IOException) {
                 Log.err(e.message!!)
