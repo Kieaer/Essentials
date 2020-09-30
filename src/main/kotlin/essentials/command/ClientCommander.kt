@@ -685,8 +685,8 @@ object ClientCommander {
             "normal" -> core = Blocks.coreFoundation
             "big" -> core = Blocks.coreNucleus
         }
-        if (player.tileOn().breakable()) {
-            player.tileOn().setBlock(core, player.team())
+        if (player.tileOn().block().alwaysReplace) {
+            //player.tileOn().setBlock(core, player.team())
             Call.constructFinish(player.tileOn(), core, player.unit(), 0.toByte(), player.team(), false)
         }
     }
@@ -809,10 +809,9 @@ object ClientCommander {
             val bantime = System.currentTimeMillis() + 1000 * 60 * (arg[1].toInt())
             PlayerCore.ban(other, bantime, arg[2])
             Call.kick(other.con(), "Temp kicked")
-            for (a in 0 until Groups.player.size()) {
-                val current = Groups.player.getByID(a)
-                val target = PlayerCore[current.uuid()]
-                current.sendMessage(Bundle(target.locale).prefix("account.ban.temp", other.name(), player.name()))
+            for (p in Groups.player) {
+                val target = PlayerCore[p.uuid()]
+                p.sendMessage(Bundle(target.locale).prefix("account.ban.temp", other.name(), player.name()))
             }
         } else {
             player.sendMessage(Bundle(playerData.locale).prefix("player.not-found"))
@@ -870,11 +869,13 @@ object ClientCommander {
             player.sendMessage(Bundle(playerData.locale).prefix("player.not-found"))
             return
         }
+        other1.set(other2.x, other2.y)
+
         /*// TODO 모바일 유저도 tp 되는지 확인
         if (!other1.isMobile || !other2.isMobile) {
             other1.set(other2.x, other2.y)
         } else {*/
-        player.sendMessage(Bundle(playerData.locale).prefix("tp-ismobile"))
+        //player.sendMessage(Bundle(playerData.locale).prefix("tp-ismobile"))
         //}
     }
 

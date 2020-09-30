@@ -25,6 +25,7 @@ import mindustry.game.EventType.Trigger.update
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.Nulls
 import mindustry.type.Item
 import mindustry.world.Tile
 import mindustry.world.blocks.logic.MessageBlock
@@ -148,7 +149,7 @@ object TickTrigger {
                             if (PluginData.warptotals[a]!!.numbersize != digits.size) {
                                 for (px in 0..2) {
                                     for (py in 0..4) {
-                                        Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, null)
+                                        Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, Nulls.unit)
                                     }
                                 }
                             }

@@ -2,15 +2,10 @@ package essentials.features
 
 import arc.Core
 import arc.Events
-import arc.struct.ArrayMap
-import essentials.Config
+import essentials.*
 import essentials.Main.Companion.mainThread
-import essentials.PlayerCore
-import essentials.PluginData
 import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.timer
-import essentials.PlayerData
-import essentials.PluginVars
 import essentials.external.IpAddressMatcher
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
@@ -27,17 +22,14 @@ import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.Nulls
 import mindustry.gen.Playerc
 import mindustry.net.Packets
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
 import java.io.BufferedReader
-import java.io.DataOutputStream
 import java.io.InputStreamReader
-import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 import kotlin.math.abs
 
@@ -144,9 +136,8 @@ object Event {
                     }
                 }
             } else if (Vars.state.rules.attackMode) {
-                for (i in 0 until Groups.player.size()) {
-                    val player = Groups.player.getByID(i)
-                    val target = PlayerCore[player.uuid()]
+                for (p in Groups.player) {
+                    val target = PlayerCore[p.uuid()]
                     if (target.login) {
                         target.attackclear = target.attackclear + 1
                     }
@@ -368,7 +359,7 @@ object Event {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(BlockBuildEndEvent::class.java) { e: BlockBuildEndEvent ->
-            if (e.unit.isPlayer) {
+            if (!e.unit.isNull && e.unit.isPlayer) {
                 val player = e.unit.player
 
                 Log.write(LogType.Block, "log.block.place", player.name, e.tile.block().name)
@@ -489,10 +480,9 @@ object Event {
 
             // 터진 유닛수만큼 카운트해줌
             if (Groups.player != null && Groups.player.size() > 0) {
-                for (i in 0 until Groups.player.size()) {
-                    val player = Groups.player.getByID(i)
-                    val target = PlayerCore[player.uuid()]
-                    if (!Vars.state.teams[player.team()].cores.isEmpty) target.killcount = target.killcount + 1
+                for (p in Groups.player) {
+                    val target = PlayerCore[p.uuid()]
+                    if (!Vars.state.teams[p.team()].cores.isEmpty) target.killcount = target.killcount + 1
                 }
             }
         }
@@ -501,7 +491,7 @@ object Event {
         Events.on(PlayerBanEvent::class.java) { e: PlayerBanEvent ->
             val bansharing = Thread {
                 if (Config.banShare && Config.clientEnable) {
-                    Client.request(Client.Request.BanSync, null, null)
+                    Client.request(Client.Request.BanSync, Nulls.player, null)
                 }
             }
             for (player in Groups.player) {
@@ -519,7 +509,7 @@ object Event {
         Events.on(PlayerIpBanEvent::class.java) {
             val bansharing = Thread {
                 if (Config.banShare && Client.activated) {
-                    Client.request(Client.Request.BanSync, null, null)
+                    Client.request(Client.Request.BanSync, Nulls.player, null)
                 }
             }
             mainThread.submit(bansharing)

@@ -9,9 +9,11 @@ import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
 import mindustry.Vars.*
 import mindustry.content.Blocks
+import mindustry.content.UnitTypes
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.Nulls
 import mindustry.gen.Playerc
 import mindustry.type.UnitType
 import mindustry.world.Block
@@ -304,9 +306,9 @@ object Tool {
             for (a in 0 until pos.size) {
                 val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
                 if (target[a] == 1) {
-                    Call.constructFinish(tar, block, null, 0.toByte(), Team.sharded, false)
+                    Call.constructFinish(tar, block, Nulls.unit, 0.toByte(), Team.sharded, false)
                 } else if (tar != null) {
-                    Call.deconstructFinish(tar, Blocks.air, null)
+                    Call.deconstructFinish(tar, Blocks.air, Nulls.unit)
                 }
             }
             t = world.tile(t.x + (xv + 1), t.y.toInt())
