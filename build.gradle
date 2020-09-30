@@ -1,6 +1,5 @@
 plugins {
     id 'java-library'
-    //id 'com.github.johnrengelman.shadow' version '5.2.0'
     id "org.sonarqube" version "2.8"
     id 'jacoco'
     id 'org.jetbrains.kotlin.jvm' version '1.4.0'
@@ -13,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:-SNAPSHOT'
-    compileOnly 'com.github.Anuken.Mindustry:core:-SNAPSHOT'
+    compileOnly 'com.github.Anuken.Arc:arc-core:v107'
+    compileOnly 'com.github.Anuken.Mindustry:core:v107'
     implementation 'com.github.PersonTheCat:hjson-java:master'
     implementation 'de.svenkubiak:jBCrypt:0.4.1'
     implementation('net.dv8tion:JDA:4.1.1_141') {
@@ -27,19 +26,16 @@ dependencies {
     implementation 'com.neovisionaries:nv-i18n:1.27'
     implementation files('libs/ip2location.jar')
 
-    testCompileOnly 'com.github.Anuken.arc:arc-core:-SNAPSHOT'
-    testCompileOnly 'com.github.Anuken.Mindustry:core:-SNAPSHOT'
-    testCompileOnly 'com.github.Anuken.Mindustry:server:-SNAPSHOT'
-    testCompileOnly 'com.github.Anuken.arc:backend-headless:-SNAPSHOT'
-    //testCompile group: 'junit', name: 'junit', version: '4.13'
+    testImplementation 'com.github.Anuken.arc:arc-core:v107'
+    testImplementation 'com.github.Anuken.Mindustry:core:v107'
+    testImplementation 'com.github.Anuken.Mindustry:server:v107'
+    testImplementation 'com.github.Anuken.arc:backend-headless:v107'
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
 
-    //testCompile "org.jetbrains.kotlin:kotlin-test:1.4.0-rc"
-    //testCompile "org.jetbrains.kotlin:kotlin-test-junit:1.4.0-rc"
-    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.7.0-M1'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0-M1'
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.7.0-M1'
+    testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.0"
+    testCompile "org.jetbrains.kotlin:kotlin-test:1.4.0"
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:1.4.0"
 }
 
 jar {
@@ -47,15 +43,7 @@ jar {
     from{
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
-
-    //enabled = false // disable original
-    //dependsOn(shadowJar) // add new task
 }
-
-/*shadowJar {
-    archiveFileName = "${project.archivesBaseName}.jar" // remove jar classifier and version
-    minimize() // remove unused classes
-}*/
 
 sourceSets{
     test{
@@ -69,10 +57,6 @@ compileJava {
     options.encoding = "UTF-8"
 }
 
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
-
 test {
     testLogging.showStandardStreams = true
 }
@@ -82,7 +66,6 @@ sonarqube {
         property "sonar.projectKey", "Kieaer_Essentials"
         property "sonar.organization", "kieaer"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.login", "02f72b2b7fe443b0bc962c878c00294ef87a01dd"
     }
 }
 
