@@ -706,6 +706,8 @@ object ClientCommander {
             "nova" -> mech = UnitTypes.nova
             "pulsar" -> mech = UnitTypes.pulsar
             "quasar" -> mech = UnitTypes.quasar
+            "vela" -> mech = UnitTypes.vela
+            "corvus" -> mech = UnitTypes.corvus
             "atrax" -> mech = UnitTypes.atrax
             "spiroct" -> mech = UnitTypes.spiroct
             "arkyid" -> mech = UnitTypes.arkyid
@@ -718,13 +720,11 @@ object ClientCommander {
             "mono" -> mech = UnitTypes.mono
             "poly" -> mech = UnitTypes.poly
             "mega" -> mech = UnitTypes.mega
+            "quad" -> mech = UnitTypes.quad
+            "oct" -> mech = UnitTypes.oct
             "alpha" -> mech = UnitTypes.alpha
             "beta" -> mech = UnitTypes.beta
             "gamma" -> mech = UnitTypes.gamma
-            "risso" -> mech = UnitTypes.risso
-            "minke" -> mech = UnitTypes.minke
-            "bryde" -> mech = UnitTypes.bryde
-            "block" -> mech = UnitTypes.block
         }
         if (arg.size == 1) {
             for (p in Groups.player) {

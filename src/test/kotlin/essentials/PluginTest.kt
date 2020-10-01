@@ -17,10 +17,12 @@ import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
+import mindustry.content.UnitTypes
 import mindustry.core.FileTree
 import mindustry.core.GameState
 import mindustry.core.Logic
 import mindustry.core.NetServer
+import mindustry.entities.Units
 import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -29,12 +31,11 @@ import mindustry.gen.Player
 import mindustry.maps.Map
 import mindustry.net.Net
 import org.hjson.JsonObject
+import org.junit.AfterClass
 import org.junit.Assert.*
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.contrib.java.lang.system.SystemOutRule
-import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.TestMethodOrder
 import java.io.*
 import java.lang.Thread.sleep
 import java.net.Socket
@@ -45,7 +46,6 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class PluginTest {
     companion object {
         private val out = SystemOutRule()
@@ -137,16 +137,16 @@ class PluginTest {
             player = PluginTestDB.createNewPlayer(true)
             serverHandler.handleMessage("setperm " + player.name + " owner")
         }
-    }
 
-    /*@Test
-    @Order(999)
-    fun shutdown() {
-        Core.app.listeners[1].dispose()
-        Client.request(Client.Request.Exit, null, null)
-        sleep(1000)
-        Server.shutdown()
-    }*/
+        @AfterClass
+        @JvmStatic
+        fun shutdown() {
+            Core.app.listeners[1].dispose()
+            Client.request(Client.Request.Exit, null, null)
+            sleep(1000)
+            Server.shutdown()
+        }
+    }
 
     @Test
     fun server_saveAll(){
@@ -314,7 +314,7 @@ class PluginTest {
 
     @Test
     fun client_spawncore(){
-        if(state.map.name().equals("Glacier")){
+        if(state.map.name() == "Glacier"){
             player.set(648f,312f)
         } else {
             player.set(912f,720f)
@@ -323,23 +323,65 @@ class PluginTest {
         assertSame(Blocks.coreShard, player.tileOn().block())
     }
 
-    /*@Test
+    @Test
     fun client_setmech(){
+        clientHandler.handleMessage("/setmech mace", player)
+        assertSame(UnitTypes.mace, player.unit().type())
+        clientHandler.handleMessage("/setmech dagger", player)
+        assertSame(UnitTypes.dagger, player.unit().type())
+        clientHandler.handleMessage("/setmech crawler", player)
+        assertSame(UnitTypes.crawler, player.unit().type())
+        clientHandler.handleMessage("/setmech fortress", player)
+        assertSame(UnitTypes.fortress, player.unit().type())
+        clientHandler.handleMessage("/setmech scepter", player)
+        assertSame(UnitTypes.scepter, player.unit().type())
+        clientHandler.handleMessage("/setmech reign", player)
+        assertSame(UnitTypes.reign, player.unit().type())
+        clientHandler.handleMessage("/setmech nova", player)
+        assertSame(UnitTypes.nova, player.unit().type())
+        clientHandler.handleMessage("/setmech pulsar", player)
+        assertSame(UnitTypes.pulsar, player.unit().type())
+        clientHandler.handleMessage("/setmech quasar", player)
+        assertSame(UnitTypes.quasar, player.unit().type())
+        clientHandler.handleMessage("/setmech vela", player)
+        assertSame(UnitTypes.vela, player.unit().type())
+        clientHandler.handleMessage("/setmech corvus", player)
+        assertSame(UnitTypes.corvus, player.unit().type())
+        clientHandler.handleMessage("/setmech atrax", player)
+        assertSame(UnitTypes.atrax, player.unit().type())
+        clientHandler.handleMessage("/setmech spiroct", player)
+        assertSame(UnitTypes.spiroct, player.unit().type())
+        clientHandler.handleMessage("/setmech arkyid", player)
+        assertSame(UnitTypes.arkyid, player.unit().type())
+        clientHandler.handleMessage("/setmech toxopid", player)
+        assertSame(UnitTypes.toxopid, player.unit().type())
+        clientHandler.handleMessage("/setmech flare", player)
+        assertSame(UnitTypes.flare, player.unit().type())
+        clientHandler.handleMessage("/setmech eclipse", player)
+        assertSame(UnitTypes.eclipse, player.unit().type())
+        clientHandler.handleMessage("/setmech horizon", player)
+        assertSame(UnitTypes.horizon, player.unit().type())
+        clientHandler.handleMessage("/setmech zenith", player)
+        assertSame(UnitTypes.zenith, player.unit().type())
+        clientHandler.handleMessage("/setmech antumbra", player)
+        assertSame(UnitTypes.antumbra, player.unit().type())
+        clientHandler.handleMessage("/setmech mono", player)
+        assertSame(UnitTypes.mono, player.unit().type())
+        clientHandler.handleMessage("/setmech poly", player)
+        assertSame(UnitTypes.poly, player.unit().type())
+        clientHandler.handleMessage("/setmech mega", player)
+        assertSame(UnitTypes.mega, player.unit().type())
+        clientHandler.handleMessage("/setmech quad", player)
+        assertSame(UnitTypes.quad, player.unit().type())
+        clientHandler.handleMessage("/setmech oct", player)
+        assertSame(UnitTypes.oct, player.unit().type())
         clientHandler.handleMessage("/setmech alpha", player)
-        assertSame(Mechs.alpha, player.mech)
-        clientHandler.handleMessage("/setmech dart", player)
-        assertSame(Mechs.dart, player.mech)
-        clientHandler.handleMessage("/setmech glaive", player)
-        assertSame(Mechs.glaive, player.mech)
-        clientHandler.handleMessage("/setmech javelin", player)
-        assertSame(Mechs.javelin, player.mech)
-        clientHandler.handleMessage("/setmech omega", player)
-        assertSame(Mechs.omega, player.mech)
-        clientHandler.handleMessage("/setmech tau", player)
-        assertSame(Mechs.tau, player.mech)
-        clientHandler.handleMessage("/setmech trident", player)
-        assertSame(Mechs.trident, player.mech)
-    }*/
+        assertSame(UnitTypes.alpha, player.unit().type())
+        clientHandler.handleMessage("/setmech beta", player)
+        assertSame(UnitTypes.beta, player.unit().type())
+        clientHandler.handleMessage("/setmech gamma", player)
+        assertSame(UnitTypes.gamma, player.unit().type())
+    }
 
     @Test
     fun client_status(){
@@ -388,7 +430,7 @@ class PluginTest {
         val dummy1 = PluginTestDB.createNewPlayer(false)
         val dummy2 = PluginTestDB.createNewPlayer(false)
         clientHandler.handleMessage("/tpp " + dummy1.name + " " + dummy2.name, player)
-        assertTrue(dummy1.x == dummy2.x && dummy1.y == dummy2.y)
+        assertSame(dummy1.tileOn(), dummy2.tileOn())
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))
@@ -518,7 +560,7 @@ class PluginTest {
         Events.fire(PlayerLeave(dummy))
     }
 
-    /*@Test
+    @Test
     fun event_TapConfig(){
         Events.fire(TapConfigEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, 5))
     }
@@ -531,7 +573,7 @@ class PluginTest {
     @Test
     fun event_Withdraw(){
         Events.fire(WithdrawEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10))
-    }*/
+    }
 
     @Test
     fun event_Gameover(){
@@ -553,10 +595,10 @@ class PluginTest {
         Events.fire(PlayerConnect(player))
     }
 
-    /*@Test
+    @Test
     fun event_Deposit(){
         Events.fire(DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5))
-    }*/
+    }
 
     @Test
     fun event_PlayerJoin(){
@@ -592,7 +634,7 @@ class PluginTest {
         Events.fire(PlayerChatEvent(player, "hi"))
     }
 
-    /*@Test
+    @Test
     fun event_BlockBuildEnd(){
         player.addBuildRequest(BuildRequest(5, 5, 0, Blocks.copperWall))
         Call.constructFinish(world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
@@ -614,7 +656,7 @@ class PluginTest {
     fun event_BuildSelect(){
         Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true))
         player.buildQueue().clear()
-    }*/
+    }
 
     @Test
     fun event_UnitDestroy(){
