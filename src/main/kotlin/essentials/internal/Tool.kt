@@ -376,6 +376,8 @@ object Tool {
     }
 
     fun setMessage(tile: Tile, message: String) {
-        (tile.block() as MessageBlock).MessageBuild().configure(message)
+        if(tile.block() is MessageBlock) {
+            (tile.block() as MessageBlock).MessageBuild().configure(message)
+        }
     }
 }

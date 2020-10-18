@@ -897,14 +897,15 @@ object ClientCommander {
         if (!Permissions.check(player, "vote") || Core.settings.getBool("isLobby")) return
         val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
-        if (Vote.service.process) {
+
+        if (Vote.voting) {
             player.sendMessage(bundle.prefix("vote.in-processing"))
             return
         }
+
         Vote.player = player
         when (arg[0]) {
             "kick" -> {
-                // vote kick <player name>
                 if (arg.size < 2) {
                     player.sendMessage(bundle["no-parameter"])
                     return
@@ -916,6 +917,7 @@ object ClientCommander {
                     player.sendMessage(bundle.prefix("player.not-found"))
                     return
                 }
+
                 when {
                     target == null -> {
                         player.sendMessage(bundle.prefix("player.not-found"))
@@ -929,24 +931,18 @@ object ClientCommander {
                         player.sendMessage(bundle.prefix("vote.target-own"))
                         return
                     }
-
-
-                    // 강퇴 투표
-                    else -> {
-                        Vote.type = Vote.VoteType.Kick
-                        Vote.parameters = arrayOf(target, arg[1])
-                    }
                 }
 
+                Vote.type = Vote.VoteType.Kick
+                Vote.parameters = arrayOf(target, arg[1])
             }
+
             "map" -> {
-                // vote map <map name>
                 if (arg.size < 2) {
                     player.sendMessage(bundle["no-parameter"])
                     return
                 }
 
-                // 맵 투표
                 var world = maps.all().find { map: Map -> map.name().equals(arg[1].replace('_', ' '), ignoreCase = true) || map.name().equals(arg[1], ignoreCase = true) }
                 if (world == null) {
                     try {
@@ -965,20 +961,22 @@ object ClientCommander {
                     Vote.parameters = arrayOf(world)
                 }
             }
+
             "gameover" -> {
-                // vote gameover
                 Vote.type = Vote.VoteType.Gameover
                 Vote.parameters = arrayOf()
             }
-            "rollback" ->                         // vote rollback
+
+            "rollback" -> {
                 if (Config.rollback) {
                     Vote.type = Vote.VoteType.Rollback
                     Vote.parameters = arrayOf()
                 } else {
                     player.sendMessage(bundle["vote.rollback.disabled"])
                 }
+            }
+
             "gamemode" -> {
-                // vote gamemode <gamemode>
                 if (arg.size < 2) {
                     player.sendMessage(bundle["no-parameter"])
                     return
@@ -990,8 +988,8 @@ object ClientCommander {
                     player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
                 }
             }
+
             "skipwave" -> {
-                // vote skipwave <wave>
                 if (arg.size != 2) {
                     player.sendMessage(bundle["no-parameter"])
                     return
@@ -999,6 +997,7 @@ object ClientCommander {
                 Vote.type = Vote.VoteType.SkipWave
                 Vote.parameters = arrayOf(arg[1])
             }
+
             else -> {
                 when (arg[0]) {
                     "gamemode" -> player.sendMessage(bundle.prefix("vote.list.gamemode"))
@@ -1009,7 +1008,8 @@ object ClientCommander {
                 return
             }
         }
-        Vote.pause = false
+
+        Vote.start()
     }
 
     private fun weather(arg: Array<String>, player: Playerc) {
