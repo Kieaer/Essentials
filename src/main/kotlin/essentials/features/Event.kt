@@ -63,37 +63,37 @@ object Event {
                 }
             }
         }
-        /*Events.on(TapEvent::class.java) { e: TapEvent ->
-            if (Config.logging) Log.write(LogType.tap, "log.tap", e.player.name, e.tile.block().name)
-            val playerData = PlayerCore[e.player.uuid]
+        Events.on(TapEvent::class.java) { e: TapEvent ->
+            if (Config.logging) Log.write(LogType.Tap, "log.tap", e.player.name, e.tile.block().name)
+            val playerData = PlayerCore[e.player.uuid()]
             if (!playerData.error) {
                 for (data in PluginData.warpblocks) {
-                    if (e.tile.x >= world.tile(data.pos).link().x && e.tile.x <= world.tile(data.pos).link().x) {
-                        if (e.tile.y >= world.tile(data.pos).link().y && e.tile.y <= world.tile(data.pos).link().y) {
+                    if (e.tile.x >= world.tile(data.pos).x && e.tile.x <= world.tile(data.pos).x) {
+                        if (e.tile.y >= world.tile(data.pos).y && e.tile.y <= world.tile(data.pos).y) {
                             if (data.online) {
                                 Log.info("player.warped", e.player.name, data.ip + ":" + data.port)
                                 playerData.connected = false
                                 playerData.connserver = "none"
-                                Call.Connect(e.player.con, data.ip, data.port)
+                                Call.connect(e.player.con, data.ip, data.port)
                             }
                             break
                         }
                     }
                 }
 
-                for (PluginData.warpzone data : PluginData.warpzones) {
-                    if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
-                        if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
+                for (data in PluginData.warpzones){
+                    if (e.tile.x > data.startTile.x && e.tile.x < data.finishTile.x) {
+                        if (e.tile.y > data.startTile.y && e.tile.y < data.finishTile.y) {
                             Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
-                            playerData.connected(false);
-                            playerData.connserver("none");
-                            Call.Connect(e.player.con, data.ip, data.port);
+                            playerData.connected = false
+                            playerData.connserver = "none"
+                            Call.connect(e.player.con, data.ip, data.port);
                             break;
                         }
                     }
                 }
             }
-        }*/
+        }
         Events.on(WithdrawEvent::class.java) { e: WithdrawEvent ->
             if (e.tile != null && e.player.miner().item() != null && e.player.name != null && Config.antiGrief) {
                 for (p in Groups.player) {
@@ -306,29 +306,27 @@ object Event {
             if (Config.antiGrief && (e.message.length > Vars.maxTextLength || e.message.contains("Nexity#2671"))) {
                 Call.kick(e.player.con, "Hacked client detected")
             }
+
             val playerData = PlayerCore[e.player.uuid()]
             val bundle = Bundle(playerData.locale)
+
             if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>")
             if (!playerData.error) {
-                // 명령어인지 확인
                 if (!e.message.startsWith("/")) {
-                    if (e.message == "y" && Vote.service.process) {
-                        // 투표가 진행중일때
-                        if (Vote.service.voted.contains(e.player.uuid())) {
+                    if (e.message == "y" && Vote.voting) {
+                        if (Vote.voted.contains(e.player.uuid())) {
                             e.player.sendMessage(bundle["vote.already-voted"])
                         } else {
-                            Vote.service.set(e.player.uuid())
+                            Vote.set(e.player.uuid())
                         }
                     } else {
                         if (!playerData.mute) {
-                            // 서버간 대화기능 작동
                             if (playerData.crosschat) {
                                 when {
                                     Config.clientEnable -> {
                                         Client.request(Client.Request.Chat, e.player, e.message)
                                     }
                                     Config.serverEnable -> {
-                                        // 메세지를 모든 클라이언트에게 전송함
                                         val msg = "[" + e.player.name + "]: " + e.message
                                         try {
                                             for (ser in Server.list) {
@@ -338,8 +336,7 @@ object Event {
                                         } catch (ex: Exception) {
                                             Log.warn("Crosschat", ex)
                                         }
-                                    }
-                                    else -> {
+                                    } else -> {
                                         e.player.sendMessage(bundle["no-any-network"])
                                         playerData.crosschat = false
                                     }

@@ -17,12 +17,14 @@ import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
+import mindustry.content.Items
 import mindustry.content.UnitTypes
 import mindustry.core.FileTree
 import mindustry.core.GameState
 import mindustry.core.Logic
 import mindustry.core.NetServer
 import mindustry.entities.Units
+import mindustry.entities.units.BuildPlan
 import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -143,7 +145,6 @@ class PluginTest {
         fun shutdown() {
             Core.app.listeners[1].dispose()
             Client.request(Client.Request.Exit, null, null)
-            sleep(1000)
             Server.shutdown()
         }
     }
@@ -453,7 +454,7 @@ class PluginTest {
         println("== votekick")
         clientHandler.handleMessage("/vote kick " + dummy3.id, player)
         sleep(500)
-        assertTrue(Vote.service.process)
+        assertTrue(Vote.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -464,12 +465,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.service.process)
+        assertFalse(Vote.voting)
 
         println("== vote gameover")
         clientHandler.handleMessage("/vote gameover", player)
         sleep(500)
-        assertTrue(Vote.service.process)
+        assertTrue(Vote.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -480,12 +481,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.service.process)
+        assertFalse(Vote.voting)
 
         println("== vote skipwave")
         clientHandler.handleMessage("/vote skipwave 5", player)
         sleep(500)
-        assertTrue(Vote.service.process)
+        assertTrue(Vote.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -496,13 +497,13 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.service.process)
+        assertFalse(Vote.voting)
 
         println("== vote rollback")
         serverHandler.handleMessage("save 1000")
         clientHandler.handleMessage("/vote rollback", player)
         sleep(500)
-        assertTrue(Vote.service.process)
+        assertTrue(Vote.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -513,12 +514,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.service.process)
+        assertFalse(Vote.voting)
 
         println("== votemap")
         clientHandler.handleMessage("/vote map Glacier", player)
         sleep(500)
-        assertTrue(Vote.service.process)
+        assertTrue(Vote.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -530,7 +531,7 @@ class PluginTest {
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
         assertEquals("Glacier", state.map.name())
-        assertFalse(Vote.service.process)
+        assertFalse(Vote.voting)
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))
@@ -556,23 +557,17 @@ class PluginTest {
         val dummy = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/mute " + dummy.name, player)
         assertTrue(PlayerCore[dummy.uuid()].mute)
-
         Events.fire(PlayerLeave(dummy))
     }
 
     @Test
-    fun event_TapConfig(){
-        Events.fire(TapConfigEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, 5))
-    }
-
-    @Test
     fun event_Tap(){
-        Events.fire(TapEvent(world.tile(r.nextInt(50), r.nextInt(50)), player))
+        Events.fire(TapEvent(player, world.tile(r.nextInt(50), r.nextInt(50))))
     }
 
     @Test
     fun event_Withdraw(){
-        Events.fire(WithdrawEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.coal, 10))
+        Events.fire(WithdrawEvent(world.tile(r.nextInt(50), r.nextInt(50)).build, player, Items.coal, 10))
     }
 
     @Test
@@ -595,10 +590,11 @@ class PluginTest {
         Events.fire(PlayerConnect(player))
     }
 
-    @Test
+    /*@Test
     fun event_Deposit(){
-        Events.fire(DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Items.copper, 5))
-    }
+        Events.fire(DepositEvent(world.tile(r.nextInt(50), r.nextInt(50)).build, player, Items.copper, 5))
+        // Miner is null
+    }*/
 
     @Test
     fun event_PlayerJoin(){
@@ -636,26 +632,26 @@ class PluginTest {
 
     @Test
     fun event_BlockBuildEnd(){
-        player.addBuildRequest(BuildRequest(5, 5, 0, Blocks.copperWall))
-        Call.constructFinish(world.tile(5, 5), Blocks.copperWall, player.id, 0.toByte(), Team.sharded, false)
-        Events.fire(BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player, Team.sharded, false))
+        player.builder().addBuild(BuildPlan(5,5,0,Blocks.copperWall))
+        Call.constructFinish(world.tile(5, 5), Blocks.copperWall, player.unit(), 0.toByte(), Team.sharded, false)
+        Events.fire(BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player.unit(), Team.sharded, false, false))
 
-        Call.constructFinish(world.tile(78, 78), Blocks.message, player.id, 0.toByte(), Team.sharded, false)
-        Events.fire(BlockBuildEndEvent(world.tile(78, 78), player, Team.sharded, false))
-        Call.setMessageBlockText(player, world.tile(78, 78), "warp mindustry.indielm.com")
+        Call.constructFinish(world.tile(78, 78), Blocks.message, player.unit(), 0.toByte(), Team.sharded, false)
+        Events.fire(BlockBuildEndEvent(world.tile(78, 78), player.unit(), Team.sharded, false, false))
+        Tool.setMessage(world.tile(78, 78), "warp mindustry.kr")
     }
 
     @Test
     fun event_DeconstructFinish(){
-        player.buildQueue().clear()
-        player.addBuildRequest(BuildRequest(5, 5))
-        Call.deconstructFinish(world.tile(5, 5), Blocks.air, player.id)
+        player.builder().clearBuilding()
+        player.builder().removeBuild(5, 5, true)
+        Call.deconstructFinish(world.tile(5, 5), Blocks.air, player.unit())
     }
 
     @Test
     fun event_BuildSelect(){
-        Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player, true))
-        player.buildQueue().clear()
+        Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player.builder(), true))
+        player.builder().clearBuilding()
     }
 
     @Test

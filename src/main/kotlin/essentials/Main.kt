@@ -69,7 +69,6 @@ class Main : Plugin() {
         if (Config.rollback) timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())
         mainThread.submit(PermissionWatch)
         mainThread.submit(WarpBorder)
-        mainThread.submit(Vote)
 
         // DB 연결
         try {
