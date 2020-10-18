@@ -203,56 +203,59 @@ object Client : Runnable {
         }
         while (!Thread.currentThread().isInterrupted) {
             try {
-                var data: JsonObject
-                try {
-                    data = JsonValue.readJSON(Tool.decrypt(br.readLine(), skey)).asObject()
-                } catch (e: IllegalArgumentException) {
-                    disconnected = true
-                    Log.client("server.disconnected", Config.clientHost)
-                    if (!Thread.currentThread().isInterrupted) wakeup()
-                    return
-                } catch (e: SocketException) {
-                    disconnected = true
-                    Log.client("server.disconnected", Config.clientHost)
-                    if (!Thread.currentThread().isInterrupted) wakeup()
-                    return
-                } catch (e: Exception) {
-                    if (e.message != "Socket closed") CrashReport(e)
-                    Log.client("server.disconnected", Config.clientHost)
-                    shutdown()
-                    return
-                }
-                when (Request.valueOf(data["type"].asString())) {
-                    Request.BanSync -> {
-                        Log.client("client.banlist.received")
-
-                        // 적용
-                        val ban = data["ban"].asArray()
-                        val ipban = data["ipban"].asArray()
-                        val subban = data["subban"].asArray()
-                        for (b in ban) {
-                            Vars.netServer.admins.banPlayerID(b.asString())
-                        }
-                        for (b in ipban) {
-                            Vars.netServer.admins.banPlayerIP(b.asString())
-                        }
-                        for (b in subban) {
-                            Vars.netServer.admins.addSubnetBan(b.asString())
-                        }
-                        Log.client("success")
-                    }
-                    Request.Chat -> {
-                        val name = data["name"].asString()
-                        val message = data["message"].asString()
-                        Call.sendMessage("[#C77E36][RC] [orange]$name [orange]:[white] $message")
-                    }
-                    Request.Exit -> {
+                val stringBuffer : String? = br.readLine()
+                if(!stringBuffer.isNullOrEmpty()) {
+                    var data: JsonObject
+                    try {
+                        data = JsonValue.readJSON(Tool.decrypt(stringBuffer, skey)).asObject()
+                    } catch (e: IllegalArgumentException) {
+                        disconnected = true
+                        Log.client("server.disconnected", Config.clientHost)
+                        if (!Thread.currentThread().isInterrupted) wakeup()
+                        return
+                    } catch (e: SocketException) {
+                        disconnected = true
+                        Log.client("server.disconnected", Config.clientHost)
+                        if (!Thread.currentThread().isInterrupted) wakeup()
+                        return
+                    } catch (e: Exception) {
+                        if (e.message != "Socket closed") CrashReport(e)
+                        Log.client("server.disconnected", Config.clientHost)
                         shutdown()
                         return
                     }
-                    Request.UnbanIP -> Vars.netServer.admins.unbanPlayerIP(data["ip"].asString())
-                    Request.UnbanID -> Vars.netServer.admins.unbanPlayerID(data["uuid"].asString())
-                    Request.DataShare -> {
+                    when (Request.valueOf(data["type"].asString())) {
+                        Request.BanSync -> {
+                            Log.client("client.banlist.received")
+
+                            // 적용
+                            val ban = data["ban"].asArray()
+                            val ipban = data["ipban"].asArray()
+                            val subban = data["subban"].asArray()
+                            for (b in ban) {
+                                Vars.netServer.admins.banPlayerID(b.asString())
+                            }
+                            for (b in ipban) {
+                                Vars.netServer.admins.banPlayerIP(b.asString())
+                            }
+                            for (b in subban) {
+                                Vars.netServer.admins.addSubnetBan(b.asString())
+                            }
+                            Log.client("success")
+                        }
+                        Request.Chat -> {
+                            val name = data["name"].asString()
+                            val message = data["message"].asString()
+                            Call.sendMessage("[#C77E36][RC] [orange]$name [orange]:[white] $message")
+                        }
+                        Request.Exit -> {
+                            shutdown()
+                            return
+                        }
+                        Request.UnbanIP -> Vars.netServer.admins.unbanPlayerIP(data["ip"].asString())
+                        Request.UnbanID -> Vars.netServer.admins.unbanPlayerID(data["uuid"].asString())
+                        Request.DataShare -> {
+                        }
                     }
                 }
             } catch (e: Exception) {

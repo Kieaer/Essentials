@@ -8,6 +8,7 @@ import mindustry.core.Version
 import org.hjson.JsonValue
 import org.hjson.Stringify
 import java.io.*
+import java.net.ConnectException
 import java.net.InetAddress
 import java.net.Socket
 import java.nio.charset.StandardCharsets
@@ -74,6 +75,9 @@ class CrashReport {
                     }
                 }
             }
+        } catch (e: ConnectException){
+            Log.warn("remote-server-dead")
+            success = true
         } catch (e: Exception) {
             val sw = StringWriter()
             e.printStackTrace(PrintWriter(sw))

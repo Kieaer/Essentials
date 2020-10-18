@@ -103,7 +103,7 @@ object Tool {
         return Base64.getEncoder().encodeToString(encrypted)
     }
 
-    fun decrypt(encrypted: String, key: SecretKey): String {
+    fun decrypt(encrypted: String?, key: SecretKey): String {
         val decoded = Base64.getDecoder().decode(encrypted)
         val iv = Arrays.copyOfRange(decoded, 0, 12)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")

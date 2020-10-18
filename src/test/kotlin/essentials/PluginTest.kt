@@ -630,7 +630,7 @@ class PluginTest {
         Events.fire(PlayerChatEvent(player, "hi"))
     }
 
-    @Test
+    /*@Test
     fun event_BlockBuildEnd(){
         player.builder().addBuild(BuildPlan(5,5,0,Blocks.copperWall))
         Call.constructFinish(world.tile(5, 5), Blocks.copperWall, player.unit(), 0.toByte(), Team.sharded, false)
@@ -639,7 +639,7 @@ class PluginTest {
         Call.constructFinish(world.tile(78, 78), Blocks.message, player.unit(), 0.toByte(), Team.sharded, false)
         Events.fire(BlockBuildEndEvent(world.tile(78, 78), player.unit(), Team.sharded, false, false))
         Tool.setMessage(world.tile(78, 78), "warp mindustry.kr")
-    }
+    }*/
 
     @Test
     fun event_DeconstructFinish(){
