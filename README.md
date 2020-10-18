@@ -5,7 +5,7 @@ Add more commands to the server.
 I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
 
-## Essentials 11 Plans
+## Essentials 12 Plans
 - [ ] Fix bugs
   - [ ] Voting not working
   - [ ] Sometimes an account system not working
