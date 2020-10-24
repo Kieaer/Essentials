@@ -14,23 +14,23 @@ import java.net.Socket
 import java.nio.charset.StandardCharsets
 
 class CrashReport {
-    var e: Throwable
+    lateinit var e: Throwable
     var data: String?
     var success = false
 
     constructor(e: Throwable) {
         this.e = e
         data = null
-        send()
+        send.start()
     }
 
     constructor(e: Throwable, data: String?) {
         this.e = e
         this.data = data
-        send()
+        send.start()
     }
 
-    private fun send() {
+    private val send = Thread {
         var socket: Socket? = null
         try {
             if (!Config.debug) {
@@ -75,7 +75,7 @@ class CrashReport {
                     }
                 }
             }
-        } catch (e: ConnectException){
+        } catch (e: ConnectException) {
             Log.warn("remote-server-dead")
             success = true
         } catch (e: Exception) {
