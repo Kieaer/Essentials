@@ -52,6 +52,9 @@ object Log {
         if (mainlog != null && mainlog.length() > 1024 * 256) {
             mainlog.writeString(Bundle()["log.file-end", date], true)
             try {
+                if(!pluginRoot.child("log/old/$type").exists()){
+                    pluginRoot.child("log/old/$type").mkdirs()
+                }
                 Files.move(newlog, oldlog, StandardCopyOption.REPLACE_EXISTING)
             } catch (e: IOException) {
                 CrashReport(e)
