@@ -157,13 +157,13 @@ object ClientCommander {
             abs(Strings.parseInt(arg[0]))
         } else 1
         val pages = Mathf.ceil(temp.size.toFloat() / perpage)
+        page--
 
-        if (pages < page) {
+        if (page >= pages || page < 0) {
             player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
             return
         }
 
-        page--
         result.append(Strings.format("[orange]-- Commands Page[lightgray] ${page + 1}[gray]/[lightgray]${pages}[orange] --\n"))
         for (a in perpage * page until (perpage * (page + 1)).coerceAtMost(temp.size)) {
             result.append(temp[a])
