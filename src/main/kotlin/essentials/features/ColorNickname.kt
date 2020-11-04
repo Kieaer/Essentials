@@ -14,9 +14,12 @@ object ColorNickname : Runnable {
         while (!Thread.currentThread().isInterrupted) {
             for (player in targets) {
                 val p = PlayerCore[player.uuid()]
-                if (p.connected) {
+                if (p.connected && p.colornick) {
                     val name = p.name.replace("\\[(.*?)]".toRegex(), "")
                     nickcolor(name, player)
+                } else {
+                    player.name(p.name)
+                    targets.remove(player)
                 }
             }
             Thread.sleep(Config.cupdatei.toLong())
