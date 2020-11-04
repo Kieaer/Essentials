@@ -255,7 +255,11 @@ object Event {
                     } else {
                         val lc = Tool.getGeo(e.player.con.address)
                         val register = PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)
-                        if (!register || PlayerCore.playerLoad(e.player, null)) {
+                        if (register) {
+                            if(!PlayerCore.playerLoad(e.player, null)){
+                                Call.kick(e.player.con, Bundle()["plugin-error-kick"])
+                            }
+                        } else {
                             Call.kick(e.player.con, Bundle()["plugin-error-kick"])
                         }
                     }
