@@ -43,6 +43,7 @@ object ClientCommander {
     fun register(handler: CommandHandler) {
         handler.removeCommand("votekick")
         handler.removeCommand("vote")
+        handler.removeCommand("help")
 
         handler.register("alert", "Turn on/off alerts", ::alert)
         handler.register("ch", "Send chat to another server.", ::ch)
