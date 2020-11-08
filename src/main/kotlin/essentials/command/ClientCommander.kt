@@ -5,6 +5,7 @@ import arc.math.Mathf
 import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Strings
+import arc.util.Tmp
 import essentials.Config
 import essentials.PlayerCore
 import essentials.PluginData
@@ -20,6 +21,7 @@ import essentials.thread.WarpBorder
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.UnitTypes
+import mindustry.content.Weathers
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -79,7 +81,7 @@ object ClientCommander {
         handler.register("tpp", "<source> <target>", "Teleport to other players", ::tpp)
         handler.register("tppos", "<x> <y>", "Teleport to coordinates", ::tppos)
         handler.register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", ::voteService)
-        handler.register("weather", "<day/eday/night/enight>", "Change map light", ::weather)
+        handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Change map light", ::weather)
         handler.register("mute", "<Player_name>", "Mute/unmute player", ::mute)
 
         commands = handler
@@ -350,24 +352,24 @@ object ClientCommander {
         if (!Permissions.check(player, "players")) return
         val build = StringBuilder()
 
-        var page = if (arg.isNotEmpty()) {
+        val page = if (arg.isNotEmpty()) {
             abs(Strings.parseInt(arg[0]))
         } else 1
         val pages = Mathf.ceil(Groups.player.size().toFloat() / 6)
 
-        if (pages < page) {
+        if (pages < page || page != 0) {
             player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
             return
         }
-        page--
+
         build.append("[green]==[white] Players list page ").append(page).append("/").append(pages).append(" [green]==[white]\n")
 
         val buf: Seq<Playerc> = Seq<Playerc>()
-        Groups.player.each {e: Playerc ->
+        Groups.player.each { e: Playerc ->
             buf.add(e)
         }
 
-        for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Groups.player.size())) {
+        for (a in 6 * page until (6 * (page)).coerceAtMost(Groups.player.size())) {
             build.append("[gray]").append(buf.get(a).id()).append("[] ").append(buf.get(a).name()).append("\n")
         }
 
@@ -1015,17 +1017,20 @@ object ClientCommander {
 
     private fun weather(arg: Array<String>, player: Playerc) {
         if (!Permissions.check(player, "weather")) return
-        // Command idea from Minecraft EssentialsX and Quezler's plugin!
-        // Useful with the Quezler's plugin.
-        state.rules.lighting = true
+        if (arg.isNullOrEmpty() || arg[0].toIntOrNull() !is Int) {
+            player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("command-invalid"))
+            return
+        }
+
+        val time = arg[0].toFloat() * 60f
+        Tmp.v1.setToRandomDirection()
         when (arg[0]) {
-            "day" -> state.rules.ambientLight.a = 0f
-            "eday" -> state.rules.ambientLight.a = 0.3f
-            "night" -> state.rules.ambientLight.a = 0.7f
-            "enight" -> state.rules.ambientLight.a = 0.85f
+            "rain" -> Call.createWeather(Weathers.rain, 1f, time, Tmp.v1.x, Tmp.v1.y)
+            "snow" -> Call.createWeather(Weathers.snow, 1f, time, Tmp.v1.x, Tmp.v1.y)
+            "sandstorm" -> Call.createWeather(Weathers.sandstorm, 1f, time, Tmp.v1.x, Tmp.v1.y)
+            "sporestorm" -> Call.createWeather(Weathers.sporestorm, 1f, time, Tmp.v1.x, Tmp.v1.y)
             else -> return
         }
-        Call.setRules(state.rules)
         player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("success"))
     }
 
