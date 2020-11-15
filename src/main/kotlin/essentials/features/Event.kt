@@ -318,7 +318,7 @@ object Event {
             if (!playerData.error) {
                 if (!e.message.startsWith("/")) {
                     if (e.message == "y" && Vote.voting) {
-                        if (Vote.voted.contains(e.player.uuid())) {
+                        if (Vote.voted.contains(e.player.uuid()) || Vote.player == e.player) {
                             e.player.sendMessage(bundle["vote.already-voted"])
                         } else {
                             Vote.set(e.player.uuid())
