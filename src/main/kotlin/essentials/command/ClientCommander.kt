@@ -955,9 +955,11 @@ object ClientCommander {
                             Vote.parameters = arrayOf(world)
                         } else {
                             player.sendMessage(bundle.prefix("vote.map.not-found"))
+                            return
                         }
                     } catch (ignored: NumberFormatException) {
                         player.sendMessage(bundle.prefix("vote.map.not-found"))
+                        return
                     }
                 } else {
                     Vote.type = Vote.VoteType.Map
@@ -976,6 +978,7 @@ object ClientCommander {
                     Vote.parameters = arrayOf()
                 } else {
                     player.sendMessage(bundle["vote.rollback.disabled"])
+                    return
                 }
             }
 
@@ -989,6 +992,7 @@ object ClientCommander {
                     Vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
                 } catch (e: IllegalArgumentException) {
                     player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
+                    return
                 }
             }
 
