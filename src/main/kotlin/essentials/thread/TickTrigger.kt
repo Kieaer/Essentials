@@ -193,8 +193,8 @@ object TickTrigger {
                             val msg = entity.MessageBuild().message.toString()
                             if (msg == "powerblock") {
                                 for (rot in 0..3) {
-                                    if (tile.getNearby(rot).block().hasPower) {
-                                        PluginData.powerblocks.add(PluginData.PowerBlock(tile, tile.getNearby(rot).pos(), rot))
+                                    if (tile.nearby(rot).block().hasPower) {
+                                        PluginData.powerblocks.add(PluginData.PowerBlock(tile, tile.nearby(rot).pos(), rot))
                                         break
                                     }
                                 }
@@ -316,9 +316,9 @@ object TickTrigger {
                                     if (cur - resources[item.name]!! <= -55) {
                                         val using = StringBuilder()
                                         for (p in Groups.player) {
-                                            if (p.builder().buildPlan().block != null) {
-                                                for (c in p.builder().buildPlan().block.requirements.indices) {
-                                                    if (p.builder().buildPlan().block.requirements[c].item.name == item.name) {
+                                            if (p.unit().buildPlan().block != null) {
+                                                for (c in p.unit().buildPlan().block.requirements.indices) {
+                                                    if (p.unit().buildPlan().block.requirements[c].item.name == item.name) {
                                                         using.append(p.name).append(", ")
                                                     }
                                                 }

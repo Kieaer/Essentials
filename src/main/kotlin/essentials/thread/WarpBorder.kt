@@ -54,22 +54,22 @@ object WarpBorder : Runnable {
                                     val size = data.finishTile.x - data.startTile.x
                                     for (x in 0 until size) {
                                         val tile = world.tile(data.startTile.x + x, data.startTile.y.toInt())
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
+                                        Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         Thread.sleep(96)
                                     }
                                     for (y in 0 until size) {
                                         val tile = world.tile(data.finishTile.x.toInt(), data.startTile.y + y)
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
+                                        Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         Thread.sleep(96)
                                     }
                                     for (x in 0 until size) {
                                         val tile = world.tile(data.finishTile.x - x, data.finishTile.y.toInt())
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
+                                        Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         Thread.sleep(96)
                                     }
                                     for (y in 0 until size) {
                                         val tile = world.tile(data.startTile.x.toInt(), data.finishTile.y - y)
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
+                                        Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         Thread.sleep(96)
                                     }
                                     if (size < 5) Thread.sleep(2000)

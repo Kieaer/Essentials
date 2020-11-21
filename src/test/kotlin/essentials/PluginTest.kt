@@ -632,7 +632,7 @@ class PluginTest {
 
     /*@Test
     fun event_BlockBuildEnd(){
-        player.builder().addBuild(BuildPlan(5,5,0,Blocks.copperWall))
+        player.unit().addBuild(BuildPlan(5,5,0,Blocks.copperWall))
         Call.constructFinish(world.tile(5, 5), Blocks.copperWall, player.unit(), 0.toByte(), Team.sharded, false)
         Events.fire(BlockBuildEndEvent(world.tile(r.nextInt(50), r.nextInt(50)), player.unit(), Team.sharded, false, false))
 
@@ -643,15 +643,15 @@ class PluginTest {
 
     @Test
     fun event_DeconstructFinish(){
-        player.builder().clearBuilding()
-        player.builder().removeBuild(5, 5, true)
+        player.unit().clearBuilding()
+        player.unit().removeBuild(5, 5, true)
         Call.deconstructFinish(world.tile(5, 5), Blocks.air, player.unit())
     }
 
     @Test
     fun event_BuildSelect(){
-        Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player.builder(), true))
-        player.builder().clearBuilding()
+        Events.fire(BuildSelectEvent(world.tile(r.nextInt(50), r.nextInt(50)), Team.sharded, player.unit(), true))
+        player.unit().clearBuilding()
     }
 
     @Test

@@ -95,19 +95,19 @@ object Event {
             }
         }
         Events.on(WithdrawEvent::class.java) { e: WithdrawEvent ->
-            if (e.tile != null && e.player.miner().item() != null && e.player.name != null && Config.antiGrief) {
+            if (e.tile != null && e.player.unit().item() != null && e.player.name != null && Config.antiGrief) {
                 for (p in Groups.player) {
                     val playerData = PlayerCore[p.uuid()]
                     if (playerData.alert) {
-                        p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name])
+                        p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.unit().item().name, e.amount, e.tile.block().name])
                     }
                 }
-                if (Config.debug) Log.info("log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
-                if (Config.logging) Log.write(LogType.WithDraw, "log.withdraw", e.player.name, e.player.miner().item().name, e.amount, e.tile.block().name)
+                if (Config.debug) Log.info("log.withdraw", e.player.name, e.player.unit().item().name, e.amount, e.tile.block().name)
+                if (Config.logging) Log.write(LogType.WithDraw, "log.withdraw", e.player.name, e.player.unit().item().name, e.amount, e.tile.block().name)
                 if (Vars.state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
                         e.player.sendMessage(Bundle(PlayerCore[e.player.uuid()].locale)["system.flammable.disabled"])
-                        e.player.miner().clearItem()
+                        e.player.unit().clearItem()
                     }
                 }
             }
@@ -182,10 +182,10 @@ object Event {
             for (p in Groups.player) {
                 val playerData = PlayerCore[p.uuid()]
                 if (playerData.alert) {
-                    p.sendMessage(Bundle(playerData.locale)["anti-grief.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name])
+                    p.sendMessage(Bundle(playerData.locale)["anti-grief.deposit", e.player.name, e.player.unit().item().name, e.tile.block().name])
                 }
             }
-            if (Config.logging) Log.write(LogType.Deposit, "log.deposit", e.player.name, e.player.miner().item().name, e.tile.block().name)
+            if (Config.logging) Log.write(LogType.Deposit, "log.deposit", e.player.name, e.player.unit().item().name, e.tile.block().name)
         }
 
         // 플레이어가 서버에 들어왔을 때
@@ -365,7 +365,7 @@ object Event {
 
                 Log.write(LogType.Block, "log.block.place", player.name, e.tile.block().name)
                 val target = PlayerCore[player.uuid()]
-                if (!e.breaking && !player.builder().isNull && !target.error && e.tile.block() != null) {
+                if (!e.breaking && !player.unit().isNull && !target.error && e.tile.block() != null) {
                     val name = e.tile.block().name
                     try {
                         val obj = JsonValue.readHjson(pluginRoot.child("Exp.hjson").reader()).asObject()
@@ -373,7 +373,7 @@ object Event {
                         target.lastplacename = e.tile.block().name
                         target.placecount = target.placecount + 1
                         target.exp = target.exp + blockexp
-                        if (player.builder().buildPlan().block === Blocks.thoriumReactor) target.reactorcount = target.reactorcount + 1
+                        if (player.unit().buildPlan().block === Blocks.thoriumReactor) target.reactorcount = target.reactorcount + 1
                     } catch (ex: Exception) {
                         CrashReport(ex)
                     }
