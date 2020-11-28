@@ -25,17 +25,14 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.sql.SQLException
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import java.util.jar.JarFile
 import kotlin.system.exitProcess
 
 class Main : Plugin() {
     companion object {
         val timer = Timer()
-        val mainThread: ExecutorService = ThreadPoolExecutor(0, 10, 10L, TimeUnit.SECONDS, SynchronousQueue())
+        val mainThread: ExecutorService = Executors.newSingleThreadExecutor()
         val pluginRoot: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     }
 
@@ -63,7 +60,7 @@ class Main : Plugin() {
         Permissions.reload(true)
 
         // 스레드 시작
-        TickTrigger.init()
+        mainThread.submit(TriggerThread)
         mainThread.submit(Threads)
         mainThread.submit(ColorNickname)
         if (Config.rollback) timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())

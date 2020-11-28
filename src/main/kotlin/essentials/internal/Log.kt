@@ -66,6 +66,6 @@ object Log {
     }
 
     enum class LogType {
-        Log, Warn, Error, Debug, Server, ServerWarn0, ServerError, Client, ClientWarn, ClientError, Config, Player, PlayerWarn, PlayerError, Tap, WithDraw, Block, Deposit, Chat, Griefer, Web
+        Log, Warn, Error, Debug, Server, ServerWarn, ServerError, Client, ClientWarn, ClientError, Config, Player, PlayerWarn, PlayerError, Tap, WithDraw, Block, Deposit, Chat, Griefer, Web
     }
 }

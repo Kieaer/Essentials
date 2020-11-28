@@ -78,7 +78,6 @@ class PluginTest {
             try {
                 val begins = booleanArrayOf(false)
                 val exceptionThrown = arrayOf<Throwable?>(null)
-                Log.setUseColors(false)
                 val core: ApplicationCore = object : ApplicationCore() {
                     override fun setup() {
                         Vars.headless = true
@@ -98,7 +97,7 @@ class PluginTest {
                         Thread.currentThread().interrupt()
                     }
                 }
-                HeadlessApplication(core, null) { throwable: Throwable? -> exceptionThrown[0] = throwable }
+                HeadlessApplication(core, 60f) { throwable: Throwable? -> exceptionThrown[0] = throwable }
                 while (!begins[0]) {
                     if (exceptionThrown[0] != null) {
                         exceptionThrown[0]!!.printStackTrace()
@@ -582,7 +581,6 @@ class PluginTest {
     fun event_WorldLoad(){
         Events.fire(WorldLoadEvent())
         assertEquals(0L, PluginVars.playtime)
-        assertEquals(0, PluginData.powerblocks.size)
     }
 
     @Test

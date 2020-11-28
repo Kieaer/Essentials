@@ -14,13 +14,7 @@ object PluginData {
     private val json = Json()
 
     // 일회성 플러그인 데이터
-    var nukeblock = Seq<ReactorBlock>()
-    var powerblocks = Seq<PowerBlock>()
-    var messagemonitors = Seq<MessageMonitor>()
     var messagewarps = Seq<MessageWarp>()
-    var scancore = Seq<Tile>()
-    var nukedata = Seq<Tile>()
-    var nukeposition = Seq<Tile>()
     var process = Seq<Process?>()
 
     // 종료시 저장되는 플러그인 데이터
@@ -141,12 +135,6 @@ object PluginData {
             saveAll()
         }
     }
-
-    class ReactorBlock(val pos: Tile, val name: String)
-
-    class PowerBlock(val messageblock: Tile, val pos: Int, val rotate: Int)
-
-    class MessageMonitor(val pos: Int)
 
     class MessageWarp(val pos: Int, val message: String)
 

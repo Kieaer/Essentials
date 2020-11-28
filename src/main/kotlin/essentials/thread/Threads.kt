@@ -3,6 +3,7 @@ package essentials.thread
 import arc.Core
 import arc.struct.ArrayMap
 import arc.struct.Seq
+import essentials.Config
 import essentials.PlayerCore
 import essentials.PluginData
 import essentials.external.PingHost
@@ -26,7 +27,7 @@ object Threads : Runnable {
     private val servers = ArrayMap<String, Int>()
 
     override fun run() {
-        Thread.currentThread().name = "Essential thread"
+        Thread.currentThread().name = "Essential main thread"
         while (!Thread.currentThread().isInterrupted) {
             try {
                 if (state.`is`(GameState.State.playing)) {
@@ -132,6 +133,22 @@ object Threads : Runnable {
                     }
                     ping = 0.000
                 }
+
+                for (p in Groups.player) {
+                    val playerData = PlayerCore[p.uuid()]
+                    if (playerData.error) {
+                        val message: String = if (Config.passwordMethod == "discord") {
+                            """
+                                ${Bundle(playerData.locale)["system.login.require.discord"]}
+                                ${Config.discordLink}
+                                """.trimIndent()
+                        } else {
+                            Bundle(playerData.locale)["system.login.require.password"]
+                        }
+                        p.sendMessage(message)
+                    }
+                }
+
                 TimeUnit.SECONDS.sleep(3)
             } catch (ignored: InterruptedException) {
                 Thread.currentThread().interrupt()

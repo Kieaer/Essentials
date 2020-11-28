@@ -8,7 +8,7 @@ Please submit your idea to this repository issues or Mindustry official discord!
 ## Essentials 12 Plans
 - [ ] Fix bugs
   - [ ] Voting not working
-  - [ ] Sometimes an account system not working
+  - [x] Sometimes an account system not working
 - [ ] Fix many typos
 - [ ] Features separation
   - [ ] Web server

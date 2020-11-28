@@ -39,53 +39,6 @@ object ServerCommander {
         val clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
         val gentime = "README.md Generated time: ${DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())}"
         Log.info("readme-generating")
-        val header = """
-                [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=Kieaer_Essentials) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=alert_status)](https://sonarcloud.io/dashboard?id=Kieaer_Essentials)
-                # Essentials
-                Add more commands to the server.
-                
-                I'm getting a lot of suggestions.<br>
-                Please submit your idea to this repository issues or Mindustry official discord!
-                
-                ## Essentials 11 Plans
-                - [ ] Fix bugs
-                - [ ] Voting not working
-                  - [ ] Sometimes an account system not working
-                - [ ] Fix many typos
-                - [ ] Features separation
-                  - [ ] Features separation
-                    - [x] Rest API [Plugin Link](https://github.com/Kieaer/Essential-REST_API) 
-                        - [x] Information 
-                        - [x] Add players detail information 
-                        - [x] Add a gamemode 
-                        - [x] Add other team core resource status 
-                        - [x] Add a server map list
-                  - [ ] Web server
-                    - [ ] Fix a sometimes ranking site not loaded
-                  - [x] Auto Rollback (Not remove) [Plugin Link](https://github.com/Kieaer/AutoRollback)
-                - [ ] New features
-                  - [ ] Web console
-                    - [ ] Control plugin database
-                    - [ ] Check world status
-                      - [ ] Dynmap (idea from Minecraft)
-                      - [ ] Rest API
-                - [ ] Remove external API services
-                  - [x] IP API (Due to traffic excess)
-                  - [x] Translate (Due to paid service)
-                - [ ] Security patches
-                - [ ] All code clean
-                
-                ### Recommend
-                CPU: Ryzen 3 2200G or Intel i3 8100<br>
-                RAM: 50MB<br>
-                Disk: HDD capable of more than 5MB/s random read/write.
-                
-                ## Installation
-                
-                Put this plugin in the ``<server folder location>/config/mods`` folder.
-                
-                
-                """.trimIndent()
         var tempbuild = StringBuilder()
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
@@ -101,7 +54,7 @@ object ServerCommander {
                 tempbuild.append(temp)
             }
         }
-        val tmp = """$header$clientdoc$tempbuild""".trimIndent()
+        val tmp = """$clientdoc$tempbuild""".trimIndent()
         tempbuild = StringBuilder()
         for (command in commands.commandList) {
             val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"""

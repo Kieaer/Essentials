@@ -17,7 +17,6 @@ object Config {
     var locale: Locale = Locale.getDefault()
     var bundle: Bundle = Bundle(locale)
 
-    var version = 0
     var language: Locale = Locale.getDefault()
     var serverEnable = false
     var serverPort = 25000
@@ -27,7 +26,6 @@ object Config {
     var strictName = false
     var cupdatei = 0
     var afktime: Long = 0L
-    var scanResource = false
     var antiGrief = false
     var alertAction = false
     var expLimit = false
@@ -38,8 +36,6 @@ object Config {
     var banShare = false
     var banTrust: JsonArray = JsonArray()
     var antiVPN = false
-    var antiRush = false
-    var antiRushtime: Long = 0
     var vote = false
     var logging = false
     var update = false
@@ -60,14 +56,6 @@ object Config {
     var prefix: String = "[green][Essentials] []"
 
     fun init() {
-        val settings: JsonObject
-        val database: JsonObject
-        val network: JsonObject
-        val anti: JsonObject
-        val features: JsonObject
-        val auth: JsonObject
-        val discord: JsonObject
-
         if (!pluginRoot.child("config.hjson").exists()) {
             val empty = JsonObject()
             obj = JsonObject()
@@ -80,8 +68,7 @@ object Config {
             obj = JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).asObject()
         }
 
-        settings = obj["settings"].asObject()
-        version = settings.getInt("version", PluginVars.configVersion)
+        val settings: JsonObject = obj["settings"].asObject()
         val lc = settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")).split(",").toTypedArray()[0]
         language = if (lc.split("_").toTypedArray().size == 2) {
             val array = lc.split("_").toTypedArray()
@@ -96,11 +83,11 @@ object Config {
         crashReport = settings.getBoolean("crashreport", true)
         prefix = settings.getString("prefix", "[green][Essentials] []")
 
-        database = settings["database"].asObject()
+        val database = settings["database"].asObject()
         dbServer = database.getBoolean("DBServer", false)
         dbUrl = database.getString("DBurl", "jdbc:h2:file:./config/mods/Essentials/data/player")
 
-        network = obj["network"].asObject()
+        val network: JsonObject = obj["network"].asObject()
         serverEnable = network.getBoolean("server-enable", false)
         serverPort = network.getInt("server-port", 25000)
         clientEnable = network.getBoolean("client-enable", false)
@@ -109,16 +96,13 @@ object Config {
         banShare = network.getBoolean("banshare", false)
         banTrust = if (network["bantrust"] == null) JsonValue.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() else network["bantrust"].asArray()
 
-        anti = obj["antigrief"].asObject()
+        val anti: JsonObject = obj["antigrief"].asObject()
         antiGrief = anti.getBoolean("antigrief", false)
         antiVPN = anti.getBoolean("antivpn", false)
-        antiRush = anti.getBoolean("antirush", false)
-        antiRushtime = if (anti["antirushtime"] == null || anti["antirushtime"].isString) 0L else anti.getLong("antirushtime", 600)
         alertAction = anti.getBoolean("alert-action", false)
         strictName = anti.getBoolean("strict-name", false)
-        scanResource = anti.getBoolean("scanresource", false)
 
-        features = obj["features"].asObject()
+        val features: JsonObject = obj["features"].asObject()
         expLimit = features.getBoolean("explimit", false)
         baseXp = features.getDouble("basexp", 500.0)
         exponent = features.getDouble("exponent", 1.12)
@@ -133,12 +117,12 @@ object Config {
         cupdatei = features.getInt("cupdatei", 1000)
         afktime = features.getLong("afktime", 0)
 
-        auth = obj["auth"].asObject()
+        val auth: JsonObject = obj["auth"].asObject()
         loginEnable = auth.getBoolean("loginenable", false)
         passwordMethod = auth.getString("loginmethod", "password")
         autoLogin = auth.getBoolean("autologin", true)
 
-        discord = auth["discord"].asObject()
+        val discord = auth["discord"].asObject()
         discordToken = discord.getString("token", "none")
         discordLink = discord.getString("link", "none")
         updateConfig()
@@ -147,7 +131,6 @@ object Config {
     fun updateConfig() {
         locale = Tool.textToLocale(obj.getString("language", locale.toString()))
         bundle = Bundle(locale)
-        if (obj.getInt("version", 0) < PluginVars.configVersion) Log.info("config.updated")
         val config = JsonObject()
         val settings = JsonObject()
         val db = JsonObject()
@@ -156,6 +139,7 @@ object Config {
         val features = JsonObject()
         val auth = JsonObject()
         val discord = JsonObject()
+
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
         config.add("antigrief", anti)
@@ -163,7 +147,6 @@ object Config {
         config.add("auth", auth)
 
         // 플러그인 설정
-        settings.add("version", version, bundle["config.version"])
         settings.add("language", language.toString(), bundle["config.language.description"])
         settings.add("logging", logging, bundle["config.feature.logging"])
         settings.add("update", update, bundle["config.update"])
@@ -188,11 +171,8 @@ object Config {
         // 테러방지 설정
         anti.add("antigrief", antiGrief, bundle["config.anti-grief.desc"])
         anti.add("antivpn", antiVPN, bundle["config.anti-grief.vpn"])
-        anti.add("antirush", antiRush, bundle["config.anti-grief.pvprush"])
-        anti.add("antirushtime", antiRushtime)
         anti.add("alert-action", alertAction, bundle["config-alert-action-description"])
         anti.add("strict-name", strictName, bundle["config-strict-name-description"])
-        anti.add("scanresource", scanResource, bundle["config.anti-grief.scan-resource"])
 
         // 특별한 기능 설정
         features.add("explimit", expLimit, bundle["config.feature.exp.limit"])

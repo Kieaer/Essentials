@@ -12,9 +12,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:v115'
-    compileOnly 'com.github.Anuken.Mindustry:core:v115'
-    //compileOnly files('../Mindustry-108/core/build/libs/core-release.jar')
+    compileOnly 'com.github.Anuken.Arc:arc-core:v117'
+    compileOnly 'com.github.Anuken.Mindustry:core:v118'
     implementation 'com.github.PersonTheCat:hjson-java:master'
     implementation 'de.svenkubiak:jBCrypt:0.4.1'
     implementation('net.dv8tion:JDA:4.1.1_141') {
@@ -27,12 +26,10 @@ dependencies {
     implementation 'com.neovisionaries:nv-i18n:1.27'
     implementation files('libs/ip2location.jar')
 
-    testImplementation 'com.github.Anuken.arc:arc-core:v115'
-    testImplementation 'com.github.Anuken.Mindustry:core:v115'
-    //testImplementation files('../Mindustry-108/core/build/libs/core-release.jar')
-    testImplementation 'com.github.Anuken.Mindustry:server:v115'
-    //testImplementation files('../Mindustry-108/server/build/libs/server-release.jar')
-    testImplementation 'com.github.Anuken.arc:backend-headless:v107'
+    testImplementation 'com.github.Anuken.arc:arc-core:v117'
+    testImplementation 'com.github.Anuken.Mindustry:core:v118'
+    testImplementation 'com.github.Anuken.Mindustry:server:v118'
+    testImplementation 'com.github.Anuken.arc:backend-headless:v117'
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
 

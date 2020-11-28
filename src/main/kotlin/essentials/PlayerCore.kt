@@ -39,13 +39,13 @@ object PlayerCore {
     fun playerLoad(p: Playerc, id: String?): Boolean {
         if (PluginVars.playerData.contains(get(p.uuid()))) PluginVars.removePlayerData(get(p.uuid()))
 
-        val playerData: PlayerData? = if (id == null) {
+        val playerData: PlayerData = if (id == null) {
             load(p.uuid(), null)
         } else {
             load(p.uuid(), id)
         }
 
-        if (playerData == null || playerData.error) {
+        if (playerData.error) {
             CrashReport(Exception("DATA NOT FOUND"))
             return false
         }
@@ -87,7 +87,7 @@ object PlayerCore {
         return true
     }
 
-    fun newData(name: String, uuid: String, country: String, countryCode: String, language: String, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): PlayerData {
+    private fun newData(name: String, uuid: String, country: String, countryCode: String, language: String, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): PlayerData {
         return PlayerData(
                 name,
                 uuid,
