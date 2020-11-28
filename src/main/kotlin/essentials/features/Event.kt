@@ -148,9 +148,6 @@ object Event {
         // 맵이 불러와졌을 때
         Events.on(WorldLoadEvent::class.java) {
             PluginVars.playtime = 0L
-
-            // 전력 노드 정보 초기화
-            PluginData.powerblocks.clear()
         }
         Events.on(PlayerConnect::class.java) { e: PlayerConnect ->
             if (Config.logging) Log.write(LogType.Player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
@@ -278,15 +275,6 @@ object Event {
                         }
                     }
                 }
-
-
-                // PvP 평화시간 설정
-                if (Config.antiRush && Vars.state.rules.pvp && PluginVars.playtime < Config.antiRushtime) {
-                    Vars.state.rules.unitDamageMultiplier = 0f
-                    Vars.state.rules.unitHealthMultiplier = 0.001f
-                    Call.setRules(Vars.state.rules)
-                    PluginVars.isPvPPeace = true
-                }
             }
             t.start()
         }
@@ -378,16 +366,7 @@ object Event {
                         CrashReport(ex)
                     }
 
-                    // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
-                    if (e.tile.block() === Blocks.message) {
-                        PluginData.messagemonitors.add(PluginData.MessageMonitor(e.tile.pos()))
-                    }
 
-                    // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
-                    if (e.tile.block() === Blocks.thoriumReactor) {
-                        PluginData.nukeposition.add(e.tile)
-                        PluginData.nukedata.add(e.tile)
-                    }
                     if (Config.debug && Config.antiGrief) {
                         Log.info("anti-grief.build.finish", player.name, e.tile.block().name, e.tile.x, e.tile.y)
                     }
@@ -429,20 +408,6 @@ object Event {
                     } catch (ex: Exception) {
                         CrashReport(ex)
                         Call.kick((e.builder as Playerc).con(), Bundle(target.locale)["not-logged"])
-                    }
-
-                    // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
-                    if (e.builder.buildPlan().block === Blocks.message) {
-                        try {
-                            for (i in 0 until PluginData.powerblocks.size) {
-                                if (PluginData.powerblocks[i].pos == e.tile.pos()) {
-                                    PluginData.powerblocks.remove(i)
-                                    break
-                                }
-                            }
-                        } catch (ex: Exception) {
-                            CrashReport(ex)
-                        }
                     }
 
                     // Exp Playing Game (EPG)
@@ -521,7 +486,7 @@ object Event {
 
         // 이건 IP 밴이 해제되었을 때 작동
         Events.on(PlayerIpUnbanEvent::class.java) { e: PlayerIpUnbanEvent -> if (Client.activated) Client.request(Client.Request.UnbanIP, null, "<unknown>|" + e.ip) }
-        Events.on(ServerLoadEvent::class.java) { _: ServerLoadEvent? ->
+        Events.on(ServerLoadEvent::class.java) {
             // 업데이트 확인
             if (Config.update) {
                 Log.client("client.update-check")
