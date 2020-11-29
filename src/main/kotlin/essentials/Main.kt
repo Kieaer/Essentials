@@ -14,6 +14,7 @@ import essentials.internal.PluginException
 import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
+import essentials.network.WebServer
 import essentials.thread.*
 import mindustry.Vars.netServer
 import mindustry.core.Version
@@ -27,6 +28,7 @@ import java.sql.SQLException
 import java.util.*
 import java.util.concurrent.*
 import java.util.jar.JarFile
+import java.util.zip.ZipFile
 import kotlin.system.exitProcess
 
 class Main : Plugin() {
@@ -91,6 +93,8 @@ class Main : Plugin() {
 
         // 이벤트 시작
         Event.register()
+
+        WebServer.main()
 
         // 서버 종료 이벤트 설정
         Core.app.addListener(object : ApplicationListener {
@@ -190,6 +194,25 @@ class Main : Plugin() {
                         jar.getInputStream(file).use { i -> pluginRoot.child(renamed).write(i, false) }
                     }
                 }
+            }
+
+            if(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()) {
+                ZipFile(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").absolutePath()).use { zip ->
+                    zip.entries().asSequence().forEach { entry ->
+                        if (entry.isDirectory) {
+                            File(pluginRoot.child("data").absolutePath(), entry.name).mkdirs()
+                        } else {
+                            zip.getInputStream(entry).use { input ->
+                                File(pluginRoot.child("data").absolutePath(), entry.name).outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                        }
+                    }
+                }
+                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").delete()
+                pluginRoot.child("data/LICENSE-CC-BY-SA-4.0.TXT").delete()
+                pluginRoot.child("data/README_LITE.TXT").delete()
             }
         } catch (e: IOException) {
             throw PluginException(e)
