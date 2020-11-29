@@ -2,6 +2,8 @@
 # Essentials
 Add more commands to the server.
 
+**__Requires Java 14 or higher!__**
+
 I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
 
