@@ -39,7 +39,7 @@ class Main : Plugin() {
     }
 
     init {
-        checkServerVersion()
+        //checkServerVersion() // Temporary disabled
         fileExtract()
 
         // 서버 로비기능 설정
