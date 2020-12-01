@@ -94,7 +94,7 @@ class Main : Plugin() {
         // 이벤트 시작
         Event.register()
 
-        WebServer.main()
+        //WebServer.main()
 
         // 서버 종료 이벤트 설정
         Core.app.addListener(object : ApplicationListener {
