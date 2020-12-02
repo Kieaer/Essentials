@@ -43,8 +43,11 @@ object ClientCommander {
     lateinit var commands: CommandHandler
 
     fun register(handler: CommandHandler) {
-        handler.removeCommand("votekick")
-        handler.removeCommand("vote")
+        if(Config.vote) {
+            handler.removeCommand("votekick")
+            handler.removeCommand("vote")
+            handler.register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", ::voteService)
+        }
         handler.removeCommand("help")
 
         handler.register("alert", "Turn on/off alerts", ::alert)
@@ -80,7 +83,6 @@ object ClientCommander {
         handler.register("tp", "<player>", "Teleport to other players", ::tp)
         handler.register("tpp", "<source> <target>", "Teleport to other players", ::tpp)
         handler.register("tppos", "<x> <y>", "Teleport to coordinates", ::tppos)
-        handler.register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", ::voteService)
         handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Change map light", ::weather)
         handler.register("mute", "<Player_name>", "Mute/unmute player", ::mute)
 
