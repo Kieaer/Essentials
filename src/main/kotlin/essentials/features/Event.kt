@@ -316,7 +316,7 @@ object Event {
                             if (playerData.crosschat) {
                                 when {
                                     Config.clientEnable -> {
-                                        Client.request(Client.Request.Chat, e.player, e.message)
+                                        if(Client.activated) Client.request(Client.Request.Chat, e.player, e.message)
                                     }
                                     Config.serverEnable -> {
                                         val msg = "[" + e.player.name + "]: " + e.message
