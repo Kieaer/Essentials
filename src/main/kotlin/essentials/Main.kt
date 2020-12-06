@@ -34,7 +34,7 @@ import kotlin.system.exitProcess
 class Main : Plugin() {
     companion object {
         val timer = Timer()
-        val mainThread: ExecutorService = Executors.newSingleThreadExecutor()
+        val mainThread: ExecutorService = Executors.newCachedThreadPool()
         val pluginRoot: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     }
 

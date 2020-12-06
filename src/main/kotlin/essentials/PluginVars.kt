@@ -11,7 +11,6 @@ object PluginVars {
     var playtime = 0L
     val playerData = ArrayList<PlayerData>()
     var players = ArrayList<Playerc>()
-    var isPvPPeace = false
 
     fun removePlayerData(d: PlayerData) {
         playerData.remove(d)

@@ -5,11 +5,10 @@ import arc.struct.Seq
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
 import essentials.Config
-import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
+import essentials.PlayerCore
 import mindustry.Vars.*
 import mindustry.content.Blocks
-import mindustry.content.UnitTypes
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
