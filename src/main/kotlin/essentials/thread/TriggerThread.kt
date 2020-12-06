@@ -46,8 +46,32 @@ object TriggerThread : Runnable {
                         if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0) p.dead()
                     }
                 }
-            }
 
+                // 서버간 이동 영역에 플레이어가 있는지 확인
+                for (value in PluginData.warpzones) {
+                    if (!value!!.touch) {
+                        for (ix in 0 until Groups.player.size()) {
+                            val player = Groups.player.getByID(ix)
+                            if (player.tileX() > value.startTile.x && player.tileX() < value.finishTile.x) {
+                                if (player.tileY() > value.startTile.y && player.tileY() < value.finishTile.y) {
+                                    var resultIP = value.ip
+                                    var port = 6567
+                                    if (resultIP.contains(":") && Strings.canParsePositiveInt(resultIP.split(":").toTypedArray()[1])) {
+                                        val temp = resultIP.split(":").toTypedArray()
+                                        resultIP = temp[0]
+                                        port = temp[1].toInt()
+                                    }
+                                    Log.info("player.warped", player.name, "$resultIP:$port")
+                                    Call.connect(player.con, resultIP, port)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        while(!Thread.currentThread().isInterrupted){
             // 서버 켜진시간 카운트
             PluginVars.uptime = PluginVars.uptime + 1
 
@@ -122,28 +146,6 @@ object TriggerThread : Runnable {
                         target.y = p.tileY()
                         if (!state.rules.editor) Exp(target)
                         if (kick) Call.kick(p.con, "AFK")
-                    }
-                }
-
-                // 서버간 이동 영역에 플레이어가 있는지 확인
-                for (value in PluginData.warpzones) {
-                    if (!value!!.touch) {
-                        for (ix in 0 until Groups.player.size()) {
-                            val player = Groups.player.getByID(ix)
-                            if (player.tileX() > value.startTile.x && player.tileX() < value.finishTile.x) {
-                                if (player.tileY() > value.startTile.y && player.tileY() < value.finishTile.y) {
-                                    var resultIP = value.ip
-                                    var port = 6567
-                                    if (resultIP.contains(":") && Strings.canParsePositiveInt(resultIP.split(":").toTypedArray()[1])) {
-                                        val temp = resultIP.split(":").toTypedArray()
-                                        resultIP = temp[0]
-                                        port = temp[1].toInt()
-                                    }
-                                    Log.info("player.warped", player.name, "$resultIP:$port")
-                                    Call.connect(player.con, resultIP, port)
-                                }
-                            }
-                        }
                     }
                 }
             }
