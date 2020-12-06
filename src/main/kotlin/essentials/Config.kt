@@ -24,6 +24,7 @@ object Config {
     var clientPort = 25000
     var clientHost: String = "mindustry.kr"
     var strictName = false
+    var motd = false
     var cupdatei = 0
     var afktime: Long = 0L
     var antiGrief = false
@@ -103,6 +104,7 @@ object Config {
         strictName = anti.getBoolean("strict-name", false)
 
         val features: JsonObject = obj["features"].asObject()
+        motd = features.getBoolean("motd", false)
         expLimit = features.getBoolean("explimit", false)
         baseXp = features.getDouble("basexp", 500.0)
         exponent = features.getDouble("exponent", 1.12)
@@ -175,6 +177,7 @@ object Config {
         anti.add("strict-name", strictName, bundle["config-strict-name-description"])
 
         // 특별한 기능 설정
+        features.add("motd", motd)
         features.add("explimit", expLimit, bundle["config.feature.exp.limit"])
         features.add("basexp", baseXp, bundle["config.feature.exp.basexp"])
         features.add("exponent", exponent, bundle["config.feature.exp.exponent"])

@@ -56,12 +56,14 @@ object PlayerCore {
             return false
         }
 
-        val motd = Tool.getMotd(playerData.locale)
-        val count = motd.split("\r\n|\r|\n").toTypedArray().size
-        if (count > 10) {
-            Call.infoMessage(p.con(), motd)
-        } else if (motd.isNotEmpty()) {
-            p.sendMessage(motd)
+        if (Config.motd) {
+            val motd = Tool.getMotd(playerData.locale)
+            val count = motd.split("\r\n|\r|\n").toTypedArray().size
+            if (count > 10) {
+                Call.infoMessage(p.con(), motd)
+            } else if (motd.isNotEmpty()) {
+                p.sendMessage(motd)
+            }
         }
 
         if (playerData.colornick) ColorNickname.targets.add(p)
