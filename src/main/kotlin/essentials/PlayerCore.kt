@@ -273,8 +273,10 @@ object PlayerCore {
     }
 
     fun saveAll() {
-        for (p in PluginVars.playerData) {
-            save(p)
+        val iter = PluginVars.playerData.iterator()
+        while(iter.hasNext()){
+            val next = iter.next()
+            save(next)
         }
     }
 
