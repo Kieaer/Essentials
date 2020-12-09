@@ -25,7 +25,7 @@ object ServerCommander {
         handler.register("lobby", "Toggle lobby server features", ::lobby)
         handler.register("edit", "<uuid> <name> [value]", "Edit PlayerData directly", ::edit)
         handler.register("saveall", "Manually save all plugin data", ::saveall)
-        handler.register("admin", "<name>", "Set admin status to player.", ::admin)
+        handler.register("admin2", "<name>", "Set admin status to player.", ::admin)
         handler.register("bansync", "Synchronize ban list with server", ::bansync)
         handler.register("info", "<player/uuid>", "Show player information", ::info)
         handler.register("setperm", "<player_name/uuid> <group>", "Set player permission", ::setperm)
