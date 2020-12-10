@@ -1,5 +1,6 @@
 package essentials
 
+import arc.struct.Seq
 import mindustry.gen.Playerc
 
 object PluginVars {
@@ -9,8 +10,8 @@ object PluginVars {
     var pluginVersion: String? = null
     var uptime = 0L
     var playtime = 0L
-    val playerData = ArrayList<PlayerData>()
-    var players = ArrayList<Playerc>()
+    val playerData = Seq<PlayerData>()
+    var players = Seq<Playerc>()
 
     fun removePlayerData(d: PlayerData) {
         playerData.remove(d)
