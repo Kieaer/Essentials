@@ -23,6 +23,9 @@ import javax.crypto.spec.SecretKeySpec
 object Server : Runnable {
     var list = Seq<Service>()
     lateinit var serverSocket: ServerSocket
+
+    fun isSocketInitialized() = ::serverSocket.isInitialized
+
     fun shutdown() {
         try {
             Thread.currentThread().interrupt()

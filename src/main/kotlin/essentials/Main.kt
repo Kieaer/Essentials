@@ -130,7 +130,7 @@ class Main : Plugin() {
                         Log.info("client.shutdown")
                     }
 
-                    if (Server.serverSocket.isClosed || Client.socket.isClosed || WarpBorder.isInterrupted || !PlayerCore.conn.isClosed) {
+                    if (Server.isSocketInitialized() || Client.socket.isClosed || WarpBorder.isInterrupted || !PlayerCore.conn.isClosed) {
                         Log.info("thread-disable-waiting")
                     } else {
                         Log.warn("thread-not-dead")
