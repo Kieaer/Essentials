@@ -2,6 +2,7 @@ package essentials.command
 
 import arc.Core
 import arc.math.Mathf
+import arc.scene.style.TextureRegionDrawable
 import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Strings
@@ -19,6 +20,7 @@ import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
 import essentials.thread.WarpBorder
+import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.UnitTypes
@@ -33,12 +35,15 @@ import mindustry.io.SaveIO
 import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.type.UnitType
+import mindustry.ui.Cicon
+import mindustry.ui.Styles
 import mindustry.world.Tile
 import org.hjson.JsonObject
 import org.mindrot.jbcrypt.BCrypt
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
+import kotlin.math.max
 
 object ClientCommander {
     lateinit var commands: CommandHandler
@@ -634,8 +639,12 @@ object ClientCommander {
         val playerData = PlayerCore[player.uuid()]
         val bundle = Bundle(playerData.locale)
         val targetUnit = Tool.getUnitByName(arg[0])
+        val names = StringBuilder()
+        for (item in content.units()) { names.append(item.name+", ") }
+        names.setLength(max(names.length - 2, 0));
+
         if (targetUnit == null) {
-            player.sendMessage(bundle.prefix("system.mob.not-found"))
+            player.sendMessage(bundle.prefix("system.mob.not-found", names))
             return
         }
         val count: Int
