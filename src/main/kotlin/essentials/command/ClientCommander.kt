@@ -6,6 +6,7 @@ import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Strings
 import arc.util.Tmp
+import arc.util.async.Threads.sleep
 import essentials.Config
 import essentials.PlayerCore
 import essentials.PluginData
@@ -140,7 +141,9 @@ object ClientCommander {
 
     private fun killall(arg: Array<String>, player: Playerc) {
         if (!Permissions.check(player, "killall")) return
-        for (a in Team.all.indices) Groups.unit.each { u: Unit -> u.kill() }
+        for (a in Team.all.indices) {
+            Groups.unit.each { u: Unit -> if(player.team() != u.team) u.kill() }
+        }
         player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("success"))
     }
 
@@ -354,10 +357,15 @@ object ClientCommander {
         if (!Permissions.check(player, "players")) return
         val build = StringBuilder()
 
-        val page = if (arg.isNotEmpty()) {
+        val page = if (arg.isNullOrEmpty()) {
             abs(Strings.parseInt(arg[0]))
         } else 1
-        val pages = Mathf.ceil(Groups.player.size().toFloat() / 6)
+
+        player.sendMessage("Result is" + abs(Strings.parseInt(arg[0])))
+
+        val pages = if (Mathf.ceil(Groups.player.size().toFloat() / 6) < 1.0) {
+            Mathf.ceil(Groups.player.size().toFloat() / 6)
+        } else 1
 
         if (pages < page || page != 0) {
             player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
@@ -568,16 +576,16 @@ object ClientCommander {
                 while (!player.isNull) {
                     for (d in loop) {
                         player.name(d)
-                        Thread.sleep(500)
+                        sleep(500)
                     }
-                    Thread.sleep(5000)
+                    sleep(5000)
                     for (i in loop.indices.reversed()) {
                         player.name(loop[i])
-                        Thread.sleep(500)
+                        sleep(500)
                     }
                     for (d in zero) {
                         player.name(d)
-                        Thread.sleep(500)
+                        sleep(500)
                     }
                 }
             } catch (e: InterruptedException) {
