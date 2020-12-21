@@ -112,7 +112,7 @@ object Tool {
         return String(text, StandardCharsets.UTF_8)
     }
 
-    fun sendMessageAll(value: String, vararg parameter: Any?) {
+    fun sendMessageAll(value: String, vararg parameter: String?) {
         for (p in Groups.player) {
             val playerData = PlayerCore[p.uuid()]
             if (!playerData.error) {

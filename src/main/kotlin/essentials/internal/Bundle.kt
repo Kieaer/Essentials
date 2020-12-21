@@ -27,7 +27,7 @@ class Bundle {
         }
     }
 
-    operator fun get(key: String, vararg params: Any?): String {
+    operator fun get(key: String, vararg params: String?): String {
         return try {
             MessageFormat.format(resource.getString(key), *params)
         } catch (e: MissingResourceException) {
@@ -35,7 +35,7 @@ class Bundle {
         }
     }
 
-    fun prefix(key: String, vararg params: Any?): String {
+    fun prefix(key: String, vararg params: String?): String {
         return try {
             MessageFormat.format(Config.prefix + resource.getString(key), *params)
         } catch (e: MissingResourceException) {

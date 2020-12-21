@@ -99,11 +99,11 @@ object Event {
                 for (p in Groups.player) {
                     val playerData = PlayerCore[p.uuid()]
                     if (playerData.alert) {
-                        p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.unit().item().name, e.amount, e.tile.block().name])
+                        p.sendMessage(Bundle(playerData.locale)["log.withdraw", e.player.name, e.player.unit().item().name, e.amount.toString(), e.tile.block().name])
                     }
                 }
                 if (Config.debug) Log.info("log.withdraw", e.player.name, e.player.unit().item().name, e.amount, e.tile.block().name)
-                if (Config.logging) Log.write(LogType.WithDraw, "log.withdraw", e.player.name, e.player.unit().item().name, e.amount, e.tile.block().name)
+                if (Config.logging) Log.write(LogType.WithDraw, "log.withdraw", e.player.name, e.player.unit().item().name, e.amount.toString(), e.tile.block().name)
                 if (Vars.state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
                         e.player.sendMessage(Bundle(PlayerCore[e.player.uuid()].locale)["system.flammable.disabled"])
@@ -396,7 +396,7 @@ object Event {
         Events.on(BuildSelectEvent::class.java) { e: BuildSelectEvent ->
             if (e.builder is Playerc && e.builder.buildPlan() != null && !Pattern.matches(".*build.*", e.builder.buildPlan().block.name) && e.tile.block() !== Blocks.air) {
                 if (e.breaking) {
-                    Log.write(LogType.Block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
+                    Log.write(LogType.Block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x.toString(), e.tile.y.toString())
                     val target = PlayerCore[(e.builder as Playerc).uuid()]
                     val name = e.tile.block().name
                     try {
@@ -419,7 +419,7 @@ object Event {
                                 val blockreqlevel = obj.getInt(name, 999)
                                 if (level < blockreqlevel) {
                                     Call.deconstructFinish(e.tile, e.tile.block(), (e.builder as Playerc).unit())
-                                    (e.builder as Playerc).sendMessage(Bundle(PlayerCore[(e.builder as Playerc).uuid()].locale)["system.epg.block-require", name, blockreqlevel])
+                                    (e.builder as Playerc).sendMessage(Bundle(PlayerCore[(e.builder as Playerc).uuid()].locale)["system.epg.block-require", name, blockreqlevel.toString()])
                                 }
                             } else {
                                 Log.err("system.epg.block-not-valid", name)
@@ -506,7 +506,7 @@ object Event {
                                 Log.client("version-new")
                                 val t = Thread {
                                     try {
-                                        Log.info(Bundle()["update-description", json["tag_name"]])
+                                        Log.info(Bundle()["update-description", json["tag_name"].toString()])
                                         println(json.getString("body", "No description found."))
                                         println(Bundle()["plugin-downloading-standby"])
                                         timer.cancel()

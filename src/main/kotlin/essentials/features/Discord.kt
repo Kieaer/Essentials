@@ -49,7 +49,7 @@ object Discord : ListenerAdapter() {
         val bundle = Bundle(if (playerData.error) Config.locale else playerData.locale)
         val pin = Random().nextInt(9999)
         pins.put(player.name(), pin)
-        player.sendMessage(bundle.prefix("discord-pin-queue", pin))
+        player.sendMessage(bundle.prefix("discord-pin-queue", pin.toString()))
     }
 
     override fun onGuildMemberJoin(e: GuildMemberJoinEvent) {

@@ -62,7 +62,7 @@ object Vote {
                         } catch (ignored: NumberFormatException) {
                             3
                         }
-                        Tool.sendMessageAll("vote.skipwave", amount)
+                        Tool.sendMessageAll("vote.skipwave", amount.toString())
                     }
                     Rollback -> Tool.sendMessageAll("vote.rollback")
                     Gamemode -> if (parameters[0] is Gamemode) {
@@ -205,7 +205,7 @@ object Vote {
         for (others in Groups.player) {
             val p = PlayerCore[others.uuid()]
             if (!p.error && require - voted.size != -1) {
-                others.sendMessage(Bundle(p.locale).prefix("vote.current-voted", voted.size, require - voted.size))
+                others.sendMessage(Bundle(p.locale).prefix("vote.current-voted", voted.size.toString(), (require - voted.size).toString()))
             }
         }
         if (voted.size >= require) {

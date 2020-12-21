@@ -644,7 +644,7 @@ object ClientCommander {
         names.setLength(max(names.length - 2, 0));
 
         if (targetUnit == null) {
-            player.sendMessage(bundle.prefix("system.mob.not-found", names))
+            player.sendMessage(bundle.prefix("system.mob.not-found", names.toString()))
             return
         }
         val count: Int
@@ -775,7 +775,7 @@ object ClientCommander {
         val bancount = bans + ipbans
         val playtime = Tool.longToTime(PluginVars.playtime)
         val uptime = Tool.longToTime(PluginVars.uptime)
-        player.sendMessage(bundle["server.status.result", fps, Groups.player.size(), bancount, bans, ipbans, playtime, uptime, PluginVars.pluginVersion])
+        player.sendMessage(bundle["server.status.result", fps.toString(), Groups.player.size().toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginVars.pluginVersion])
         val result = JsonObject()
         for (p in PluginVars.playerData) {
             if (result[p.locale.getDisplayCountry(playerData.locale)] == null) {
