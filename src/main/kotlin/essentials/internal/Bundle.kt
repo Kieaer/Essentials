@@ -13,7 +13,7 @@ class Bundle {
 
     constructor() {
         resource = try {
-            if (pluginRoot.child("bundle.properties").exists()) PropertyResourceBundle(Files.newInputStream(Paths.get(pluginRoot.child("bundle.properties").path()))) else ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
+            ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
         } catch (e: Exception) {
             ResourceBundle.getBundle("bundle.bundle", Locale.US, UTF8Control())
         }
@@ -21,7 +21,7 @@ class Bundle {
 
     constructor(locale: Locale) {
         resource = try {
-            if (pluginRoot.child("bundle.properties").exists()) PropertyResourceBundle(Files.newInputStream(Paths.get(pluginRoot.child("bundle.properties").path()))) else ResourceBundle.getBundle("bundle.bundle", locale, UTF8Control())
+            ResourceBundle.getBundle("bundle.bundle", locale, UTF8Control())
         } catch (e: Exception) {
             ResourceBundle.getBundle("bundle.bundle", Locale.US, UTF8Control())
         }
