@@ -84,11 +84,11 @@ object Event {
                 for (data in PluginData.warpzones){
                     if (e.tile.x > data.startTile.x && e.tile.x < data.finishTile.x) {
                         if (e.tile.y > data.startTile.y && e.tile.y < data.finishTile.y) {
-                            Log.info("player.warped", e.player.name, data.ip + ":" + data.port);
+                            Log.info("player.warped", e.player.name, data.ip + ":" + data.port)
                             playerData.connected = false
                             playerData.connserver = "none"
-                            Call.connect(e.player.con, data.ip, data.port);
-                            break;
+                            Call.connect(e.player.con, data.ip, data.port)
+                            break
                         }
                     }
                 }
@@ -123,8 +123,7 @@ object Event {
                     }
                 }
                 if (index == 1) {
-                    for (i in 0 until Groups.player.size()) {
-                        val player = Groups.player.getByID(i)
+                    for (player in Groups.player){
                         val target = PlayerCore[player.uuid()]
                         if (target.login) {
                             if (player.team().name == e.winner.name) {
