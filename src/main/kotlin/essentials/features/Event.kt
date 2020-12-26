@@ -352,7 +352,7 @@ object Event {
 
                 Log.write(LogType.Block, "log.block.place", player.name, e.tile.block().name)
                 val target = PlayerCore[player.uuid()]
-                if (!e.breaking && !player.unit().isNull && !target.error && e.tile.block() != null && player.unit().buildPlan().block != null) {
+                if (!e.breaking && !player.unit().isNull && !target.error && e.tile.block() != null && player.unit().buildPlan() != null && player.unit().buildPlan().block != null) {
                     val name = e.tile.block().name
                     try {
                         val obj = JsonValue.readHjson(pluginRoot.child("Exp.hjson").reader()).asObject()
