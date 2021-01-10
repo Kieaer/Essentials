@@ -5,8 +5,8 @@ import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.async.Threads.sleep
-import essentials.command.ClientCommander
-import essentials.command.ServerCommander
+import essentials.command.ClientCommand
+import essentials.command.ServerCommand
 import essentials.features.*
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -14,7 +14,6 @@ import essentials.internal.PluginException
 import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
-import essentials.network.WebServer
 import essentials.thread.*
 import mindustry.Vars.netServer
 import mindustry.core.Version
@@ -160,11 +159,11 @@ class Main : Plugin() {
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
-        ServerCommander.register(handler)
+        ServerCommand.register(handler)
     }
 
     override fun registerClientCommands(handler: CommandHandler) {
-        ClientCommander.register(handler)
+        ClientCommand.register(handler)
     }
 
     private fun checkServerVersion(){

@@ -1,8 +1,8 @@
 package essentials.features
 
 import arc.struct.Seq
+import arc.util.async.Threads.sleep
 import essentials.Config
-import essentials.Main
 import essentials.PlayerCore
 import mindustry.gen.Playerc
 
@@ -22,7 +22,7 @@ object ColorNickname : Runnable {
                     targets.remove(player)
                 }
             }
-            Thread.sleep(Config.cupdatei.toLong())
+            sleep(Config.cupdatei.toLong())
         }
     }
 

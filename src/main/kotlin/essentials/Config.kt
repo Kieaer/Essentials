@@ -2,7 +2,6 @@ package essentials
 
 import essentials.Main.Companion.pluginRoot
 import essentials.internal.Bundle
-import essentials.internal.Log
 import essentials.internal.Tool
 import org.hjson.JsonArray
 import org.hjson.JsonObject

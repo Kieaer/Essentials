@@ -72,7 +72,7 @@ object Vote {
                         player.sendMessage("vote.wrong-gamemode")
                         interrupt()
                     }
-                    Map -> if (parameters[0] is Map) {
+                    Maps -> if (parameters[0] is Map) {
                         map = parameters[0] as Map
                         Tool.sendMessageAll("vote.map", map!!.name())
                     }
@@ -180,7 +180,7 @@ object Vote {
                     if (rules.attackMode) rules.attackMode = false
                     Vars.world.loadMap(Vars.world.map, rules)*/
                 }
-                Map -> {
+                Maps -> {
                     Log.info("Vote map passed!")
                     Tool.sendMessageAll("vote.map.done")
                     AutoRollback.load(map)
@@ -194,7 +194,7 @@ object Vote {
                 Kick -> Tool.sendMessageAll("vote.kick.fail", target.name())
                 Rollback -> Tool.sendMessageAll("vote.rollback.fail")
                 Gamemode -> Tool.sendMessageAll("vote.gamemode.fail")
-                Map -> Tool.sendMessageAll("vote.map.fail")
+                Maps -> Tool.sendMessageAll("vote.map.fail")
             }
         }
         reset()
@@ -215,6 +215,6 @@ object Vote {
     }
 
     enum class VoteType {
-        Gameover, SkipWave, Kick, Rollback, Gamemode, Map
+        Gameover, SkipWave, Kick, Rollback, Gamemode, Maps
     }
 }

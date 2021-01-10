@@ -185,7 +185,7 @@ object Event {
         }
 
         // 플레이어가 서버에 들어왔을 때
-        Events.on(PlayerJoin::class.java) { e: PlayerJoin ->
+        Events.on(`PlayerJoin`::class.java) { e: PlayerJoin ->
             if (Config.logging) Log.write(LogType.Player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
             PluginVars.players.add(e.player)
             e.player.admin(false)

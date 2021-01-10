@@ -17,7 +17,7 @@ import java.sql.SQLException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-object ServerCommander {
+object ServerCommand {
     lateinit var commands: CommandHandler
 
     fun register(handler: CommandHandler) {
@@ -43,7 +43,7 @@ object ServerCommander {
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
             var dup = false
-            for (b in ClientCommander.commands.commandList) {
+            for (b in ClientCommand.commands.commandList) {
                 if (command.text == b.text) {
                     dup = true
                     break
@@ -229,5 +229,9 @@ object ServerCommander {
         Permissions.reload(false)
         Permissions.update(false)
         Log.info("plugin-reloaded")
+    }
+
+    enum class Command{
+        Gendocs, Lobby, Edit, Saveall, Admin, BanSync, Info, Setperm, Reload
     }
 }

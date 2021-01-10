@@ -2,38 +2,28 @@ package essentials.thread
 
 import arc.Core
 import arc.Events
-import arc.struct.ArrayMap
-import arc.struct.ObjectMap
 import arc.util.Strings
+import arc.util.async.Threads.sleep
 import essentials.Config
-import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
+import essentials.PlayerCore
 import essentials.PluginData
 import essentials.PluginVars
 import essentials.features.Exp
-import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.Tool
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.core.GameState
-import mindustry.core.NetClient
-import mindustry.ctype.ContentType
-import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.EventType.Trigger.update
-import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Nulls
-import mindustry.type.Item
-import mindustry.world.Tile
-import mindustry.world.blocks.logic.MessageBlock
 import org.hjson.JsonObject
 import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.math.roundToInt
 
 object TriggerThread : Runnable {
     private val random = SecureRandom()
@@ -157,6 +147,8 @@ object TriggerThread : Runnable {
             } catch (e: Exception) {
                 CrashReport(e)
             }
+
+            sleep(1000)
         }
     }
 }

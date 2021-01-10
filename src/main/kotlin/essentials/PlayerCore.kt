@@ -22,7 +22,6 @@ import java.sql.DriverManager
 import java.sql.SQLException
 import java.time.LocalDateTime
 import java.util.function.Consumer
-import kotlin.jvm.Throws
 import kotlin.system.exitProcess
 
 object PlayerCore {

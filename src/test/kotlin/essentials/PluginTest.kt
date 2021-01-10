@@ -7,7 +7,6 @@ import arc.Settings
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.util.CommandHandler
-import arc.util.Log
 import essentials.Main.Companion.pluginRoot
 import essentials.features.Vote
 import essentials.internal.Tool
@@ -23,8 +22,6 @@ import mindustry.core.FileTree
 import mindustry.core.GameState
 import mindustry.core.Logic
 import mindustry.core.NetServer
-import mindustry.entities.Units
-import mindustry.entities.units.BuildPlan
 import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call

@@ -1,5 +1,6 @@
 package essentials.thread
 
+import arc.util.async.Threads.sleep
 import essentials.Main
 import essentials.features.Permissions
 import essentials.internal.CrashReport
@@ -19,7 +20,7 @@ object PermissionWatch : Runnable {
         while (!Thread.currentThread().isInterrupted) {
             try {
                 watchKey = watchService!!.take()
-                Thread.sleep(50)
+                sleep(50)
                 val events = watchKey.pollEvents()
                 for (event in events) {
                     val kind = event.kind()

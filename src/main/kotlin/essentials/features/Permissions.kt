@@ -2,8 +2,8 @@ package essentials.features
 
 import arc.Core
 import essentials.Config
-import essentials.PlayerCore
 import essentials.Main.Companion.pluginRoot
+import essentials.PlayerCore
 import essentials.PlayerData
 import essentials.PluginVars
 import essentials.internal.Bundle

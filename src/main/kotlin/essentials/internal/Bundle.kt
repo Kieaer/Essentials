@@ -1,10 +1,7 @@
 package essentials.internal
 
 import essentials.Config
-import essentials.Main.Companion.pluginRoot
 import essentials.external.UTF8Control
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.text.MessageFormat
 import java.util.*
 

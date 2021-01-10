@@ -2,6 +2,7 @@ package essentials.thread
 
 import arc.graphics.Color
 import arc.struct.Seq
+import arc.util.async.Threads.sleep
 import essentials.Config
 import essentials.PluginData
 import essentials.external.PingHost
@@ -55,24 +56,24 @@ object WarpBorder : Runnable {
                                     for (x in 0 until size) {
                                         val tile = world.tile(data.startTile.x + x, data.startTile.y.toInt())
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
-                                        Thread.sleep(96)
+                                        sleep(96)
                                     }
                                     for (y in 0 until size) {
                                         val tile = world.tile(data.finishTile.x.toInt(), data.startTile.y + y)
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
-                                        Thread.sleep(96)
+                                        sleep(96)
                                     }
                                     for (x in 0 until size) {
                                         val tile = world.tile(data.finishTile.x - x, data.finishTile.y.toInt())
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
-                                        Thread.sleep(96)
+                                        sleep(96)
                                     }
                                     for (y in 0 until size) {
                                         val tile = world.tile(data.startTile.x.toInt(), data.finishTile.y - y)
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
-                                        Thread.sleep(96)
+                                        sleep(96)
                                     }
-                                    if (size < 5) Thread.sleep(2000)
+                                    if (size < 5) sleep(2000)
                                 } else {
                                     if (Config.debug) Log.info("warp zone $ip offline! After 1 minute, try to connect again.")
                                     TimeUnit.MINUTES.sleep(1)
