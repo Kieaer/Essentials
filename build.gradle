@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id "org.sonarqube" version "2.8"
     id 'jacoco'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
 }
 
 repositories {
@@ -12,33 +12,33 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:v121.4'
-    compileOnly 'com.github.Anuken.Mindustry:core:v121.4'
+    compileOnly 'com.github.Anuken.Arc:arc-core:+'
+    compileOnly 'com.github.Anuken.Mindustry:core:+'
 
     implementation 'com.github.PersonTheCat:hjson-java:master'
-    implementation 'de.svenkubiak:jBCrypt:0.4.1'
+    implementation 'de.svenkubiak:jBCrypt:+'
     implementation('net.dv8tion:JDA:4.1.1_141') {
         exclude module: 'opus-java'
     }
-    implementation 'org.apache.maven:maven-artifact:3.6.3'
-    implementation 'org.jsoup:jsoup:1.13.1'
-    implementation 'com.github.gimlet2:kottpd:0.2.0'
-    implementation 'org.slf4j:slf4j-nop:1.7.30'
+    implementation 'org.apache.maven:maven-artifact:+'
+    implementation 'org.jsoup:jsoup:+'
+    implementation 'com.github.gimlet2:kottpd:+'
+    implementation 'org.slf4j:slf4j-nop:+'
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
-    implementation 'com.neovisionaries:nv-i18n:1.27'
+    implementation 'com.neovisionaries:nv-i18n:+'
     implementation files('libs/ip2location.jar')
 
-    testImplementation 'com.github.Anuken.arc:arc-core:v121.4'
-    testImplementation 'com.github.Anuken.Mindustry:core:v121.4'
-    testImplementation 'com.github.Anuken.Mindustry:server:v121.4'
-    testImplementation 'com.github.Anuken.arc:backend-headless:v121.4'
+    testImplementation 'com.github.Anuken.arc:arc-core:+'
+    testImplementation 'com.github.Anuken.Mindustry:core:+'
+    testImplementation 'com.github.Anuken.Mindustry:server:+'
+    testImplementation 'com.github.Anuken.arc:backend-headless:+'
 
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
 
-    testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.0"
-    testCompile "org.jetbrains.kotlin:kotlin-test:1.4.0"
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:1.4.0"
+    testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:+"
+    testCompile "org.jetbrains.kotlin:kotlin-test:+"
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:+"
 }
 
 jar {
