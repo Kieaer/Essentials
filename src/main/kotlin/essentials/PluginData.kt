@@ -5,12 +5,26 @@ import arc.util.serialization.Json
 import essentials.Main.Companion.pluginRoot
 import essentials.internal.Log
 import mindustry.Vars.world
+import mindustry.gen.Playerc
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 
 object PluginData {
+    const val buildVersion = 118
+    const val buildRevision = 0
+    var serverIP: String = "127.0.0.1"
+    var pluginVersion: String? = null
+    var uptime = 0L
+    var playtime = 0L
+    val playerData = Seq<PlayerData>()
+    var players = Seq<Playerc>()
+
+    fun removePlayerData(d: PlayerData) {
+        playerData.remove(d)
+    }
+
     private val json = Json()
 
     // 일회성 플러그인 데이터

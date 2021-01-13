@@ -1,11 +1,10 @@
-package essentials.thread
+package essentials
 
 import arc.Core
 import arc.struct.ArrayMap
 import arc.struct.Seq
-import essentials.Config
-import essentials.PlayerCore
-import essentials.PluginData
+import essentials.data.Config
+import essentials.data.PlayerCore
 import essentials.external.PingHost
 import essentials.internal.Bundle
 import essentials.internal.CrashReport

@@ -1,7 +1,7 @@
 package essentials.internal
 
 import arc.util.Log
-import essentials.Config
+import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
 import java.io.IOException
 import java.nio.file.Files

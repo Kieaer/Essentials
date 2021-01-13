@@ -1,12 +1,12 @@
-package essentials.features
+package essentials.event.feature
 
 import arc.struct.Seq
 import arc.util.async.Threads.sleep
-import essentials.Config
-import essentials.PlayerCore
+import essentials.data.Config
+import essentials.data.PlayerCore
 import mindustry.gen.Playerc
 
-object ColorNickname : Runnable {
+object RainbowName : Runnable {
     var colorOffset = 0
     var targets = Seq<Playerc>()
 

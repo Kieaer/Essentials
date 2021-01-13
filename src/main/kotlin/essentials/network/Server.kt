@@ -1,7 +1,7 @@
 package essentials.network
 
 import arc.struct.Seq
-import essentials.Config
+import essentials.data.Config
 import essentials.internal.*
 import mindustry.Vars
 import mindustry.gen.Groups

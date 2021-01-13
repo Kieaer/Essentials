@@ -1,8 +1,8 @@
 package essentials.internal
 
-import essentials.Config
+import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
-import essentials.PluginVars
+import essentials.PluginData
 import mindustry.Vars
 import mindustry.core.Version
 import org.hjson.JsonValue
@@ -54,7 +54,7 @@ class CrashReport {
                             for (error in element) sb.append("at ").append(error.toString()).append("\n")
                             val plugins = StringBuilder()
                             for (a in 0 until Vars.mods.list().size) plugins.append(Vars.mods.list()[a].name).append(", ")
-                            val logs = "플러그인 버전: ${PluginVars.pluginVersion}\n" + "" +
+                            val logs = "플러그인 버전: ${PluginData.pluginVersion}\n" + "" +
                                     "서버 버전: ${Version.build}.${Version.revision} ${Version.modifier}\n" +
                                     "OS: ${System.getProperty("os.name")}\n" +
                                     "플러그인 목록: ${if (plugins.toString().contains(", ")) plugins.toString().substring(0, plugins.length - 2) else plugins.toString()}\n" +

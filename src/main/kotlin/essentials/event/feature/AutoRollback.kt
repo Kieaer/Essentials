@@ -1,8 +1,8 @@
-package essentials.thread
+package essentials.event.feature
 
 import arc.struct.Seq
 import arc.struct.Seq.SeqIterable
-import essentials.Config
+import essentials.data.Config
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import mindustry.Vars

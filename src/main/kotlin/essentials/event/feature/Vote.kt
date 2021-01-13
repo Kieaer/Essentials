@@ -1,17 +1,16 @@
-package essentials.features
+package essentials.event.feature
 
 import arc.Core
 import arc.Events
 import arc.struct.Seq
 import arc.util.Time
-import essentials.PlayerCore
-import essentials.PluginVars
-import essentials.features.Vote.VoteType.*
+import essentials.data.PlayerCore
+import essentials.PluginData
+import essentials.event.feature.Vote.VoteType.*
 import essentials.internal.Bundle
 import essentials.internal.Log
 import essentials.internal.Log.LogType
 import essentials.internal.Tool
-import essentials.thread.AutoRollback
 import mindustry.Vars
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
@@ -43,10 +42,10 @@ object Vote {
 
         if(!voting) {
             voting = true
-            if (PluginVars.playerData.size < 4) {
+            if (PluginData.playerData.size < 4) {
                 player.sendMessage(bundle["vote.minimal"])
             } else {
-                require = if (PluginVars.playerData.size > 8) 6 else 2 + if (PluginVars.playerData.size > 4) 1 else 0
+                require = if (PluginData.playerData.size > 8) 6 else 2 + if (PluginData.playerData.size > 4) 1 else 0
 
                 Tool.sendMessageAll("vote.suggester-name", player.name())
                 when (type) {

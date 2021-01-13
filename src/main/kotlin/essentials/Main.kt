@@ -7,7 +7,10 @@ import arc.util.CommandHandler
 import arc.util.async.Threads.sleep
 import essentials.command.ClientCommand
 import essentials.command.ServerCommand
-import essentials.features.*
+import essentials.data.Config
+import essentials.data.PlayerCore
+import essentials.event.Event
+import essentials.event.feature.*
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
@@ -63,7 +66,7 @@ class Main : Plugin() {
         // 스레드 시작
         mainThread.submit(TriggerThread)
         mainThread.submit(Threads)
-        mainThread.submit(ColorNickname)
+        mainThread.submit(RainbowName)
         if (Config.rollback) timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())
         mainThread.submit(PermissionWatch)
         mainThread.submit(WarpBorder)
@@ -141,7 +144,7 @@ class Main : Plugin() {
             }
         })
 
-        PluginVars.serverIP = Tool.hostIP()
+        PluginData.serverIP = Tool.hostIP()
     }
 
     override fun init() {
@@ -170,10 +173,10 @@ class Main : Plugin() {
         javaClass.getResourceAsStream("/plugin.json").use { reader ->
             BufferedReader(InputStreamReader(reader)).use { br ->
                 val version = JsonValue.readJSON(br).asObject()["version"].asString()
-                if (Version.build != PluginVars.buildVersion && Version.revision >= PluginVars.buildRevision) {
-                    throw PluginException("Essentials " + version + " plugin only works with Build " + PluginVars.buildVersion + "." + PluginVars.buildRevision + " or higher.")
+                if (Version.build != PluginData.buildVersion && Version.revision >= PluginData.buildRevision) {
+                    throw PluginException("Essentials " + version + " plugin only works with Build " + PluginData.buildVersion + "." + PluginData.buildRevision + " or higher.")
                 }
-                PluginVars.pluginVersion = version
+                PluginData.pluginVersion = version
             }
         }
     }

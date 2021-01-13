@@ -1,4 +1,4 @@
-package essentials
+package essentials.data
 
 import essentials.Main.Companion.pluginRoot
 import essentials.internal.Bundle

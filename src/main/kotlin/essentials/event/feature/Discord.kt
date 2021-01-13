@@ -1,9 +1,9 @@
-package essentials.features
+package essentials.event.feature
 
 import arc.struct.ObjectMap
-import essentials.Config
-import essentials.PlayerCore
-import essentials.PluginVars
+import essentials.data.Config
+import essentials.data.PlayerCore
+import essentials.PluginData
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -79,7 +79,7 @@ object Discord : ListenerAdapter() {
                                         val player = Groups.player.find { p: Playerc -> p.name().equals(name, ignoreCase = true) }
                                         if (player != null) {
                                             val lc = Tool.getGeo(player)
-                                            val register = PlayerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", e.author.idLong, name, pw, false)
+                                            val register = PlayerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", e.author.idLong, name, pw, false)
                                             if (register) {
                                                 PlayerCore.playerLoad(player, null)
                                                 val playerData = PlayerCore[player.uuid()]

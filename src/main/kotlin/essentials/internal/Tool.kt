@@ -4,9 +4,9 @@ import arc.struct.ObjectMap
 import arc.struct.Seq
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
-import essentials.Config
+import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
-import essentials.PlayerCore
+import essentials.data.PlayerCore
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.game.Team

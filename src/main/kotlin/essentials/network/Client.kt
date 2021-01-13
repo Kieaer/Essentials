@@ -1,6 +1,6 @@
 package essentials.network
 
-import essentials.Config
+import essentials.data.Config
 import essentials.Main.Companion.mainThread
 import essentials.internal.CrashReport
 import essentials.internal.Log

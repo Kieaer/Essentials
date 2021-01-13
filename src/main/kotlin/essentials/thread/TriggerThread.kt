@@ -4,12 +4,11 @@ import arc.Core
 import arc.Events
 import arc.util.Strings
 import arc.util.async.Threads.sleep
-import essentials.Config
+import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
-import essentials.PlayerCore
+import essentials.data.PlayerCore
 import essentials.PluginData
-import essentials.PluginVars
-import essentials.features.Exp
+import essentials.event.feature.Exp
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.Tool
@@ -63,7 +62,7 @@ object TriggerThread : Runnable {
 
         while(!Thread.currentThread().isInterrupted){
             // 서버 켜진시간 카운트
-            PluginVars.uptime = PluginVars.uptime + 1
+            PluginData.uptime = PluginData.uptime + 1
 
             // 데이터 저장
             val json = JsonObject()
@@ -90,7 +89,7 @@ object TriggerThread : Runnable {
                 // new jumpzone().start();
 
                 // 맵 플탐 카운트
-                PluginVars.playtime = PluginVars.playtime + 1
+                PluginData.playtime = PluginData.playtime + 1
 
                 // 모든 클라이언트 서버에 대한 인원 총합 카운트
                 for (a in 0 until PluginData.warptotals.size) {

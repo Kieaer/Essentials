@@ -1,4 +1,4 @@
-package essentials.features
+package essentials.event
 
 import arc.Core
 import arc.Events
@@ -6,7 +6,12 @@ import essentials.*
 import essentials.Main.Companion.mainThread
 import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.timer
+import essentials.data.Config
+import essentials.data.PlayerCore
 import essentials.external.IpAddressMatcher
+import essentials.event.feature.Discord
+import essentials.event.feature.Permissions
+import essentials.event.feature.Vote
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -146,7 +151,7 @@ object Event {
 
         // 맵이 불러와졌을 때
         Events.on(WorldLoadEvent::class.java) {
-            PluginVars.playtime = 0L
+            PluginData.playtime = 0L
         }
         Events.on(PlayerConnect::class.java) { e: PlayerConnect ->
             if (Config.logging) Log.write(LogType.Player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
@@ -187,7 +192,7 @@ object Event {
         // 플레이어가 서버에 들어왔을 때
         Events.on(`PlayerJoin`::class.java) { e: PlayerJoin ->
             if (Config.logging) Log.write(LogType.Player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
-            PluginVars.players.add(e.player)
+            PluginData.players.add(e.player)
             e.player.admin(false)
             val t = Thread {
                 Thread.currentThread().name = e.player.name + " Player Join thread"
@@ -197,14 +202,14 @@ object Event {
                     if (Config.passwordMethod == "mixed") {
                         if (!playerData.error && Config.autoLogin) {
                             if (playerData.udid != 0L) {
-                                Thread { Call.connect(e.player.con, PluginVars.serverIP, 7060) }.start()
+                                Thread { Call.connect(e.player.con, PluginData.serverIP, 7060) }.start()
                             } else {
                                 e.player.sendMessage(bundle["account.autologin"])
                                 PlayerCore.playerLoad(e.player, null)
                             }
                         } else {
                             val lc = Tool.getGeo(e.player)
-                            if (PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)) {
+                            if (PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, e.player.name, "none", false)) {
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
                                 Call.kick(e.player.con, Bundle()["plugin-error-kick"])
@@ -250,7 +255,7 @@ object Event {
                         PlayerCore.playerLoad(e.player, null)
                     } else {
                         val lc = Tool.getGeo(e.player.con.address)
-                        val register = PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, e.player.name, "none", false)
+                        val register = PlayerCore.register(e.player.name, e.player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, e.player.name, "none", false)
                         if (register) {
                             if(!PlayerCore.playerLoad(e.player, null)){
                                 Call.kick(e.player.con, Bundle()["plugin-error-kick"])
@@ -288,8 +293,8 @@ object Event {
                 if (Vars.state.rules.pvp && !Vars.state.gameOver) player.pvpbreakout = player.pvpbreakout + 1
             }
             PlayerCore.save(player)
-            PluginVars.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }?.let { PluginVars.removePlayerData(it) }
-            PluginVars.players.remove(e.player)
+            PluginData.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }?.let { PluginData.removePlayerData(it) }
+            PluginData.players.remove(e.player)
         }
 
         // 플레이어가 수다떨었을 때
@@ -495,11 +500,11 @@ object Event {
                         val json = JsonValue.readJSON(web).asObject()
                         for (a in 0 until Vars.mods.list().size) {
                             if (Vars.mods.list()[a].meta.name == "Essentials") {
-                                PluginVars.pluginVersion = Vars.mods.list()[a].meta.version
+                                PluginData.pluginVersion = Vars.mods.list()[a].meta.version
                             }
                         }
-                        val latest = DefaultArtifactVersion(json.getString("tag_name", PluginVars.pluginVersion))
-                        val current = DefaultArtifactVersion(PluginVars.pluginVersion)
+                        val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
+                        val current = DefaultArtifactVersion(PluginData.pluginVersion)
                         when {
                             latest > current -> {
                                 Log.client("version-new")
@@ -558,7 +563,7 @@ object Event {
             } else {
                 for (a in 0 until Vars.mods.list().size) {
                     if (Vars.mods.list()[a].meta.name == "Essentials") {
-                        PluginVars.pluginVersion = Vars.mods.list()[a].meta.version
+                        PluginData.pluginVersion = Vars.mods.list()[a].meta.version
                         break
                     }
                 }

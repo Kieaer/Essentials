@@ -3,7 +3,7 @@ package essentials.thread
 import arc.graphics.Color
 import arc.struct.Seq
 import arc.util.async.Threads.sleep
-import essentials.Config
+import essentials.data.Config
 import essentials.PluginData
 import essentials.external.PingHost
 import essentials.internal.Log

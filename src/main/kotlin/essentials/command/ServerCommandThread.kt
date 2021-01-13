@@ -3,8 +3,9 @@ package essentials.command
 import arc.Core
 import essentials.*
 import essentials.command.ServerCommand.Command.*
+import essentials.data.PlayerCore
 import essentials.external.StringUtils
-import essentials.features.Permissions
+import essentials.event.feature.Permissions
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -73,8 +74,8 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                         val count = pstmt.executeUpdate()
                         if (count < 1 && !playerData.error) {
                             Log.info("success")
-                            PluginVars.removePlayerData(playerData)
-                            PluginVars.players.remove(player)
+                            PluginData.removePlayerData(playerData)
+                            PluginData.players.remove(player)
                             PlayerCore.playerLoad(player, null)
                             player.sendMessage(Bundle(playerData.locale)["player.reloaded"])
                         } else {

@@ -1,11 +1,11 @@
-package essentials.features
+package essentials.event.feature
 
 import arc.Core
-import essentials.Config
+import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
-import essentials.PlayerCore
+import essentials.data.PlayerCore
 import essentials.PlayerData
-import essentials.PluginVars
+import essentials.PluginData
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -129,7 +129,7 @@ object Permissions {
             try {
                 user = JsonValue.readHjson(pluginRoot.child("permission_user.hjson").reader()).asObject()
                 for (p in Groups.player) {
-                    p.admin(isAdmin(PluginVars.playerData.find { d: PlayerData -> d.name == p.name }))
+                    p.admin(isAdmin(PluginData.playerData.find { d: PlayerData -> d.name == p.name }))
                 }
             } catch (e: PluginException) {
                 Log.err("Permissing parsing: " + CrashReport(e).print())

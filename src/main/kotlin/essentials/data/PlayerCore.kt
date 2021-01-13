@@ -1,9 +1,11 @@
-package essentials
+package essentials.data
 
 import arc.Core
 import essentials.Main.Companion.pluginRoot
-import essentials.features.ColorNickname
-import essentials.features.Permissions
+import essentials.PlayerData
+import essentials.PluginData
+import essentials.event.feature.Permissions
+import essentials.event.feature.RainbowName
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
@@ -29,14 +31,14 @@ object PlayerCore {
     var server: Server? = null
 
     operator fun get(uuid: String): PlayerData {
-        for (p in PluginVars.playerData) {
+        for (p in PluginData.playerData) {
             if (p.uuid == uuid) return p
         }
         return PlayerData()
     }
 
     fun playerLoad(p: Playerc, id: String?): Boolean {
-        if (PluginVars.playerData.contains(get(p.uuid()))) PluginVars.removePlayerData(get(p.uuid()))
+        if (PluginData.playerData.contains(get(p.uuid()))) PluginData.removePlayerData(get(p.uuid()))
 
         val playerData: PlayerData = if (id == null) {
             load(p.uuid(), null)
@@ -65,14 +67,14 @@ object PlayerCore {
             }
         }
 
-        if (playerData.colornick) ColorNickname.targets.add(p)
+        if (playerData.colornick) RainbowName.targets.add(p)
 
         val oldUUID = playerData.uuid
 
         playerData.uuid = p.uuid()
         playerData.connected = true
         playerData.lastdate = System.currentTimeMillis()
-        playerData.connserver = PluginVars.serverIP
+        playerData.connserver = PluginData.serverIP
         playerData.joincount = playerData.joincount + 1
         playerData.exp = playerData.exp + playerData.joincount
         playerData.login = true
@@ -209,7 +211,7 @@ object PlayerCore {
                                 rs.getString("accountpw"),
                                 false
                         )
-                        PluginVars.playerData.add(data)
+                        PluginData.playerData.add(data)
                         return data
                     }
                 }
@@ -272,8 +274,8 @@ object PlayerCore {
     }
 
     fun saveAll() {
-        for (p in PluginVars.playerData){
-            synchronized(PluginVars.playerData){
+        for (p in PluginData.playerData){
+            synchronized(PluginData.playerData){
                 save(p)
             }
         }

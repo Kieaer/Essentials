@@ -1,7 +1,7 @@
 package essentials.command
 
 import arc.util.CommandHandler
-import essentials.Config
+import essentials.data.Config
 import mindustry.gen.Playerc
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

@@ -1,6 +1,6 @@
-package essentials.features
+package essentials.event.feature
 
-import essentials.Config
+import essentials.data.Config
 import essentials.PlayerData
 import essentials.internal.Bundle
 import mindustry.gen.Call

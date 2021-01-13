@@ -1,6 +1,6 @@
 package essentials.internal
 
-import essentials.Config
+import essentials.data.Config
 import essentials.external.UTF8Control
 import java.text.MessageFormat
 import java.util.*

@@ -6,14 +6,13 @@ import arc.struct.Seq
 import arc.util.Strings
 import arc.util.Tmp
 import arc.util.async.Threads
-import essentials.Config
-import essentials.PlayerCore
+import essentials.data.Config
+import essentials.data.PlayerCore
 import essentials.PluginData
-import essentials.PluginVars
 import essentials.command.ClientCommand.Command.*
-import essentials.features.ColorNickname
-import essentials.features.Discord
-import essentials.features.Permissions
+import essentials.event.feature.RainbowName
+import essentials.event.feature.Discord
+import essentials.event.feature.Permissions
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
@@ -49,12 +48,12 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     val playerData = PlayerCore[player.uuid()]
                     val bundle = Bundle(playerData.locale)
 
-                    if (essentials.features.Vote.voting) {
+                    if (essentials.event.feature.Vote.voting) {
                         player.sendMessage(bundle.prefix("vote.in-processing"))
                         return
                     }
 
-                    essentials.features.Vote.player = player
+                    essentials.event.feature.Vote.player = player
                     when (arg[0]) {
                         "kick" -> {
                             if (arg.size < 2) {
@@ -84,8 +83,8 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 }
                             }
 
-                            essentials.features.Vote.type = essentials.features.Vote.VoteType.Kick
-                            essentials.features.Vote.parameters = arrayOf(target, arg[1])
+                            essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Kick
+                            essentials.event.feature.Vote.parameters = arrayOf(target, arg[1])
                         }
 
                         "map" -> {
@@ -99,8 +98,8 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 try {
                                     world = Vars.maps.all()[arg[1].toInt()]
                                     if (world != null) {
-                                        essentials.features.Vote.type = essentials.features.Vote.VoteType.Maps
-                                        essentials.features.Vote.parameters = arrayOf(world)
+                                        essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Maps
+                                        essentials.event.feature.Vote.parameters = arrayOf(world)
                                     } else {
                                         player.sendMessage(bundle.prefix("vote.map.not-found"))
                                         return
@@ -110,20 +109,20 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                     return
                                 }
                             } else {
-                                essentials.features.Vote.type = essentials.features.Vote.VoteType.Maps
-                                essentials.features.Vote.parameters = arrayOf(world)
+                                essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Maps
+                                essentials.event.feature.Vote.parameters = arrayOf(world)
                             }
                         }
 
                         "gameover" -> {
-                            essentials.features.Vote.type = essentials.features.Vote.VoteType.Gameover
-                            essentials.features.Vote.parameters = arrayOf()
+                            essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Gameover
+                            essentials.event.feature.Vote.parameters = arrayOf()
                         }
 
                         "rollback" -> {
                             if (Config.rollback) {
-                                essentials.features.Vote.type = essentials.features.Vote.VoteType.Rollback
-                                essentials.features.Vote.parameters = arrayOf()
+                                essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Rollback
+                                essentials.event.feature.Vote.parameters = arrayOf()
                             } else {
                                 player.sendMessage(bundle["vote.rollback.disabled"])
                                 return
@@ -136,8 +135,8 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 return
                             }
                             try {
-                                essentials.features.Vote.type = essentials.features.Vote.VoteType.Gamemode
-                                essentials.features.Vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
+                                essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Gamemode
+                                essentials.event.feature.Vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
                             } catch (e: IllegalArgumentException) {
                                 player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
                                 return
@@ -149,8 +148,8 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 player.sendMessage(bundle["no-parameter"])
                                 return
                             }
-                            essentials.features.Vote.type = essentials.features.Vote.VoteType.SkipWave
-                            essentials.features.Vote.parameters = arrayOf(arg[1])
+                            essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.SkipWave
+                            essentials.event.feature.Vote.parameters = arrayOf(arg[1])
                         }
 
                         else -> {
@@ -164,7 +163,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         }
                     }
 
-                    essentials.features.Vote.start()
+                    essentials.event.feature.Vote.start()
                 }
                 Alert -> {
                     if (!Permissions.check(player, "alert")) return
@@ -209,7 +208,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     if (!Permissions.check(player, "color")) return
                     val playerData = PlayerCore[player.uuid()]
                     playerData.colornick = !playerData.colornick
-                    if (playerData.colornick) ColorNickname.targets.add(player)
+                    if (playerData.colornick) RainbowName.targets.add(player)
                     player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.colornick) "feature.colornick.enable" else "feature.colornick.disable"))
                 }
                 KillAll -> {
@@ -378,7 +377,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                             }
                         } else {
                             if (Config.passwordMethod == "mixed") {
-                                if (PlayerCore.login(arg[0], arg[1])) Call.connect(player.con(), PluginVars.serverIP, 7060)
+                                if (PlayerCore.login(arg[0], arg[1])) Call.connect(player.con(), PluginData.serverIP, 7060)
                             } else {
                                 player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.")
                             }
@@ -647,7 +646,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                             "password" -> {
                                 val lc = Tool.getGeo(player)
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
+                                val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, arg[0], hash, false)
                                 if (register) {
                                     PlayerCore.playerLoad(player, null)
                                     player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
@@ -658,7 +657,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                             else -> {
                                 val lc = Tool.getGeo(player)
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginVars.serverIP, "default", 0L, arg[0], hash, false)
+                                val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, arg[0], hash, false)
                                 if (register) {
                                     PlayerCore.playerLoad(player, null)
                                     player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
@@ -745,11 +744,11 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     val bans = Vars.netServer.admins.banned.size
                     val ipbans = Vars.netServer.admins.bannedIPs.size
                     val bancount = bans + ipbans
-                    val playtime = Tool.longToTime(PluginVars.playtime)
-                    val uptime = Tool.longToTime(PluginVars.uptime)
-                    player.sendMessage(bundle["server.status.result", fps.toString(), Groups.player.size().toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginVars.pluginVersion])
+                    val playtime = Tool.longToTime(PluginData.playtime)
+                    val uptime = Tool.longToTime(PluginData.uptime)
+                    player.sendMessage(bundle["server.status.result", fps.toString(), Groups.player.size().toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginData.pluginVersion])
                     val result = JsonObject()
-                    for (p in PluginVars.playerData) {
+                    for (p in PluginData.playerData) {
                         if (result[p.locale.getDisplayCountry(playerData.locale)] == null) {
                             result.add(p.locale.getDisplayCountry(playerData.locale), 1)
                         } else {

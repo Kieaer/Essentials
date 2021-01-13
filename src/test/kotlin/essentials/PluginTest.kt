@@ -8,7 +8,9 @@ import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.util.CommandHandler
 import essentials.Main.Companion.pluginRoot
-import essentials.features.Vote
+import essentials.data.Config
+import essentials.data.PlayerCore
+import essentials.event.feature.Vote
 import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
@@ -577,7 +579,7 @@ class PluginTest {
     @Test
     fun event_WorldLoad(){
         Events.fire(WorldLoadEvent())
-        assertEquals(0L, PluginVars.playtime)
+        assertEquals(0L, PluginData.playtime)
     }
 
     @Test

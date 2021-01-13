@@ -2,14 +2,11 @@ package essentials
 
 import arc.graphics.Color
 import com.github.javafaker.Faker
-import mindustry.Vars
+import essentials.data.PlayerCore
 import mindustry.content.UnitTypes
-import mindustry.entities.Units
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import mindustry.gen.Playerc
-import mindustry.gen.Unit
 import mindustry.net.Net.SendMode
 import mindustry.net.NetConnection
 import java.security.SecureRandom

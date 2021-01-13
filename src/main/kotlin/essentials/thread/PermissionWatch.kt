@@ -2,7 +2,7 @@ package essentials.thread
 
 import arc.util.async.Threads.sleep
 import essentials.Main
-import essentials.features.Permissions
+import essentials.event.feature.Permissions
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import java.io.IOException
