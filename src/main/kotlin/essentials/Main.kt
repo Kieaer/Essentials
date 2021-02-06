@@ -102,6 +102,7 @@ class Main : Plugin() {
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 try {
+                    ServerCommand.service.shutdown()
                     Discord.shutdownNow() // Discord 서비스 종료
                     PlayerCore.saveAll() // 플레이어 데이터 저장
                     PluginData.saveAll() // 플러그인 데이터 저장

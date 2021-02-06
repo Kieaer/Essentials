@@ -1,19 +1,17 @@
 package essentials.command
 
 import arc.Core
-import essentials.*
+import essentials.Main.Companion.pluginRoot
+import essentials.PluginData
 import essentials.command.ServerCommand.Command.*
 import essentials.data.PlayerCore
-import essentials.external.StringUtils
 import essentials.event.feature.Permissions
-import essentials.internal.Bundle
+import essentials.external.StringUtils
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.Tool
 import essentials.network.Client
-import mindustry.Vars
-import mindustry.gen.Groups
-import mindustry.gen.Playerc
+import mindustry.Vars.netServer
 import java.sql.SQLException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -22,89 +20,49 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
     override fun run() {
         when (type){
             Gendocs -> {
-                val serverdoc = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-                val clientdoc = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-                val gentime = "README.md Generated time: ${
+                val server = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+                val client = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+                val time = "README.md Generated time: ${
                     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(
                         LocalDateTime.now())}"
                 Log.info("readme-generating")
-                var tempbuild = StringBuilder()
-                for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
-                    val command = Vars.netServer.clientCommands.commandList[a]
-                    var dup = false
+                var result = StringBuilder()
+
+                for (a in 0..netServer.clientCommands.commandList.size){
+                    val command = netServer.clientCommands.commandList[a]
+                    var duplicate = false
                     for (b in ClientCommand.commands.commandList) {
                         if (command.text == b.text) {
-                            dup = true
+                            duplicate = true
                             break
                         }
                     }
-                    if (!dup) {
-                        val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"""
-                        tempbuild.append(temp)
+
+                    if (!duplicate) {
+                        val temp = "| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"
+                        result.append(temp)
                     }
                 }
-                val tmp = """$clientdoc$tempbuild""".trimIndent()
-                tempbuild = StringBuilder()
+
+                val tmp = "$client$result"
+
+                result = StringBuilder()
                 for (command in ServerCommand.commands.commandList) {
-                    val temp = """| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"""
-                    tempbuild.append(temp)
+                    val temp = "| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"
+                    result.append(temp)
                 }
-                Main.pluginRoot.child("README.md").writeString(tmp + serverdoc + tempbuild.toString() + gentime)
-                Log.info("success")
+
+                pluginRoot.child("README.md").writeString("$tmp$server$result$time")
+                Log.info("readme-generated")
             }
             Lobby -> {
                 Core.settings.put("isLobby", !Core.settings.getBool("isLobby"))
                 Core.settings.saveValues()
-                Log.info("success")
-            }
-            Edit -> {
-                val sql = "UPDATE players SET " + arg[1] + "=? WHERE uuid=?"
-                try {
-                    PlayerCore.conn.prepareStatement(sql).use { pstmt ->
-                        pstmt.setString(1, arg[2])
-                        pstmt.setString(2, arg[0])
-                        val playerData = PlayerCore[arg[0]]
-                        val player = Groups.player.find { p: Playerc -> p.uuid() == arg[0] }
-                        if (!playerData.error) {
-                            PlayerCore.save(playerData)
-                            playerData.toData(playerData.toMap().set(arg[1], arg[2]))
-                            Permissions.user[playerData.uuid].asObject()[arg[1]] = arg[2]
-                            Permissions.saveAll()
-                        }
-                        val count = pstmt.executeUpdate()
-                        if (count < 1 && !playerData.error) {
-                            Log.info("success")
-                            PluginData.removePlayerData(playerData)
-                            PluginData.players.remove(player)
-                            PlayerCore.playerLoad(player, null)
-                            player.sendMessage(Bundle(playerData.locale)["player.reloaded"])
-                        } else {
-                            Log.info("failed")
-                        }
-                    }
-                } catch (e: SQLException) {
-                    CrashReport(e)
-                }
+                Log.info(if(Core.settings.getBool("isLobby")) "lobby-enabled" else "lobby-disabled")
             }
             Saveall -> {
                 PluginData.saveAll()
-            }
-            Admin -> {
-                val player = Groups.player.find { p: Playerc -> p.name() == arg[0] }
-                if (player == null) {
-                    Log.warn("player.not-found")
-                } else {
-                    for (data in Permissions.perm) {
-                        if (data.name == "newadmin") {
-                            val p = PlayerCore[player.uuid()]
-                            p.permission = "newadmin"
-                            player.admin(Permissions.isAdmin(p))
-                            Log.info("success")
-                            break
-                        }
-                    }
-                    //Log.warn("use-setperm");
-                }
+                Log.info("system.saved")
             }
             BanSync -> {
                 if (Client.activated) {
@@ -114,7 +72,7 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                 }
             }
             Info -> {
-                val players = Vars.netServer.admins.findByName(arg[0])
+                val players = netServer.admins.findByName(arg[0])
                 if (players.size != 0) {
                     for (p in players) {
                         try {
@@ -172,7 +130,7 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                                         }
                                         Log.info(datatext)
                                     } else {
-                                        Log.info("Player not found!")
+                                        Log.info("player.not-found")
                                     }
                                 }
                             }
@@ -181,30 +139,6 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                         }
                     }
                 }
-            }
-            // TODO 모든 권한 그룹 변경 만들기
-            Setperm -> {
-                val target = Groups.player.find { p: Playerc -> p.name() == arg[0] }
-                val bundle = Bundle()
-                val playerData: PlayerData
-                if (target == null) {
-                    Log.warn(bundle["player.not-found"])
-                    return
-                }
-                for (p in Permissions.perm) {
-                    if (p.name == arg[1]) {
-                        playerData = PlayerCore[target.uuid()]
-                        playerData.permission = arg[1]
-                        Permissions.user[playerData.uuid].asObject()["group"] = arg[1]
-                        Permissions.update(true)
-                        Permissions.reload(false)
-                        target.admin(Permissions.isAdmin(playerData))
-                        Log.info(bundle["success"])
-                        target.sendMessage(Bundle(PlayerCore[target.uuid()].locale).prefix("perm-changed"))
-                        return
-                    }
-                }
-                Log.warn(bundle["perm-group-not-found"])
             }
             Reload -> {
                 Permissions.reload(false)
