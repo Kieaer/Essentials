@@ -3,8 +3,11 @@ package essentials
 import arc.struct.Seq
 import arc.util.serialization.Json
 import essentials.Main.Companion.pluginRoot
+import essentials.event.feature.Vote
+import essentials.event.feature.VoteType
 import essentials.internal.Log
 import mindustry.Vars.world
+import mindustry.gen.Nulls
 import mindustry.gen.Playerc
 import mindustry.world.Tile
 import org.hjson.JsonArray
@@ -20,6 +23,11 @@ object PluginData {
     var playtime = 0L
     val playerData = Seq<PlayerData>()
     var players = Seq<Playerc>()
+
+    var votingClass: Vote? = null
+    var isVoting: Boolean = false
+    var votingType: VoteType? = VoteType.None
+    var votingPlayer: Playerc = Nulls.player
 
     fun removePlayerData(d: PlayerData) {
         playerData.remove(d)

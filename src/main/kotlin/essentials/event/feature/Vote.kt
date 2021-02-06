@@ -4,36 +4,30 @@ import arc.Core
 import arc.Events
 import arc.struct.Seq
 import arc.util.Time
-import essentials.data.PlayerCore
 import essentials.PluginData
-import essentials.event.feature.Vote.VoteType.*
+import essentials.data.PlayerCore
+import essentials.eof.sendMessage
+import essentials.event.feature.VoteType.*
+import essentials.event.feature.VoteType.Map
 import essentials.internal.Bundle
 import essentials.internal.Log
 import essentials.internal.Log.LogType
 import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.game.EventType.GameOverEvent
-import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
-import mindustry.gen.Nulls
 import mindustry.gen.Playerc
-import mindustry.maps.Map
 import mindustry.net.Packets
-import java.lang.Thread.currentThread
-import java.util.concurrent.TimeUnit
 
-object Vote {
-    lateinit var player: Playerc
-    lateinit var type: VoteType
-    lateinit var parameters: Array<Any>
+class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
     lateinit var target: Playerc
 
     var voting = false
     var require = 0
     var amount = 0
-    var map : Map? = null
+    var map : mindustry.maps.Map? = null
 
     val voted = Seq<String>()
 
@@ -50,31 +44,36 @@ object Vote {
                 Tool.sendMessageAll("vote.suggester-name", player.name())
                 when (type) {
                     Kick -> {
-                        this.target = parameters[0] as Playerc
+                        this.target = arg[0] as Playerc
                         Tool.sendMessageAll("vote.kick", target.name())
                     }
                     Gameover -> Tool.sendMessageAll("vote.gameover")
-                    SkipWave -> {
-                        println(parameters[0])
+                    Skipwave -> {
+                        println(arg[0])
                         amount = try {
-                            parameters[0].toString().toInt()
+                            arg[0].toInt()
                         } catch (ignored: NumberFormatException) {
                             3
                         }
                         Tool.sendMessageAll("vote.skipwave", amount.toString())
                     }
                     Rollback -> Tool.sendMessageAll("vote.rollback")
-                    Gamemode -> if (parameters[0] is Gamemode) {
-                        val gamemode = parameters[0] as Gamemode
-                        Tool.sendMessageAll("vote-gamemode", gamemode.name)
-                    } else {
-                        player.sendMessage("vote.wrong-gamemode")
-                        interrupt()
+                    Map -> {
+                        var map = Vars.maps.all().find { map: mindustry.maps.Map ->
+                            map.name().equals(arg[1].replace('_', ' '), ignoreCase = true) || map.name()
+                                .equals(arg[1], ignoreCase = true)
+                        }
+                        if (map == null) {
+                            map = Vars.maps.all()[arg[1].toInt()]
+                            if (map == null) {
+                                sendMessage(player, bundle.prefix("vote.map.not-found"))
+                                return
+                            }
+                        }
+
+                        Tool.sendMessageAll("vote.map", map.name())
                     }
-                    Maps -> if (parameters[0] is Map) {
-                        map = parameters[0] as Map
-                        Tool.sendMessageAll("vote.map", map!!.name())
-                    }
+                    None -> {}
                 }
                 if(voting) {
                     counting.start()
@@ -92,53 +91,6 @@ object Vote {
         voting = false
     }
 
-    fun reset(){
-        player = Nulls.player
-        type = Gameover
-        parameters = arrayOf()
-        target = Nulls.player
-        voting = false
-        require = 0
-        amount = 0
-        map = null
-
-        counting = Thread {
-            var time = 0
-            while (!currentThread().isInterrupted) {
-                time++
-                if (time >= 60) {
-                    interrupt()
-                } else {
-                    try {
-                        TimeUnit.SECONDS.sleep(1)
-                    } catch (ignored: InterruptedException) {
-                        interrupt()
-                        success(voted.size >= require)
-                    }
-                }
-            }
-        }
-
-        alert = Thread {
-            currentThread().name = "Vote alert timertask"
-            var time = 0
-            while (!currentThread().isInterrupted) {
-                val bundles = arrayOf("vote.count.50", "vote.count.40", "vote.count.30", "vote.count.20", "vote.count.10")
-                if (time <= 4) {
-                    if (Groups.player.size() > 0) {
-                        Tool.sendMessageAll(bundles[time])
-                    }
-                    time++
-                }
-                try {
-                    TimeUnit.SECONDS.sleep(10)
-                } catch (ignored: InterruptedException) {
-                    interrupt()
-                }
-            }
-        }
-    }
-
     private var counting : Thread = Thread()
     private var alert : Thread = Thread()
 
@@ -151,7 +103,7 @@ object Vote {
                     Tool.sendMessageAll("vote.gameover.done")
                     Events.fire(GameOverEvent(Team.crux))
                 }
-                SkipWave -> {
+                Skipwave -> {
                     Log.info("Vote skipwave passed!")
                     Tool.sendMessageAll("vote.skipwave.done")
                     var a = 0
@@ -173,30 +125,24 @@ object Vote {
                     Tool.sendMessageAll("vote.rollback.done")
                     AutoRollback.load()
                 }
-                Gamemode -> {
-                    /*val m = Vars.world.map
-                    val rules = Vars.world.map.rules()
-                    if (rules.attackMode) rules.attackMode = false
-                    Vars.world.loadMap(Vars.world.map, rules)*/
-                }
-                Maps -> {
+                Map -> {
                     Log.info("Vote map passed!")
                     Tool.sendMessageAll("vote.map.done")
                     AutoRollback.load(map)
                     Tool.sendMessageAll("vote.map.done")
                 }
+                None -> {}
             }
         } else {
             when (type) {
                 Gameover -> Tool.sendMessageAll("vote.gameover.fail")
-                SkipWave -> Tool.sendMessageAll("vote.skipwave.fail")
+                Skipwave -> Tool.sendMessageAll("vote.skipwave.fail")
                 Kick -> Tool.sendMessageAll("vote.kick.fail", target.name())
                 Rollback -> Tool.sendMessageAll("vote.rollback.fail")
-                Gamemode -> Tool.sendMessageAll("vote.gamemode.fail")
-                Maps -> Tool.sendMessageAll("vote.map.fail")
+                Map -> Tool.sendMessageAll("vote.map.fail")
+                None -> {}
             }
         }
-        reset()
     }
 
     fun set(uuid: String) {
@@ -211,9 +157,5 @@ object Vote {
             interrupt()
             success(voted.size >= require)
         }
-    }
-
-    enum class VoteType {
-        Gameover, SkipWave, Kick, Rollback, Gamemode, Maps
     }
 }

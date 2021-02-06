@@ -111,7 +111,7 @@ class Main : Plugin() {
                     // config.singleService.shutdownNow(); // 로그 스레드 종료
                     timer.cancel() // 일정 시간마다 실행되는 스레드 종료
                     // 투표 종료
-                    Vote.interrupt()
+                    PluginData.votingClass?.interrupt()
                     PlayerCore.dispose() // DB 연결 종료
                     if (Config.serverEnable) {
                         val servers = Server.list.iterator()

@@ -6,13 +6,18 @@ import arc.struct.Seq
 import arc.util.Strings
 import arc.util.Tmp
 import arc.util.async.Threads
-import essentials.data.Config
-import essentials.data.PlayerCore
 import essentials.PluginData
 import essentials.command.ClientCommand.Command.*
-import essentials.event.feature.RainbowName
+import essentials.data.Config
+import essentials.data.PlayerCore
+import essentials.eof.infoMessage
+import essentials.eof.kick
+import essentials.eof.sendMessage
+import essentials.eof.setPosition
 import essentials.event.feature.Discord
 import essentials.event.feature.Permissions
+import essentials.event.feature.RainbowName
+import essentials.event.feature.VoteType
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
@@ -21,13 +26,11 @@ import exceptions.ClientCommandError
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Weathers
-import mindustry.game.Gamemode
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.gen.Unit
 import mindustry.io.SaveIO
-import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.world.Tile
 import org.hjson.JsonObject
@@ -45,156 +48,121 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
             when (type){
                 Vote -> {
                     if (!Permissions.check(player, "vote") || Core.settings.getBool("isLobby")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
 
-                    if (essentials.event.feature.Vote.voting) {
-                        player.sendMessage(bundle.prefix("vote.in-processing"))
+                    if (PluginData.isVoting) {
+                        sendMessage(player, bundle.prefix("vote.in-processing"))
                         return
                     }
 
-                    essentials.event.feature.Vote.player = player
+                    PluginData.votingPlayer = player
                     when (arg[0]) {
                         "kick" -> {
                             if (arg.size < 2) {
-                                player.sendMessage(bundle["no-parameter"])
+                                sendMessage(player, bundle["no-parameter"])
                                 return
                             }
                             var target = Groups.player.find { p: Playerc -> p.name().equals(arg[1], ignoreCase = true) }
                             try {
                                 if (target == null) target = Groups.player.find { p: Playerc -> p.id() == arg[1].toInt() }
                             } catch (e: NumberFormatException) {
-                                player.sendMessage(bundle.prefix("player.not-found"))
+                                sendMessage(player, bundle.prefix("player.not-found"))
                                 return
                             }
 
                             when {
                                 target == null -> {
-                                    player.sendMessage(bundle.prefix("player.not-found"))
+                                    sendMessage(player, bundle.prefix("player.not-found"))
                                     return
                                 }
                                 target.admin -> {
-                                    player.sendMessage(bundle.prefix("vote.target-admin"))
+                                    sendMessage(player, bundle.prefix("vote.target-admin"))
                                     return
                                 }
                                 target === player -> {
-                                    player.sendMessage(bundle.prefix("vote.target-own"))
+                                    sendMessage(player, bundle.prefix("vote.target-own"))
                                     return
                                 }
                             }
 
-                            essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Kick
-                            essentials.event.feature.Vote.parameters = arrayOf(target, arg[1])
+                            PluginData.votingType = VoteType.Kick
                         }
 
                         "map" -> {
                             if (arg.size < 2) {
-                                player.sendMessage(bundle["no-parameter"])
+                                sendMessage(player, bundle["no-parameter"])
                                 return
                             }
 
-                            var world = Vars.maps.all().find { map: Map -> map.name().equals(arg[1].replace('_', ' '), ignoreCase = true) || map.name().equals(arg[1], ignoreCase = true) }
-                            if (world == null) {
-                                try {
-                                    world = Vars.maps.all()[arg[1].toInt()]
-                                    if (world != null) {
-                                        essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Maps
-                                        essentials.event.feature.Vote.parameters = arrayOf(world)
-                                    } else {
-                                        player.sendMessage(bundle.prefix("vote.map.not-found"))
-                                        return
-                                    }
-                                } catch (ignored: NumberFormatException) {
-                                    player.sendMessage(bundle.prefix("vote.map.not-found"))
-                                    return
-                                }
-                            } else {
-                                essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Maps
-                                essentials.event.feature.Vote.parameters = arrayOf(world)
-                            }
+                            PluginData.votingType = VoteType.Map
                         }
 
                         "gameover" -> {
-                            essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Gameover
-                            essentials.event.feature.Vote.parameters = arrayOf()
+                            PluginData.votingType = VoteType.Gameover
                         }
 
                         "rollback" -> {
                             if (Config.rollback) {
-                                essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Rollback
-                                essentials.event.feature.Vote.parameters = arrayOf()
+                                PluginData.votingType = VoteType.Rollback
                             } else {
-                                player.sendMessage(bundle["vote.rollback.disabled"])
-                                return
-                            }
-                        }
-
-                        "gamemode" -> {
-                            if (arg.size < 2) {
-                                player.sendMessage(bundle["no-parameter"])
-                                return
-                            }
-                            try {
-                                essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.Gamemode
-                                essentials.event.feature.Vote.parameters = arrayOf(Gamemode.valueOf(arg[1]))
-                            } catch (e: IllegalArgumentException) {
-                                player.sendMessage(bundle.prefix("vote.wrong-gamemode"))
+                                sendMessage(player, bundle["vote.rollback.disabled"])
                                 return
                             }
                         }
 
                         "skipwave" -> {
                             if (arg.size != 2) {
-                                player.sendMessage(bundle["no-parameter"])
+                                sendMessage(player, bundle["no-parameter"])
                                 return
                             }
-                            essentials.event.feature.Vote.type = essentials.event.feature.Vote.VoteType.SkipWave
-                            essentials.event.feature.Vote.parameters = arrayOf(arg[1])
+                            PluginData.votingType = VoteType.Skipwave
                         }
 
                         else -> {
                             when (arg[0]) {
-                                "gamemode" -> player.sendMessage(bundle.prefix("vote.list.gamemode"))
-                                "map" -> player.sendMessage(bundle.prefix("vote.map.not-found"))
-                                "kick" -> player.sendMessage(bundle.prefix("vote.kick.parameter"))
-                                else -> player.sendMessage(bundle.prefix("vote.list"))
+                                "gamemode" -> sendMessage(player, bundle.prefix("vote.list.gamemode"))
+                                "map" -> sendMessage(player, bundle.prefix("vote.map.not-found"))
+                                "kick" -> sendMessage(player, bundle.prefix("vote.kick.parameter"))
+                                else -> sendMessage(player, bundle.prefix("vote.list"))
                             }
                             return
                         }
                     }
 
-                    essentials.event.feature.Vote.start()
+                    PluginData.votingClass = essentials.event.feature.Vote(player, PluginData.votingType!!, if (arg.size == 2) arg[1] else "")
+                    PluginData.votingClass!!.start()
                 }
                 Alert -> {
                     if (!Permissions.check(player, "alert")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     if (playerData.alert) {
                         playerData.alert = false
-                        player.sendMessage(Bundle(playerData.locale).prefix("anti-grief.alert.disable"))
+                        sendMessage(player, Bundle(playerData.locale).prefix("anti-grief.alert.disable"))
                     } else {
                         playerData.alert = true
-                        player.sendMessage(Bundle(playerData.locale).prefix("anti-grief.alert.enable"))
+                        sendMessage(player, Bundle(playerData.locale).prefix("anti-grief.alert.enable"))
                     }
                 }
                 Ch -> {
                     if (!Permissions.check(player, "ch")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     playerData.crosschat = !playerData.crosschat
-                    player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.crosschat) "player.crosschat.disable" else "player.crosschat.enabled"))
+                    sendMessage(player, Bundle(playerData.locale).prefix(if (playerData.crosschat) "player.crosschat.disable" else "player.crosschat.enabled"))
 
                 }
                 Changepw -> {
                     if (!Permissions.check(player, "changepw")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
                     if (!Tool.checkPassword(player, playerData.accountid, arg[0], arg[1])) {
-                        player.sendMessage(bundle.prefix("system.account.need-new-password"))
+                        sendMessage(player, bundle.prefix("system.account.need-new-password"))
                         return
                     }
                     try {
                         Class.forName("org.mindrot.jbcrypt.BCrypt")
                         playerData.accountpw = BCrypt.hashpw(arg[0], BCrypt.gensalt(12))
-                        player.sendMessage(bundle.prefix("success"))
+                        sendMessage(player, bundle.prefix("success"))
                     } catch (e: ClassNotFoundException) {
                         CrashReport(e)
                     }
@@ -206,25 +174,25 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 }
                 Color -> {
                     if (!Permissions.check(player, "color")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     playerData.colornick = !playerData.colornick
                     if (playerData.colornick) RainbowName.targets.add(player)
-                    player.sendMessage(Bundle(playerData.locale).prefix(if (playerData.colornick) "feature.colornick.enable" else "feature.colornick.disable"))
+                    sendMessage(player, Bundle(playerData.locale).prefix(if (playerData.colornick) "feature.colornick.enable" else "feature.colornick.disable"))
                 }
                 KillAll -> {
                     if (!Permissions.check(player, "killall")) return
                     for (a in mindustry.game.Team.all.indices) {
                         Groups.unit.each { u: Unit -> if(player.team() != u.team) u.kill() }
                     }
-                    player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("success"))
+                    sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("success"))
                 }
                 Help -> {
                     if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
-                        player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("page-number"))
+                        sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("page-number"))
                         return
                     }
                     val temp = Seq<String>()
-                    for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
+                    for (a in 0..Vars.netServer.clientCommands.commandList.size) {
                         val command = Vars.netServer.clientCommands.commandList[a]
                         if (Permissions.check(player, command.text)) {
                             temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}\n")
@@ -239,7 +207,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     page--
 
                     if (page >= pages || page < 0) {
-                        player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
+                        sendMessage(player, "[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
                         return
                     }
 
@@ -247,11 +215,11 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     for (a in perpage * page until (perpage * (page + 1)).coerceAtMost(temp.size)) {
                         result.append(temp[a])
                     }
-                    player.sendMessage(result.toString().substring(0, result.length - 1))
+                    sendMessage(player, result.toString().substring(0, result.length - 1))
                 }
                 Info -> {
                     if (!Permissions.check(player, "info")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
                     val datatext = """
                 [#DEA82A]${Bundle(playerData.locale)["player.info"]}[]
@@ -277,15 +245,15 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 [green]${bundle["player.pvplosecount"]}[] : ${playerData.pvplosecount}
                 [green]${bundle["player.pvpbreakout"]}[] : ${playerData.pvpbreakout}
                 """.trimIndent()
-                    Call.infoMessage(player.con(), datatext)
+                    infoMessage(player, datatext)
                 }
                 Warp -> {
                     if (!Permissions.check(player, "warp")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
                     val types = arrayOf("zone", "block", "count", "total")
                     if (!listOf(*types).contains(arg[0])) {
-                        player.sendMessage(bundle["system.warp.info"])
+                        sendMessage(player, bundle["system.warp.info"])
                     } else {
                         val type = arg[0]
                         val x = player.tileX()
@@ -310,94 +278,94 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                             arrayOf()
                         }
                         when (type) {
-                            "zone" ->                         //ip size clickable
+                            "zone" -> //ip size clickable
                                 if (parameters.size <= 1) {
-                                    player.sendMessage(bundle.prefix("system.warp.incorrect"))
+                                    sendMessage(player, bundle.prefix("system.warp.incorrect"))
                                 } else {
                                     try {
                                         size = parameters[0].toInt()
                                         clickable = java.lang.Boolean.parseBoolean(parameters[1])
                                     } catch (ignored: NumberFormatException) {
-                                        player.sendMessage(bundle.prefix("system.warp.not-int"))
+                                        sendMessage(player, bundle.prefix("system.warp.not-int"))
                                         return
                                     }
                                     PluginData.warpzones.add(PluginData.WarpZone(name, Vars.world.tile(x, y).pos(), Vars.world.tile(x + size, y + size).pos(), clickable, ip, port))
                                     WarpBorder.thread.clear()
                                     WarpBorder.start()
-                                    player.sendMessage(bundle.prefix("system.warp.added"))
+                                    sendMessage(player, bundle.prefix("system.warp.added"))
                                 }
                             "block" -> if (parameters.isEmpty()) {
-                                player.sendMessage(bundle.prefix("system.warp.incorrect"))
+                                sendMessage(player, bundle.prefix("system.warp.incorrect"))
                             } else {
                                 val t: Tile = Vars.world.tile(x, y)
                                 PluginData.warpblocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
-                                player.sendMessage(bundle.prefix("system.warp.added"))
+                                sendMessage(player, bundle.prefix("system.warp.added"))
                             }
                             "count" -> {
                                 PluginData.warpcounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 0))
-                                player.sendMessage(bundle.prefix("system.warp.added"))
+                                sendMessage(player, bundle.prefix("system.warp.added"))
                             }
                             "total" -> {
                                 PluginData.warptotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 0))
-                                player.sendMessage(bundle.prefix("system.warp.added"))
+                                sendMessage(player, bundle.prefix("system.warp.added"))
                             }
-                            else -> player.sendMessage(bundle.prefix("command.invalid"))
+                            else -> sendMessage(player, bundle.prefix("command.invalid"))
                         }
                     }
                 }
                 KickAll -> {
                     if (!Permissions.check(player, "kickall")) return
                     for (p in Groups.player) {
-                        if (player !== p) Call.kick(p.con, Packets.KickReason.kick)
+                        if (player !== p) kick(p, Packets.KickReason.kick)
                     }
                 }
                 Kill -> {
                     if (!Permissions.check(player, "kill")) return
                     if (arg.isEmpty()) {
-                        player.dead()
+                        player.unit().kill()
                     } else {
                         val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
                         if (other == null) {
-                            player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("player.not-found"))
+                            sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("player.not-found"))
                         } else {
-                            other.dead()
+                            other.unit().kill()
                         }
                     }
                 }
                 Login -> {
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     if (Config.loginEnable) {
                         if (playerData.error) {
                             if (PlayerCore.login(arg[0], arg[1])) {
                                 if (PlayerCore.playerLoad(player, arg[0])) {
-                                    player.sendMessage(Bundle(playerData.locale).prefix("system.login.success"))
+                                    sendMessage(player, Bundle(playerData.locale).prefix("system.login.success"))
                                 }
                             } else {
-                                player.sendMessage("[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!")
+                                sendMessage(player, "[green][EssentialPlayer] [scarlet]Login failed/로그인 실패!!")
                             }
                         } else {
                             if (Config.passwordMethod == "mixed") {
                                 if (PlayerCore.login(arg[0], arg[1])) Call.connect(player.con(), PluginData.serverIP, 7060)
                             } else {
-                                player.sendMessage("[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.")
+                                sendMessage(player, "[green][EssentialPlayer] [scarlet]You're already logged./이미 로그인한 상태입니다.")
                             }
                         }
                     } else {
-                        player.sendMessage(Bundle(playerData.locale).prefix("system.login.disabled"))
+                        sendMessage(player, Bundle(playerData.locale).prefix("system.login.disabled"))
                     }
                 }
                 Me -> {
                     if (!Permissions.check(player, "me")) return
-                    Call.sendMessage("[orange]*[] " + player.name() + "[white] : " + arg[0])
+                    sendMessage("[orange]*[] " + player.name() + "[white] : " + arg[0])
                 }
                 Motd -> {
                     if (!Permissions.check(player, "motd")) return
-                    val motd = Tool.getMotd(PlayerCore[player.uuid()].locale)
+                    val motd = Tool.getMotd(PlayerCore[uuid].locale)
                     val count = motd.split("\r\n|\r|\n").toTypedArray().size
                     if (count > 10) {
-                        Call.infoMessage(player.con(), motd)
+                        infoMessage(player, motd)
                     } else {
-                        player.sendMessage(motd)
+                        sendMessage(player, motd)
                     }
                 }
                 Players -> {
@@ -408,14 +376,14 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         abs(Strings.parseInt(arg[0]))
                     } else 1
 
-                    player.sendMessage("Result is" + abs(Strings.parseInt(arg[0])))
+                    sendMessage(player, "Result is" + abs(Strings.parseInt(arg[0])))
 
                     val pages = if (Mathf.ceil(Groups.player.size().toFloat() / 6) < 1.0) {
                         Mathf.ceil(Groups.player.size().toFloat() / 6)
                     } else 1
 
                     if (pages < page || page != 0) {
-                        player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
+                        sendMessage(player, "[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
                         return
                     }
 
@@ -430,36 +398,36 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         build.append("[gray]").append(buf.get(a).id()).append("[] ").append(buf.get(a).name()).append("\n")
                     }
 
-                    player.sendMessage(build.toString())
+                    sendMessage(player, build.toString())
                 }
                 Save -> {
                     if (!Permissions.check(player, "save")) return
                     val file = Vars.saveDirectory.child(Config.slotNumber.toString() + "." + Vars.saveExtension)
                     SaveIO.save(file)
-                    player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("system.map-saved"))
+                    sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("system.map-saved"))
                 }
                 R -> {
                     if (!Permissions.check(player, "r")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
                     val target = Groups.player.find { p: Playerc -> p.name().contains(arg[0]) }
                     if (target != null) {
-                        target.sendMessage("[orange]DM [sky]" + playerData.name + " [green]>> [white]" + arg[1])
-                        player.sendMessage("[cyan]DM [sky]" + target.name + " [green]>> [white]" + arg[1])
+                        sendMessage(target, "[orange]DM [sky]" + playerData.name + " [green]>> [white]" + arg[1])
+                        sendMessage(player, "[cyan]DM [sky]" + target.name + " [green]>> [white]" + arg[1])
                     } else {
-                        player.sendMessage(bundle["player.not-found"])
+                        sendMessage(player, bundle["player.not-found"])
                     }
                 }
                 Reset -> {
                     if (!Permissions.check(player, "reset")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
                     when (arg[0]) {
                         "zone" -> {
                             var a = 0
                             while (a < PluginData.warpzones.size) {
                                 if (arg.size != 2) {
-                                    player.sendMessage(bundle.prefix("no-parameter"))
+                                    sendMessage(player, bundle.prefix("no-parameter"))
                                     return
                                 }
                                 if (arg[1] == PluginData.warpzones[a].ip) {
@@ -469,7 +437,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                     }
                                     WarpBorder.thread.clear()
                                     WarpBorder.start()
-                                    player.sendMessage(bundle.prefix("success"))
+                                    sendMessage(player, bundle.prefix("success"))
                                     break
                                 }
                                 a++
@@ -477,17 +445,17 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         }
                         "count" -> {
                             PluginData.warpcounts.clear()
-                            player.sendMessage(bundle.prefix("system.warp.reset", "count"))
+                            sendMessage(player, bundle.prefix("system.warp.reset", "count"))
                         }
                         "total" -> {
                             PluginData.warptotals.clear()
-                            player.sendMessage(bundle.prefix("system.warp.reset", "total"))
+                            sendMessage(player, bundle.prefix("system.warp.reset", "total"))
                         }
                         "block" -> {
                             PluginData.warpblocks.clear()
-                            player.sendMessage(bundle.prefix("system.warp.reset", "block"))
+                            sendMessage(player, bundle.prefix("system.warp.reset", "block"))
                         }
-                        else -> player.sendMessage(bundle.prefix("command.invalid"))
+                        else -> sendMessage(player, bundle.prefix("command.invalid"))
                     }
                 }
                 Router -> {
@@ -640,39 +608,39 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     if (Config.loginEnable) {
                         when (Config.passwordMethod) {
                             "discord" -> {
-                                player.sendMessage("""Join discord and use !register command!${Config.discordLink}""".trimIndent())
+                                sendMessage(player, """Join discord and use !register command!${Config.discordLink}""".trimIndent())
                                 if (!Discord.pins.containsKey(player.name())) Discord.queue(player)
                             }
                             "password" -> {
                                 val lc = Tool.getGeo(player)
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, arg[0], hash, false)
+                                val register = PlayerCore.register(player.name(), uuid, lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, arg[0], hash, false)
                                 if (register) {
                                     PlayerCore.playerLoad(player, null)
-                                    player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
+                                    sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("register-success"))
                                 } else {
-                                    player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!")
+                                    sendMessage(player, "[green][Essentials] [scarlet]Register failed/계정 등록 실패!")
                                 }
                             }
                             else -> {
                                 val lc = Tool.getGeo(player)
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(player.name(), player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, arg[0], hash, false)
+                                val register = PlayerCore.register(player.name(), uuid, lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", 0L, arg[0], hash, false)
                                 if (register) {
                                     PlayerCore.playerLoad(player, null)
-                                    player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("register-success"))
+                                    sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("register-success"))
                                 } else {
-                                    player.sendMessage("[green][Essentials] [scarlet]Register failed/계정 등록 실패!")
+                                    sendMessage(player, "[green][Essentials] [scarlet]Register failed/계정 등록 실패!")
                                 }
                             }
                         }
                     } else {
-                        player.sendMessage(Bundle(Config.locale).prefix("system.login.disabled"))
+                        sendMessage(player, Bundle(Config.locale).prefix("system.login.disabled"))
                     }
                 }
                 Spawn -> {
                     if (!Permissions.check(player, "spawn")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
                     val targetUnit = Tool.getUnitByName(arg[0])
                     val names = StringBuilder()
@@ -680,28 +648,27 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     names.setLength(max(names.length - 2, 0));
 
                     if (targetUnit == null) {
-                        player.sendMessage(bundle.prefix("system.mob.not-found", names.toString()))
+                        sendMessage(player, bundle.prefix("system.mob.not-found", names.toString()))
                         return
                     }
-                    val count: Int
-                    count = try {
+                    val count: Int = try {
                         arg[1].toInt()
                     } catch (e: NumberFormatException) {
-                        player.sendMessage(bundle.prefix("system.mob.not-number"))
+                        sendMessage(player, bundle.prefix("system.mob.not-number"))
                         return
                     }
                     if (Config.spawnLimit == count) {
-                        player.sendMessage(bundle.prefix("spawn-limit"))
+                        sendMessage(player, bundle.prefix("spawn-limit"))
                         return
                     }
                     var targetPlayer = if (arg.size > 3) Tool.findPlayer(arg[3]) else player
                     if (targetPlayer == null) {
-                        player.sendMessage(bundle.prefix("player.not-found"))
+                        sendMessage(player, bundle.prefix("player.not-found"))
                         targetPlayer = player
                     }
                     var targetTeam = if (arg.size > 2) Tool.getTeamByName(arg[2]) else targetPlayer.team()
                     if (targetTeam == null) {
-                        player.sendMessage(bundle.prefix("team-not-found"))
+                        sendMessage(player, bundle.prefix("team-not-found"))
                         targetTeam = targetPlayer.team()
                     }
                     var i = 0
@@ -714,11 +681,11 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 }
                 Setperm -> {
                     if (!Permissions.check(player, "setperm")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
                     val target = Groups.player.find { p: Playerc -> p.name() == arg[0] }
                     if (target == null) {
-                        player.sendMessage(bundle.prefix("player.not-found"))
+                        sendMessage(player, bundle.prefix("player.not-found"))
                         return
                     }
                     for (permission in Permissions.perm) {
@@ -727,26 +694,26 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                             data.permission = arg[1]
                             Permissions.user[data.uuid].asObject()["group"] = arg[1]
                             Permissions.update(true)
-                            player.sendMessage(bundle.prefix("success"))
+                            sendMessage(player, bundle.prefix("success"))
                             target.sendMessage(Bundle(data.locale).prefix("perm-changed"))
                             return
                         }
                     }
-                    player.sendMessage(Bundle(playerData.locale).prefix("perm-group-not-found"))
+                    sendMessage(player, Bundle(playerData.locale).prefix("perm-group-not-found"))
                 }
                 Status -> {
                     if (!Permissions.check(player, "status")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
-                    player.sendMessage(bundle.prefix("server.status"))
-                    player.sendMessage("[#2B60DE]========================================[]")
+                    sendMessage(player, bundle.prefix("server.status"))
+                    sendMessage(player, "[#2B60DE]========================================[]")
                     val fps = Core.graphics.framesPerSecond
                     val bans = Vars.netServer.admins.banned.size
                     val ipbans = Vars.netServer.admins.bannedIPs.size
                     val bancount = bans + ipbans
                     val playtime = Tool.longToTime(PluginData.playtime)
                     val uptime = Tool.longToTime(PluginData.uptime)
-                    player.sendMessage(bundle["server.status.result", fps.toString(), Groups.player.size().toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginData.pluginVersion])
+                    sendMessage(player, bundle["server.status.result", fps.toString(), Groups.player.size().toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginData.pluginVersion])
                     val result = JsonObject()
                     for (p in PluginData.playerData) {
                         if (result[p.locale.getDisplayCountry(playerData.locale)] == null) {
@@ -763,11 +730,11 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     """.trimIndent()
                         s.append(d)
                     }
-                    player.sendMessage(if (s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString())
+                    sendMessage(player, if (s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString())
                 }
                 Team -> {
                     if (!Permissions.check(player, "team")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     when (arg[0]) {
                         "derelict" -> player.team(mindustry.game.Team.derelict)
                         "sharded" -> player.team(mindustry.game.Team.sharded)
@@ -775,12 +742,12 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         "green" -> player.team(mindustry.game.Team.green)
                         "purple" -> player.team(mindustry.game.Team.purple)
                         "blue" -> player.team(mindustry.game.Team.blue)
-                        else -> player.sendMessage(Bundle(playerData.locale).prefix("command.team"))
+                        else -> sendMessage(player, Bundle(playerData.locale).prefix("command.team"))
                     }
                 }
                 Ban -> {
                     if (!Permissions.check(player, "tempban")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     var other: Playerc? = null
                     for (p in Groups.player) {
                         val result = p.name.contains(arg[0])
@@ -791,32 +758,27 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     if (other != null) {
                         val bantime = System.currentTimeMillis() + 1000 * 60 * (arg[1].toInt())
                         PlayerCore.ban(other, bantime, arg[2])
-                        Call.kick(other.con(), "Temp kicked")
+                        kick(other, "Temp kicked")
                         for (p in Groups.player) {
                             val target = PlayerCore[p.uuid()]
-                            p.sendMessage(Bundle(target.locale).prefix("account.ban.temp", other.name(), player.name()))
+                            sendMessage(p, Bundle(target.locale).prefix("account.ban.temp", other.name(), player.name()))
                         }
                     } else {
-                        player.sendMessage(Bundle(playerData.locale).prefix("player.not-found"))
+                        sendMessage(player, Bundle(playerData.locale).prefix("player.not-found"))
                     }
                 }
                 Time -> {
                     if (!Permissions.check(player, "time")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val now = LocalDateTime.now()
                     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                     val nowString = now.format(dateTimeFormatter)
-                    player.sendMessage(Bundle(playerData.locale).prefix("servertime", nowString))
+                    sendMessage(player, Bundle(playerData.locale).prefix("servertime", nowString))
                 }
                 Tp -> {
                     if (!Permissions.check(player, "tp")) return
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     val bundle = Bundle(playerData.locale)
-                    /*// TODO 모바일 유저 확인
-                    if (player.isMobile) {
-                        player.sendMessage(bundle.prefix("tp-not-support"))
-                        return
-                    }*/
                     var other: Playerc? = null
                     for (p in Groups.player) {
                         val result = p.name.contains(arg[0])
@@ -825,15 +787,15 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         }
                     }
                     if (other == null) {
-                        player.sendMessage(bundle.prefix("player.not-found"))
+                        sendMessage(player, bundle.prefix("player.not-found"))
                         return
                     }
-                    player.set(other.x, other.y)
+                    setPosition(player, other.x, other.y)
                 }
                 Weather -> {
                     if (!Permissions.check(player, "weather")) return
                     if (arg.isNullOrEmpty() || arg[0].toIntOrNull() !is Int) {
-                        player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("command-invalid"))
+                        sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("command-invalid"))
                         return
                     }
 
@@ -846,18 +808,18 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         "sporestorm" -> Call.createWeather(Weathers.sporestorm, 1f, time, Tmp.v1.x, Tmp.v1.y)
                         else -> return
                     }
-                    player.sendMessage(Bundle(PlayerCore[player.uuid()].locale).prefix("success"))
+                    sendMessage(player, Bundle(PlayerCore[uuid].locale).prefix("success"))
                 }
                 Mute -> {
                     if (!Permissions.check(player, "mute")) return
                     val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
-                    val playerData = PlayerCore[player.uuid()]
+                    val playerData = PlayerCore[uuid]
                     if (other == null) {
-                        player.sendMessage(Bundle(playerData.locale).prefix("player.not-found"))
+                        sendMessage(player, Bundle(playerData.locale).prefix("player.not-found"))
                     } else {
                         val target = PlayerCore[other.uuid()]
                         target.mute = !target.mute
-                        player.sendMessage(Bundle(target.locale).prefix(if (target.mute) "player.muted" else "player.unmute", target.name))
+                        sendMessage(player, Bundle(target.locale).prefix(if (target.mute) "player.muted" else "player.unmute", target.name))
                     }
                 }
                 Maps -> {
@@ -868,14 +830,14 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     val pages = Mathf.ceil(maplist.size.toFloat() / 6)
                     page--
                     if (page > pages || page < 0) {
-                        player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
+                        sendMessage(player, "[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
                         return
                     }
                     build.append("[green]==[white] Server maps page ").append(page).append("/").append(pages).append(" [green]==[white]\n")
                     for (a in 6 * page until (6 * (page + 1)).coerceAtMost(maplist.size)) {
                         build.append("[gray]").append(a).append("[] ").append(maplist[a].name()).append("\n")
                     }
-                    player.sendMessage(build.toString())
+                    sendMessage(player, build.toString())
                 }
                 Suicide -> {
                     if (!Permissions.check(player, "suicide")) return

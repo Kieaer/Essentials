@@ -1,11 +1,12 @@
 package essentials.internal
 
+import arc.Core
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
-import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
+import essentials.data.Config
 import essentials.data.PlayerCore
 import mindustry.Vars.*
 import mindustry.content.Blocks
@@ -113,10 +114,12 @@ object Tool {
     }
 
     fun sendMessageAll(value: String, vararg parameter: String?) {
-        for (p in Groups.player) {
-            val playerData = PlayerCore[p.uuid()]
-            if (!playerData.error) {
-                p.sendMessage(Bundle(playerData.locale).prefix(value, *parameter))
+        Core.app.post {
+            for (p in Groups.player) {
+                val playerData = PlayerCore[p.uuid()]
+                if (!playerData.error) {
+                    p.sendMessage(Bundle(playerData.locale).prefix(value, *parameter))
+                }
             }
         }
     }
