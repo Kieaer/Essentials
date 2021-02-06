@@ -192,7 +192,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         return
                     }
                     val temp = Seq<String>()
-                    for (a in 0..Vars.netServer.clientCommands.commandList.size) {
+                    for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
                         val command = Vars.netServer.clientCommands.commandList[a]
                         if (Permissions.check(player, command.text)) {
                             temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}\n")

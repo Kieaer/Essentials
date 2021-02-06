@@ -2,16 +2,16 @@ package essentials.event
 
 import arc.Core
 import arc.Events
-import essentials.*
 import essentials.Main.Companion.mainThread
 import essentials.Main.Companion.pluginRoot
 import essentials.Main.Companion.timer
+import essentials.PlayerData
+import essentials.PluginData
 import essentials.data.Config
 import essentials.data.PlayerCore
-import essentials.external.IpAddressMatcher
 import essentials.event.feature.Discord
 import essentials.event.feature.Permissions
-import essentials.event.feature.Vote
+import essentials.external.IpAddressMatcher
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -309,11 +309,11 @@ object Event {
             if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>")
             if (!playerData.error) {
                 if (!e.message.startsWith("/")) {
-                    if (e.message == "y" && Vote.voting) {
-                        if (Vote.voted.contains(e.player.uuid()) || Vote.player == e.player) {
+                    if (e.message == "y" && PluginData.votingClass != null && PluginData.isVoting) {
+                        if (PluginData.votingClass!!.voted.contains(e.player.uuid()) || PluginData.votingPlayer == e.player) {
                             e.player.sendMessage(bundle["vote.already-voted"])
                         } else {
-                            Vote.set(e.player.uuid())
+                            PluginData.votingClass!!.voted.add(e.player.uuid())
                         }
                     } else {
                         if (!playerData.mute) {
