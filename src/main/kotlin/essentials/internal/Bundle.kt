@@ -39,4 +39,20 @@ class Bundle {
             key
         }
     }
+
+    operator fun get(key: String): String {
+        return try {
+            MessageFormat.format(resource.getString(key))
+        } catch (e: MissingResourceException) {
+            key
+        }
+    }
+
+    operator fun get(key: String, vararg parameter: Array<out String?>): String {
+        return try {
+            MessageFormat.format(Config.prefix + resource.getString(key), *parameter)
+        } catch (e: MissingResourceException) {
+            key
+        }
+    }
 }

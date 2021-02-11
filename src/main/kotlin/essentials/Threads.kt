@@ -4,7 +4,8 @@ import arc.Core
 import arc.struct.ArrayMap
 import arc.struct.Seq
 import essentials.data.Config
-import essentials.data.PlayerCore
+import essentials.eof.kick
+import essentials.eof.sendMessage
 import essentials.external.PingHost
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
@@ -134,8 +135,8 @@ object Threads : Runnable {
                 }
 
                 for (p in Groups.player) {
-                    val playerData = PlayerCore[p.uuid()]
-                    if (playerData.error) {
+                    val playerData = PluginData[p.uuid()]
+                    if (!playerData.isNull) {
                         val message: String = if (Config.passwordMethod == "discord") {
                             """
                                 ${Bundle(playerData.locale)["system.login.require.discord"]}
@@ -144,7 +145,7 @@ object Threads : Runnable {
                         } else {
                             Bundle(playerData.locale)["system.login.require.password"]
                         }
-                        p.sendMessage(message)
+                        sendMessage(p, message)
                     }
                 }
 
@@ -153,10 +154,10 @@ object Threads : Runnable {
                 Thread.currentThread().interrupt()
             } catch (e: Exception) {
                 for (p in Groups.player) {
-                    if (PlayerCore[p.uuid()].login) {
-                        Call.kick(p.con, Bundle(PlayerCore[p.uuid()].locale)["plugin-error-kick"])
+                    if (!PluginData[p.uuid()].isNull) {
+                        kick(p, Bundle(PluginData[p.uuid()].locale)["plugin-error-kick"])
                     } else {
-                        Call.kick(p.con, Bundle(Locale.ENGLISH)["plugin-error-kick"])
+                        kick(p, Bundle(Locale.ENGLISH)["plugin-error-kick"])
                     }
                 }
                 CrashReport(e)

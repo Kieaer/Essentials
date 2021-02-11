@@ -14,7 +14,7 @@ import kotlin.test.assertNotNull
 
 object PluginTestDB {
     var r = SecureRandom()
-    fun randomString(length: Int): String {
+    private fun randomString(length: Int): String {
         val leftLimit = 48
         val rightLimit = 122
         return r.ints(leftLimit, rightLimit + 1)

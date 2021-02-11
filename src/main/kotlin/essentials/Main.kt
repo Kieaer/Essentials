@@ -158,7 +158,7 @@ class Main : Plugin() {
         // 비 로그인 유저 통제
         netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
-            return@addActionFilter PlayerCore[e.player.uuid()].login
+            return@addActionFilter !PluginData[e.player.uuid()].isNull
         }
     }
 

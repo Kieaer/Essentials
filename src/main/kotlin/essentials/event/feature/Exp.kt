@@ -1,13 +1,11 @@
 package essentials.event.feature
 
-import essentials.data.Config
 import essentials.PlayerData
-import essentials.internal.Bundle
-import mindustry.gen.Call
+import essentials.data.Config
 import kotlin.math.floor
 import kotlin.math.pow
 
-class Exp(target: PlayerData) {
+object Exp {
     private val baseXP = Config.baseXp
     private val exponent = Config.exponent
     private fun calcXpForLevel(level: Int): Double {
@@ -31,17 +29,15 @@ class Exp(target: PlayerData) {
         return level
     }
 
-    init {
+    operator fun get(target: PlayerData): String {
         val currentlevel = target.level
         val max = calculateFullTargetXp(currentlevel).toInt()
         val xp = target.exp
         val levelXp = max - xp
         val level = calculateLevel(xp.toDouble())
         val reqexp = floor(max.toDouble()).toInt()
-        val reqtotalexp = xp.toString() + "(" + floor(levelXp.toDouble()).toInt() + ") / " + floor(max.toDouble()).toInt()
         target.reqexp = reqexp
         target.level = level
-        target.reqtotalexp = reqtotalexp
-        if (currentlevel < level && currentlevel > Config.alarmLevel && Config.levelUpAlarm) Call.infoToast(Bundle(target.locale)["player.levelup", target.name, level.toString()], 600f)
+        return xp.toString() + "(" + floor(levelXp.toDouble()).toInt() + ") / " + floor(max.toDouble()).toInt()
     }
 }

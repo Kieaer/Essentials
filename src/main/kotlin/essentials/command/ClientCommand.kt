@@ -10,7 +10,7 @@ object ClientCommand {
     lateinit var commands: CommandHandler
 
     fun register(handler: CommandHandler) {
-        val service: ExecutorService = Executors.newFixedThreadPool(6)
+        val service: ExecutorService = Executors.newCachedThreadPool()
 
         if(Config.vote) {
             handler.removeCommand("votekick")
@@ -21,9 +21,6 @@ object ClientCommand {
         }
         handler.removeCommand("help")
 
-        handler.register("alert", "Turn on/off alerts"){ arg: Array<String>, player: Playerc ->
-            service.submit(ClientCommandThread(Command.Login, arg, player))
-        }
         handler.register("ch", "Send chat to another server."){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Ch, arg, player))
         }
@@ -48,9 +45,6 @@ object ClientCommand {
         handler.register("warp", "<zone/block/count/total> [ip] [parameters...]", "Create a server-to-server warp zone."){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Warp, arg, player))
         }
-        handler.register("kickall", "Kick all players"){ arg: Array<String>, player: Playerc ->
-            service.submit(ClientCommandThread(Command.KickAll, arg, player))
-        }
         handler.register("kill", "[player]", "Kill player."){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Kill, arg, player))
         }
@@ -72,12 +66,6 @@ object ClientCommand {
         handler.register("save", "Auto rollback map early save"){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Save, arg, player))
         }
-        handler.register("r", "<player> [message]", "Send Direct message to target player"){ arg: Array<String>, player: Playerc ->
-            service.submit(ClientCommandThread(Command.R, arg, player))
-        }
-        handler.register("reset", "<zone/count/total/block> [ip]", "Remove a server-to-server warp zone data."){ arg: Array<String>, player: Playerc ->
-            service.submit(ClientCommandThread(Command.Reset, arg, player))
-        }
         handler.register("router", "Router"){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Router, arg, player))
         }
@@ -87,20 +75,11 @@ object ClientCommand {
         handler.register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position"){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Spawn, arg, player))
         }
-        handler.register("setperm", "<player_name> <group>", "Set player permission"){ arg: Array<String>, player: Playerc ->
-            service.submit(ClientCommandThread(Command.Setperm, arg, player))
-        }
         handler.register("status", "Show server status"){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Status, arg, player))
         }
-        handler.register("suicide", "Kill yourself."){ arg: Array<String>, player: Playerc ->
-            service.submit(ClientCommandThread(Command.Suicide, arg, player))
-        }
         handler.register("team", "<team_name>", "Change team"){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Team, arg, player))
-        }
-        handler.register("tempban", "<player> <time> <reason>", "Temporarily ban player. time unit: 1 minute"){ arg: Array<String>, player: Playerc ->
-            service.submit(ClientCommandThread(Command.Ban, arg, player))
         }
         handler.register("time", "Show server time"){ arg: Array<String>, player: Playerc ->
             service.submit(ClientCommandThread(Command.Time, arg, player))
@@ -119,6 +98,6 @@ object ClientCommand {
     }
 
     enum class Command{
-        Vote, Alert, Ch, Changepw, Chars, Color, KillAll, Help, Info, Warp, KickAll, Kill, Login, Me, Motd, Players, Save, R, Reset, Router, Register, Spawn, Setperm, Status, Team, Ban, Time, Tp, Weather, Mute, Maps, Suicide
+        Vote, Ch, Changepw, Chars, Color, KillAll, Help, Info, Warp, Kill, Login, Me, Motd, Players, Save, Router, Register, Spawn, Status, Team, Time, Tp, Weather, Mute, Maps
     }
 }

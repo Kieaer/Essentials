@@ -15,8 +15,8 @@ import org.hjson.JsonObject
 import org.hjson.JsonValue
 
 object PluginData {
-    const val buildVersion = 118
-    const val buildRevision = 0
+    const val buildVersion = 124
+    const val buildRevision = 1
     var serverIP: String = "127.0.0.1"
     var pluginVersion: String? = null
     var uptime = 0L
@@ -26,12 +26,8 @@ object PluginData {
 
     var votingClass: Vote? = null
     var isVoting: Boolean = false
-    var votingType: VoteType? = VoteType.None
+    var votingType: VoteType = VoteType.None
     var votingPlayer: Playerc = Nulls.player
-
-    fun removePlayerData(d: PlayerData) {
-        playerData.remove(d)
-    }
 
     private val json = Json()
 
@@ -46,6 +42,17 @@ object PluginData {
     var warptotals = Seq<WarpTotal>()
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
+
+    operator fun get(uuid: String): PlayerData {
+        for (p in playerData) {
+            if (p.uuid == uuid) return p
+        }
+        return PlayerData()
+    }
+
+    fun removePlayerData(d: PlayerData) {
+        playerData.remove(d)
+    }
 
     fun saveAll() {
         val data = JsonObject()

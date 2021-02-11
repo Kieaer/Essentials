@@ -1,1 +1,1 @@
-To replace this message, edit the [green]motd.txt[] file in the [green]config/mods/Essentials/[] folder.
+Welcome to the server!

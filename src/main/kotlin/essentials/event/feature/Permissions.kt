@@ -1,11 +1,10 @@
 package essentials.event.feature
 
 import arc.Core
-import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
-import essentials.data.PlayerCore
 import essentials.PlayerData
 import essentials.PluginData
+import essentials.data.Config
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -31,7 +30,7 @@ object Permissions {
         obj.add("name", playerData.name)
         obj.add("group", default)
         obj.add("prefix", perm[playerData.permission].asObject().getString("prefix", "%1[orange] >[white] %2"))
-        obj.add("admin", playerData.isAdmin)
+        obj.add("admin", playerData.admin)
         user.add(playerData.uuid, obj)
     }
 
@@ -132,7 +131,7 @@ object Permissions {
                     p.admin(isAdmin(PluginData.playerData.find { d: PlayerData -> d.name == p.name }))
                 }
             } catch (e: PluginException) {
-                Log.err("Permissing parsing: " + CrashReport(e).print())
+                Log.err("Permission parsing: " + CrashReport(e).print())
             }
         } else {
             pluginRoot.child("permission_user.hjson").writeString(JsonObject().toString(Stringify.FORMATTED))
@@ -140,21 +139,18 @@ object Permissions {
     }
 
     fun check(player: Playerc, command: String): Boolean {
-        val p = PlayerCore[player.uuid()]
-        if (!p.error) {
-            val `object` = user[player.uuid()]
-            if (`object` != null) {
-                val obj = `object`.asObject()
-                val size = perm[obj["group"].asString()].asObject()["permission"].asArray().size()
-                for (a in 0 until size) {
-                    val permlevel = perm[obj["group"].asString()].asObject()["permission"].asArray()[a].asString()
-                    if (permlevel == command || permlevel == "ALL") {
-                        return true
-                    }
+        val data = user[player.uuid()]
+        if (data != null) {
+            val obj = data.asObject()
+            val size = perm[obj["group"].asString()].asObject()["permission"].asArray().size()
+            for (a in 0 until size) {
+                val node = perm[obj["group"].asString()].asObject()["permission"].asArray()[a].asString()
+                if (node == command || node == "ALL") {
+                    return true
                 }
-            } else {
-                return false
             }
+        } else {
+            return false
         }
         return false
     }

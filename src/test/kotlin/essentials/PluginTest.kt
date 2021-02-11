@@ -8,9 +8,8 @@ import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.util.CommandHandler
 import essentials.Main.Companion.pluginRoot
+import essentials.PluginData.votingClass
 import essentials.data.Config
-import essentials.data.PlayerCore
-import essentials.event.feature.Vote
 import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
@@ -153,22 +152,10 @@ class PluginTest {
     }
 
     @Test
-    fun server_edit(){
-        serverHandler.handleMessage("edit " + player.uuid() + " lastchat Manually")
-        assertEquals("Manually", PlayerCore[player.uuid()].lastchat)
-    }
-
-    @Test
     fun server_gendocs(){
         pluginRoot.child("README.md").delete()
         serverHandler.handleMessage("gendocs")
         assertTrue(pluginRoot.child("README.md").exists())
-    }
-
-    @Test
-    fun server_admin(){
-        serverHandler.handleMessage("admin " + player.name)
-        assertEquals("newadmin", PlayerCore[player.uuid()].permission)
     }
 
     @Test
@@ -183,32 +170,20 @@ class PluginTest {
     }
 
     @Test
-    fun server_setperm(){
-        serverHandler.handleMessage("setperm " + player.name + " owner")
-        assertEquals("owner", PlayerCore[player.uuid()].permission)
-    }
-
-    @Test
     fun server_reload(){
         serverHandler.handleMessage("reload")
     }
 
     @Test
-    fun client_alert(){
-        clientHandler.handleMessage("/alert", player)
-        assertTrue(PlayerCore[player.uuid()].alert)
-    }
-
-    @Test
     fun client_ch(){
         clientHandler.handleMessage("/ch", player)
-        assertTrue(PlayerCore[player.uuid()].crosschat)
+        assertTrue(PluginData[player.uuid()].crosschat)
     }
 
     @Test
     fun client_changepw(){
         clientHandler.handleMessage("/changepw testpw123 testpw123", player)
-        assertNotEquals("none", PlayerCore[player.uuid()].accountpw)
+        assertNotEquals("none", PluginData[player.uuid()].accountpw)
     }
 
     @Test
@@ -220,7 +195,7 @@ class PluginTest {
     @Test
     fun client_color() {
         clientHandler.handleMessage("/color", player)
-        assertTrue(PlayerCore[player.uuid()].colornick)
+        assertTrue(PluginData[player.uuid()].colornick)
     }
 
     @Test
@@ -282,15 +257,7 @@ class PluginTest {
         clientHandler.handleMessage("/save", player)
     }
 
-    @Test
-    fun client_r(){
-        val dummy = PluginTestDB.createNewPlayer(false)
-        clientHandler.handleMessage("/r " + dummy.name + " Hi!", player)
-
-        Events.fire(PlayerLeave(dummy))
-    }
-
-    @Test
+    /*@Test
     fun client_reset(){
         clientHandler.handleMessage("/reset count mindustry.indielm.com", player)
         assertEquals(0, PluginData.warpcounts.size.toLong())
@@ -298,28 +265,11 @@ class PluginTest {
         assertEquals(0, PluginData.warpzones.size.toLong())
         clientHandler.handleMessage("/reset total", player)
         assertEquals(0, PluginData.warptotals.size.toLong())
-    }
+    }*/
 
     @Test
     fun client_spawn(){
         clientHandler.handleMessage("/spawn dagger 5 crux", player)
-    }
-
-    @Test
-    fun client_setperm(){
-        clientHandler.handleMessage("/setperm " + player.name + " newadmin", player)
-        assertEquals("newadmin", PlayerCore[player.uuid()].permission)
-    }
-
-    @Test
-    fun client_spawncore(){
-        if(state.map.name() == "Glacier"){
-            player.set(648f,312f)
-        } else {
-            player.set(912f,720f)
-        }
-        clientHandler.handleMessage("/spawn-core small", player)
-        assertSame(Blocks.coreShard, player.tileOn().block())
     }
 
     @Test
@@ -402,15 +352,6 @@ class PluginTest {
     }
 
     @Test
-    fun client_tempban() {
-        val dummy = PluginTestDB.createNewPlayer(true)
-        clientHandler.handleMessage("/tempban " + dummy.name + " 10 test", player)
-        assertNotEquals(0L, PlayerCore[dummy.uuid()].bantime)
-
-        Events.fire(PlayerLeave(dummy))
-    }
-
-    @Test
     fun client_time() {
         clientHandler.handleMessage("/time", player)
     }
@@ -452,7 +393,7 @@ class PluginTest {
         println("== votekick")
         clientHandler.handleMessage("/vote kick " + dummy3.id, player)
         sleep(500)
-        assertTrue(Vote.voting)
+        assertTrue(votingClass!!.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -463,12 +404,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.voting)
+        assertFalse(votingClass!!.voting)
 
         println("== vote gameover")
         clientHandler.handleMessage("/vote gameover", player)
         sleep(500)
-        assertTrue(Vote.voting)
+        assertTrue(votingClass!!.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -479,12 +420,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.voting)
+        assertFalse(votingClass!!.voting)
 
         println("== vote skipwave")
         clientHandler.handleMessage("/vote skipwave 5", player)
         sleep(500)
-        assertTrue(Vote.voting)
+        assertTrue(votingClass!!.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -495,13 +436,13 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.voting)
+        assertFalse(votingClass!!.voting)
 
         println("== vote rollback")
         serverHandler.handleMessage("save 1000")
         clientHandler.handleMessage("/vote rollback", player)
         sleep(500)
-        assertTrue(Vote.voting)
+        assertTrue(votingClass!!.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -512,12 +453,12 @@ class PluginTest {
         sleep(100)
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
-        assertFalse(Vote.voting)
+        assertFalse(votingClass!!.voting)
 
         println("== votemap")
         clientHandler.handleMessage("/vote map Glacier", player)
         sleep(500)
-        assertTrue(Vote.voting)
+        assertTrue(votingClass!!.voting)
         Events.fire(PlayerChatEvent(player, "y"))
         sleep(100)
         Events.fire(PlayerChatEvent(dummy1, "y"))
@@ -529,7 +470,7 @@ class PluginTest {
         Events.fire(PlayerChatEvent(dummy5, "y"))
         sleep(1000)
         assertEquals("Glacier", state.map.name())
-        assertFalse(Vote.voting)
+        assertFalse(votingClass!!.voting)
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))
@@ -554,7 +495,7 @@ class PluginTest {
     fun client_mute() {
         val dummy = PluginTestDB.createNewPlayer(true)
         clientHandler.handleMessage("/mute " + dummy.name, player)
-        assertTrue(PlayerCore[dummy.uuid()].mute)
+        assertTrue(PluginData[dummy.uuid()].mute)
         Events.fire(PlayerLeave(dummy))
     }
 
@@ -573,7 +514,7 @@ class PluginTest {
         state.rules.attackMode = true
         Call.setRules(state.rules)
         Events.fire(GameOverEvent(player.team()))
-        assertEquals(1, PlayerCore[player.uuid()].attackclear)
+        assertEquals(1, PluginData[player.uuid()].attackclear)
     }
 
     @Test
@@ -603,7 +544,7 @@ class PluginTest {
         Events.fire(PlayerLeave(dummy))
     }
 
-    @Test
+    /*@Test
     fun event_PlayerJoin_Leave(){
         val dummy1 = PluginTestDB.createNewPlayer(false)
         Events.fire(PlayerJoin(dummy1))
@@ -613,14 +554,14 @@ class PluginTest {
         val dummy2 = PluginTestDB.createNewPlayer(false)
         Events.fire(PlayerJoin(dummy2))
         clientHandler.handleMessage("/login hello testas123", dummy2)
-        assertTrue(PlayerCore[dummy2.uuid()].login)
+        assertTrue(PluginData[dummy2.uuid()].login)
 
         Events.fire(PlayerLeave(dummy2))
-        assertTrue(PlayerCore[dummy2.uuid()].error)
+        assertTrue(PluginData[dummy2.uuid()].error)
 
         Events.fire(PlayerLeave(dummy1))
         Events.fire(PlayerLeave(dummy2))
-    }
+    }*/
 
     @Test
     fun event_PlayerChat(){

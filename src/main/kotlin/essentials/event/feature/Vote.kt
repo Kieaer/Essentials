@@ -1,11 +1,10 @@
 package essentials.event.feature
 
-import arc.Core
 import arc.Events
 import arc.struct.Seq
 import arc.util.Time
 import essentials.PluginData
-import essentials.data.PlayerCore
+import essentials.eof.kick
 import essentials.eof.sendMessage
 import essentials.event.feature.VoteType.*
 import essentials.event.feature.VoteType.Map
@@ -16,7 +15,6 @@ import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
-import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.net.Packets
@@ -32,7 +30,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
     val voted = Seq<String>()
 
     fun start() {
-        val bundle = Bundle(PlayerCore[player.uuid()].locale)
+        val bundle = Bundle(PluginData[player.uuid()].locale)
 
         if(!voting) {
             voting = true
@@ -114,10 +112,10 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                 }
                 Kick -> {
                     Log.info("Vote kick passed!")
-                    PlayerCore[target.uuid()].kickcount = PlayerCore[target.uuid()].kickcount + 1
+                    PluginData[target.uuid()].kickcount++
                     Tool.sendMessageAll("vote.kick.done", target.name())
-                    Core.app.post { target.info.lastKicked = Time.millis() + 30 * 60 * 1000 }
-                    Call.kick(target.con(), Packets.KickReason.vote)
+                    target.info.lastKicked = Time.millis() + 30 * 60 * 1000
+                    kick(target, Packets.KickReason.vote)
                     Log.write(LogType.Player, "log.player.kick")
                 }
                 Rollback -> {
@@ -148,8 +146,8 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
     fun set(uuid: String) {
         voted.add(uuid)
         for (others in Groups.player) {
-            val p = PlayerCore[others.uuid()]
-            if (!p.error && require - voted.size != -1) {
+            val p = PluginData[others.uuid()]
+            if (!p.isNull && require - voted.size != -1) {
                 others.sendMessage(Bundle(p.locale).prefix("vote.current-voted", voted.size.toString(), (require - voted.size).toString()))
             }
         }

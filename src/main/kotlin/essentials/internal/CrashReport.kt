@@ -1,8 +1,8 @@
 package essentials.internal
 
-import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
 import essentials.PluginData
+import essentials.data.Config
 import mindustry.Vars
 import mindustry.core.Version
 import org.hjson.JsonValue
@@ -58,10 +58,10 @@ class CrashReport {
                                     "서버 버전: ${Version.build}.${Version.revision} ${Version.modifier}\n" +
                                     "OS: ${System.getProperty("os.name")}\n" +
                                     "플러그인 목록: ${if (plugins.toString().contains(", ")) plugins.toString().substring(0, plugins.length - 2) else plugins.toString()}\n" +
-                                    "== 설정파일 ==\n" +
-                                    "${JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).toString(Stringify.HJSON)}\n" +
                                     "== Stacktrace ==\n" +
                                     "$sb\n" +
+                                    "== 설정파일 ==\n" +
+                                    "${JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).toString(Stringify.HJSON)}\n" +
                                     "!exit!"
                             os.write(logs.toByteArray(StandardCharsets.UTF_8))
                             val data = `is`.readLine()

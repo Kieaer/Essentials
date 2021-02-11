@@ -30,26 +30,8 @@ object PlayerCore {
     lateinit var conn: Connection
     var server: Server? = null
 
-    operator fun get(uuid: String): PlayerData {
-        for (p in PluginData.playerData) {
-            if (p.uuid == uuid) return p
-        }
-        return PlayerData()
-    }
-
     fun playerLoad(p: Playerc, id: String?): Boolean {
-        if (PluginData.playerData.contains(get(p.uuid()))) PluginData.removePlayerData(get(p.uuid()))
-
-        val playerData: PlayerData = if (id == null) {
-            load(p.uuid(), null)
-        } else {
-            load(p.uuid(), id)
-        }
-
-        if (playerData.error) {
-            CrashReport(Exception("DATA NOT FOUND"))
-            return false
-        }
+        val playerData: PlayerData = load(p.uuid(), id)
 
         if (LocalDateTime.now().isBefore(Tool.longToDateTime(playerData.bantime))) {
             Vars.netServer.admins.banPlayerID(p.uuid())
@@ -72,12 +54,9 @@ object PlayerCore {
         val oldUUID = playerData.uuid
 
         playerData.uuid = p.uuid()
-        playerData.connected = true
         playerData.lastdate = System.currentTimeMillis()
-        playerData.connserver = PluginData.serverIP
         playerData.joincount = playerData.joincount + 1
         playerData.exp = playerData.exp + playerData.joincount
-        playerData.login = true
 
         Permissions.setUserPerm(oldUUID, p.uuid())
         if (Permissions.user[p.uuid()] == null) {
@@ -92,44 +71,44 @@ object PlayerCore {
 
     private fun newData(name: String, uuid: String, country: String, countryCode: String, language: String, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): PlayerData {
         return PlayerData(
-                name,
-                uuid,
-                country,
-                countryCode,
-                language,
-                false,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                System.currentTimeMillis(),
-                System.currentTimeMillis(),
-                "none",
-                "none",
-                "none",
-                0L,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0L,
-                crosschat = false,
-                colornick = false,
-                connected = false,
-                connserver = connserver,
-                permission = permission,
-                mute = false,
-                alert = false,
-                udid = udid,
-                accountid = accountid,
-                accountpw = accountpw,
-                login = isLogin
+            name = name,
+            uuid = uuid,
+            country = country,
+            countryCode = countryCode,
+            language = language,
+            isAdmin = false,
+            placecount = 0,
+            breakcount = 0,
+            killcount = 0,
+            deathcount = 0,
+            joincount = 0,
+            kickcount = 0,
+            level = 0,
+            exp = 0,
+            reqexp = 0,
+            firstdate = System.currentTimeMillis(),
+            lastdate = System.currentTimeMillis(),
+            lastplacename = "none",
+            lastbreakname = "none",
+            lastchat = "none",
+            playtime = 0L,
+            attackclear = 0,
+            pvpwincount = 0,
+            pvplosecount = 0,
+            pvpbreakout = 0,
+            reactorcount = 0,
+            bantime = 0L,
+            crosschat = false,
+            colornick = false,
+            connected = false,
+            connserver = connserver,
+            permission = permission,
+            mute = false,
+            alert = false,
+            udid = udid,
+            accountid = accountid,
+            accountpw = accountpw,
+            login = isLogin
         )
     }
 
@@ -151,14 +130,6 @@ object PlayerCore {
             CrashReport(e)
             return false
         }
-    }
-
-    fun ban(player: Playerc, hours: Long, reason: String) {
-        val playerData = get(player.uuid())
-        val banTime = System.currentTimeMillis() + 1000 * 60 * 60 * hours
-
-        playerData.bantime = banTime
-        PluginData.banned.add(PluginData.Banned(banTime, playerData.name, playerData.uuid, reason))
     }
 
     fun load(uuid: String, id: String?): PlayerData {
@@ -224,7 +195,7 @@ object PlayerCore {
 
     fun save(playerData: PlayerData): Boolean {
         val sql = StringBuilder()
-        if (playerData.error) return false
+        if (playerData.isNull) return false
         val js = playerData.toMap()
         sql.append("UPDATE players SET ")
         js.forEach(Consumer { s: JsonObject.Member ->
@@ -274,11 +245,7 @@ object PlayerCore {
     }
 
     fun saveAll() {
-        for (p in PluginData.playerData){
-            synchronized(PluginData.playerData){
-                save(p)
-            }
-        }
+        for (p in PluginData.playerData) save(p)
     }
 
     fun register(name: String, uuid: String, country: String, countryCode: String, language: String, connserver: String, permission: String, udid: Long, accountid: String, accountpw: String, isLogin: Boolean): Boolean {
@@ -339,8 +306,6 @@ object PlayerCore {
                 "isadmin TINYINT(4) NOT NULL," +
                 "placecount INT(11) NOT NULL," +
                 "breakcount INT(11) NOT NULL," +
-                "killcount INT(11) NOT NULL," +
-                "deathcount INT(11) NOT NULL," +
                 "joincount INT(11) NOT NULL," +
                 "kickcount INT(11) NOT NULL," +
                 "level INT(11) NOT NULL," +
@@ -348,23 +313,15 @@ object PlayerCore {
                 "reqexp INT(11) NOT NULL," +
                 "firstdate TEXT NOT NULL," +
                 "lastdate TEXT NOT NULL," +
-                "lastplacename TEXT NOT NULL," +
-                "lastbreakname TEXT NOT NULL," +
-                "lastchat TEXT NOT NULL," +
                 "playtime TEXT NOT NULL," +
                 "attackclear INT(11) NOT NULL," +
                 "pvpwincount INT(11) NOT NULL," +
                 "pvplosecount INT(11) NOT NULL," +
-                "pvpbreakout INT(11) NOT NULL," +
-                "reactorcount INT(11) NOT NULL," +
                 "bantime TINYTEXT NOT NULL," +
                 "crosschat TINYINT(4) NOT NULL," +
                 "colornick TINYINT(4) NOT NULL," +
-                "connected TINYINT(4) NOT NULL," +
-                "connserver TINYTEXT NOT NULL DEFAULT 'none'," +
                 "permission TINYTEXT NOT NULL DEFAULT 'default'," +
                 "mute TINYTEXT NOT NULL," +
-                "alert TINYTEXT NOT NULL," +
                 "udid TEXT NOT NULL," +
                 "accountid TEXT NOT NULL," +
                 "accountpw TEXT NOT NULL" +

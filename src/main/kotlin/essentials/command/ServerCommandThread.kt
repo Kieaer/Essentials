@@ -42,8 +42,7 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                         }
 
                         if (!duplicate) {
-                            val temp =
-                                "| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"
+                            val temp = "| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"
                             result.append(temp)
                         }
                     }
@@ -85,7 +84,7 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                                     pstmt.setString(1, p.id)
                                     pstmt.executeQuery().use { rs ->
                                         if (rs.next()) {
-                                            var datatext = "${rs.getString("name")} Player information\n" +
+                                            Log.info("${rs.getString("name")} Player information\n" +
                                                     "=====================================\n" +
                                                     "name: ${rs.getString("name")}\n" +
                                                     "uuid: ${rs.getString("uuid")}\n" +
@@ -128,18 +127,7 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                                                     "mute: ${rs.getBoolean("mute")}\n" +
                                                     "alert: ${rs.getBoolean("alert")}\n" +
                                                     "udid: ${rs.getLong("udid")}\n" +
-                                                    "accountid: ${rs.getString("accountid")}"
-
-                                            val current = PlayerCore[p.id]
-                                            if (!current.error) {
-                                                datatext = "$datatext\n" +
-                                                        "== ${current.name} Player internal data ==\n" + " +" +
-                                                        "isLogin: ${current.login}\n" +
-                                                        "afk: ${Tool.longToTime(current.afk)}\n" +
-                                                        "afk_x: ${current.x}\n" + " +" +
-                                                        "afk_y: ${current.y}"
-                                            }
-                                            Log.info(datatext)
+                                                    "accountid: ${rs.getString("accountid")}")
                                         } else {
                                             Log.info("player.not-found")
                                         }

@@ -2,8 +2,8 @@ package essentials.event.feature
 
 import arc.struct.Seq
 import arc.util.async.Threads.sleep
+import essentials.PluginData
 import essentials.data.Config
-import essentials.data.PlayerCore
 import mindustry.gen.Playerc
 
 object RainbowName : Runnable {
@@ -13,13 +13,15 @@ object RainbowName : Runnable {
     override fun run() {
         while (!Thread.currentThread().isInterrupted) {
             for (player in targets) {
-                val p = PlayerCore[player.uuid()]
-                if (p.connected && p.colornick) {
-                    val name = p.name.replace("\\[(.*?)]".toRegex(), "")
-                    nickcolor(name, player)
-                } else {
-                    player.name(p.name)
-                    targets.remove(player)
+                if (!player.isNull) {
+                    val p = PluginData[player.uuid()]
+                    if (p.colornick) {
+                        val name = p.name.replace("\\[(.*?)]".toRegex(), "")
+                        nickcolor(name, player)
+                    } else {
+                        player.name(p.name)
+                        targets.remove(player)
+                    }
                 }
             }
             sleep(Config.cupdatei.toLong())

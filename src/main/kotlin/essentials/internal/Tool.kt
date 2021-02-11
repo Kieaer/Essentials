@@ -6,8 +6,8 @@ import arc.struct.Seq
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
 import essentials.Main.Companion.pluginRoot
+import essentials.PluginData
 import essentials.data.Config
-import essentials.data.PlayerCore
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.game.Team
@@ -116,10 +116,8 @@ object Tool {
     fun sendMessageAll(value: String, vararg parameter: String?) {
         Core.app.post {
             for (p in Groups.player) {
-                val playerData = PlayerCore[p.uuid()]
-                if (!playerData.error) {
-                    p.sendMessage(Bundle(playerData.locale).prefix(value, *parameter))
-                }
+                val playerData = PluginData[p.uuid()]
+                if (!playerData.isNull) p.sendMessage(Bundle(playerData.locale).prefix(value, *parameter))
             }
         }
     }
@@ -378,8 +376,10 @@ object Tool {
     }
 
     fun setMessage(tile: Tile, message: String) {
-        if(tile.block() is MessageBlock) {
-            (tile.block() as MessageBlock).MessageBuild().configure(message)
+        Core.app.post {
+            if (tile.block() is MessageBlock) {
+                (tile.block() as MessageBlock).MessageBuild().configure(message)
+            }
         }
     }
 }

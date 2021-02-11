@@ -1,9 +1,10 @@
 package essentials.event.feature
 
 import arc.struct.ObjectMap
+import essentials.PluginData
 import essentials.data.Config
 import essentials.data.PlayerCore
-import essentials.PluginData
+import essentials.eof.sendMessage
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
@@ -45,11 +46,9 @@ object Discord : ListenerAdapter() {
     }
 
     fun queue(player: Playerc) {
-        val playerData = PlayerCore[player.uuid()]
-        val bundle = Bundle(if (playerData.error) Config.locale else playerData.locale)
         val pin = Random().nextInt(9999)
         pins.put(player.name(), pin)
-        player.sendMessage(bundle.prefix("discord-pin-queue", pin.toString()))
+        sendMessage(player, Bundle(PluginData[player.uuid()].locale))["discord-pin-queue", pin.toString()]
     }
 
     override fun onGuildMemberJoin(e: GuildMemberJoinEvent) {
@@ -82,9 +81,9 @@ object Discord : ListenerAdapter() {
                                             val register = PlayerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", e.author.idLong, name, pw, false)
                                             if (register) {
                                                 PlayerCore.playerLoad(player, null)
-                                                val playerData = PlayerCore[player.uuid()]
-                                                player.sendMessage(Bundle(playerData.locale).prefix("register-success"))
-                                                send(Bundle(playerData.locale)["success"])
+                                                val playerData = PluginData[player.uuid()]
+                                                sendMessage(player, Bundle(PluginData[player.uuid()].locale))["register-success"]
+                                                send(Bundle(PluginData[player.uuid()].locale)["success"])
                                                 break
                                             }
                                         } else {
@@ -121,7 +120,7 @@ object Discord : ListenerAdapter() {
                     val message = """
                         >>> Command list
                         ``!signup <PIN> <New password>`` Account register to server. Nickname and password can't use blank.
-                        """.trimIndent()
+                        """
                     send(message)
                 }
             }
@@ -168,11 +167,11 @@ object Discord : ListenerAdapter() {
         return true
     }
 
-    fun send(message: String?) {
+    private fun send(message: String?) {
         event!!.privateChannel.sendMessage(message!!).queue()
     }
 
     fun shutdownNow() {
-        if (jda != null) jda!!.shutdown()
+        jda!!.shutdown()
     }
 }
