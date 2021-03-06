@@ -37,8 +37,8 @@ import java.net.URL
 import java.util.regex.Pattern
 import kotlin.math.abs
 
-class EventThread(private val type: EventTypes, private val event: Any) : Thread(){
-    override fun run() {
+class EventThread(private val type: EventTypes, private val event: Any){
+    fun run() {
         try {
             when (type) {
                 EventTypes.Config -> {

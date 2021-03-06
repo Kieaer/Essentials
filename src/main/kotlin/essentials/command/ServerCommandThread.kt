@@ -16,8 +16,8 @@ import java.sql.SQLException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class ServerCommandThread(private val type: ServerCommand.Command, private val arg: Array<String>) : Thread() {
-    override fun run() {
+class ServerCommandThread(private val type: ServerCommand.Command, private val arg: Array<String>){
+    fun run() {
         try {
             when (type) {
                 Gendocs -> {
@@ -143,6 +143,9 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                     Permissions.reload(false)
                     Permissions.update(false)
                     Log.info("plugin-reloaded")
+                }
+                Blacklist -> {
+
                 }
             }
         } catch (e: Exception){

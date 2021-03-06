@@ -6,32 +6,34 @@ import java.util.concurrent.Executors
 
 object ServerCommand {
     lateinit var commands: CommandHandler
-    val service: ExecutorService = Executors.newCachedThreadPool()
 
     fun register(handler: CommandHandler) {
         handler.register("gendocs", "Generate Essentials README.md"){
-            service.submit(ServerCommandThread(Command.Gendocs, it))
+            ServerCommandThread(Command.Gendocs, it).run()
         }
         handler.register("lobby", "Toggle lobby server features"){
-            service.submit(ServerCommandThread(Command.Lobby, it))
+            ServerCommandThread(Command.Lobby, it).run()
         }
         handler.register("saveall", "Manually save all plugin data"){
-            service.submit(ServerCommandThread(Command.Saveall, it))
+            ServerCommandThread(Command.Saveall, it).run()
         }
         handler.register("bansync", "Synchronize ban list with server"){
-            service.submit(ServerCommandThread(Command.BanSync, it))
+            ServerCommandThread(Command.BanSync, it).run()
         }
         handler.register("info", "<player/uuid>", "Show player information") {
-            service.submit(ServerCommandThread(Command.Info, it))
+            ServerCommandThread(Command.Info, it).run()
         }
         handler.register("reload", "Reload Essential plugin data"){
-            service.submit(ServerCommandThread(Command.Reload, it))
+            ServerCommandThread(Command.Reload, it).run()
+        }
+        handler.register("blacklist","<add/remove> [name]"){
+            ServerCommandThread(Command.Blacklist, it).run()
         }
 
         commands = handler
     }
 
     enum class Command{
-        Gendocs, Lobby, Saveall, BanSync, Info, Reload
+        Gendocs, Lobby, Saveall, BanSync, Info, Reload, Blacklist
     }
 }

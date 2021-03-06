@@ -37,8 +37,8 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.max
 
-class ClientCommandThread(private val type: ClientCommand.Command, private val arg: Array<String>, private val player: Playerc) : Thread(){
-    override fun run(){
+class ClientCommandThread(private val type: ClientCommand.Command, private val arg: Array<String>, private val player: Playerc){
+    fun run(){
         val data = PluginData[player.uuid()]
         val bundle = if(!data.isNull) Bundle(data.locale) else Bundle()
         if (!Permissions.check(player, type.name.toLowerCase())) return
@@ -565,7 +565,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 }
                             }
                         } catch (e: InterruptedException) {
-                            currentThread().interrupt()
+
                         }
                     }.start()
                 }
