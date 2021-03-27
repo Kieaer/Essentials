@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:+'
-    compileOnly 'com.github.Anuken.Mindustry:core:+'
+    compileOnly 'com.github.Anuken.Arc:arc-core:v+'
+    compileOnly 'com.github.Anuken.Mindustry:core:v+'
 
     implementation 'com.github.PersonTheCat:hjson-java:master'
     implementation 'de.svenkubiak:jBCrypt:+'
@@ -28,9 +28,9 @@ dependencies {
     implementation 'com.neovisionaries:nv-i18n:+'
     implementation files('libs/ip2location.jar')
 
-    testImplementation 'com.github.Anuken.arc:arc-core:+'
-    testImplementation 'com.github.Anuken.Mindustry:core:+'
-    testImplementation 'com.github.Anuken.Mindustry:server:+'
+    testImplementation 'com.github.Anuken.arc:arc-core:v+'
+    testImplementation 'com.github.Anuken.Mindustry:core:v+'
+    testImplementation 'com.github.Anuken.Mindustry:server:v+'
     testImplementation 'com.github.Anuken.arc:backend-headless:+'
 
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
