@@ -43,9 +43,12 @@ dependencies {
 
 jar {
     archiveFileName = "${project.archivesBaseName}.jar"
-    from{
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    from({configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}}){
+        exclude '**/META-INF/*.SF'
+        exclude '**/META-INF/*.DSA'
+        exclude '**/META-INF/*.RSA'
     }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 /*sourceSets{
