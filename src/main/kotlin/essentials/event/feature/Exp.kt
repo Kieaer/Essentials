@@ -35,8 +35,7 @@ object Exp {
         val xp = target.exp
         val levelXp = max - xp
         val level = calculateLevel(xp.toDouble())
-        val reqexp = floor(max.toDouble()).toInt()
-        target.reqexp = reqexp
+        //val reqexp = floor(max.toDouble()).toInt()
         target.level = level
         return xp.toString() + "(" + floor(levelXp.toDouble()).toInt() + ") / " + floor(max.toDouble()).toInt()
     }

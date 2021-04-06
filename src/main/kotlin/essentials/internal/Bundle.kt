@@ -1,5 +1,6 @@
 package essentials.internal
 
+import essentials.PlayerData
 import essentials.data.Config
 import essentials.external.UTF8Control
 import java.text.MessageFormat
@@ -17,6 +18,15 @@ class Bundle {
     }
 
     constructor(locale: Locale) {
+        resource = try {
+            ResourceBundle.getBundle("bundle.bundle", locale, UTF8Control())
+        } catch (e: Exception) {
+            ResourceBundle.getBundle("bundle.bundle", Locale.US, UTF8Control())
+        }
+    }
+
+    constructor(playerData: PlayerData?) {
+        val locale = if(playerData != null) Locale(playerData.countryCode) else Config.locale
         resource = try {
             ResourceBundle.getBundle("bundle.bundle", locale, UTF8Control())
         } catch (e: Exception) {

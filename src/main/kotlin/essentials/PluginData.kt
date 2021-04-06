@@ -43,11 +43,11 @@ object PluginData {
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
 
-    operator fun get(uuid: String): PlayerData {
+    operator fun get(uuid: String): PlayerData? {
         for (p in playerData) {
             if (p.uuid == uuid) return p
         }
-        return PlayerData()
+        return null
     }
 
     fun removePlayerData(d: PlayerData) {

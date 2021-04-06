@@ -48,7 +48,7 @@ object Discord : ListenerAdapter() {
     fun queue(player: Playerc) {
         val pin = Random().nextInt(9999)
         pins.put(player.name(), pin)
-        sendMessage(player, Bundle(PluginData[player.uuid()].locale))["discord-pin-queue", pin.toString()]
+        sendMessage(player, Bundle(PluginData[player.uuid()])["discord-pin-queue", pin.toString()])
     }
 
     override fun onGuildMemberJoin(e: GuildMemberJoinEvent) {
@@ -78,12 +78,12 @@ object Discord : ListenerAdapter() {
                                         val player = Groups.player.find { p: Playerc -> p.name().equals(name, ignoreCase = true) }
                                         if (player != null) {
                                             val lc = Tool.getGeo(player)
-                                            val register = PlayerCore.register(player.name, player.uuid(), lc.displayCountry, lc.toString(), lc.displayLanguage, PluginData.serverIP, "default", e.author.idLong, name, pw, false)
+                                            val register = PlayerCore.register(player, player.name(), player.uuid(), name, pw)
                                             if (register) {
                                                 PlayerCore.playerLoad(player, null)
                                                 val playerData = PluginData[player.uuid()]
-                                                sendMessage(player, Bundle(PluginData[player.uuid()].locale))["register-success"]
-                                                send(Bundle(PluginData[player.uuid()].locale)["success"])
+                                                sendMessage(player, Bundle(PluginData[player.uuid()]))["register-success"]
+                                                send(Bundle(PluginData[player.uuid()])["success"])
                                                 break
                                             }
                                         } else {

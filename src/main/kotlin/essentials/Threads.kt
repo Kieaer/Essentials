@@ -136,14 +136,15 @@ object Threads : Runnable {
 
                 for (p in Groups.player) {
                     val playerData = PluginData[p.uuid()]
-                    if (!playerData.isNull) {
+                    if (playerData != null) {
+                        val locale = Locale(playerData.countryCode)
                         val message: String = if (Config.passwordMethod == "discord") {
                             """
-                                ${Bundle(playerData.locale)["system.login.require.discord"]}
+                                ${Bundle(locale)["system.login.require.discord"]}
                                 ${Config.discordLink}
                                 """.trimIndent()
                         } else {
-                            Bundle(playerData.locale)["system.login.require.password"]
+                            Bundle(locale)["system.login.require.password"]
                         }
                         sendMessage(p, message)
                     }
@@ -154,8 +155,8 @@ object Threads : Runnable {
                 Thread.currentThread().interrupt()
             } catch (e: Exception) {
                 for (p in Groups.player) {
-                    if (!PluginData[p.uuid()].isNull) {
-                        kick(p, Bundle(PluginData[p.uuid()].locale)["plugin-error-kick"])
+                    if (PluginData[p.uuid()] != null) {
+                        kick(p, Bundle(Locale(PluginData[p.uuid()]!!.countryCode))["plugin-error-kick"])
                     } else {
                         kick(p, Bundle(Locale.ENGLISH)["plugin-error-kick"])
                     }

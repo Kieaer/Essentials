@@ -34,13 +34,15 @@ import org.hjson.JsonObject
 import org.mindrot.jbcrypt.BCrypt
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.math.abs
 import kotlin.math.max
 
 class ClientCommandThread(private val type: ClientCommand.Command, private val arg: Array<String>, private val player: Playerc){
     fun run(){
         val data = PluginData[player.uuid()]
-        val bundle = if(!data.isNull) Bundle(data.locale) else Bundle()
+        val locale = if(data != null) Locale(data.countryCode) else Config.locale
+        val bundle = if(data != null) Bundle(Locale(data.countryCode)) else Bundle()
         if (!Permissions.check(player, type.name.toLowerCase())) return
         val sendMessage = sendMessage(player, bundle)
 
@@ -138,11 +140,11 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     PluginData.votingClass!!.start()
                 }
                 Ch -> {
-                    data.crosschat = !data.crosschat
+                    data!!.crosschat = !data.crosschat
                     sendMessage[if (data.crosschat) "player.crosschat.disable" else "player.crosschat.enabled"]
                 }
                 Changepw -> {
-                    if (!Tool.checkPassword(player, data.accountid, arg[0], arg[1])) {
+                    if (!Tool.checkPassword(player, data!!.accountid, arg[0], arg[1])) {
                         sendMessage["system.account.need-new-password"]
                         return
                     }
@@ -162,7 +164,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     )
                 }
                 Color -> {
-                    data.colornick = !data.colornick
+                    data!!.colornick = !data.colornick
                     if (data.colornick) RainbowName.targets.add(player)
                     sendMessage[if (data.colornick) "feature.colornick.enable" else "feature.colornick.disable"]
                 }
@@ -203,11 +205,11 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 }
                 Info -> {
                     val datatext = """
-                [#DEA82A]${Bundle(data.locale)["player.info"]}[]
+                [#DEA82A]${Bundle(data)["player.info"]}[]
                 [#2B60DE]====================================[]
                 [green]${bundle["player.name"]}[] : ${player.name()}[white]
-                [green]${bundle["player.uuid"]}[] : ${data.uuid}[white]
-                [green]${bundle["player.country"]}[] : ${data.locale.getDisplayCountry(data.locale)}
+                [green]${bundle["player.uuid"]}[] : ${data!!.uuid}[white]
+                [green]${bundle["player.country"]}[] : ${locale.getDisplayCountry(locale)}
                 [green]${bundle["player.placecount"]}[] : ${data.placecount}
                 [green]${bundle["player.breakcount"]}[] : ${data.breakcount}
                 [green]${bundle["player.joincount"]}[] : ${data.joincount}
@@ -332,7 +334,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 }
                 Login -> {
                     if (Config.loginEnable) {
-                        if (!data.isNull) {
+                        if (data != null) {
                             if (PlayerCore.login(arg[0], arg[1])) {
                                 if (PlayerCore.playerLoad(player, arg[0])) {
                                     sendMessage["system.login.success"]
@@ -351,7 +353,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     sendMessage("[orange]*[] " + player.name() + "[white] : " + arg[0])
                 }
                 Motd -> {
-                    val motd = Tool.getMotd(data.locale)
+                    val motd = Tool.getMotd(locale)
                     val count = motd.split("\r\n|\r|\n").toTypedArray().size
                     if (count > 10) infoMessage(player, motd) else sendMessage(player, motd)
                 }
@@ -577,21 +579,8 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 if (!Discord.pins.containsKey(player.name())) Discord.queue(player)
                             }
                             "password" -> {
-                                val lc = Tool.getGeo(player)
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(
-                                    player.name(),
-                                    player.uuid(),
-                                    lc.displayCountry,
-                                    lc.toString(),
-                                    lc.displayLanguage,
-                                    PluginData.serverIP,
-                                    "default",
-                                    0L,
-                                    arg[0],
-                                    hash,
-                                    false
-                                )
+                                val register = PlayerCore.register(player, player.name(), player.uuid(), arg[0], hash)
                                 if (register) {
                                     PlayerCore.playerLoad(player, null)
                                     sendMessage["register-success"]
@@ -600,21 +589,8 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 }
                             }
                             else -> {
-                                val lc = Tool.getGeo(player)
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(
-                                    player.name(),
-                                    player.uuid(),
-                                    lc.displayCountry,
-                                    lc.toString(),
-                                    lc.displayLanguage,
-                                    PluginData.serverIP,
-                                    "default",
-                                    0L,
-                                    arg[0],
-                                    hash,
-                                    false
-                                )
+                                val register = PlayerCore.register(player, player.name(), player.uuid(), arg[0], hash)
                                 if (register) {
                                     PlayerCore.playerLoad(player, null)
                                     sendMessage["register-success"]
@@ -683,11 +659,12 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         .toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginData.pluginVersion.toString()]
                     val result = JsonObject()
                     for (p in PluginData.playerData) {
-                        if (result[p.locale.getDisplayCountry(data.locale)] == null) {
-                            result.add(p.locale.getDisplayCountry(data.locale), 1)
+                        val loc = Locale(p.countryCode)
+                        if (result[loc.getDisplayCountry(locale)] == null) {
+                            result.add(loc.getDisplayCountry(locale), 1)
                         } else {
-                            result[p.locale.getDisplayCountry(data.locale)] =
-                                result[p.locale.getDisplayCountry(data.locale)].asInt() + 1
+                            result[loc.getDisplayCountry(locale)] =
+                                result[loc.getDisplayCountry(locale)].asInt() + 1
                         }
                     }
                     val s = StringBuilder()
@@ -705,14 +682,14 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         "green" -> player.team(mindustry.game.Team.green)
                         "purple" -> player.team(mindustry.game.Team.purple)
                         "blue" -> player.team(mindustry.game.Team.blue)
-                        else -> sendMessage(player, Bundle(data.locale).prefix("command.team"))
+                        else -> sendMessage(player, Bundle(data).prefix("command.team"))
                     }
                 }
                 Time -> {
                     val now = LocalDateTime.now()
                     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                     val nowString = now.format(dateTimeFormatter)
-                    sendMessage(player, Bundle(data.locale).prefix("servertime", nowString))
+                    sendMessage(player, Bundle(data).prefix("servertime", nowString))
                 }
                 Tp -> {
                     var other: Playerc? = null
@@ -748,10 +725,10 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 Mute -> {
                     val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
                     if (other == null) {
-                        sendMessage(player, Bundle(data.locale).prefix("player.not-found"))
+                        sendMessage(player, Bundle(data).prefix("player.not-found"))
                     } else {
                         val target = PluginData[other.uuid()]
-                        target.mute = !target.mute
+                        target!!.mute = !target.mute
                         sendMessage[if (target.mute) "player.muted" else "player.unmute", target.name]
                     }
                 }

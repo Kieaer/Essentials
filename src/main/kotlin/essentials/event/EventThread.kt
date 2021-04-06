@@ -5,6 +5,7 @@ import essentials.Main
 import essentials.PlayerData
 import essentials.PluginData
 import essentials.data.Config
+import essentials.data.DB
 import essentials.data.PlayerCore
 import essentials.eof.connect
 import essentials.eof.infoMessage
@@ -66,7 +67,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
 
                     if (Config.logging) Log.write(Log.LogType.Tap, "log.tap", e.player.name, e.tile.block().name)
                     val playerData = PluginData[e.player.uuid()]
-                    if (!playerData.isNull) {
+                    if (playerData != null) {
                         for (data in PluginData.warpblocks) {
                             if (e.tile.x >= Vars.world.tile(data.pos).x && e.tile.x <= Vars.world.tile(data.pos).x) {
                                 if (e.tile.y >= Vars.world.tile(data.pos).y && e.tile.y <= Vars.world.tile(data.pos).y) {
@@ -97,7 +98,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                         if (Config.logging) Log.write(Log.LogType.WithDraw, "log.withdraw", e.player.name, e.player.unit().item().name, e.amount.toString(), e.tile.block().name)
                         if (Vars.state.rules.pvp) {
                             if (e.item.flammability > 0.001f) {
-                                e.player.sendMessage(Bundle(PluginData[e.player.uuid()].locale)["system.flammable.disabled"])
+                                e.player.sendMessage(Bundle(PluginData[e.player.uuid()])["system.flammable.disabled"])
                                 e.player.unit().clearItem()
                             }
                         }
@@ -116,7 +117,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                         if (index == 1) {
                             for (player in Groups.player) {
                                 val target = PluginData[player.uuid()]
-                                if (!target.isNull) {
+                                if (target != null) {
                                     if (player.team().name == e.winner.name) {
                                         target.pvpwincount++
                                     } else if (player.team().name != e.winner.name) {
@@ -128,7 +129,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     } else if (Vars.state.rules.attackMode) {
                         for (p in Groups.player) {
                             val target = PluginData[p.uuid()]
-                            if (!target.isNull) target.attackclear++
+                            if (target != null) target.attackclear++
                         }
                     }
                 }
@@ -173,11 +174,11 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     e.player.admin(false)
                     
                     val playerData = PlayerCore.load(e.player.uuid(), null)
-                    val sendMessage = sendMessage(e.player, Bundle(playerData.locale))
+                    val sendMessage = sendMessage(e.player, Bundle(playerData))
                     
                     if (Config.loginEnable) {
                         if (Config.passwordMethod == "discord") {
-                            if (!playerData.isNull && Config.autoLogin) {
+                            if (playerData != null && Config.autoLogin) {
                                 sendMessage["account.autologin"]
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
@@ -191,7 +192,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                 infoMessage(e.player, message)
                             }
                         } else {
-                            if (!playerData.isNull && Config.autoLogin) {
+                            if (playerData != null && Config.autoLogin) {
                                 sendMessage["account.autologin"]
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
@@ -200,24 +201,12 @@ class EventThread(private val type: EventTypes, private val event: Any){
                             }
                         }
                     } else { // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                        if (!playerData.isNull && Config.autoLogin) {
+                        if (playerData != null && Config.autoLogin) {
                             sendMessage["account.autologin"]
                             PlayerCore.playerLoad(e.player, null)
                         } else {
                             val lc = Tool.getGeo(e.player.con.address)
-                            val register = PlayerCore.register(
-                                name = e.player.name,
-                                uuid = e.player.uuid(),
-                                country = lc.displayCountry,
-                                countryCode = lc.toString(),
-                                language = lc.displayLanguage,
-                                connserver = PluginData.serverIP,
-                                permission = "default",
-                                udid = 0L,
-                                accountid = e.player.name,
-                                accountpw = "none",
-                                isLogin = false
-                            )
+                            val register = PlayerCore.register(e.player, e.player.name(), e.player.uuid(), "none", "none")
                             if (register) {
                                 if (!PlayerCore.playerLoad(e.player, null)) kick(e.player, Bundle()["plugin-error-kick"])
                             } else {
@@ -245,9 +234,12 @@ class EventThread(private val type: EventTypes, private val event: Any){
 
                     if (Config.logging) Log.write(Log.LogType.Player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
                     val player = PluginData[e.player.uuid()]
-                    PlayerCore.save(player)
-                    PluginData.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }?.let { PluginData.removePlayerData(it) }
-                    PluginData.players.remove(e.player)
+                    if(player != null) {
+                        PlayerCore.save(player)
+                        PluginData.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }
+                            ?.let { PluginData.removePlayerData(it) }
+                        PluginData.players.remove(e.player)
+                    }
                 }
                 PlayerChat -> {
                     val e = event as EventType.PlayerChatEvent
@@ -257,10 +249,10 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     }
 
                     val playerData = PluginData[e.player.uuid()]
-                    val sendMessage = sendMessage(e.player, Bundle(playerData.locale))
+                    val sendMessage = sendMessage(e.player, Bundle(playerData))
 
                     if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>")
-                    if (!playerData.isNull) {
+                    if (playerData != null) {
                         if (!e.message.startsWith("/")) {
                             if (e.message == "y" && PluginData.votingClass != null && PluginData.isVoting) {
                                 if (PluginData.votingClass!!.voted.contains(e.player.uuid()) || PluginData.votingPlayer == e.player) {
@@ -309,7 +301,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                         Log.write(Log.LogType.Block, "log.block.place", player.name, e.tile.block().name)
                         val target = PluginData[player.uuid()]
 
-                        if (!e.breaking && !player.unit().isNull && !target.isNull && e.tile.block() != null && player.unit().buildPlan() != null && player.unit().buildPlan().block != null) {
+                        if (!e.breaking && !player.unit().isNull && target != null && e.tile.block() != null && player.unit().buildPlan() != null && player.unit().buildPlan().block != null) {
                             val name = e.tile.block().name
                             try {
                                 val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
@@ -352,33 +344,35 @@ class EventThread(private val type: EventTypes, private val event: Any){
                         if (e.breaking) {
                             Log.write(Log.LogType.Block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x.toString(), e.tile.y.toString())
                             val target = PluginData[(e.builder as Playerc).uuid()]
-                            val name = e.tile.block().name
-                            try {
-                                val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
-                                val exp = obj.getInt(name, 0)
-                                target.breakcount++
-                                target.exp = target.exp + exp
-                            } catch (ex: Exception) {
-                                CrashReport(ex)
-                                kick((e.builder as Playerc), Bundle(target.locale)["not-logged"])
-                            }
-
-                            // Exp Playing Game (EPG)
-                            if (Config.expLimit) {
-                                val level = target.level
+                            if(target != null) {
+                                val name = e.tile.block().name
                                 try {
                                     val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
-                                    if (obj[name] != null) {
-                                        val req = obj.getInt(name, 999)
-                                        if (level < req) {
-                                            Call.deconstructFinish(e.tile, e.tile.block(), (e.builder as Playerc).unit())
-                                            sendMessage((e.builder as Playerc), Bundle(PluginData[(e.builder as Playerc).uuid()].locale)["system.epg.block-require", name, req.toString()])
-                                        }
-                                    } else {
-                                        Log.err("system.epg.block-not-valid", name)
-                                    }
+                                    val exp = obj.getInt(name, 0)
+                                    target.breakcount++
+                                    target.exp = target.exp + exp
                                 } catch (ex: Exception) {
                                     CrashReport(ex)
+                                    kick((e.builder as Playerc), Bundle(target)["not-logged"])
+                                }
+
+                                // Exp Playing Game (EPG)
+                                if (Config.expLimit) {
+                                    val level = target.level
+                                    try {
+                                        val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
+                                        if (obj[name] != null) {
+                                            val req = obj.getInt(name, 999)
+                                            if (level < req) {
+                                                Call.deconstructFinish(e.tile, e.tile.block(), (e.builder as Playerc).unit())
+                                                sendMessage((e.builder as Playerc), Bundle(PluginData[(e.builder as Playerc).uuid()])["system.epg.block-require", name, req.toString()])
+                                            }
+                                        } else {
+                                            Log.err("system.epg.block-not-valid", name)
+                                        }
+                                    } catch (ex: Exception) {
+                                        CrashReport(ex)
+                                    }
                                 }
                             }
                         }
@@ -462,7 +456,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                                     Client.request(Client.Request.Exit, null, null)
                                                 }
                                                 Main.mainThread.shutdown()
-                                                PlayerCore.dispose()
+                                                DB.stop()
                                                 println(Bundle()["plugin-downloading"])
                                                 Tool.download(
                                                     URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),

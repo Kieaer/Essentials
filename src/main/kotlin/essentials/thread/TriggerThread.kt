@@ -117,25 +117,27 @@ object TriggerThread : Runnable {
                 // 플레이어 플탐 카운트 및 잠수확인
                 for (p in Groups.player) {
                     val target = PluginData[p.uuid()]
-                    var kick = false
+                    if(target != null) {
+                        var kick = false
 
-                    // Exp 계산
-                    target.exp = target.exp + random.nextInt(50)
+                        // Exp 계산
+                        target.exp = target.exp + random.nextInt(50)
 
-                    // 잠수 및 플레이 시간 계산
-                    target.playtime = target.playtime + 1
-                    if (target.x == p.tileX() && target.y == p.tileY()) {
-                        target.afk = target.afk + 1
-                        if (Config.afktime != 0L && Config.afktime < target.afk) {
-                            kick = true
+                        // 잠수 및 플레이 시간 계산
+                        target.playtime = target.playtime + 1
+                        if (target.x == p.tileX() && target.y == p.tileY()) {
+                            target.afk = target.afk + 1
+                            if (Config.afktime != 0L && Config.afktime < target.afk) {
+                                kick = true
+                            }
+                        } else {
+                            target.afk = 0
                         }
-                    } else {
-                        target.afk = 0
+                        target.x = p.tileX()
+                        target.y = p.tileY()
+                        if (!state.rules.editor) Exp[target]
+                        if (kick) kick(p, "AFK")
                     }
-                    target.x = p.tileX()
-                    target.y = p.tileY()
-                    if (!state.rules.editor) Exp[target]
-                    if (kick) kick(p, "AFK")
                 }
             }
 

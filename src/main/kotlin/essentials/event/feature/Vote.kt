@@ -30,7 +30,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
     val voted = Seq<String>()
 
     fun start() {
-        val bundle = Bundle(PluginData[player.uuid()].locale)
+        val bundle = Bundle(PluginData[player.uuid()])
 
         if(!voting) {
             voting = true
@@ -112,7 +112,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                 }
                 Kick -> {
                     Log.info("Vote kick passed!")
-                    PluginData[target.uuid()].kickcount++
+                    PluginData[target.uuid()]!!.kickcount++
                     Tool.sendMessageAll("vote.kick.done", target.name())
                     target.info.lastKicked = Time.millis() + 30 * 60 * 1000
                     kick(target, Packets.KickReason.vote)
@@ -147,8 +147,8 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
         voted.add(uuid)
         for (others in Groups.player) {
             val p = PluginData[others.uuid()]
-            if (!p.isNull && require - voted.size != -1) {
-                others.sendMessage(Bundle(p.locale).prefix("vote.current-voted", voted.size.toString(), (require - voted.size).toString()))
+            if (p != null && require - voted.size != -1) {
+                others.sendMessage(Bundle(p).prefix("vote.current-voted", voted.size.toString(), (require - voted.size).toString()))
             }
         }
         if (voted.size >= require) {

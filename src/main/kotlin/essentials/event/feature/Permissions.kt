@@ -30,7 +30,7 @@ object Permissions {
         obj.add("name", playerData.name)
         obj.add("group", default)
         obj.add("prefix", perm[playerData.permission].asObject().getString("prefix", "%1[orange] >[white] %2"))
-        obj.add("admin", playerData.admin)
+        obj.add("admin", false)
         user.add(playerData.uuid, obj)
     }
 

@@ -15,12 +15,14 @@ object RainbowName : Runnable {
             for (player in targets) {
                 if (!player.isNull) {
                     val p = PluginData[player.uuid()]
-                    if (p.colornick) {
-                        val name = p.name.replace("\\[(.*?)]".toRegex(), "")
-                        nickcolor(name, player)
-                    } else {
-                        player.name(p.name)
-                        targets.remove(player)
+                    if (p != null) {
+                        if (p.colornick) {
+                            val name = p.name.replace("\\[(.*?)]".toRegex(), "")
+                            nickcolor(name, player)
+                        } else {
+                            player.name(p.name)
+                            targets.remove(player)
+                        }
                     }
                 }
             }

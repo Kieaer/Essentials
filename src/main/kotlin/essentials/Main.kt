@@ -8,9 +8,11 @@ import arc.util.async.Threads.sleep
 import essentials.command.ClientCommand
 import essentials.command.ServerCommand
 import essentials.data.Config
+import essentials.data.DB
 import essentials.data.PlayerCore
 import essentials.event.Event
 import essentials.event.feature.*
+import essentials.form.Service
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
@@ -72,13 +74,7 @@ class Main : Plugin() {
         mainThread.submit(WarpBorder)
 
         // DB 연결
-        try {
-            PlayerCore.connect(Config.dbServer)
-            PlayerCore.create()
-            PlayerCore.update()
-        } catch (e: SQLException) {
-            CrashReport(e)
-        }
+        DB.start()
 
         // Server 시작
         if (Config.serverEnable) mainThread.submit(Server)
@@ -111,7 +107,7 @@ class Main : Plugin() {
                     timer.cancel() // 일정 시간마다 실행되는 스레드 종료
                     // 투표 종료
                     PluginData.votingClass?.interrupt()
-                    PlayerCore.dispose() // DB 연결 종료
+                    DB.stop()
                     if (Config.serverEnable) {
                         val servers = Server.list.iterator()
                         while (servers.hasNext()) {
@@ -157,7 +153,7 @@ class Main : Plugin() {
         // 비 로그인 유저 통제
         netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
-            return@addActionFilter !PluginData[e.player.uuid()].isNull
+            return@addActionFilter PluginData[e.player.uuid()] != null
         }
     }
 

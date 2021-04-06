@@ -117,7 +117,7 @@ object Tool {
         Core.app.post {
             for (p in Groups.player) {
                 val playerData = PluginData[p.uuid()]
-                if (!playerData.isNull) p.sendMessage(Bundle(playerData.locale).prefix(value, *parameter))
+                if (playerData != null) p.sendMessage(Bundle(Locale(playerData.countryCode)).prefix(value, *parameter))
             }
         }
     }
@@ -136,7 +136,8 @@ object Tool {
         }
     }
 
-    fun getGeo(data: Any): Locale {
+    fun getGeo(data: Any?): Locale {
+        if(data == null) return Config.locale
         val ip = if (data is Playerc) netServer.admins.getInfo(data.uuid()).lastIP else (data as String?)!!
 
         val res = ipre.IPQuery(ip)
