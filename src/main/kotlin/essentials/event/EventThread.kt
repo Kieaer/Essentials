@@ -94,7 +94,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 Withdraw -> {
                     val e = event as EventType.WithdrawEvent
 
-                    if (e.tile != null && e.player.unit().item() != null && e.player.name != null && Config.antiGrief) {
+                    if (e.tile != null && e.player.unit().item() != null && e.player.name != null) {
                         if (Config.logging) Log.write(Log.LogType.WithDraw, "log.withdraw", e.player.name, e.player.unit().item().name, e.amount.toString(), e.tile.block().name)
                         if (Vars.state.rules.pvp) {
                             if (e.item.flammability > 0.001f) {
@@ -153,7 +153,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                             }
                         }
                     }
-                    if (Config.strictName) {
+                    if (Config.nameFixed) {
                         if (e.player.name.length > 32) kick(e.player, "Nickname too long!")
                         //if (e.player.name.matches(Regex(".*\\[.*].*"))) kick(e.player, "Color tags can't be used for nicknames on this Server.");
                         if (e.player.name.contains("　")) kick(e.player, "Don't use blank speical charactor nickname!")
@@ -176,23 +176,23 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     val playerData = PlayerCore.load(e.player.uuid(), null)
                     val sendMessage = sendMessage(e.player, Bundle(playerData))
                     
-                    if (Config.loginEnable) {
-                        if (Config.passwordMethod == "discord") {
-                            if (playerData != null && Config.autoLogin) {
+                    if (Config.authType != Config.AuthType.None) {
+                        if (Config.authType == Config.AuthType.Discord) {
+                            if (playerData != null) {
                                 sendMessage["account.autologin"]
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
                                 val message: String?
                                 val language = Tool.getGeo(e.player)
-                                message = if (Config.passwordMethod == "discord") {
-                                    "${Bundle(language)["system.login.require.discord"]} ${Config.discordLink}"
+                                message = if (Config.authType == Config.AuthType.Discord) {
+                                    Bundle(language)["system.login.require.discord"]
                                 } else {
                                     Bundle(language)["system.login.require.password"]
                                 }
                                 infoMessage(e.player, message)
                             }
                         } else {
-                            if (playerData != null && Config.autoLogin) {
+                            if (playerData != null) {
                                 sendMessage["account.autologin"]
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
@@ -201,7 +201,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                             }
                         }
                     } else { // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                        if (playerData != null && Config.autoLogin) {
+                        if (playerData != null) {
                             sendMessage["account.autologin"]
                             PlayerCore.playerLoad(e.player, null)
                         } else {
@@ -244,7 +244,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 PlayerChat -> {
                     val e = event as EventType.PlayerChatEvent
 
-                    if (Config.antiGrief && e.message.length > Vars.maxTextLength) {
+                    if (e.message.length > Vars.maxTextLength) {
                         kick(e.player, "Hacked client detected")
                     }
 
@@ -264,10 +264,10 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                 if (!playerData.mute) {
                                     if (playerData.crosschat) {
                                         when {
-                                            Config.clientEnable -> {
+                                            Config.networkMode == Config.NetworkMode.Client -> {
                                                 if (Client.activated) Client.request(Client.Request.Chat, e.player, e.message)
                                             }
-                                            Config.serverEnable -> {
+                                            Config.networkMode == Config.NetworkMode.Server -> {
                                                 val msg = "[" + e.player.name + "]: " + e.message
                                                 try {
                                                     for (ser in Server.list) {
@@ -313,7 +313,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                             }
 
 
-                            if (Config.debug && Config.antiGrief) {
+                            if (Config.debug) {
                                 Log.info("anti-grief.build.finish", player.name, e.tile.block().name, e.tile.x, e.tile.y)
                             }
 
@@ -357,7 +357,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                 }
 
                                 // Exp Playing Game (EPG)
-                                if (Config.expLimit) {
+                                if (Config.blockEXP) {
                                     val level = target.level
                                     try {
                                         val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
@@ -376,7 +376,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                 }
                             }
                         }
-                        if (Config.debug && Config.antiGrief) {
+                        if (Config.debug) {
                             Log.info("anti-grief.destroy", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
                         }
                     }
@@ -387,7 +387,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 PlayerBan -> {
                     val e = event as EventType.PlayerBanEvent
 
-                    if (Config.banShare && Config.clientEnable) {
+                    if (Config.banShare && Config.networkMode == Config.NetworkMode.Client) {
                         Client.request(Client.Request.BanSync, Nulls.player, null)
                     }
 
@@ -439,7 +439,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                                 println(json.getString("body", "No description found."))
                                                 println(Bundle()["plugin-downloading-standby"])
                                                 Main.timer.cancel()
-                                                if (Config.serverEnable) {
+                                                if (Config.networkMode == Config.NetworkMode.Server) {
                                                     try {
                                                         for (ser in Server.list) {
                                                             ser!!.interrupt()
@@ -452,7 +452,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                                     } catch (ignored: Exception) {
                                                     }
                                                 }
-                                                if (Config.clientEnable && Client.activated) {
+                                                if (Config.networkMode == Config.NetworkMode.Client && Client.activated) {
                                                     Client.request(Client.Request.Exit, null, null)
                                                 }
                                                 Main.mainThread.shutdown()
@@ -496,7 +496,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     }
 
                     // Discord 봇 시작
-                    if (Config.passwordMethod == "discord") {
+                    if (Config.authType == Config.AuthType.Discord) {
                         Discord.start()
                     }
                 }

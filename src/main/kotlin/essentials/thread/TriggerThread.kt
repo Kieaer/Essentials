@@ -127,7 +127,7 @@ object TriggerThread : Runnable {
                         target.playtime = target.playtime + 1
                         if (target.x == p.tileX() && target.y == p.tileY()) {
                             target.afk = target.afk + 1
-                            if (Config.afktime != 0L && Config.afktime < target.afk) {
+                            if (Config.afktime != 0 && Config.afktime < target.afk) {
                                 kick = true
                             }
                         } else {

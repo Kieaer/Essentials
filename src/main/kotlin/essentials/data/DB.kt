@@ -1,6 +1,5 @@
 package essentials.data
 
-import essentials.form.Config
 import essentials.form.Service
 import essentials.internal.CrashReport
 import java.sql.Connection

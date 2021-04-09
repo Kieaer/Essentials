@@ -3,8 +3,6 @@ package essentials.command
 import arc.util.CommandHandler
 import essentials.data.Config
 import mindustry.gen.Playerc
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 object ClientCommand {
     lateinit var commands: CommandHandler
@@ -67,7 +65,7 @@ object ClientCommand {
         handler.register("router", "Router"){ arg: Array<String>, player: Playerc ->
             ClientCommandThread(Command.Router, arg, player).run()
         }
-        handler.register("register", if (Config.passwordMethod.equals("password", ignoreCase = true)) "<accountid> <password>" else "", "Register account"){ arg: Array<String>, player: Playerc ->
+        handler.register("register", if (Config.authType == Config.AuthType.Password) "<accountid> <password>" else "", "Register account"){ arg: Array<String>, player: Playerc ->
             ClientCommandThread(Command.Register, arg, player).run()
         }
         handler.register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position"){ arg: Array<String>, player: Playerc ->

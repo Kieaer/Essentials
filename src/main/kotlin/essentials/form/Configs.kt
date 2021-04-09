@@ -1,6 +1,6 @@
 package essentials.form
 
-abstract class Config {
+abstract class Configs {
     abstract fun createFile()
     abstract fun save()
     abstract fun load()

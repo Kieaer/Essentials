@@ -4,22 +4,25 @@ import arc.ApplicationListener
 import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
-import arc.util.async.Threads.sleep
 import essentials.command.ClientCommand
 import essentials.command.ServerCommand
 import essentials.data.Config
 import essentials.data.DB
 import essentials.data.PlayerCore
 import essentials.event.Event
-import essentials.event.feature.*
-import essentials.form.Service
+import essentials.event.feature.AutoRollback
+import essentials.event.feature.Discord
+import essentials.event.feature.Permissions
+import essentials.event.feature.RainbowName
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.PluginException
 import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
-import essentials.thread.*
+import essentials.thread.PermissionWatch
+import essentials.thread.TriggerThread
+import essentials.thread.WarpBorder
 import mindustry.Vars.netServer
 import mindustry.core.Version
 import mindustry.mod.Plugin
@@ -28,9 +31,9 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
-import java.sql.SQLException
 import java.util.*
-import java.util.concurrent.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import kotlin.system.exitProcess
@@ -56,8 +59,8 @@ class Main : Plugin() {
         }
 
         // 설정 불러오기
-        Config.init()
-        Log.info("config.language", Config.language.displayLanguage)
+        Config.createFile()
+        Log.info("config.language", Config.locale.displayLanguage)
 
         // 플러그인 데이터 불러오기
         PluginData.loadAll()
@@ -69,19 +72,17 @@ class Main : Plugin() {
         mainThread.submit(TriggerThread)
         mainThread.submit(Threads)
         mainThread.submit(RainbowName)
-        if (Config.rollback) timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())
+        timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())
         mainThread.submit(PermissionWatch)
         mainThread.submit(WarpBorder)
 
         // DB 연결
         DB.start()
 
-        // Server 시작
-        if (Config.serverEnable) mainThread.submit(Server)
-
-        // Client 연결
-        if (Config.clientEnable) {
-            if (Config.serverEnable) sleep(1000)
+        // 네트워크 연결
+        if (Config.networkMode == Config.NetworkMode.Server) {
+            mainThread.submit(Server)
+        } else if (Config.networkMode == Config.NetworkMode.Client){
             mainThread.submit(Client)
             Client.wakeup()
         }
@@ -108,7 +109,7 @@ class Main : Plugin() {
                     // 투표 종료
                     PluginData.votingClass?.interrupt()
                     DB.stop()
-                    if (Config.serverEnable) {
+                    if (Config.networkMode == Config.NetworkMode.Server) {
                         val servers = Server.list.iterator()
                         while (servers.hasNext()) {
                             val ser = servers.next()
@@ -123,7 +124,7 @@ class Main : Plugin() {
                     }
 
                     // 클라이언트 종료
-                    if (Config.clientEnable && Client.activated) {
+                    if (Config.networkMode == Config.NetworkMode.Client && Client.activated) {
                         Client.request(Client.Request.Exit, null, null)
                         Log.info("client.shutdown")
                     }

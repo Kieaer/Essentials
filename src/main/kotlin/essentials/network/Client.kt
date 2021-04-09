@@ -1,7 +1,7 @@
 package essentials.network
 
-import essentials.data.Config
 import essentials.Main.Companion.mainThread
+import essentials.data.Config
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.Tool
@@ -32,6 +32,8 @@ object Client : Runnable {
     private lateinit var skey: SecretKey
     private var disconnected = false
 
+    private lateinit var ip: List<String>
+
     fun shutdown() {
         try {
             Thread.currentThread().interrupt()
@@ -45,8 +47,8 @@ object Client : Runnable {
 
     fun wakeup() {
         try {
-            val address = InetAddress.getByName(Config.clientHost)
-            socket = Socket(address, Config.clientPort)
+            ip = Config.networkAddress.split(":")
+            socket = Socket(ip[0], ip[1].toInt())
             socket.soTimeout = if (disconnected) 2000 else 10000
 
             // 키 생성
@@ -156,7 +158,7 @@ object Client : Runnable {
                     os.writeBytes(Tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                     Call.sendMessage("[#357EC7][SC] [orange]" + player.name() + "[orange]: [white]" + message)
-                    Log.client("client.message", Config.clientHost, message)
+                    Log.client("client.message", ip[0], message)
                 }
                 Request.Exit -> {
                     data.add("type", "Exit")
@@ -210,17 +212,17 @@ object Client : Runnable {
                         data = JsonValue.readJSON(Tool.decrypt(stringBuffer, skey)).asObject()
                     } catch (e: IllegalArgumentException) {
                         disconnected = true
-                        Log.client("server.disconnected", Config.clientHost)
+                        Log.client("server.disconnected", ip[0])
                         if (!Thread.currentThread().isInterrupted) wakeup()
                         return
                     } catch (e: SocketException) {
                         disconnected = true
-                        Log.client("server.disconnected", Config.clientHost)
+                        Log.client("server.disconnected", ip[0])
                         if (!Thread.currentThread().isInterrupted) wakeup()
                         return
                     } catch (e: Exception) {
                         if (e.message != "Socket closed") CrashReport(e)
-                        Log.client("server.disconnected", Config.clientHost)
+                        Log.client("server.disconnected", ip[0])
                         shutdown()
                         return
                     }
@@ -259,7 +261,7 @@ object Client : Runnable {
                     }
                 }
             } catch (e: Exception) {
-                Log.client("server.disconnected", Config.clientHost)
+                Log.client("server.disconnected", ip[0])
                 shutdown()
                 return
             }

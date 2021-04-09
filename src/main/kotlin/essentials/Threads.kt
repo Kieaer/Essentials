@@ -138,11 +138,8 @@ object Threads : Runnable {
                     val playerData = PluginData[p.uuid()]
                     if (playerData != null) {
                         val locale = Locale(playerData.countryCode)
-                        val message: String = if (Config.passwordMethod == "discord") {
-                            """
-                                ${Bundle(locale)["system.login.require.discord"]}
-                                ${Config.discordLink}
-                                """.trimIndent()
+                        val message: String = if (Config.authType == Config.AuthType.Discord) {
+                            Bundle(locale)["system.login.require.discord"]
                         } else {
                             Bundle(locale)["system.login.require.password"]
                         }

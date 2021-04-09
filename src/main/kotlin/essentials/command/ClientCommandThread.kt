@@ -105,12 +105,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         }
 
                         "rollback" -> {
-                            if (Config.rollback) {
-                                PluginData.votingType = VoteType.Rollback
-                            } else {
-                                sendMessage["vote.rollback.disabled"]
-                                return
-                            }
+                            PluginData.votingType = VoteType.Rollback
                         }
 
                         "skipwave" -> {
@@ -333,7 +328,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     }
                 }
                 Login -> {
-                    if (Config.loginEnable) {
+                    if (Config.authType != Config.AuthType.None) {
                         if (data != null) {
                             if (PlayerCore.login(arg[0], arg[1])) {
                                 if (PlayerCore.playerLoad(player, arg[0])) {
@@ -385,7 +380,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     sendMessage[build.toString()]
                 }
                 Save -> {
-                    val file = Vars.saveDirectory.child(Config.slotNumber.toString() + "." + Vars.saveExtension)
+                    val file = Vars.saveDirectory.child("rollback." + Vars.saveExtension)
                     SaveIO.save(file)
                     sendMessage["system.map-saved"]
                 }
@@ -572,10 +567,10 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     }.start()
                 }
                 Register -> {
-                    if (Config.loginEnable) {
-                        when (Config.passwordMethod.toLowerCase()) {
+                    if (Config.authType != Config.AuthType.None) {
+                        when (Config.authType.name.toLowerCase()) {
                             "discord" -> {
-                                sendMessage["Join discord and use !register command!${Config.discordLink}"]
+                                sendMessage["Join discord and use !register command!"]
                                 if (!Discord.pins.containsKey(player.name())) Discord.queue(player)
                             }
                             "password" -> {

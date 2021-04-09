@@ -3,7 +3,6 @@ package essentials.event.feature
 import arc.struct.Seq
 import arc.util.async.Threads.sleep
 import essentials.PluginData
-import essentials.data.Config
 import mindustry.gen.Playerc
 
 object RainbowName : Runnable {
@@ -26,7 +25,7 @@ object RainbowName : Runnable {
                     }
                 }
             }
-            sleep(Config.cupdatei.toLong())
+            sleep(250)
         }
     }
 

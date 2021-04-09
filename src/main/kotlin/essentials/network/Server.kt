@@ -37,7 +37,7 @@ object Server : Runnable {
 
     override fun run() {
         try {
-            serverSocket = ServerSocket(Config.serverPort)
+            serverSocket = ServerSocket(Config.networkAddress.split(":")[1].toInt())
             Log.info("server.enabled")
             while (!serverSocket.isClosed) {
                 val socket = serverSocket.accept()

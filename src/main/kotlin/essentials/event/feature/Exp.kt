@@ -1,13 +1,12 @@
 package essentials.event.feature
 
 import essentials.PlayerData
-import essentials.data.Config
 import kotlin.math.floor
 import kotlin.math.pow
 
 object Exp {
-    private val baseXP = Config.baseXp
-    private val exponent = Config.exponent
+    private val baseXP = 500
+    private val exponent = 1.12
     private fun calcXpForLevel(level: Int): Double {
         return baseXP + baseXP * level.toDouble().pow(exponent)
     }
