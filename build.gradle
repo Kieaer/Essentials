@@ -28,7 +28,7 @@ dependencies {
     implementation 'com.neovisionaries:nv-i18n:+'
     implementation files('libs/ip2location.jar')
 
-    /*testImplementation 'com.github.Anuken.arc:arc-core:126.2'
+    testImplementation 'com.github.Anuken.arc:arc-core:126.2'
     testImplementation 'com.github.Anuken.Mindustry:core:126.2'
     testImplementation 'com.github.Anuken.Mindustry:server:126.2'
     testImplementation 'com.github.Anuken.arc:backend-headless:126.2'
@@ -36,9 +36,9 @@ dependencies {
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
 
-    testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:+"
-    testCompile "org.jetbrains.kotlin:kotlin-test:+"
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:+"*/
+    //testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:+"
+    testCompile "org.jetbrains.kotlin:kotlin-test:1.4.31"
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:1.4.31"
 }
 
 jar {

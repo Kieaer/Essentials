@@ -3,14 +3,15 @@ package essentials
 import arc.graphics.Color
 import com.github.javafaker.Faker
 import essentials.data.PlayerCore
+import junit.framework.Assert.assertNotNull
 import mindustry.content.UnitTypes
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import mindustry.net.Net.SendMode
+import mindustry.gen.Playerc
+import mindustry.net.Net
 import mindustry.net.NetConnection
 import java.security.SecureRandom
-import kotlin.test.assertNotNull
 
 object PluginTestDB {
     var r = SecureRandom()
@@ -24,12 +25,12 @@ object PluginTestDB {
                 .toString()
     }
 
-    fun createNewPlayer(isFull: Boolean, vararg password: String?): Player {
+    fun createNewPlayer(isFull: Boolean, vararg password: String?): Playerc {
         val player = Player.create()
         player.reset()
         player.admin(false)
         player.con = object : NetConnection(r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
-            override fun send(o: Any, sendMode: SendMode) {}
+            override fun send(o: Any, sendMode: Net.SendMode) {}
             override fun close() {}
         }
         player.con.usid = randomString(22) + "=="
@@ -43,7 +44,7 @@ object PluginTestDB {
         player.add()
         Groups.player.update()
         if (isFull) {
-            PlayerCore.register(player.name, player.uuid(), "South Korea", "ko_KR", "ko-KR", "none", "default",0L, player.name, (if (password.isNotEmpty()) password[0] else "none")!!, false)
+            PlayerCore.register(player, player.name, player.uuid(), player.name, password[0]!!)
             PlayerCore.playerLoad(player, null)
         }
         assertNotNull(player)
