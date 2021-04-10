@@ -34,7 +34,6 @@ import java.io.InputStreamReader
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import kotlin.system.exitProcess
 
@@ -180,21 +179,6 @@ class Main : Plugin() {
 
     private fun fileExtract(){
         try {
-            JarFile(File(Core.settings.dataDirectory.child("mods/Essentials.jar").absolutePath())).use { jar ->
-                val enumEntries = jar.entries()
-                while (enumEntries.hasMoreElements()) {
-                    val file = enumEntries.nextElement()
-                    val renamed = file.name.replace("config_folder/", "")
-                    if (file.name.startsWith("config_folder") && !pluginRoot.child(renamed).exists()) {
-                        if (file.isDirectory) {
-                            pluginRoot.child(renamed).file().mkdir()
-                            continue
-                        }
-                        jar.getInputStream(file).use { i -> pluginRoot.child(renamed).write(i, false) }
-                    }
-                }
-            }
-
             if(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()) {
                 ZipFile(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").absolutePath()).use { zip ->
                     zip.entries().asSequence().forEach { entry ->
