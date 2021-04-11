@@ -31,6 +31,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
+import java.net.URL
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -179,6 +180,10 @@ class Main : Plugin() {
 
     private fun fileExtract(){
         try {
+            if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()){
+                Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").file())
+            }
+
             if(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()) {
                 ZipFile(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").absolutePath()).use { zip ->
                     zip.entries().asSequence().forEach { entry ->
