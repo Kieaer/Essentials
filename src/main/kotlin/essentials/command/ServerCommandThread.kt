@@ -4,7 +4,7 @@ import arc.Core
 import essentials.Main.Companion.pluginRoot
 import essentials.PluginData
 import essentials.command.ServerCommand.Command.*
-import essentials.data.PlayerCore
+import essentials.data.DB
 import essentials.event.feature.Permissions
 import essentials.external.StringUtils
 import essentials.internal.CrashReport
@@ -80,7 +80,7 @@ class ServerCommandThread(private val type: ServerCommand.Command, private val a
                     if (players.size != 0) {
                         for (p in players) {
                             try {
-                                PlayerCore.conn.prepareStatement("SELECT * from players WHERE uuid=?").use { pstmt ->
+                                DB.database.prepareStatement("SELECT * from players WHERE uuid=?").use { pstmt ->
                                     pstmt.setString(1, p.id)
                                     pstmt.executeQuery().use { rs ->
                                         if (rs.next()) {

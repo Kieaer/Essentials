@@ -18,7 +18,7 @@ object DB : Service(){
                 "accountpw TEXT NOT NULL" +
                 ")"
         try {
-            PlayerCore.conn.prepareStatement(data).use { pstmt -> pstmt.execute() }
+            database.prepareStatement(data).use { pstmt -> pstmt.execute() }
         } catch (e: SQLException) {
             CrashReport(e)
         }

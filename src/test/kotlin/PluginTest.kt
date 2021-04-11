@@ -43,6 +43,7 @@ class PluginTest {
             Core.settings = Settings()
             Core.settings.dataDirectory = Fi("")
             val path = Core.settings.dataDirectory
+            println(path.absolutePath())
 
             path.child("locales").writeString("en")
             path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=6\nbuild=custom build")
@@ -120,6 +121,7 @@ class PluginTest {
         fun shutdown() {
             Core.app.listeners[0].dispose()
             Core.settings.dataDirectory.child("maps").deleteDirectory()
+            //Core.settings.dataDirectory.child("mods/Essentials").deleteDirectory()
         }
 
         private fun getSaltString(): String {

@@ -25,12 +25,14 @@ object Files : Configs() {
                 )
                 for (a in names) {
                     if (!pluginRoot.child("log/$a.log").exists()) {
+                        pluginRoot.child("log").mkdirs()
                         pluginRoot.child("log/$a.log").file().createNewFile()
                     }
                 }
             }
             // motd
             if (!pluginRoot.child("motd").exists()) {
+                pluginRoot.child("motd ").mkdirs()
                 val names = arrayListOf("en_US", "ko_KR")
                 val texts = arrayListOf(
                     "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en_US.txt[]",

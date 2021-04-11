@@ -52,16 +52,10 @@ object Config : Configs() {
 
     override fun createFile() {
         if (!pluginRoot.child("config.hjson").exists()) {
-            val empty = JsonObject()
-            obj = JsonObject()
-            obj.add("settings", JsonObject().add("database", empty))
-            obj.add("network", empty)
-            obj.add("features", empty)
-            obj.add("auth", JsonObject().add("discord", empty))
-        } else {
-            obj = JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).asObject()
+            obj = JsonObject().add("language", Locale.getDefault().toString())
+            save()
         }
-
+        obj = JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).asObject()
         load()
     }
 

@@ -113,7 +113,7 @@ object Client : Runnable {
                 }
             } else {
                 try {
-                    socket.close()
+                    if(::socket.isInitialized) socket.close()
                     Log.client("remote-server-dead")
                 } catch (ignored: IOException) {
                 }

@@ -3,6 +3,7 @@ package essentials.event.feature
 import arc.struct.ObjectMap
 import essentials.PluginData
 import essentials.data.Config
+import essentials.data.DB
 import essentials.data.PlayerCore
 import essentials.eof.sendMessage
 import essentials.internal.Bundle
@@ -71,7 +72,7 @@ object Discord : ListenerAdapter() {
                                 var rs: ResultSet? = null
                                 try {
                                     pw = BCrypt.gensalt(12, SecureRandom.getInstanceStrong())
-                                    pstmt = PlayerCore.conn.prepareStatement("SELECT * FROM players WHERE accountid=?")
+                                    pstmt = DB.database.prepareStatement("SELECT * FROM players WHERE accountid=?")
                                     pstmt.setString(1, name)
                                     rs = pstmt.executeQuery()
                                     if (!rs.next()) {

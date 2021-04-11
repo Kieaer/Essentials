@@ -1,35 +1,24 @@
 package essentials.data
 
-import arc.Core
-import arc.util.serialization.Json
-import essentials.Main.Companion.pluginRoot
 import essentials.PlayerData
 import essentials.PluginData
+import essentials.data.DB.database
 import essentials.event.feature.Permissions
 import essentials.event.feature.RainbowName
 import essentials.internal.CrashReport
-import essentials.internal.Log
-import essentials.internal.PluginException
 import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Playerc
 import mindustry.net.Packets
-import org.h2.Driver
 import org.h2.tools.Server
 import org.hjson.JsonObject
-import org.hjson.JsonType
 import org.mindrot.jbcrypt.BCrypt
-import java.sql.Connection
-import java.sql.DriverManager
 import java.sql.SQLException
 import java.time.LocalDateTime
 import java.util.*
-import java.util.function.Consumer
-import kotlin.system.exitProcess
 
 object PlayerCore {
-    lateinit var conn: Connection
     var server: Server? = null
 
     fun playerLoad(p: Playerc, id: String?): Boolean {
@@ -105,7 +94,7 @@ object PlayerCore {
 
     fun login(id: String, pw: String): Boolean {
         try {
-            conn.prepareStatement("SELECT * from players WHERE accountid=?").use { pstmt ->
+            database.prepareStatement("SELECT * from players WHERE accountid=?").use { pstmt ->
                 pstmt.setString(1, id)
                 pstmt.executeQuery().use { rs ->
                     return if (rs.next()) {
@@ -128,7 +117,7 @@ object PlayerCore {
         sql.append("SELECT * FROM players WHERE uuid=?")
         if (id != null) sql.append(" OR accountid=?")
         try {
-            conn.prepareStatement(sql.toString()).use { pstmt ->
+            database.prepareStatement(sql.toString()).use { pstmt ->
                 pstmt.setString(1, uuid)
                 if (id != null) pstmt.setString(2, id)
                 pstmt.executeQuery().use { rs ->
@@ -152,7 +141,7 @@ object PlayerCore {
 
     fun save(playerData: PlayerData): Boolean {
         try {
-            conn.prepareStatement("UPDATE players SET json=?, accountid=?, accountpw=? WHERE uuid=?").use { p ->
+            database.prepareStatement("UPDATE players SET json=?, accountid=?, accountpw=? WHERE uuid=?").use { p ->
                 p.setString(1, playerData.json)
                 p.setString(2, playerData.accountid)
                 p.setString(3, playerData.accountpw)
@@ -174,7 +163,7 @@ object PlayerCore {
         sql.append("INSERT INTO players VALUES(?,?,?,?)")
         val new = createData(player, name, uuid, id, pw)
         try {
-            conn.prepareStatement(sql.toString()).use { p ->
+            database.prepareStatement(sql.toString()).use { p ->
                 p.setString(1, new.json)
                 p.setString(2, new.accountid)
                 p.setString(3, new.accountpw)

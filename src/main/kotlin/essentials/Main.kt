@@ -8,6 +8,7 @@ import essentials.command.ClientCommand
 import essentials.command.ServerCommand
 import essentials.data.Config
 import essentials.data.DB
+import essentials.data.Files
 import essentials.data.PlayerCore
 import essentials.event.Event
 import essentials.event.feature.AutoRollback
@@ -59,6 +60,7 @@ class Main : Plugin() {
         }
 
         // 설정 불러오기
+        Files.createFile()
         Config.createFile()
         Log.info("config.language", Config.locale.displayLanguage)
 
@@ -129,7 +131,7 @@ class Main : Plugin() {
                         Log.info("client.shutdown")
                     }
 
-                    if (Server.isSocketInitialized() || Client.socket.isClosed || WarpBorder.isInterrupted || !PlayerCore.conn.isClosed) {
+                    if (Server.isSocketInitialized() || Client.socket.isClosed || WarpBorder.isInterrupted || !DB.database.isClosed) {
                         Log.info("thread-disable-waiting")
                     } else {
                         Log.warn("thread-not-dead")
@@ -181,6 +183,7 @@ class Main : Plugin() {
     private fun fileExtract(){
         try {
             if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()){
+                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").writeString("")
                 Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").file())
             }
 
