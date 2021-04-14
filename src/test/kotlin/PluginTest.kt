@@ -36,14 +36,14 @@ class PluginTest {
         private val clientCommand = CommandHandler("/")
         private val r = Random()
         private lateinit var player: Playerc
+        private lateinit var path: Fi
 
         @BeforeClass
         @JvmStatic
         fun init() {
             Core.settings = Settings()
             Core.settings.dataDirectory = Fi("")
-            val path = Core.settings.dataDirectory
-            println(path.absolutePath())
+            path = Core.settings.dataDirectory
 
             path.child("locales").writeString("en")
             path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=6\nbuild=custom build")
@@ -120,8 +120,7 @@ class PluginTest {
         @JvmStatic
         fun shutdown() {
             Core.app.listeners[0].dispose()
-            Core.settings.dataDirectory.child("maps").deleteDirectory()
-            //Core.settings.dataDirectory.child("mods/Essentials").deleteDirectory()
+            path.child("mods/Essentials").deleteDirectory()
         }
 
         private fun getSaltString(): String {

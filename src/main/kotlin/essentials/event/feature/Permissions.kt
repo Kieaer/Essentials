@@ -19,7 +19,7 @@ import java.io.IOException
 object Permissions {
     var perm: JsonObject = JsonObject()
     var user: JsonObject = JsonObject()
-    var default: String = "default"
+    var default: String = "visitor"
     
     operator fun get(name: String): JsonObject? {
         return user.get(name)?.asObject()
@@ -77,8 +77,8 @@ object Permissions {
                 for (data in perm) {
                     val name = data.name
                     if(get(name) != null) {
-                        if (get(name)!!.has("default")) {
-                            if (get(name)!!["default"].asBoolean()) {
+                        if (get(name)!!.has("visitor")) {
+                            if (get(name)!!["visitor"].asBoolean()) {
                                 default = name
                             }
                         }
@@ -96,12 +96,12 @@ object Permissions {
                 if (default == null || init) {
                     for (data in perm) {
                         val name = data.name
-                        if (name == "default") {
+                        if (name == "visitor") {
                             default = name
                             val json = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
-                            val perms = json["default"].asObject()["permission"].asArray()
+                            val perms = json["visitor"].asObject()["permission"].asArray()
                             json.remove("permission")
-                            if(!json.has("default")) json.add("default", true)
+                            if(!json.has("visitor")) json.add("visitor", true)
                             json.add("permission", perms)
                             if(init){
                                 pluginRoot.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
