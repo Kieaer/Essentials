@@ -10,27 +10,24 @@ class Bundle {
     var resource: ResourceBundle
 
     constructor() {
-        resource = try {
-            ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
-        } catch (e: Exception) {
-            ResourceBundle.getBundle("bundle.bundle", Locale.US, UTF8Control())
+        resource = when(Config.locale){
+            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru","RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
+            else -> ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, UTF8Control())
         }
     }
 
     constructor(locale: Locale) {
-        resource = try {
-            ResourceBundle.getBundle("bundle.bundle", locale, UTF8Control())
-        } catch (e: Exception) {
-            ResourceBundle.getBundle("bundle.bundle", Locale.US, UTF8Control())
+        resource = when(locale){
+            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru","RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
+            else -> ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, UTF8Control())
         }
     }
 
     constructor(playerData: PlayerData?) {
         val locale = if(playerData != null) Locale(playerData.countryCode) else Config.locale
-        resource = try {
-            ResourceBundle.getBundle("bundle.bundle", locale, UTF8Control())
-        } catch (e: Exception) {
-            ResourceBundle.getBundle("bundle.bundle", Locale.US, UTF8Control())
+        resource = when(locale){
+            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru","RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
+            else -> ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, UTF8Control())
         }
     }
 
