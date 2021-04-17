@@ -22,7 +22,13 @@ object PlayerCore {
     var server: Server? = null
 
     fun playerLoad(p: Playerc, id: String?): Boolean {
-        val playerData = load(p.uuid(), id) ?: return false
+        val playerData: PlayerData
+        if(load(p.uuid(), id) == null) {
+            playerData = load(p.uuid(), id)!!
+            PluginData.playerData.add(playerData)
+        } else {
+            return false
+        }
 
         if (LocalDateTime.now().isBefore(Tool.longToDateTime(playerData.bantime))) {
             Vars.netServer.admins.banPlayerID(p.uuid())
@@ -121,15 +127,13 @@ object PlayerCore {
                 pstmt.setString(1, uuid)
                 if (id != null) pstmt.setString(2, id)
                 pstmt.executeQuery().use { rs ->
-                    if (rs.next()) {
-                        val data = PlayerData(
+                    while (rs.next()) {
+                        return PlayerData(
                             rs.getString("uuid"),
                             rs.getString("json"),
                             rs.getString("accountid"),
                             rs.getString("accountpw")
                         )
-                        PluginData.playerData.add(data)
-                        return data
                     }
                 }
             }
@@ -164,10 +168,10 @@ object PlayerCore {
         val new = createData(player, name, uuid, id, pw)
         try {
             database.prepareStatement(sql.toString()).use { p ->
-                p.setString(1, new.json)
-                p.setString(2, new.accountid)
-                p.setString(3, new.accountpw)
-                p.setString(4, new.uuid)
+                p.setString(1, new.uuid)
+                p.setString(2, new.json)
+                p.setString(3, new.accountid)
+                p.setString(4, new.accountpw)
                 val count = p.executeUpdate()
                 return count > 0
             }
