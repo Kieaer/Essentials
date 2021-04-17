@@ -10,10 +10,11 @@ object DB : Service(){
     lateinit var database: Connection
 
     override fun start() {
+        Class.forName("org.h2.Driver")
         database = DriverManager.getConnection("jdbc:h2:file:./config/mods/Essentials/data/player", "", "")
         val data = "CREATE TABLE IF NOT EXISTS players (" +
                 "uuid TEXT NOT NULL," +
-                "data TEXT NOT NULL," +
+                "json TEXT NOT NULL," +
                 "accountid TEXT NOT NULL," +
                 "accountpw TEXT NOT NULL" +
                 ")"

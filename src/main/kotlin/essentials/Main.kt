@@ -182,7 +182,7 @@ class Main : Plugin() {
 
     private fun fileExtract(){
         try {
-            if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()){
+            if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists() && !pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").exists()){
                 pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").writeString("")
                 Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").file())
             }

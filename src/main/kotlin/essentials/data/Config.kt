@@ -54,8 +54,9 @@ object Config : Configs() {
         if (!pluginRoot.child("config.hjson").exists()) {
             obj = JsonObject().add("language", Locale.getDefault().toString())
             save()
+        } else {
+            obj = JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).asObject()
         }
-        obj = JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).asObject()
         load()
     }
 
@@ -115,6 +116,8 @@ object Config : Configs() {
         // Discord 설정 (auth 상속)
         auth.add("discord", discord, bundle["config.feature.discord.desc"])
         discord.add("token", discordToken)
+
+        obj = config
         pluginRoot.child("config.hjson").writeString(config.toString(Stringify.HJSON_COMMENTS))
     }
 
