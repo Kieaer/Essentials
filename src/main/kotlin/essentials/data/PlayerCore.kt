@@ -22,9 +22,8 @@ object PlayerCore {
     var server: Server? = null
 
     fun playerLoad(p: Playerc, id: String?): Boolean {
-        val playerData: PlayerData
-        if(load(p.uuid(), id) == null) {
-            playerData = load(p.uuid(), id)!!
+        val playerData = load(p.uuid(), id)
+        if (playerData != null){
             PluginData.playerData.add(playerData)
         } else {
             return false

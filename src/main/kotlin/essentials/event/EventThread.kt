@@ -290,6 +290,8 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                 sendMessage(Permissions.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
                             }
                         }
+                    } else {
+                        sendMessage("[gray][Unauthorized] ${NetClient.colorizeName(e.player.id, e.player.name)}[white]: ${e.message}")
                     }
                 }
                 BlockBuildEnd -> {
@@ -502,6 +504,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 }
             }
         } catch (e: Exception){
+            e.printStackTrace()
             CrashReport(e)
         }
     }

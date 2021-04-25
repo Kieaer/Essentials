@@ -134,16 +134,17 @@ object Threads : Runnable {
                     ping = 0.000
                 }
 
+                // 로그인 요구 띄우기
                 for (p in Groups.player) {
                     val playerData = PluginData[p.uuid()]
                     if (playerData != null) {
                         val locale = Locale(playerData.countryCode)
-                        val message: String = if (Config.authType == Config.AuthType.Discord) {
-                            Bundle(locale)["system.login.require.discord"]
-                        } else {
-                            Bundle(locale)["system.login.require.password"]
+                        val message: String = when (Config.authType) {
+                            Config.AuthType.Discord -> Bundle(locale)["system.login.require.discord"]
+                            Config.AuthType.Password -> Bundle(locale)["system.login.require.password"]
+                            else -> ""
                         }
-                        sendMessage(p, message)
+                        if(message != "") sendMessage(p, message)
                     }
                 }
 

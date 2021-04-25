@@ -29,7 +29,7 @@ object Permissions {
         val obj = JsonObject()
         obj.add("name", playerData.name)
         obj.add("group", default)
-        obj.add("prefix", perm[playerData.permission].asObject().getString("prefix", "%1[orange] >[white] %2"))
+        obj.add("prefix", perm[default].asObject().getString("prefix", "%1[orange] >[white] %2"))
         obj.add("admin", false)
         user.add(playerData.uuid, obj)
     }
