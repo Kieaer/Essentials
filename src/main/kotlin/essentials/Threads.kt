@@ -25,6 +25,7 @@ import java.util.function.Consumer
 object Threads : Runnable {
     private var ping = 0.000
     private val servers = ArrayMap<String, Int>()
+    private var sleepCount = 0
 
     override fun run() {
         Thread.currentThread().name = "Essential main thread"
@@ -135,17 +136,22 @@ object Threads : Runnable {
                 }
 
                 // 로그인 요구 띄우기
-                for (p in Groups.player) {
-                    val playerData = PluginData[p.uuid()]
-                    if (playerData != null) {
-                        val locale = Locale(playerData.countryCode)
-                        val message: String = when (Config.authType) {
-                            Config.AuthType.Discord -> Bundle(locale)["system.login.require.discord"]
-                            Config.AuthType.Password -> Bundle(locale)["system.login.require.password"]
-                            else -> ""
+                if (sleepCount == 20) {
+                    for (p in Groups.player) {
+                        val playerData = PluginData[p.uuid()]
+                        if (playerData != null) {
+                            val locale = Locale(playerData.countryCode)
+                            val message: String = when (Config.authType) {
+                                Config.AuthType.Discord -> Bundle(locale)["system.login.require.discord"]
+                                Config.AuthType.Password -> Bundle(locale)["system.login.require.password"]
+                                else -> ""
+                            }
+                            if (message != "") sendMessage(p, message)
                         }
-                        if(message != "") sendMessage(p, message)
                     }
+                    sleepCount = 0
+                } else {
+                    sleepCount++
                 }
 
                 TimeUnit.SECONDS.sleep(3)
