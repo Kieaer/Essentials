@@ -28,7 +28,7 @@ object Permissions {
     fun create(playerData: PlayerData) {
         val obj = JsonObject()
         obj.add("name", playerData.name)
-        obj.add("group", default)
+        obj.add("group", if(Config.authType == Config.AuthType.None) "default" else default)
         obj.add("prefix", perm[default].asObject().getString("prefix", "%1[orange] >[white] %2"))
         obj.add("admin", false)
         user.add(playerData.uuid, obj)
@@ -76,41 +76,25 @@ object Permissions {
                 perm = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
                 for (data in perm) {
                     val name = data.name
-                    if(get(name) != null) {
-                        if (get(name)!!.has("visitor")) {
-                            if (get(name)!!["visitor"].asBoolean()) {
-                                default = name
+                    if (Config.authType == Config.AuthType.None && perm.get(name).asObject().has("default")){
+                        default = name
+                    } else if(perm.get(name).asObject().has("visitor")){
+                        default = "visitor"
+                    }
+
+                    if (perm.get(name).asObject().has("inheritance")){
+                        var inheritance = perm.get(name).asObject().getString("inheritance", null)
+                        while (inheritance != null){
+                            for (a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()){
+                                perm.get(name).asObject().get("permission").asArray().add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
                             }
-                        }
-                        if (get(name)!!["inheritance"] != null) {
-                            var inheritance = get(name)!!.getString("inheritance", null)
-                            while (inheritance != null) {
-                                for (a in 0 until get(inheritance)!!.asObject()["permission"].asArray().size()) {
-                                    get(name)!!["permission"].asArray().add(get(inheritance)!!.asObject()["permission"].asArray()[a].asString())
-                                }
-                                inheritance = get(inheritance)!!.asObject().getString("inheritance", null)
-                            }
+                            inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
                         }
                     }
+
+                    println(perm.toString(Stringify.HJSON))
                 }
-                if (default == null || init) {
-                    for (data in perm) {
-                        val name = data.name
-                        if (name == "visitor") {
-                            default = name
-                            val json = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
-                            val perms = json["visitor"].asObject()["permission"].asArray()
-                            json.remove("permission")
-                            if(!json.has("visitor")) json.add("visitor", true)
-                            json.add("permission", perms)
-                            if(init){
-                                pluginRoot.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
-                            } else {
-                                perm = json
-                            }
-                        }
-                    }
-                }
+
                 if (default == null) {
                     throw PluginException(Bundle(Config.locale)["system.permissions.no-default"])
                 }
