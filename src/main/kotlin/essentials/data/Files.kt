@@ -273,6 +273,7 @@ object Files : Configs() {
             visitorPerm.add("register")
             visitorPerm.add("login")
             visitorPerm.add("help")
+            visitorPerm.add("t")
 
             visitor.add("prefix", "%1[scarlet] > [white]%2")
             visitor.add("default", true)
