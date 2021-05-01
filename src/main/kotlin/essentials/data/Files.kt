@@ -272,6 +272,7 @@ object Files : Configs() {
             val visitorPerm = JsonArray()
             visitorPerm.add("register")
             visitorPerm.add("login")
+            visitorPerm.add("help")
 
             visitor.add("prefix", "%1[scarlet] > [white]%2")
             visitor.add("default", true)
