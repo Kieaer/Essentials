@@ -28,7 +28,7 @@ object Permissions {
     fun create(playerData: PlayerData) {
         val obj = JsonObject()
         obj.add("name", playerData.name)
-        obj.add("group", if(Config.authType == Config.AuthType.None) "default" else default)
+        obj.add("group", if(Config.authType == Config.AuthType.None) "user" else default)
         obj.add("prefix", perm[default].asObject().getString("prefix", "%1[orange] >[white] %2"))
         obj.add("admin", false)
         user.add(playerData.uuid, obj)
@@ -78,8 +78,6 @@ object Permissions {
                     val name = data.name
                     if (Config.authType == Config.AuthType.None && perm.get(name).asObject().has("default")){
                         default = name
-                    } else if(perm.get(name).asObject().has("visitor")){
-                        default = "visitor"
                     }
 
                     if (perm.get(name).asObject().has("inheritance")){
@@ -91,8 +89,6 @@ object Permissions {
                             inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
                         }
                     }
-
-                    println(perm.toString(Stringify.HJSON))
                 }
 
                 if (default == null) {
