@@ -28,16 +28,16 @@ import java.util.regex.Pattern
 import javax.security.auth.login.LoginException
 
 object Discord : ListenerAdapter() {
-    private var jda: JDA? = null
-    private var event: MessageReceivedEvent? = null
+    private lateinit var jda: JDA
+    private lateinit var event: MessageReceivedEvent
     val pins: ObjectMap<String, Int> = ObjectMap()
 
     fun start() {
         // TODO discord 방식 변경
         try {
             jda = JDABuilder.createDefault(Config.discordToken).build()
-            jda!!.awaitReady()
-            jda!!.addEventListener(Discord)
+            jda.awaitReady()
+            jda.addEventListener(Discord)
             Log.info("system.discord.enabled")
         } catch (e: LoginException) {
             Log.err("system.discord.error")
@@ -169,10 +169,10 @@ object Discord : ListenerAdapter() {
     }
 
     private fun send(message: String?) {
-        event!!.privateChannel.sendMessage(message!!).queue()
+        if(::event.isInitialized) event.privateChannel.sendMessage(message!!).queue()
     }
 
     fun shutdownNow() {
-        jda!!.shutdown()
+        if(::jda.isInitialized) jda.shutdown()
     }
 }
