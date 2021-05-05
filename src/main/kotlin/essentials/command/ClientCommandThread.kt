@@ -11,6 +11,7 @@ import essentials.command.ClientCommand.Command.*
 import essentials.command.ClientCommand.Command.Vote
 import essentials.data.Config
 import essentials.data.PlayerCore
+import essentials.eof.constructFinish
 import essentials.eof.infoMessage
 import essentials.eof.sendMessage
 import essentials.eof.setPosition
@@ -29,6 +30,7 @@ import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.gen.Unit
 import mindustry.io.SaveIO
+import mindustry.type.UnitType
 import mindustry.world.Tile
 import org.hjson.JsonObject
 import org.mindrot.jbcrypt.BCrypt
@@ -36,7 +38,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.math.abs
-import kotlin.math.max
 
 class ClientCommandThread(private val type: ClientCommand.Command, private val arg: Array<String>, private val player: Playerc){
     fun run(){
@@ -353,31 +354,32 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     if (count > 10) infoMessage(player, motd) else sendMessage(player, motd)
                 }
                 Players -> {
-                    val build = StringBuilder()
-                    val page = if (arg.isNullOrEmpty()) abs(Strings.parseInt(arg[0])) else 1
-                    val pages = if (Mathf.ceil(Groups.player.size().toFloat() / 6) < 1.0) {
-                        Mathf.ceil(Groups.player.size().toFloat() / 6)
-                    } else 1
+                    val message = StringBuilder()
+                    val page = if (arg.isNotEmpty()) arg[0].toInt() else 0
 
-                    if (pages < page || page != 0) {
-                        sendMessage["[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet]."]
-                        return
+                    val buffer = Mathf.ceil(Groups.player.size().toFloat() / 6)
+                    val pages = if (buffer > 1.0) buffer - 1 else 0
+
+                    if (pages < page) {
+                        sendMessage["[scarlet]페이지 쪽수는 최대 [orange]$pages[] 까지 있습니다"]
+                    } else {
+                        message.append("[green]==[white] 현재 서버 플레이어 목록. [sky]페이지 [orange]$page[]/[orange]$pages\n")
+
+                        val players: Seq<Playerc> = Seq<Playerc>()
+                        Groups.player.each { e: Playerc ->
+                            players.add(e)
+                        }
+
+                        for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Groups.player.size())) {
+                            message.append(
+                                    "[gray]${players.get(a).id()}[white] ${
+                                        players.get(a).name()
+                                    }\n"
+                            )
+                        }
+
+                        sendMessage[message.toString().dropLast(2)]
                     }
-
-                    build.append("[green]==[white] Players list page ").append(page).append("/").append(pages)
-                        .append(" [green]==[white]\n")
-
-                    val buf: Seq<Playerc> = Seq<Playerc>()
-                    Groups.player.each { e: Playerc ->
-                        buf.add(e)
-                    }
-
-                    for (a in 6 * page until (6 * (page)).coerceAtMost(Groups.player.size())) {
-                        build.append("[gray]").append(buf.get(a).id()).append("[] ").append(buf.get(a).name())
-                            .append("\n")
-                    }
-
-                    sendMessage[build.toString()]
                 }
                 Save -> {
                     val file = Vars.saveDirectory.child("rollback." + Vars.saveExtension)
@@ -599,46 +601,50 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     }
                 }
                 Spawn -> {
-                    val targetUnit = Tool.getUnitByName(arg[0])
-                    val names = StringBuilder()
-                    for (item in Vars.content.units()) {
-                        names.append(item.name + ", ")
-                    }
-                    names.setLength(max(names.length - 2, 0))
+                    val type = arg[0]
+                    val name = arg[1]
+                    val parameter = if (arg.size == 3) arg[2].toIntOrNull() else 1
 
-                    if (targetUnit == null) {
-                        sendMessage["system.mob.not-found", names.toString()]
-                        return
-                    }
-
-                    val count: Int = if(arg[1].toIntOrNull() !is Int) {
-                        arg[1].toInt()
-                    } else {
-                        sendMessage["system.mob.not-number"]
-                        return
-                    }
-
-                    if (Config.spawnLimit == count) {
-                        sendMessage["spawn-limit"]
-                        return
-                    }
-
-                    var targetPlayer = if (arg.size > 3) Tool.findPlayer(arg[3]) else player
-                    if (targetPlayer == null) {
-                        sendMessage["player.not-found"]
-                        targetPlayer = player
-                    }
-
-                    var targetTeam = if (arg.size > 2) Tool.getTeamByName(arg[2]) else targetPlayer.team()
-                    if (targetTeam == null) {
-                        sendMessage["team-not-found"]
-                        targetTeam = targetPlayer.team()
-                    }
-
-                    for (i in 0..count){
-                        val baseUnit = targetUnit.create(targetTeam)
-                        baseUnit[targetPlayer.x] = targetPlayer.y
-                        baseUnit.add()
+                    when {
+                        type.equals("unit", true) -> {
+                            val unit = Vars.content.units().find { unitType: UnitType -> unitType.name == name }
+                            if (unit != null) {
+                                if (parameter != null) {
+                                    if (name != "block") {
+                                        for (a in 1..parameter) {
+                                            val baseUnit = unit.create(player.team())
+                                            baseUnit.set(player.x, player.y)
+                                            baseUnit.add()
+                                        }
+                                    } else {
+                                        // TODO bundle
+                                        sendMessage["Block isn't unit. don't spawn it."]
+                                    }
+                                } else {
+                                    sendMessage["system.mob.not-number"]
+                                }
+                            } else {
+                                val names = StringBuilder()
+                                Vars.content.units().each {
+                                    names.append("${it.name}, ")
+                                }
+                                // TODO bundle
+                                sendMessage["Avaliable unit names: ${names.dropLast(2)}"]
+                            }
+                        }
+                        type.equals("block", true) -> {
+                            constructFinish(
+                                    tile = player.tileOn(),
+                                    block = Vars.content.blocks().find { it.name == name },
+                                    builder = player.unit(),
+                                    rotation = parameter?.toByte() ?: 0,
+                                    team = player.team(),
+                                    config = null
+                            )
+                        }
+                        else -> { // TODO 명령어 예외 만들기
+                            return
+                        }
                     }
                 }
                 Status -> {

@@ -68,7 +68,7 @@ object ClientCommand {
         handler.register("register", if (Config.authType == Config.AuthType.Password) "<accountid> <password>" else "", "Register account"){ arg: Array<String>, player: Playerc ->
             ClientCommandThread(Command.Register, arg, player).run()
         }
-        handler.register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position"){ arg: Array<String>, player: Playerc ->
+        handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawn mob in player position"){ arg: Array<String>, player: Playerc ->
             ClientCommandThread(Command.Spawn, arg, player).run()
         }
         handler.register("status", "Show server status"){ arg: Array<String>, player: Playerc ->
