@@ -13,6 +13,8 @@ import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
+import java.io.FileNotFoundException
+import java.lang.Thread.sleep
 
 object PluginData {
     const val buildVersion = 124
@@ -92,7 +94,15 @@ object PluginData {
         }
         data.add("banned", buffer)
 
-        pluginRoot.child("data/PluginData.object").writeString(data.toString(), false)
+        val file = pluginRoot.child("data/PluginData.object").file()
+        try {
+            file.writeText(data.toString())
+        } catch (e: FileNotFoundException){
+            Thread{
+                sleep(32)
+                file.writeText(data.toString())
+            }.start()
+        }
     }
 
     fun loadAll() {
