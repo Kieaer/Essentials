@@ -650,8 +650,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     val bancount = bans + ipbans
                     val playtime = Tool.longToTime(PluginData.playtime)
                     val uptime = Tool.longToTime(PluginData.uptime)
-                    sendMessage["server.status.result", fps.toString(), Groups.player.size()
-                        .toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginData.pluginVersion.toString()]
+                    sendMessage["server.status.result", fps.toString(), Groups.player.size().toString(), bancount.toString(), bans.toString(), ipbans.toString(), playtime, uptime, PluginData.pluginVersion.toString()]
                     val result = JsonObject()
                     for (p in PluginData.playerData) {
                         val loc = Locale(p.countryCode)
@@ -662,12 +661,12 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                                 result[loc.getDisplayCountry(locale)].asInt() + 1
                         }
                     }
-                    val s = StringBuilder()
+                    /*val s = StringBuilder()
                     for (m in result) {
                         val d = "${m.name}: ${m.value}"
                         s.append(d)
                     }
-                    sendMessage[if (s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString()]
+                    sendMessage[if (s.isNotEmpty() && s.last() == (',')) s.substring(0, s.length - 1) else s.toString()]*/
                 }
                 Team -> {
                     when (arg[0]) {

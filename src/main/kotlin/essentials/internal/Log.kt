@@ -1,8 +1,8 @@
 package essentials.internal
 
 import arc.util.Log
-import essentials.data.Config
 import essentials.Main.Companion.pluginRoot
+import essentials.data.Config
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -42,7 +42,7 @@ object Log {
         Log.info("[EssentialPlayer] " + MessageFormat.format(result, *parameter))
     }
 
-    fun write(type: LogType, value: String, vararg params: String?) {
+    fun write(type: LogType, value: String, vararg params: String) {
         val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
         val newlog = Paths.get(pluginRoot.child("log/$type.log").path())
         val oldlog = Paths.get(pluginRoot.child("log/old/$type/$date.log").path())

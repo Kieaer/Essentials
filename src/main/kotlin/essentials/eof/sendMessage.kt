@@ -27,9 +27,9 @@ class sendMessage {
         this.bundle = bundle
     }
 
-    operator fun get(msg: String, vararg parameter: String?){
+    operator fun get(msg: String, vararg parameter: String){
         Core.app.post {
-            player.sendMessage(bundle[msg, parameter])
+            player.sendMessage(bundle.get(msg, *parameter))
         }
     }
 }
