@@ -30,6 +30,7 @@ import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Nulls
 import mindustry.gen.Playerc
+import mindustry.net.Packets
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
 import java.io.BufferedReader
@@ -378,9 +379,7 @@ class EventThread(private val type: EventTypes, private val event: Any) {
                         }
                     }
                 }
-                UnitDestroy -> {
-                    val e = event as EventType.UnitDestroyEvent
-                }
+                UnitDestroy -> {}
                 PlayerBan -> {
                     val e = event as EventType.PlayerBanEvent
 
@@ -388,14 +387,12 @@ class EventThread(private val type: EventTypes, private val event: Any) {
                         Client.request(Client.Request.BanSync, Nulls.player, null)
                     }
 
-                    /*for (player in Groups.player) {
-                        if (player === e.player) {
-                            Tool.sendMessageAll("player.banned", e.player.name)
-                            if (Vars.netServer.admins.isIDBanned(player.uuid())) {
-                                player.con.kick(Packets.KickReason.banned)
-                            }
+                    if(e.player != null) {
+                        Tool.sendMessageAll("player.banned", e.player.name)
+                        if(Vars.netServer.admins.isIDBanned(e.player.uuid())) {
+                            e.player.con.kick(Packets.KickReason.banned)
                         }
-                    }*/
+                    }
                 }
                 PlayerIpBan -> {
                     if(Config.banShare && Client.activated) {

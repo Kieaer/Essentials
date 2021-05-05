@@ -9,7 +9,6 @@ import essentials.eof.sendMessage
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
-import essentials.internal.Tool
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import net.dv8tion.jda.api.JDA
@@ -77,7 +76,6 @@ object Discord : ListenerAdapter() {
                                     if(!rs.next()) {
                                         val player = Groups.player.find { p: Playerc -> p.name().equals(name, ignoreCase = true) }
                                         if(player != null) {
-                                            val lc = Tool.getGeo(player)
                                             val register = PlayerCore.register(player, player.name(), player.uuid(), name, pw)
                                             if(register) {
                                                 PlayerCore.playerLoad(player, null)
