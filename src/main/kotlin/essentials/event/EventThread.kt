@@ -48,15 +48,14 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     if (e.tile != null && e.tile.block() != null && e.player != null) {
                         // Source by BasedUser(router)
                         val entity = e.tile
-                        val value = e.value
-                        val other = Vars.world.tile(value as Int)
+                        val other = Vars.world.tile(e.value as Int)
                         val valid = other != null && other.block().hasPower
                         if (valid) {
                             val oldGraph = entity.power.graph
                             val newGraph = other.build.power.graph
-                            val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all={"), oldGraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
-                            val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all={"), newGraph.toString().indexOf("}, l")).replaceFirst("all=\\{".toRegex(), "").split(",").toTypedArray().size
-                            if (abs(oldGraphCount - newGraphCount) > 10) { //Tool.sendMessageAll("anti-grief.powernode", e.player.name, "[green] " + Math.max(oldGraphCount, newGraphCount) + " [cyan]->[scarlet] " + Math.min(oldGraphCount, newGraphCount) + " [white](" + e.tile.x + ", " + e.tile.y + ")");
+                            val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                            val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                            if (abs(oldGraphCount - newGraphCount) > 10) {
                                 sendMessage("${e.player.name} [white]player has [scarlet]unlinked[] the [yellow]power node[]. Number of connected buildings: [green] ${oldGraphCount.coerceAtLeast(newGraphCount)} [cyan]->[scarlet] ${oldGraphCount.coerceAtMost(newGraphCount)} [white](" + e.tile.x + ", " + e.tile.y + ")")
                             }
                         }
