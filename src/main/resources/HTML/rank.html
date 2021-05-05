@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-	<meta charset="UTF-8">
-	<title>Server ranking</title>
-	<style>
+    <meta charset="UTF-8">
+    <title>Server ranking</title>
+    <style>
 		* {margin: 0 auto;padding: 0;box-sizing: border-box;}
 		#box {margin-top: 5px;width: 85vw;height: 100%}
 		header{width: 100%;height: 75px;font-size:30px;background-color: #0277bd;color:white;display: flex;align-items: center;justify-content: center;}
@@ -41,7 +41,7 @@
 		#result_body{width: 100%;height: 550px;background-color: white;padding: 5px;}
 
     </style>
-    <script voteType="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" voteType="text/javascript"></script>
     <script>
 		$(function(){
 			$('#serverinfo').click(function(){
@@ -73,79 +73,79 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-	<div id="result">
-		<div id="result_header">Player information</div>
-		<div id="result_body"></div>
-	</div>
-	<div id="loginbox">
-		<div id="login">Login your account</div>
-		<div id="boxd">
-			<form method="post">
-                <div id="inputzone">
-                    <input id="id" voteType="text" placeholder="Your account id" name="id"><br>
-                    <input id="pw" voteType="password" placeholder="Your password" name="pw">
-                </div>
-                <div id="loginbutton">
-                    <input id="submit" voteType="submit" value="Login">
-                </div>
-			</form>
-		</div>
-	</div>
-	<div id="infopopup">
-		<div id="info_header">Server information</div>
-		<div id="info_body"></div>
-	</div>
+<div id="result">
+    <div id="result_header">Player information</div>
+    <div id="result_body"></div>
+</div>
+<div id="loginbox">
+    <div id="login">Login your account</div>
+    <div id="boxd">
+        <form method="post">
+            <div id="inputzone">
+                <input id="id" name="id" placeholder="Your account id" voteType="text"><br>
+                <input id="pw" name="pw" placeholder="Your password" voteType="password">
+            </div>
+            <div id="loginbutton">
+                <input id="submit" value="Login" voteType="submit">
+            </div>
+        </form>
+    </div>
+</div>
+<div id="infopopup">
+    <div id="info_header">Server information</div>
+    <div id="info_body"></div>
+</div>
 
-	<div id="box">
-		<header>Mindustry server player ranking</header>
-		<nav>
-			<ul>
-				<li><a href="#" id="serverinfo">Current server information</a></li>
-				<li><a href="#" id="loginbtn">Check personal record</a></li>
-			</ul>
-		</nav>
-		<div id="body">
-			<div class="rankbox">
-				<span id="rank-placecount"></span>
-				<table id="placecount"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-breakcount"></span>
-				<table id="breakcount"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-killcount"></span>
-				<table id="killcount"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-joincount"></span>
-				<table id="joincount"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-kickcount"></span>
-				<table id="kickcount"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-exp"></span>
-				<table id="exp"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-playtime"></span>
-				<table id="playtime"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-pvpwincount"></span>
-				<table id="pvpwincount"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-reactorcount"></span>
-				<table id="reactorcount"></table>
-			</div>
-			<div class="rankbox">
-				<span id="rank-attackclear"></span>
-				<table id="attackclear"></table>
-			</div>
-		</div>
-	</div>
+<div id="box">
+    <header>Mindustry server player ranking</header>
+    <nav>
+        <ul>
+            <li><a href="#" id="serverinfo">Current server information</a></li>
+            <li><a href="#" id="loginbtn">Check personal record</a></li>
+        </ul>
+    </nav>
+    <div id="body">
+        <div class="rankbox">
+            <span id="rank-placecount"></span>
+            <table id="placecount"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-breakcount"></span>
+            <table id="breakcount"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-killcount"></span>
+            <table id="killcount"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-joincount"></span>
+            <table id="joincount"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-kickcount"></span>
+            <table id="kickcount"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-exp"></span>
+            <table id="exp"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-playtime"></span>
+            <table id="playtime"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-pvpwincount"></span>
+            <table id="pvpwincount"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-reactorcount"></span>
+            <table id="reactorcount"></table>
+        </div>
+        <div class="rankbox">
+            <span id="rank-attackclear"></span>
+            <table id="attackclear"></table>
+        </div>
+    </div>
+</div>
 </body>
 </html>

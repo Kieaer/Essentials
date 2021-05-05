@@ -11,7 +11,7 @@ import java.util.function.Consumer
 
 object PingHost {
     // source from https://github.com/Anuken/CoreBot/blob/master/src/corebot/Net.java#L57-L84
-    operator fun get(ip: String, port: Int, listener: Consumer<Host>){
+    operator fun get(ip: String, port: Int, listener: Consumer<Host>) {
         try {
             DatagramSocket().use { socket ->
                 socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(ip), port))
@@ -23,7 +23,7 @@ object PingHost {
                 listener.accept(readServerData(ip, buffer, System.currentTimeMillis() - start))
                 socket.disconnect()
             }
-        } catch (e: Exception) {
+        } catch(e: Exception) {
             listener.accept(Host(0, ip, null, "invaild", 0, 0, 0, null, Gamemode.editor, 0, "invalid description", "invalid modename"))
         }
     }

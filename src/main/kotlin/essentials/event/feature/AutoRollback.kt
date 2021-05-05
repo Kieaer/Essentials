@@ -16,20 +16,19 @@ import mindustry.io.SaveIO.SaveException
 import mindustry.maps.Map
 import java.util.*
 
-
 object AutoRollback : TimerTask() {
     fun save() {
         try {
             val file = Vars.saveDirectory.child("rollback.${Vars.saveExtension}")
-            if (Vars.state.`is`(GameState.State.playing)) SaveIO.save(file)
-        } catch (e: Exception) {
+            if(Vars.state.`is`(GameState.State.playing)) SaveIO.save(file)
+        } catch(e: Exception) {
             CrashReport(e)
         }
     }
 
     fun load() {
         val players = Seq<Player>()
-        for (p in Groups.player) {
+        for(p in Groups.player) {
             players.add(p)
             p.dead()
         }
@@ -39,42 +38,41 @@ object AutoRollback : TimerTask() {
             val file = Vars.saveDirectory.child("rollback.${Vars.saveExtension}")
             SaveIO.load(file)
             Vars.logic.play()
-            for (p in players) {
-                if (p.con() == null) continue
+            for(p in players) {
+                if(p.con() == null) continue
                 p.reset()
-                if (Vars.state.rules.pvp) {
+                if(Vars.state.rules.pvp) {
                     p.team(netServer.assignTeam(p, SeqIterable(players)))
                 }
                 netServer.sendWorldData(p)
             }
-        } catch (e: SaveException) {
+        } catch(e: SaveException) {
             CrashReport(e)
         }
         Log.info("Map rollbacked.")
-        if (Vars.state.`is`(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.")
+        if(Vars.state.`is`(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.")
     }
 
     fun load(map: Map?) {
         val players = Seq<Player>()
-        for (p in Groups.player) {
+        for(p in Groups.player) {
             players.add(p)
             p.dead()
         }
         Vars.logic.reset()
         Call.worldDataBegin()
         try {
-            Vars.world.loadMap(map, map!!.applyRules(Gamemode.survival))
-            //SaveIO.load(map.file);
+            Vars.world.loadMap(map, map!!.applyRules(Gamemode.survival)) //SaveIO.load(map.file);
             Vars.logic.play()
-            for (p in players) {
-                if (p.con() == null) continue
+            for(p in players) {
+                if(p.con() == null) continue
                 p.reset()
-                if (Vars.state.rules.pvp) {
+                if(Vars.state.rules.pvp) {
                     p.team(netServer.assignTeam(p, SeqIterable(players)))
                 }
                 netServer.sendWorldData(p)
             }
-        } catch (e: SaveException) {
+        } catch(e: SaveException) {
             CrashReport(e)
         }
     }

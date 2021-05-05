@@ -23,29 +23,29 @@ object PlayerCore {
 
     fun playerLoad(p: Playerc, id: String?): Boolean {
         val playerData = load(p.uuid(), id)
-        if (playerData != null){
+        if(playerData != null) {
             PluginData.playerData.add(playerData)
         } else {
             return false
         }
 
-        if (LocalDateTime.now().isBefore(Tool.longToDateTime(playerData.bantime))) {
+        if(LocalDateTime.now().isBefore(Tool.longToDateTime(playerData.bantime))) {
             Vars.netServer.admins.banPlayerID(p.uuid())
             Call.kick(p.con(), Packets.KickReason.banned)
             return false
         }
 
-        if (Config.motd) {
+        if(Config.motd) {
             val motd = Tool.getMotd(Locale(playerData.countryCode))
             val count = motd.split("\r\n|\r|\n").toTypedArray().size
-            if (count > 10) {
+            if(count > 10) {
                 Call.infoMessage(p.con(), motd)
-            } else if (motd.isNotEmpty()) {
+            } else if(motd.isNotEmpty()) {
                 p.sendMessage(motd)
             }
         }
 
-        if (playerData.colornick) RainbowName.targets.add(p)
+        if(playerData.colornick) RainbowName.targets.add(p)
 
         val oldUUID = playerData.uuid
 
@@ -55,7 +55,7 @@ object PlayerCore {
         playerData.exp = playerData.exp + playerData.joincount
 
         Permissions.setUserPerm(oldUUID, p.uuid())
-        if (Permissions.user[p.uuid()] == null) {
+        if(Permissions.user[p.uuid()] == null) {
             Permissions.create(playerData)
             Permissions.saveAll()
         } else {
@@ -65,34 +65,33 @@ object PlayerCore {
         return true
     }
 
-
     fun createData(player: Playerc?, name: String, uuid: String, id: String, pw: String): PlayerData {
         val country = Tool.getGeo(player)
 
         val json = JsonObject()
-        json.add("name",name)
-        json.add("uuid",uuid)
-        json.add("countryCode",country.toLanguageTag())
-        json.add("placecount",0)
-        json.add("breakcount",0)
-        json.add("joincount",0)
-        json.add("kickcount",0)
-        json.add("level",0)
-        json.add("exp",0)
-        json.add("firstdate",System.currentTimeMillis())
-        json.add("lastdate",System.currentTimeMillis())
-        json.add("playtime",0L)
-        json.add("attackclear",0)
-        json.add("pvpwincount",0)
-        json.add("pvplosecount",0)
-        json.add("pvpbreakout",0)
-        json.add("bantime",0L)
-        json.add("crosschat",false)
-        json.add("colornick",false)
-        json.add("permission","default")
-        json.add("mute",false)
-        json.add("alert",false)
-        json.add("udid",0L)
+        json.add("name", name)
+        json.add("uuid", uuid)
+        json.add("countryCode", country.toLanguageTag())
+        json.add("placecount", 0)
+        json.add("breakcount", 0)
+        json.add("joincount", 0)
+        json.add("kickcount", 0)
+        json.add("level", 0)
+        json.add("exp", 0)
+        json.add("firstdate", System.currentTimeMillis())
+        json.add("lastdate", System.currentTimeMillis())
+        json.add("playtime", 0L)
+        json.add("attackclear", 0)
+        json.add("pvpwincount", 0)
+        json.add("pvplosecount", 0)
+        json.add("pvpbreakout", 0)
+        json.add("bantime", 0L)
+        json.add("crosschat", false)
+        json.add("colornick", false)
+        json.add("permission", "default")
+        json.add("mute", false)
+        json.add("alert", false)
+        json.add("udid", 0L)
 
         return PlayerData(uuid, json.toString(), id, pw)
     }
@@ -102,16 +101,16 @@ object PlayerCore {
             database.prepareStatement("SELECT * from players WHERE accountid=?").use { pstmt ->
                 pstmt.setString(1, id)
                 pstmt.executeQuery().use { rs ->
-                    return if (rs.next()) {
+                    return if(rs.next()) {
                         BCrypt.checkpw(pw, rs.getString("accountpw"))
                     } else {
                         false
                     }
                 }
             }
-        } catch (e: RuntimeException) {
+        } catch(e: RuntimeException) {
             return false
-        } catch (e: SQLException) {
+        } catch(e: SQLException) {
             CrashReport(e)
             return false
         }
@@ -120,23 +119,18 @@ object PlayerCore {
     fun load(uuid: String, id: String?): PlayerData? {
         val sql = StringBuilder()
         sql.append("SELECT * FROM players WHERE uuid=?")
-        if (id != null) sql.append(" OR accountid=?")
+        if(id != null) sql.append(" OR accountid=?")
         try {
             database.prepareStatement(sql.toString()).use { pstmt ->
                 pstmt.setString(1, uuid)
-                if (id != null) pstmt.setString(2, id)
+                if(id != null) pstmt.setString(2, id)
                 pstmt.executeQuery().use { rs ->
-                    while (rs.next()) {
-                        return PlayerData(
-                            rs.getString("uuid"),
-                            rs.getString("json"),
-                            rs.getString("accountid"),
-                            rs.getString("accountpw")
-                        )
+                    while(rs.next()) {
+                        return PlayerData(rs.getString("uuid"), rs.getString("json"), rs.getString("accountid"), rs.getString("accountpw"))
                     }
                 }
             }
-        } catch (e: SQLException) {
+        } catch(e: SQLException) {
             CrashReport(e)
         }
         return null
@@ -151,14 +145,14 @@ object PlayerCore {
                 p.setString(4, playerData.uuid)
                 return p.execute()
             }
-        } catch (e: SQLException) {
+        } catch(e: SQLException) {
             CrashReport(e)
             return false
         }
     }
 
     fun saveAll() {
-        for (p in PluginData.playerData) save(p)
+        for(p in PluginData.playerData) save(p)
     }
 
     fun register(player: Playerc?, name: String, uuid: String, id: String, pw: String): Boolean {
@@ -174,7 +168,7 @@ object PlayerCore {
                 val count = p.executeUpdate()
                 return count > 0
             }
-        } catch (e: SQLException) {
+        } catch(e: SQLException) {
             CrashReport(e)
             return false
         }

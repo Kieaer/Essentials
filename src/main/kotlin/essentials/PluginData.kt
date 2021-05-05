@@ -46,8 +46,8 @@ object PluginData {
     var banned = Seq<Banned>()
 
     operator fun get(uuid: String): PlayerData? {
-        for (p in playerData) {
-            if (p.uuid == uuid) return p
+        for(p in playerData) {
+            if(p.uuid == uuid) return p
         }
         return null
     }
@@ -59,37 +59,37 @@ object PluginData {
     fun saveAll() {
         val data = JsonObject()
         var buffer = JsonArray()
-        for (a in 0 until warpzones.size) {
+        for(a in 0 until warpzones.size) {
             buffer.add(JsonValue.readHjson(json.prettyPrint(warpzones[a])))
         }
         data.add("warpzones", buffer)
 
         buffer = JsonArray()
-        for (a in 0 until warpblocks.size) {
+        for(a in 0 until warpblocks.size) {
             buffer.add(JsonValue.readHjson(json.prettyPrint(warpblocks[a])))
         }
         data.add("warpblocks", buffer)
 
         buffer = JsonArray()
-        for (a in 0 until warpcounts.size) {
+        for(a in 0 until warpcounts.size) {
             buffer.add(JsonValue.readHjson(json.prettyPrint(warpcounts[a])))
         }
         data.add("warpcounts", buffer)
 
         buffer = JsonArray()
-        for (a in 0 until warptotals.size) {
+        for(a in 0 until warptotals.size) {
             buffer.add(JsonValue.readHjson(json.prettyPrint(warptotals[a])))
         }
         data.add("warptotals", buffer)
 
         buffer = JsonArray()
-        for (a in 0 until blacklist.size) {
+        for(a in 0 until blacklist.size) {
             buffer.add(blacklist[a])
         }
         data.add("blacklist", buffer)
 
         buffer = JsonArray()
-        for (a in 0 until banned.size) {
+        for(a in 0 until banned.size) {
             buffer.add(JsonValue.readHjson(json.prettyPrint(banned[a])))
         }
         data.add("banned", buffer)
@@ -97,8 +97,8 @@ object PluginData {
         val file = pluginRoot.child("data/PluginData.object").file()
         try {
             file.writeText(data.toString())
-        } catch (e: FileNotFoundException){
-            Thread{
+        } catch(e: FileNotFoundException) {
+            Thread {
                 sleep(32)
                 file.writeText(data.toString())
             }.start()
@@ -107,69 +107,37 @@ object PluginData {
 
     fun loadAll() {
         try {
-            if (!pluginRoot.child("data/PluginData.object").exists()) {
+            if(!pluginRoot.child("data/PluginData.object").exists()) {
                 saveAll()
             } else {
                 val data = JsonValue.readJSON(pluginRoot.child("data/PluginData.object").readString()).asObject()
-                for (a in 0 until data["warpzones"].asArray().size()) {
+                for(a in 0 until data["warpzones"].asArray().size()) {
                     val buffer = data["warpzones"].asArray()[a].asObject()
-                    warpzones.add(WarpZone(
-                            buffer["mapName"].asString(),
-                            buffer["start"].asInt(),
-                            buffer["finish"].asInt(),
-                            buffer["touch"].asBoolean(),
-                            buffer["ip"].asString(),
-                            buffer["port"].asInt()
-                    ))
+                    warpzones.add(WarpZone(buffer["mapName"].asString(), buffer["start"].asInt(), buffer["finish"].asInt(), buffer["touch"].asBoolean(), buffer["ip"].asString(), buffer["port"].asInt()))
                 }
-                for (a in 0 until data["warpblocks"].asArray().size()) {
+                for(a in 0 until data["warpblocks"].asArray().size()) {
                     val buffer = data["warpblocks"].asArray()[a].asObject()
-                    warpblocks.add(WarpBlock(
-                            buffer["mapName"].asString(),
-                            buffer["pos"].asInt(),
-                            buffer["tileName"].asString(),
-                            buffer["size"].asInt(),
-                            buffer["ip"].asString(),
-                            buffer["port"].asInt(),
-                            buffer["description"].asString()
-                    ))
+                    warpblocks.add(WarpBlock(buffer["mapName"].asString(), buffer["pos"].asInt(), buffer["tileName"].asString(), buffer["size"].asInt(), buffer["ip"].asString(), buffer["port"].asInt(), buffer["description"].asString()))
                 }
-                for (a in 0 until data["warpcounts"].asArray().size()) {
+                for(a in 0 until data["warpcounts"].asArray().size()) {
                     val buffer = data["warpcounts"].asArray()[a].asObject()
-                    warpcounts.add(WarpCount(
-                            buffer["mapName"].asString(),
-                            buffer["pos"].asInt(),
-                            buffer["ip"].asString(),
-                            buffer["port"].asInt(),
-                            buffer["players"].asInt(),
-                            buffer["numbersize"].asInt()
-                    ))
+                    warpcounts.add(WarpCount(buffer["mapName"].asString(), buffer["pos"].asInt(), buffer["ip"].asString(), buffer["port"].asInt(), buffer["players"].asInt(), buffer["numbersize"].asInt()))
                 }
-                for (a in 0 until data["warptotals"].asArray().size()) {
+                for(a in 0 until data["warptotals"].asArray().size()) {
                     val buffer = data["warptotals"].asArray()[a].asObject()
-                    warptotals.add(WarpTotal(
-                            buffer["mapName"].asString(),
-                            buffer["tilePos"].asInt(),
-                            buffer["totalplayers"].asInt(),
-                            buffer["numbersize"].asInt()
-                    ))
+                    warptotals.add(WarpTotal(buffer["mapName"].asString(), buffer["tilePos"].asInt(), buffer["totalplayers"].asInt(), buffer["numbersize"].asInt()))
                 }
-                for (a in 0 until data["blacklist"].asArray().size()) {
+                for(a in 0 until data["blacklist"].asArray().size()) {
                     val buffer = data["warpzones"].asArray()[a].asArray()
                     blacklist.add(buffer[a].asString())
                 }
-                for (a in 0 until data["banned"].asArray().size()) {
+                for(a in 0 until data["banned"].asArray().size()) {
                     val buffer = data["banned"].asArray()[a].asObject()
-                    banned.add(Banned(
-                            buffer["time"].asLong(),
-                            buffer["name"].asString(),
-                            buffer["uuid"].asString(),
-                            buffer["reason"].asString()
-                    ))
+                    banned.add(Banned(buffer["time"].asLong(), buffer["name"].asString(), buffer["uuid"].asString(), buffer["reason"].asString()))
                 }
                 Log.info("plugindata-loaded")
             }
-        } catch (i: Exception) {
+        } catch(i: Exception) {
             pluginRoot.child("data/PluginData.object").delete()
             saveAll()
         }

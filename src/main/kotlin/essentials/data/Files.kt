@@ -9,44 +9,27 @@ import java.io.IOException
 
 object Files : Configs() {
     @Throws(IOException::class)
-    override fun createFile() {
-        // 기록 파일들
-        if (!pluginRoot.child("log").exists()) {
-            val names = arrayOf(
-                "block",
-                "chat",
-                "deposit",
-                "error",
-                "griefer",
-                "non-block",
-                "player",
-                "tap",
-                "web",
-                "withdraw"
-            )
-            for (a in names) {
-                if (!pluginRoot.child("log/$a.log").exists()) {
+    override fun createFile() { // 기록 파일들
+        if(!pluginRoot.child("log").exists()) {
+            val names = arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
+            for(a in names) {
+                if(!pluginRoot.child("log/$a.log").exists()) {
                     pluginRoot.child("log").mkdirs()
                     pluginRoot.child("log/$a.log").file().createNewFile()
                 }
             }
-        }
-        // motd
-        if (!pluginRoot.child("motd").exists()) {
+        } // motd
+        if(!pluginRoot.child("motd").exists()) {
             pluginRoot.child("motd ").mkdirs()
             val names = arrayListOf("en_US", "ko_KR")
-            val texts = arrayListOf(
-                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en_US.txt[]",
-                "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko_KR.txt[] 파일을 수정하세요."
-            )
-            for (a in 0 until names.size) {
-                if (!pluginRoot.child("motd/${names[a]}.txt").exists()) {
+            val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en_US.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko_KR.txt[] 파일을 수정하세요.")
+            for(a in 0 until names.size) {
+                if(!pluginRoot.child("motd/${names[a]}.txt").exists()) {
                     pluginRoot.child("motd/${names[a]}.txt").writeString(texts[a])
                 }
             }
-        }
-        // 블록 설치시 요구레벨 설정 파일
-        if (!pluginRoot.child("BlockReqExp.hjson").exists() || !pluginRoot.child("Exp.hjson").exists()) {
+        } // 블록 설치시 요구레벨 설정 파일
+        if(!pluginRoot.child("BlockReqExp.hjson").exists() || !pluginRoot.child("Exp.hjson").exists()) {
             val json = JsonObject()
 
             // 제작 건물
@@ -222,14 +205,14 @@ object Files : Configs() {
             json.add("blockLoader", 0)
             json.add("blockUnloader", 0)
 
-            if (!pluginRoot.child("BlockReqExp.hjson").exists()) {
+            if(!pluginRoot.child("BlockReqExp.hjson").exists()) {
                 pluginRoot.child("BlockReqExp.hjson").writeString(json.toString(Stringify.HJSON_COMMENTS))
-            } else if (!pluginRoot.child("Exp.hjson").exists()) {
+            } else if(!pluginRoot.child("Exp.hjson").exists()) {
                 pluginRoot.child("Exp.hjson").writeString(json.toString(Stringify.HJSON_COMMENTS))
             }
         }
 
-        if (!pluginRoot.child("permission.hjson").exists()) {
+        if(!pluginRoot.child("permission.hjson").exists()) {
             val json = JsonObject()
 
             val owner = JsonObject()
@@ -287,7 +270,7 @@ object Files : Configs() {
             pluginRoot.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
         }
 
-        if (!pluginRoot.child("permission_user.hjson").exists()) {
+        if(!pluginRoot.child("permission_user.hjson").exists()) {
             pluginRoot.child("permission_user.hjson").writeString("{}")
         }
     }

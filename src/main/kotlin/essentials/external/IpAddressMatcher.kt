@@ -37,22 +37,22 @@ class IpAddressMatcher(ipAddress: String) {
     private val requiredAddress: InetAddress
     fun matches(address: String): Boolean {
         val remoteAddress = parseAddress(address)
-        if (requiredAddress.javaClass != remoteAddress.javaClass) {
+        if(requiredAddress.javaClass != remoteAddress.javaClass) {
             return false
         }
-        if (nMaskBits < 0) {
+        if(nMaskBits < 0) {
             return remoteAddress == requiredAddress
         }
         val remAddr = remoteAddress.address
         val reqAddr = requiredAddress.address
         val nMaskFullBytes = nMaskBits / 8
         val finalByte = (0xFF00 shr (nMaskBits and 0x07)).toByte()
-        for (i in 0 until nMaskFullBytes) {
-            if (remAddr[i] != reqAddr[i]) {
+        for(i in 0 until nMaskFullBytes) {
+            if(remAddr[i] != reqAddr[i]) {
                 return false
             }
         }
-        return if (finalByte.toInt() != 0) {
+        return if(finalByte.toInt() != 0) {
             remAddr[nMaskFullBytes] and finalByte == reqAddr[nMaskFullBytes] and finalByte
         } else true
     }
@@ -60,7 +60,7 @@ class IpAddressMatcher(ipAddress: String) {
     private fun parseAddress(address: String): InetAddress {
         return try {
             InetAddress.getByName(address)
-        } catch (e: UnknownHostException) {
+        } catch(e: UnknownHostException) {
             throw IllegalArgumentException("Failed to parse address$address", e)
         }
     }
@@ -74,7 +74,7 @@ class IpAddressMatcher(ipAddress: String) {
      */
     init {
         var address = ipAddress
-        if (address.indexOf('/') > 0) {
+        if(address.indexOf('/') > 0) {
             val addressAndMask = address.split("/").toTypedArray()
             address = addressAndMask[0]
             nMaskBits = addressAndMask[1].toInt()
@@ -83,8 +83,7 @@ class IpAddressMatcher(ipAddress: String) {
         }
         requiredAddress = parseAddress(address)
         assert(requiredAddress.address.size * 8 >= nMaskBits) {
-            String.format("IP address %s is too short for bitmask of length %d",
-                    address, nMaskBits)
+            String.format("IP address %s is too short for bitmask of length %d", address, nMaskBits)
         }
     }
 }

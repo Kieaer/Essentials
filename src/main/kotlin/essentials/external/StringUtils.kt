@@ -10,32 +10,31 @@ object StringUtils {
     }
 
     private fun encode(source: String?): String? {
-        if (null == source) return null
+        if(null == source) return null
         var encode: StringBuffer? = null
         val encodeArray = source.toCharArray()
         var match = -1
         var difference: Int
-        for (i in encodeArray.indices) {
+        for(i in encodeArray.indices) {
             val charEncode = encodeArray[i]
-            if (htmlEncodeChars.containsKey(charEncode)) {
-                if (null == encode) encode = StringBuffer(source.length)
+            if(htmlEncodeChars.containsKey(charEncode)) {
+                if(null == encode) encode = StringBuffer(source.length)
                 difference = i - (match + 1)
-                if (difference > 0) encode.append(encodeArray, match + 1, difference)
+                if(difference > 0) encode.append(encodeArray, match + 1, difference)
                 encode.append(htmlEncodeChars[charEncode])
                 match = i
             }
         }
-        return if (null == encode) {
+        return if(null == encode) {
             source
         } else {
             difference = encodeArray.size - (match + 1)
-            if (difference > 0) encode.append(encodeArray, match + 1, difference)
+            if(difference > 0) encode.append(encodeArray, match + 1, difference)
             encode.toString()
         }
     }
 
-    init {
-        // Special characters for HTML
+    init { // Special characters for HTML
         htmlEncodeChars.put('\u0026', "&amp;")
         htmlEncodeChars.put('\u003C', "&lt;")
         htmlEncodeChars.put('\u003E', "&gt;")

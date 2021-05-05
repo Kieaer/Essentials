@@ -30,7 +30,7 @@ import java.util.zip.ZipFile
 import kotlin.test.assertNotNull
 
 class PluginTest {
-    companion object{
+    companion object {
         private lateinit var main: Main
         private val serverCommand = CommandHandler("")
         private val clientCommand = CommandHandler("/")
@@ -49,12 +49,12 @@ class PluginTest {
             path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=6\nbuild=custom build")
             Core.net = Net()
 
-            if (!path.child("maps").exists()) {
+            if(!path.child("maps").exists()) {
                 path.child("maps").mkdirs()
 
-                ZipFile(Paths.get("src","test","resources","maps.zip").toFile().absolutePath).use { zip ->
+                ZipFile(Paths.get("src", "test", "resources", "maps.zip").toFile().absolutePath).use { zip ->
                     zip.entries().asSequence().forEach { entry ->
-                        if (entry.isDirectory) {
+                        if(entry.isDirectory) {
                             File(path.child("maps").absolutePath(), entry.name).mkdirs()
                         } else {
                             zip.getInputStream(entry).use { input ->
@@ -91,14 +91,14 @@ class PluginTest {
                     }
                 }
                 HeadlessApplication(core, 60f) { throwable: Throwable? -> exceptionThrown[0] = throwable }
-                while (!begins[0]) {
-                    if (exceptionThrown[0] != null) {
+                while(!begins[0]) {
+                    if(exceptionThrown[0] != null) {
                         exceptionThrown[0]!!.printStackTrace()
                         Assert.fail()
                     }
                     Thread.sleep(10)
                 }
-            } catch (e: Exception) {
+            } catch(e: Exception) {
                 e.printStackTrace()
             }
 
@@ -126,7 +126,7 @@ class PluginTest {
         private fun getSaltString(): String {
             val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890"
             val salt = StringBuilder()
-            while (salt.length < 25){
+            while(salt.length < 25) {
                 val index = (r.nextFloat() * chars.length).toInt()
                 salt.append(chars[index])
             }
@@ -149,20 +149,18 @@ class PluginTest {
             player.set(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
             player.color.set(Color.rgb(r.nextInt(255), r.nextInt(255), r.nextInt(255)))
             player.color.a = r.nextFloat()
-            player.team(Team.sharded)
-            //player.unit(UnitTypes.dagger.spawn(r.nextInt(300).toFloat(), r.nextInt(500).toFloat()))
+            player.team(Team.sharded) //player.unit(UnitTypes.dagger.spawn(r.nextInt(300).toFloat(), r.nextInt(500).toFloat()))
             player.add()
             Vars.netServer.admins.getInfo(player.uuid())
             Groups.player.update()
 
-            assertNotNull(player)
-            //assertNotNull(player.unit())
+            assertNotNull(player) //assertNotNull(player.unit())
             return player
         }
     }
 
     @Test
-    fun register(){
+    fun register() {
         clientCommand.handleMessage("/register @as123P", player)
     }
 }

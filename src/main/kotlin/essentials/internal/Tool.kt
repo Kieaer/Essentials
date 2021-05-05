@@ -36,7 +36,6 @@ import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.pow
 
-
 object Tool {
     val ipre = IP2Location()
 
@@ -47,30 +46,28 @@ object Tool {
         br.use {
             return try {
                 br.readLine()
-            } catch (e: Exception) {
+            } catch(e: Exception) {
                 "127.0.0.1"
             }
         }
     }
 
     fun longToDateTime(mils: Long): LocalDateTime {
-        return Timestamp(mils).toLocalDateTime()
-        //return LocalDateTime.ofInstant(Instant.ofEpochMilli(mils), TimeZone.getDefault().toZoneId())
+        return Timestamp(mils).toLocalDateTime() //return LocalDateTime.ofInstant(Instant.ofEpochMilli(mils), TimeZone.getDefault().toZoneId())
     }
 
     fun longToTime(seconds: Long): String {
         val min = seconds / 60
         val hour = min / 60
         val days = hour / 24
-        return String.format("%d:%02d:%02d:%02d",
-                days % 365, hour % 24, min % 60, seconds % 60)
+        return String.format("%d:%02d:%02d:%02d", days % 365, hour % 24, min % 60, seconds % 60)
     }
 
     fun textToLocale(s: String): Locale {
         var locale = Locale(s)
         var lc = s
-        if (s.contains(",")) lc = lc.split(",").toTypedArray()[0]
-        if (lc.split("_").toTypedArray().size > 1) {
+        if(s.contains(",")) lc = lc.split(",").toTypedArray()[0]
+        if(lc.split("_").toTypedArray().size > 1) {
             val array = lc.split("_").toTypedArray()
             locale = Locale(array[0], array[1])
         }
@@ -78,11 +75,11 @@ object Tool {
     }
 
     fun getMotd(l: Locale): String {
-        return if (pluginRoot.child("motd/$l.txt").exists()) {
+        return if(pluginRoot.child("motd/$l.txt").exists()) {
             pluginRoot.child("motd/$l.txt").readString()
         } else {
             val file = pluginRoot.child("motd/" + Config.locale.toString() + ".txt")
-            if (file.exists()) file.readString() else ""
+            if(file.exists()) file.readString() else ""
         }
     }
 
@@ -115,9 +112,9 @@ object Tool {
 
     fun sendMessageAll(value: String, vararg parameter: String?) {
         Core.app.post {
-            for (p in Groups.player) {
+            for(p in Groups.player) {
                 val playerData = PluginData[p.uuid()]
-                if (playerData != null) p.sendMessage(Bundle(Locale(playerData.countryCode)).prefix(value, *parameter))
+                if(playerData != null) p.sendMessage(Bundle(Locale(playerData.countryCode)).prefix(value, *parameter))
             }
         }
     }
@@ -126,24 +123,24 @@ object Tool {
         try {
             Scanner(URL(url).openStream()).use { sc ->
                 val sb = StringBuilder()
-                while (sc.hasNext()) {
+                while(sc.hasNext()) {
                     sb.append(sc.next())
                 }
                 return sb.toString()
             }
-        } catch (e: IOException) {
+        } catch(e: IOException) {
             return null
         }
     }
 
     fun getGeo(data: Any?): Locale {
         if(data == null) return Config.locale
-        val ip = if (data is Playerc) netServer.admins.getInfo(data.uuid()).lastIP else (data as String?)!!
+        val ip = if(data is Playerc) netServer.admins.getInfo(data.uuid()).lastIP else (data as String?)!!
 
         val res = ipre.IPQuery(ip)
         val code = CountryCode.getByCode(res.countryShort)
 
-        return if (code == null) Config.locale else code.toLocale()
+        return if(code == null) Config.locale else code.toLocale()
     }
 
     fun download(url: URL, savepath: File) {
@@ -156,23 +153,21 @@ object Tool {
                 var byteRead: Int
                 var byteWritten = 0
                 val startTime = System.currentTimeMillis()
-                while (br.read(buf).also { byteRead = it } != -1) {
+                while(br.read(buf).also { byteRead = it } != -1) {
                     outputStream.write(buf, 0, byteRead)
                     byteWritten += byteRead
                     printProgress(startTime, size, byteWritten)
                 }
                 br.close()
             }
-        } catch (e: Exception) {
+        } catch(e: Exception) {
             CrashReport(e)
         }
     }
 
     private fun printProgress(startTime: Long, total: Int, remain: Int) {
-        val eta = if (remain == 0) 0 else (total - remain) * (System.currentTimeMillis() - startTime) / remain
-        val etaHms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
-                TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
-                TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1))
+        val eta = if(remain == 0) 0 else (total - remain) * (System.currentTimeMillis() - startTime) / remain
+        val etaHms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta), TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1), TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1))
         require(remain <= total)
         val maxBareSize = 20
         val remainPercent = 20 * remain / total
@@ -181,12 +176,12 @@ object Tool {
         val bare = String(CharArray(maxBareSize)).replace('\u0000', defaultChar) + "]"
         val bareDone = StringBuilder()
         bareDone.append("[")
-        for (i in 0 until remainPercent) {
+        for(i in 0 until remainPercent) {
             bareDone.append(icon)
         }
         val bareRemain = bare.substring(remainPercent)
         print("\r" + humanReadableByteCount(remain, true) + "/" + humanReadableByteCount(total, true) + "\t" + bareDone + bareRemain + " " + remainPercent * 5 + "%, ETA: " + etaHms)
-        if (remain == total) {
+        if(remain == total) {
             print("\n")
         }
     }
@@ -194,14 +189,14 @@ object Tool {
     // Source: https://programming.guide/worlds-most-copied-so-snippet.html
     private fun humanReadableByteCount(byte: Int, si: Boolean): String {
         var bytes = byte
-        val unit = if (si) 1000 else 1024
+        val unit = if(si) 1000 else 1024
         val absBytes = abs(bytes).toLong()
-        if (absBytes < unit) return "$bytes B"
+        if(absBytes < unit) return "$bytes B"
         var exp = (ln(absBytes.toDouble()) / ln(unit.toDouble())).toInt()
         val th = (unit.toDouble().pow(exp.toDouble()) * (unit - 0.05)).toLong()
-        if (exp < 6 && absBytes >= th - (if (th and 0xfff == 0xd00L) 52 else 0)) exp++
-        val pre = (if (si) "kMGTPE" else "KMGTPE")[exp - 1].toString() + if (si) "" else "i"
-        if (exp > 4) {
+        if(exp < 6 && absBytes >= th - (if(th and 0xfff == 0xd00L) 52 else 0)) exp++
+        val pre = (if(si) "kMGTPE" else "KMGTPE")[exp - 1].toString() + if(si) "" else "i"
+        if(exp > 4) {
             bytes /= unit
             exp -= 1
         }
@@ -217,8 +212,8 @@ object Tool {
     }
 
     fun getTeamByName(name: String): Team? {
-        for (t in Team.all) {
-            if (t.name == name) {
+        for(t in Team.all) {
+            if(t.name == name) {
                 return t
             }
         }
@@ -268,12 +263,12 @@ object Tool {
         letters.put("?", intArrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0))
         letters.put(" ", intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         val texts = text.toCharArray()
-        for (i in texts) {
+        for(i in texts) {
             val pos = Seq<IntArray>()
             val target = letters[i.toUpperCase().toString()]
             var xv = 0
             var yv = 0
-            when (target.size) {
+            when(target.size) {
                 20 -> {
                     xv = 5
                     yv = 4
@@ -299,16 +294,16 @@ object Tool {
                     yv = 5
                 }
             }
-            for (y in 0 until yv) {
-                for (x in 0 until xv) {
+            for(y in 0 until yv) {
+                for(x in 0 until xv) {
                     pos.add(intArrayOf(y, -x))
                 }
             }
-            for (a in 0 until pos.size) {
+            for(a in 0 until pos.size) {
                 val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
-                if (target[a] == 1) {
+                if(target[a] == 1) {
                     Call.constructFinish(tar, block, Nulls.unit, 0.toByte(), Team.sharded, false)
-                } else if (tar != null) {
+                } else if(tar != null) {
                     Call.deconstructFinish(tar, Blocks.air, Nulls.unit)
                 }
             }
@@ -316,54 +311,47 @@ object Tool {
         }
     }
 
-    fun checkPassword(player: Playerc, id: String?, password: String, password_repeat: String): Boolean {
-        // 영문(소문자), 숫자, 7~20자리
+    fun checkPassword(player: Playerc, id: String?, password: String, password_repeat: String): Boolean { // 영문(소문자), 숫자, 7~20자리
         var pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$"
         val matcher = Pattern.compile(pwPattern).matcher(password)
 
         // 같은 문자 4개이상 사용 불가
         pwPattern = "(.)\\1\\1\\1"
         val matcher2 = Pattern.compile(pwPattern).matcher(password)
-        if (password != password_repeat) {
-            // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
+        if(password != password_repeat) { // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
             /*player.sendMessage("""
     [green][Essentials] [sky]The password isn't the same.
     [green][Essentials] [sky]비밀번호가 똑같지 않습니다.
     """.trimIndent())*/
             return false
-        } else if (!matcher.matches()) {
-            // 정규식에 맞지 않을경우
+        } else if(!matcher.matches()) { // 정규식에 맞지 않을경우
             /*player.sendMessage("""
     [green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!
     [green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!
     """.trimIndent())*/
             Log.player("system.password.match.regex", player.name())
             return false
-        } else if (matcher2.find()) {
-            // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
+        } else if(matcher2.find()) { // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             /*player.sendMessage("""
     [green][Essentials] [sky]Passwords should not be similar to nicknames!
     [green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!
     """.trimIndent())*/
             Log.player("system.password.match.name", player.name())
             return false
-        } else if (password.contains(id!!)) {
-            // 비밀번호와 ID가 완전히 같은경우
+        } else if(password.contains(id!!)) { // 비밀번호와 ID가 완전히 같은경우
             /*player.sendMessage("""
     [green][Essentials] [sky]Password shouldn't be the same as your nickname.
     [green][Essentials] [sky]비밀번호는 ID와 비슷하게 설정할 수 없습니다!
     """.trimIndent())*/
             return false
-        } else if (password.contains(" ")) {
-            // 비밀번호에 공백이 있을경우
+        } else if(password.contains(" ")) { // 비밀번호에 공백이 있을경우
             /*player.sendMessage("""
     [green][Essentials] [sky]Password must not contain spaces!
     [green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!
     """.trimIndent())*/
             Log.player("system.password.match.blank", player.name())
             return false
-        } else if (password.matches(Regex("<(.*?)>"))) {
-            // 비밀번호 형식이 "<비밀번호>" 일경우
+        } else if(password.matches(Regex("<(.*?)>"))) { // 비밀번호 형식이 "<비밀번호>" 일경우
             /*player.sendMessage("""
     [green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!
     [green][Essentials] [sky]Use /register password
@@ -378,7 +366,7 @@ object Tool {
 
     fun setMessage(tile: Tile, message: String) {
         Core.app.post {
-            if (tile.block() is MessageBlock) {
+            if(tile.block() is MessageBlock) {
                 (tile.block() as MessageBlock).MessageBuild().configure(message)
             }
         }

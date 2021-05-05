@@ -25,7 +25,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
     var voting = false
     var require = 0
     var amount = 0
-    var map : mindustry.maps.Map? = null
+    var map: mindustry.maps.Map? = null
 
     val voted = Seq<String>()
 
@@ -34,13 +34,13 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
 
         if(!voting) {
             voting = true
-            if (PluginData.playerData.size < 4) {
+            if(PluginData.playerData.size < 4) {
                 player.sendMessage(bundle["vote.minimal"])
             } else {
-                require = if (PluginData.playerData.size > 8) 6 else 2 + if (PluginData.playerData.size > 4) 1 else 0
+                require = if(PluginData.playerData.size > 8) 6 else 2 + if(PluginData.playerData.size > 4) 1 else 0
 
                 Tool.sendMessageAll("vote.suggester-name", player.name())
-                when (type) {
+                when(type) {
                     Kick -> {
                         this.target = arg[0] as Playerc
                         Tool.sendMessageAll("vote.kick", target.name())
@@ -50,7 +50,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                         println(arg[0])
                         amount = try {
                             arg[0].toInt()
-                        } catch (ignored: NumberFormatException) {
+                        } catch(ignored: NumberFormatException) {
                             3
                         }
                         Tool.sendMessageAll("vote.skipwave", amount.toString())
@@ -58,12 +58,11 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                     Rollback -> Tool.sendMessageAll("vote.rollback")
                     Map -> {
                         var map = Vars.maps.all().find { map: mindustry.maps.Map ->
-                            map.name().equals(arg[1].replace('_', ' '), ignoreCase = true) || map.name()
-                                .equals(arg[1], ignoreCase = true)
+                            map.name().equals(arg[1].replace('_', ' '), ignoreCase = true) || map.name().equals(arg[1], ignoreCase = true)
                         }
-                        if (map == null) {
+                        if(map == null) {
                             map = Vars.maps.all()[arg[1].toInt()]
-                            if (map == null) {
+                            if(map == null) {
                                 sendMessage(player, bundle.prefix("vote.map.not-found"))
                                 return
                             }
@@ -71,7 +70,8 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
 
                         Tool.sendMessageAll("vote.map", map.name())
                     }
-                    None -> {}
+                    None -> {
+                    }
                 }
                 if(voting) {
                     counting.start()
@@ -83,19 +83,18 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
         }
     }
 
-    fun interrupt(){
+    fun interrupt() {
         alert.interrupt()
         counting.interrupt()
         voting = false
     }
 
-    private var counting : Thread = Thread()
-    private var alert : Thread = Thread()
+    private var counting: Thread = Thread()
+    private var alert: Thread = Thread()
 
-    fun success(success: Boolean) {
-        // TODO 투표 성공 메세지 bundle 추가
-        if (success) {
-            when (type) {
+    fun success(success: Boolean) { // TODO 투표 성공 메세지 bundle 추가
+        if(success) {
+            when(type) {
                 Gameover -> {
                     Log.info("Vote gameover passed!")
                     Tool.sendMessageAll("vote.gameover.done")
@@ -105,7 +104,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                     Log.info("Vote skipwave passed!")
                     Tool.sendMessageAll("vote.skipwave.done")
                     var a = 0
-                    while (a < amount) {
+                    while(a < amount) {
                         Vars.logic.runWave()
                         a++
                     }
@@ -129,29 +128,31 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                     AutoRollback.load(map)
                     Tool.sendMessageAll("vote.map.done")
                 }
-                None -> {}
+                None -> {
+                }
             }
         } else {
-            when (type) {
+            when(type) {
                 Gameover -> Tool.sendMessageAll("vote.gameover.fail")
                 Skipwave -> Tool.sendMessageAll("vote.skipwave.fail")
                 Kick -> Tool.sendMessageAll("vote.kick.fail", target.name())
                 Rollback -> Tool.sendMessageAll("vote.rollback.fail")
                 Map -> Tool.sendMessageAll("vote.map.fail")
-                None -> {}
+                None -> {
+                }
             }
         }
     }
 
     fun set(uuid: String) {
         voted.add(uuid)
-        for (others in Groups.player) {
+        for(others in Groups.player) {
             val p = PluginData[others.uuid()]
-            if (p != null && require - voted.size != -1) {
+            if(p != null && require - voted.size != -1) {
                 others.sendMessage(Bundle(p).prefix("vote.current-voted", voted.size.toString(), (require - voted.size).toString()))
             }
         }
-        if (voted.size >= require) {
+        if(voted.size >= require) {
             interrupt()
             success(voted.size >= require)
         }

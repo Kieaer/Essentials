@@ -97,7 +97,7 @@ class PlayerData(var uuid: String, var json: String, ID: String, PW: String) {
         this.pvplosecount = data.getInt("pvplose", 0)
         this.bantime = data.getLong("bantime", 0)
         this.crosschat = data.getBoolean("crosschat", false)
-        this.colornick = data.getBoolean("colornick",false)
+        this.colornick = data.getBoolean("colornick", false)
         this.permission = data.getString("permission", "visitor")
         this.mute = data.getBoolean("mute", false)
         this.udid = data.getLong("udid", 0L)

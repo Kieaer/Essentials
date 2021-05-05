@@ -3,8 +3,8 @@ package essentials.thread
 import arc.graphics.Color
 import arc.struct.Seq
 import arc.util.async.Threads.sleep
-import essentials.data.Config
 import essentials.PluginData
+import essentials.data.Config
 import essentials.external.PingHost
 import essentials.internal.Log
 import mindustry.Vars
@@ -26,7 +26,7 @@ object WarpBorder : Runnable {
     }
 
     fun interrupt() {
-        for (t in thread) {
+        for(t in thread) {
             t.interrupt()
         }
     }
@@ -34,8 +34,8 @@ object WarpBorder : Runnable {
     val isInterrupted: Boolean
         get() {
             var interrupt = true
-            for (t in thread) {
-                if (!t.isInterrupted) {
+            for(t in thread) {
+                if(!t.isInterrupted) {
                     interrupt = false
                     break
                 }
@@ -44,48 +44,48 @@ object WarpBorder : Runnable {
         }
 
     fun start() {
-        for (data in PluginData.warpzones) {
+        for(data in PluginData.warpzones) {
             val t = Thread {
-                while (!Thread.currentThread().isInterrupted) {
+                while(!Thread.currentThread().isInterrupted) {
                     val ip = data!!.ip
-                    if (Vars.state.`is`(GameState.State.playing)) {
+                    if(Vars.state.`is`(GameState.State.playing)) {
                         PingHost[ip, data.port, Consumer { result: Host ->
                             try {
-                                if (result.name != null) {
+                                if(result.name != null) {
                                     val size = data.finishTile.x - data.startTile.x
-                                    for (x in 0 until size) {
+                                    for(x in 0 until size) {
                                         val tile = world.tile(data.startTile.x + x, data.startTile.y.toInt())
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         sleep(96)
                                     }
-                                    for (y in 0 until size) {
+                                    for(y in 0 until size) {
                                         val tile = world.tile(data.finishTile.x.toInt(), data.startTile.y + y)
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         sleep(96)
                                     }
-                                    for (x in 0 until size) {
+                                    for(x in 0 until size) {
                                         val tile = world.tile(data.finishTile.x - x, data.finishTile.y.toInt())
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         sleep(96)
                                     }
-                                    for (y in 0 until size) {
+                                    for(y in 0 until size) {
                                         val tile = world.tile(data.startTile.x.toInt(), data.finishTile.y - y)
                                         Call.effect(Fx.placeBlock, tile.getX(), tile.getY(), 0f, Color.orange)
                                         sleep(96)
                                     }
-                                    if (size < 5) sleep(2000)
+                                    if(size < 5) sleep(2000)
                                 } else {
-                                    if (Config.debug) Log.info("warp zone $ip offline! After 1 minute, try to connect again.")
+                                    if(Config.debug) Log.info("warp zone $ip offline! After 1 minute, try to connect again.")
                                     TimeUnit.MINUTES.sleep(1)
                                 }
-                            } catch (e: InterruptedException) {
+                            } catch(e: InterruptedException) {
                                 Thread.currentThread().interrupt()
                             }
                         }]
                     } else {
                         try {
                             TimeUnit.SECONDS.sleep(1)
-                        } catch (e: InterruptedException) {
+                        } catch(e: InterruptedException) {
                             Thread.currentThread().interrupt()
                         }
                     }

@@ -20,7 +20,7 @@ object Permissions {
     var perm: JsonObject = JsonObject()
     var user: JsonObject = JsonObject()
     var default: String = "visitor"
-    
+
     operator fun get(name: String): JsonObject? {
         return user.get(name)?.asObject()
     }
@@ -35,28 +35,28 @@ object Permissions {
     }
 
     fun update(isSave: Boolean) {
-        for (p in user) {
+        for(p in user) {
             val `object` = p.value.asObject()
             var isMatch = false
             val group = p.value.asObject()["group"].asString()
-            for (d in perm) {
-                if (d.name == group) {
+            for(d in perm) {
+                if(d.name == group) {
                     isMatch = true
                     break
                 }
             }
-            if (!isMatch) user[p.name].asObject()["group"] = default
+            if(!isMatch) user[p.name].asObject()["group"] = default
             val player = Groups.player.find { pl: Playerc -> pl.uuid() == p.name }
-            if (player != null && p.value.asObject()["name"].asString() != player.name) {
+            if(player != null && p.value.asObject()["name"].asString() != player.name) {
                 player.name(`object`.getString("name", player.name))
             }
         }
-        if (isSave) saveAll()
+        if(isSave) saveAll()
     }
 
     fun rename(uuid: String, new_name: String?) {
-        for (j in user) {
-            if (j.name == uuid) {
+        for(j in user) {
+            if(j.name == uuid) {
                 val o = j.value.asObject().set("name", new_name)
                 o["name"] = new_name
                 user[uuid] = o
@@ -70,20 +70,20 @@ object Permissions {
     }
 
     fun reload(init: Boolean) {
-        if (pluginRoot.child("permission.hjson").exists()) {
+        if(pluginRoot.child("permission.hjson").exists()) {
             try {
                 var default: String? = null
                 perm = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
-                for (data in perm) {
+                for(data in perm) {
                     val name = data.name
-                    if (Config.authType == Config.AuthType.None && perm.get(name).asObject().has("default")){
+                    if(Config.authType == Config.AuthType.None && perm.get(name).asObject().has("default")) {
                         default = name
                     }
 
-                    if (perm.get(name).asObject().has("inheritance")){
+                    if(perm.get(name).asObject().has("inheritance")) {
                         var inheritance = perm.get(name).asObject().getString("inheritance", null)
-                        while (inheritance != null){
-                            for (a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()){
+                        while(inheritance != null) {
+                            for(a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()) {
                                 perm.get(name).asObject().get("permission").asArray().add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
                             }
                             inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
@@ -91,26 +91,26 @@ object Permissions {
                     }
                 }
 
-                if (default == null) {
+                if(default == null) {
                     throw PluginException(Bundle(Config.locale)["system.permissions.no-default"])
                 }
-            } catch (e: IOException) {
+            } catch(e: IOException) {
                 Log.err(e.message!!)
                 Core.app.dispose()
                 Core.app.exit()
-            } catch (e: Exception) {
+            } catch(e: Exception) {
                 CrashReport(e)
             }
         } else {
             Log.warn("system.file-not-found", "permission.hjson")
         }
-        if (pluginRoot.child("permission_user.hjson").exists()) {
+        if(pluginRoot.child("permission_user.hjson").exists()) {
             try {
                 user = JsonValue.readHjson(pluginRoot.child("permission_user.hjson").reader()).asObject()
-                for (p in Groups.player) {
+                for(p in Groups.player) {
                     p.admin(isAdmin(PluginData.playerData.find { d: PlayerData -> d.name == p.name }))
                 }
-            } catch (e: PluginException) {
+            } catch(e: PluginException) {
                 Log.err("Permission parsing: " + CrashReport(e).print())
             }
         } else {
@@ -120,12 +120,12 @@ object Permissions {
 
     fun check(player: Playerc, command: String): Boolean {
         val data = user[player.uuid()]
-        if (data != null) {
+        if(data != null) {
             val obj = data.asObject()
             val size = perm[obj["group"].asString()].asObject()["permission"].asArray().size()
-            for (a in 0 until size) {
+            for(a in 0 until size) {
                 val node = perm[obj["group"].asString()].asObject()["permission"].asArray()[a].asString()
-                if (node == command || node == "ALL") {
+                if(node == command || node == "ALL") {
                     return true
                 }
             }
@@ -136,8 +136,8 @@ object Permissions {
     }
 
     fun isAdmin(player: PlayerData?): Boolean {
-        return if (player != null) {
-            if (user.has(player.uuid)) {
+        return if(player != null) {
+            if(user.has(player.uuid)) {
                 user[player.uuid].asObject().getBoolean("admin", false)
             } else {
                 false
@@ -148,7 +148,7 @@ object Permissions {
     }
 
     fun setUserPerm(old: String, newid: String) {
-        if (old != newid) {
+        if(old != newid) {
             val oldJson = user[old].asObject()
             user[newid] = oldJson
             user.remove(old)

@@ -41,7 +41,7 @@ object Client : Runnable {
             br.close()
             socket.close()
             activated = false
-        } catch (ignored: IOException) {
+        } catch(ignored: IOException) {
         }
     }
 
@@ -49,7 +49,7 @@ object Client : Runnable {
         try {
             ip = Config.networkAddress.split(":")
             socket = Socket(ip[0], ip[1].toInt())
-            socket.soTimeout = if (disconnected) 2000 else 10000
+            socket.soTimeout = if(disconnected) 2000 else 10000
 
             // 키 생성
             br = BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
@@ -71,54 +71,54 @@ object Client : Runnable {
             os.writeBytes(encrypted + "\n")
             os.flush()
             val receive = Tool.decrypt(br.readLine(), skey)
-            if (JsonValue.readJSON(receive).asObject()["result"] != null) {
+            if(JsonValue.readJSON(receive).asObject()["result"] != null) {
                 activated = true
                 mainThread.execute(Thread(this))
                 Log.client(JsonValue.readJSON(receive).asObject()["result"].asString())
-                Log.client(if (disconnected) "client.reconnected" else "client.enabled", socket.inetAddress.toString().replace("/", ""))
+                Log.client(if(disconnected) "client.reconnected" else "client.enabled", socket.inetAddress.toString().replace("/", ""))
                 disconnected = false
             } else {
                 throw SocketException("Invalid request!")
             }
-        } catch (e: UnknownHostException) {
+        } catch(e: UnknownHostException) {
             Log.client("Invalid host!")
-        } catch (e: SocketTimeoutException) {
-            if (disconnected) {
+        } catch(e: SocketTimeoutException) {
+            if(disconnected) {
                 try {
                     socket.close()
                     TimeUnit.SECONDS.sleep(5)
                     wakeup()
-                } catch (ex: InterruptedException) {
+                } catch(ex: InterruptedException) {
                     Thread.currentThread().interrupt()
-                } catch (ex: IOException) {
+                } catch(ex: IOException) {
                     Thread.currentThread().interrupt()
                 }
             } else {
                 try {
                     socket.close()
                     Log.client("remote-server-dead")
-                } catch (ignored: IOException) {
+                } catch(ignored: IOException) {
                 }
             }
-        } catch (e: SocketException) {
-            if (disconnected) {
+        } catch(e: SocketException) {
+            if(disconnected) {
                 try {
                     socket.close()
                     TimeUnit.SECONDS.sleep(5)
                     wakeup()
-                } catch (ex: InterruptedException) {
+                } catch(ex: InterruptedException) {
                     Thread.currentThread().interrupt()
-                } catch (ex: IOException) {
+                } catch(ex: IOException) {
                     Thread.currentThread().interrupt()
                 }
             } else {
                 try {
                     if(::socket.isInitialized) socket.close()
                     Log.client("remote-server-dead")
-                } catch (ignored: IOException) {
+                } catch(ignored: IOException) {
                 }
             }
-        } catch (e: Exception) {
+        } catch(e: Exception) {
             CrashReport(e)
         }
     }
@@ -126,21 +126,21 @@ object Client : Runnable {
     fun request(request: Request?, player: Playerc?, message: String?) {
         val data = JsonObject()
         try {
-            when (request) {
+            when(request) {
                 Request.BanSync -> {
                     val ban = JsonArray()
                     val ipban = JsonArray()
                     val subban = JsonArray()
-                    for (info in Vars.netServer.admins.banned) {
+                    for(info in Vars.netServer.admins.banned) {
                         ban.add(info.id)
-                        for (ipbans in info.ips) {
+                        for(ipbans in info.ips) {
                             ipban.add(ipbans)
                         }
                     }
-                    for (ipbans in Vars.netServer.admins.bannedIPs) {
+                    for(ipbans in Vars.netServer.admins.bannedIPs) {
                         ipban.add(ipbans)
                     }
-                    for (subbans in Vars.netServer.admins.subnetBans) {
+                    for(subbans in Vars.netServer.admins.subnetBans) {
                         subban.add(subbans)
                     }
                     data.add("type", "BanSync")
@@ -171,10 +171,10 @@ object Client : Runnable {
                     data.add("type", "UnbanIP")
                     val isIP: Boolean = try {
                         InetAddress.getByName(message).hostAddress == message
-                    } catch (ex: UnknownHostException) {
+                    } catch(ex: UnknownHostException) {
                         false
                     }
-                    if (isIP) data.add("ip", message)
+                    if(isIP) data.add("ip", message)
                     os.writeBytes(Tool.encrypt(data.toString(), skey) + "\n")
                     os.flush()
                 }
@@ -191,7 +191,7 @@ object Client : Runnable {
                     os.flush()
                 }
             }
-        } catch (e: Exception) {
+        } catch(e: Exception) {
             CrashReport(e)
         }
     }
@@ -200,33 +200,33 @@ object Client : Runnable {
         disconnected = false
         try {
             socket.soTimeout = 0
-        } catch (e: SocketException) {
+        } catch(e: SocketException) {
             CrashReport(e)
         }
-        while (!Thread.currentThread().isInterrupted) {
+        while(!Thread.currentThread().isInterrupted) {
             try {
-                val stringBuffer : String? = br.readLine()
+                val stringBuffer: String? = br.readLine()
                 if(!stringBuffer.isNullOrEmpty()) {
                     var data: JsonObject
                     try {
                         data = JsonValue.readJSON(Tool.decrypt(stringBuffer, skey)).asObject()
-                    } catch (e: IllegalArgumentException) {
+                    } catch(e: IllegalArgumentException) {
                         disconnected = true
                         Log.client("server.disconnected", ip[0])
-                        if (!Thread.currentThread().isInterrupted) wakeup()
+                        if(!Thread.currentThread().isInterrupted) wakeup()
                         return
-                    } catch (e: SocketException) {
+                    } catch(e: SocketException) {
                         disconnected = true
                         Log.client("server.disconnected", ip[0])
-                        if (!Thread.currentThread().isInterrupted) wakeup()
+                        if(!Thread.currentThread().isInterrupted) wakeup()
                         return
-                    } catch (e: Exception) {
-                        if (e.message != "Socket closed") CrashReport(e)
+                    } catch(e: Exception) {
+                        if(e.message != "Socket closed") CrashReport(e)
                         Log.client("server.disconnected", ip[0])
                         shutdown()
                         return
                     }
-                    when (Request.valueOf(data["type"].asString())) {
+                    when(Request.valueOf(data["type"].asString())) {
                         Request.BanSync -> {
                             Log.client("client.banlist.received")
 
@@ -234,13 +234,13 @@ object Client : Runnable {
                             val ban = data["ban"].asArray()
                             val ipban = data["ipban"].asArray()
                             val subban = data["subban"].asArray()
-                            for (b in ban) {
+                            for(b in ban) {
                                 Vars.netServer.admins.banPlayerID(b.asString())
                             }
-                            for (b in ipban) {
+                            for(b in ipban) {
                                 Vars.netServer.admins.banPlayerIP(b.asString())
                             }
-                            for (b in subban) {
+                            for(b in subban) {
                                 Vars.netServer.admins.addSubnetBan(b.asString())
                             }
                             Log.client("success")
@@ -260,7 +260,7 @@ object Client : Runnable {
                         }
                     }
                 }
-            } catch (e: Exception) {
+            } catch(e: Exception) {
                 Log.client("server.disconnected", ip[0])
                 shutdown()
                 return

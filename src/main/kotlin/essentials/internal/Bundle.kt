@@ -10,23 +10,23 @@ class Bundle {
     var resource: ResourceBundle
 
     constructor() {
-        resource = when(Config.locale){
-            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru","RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
+        resource = when(Config.locale) {
+            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru", "RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
             else -> ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, UTF8Control())
         }
     }
 
     constructor(locale: Locale) {
-        resource = when(locale){
-            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru","RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
+        resource = when(locale) {
+            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru", "RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
             else -> ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, UTF8Control())
         }
     }
 
     constructor(playerData: PlayerData?) {
         val locale = if(playerData != null) Locale(playerData.countryCode) else Config.locale
-        resource = when(locale){
-            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru","RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
+        resource = when(locale) {
+            Locale.ENGLISH, Locale.KOREAN, Locale.CHINESE, Locale("ru", "RU") -> ResourceBundle.getBundle("bundle.bundle", Config.locale, UTF8Control())
             else -> ResourceBundle.getBundle("bundle.bundle", Locale.ENGLISH, UTF8Control())
         }
     }
@@ -34,7 +34,7 @@ class Bundle {
     fun prefix(key: String, vararg params: String?): String {
         return try {
             MessageFormat.format(Config.prefix + resource.getString(key), *params)
-        } catch (e: MissingResourceException) {
+        } catch(e: MissingResourceException) {
             key
         }
     }
@@ -42,7 +42,7 @@ class Bundle {
     operator fun get(key: String): String {
         return try {
             MessageFormat.format(resource.getString(key))
-        } catch (e: MissingResourceException) {
+        } catch(e: MissingResourceException) {
             key
         }
     }
@@ -50,7 +50,7 @@ class Bundle {
     operator fun get(key: String, vararg parameter: String): String {
         return try {
             MessageFormat.format(resource.getString(key), *parameter)
-        } catch (e: MissingResourceException) {
+        } catch(e: MissingResourceException) {
             key
         }
     }

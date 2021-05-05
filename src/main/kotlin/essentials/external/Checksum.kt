@@ -23,13 +23,13 @@ object Checksum {
         try {
             var md = MessageDigest.getInstance("SHA-512")
             DigestInputStream(FileInputStream(Core.settings.dataDirectory.child("mods/Essentials.jar").absolutePath()), md).use { dis ->
-                while (dis.read() != -1);
+                while(dis.read() != -1);
                 md = dis.messageDigest
             }
-            for (b in md.digest()) result.append(String.format("%02x", b))
-        } catch (e: NoSuchAlgorithmException) {
+            for(b in md.digest()) result.append(String.format("%02x", b))
+        } catch(e: NoSuchAlgorithmException) {
             sum = "null"
-        } catch (e: IOException) {
+        } catch(e: IOException) {
             sum = "null"
         }
         sum = result.toString()

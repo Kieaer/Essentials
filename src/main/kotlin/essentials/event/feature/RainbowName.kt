@@ -10,12 +10,12 @@ object RainbowName : Runnable {
     var targets = Seq<Playerc>()
 
     override fun run() {
-        while (!Thread.currentThread().isInterrupted) {
-            for (player in targets) {
-                if (!player.isNull) {
+        while(!Thread.currentThread().isInterrupted) {
+            for(player in targets) {
+                if(!player.isNull) {
                     val p = PluginData[player.uuid()]
-                    if (p != null) {
-                        if (p.colornick) {
+                    if(p != null) {
+                        if(p.colornick) {
                             val name = p.name.replace("\\[(.*?)]".toRegex(), "")
                             nickcolor(name, player)
                         } else {
@@ -44,17 +44,17 @@ object RainbowName : Runnable {
         colors[9] = "[#8000ff]"
         colors[10] = "[#ff00ff]"
         val newName = arrayOfNulls<String>(name.length)
-        for (i in name.indices) {
+        for(i in name.indices) {
             val c = name[i]
             var colorIndex = (i + colorOffset) % colors.size
-            if (colorIndex < 0) {
+            if(colorIndex < 0) {
                 colorIndex += colors.size
             }
             val newtext = colors[colorIndex] + c
             newName[i] = newtext
         }
         colorOffset--
-        for (s in newName) {
+        for(s in newName) {
             stringBuilder.append(s)
         }
         player.name(stringBuilder.toString())

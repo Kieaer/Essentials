@@ -38,24 +38,23 @@ import java.net.URL
 import java.util.regex.Pattern
 import kotlin.math.abs
 
-class EventThread(private val type: EventTypes, private val event: Any){
+class EventThread(private val type: EventTypes, private val event: Any) {
     fun run() {
         try {
-            when (type) {
+            when(type) {
                 EventTypes.Config -> {
                     val e = event as EventType.ConfigEvent
 
-                    if (e.tile != null && e.tile.block() != null && e.player != null) {
-                        // Source by BasedUser(router)
+                    if(e.tile != null && e.tile.block() != null && e.player != null) { // Source by BasedUser(router)
                         val entity = e.tile
                         val other = Vars.world.tile(e.value as Int)
                         val valid = other != null && other.block().hasPower
-                        if (valid) {
+                        if(valid) {
                             val oldGraph = entity.power.graph
                             val newGraph = other.build.power.graph
                             val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
                             val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
-                            if (abs(oldGraphCount - newGraphCount) > 10) {
+                            if(abs(oldGraphCount - newGraphCount) > 10) {
                                 sendMessage("${e.player.name} [white]player has [scarlet]unlinked[] the [yellow]power node[]. Number of connected buildings: [green] ${oldGraphCount.coerceAtLeast(newGraphCount)} [cyan]->[scarlet] ${oldGraphCount.coerceAtMost(newGraphCount)} [white](" + e.tile.x + ", " + e.tile.y + ")")
                             }
                         }
@@ -64,13 +63,13 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 Tap -> {
                     val e = event as EventType.TapEvent
 
-                    if (Config.logging) Log.write(Log.LogType.Tap, "log.tap", e.player.name, e.tile.block().name)
+                    if(Config.logging) Log.write(Log.LogType.Tap, "log.tap", e.player.name, e.tile.block().name)
                     val playerData = PluginData[e.player.uuid()]
-                    if (playerData != null) {
-                        for (data in PluginData.warpblocks) {
-                            if (e.tile.x >= Vars.world.tile(data.pos).x && e.tile.x <= Vars.world.tile(data.pos).x) {
-                                if (e.tile.y >= Vars.world.tile(data.pos).y && e.tile.y <= Vars.world.tile(data.pos).y) {
-                                    if (data.online) {
+                    if(playerData != null) {
+                        for(data in PluginData.warpblocks) {
+                            if(e.tile.x >= Vars.world.tile(data.pos).x && e.tile.x <= Vars.world.tile(data.pos).x) {
+                                if(e.tile.y >= Vars.world.tile(data.pos).y && e.tile.y <= Vars.world.tile(data.pos).y) {
+                                    if(data.online) {
                                         Log.info("player.warped", e.player.name, data.ip + ":" + data.port)
                                         connect(e.player, data.ip, data.port)
                                     }
@@ -79,9 +78,9 @@ class EventThread(private val type: EventTypes, private val event: Any){
                             }
                         }
 
-                        for (data in PluginData.warpzones) {
-                            if (e.tile.x > data.startTile.x && e.tile.x < data.finishTile.x) {
-                                if (e.tile.y > data.startTile.y && e.tile.y < data.finishTile.y) {
+                        for(data in PluginData.warpzones) {
+                            if(e.tile.x > data.startTile.x && e.tile.x < data.finishTile.x) {
+                                if(e.tile.y > data.startTile.y && e.tile.y < data.finishTile.y) {
                                     Log.info("player.warped", e.player.name, data.ip + ":" + data.port)
                                     connect(e.player, data.ip, data.port)
                                     break
@@ -93,10 +92,10 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 Withdraw -> {
                     val e = event as EventType.WithdrawEvent
 
-                    if (e.tile != null && e.player.unit().item() != null && e.player.name != null) {
-                        if (Config.logging) Log.write(Log.LogType.WithDraw, "log.withdraw", e.player.name, e.player.unit().item().name, e.amount.toString(), e.tile.block().name)
-                        if (Vars.state.rules.pvp) {
-                            if (e.item.flammability > 0.001f) {
+                    if(e.tile != null && e.player.unit().item() != null && e.player.name != null) {
+                        if(Config.logging) Log.write(Log.LogType.WithDraw, "log.withdraw", e.player.name, e.player.unit().item().name, e.amount.toString(), e.tile.block().name)
+                        if(Vars.state.rules.pvp) {
+                            if(e.item.flammability > 0.001f) {
                                 e.player.sendMessage(Bundle(PluginData[e.player.uuid()])["system.flammable.disabled"])
                                 e.player.unit().clearItem()
                             }
@@ -106,29 +105,29 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 Gameover -> {
                     val e = event as EventType.GameOverEvent
 
-                    if (Vars.state.rules.pvp) {
+                    if(Vars.state.rules.pvp) {
                         var index = 5
-                        for (a in 0..4) {
-                            if (Vars.state.teams[Team.all[index]].cores.isEmpty) {
+                        for(a in 0..4) {
+                            if(Vars.state.teams[Team.all[index]].cores.isEmpty) {
                                 index--
                             }
                         }
-                        if (index == 1) {
-                            for (player in Groups.player) {
+                        if(index == 1) {
+                            for(player in Groups.player) {
                                 val target = PluginData[player.uuid()]
-                                if (target != null) {
-                                    if (player.team().name == e.winner.name) {
+                                if(target != null) {
+                                    if(player.team().name == e.winner.name) {
                                         target.pvpwincount++
-                                    } else if (player.team().name != e.winner.name) {
+                                    } else if(player.team().name != e.winner.name) {
                                         target.pvplosecount++
                                     }
                                 }
                             }
                         }
-                    } else if (Vars.state.rules.attackMode) {
-                        for (p in Groups.player) {
+                    } else if(Vars.state.rules.attackMode) {
+                        for(p in Groups.player) {
                             val target = PluginData[p.uuid()]
-                            if (target != null) target.attackclear++
+                            if(target != null) target.attackclear++
                         }
                     }
                 }
@@ -138,52 +137,51 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 PlayerConnect -> {
                     val e = event as EventType.PlayerConnect
 
-                    if (Config.logging) Log.write(Log.LogType.Player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
+                    if(Config.logging) Log.write(Log.LogType.Player, "log.player.connect", e.player.name, e.player.uuid(), e.player.con.address)
 
                     // 닉네임이 블랙리스트에 등록되어 있는지 확인
-                    for (s in PluginData.blacklist) {
-                        if (e.player.name.matches(Regex(s))) {
+                    for(s in PluginData.blacklist) {
+                        if(e.player.name.matches(Regex(s))) {
                             try {
                                 val locale = Tool.getGeo(e.player)
                                 Call.kick(e.player.con, Bundle(locale)["system.nickname.blacklisted.kick"])
                                 Log.info("system.nickname.blacklisted", e.player.name)
-                            } catch (ex: Exception) {
+                            } catch(ex: Exception) {
                                 CrashReport(ex)
                             }
                         }
                     }
-                    if (Config.nameFixed) {
-                        if (e.player.name.length > 32) kick(e.player, "Nickname too long!")
-                        //if (e.player.name.matches(Regex(".*\\[.*].*"))) kick(e.player, "Color tags can't be used for nicknames on this Server.");
-                        if (e.player.name.contains("　")) kick(e.player, "Don't use blank speical charactor nickname!")
-                        if (e.player.name.contains(" ")) kick(e.player, "Nicknames can't be used on this server!")
-                        if (Pattern.matches(".*\\[.*.].*", e.player.name)) kick(e.player, "Can't use only color tags nickname in this Server.")
+                    if(Config.nameFixed) {
+                        if(e.player.name.length > 32) kick(e.player, "Nickname too long!") //if (e.player.name.matches(Regex(".*\\[.*].*"))) kick(e.player, "Color tags can't be used for nicknames on this Server.");
+                        if(e.player.name.contains("　")) kick(e.player, "Don't use blank speical charactor nickname!")
+                        if(e.player.name.contains(" ")) kick(e.player, "Nicknames can't be used on this server!")
+                        if(Pattern.matches(".*\\[.*.].*", e.player.name)) kick(e.player, "Can't use only color tags nickname in this Server.")
                     }
                 }
                 Deposit -> {
                     val e = event as EventType.DepositEvent
 
-                    if (Config.logging) Log.write(Log.LogType.Deposit, "log.deposit", e.player.name, e.player.unit().item().name, e.tile.block().name)
+                    if(Config.logging) Log.write(Log.LogType.Deposit, "log.deposit", e.player.name, e.player.unit().item().name, e.tile.block().name)
                 }
                 PlayerJoin -> {
                     val e = event as EventType.PlayerJoin
 
-                    if (Config.logging) Log.write(Log.LogType.Player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
+                    if(Config.logging) Log.write(Log.LogType.Player, "log.player.join", e.player.name, e.player.uuid(), e.player.con.address)
                     PluginData.players.add(e.player)
                     e.player.admin(false)
-                    
+
                     val playerData = PlayerCore.load(e.player.uuid(), null)
                     val sendMessage = sendMessage(e.player, Bundle(playerData))
-                    
-                    if (Config.authType != Config.AuthType.None) {
-                        if (Config.authType == Config.AuthType.Discord) {
-                            if (playerData != null) {
+
+                    if(Config.authType != Config.AuthType.None) {
+                        if(Config.authType == Config.AuthType.Discord) {
+                            if(playerData != null) {
                                 sendMessage["account.autologin"]
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
                                 val message: String?
                                 val language = Tool.getGeo(e.player)
-                                message = if (Config.authType == Config.AuthType.Discord) {
+                                message = if(Config.authType == Config.AuthType.Discord) {
                                     Bundle(language)["system.login.require.discord"]
                                 } else {
                                     Bundle(language)["system.login.require.password"]
@@ -191,7 +189,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                 infoMessage(e.player, message)
                             }
                         } else {
-                            if (playerData != null) {
+                            if(playerData != null) {
                                 sendMessage["account.autologin"]
                                 PlayerCore.playerLoad(e.player, null)
                             } else {
@@ -200,14 +198,13 @@ class EventThread(private val type: EventTypes, private val event: Any){
                             }
                         }
                     } else { // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
-                        if (playerData != null) {
+                        if(playerData != null) {
                             sendMessage["account.autologin"]
                             PlayerCore.playerLoad(e.player, null)
                         } else {
-                            val lc = Tool.getGeo(e.player.con.address)
                             val register = PlayerCore.register(e.player, e.player.name(), e.player.uuid(), "none", "none")
-                            if (register) {
-                                if (!PlayerCore.playerLoad(e.player, null)) kick(e.player, Bundle()["plugin-error-kick"])
+                            if(register) {
+                                if(!PlayerCore.playerLoad(e.player, null)) kick(e.player, Bundle()["plugin-error-kick"])
                             } else {
                                 kick(e.player, Bundle()["plugin-error-kick"])
                             }
@@ -215,13 +212,13 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     }
 
                     // VPN을 사용중인지 확인
-                    if (Config.antiVPN) {
+                    if(Config.antiVPN) {
                         val br = BufferedReader(InputStreamReader(javaClass.getResourceAsStream("/ipv4.txt")))
                         br.use {
                             var line: String
-                            while (br.readLine().also { line = it } != null) {
+                            while(br.readLine().also { line = it } != null) {
                                 val match = IpAddressMatcher(line)
-                                if (match.matches(e.player.con.address)) {
+                                if(match.matches(e.player.con.address)) {
                                     kick(e.player, Bundle()["anti-grief.vpn"])
                                 }
                             }
@@ -231,49 +228,48 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 PlayerLeave -> {
                     val e = event as EventType.PlayerLeave
 
-                    if (Config.logging) Log.write(Log.LogType.Player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
+                    if(Config.logging) Log.write(Log.LogType.Player, "log.player.leave", e.player.name, e.player.uuid(), e.player.con.address)
                     val player = PluginData[e.player.uuid()]
                     if(player != null) {
                         PlayerCore.save(player)
-                        PluginData.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }
-                            ?.let { PluginData.removePlayerData(it) }
+                        PluginData.playerData.find { p: PlayerData -> p.uuid == e.player.uuid() }?.let { PluginData.removePlayerData(it) }
                         PluginData.players.remove(e.player)
                     }
                 }
                 PlayerChat -> {
                     val e = event as EventType.PlayerChatEvent
 
-                    if (e.message.length > Vars.maxTextLength) {
+                    if(e.message.length > Vars.maxTextLength) {
                         kick(e.player, "Hacked client detected")
                     }
 
                     val playerData = PluginData[e.player.uuid()]
                     val sendMessage = sendMessage(e.player, Bundle(playerData))
 
-                    if (!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>")
-                    if (playerData != null) {
-                        if (!e.message.startsWith("/")) {
-                            if (e.message == "y" && PluginData.votingClass != null && PluginData.isVoting) {
-                                if (PluginData.votingClass!!.voted.contains(e.player.uuid()) || PluginData.votingPlayer == e.player) {
+                    if(!e.message.startsWith("/")) Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>")
+                    if(playerData != null) {
+                        if(!e.message.startsWith("/")) {
+                            if(e.message == "y" && PluginData.votingClass != null && PluginData.isVoting) {
+                                if(PluginData.votingClass!!.voted.contains(e.player.uuid()) || PluginData.votingPlayer == e.player) {
                                     sendMessage["vote.already-voted"]
                                 } else {
                                     PluginData.votingClass!!.voted.add(e.player.uuid())
                                 }
                             } else {
-                                if (!playerData.mute) {
-                                    if (playerData.crosschat) {
+                                if(!playerData.mute) {
+                                    if(playerData.crosschat) {
                                         when {
                                             Config.networkMode == Config.NetworkMode.Client -> {
-                                                if (Client.activated) Client.request(Client.Request.Chat, e.player, e.message)
+                                                if(Client.activated) Client.request(Client.Request.Chat, e.player, e.message)
                                             }
                                             Config.networkMode == Config.NetworkMode.Server -> {
                                                 val msg = "[" + e.player.name + "]: " + e.message
                                                 try {
-                                                    for (ser in Server.list) {
+                                                    for(ser in Server.list) {
                                                         ser!!.os.writeBytes(Tool.encrypt(msg, ser.spec))
                                                         ser.os.flush()
                                                     }
-                                                } catch (ex: Exception) {
+                                                } catch(ex: Exception) {
                                                     Log.warn("Crosschat", ex)
                                                 }
                                             }
@@ -285,7 +281,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                     }
                                 }
                             }
-                            if (NetClient.colorizeName(e.player.id, e.player.name) != null) {
+                            if(NetClient.colorizeName(e.player.id, e.player.name) != null) {
                                 sendMessage(Permissions.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(e.player.id, e.player.name)).replace("%2", e.message))
                             }
                         }
@@ -296,25 +292,25 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 BlockBuildEnd -> {
                     val e = event as EventType.BlockBuildEndEvent
 
-                    if (!e.unit.isNull && e.unit.isPlayer) {
+                    if(!e.unit.isNull && e.unit.isPlayer) {
                         val player = e.unit.player
 
                         Log.write(Log.LogType.Block, "log.block.place", player.name, e.tile.block().name)
                         val target = PluginData[player.uuid()]
 
-                        if (!e.breaking && !player.unit().isNull && target != null && e.tile.block() != null && player.unit().buildPlan() != null && player.unit().buildPlan().block != null) {
+                        if(!e.breaking && !player.unit().isNull && target != null && e.tile.block() != null && player.unit().buildPlan() != null && player.unit().buildPlan().block != null) {
                             val name = e.tile.block().name
                             try {
                                 val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
                                 val exp = obj.getInt(name, 0)
                                 target.placecount++
                                 target.exp = target.exp + exp
-                            } catch (ex: Exception) {
+                            } catch(ex: Exception) {
                                 CrashReport(ex)
                             }
 
 
-                            if (Config.debug) {
+                            if(Config.debug) {
                                 Log.info("anti-grief.build.finish", player.name, e.tile.block().name, e.tile.x, e.tile.y)
                             }
 
@@ -341,8 +337,8 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 BuildSelect -> {
                     val e = event as EventType.BuildSelectEvent
 
-                    if (e.builder is Playerc && e.builder.buildPlan() != null && !Pattern.matches(".*build.*", e.builder.buildPlan().block.name) && e.tile.block() !== Blocks.air) {
-                        if (e.breaking) {
+                    if(e.builder is Playerc && e.builder.buildPlan() != null && !Pattern.matches(".*build.*", e.builder.buildPlan().block.name) && e.tile.block() !== Blocks.air) {
+                        if(e.breaking) {
                             Log.write(Log.LogType.Block, "log.block.remove", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x.toString(), e.tile.y.toString())
                             val target = PluginData[(e.builder as Playerc).uuid()]
                             if(target != null) {
@@ -352,32 +348,32 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                     val exp = obj.getInt(name, 0)
                                     target.breakcount++
                                     target.exp = target.exp + exp
-                                } catch (ex: Exception) {
+                                } catch(ex: Exception) {
                                     CrashReport(ex)
                                     kick((e.builder as Playerc), Bundle(target)["not-logged"])
                                 }
 
                                 // Exp Playing Game (EPG)
-                                if (Config.blockEXP) {
+                                if(Config.blockEXP) {
                                     val level = target.level
                                     try {
                                         val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
-                                        if (obj[name] != null) {
+                                        if(obj[name] != null) {
                                             val req = obj.getInt(name, 999)
-                                            if (level < req) {
+                                            if(level < req) {
                                                 Call.deconstructFinish(e.tile, e.tile.block(), (e.builder as Playerc).unit())
                                                 sendMessage((e.builder as Playerc), Bundle(PluginData[(e.builder as Playerc).uuid()])["system.epg.block-require", name, req.toString()])
                                             }
                                         } else {
                                             Log.err("system.epg.block-not-valid", name)
                                         }
-                                    } catch (ex: Exception) {
+                                    } catch(ex: Exception) {
                                         CrashReport(ex)
                                     }
                                 }
                             }
                         }
-                        if (Config.debug) {
+                        if(Config.debug) {
                             Log.info("anti-grief.destroy", (e.builder as Playerc).name(), e.tile.block().name, e.tile.x, e.tile.y)
                         }
                     }
@@ -388,7 +384,7 @@ class EventThread(private val type: EventTypes, private val event: Any){
                 PlayerBan -> {
                     val e = event as EventType.PlayerBanEvent
 
-                    if (Config.banShare && Config.networkMode == Config.NetworkMode.Client) {
+                    if(Config.banShare && Config.networkMode == Config.NetworkMode.Client) {
                         Client.request(Client.Request.BanSync, Nulls.player, null)
                     }
 
@@ -402,30 +398,29 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     }*/
                 }
                 PlayerIpBan -> {
-                    if (Config.banShare && Client.activated) {
+                    if(Config.banShare && Client.activated) {
                         Client.request(Client.Request.BanSync, Nulls.player, null)
                     }
                 }
                 PlayerUnban -> {
                     val e = event as EventType.PlayerUnbanEvent
 
-                    if (Client.activated) Client.request(Client.Request.UnbanID, null, e.player.uuid() + "|<unknown>")
+                    if(Client.activated) Client.request(Client.Request.UnbanID, null, e.player.uuid() + "|<unknown>")
                 }
                 PlayerIpUnban -> {
                     val e = event as EventType.PlayerIpUnbanEvent
 
-                    if (Client.activated) Client.request(Client.Request.UnbanIP, null, "<unknown>|" + e.ip)
+                    if(Client.activated) Client.request(Client.Request.UnbanIP, null, "<unknown>|" + e.ip)
                 }
-                ServerLoaded -> {
-                    // 업데이트 확인
-                    if (Config.update) {
+                ServerLoaded -> { // 업데이트 확인
+                    if(Config.update) {
                         Log.client("client.update-check")
                         try {
                             val web = Tool.getWebContent("https://api.github.com/repos/kieaer/Essentials/releases/latest")
                             if(web != null) {
                                 val json = JsonValue.readJSON(web).asObject()
-                                for (a in 0 until Vars.mods.list().size) {
-                                    if (Vars.mods.list()[a].meta.name == "Essentials") {
+                                for(a in 0 until Vars.mods.list().size) {
+                                    if(Vars.mods.list()[a].meta.name == "Essentials") {
                                         PluginData.pluginVersion = Vars.mods.list()[a].meta.version
                                     }
                                 }
@@ -440,9 +435,9 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                                 println(json.getString("body", "No description found."))
                                                 println(Bundle()["plugin-downloading-standby"])
                                                 Main.timer.cancel()
-                                                if (Config.networkMode == Config.NetworkMode.Server) {
+                                                if(Config.networkMode == Config.NetworkMode.Server) {
                                                     try {
-                                                        for (ser in Server.list) {
+                                                        for(ser in Server.list) {
                                                             ser!!.interrupt()
                                                             ser.os.close()
                                                             ser.br.close()
@@ -450,19 +445,17 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                                             Server.list.remove(ser)
                                                         }
                                                         Server.shutdown()
-                                                    } catch (ignored: Exception) {
+                                                    } catch(ignored: Exception) {
                                                     }
                                                 }
-                                                if (Config.networkMode == Config.NetworkMode.Client && Client.activated) {
+                                                if(Config.networkMode == Config.NetworkMode.Client && Client.activated) {
                                                     Client.request(Client.Request.Exit, null, null)
                                                 }
                                                 Main.mainThread.shutdown()
                                                 DB.stop()
                                                 println(Bundle()["plugin-downloading"])
-                                                Tool.download(
-                                                    URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)),
-                                                    Core.settings.dataDirectory.child("mods/Essentials.jar").file())
-                                            } catch (ex: Exception) {
+                                                Tool.download(URL(json["assets"].asArray()[0].asObject().getString("browser_download_url", null)), Core.settings.dataDirectory.child("mods/Essentials.jar").file())
+                                            } catch(ex: Exception) {
                                                 println(Bundle()["plugin-downloading-fail"].trimIndent())
                                                 CrashReport(ex)
                                             }
@@ -484,12 +477,12 @@ class EventThread(private val type: EventTypes, private val event: Any){
                                     }
                                 }
                             }
-                        } catch (ex: Exception) {
+                        } catch(ex: Exception) {
                             CrashReport(ex)
                         }
                     } else {
-                        for (a in 0 until Vars.mods.list().size) {
-                            if (Vars.mods.list()[a].meta.name == "Essentials") {
+                        for(a in 0 until Vars.mods.list().size) {
+                            if(Vars.mods.list()[a].meta.name == "Essentials") {
                                 PluginData.pluginVersion = Vars.mods.list()[a].meta.version
                                 break
                             }
@@ -497,18 +490,18 @@ class EventThread(private val type: EventTypes, private val event: Any){
                     }
 
                     // Discord 봇 시작
-                    if (Config.authType == Config.AuthType.Discord) {
+                    if(Config.authType == Config.AuthType.Discord) {
                         Discord.start()
                     }
                 }
             }
-        } catch (e: Exception){
+        } catch(e: Exception) {
             e.printStackTrace()
             CrashReport(e)
         }
     }
 
-    enum class EventTypes{
+    enum class EventTypes {
         Config, Tap, Withdraw, Gameover, WorldLoad, PlayerConnect, Deposit, PlayerJoin, PlayerLeave, PlayerChat, BlockBuildEnd, BuildSelect, UnitDestroy, PlayerBan, PlayerIpBan, PlayerUnban, PlayerIpUnban, ServerLoaded;
     }
 }

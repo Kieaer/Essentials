@@ -46,15 +46,14 @@ class Main : Plugin() {
         val pluginRoot: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     }
 
-    init {
-        //checkServerVersion() // Temporary disabled
+    init { //checkServerVersion() // Temporary disabled
         fileExtract()
 
         // 서버 로비기능 설정
-        if (!Core.settings.has("isLobby")) {
+        if(!Core.settings.has("isLobby")) {
             Core.settings.put("isLobby", false)
             Core.settings.saveValues()
-        } else if (Core.settings.getBool("isLobby")) {
+        } else if(Core.settings.getBool("isLobby")) {
             Log.info("system.lobby")
             Log.info("Lobby server can only be built by admins!") //TODO 언어별 추가
         }
@@ -82,9 +81,9 @@ class Main : Plugin() {
         DB.start()
 
         // 네트워크 연결
-        if (Config.networkMode == Config.NetworkMode.Server) {
+        if(Config.networkMode == Config.NetworkMode.Server) {
             mainThread.submit(Server)
-        } else if (Config.networkMode == Config.NetworkMode.Client){
+        } else if(Config.networkMode == Config.NetworkMode.Client) {
             mainThread.submit(Client)
             Client.wakeup()
         }
@@ -111,11 +110,11 @@ class Main : Plugin() {
                     // 투표 종료
                     PluginData.votingClass?.interrupt()
                     DB.stop()
-                    if (Config.networkMode == Config.NetworkMode.Server) {
+                    if(Config.networkMode == Config.NetworkMode.Server) {
                         val servers = Server.list.iterator()
-                        while (servers.hasNext()) {
+                        while(servers.hasNext()) {
                             val ser = servers.next()
-                            if (ser != null) {
+                            if(ser != null) {
                                 ser.os.close()
                                 ser.br.close()
                                 ser.socket.close()
@@ -126,17 +125,17 @@ class Main : Plugin() {
                     }
 
                     // 클라이언트 종료
-                    if (Config.networkMode == Config.NetworkMode.Client && Client.activated) {
+                    if(Config.networkMode == Config.NetworkMode.Client && Client.activated) {
                         Client.request(Client.Request.Exit, null, null)
                         Log.info("client.shutdown")
                     }
 
-                    if (Server.isSocketInitialized() || Client.socket.isClosed || WarpBorder.isInterrupted || !DB.database.isClosed) {
+                    if(Server.isSocketInitialized() || Client.socket.isClosed || WarpBorder.isInterrupted || !DB.database.isClosed) {
                         Log.info("thread-disable-waiting")
                     } else {
                         Log.warn("thread-not-dead")
                     }
-                } catch (e: Exception) {
+                } catch(e: Exception) {
                     CrashReport(e)
                     exitProcess(1) // 오류로 인한 강제 종료
                 }
@@ -155,7 +154,7 @@ class Main : Plugin() {
 
         // 비 로그인 유저 통제
         netServer.admins.addActionFilter { e ->
-            if (e.player == null) return@addActionFilter true
+            if(e.player == null) return@addActionFilter true
             return@addActionFilter PluginData[e.player.uuid()] != null
         }
     }
@@ -168,11 +167,11 @@ class Main : Plugin() {
         ClientCommand.register(handler)
     }
 
-    private fun checkServerVersion(){
+    private fun checkServerVersion() {
         javaClass.getResourceAsStream("/plugin.json").use { reader ->
             BufferedReader(InputStreamReader(reader)).use { br ->
                 val version = JsonValue.readJSON(br).asObject()["version"].asString()
-                if (Version.build != PluginData.buildVersion && Version.revision >= PluginData.buildRevision) {
+                if(Version.build != PluginData.buildVersion && Version.revision >= PluginData.buildRevision) {
                     throw PluginException("Essentials " + version + " plugin only works with Build " + PluginData.buildVersion + "." + PluginData.buildRevision + " or higher.")
                 }
                 PluginData.pluginVersion = version
@@ -180,9 +179,9 @@ class Main : Plugin() {
         }
     }
 
-    private fun fileExtract(){
+    private fun fileExtract() {
         try {
-            if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists() && !pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").exists()){
+            if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists() && !pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").exists()) {
                 pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").writeString("")
                 Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").file())
             }
@@ -190,7 +189,7 @@ class Main : Plugin() {
             if(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()) {
                 ZipFile(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").absolutePath()).use { zip ->
                     zip.entries().asSequence().forEach { entry ->
-                        if (entry.isDirectory) {
+                        if(entry.isDirectory) {
                             File(pluginRoot.child("data").absolutePath(), entry.name).mkdirs()
                         } else {
                             zip.getInputStream(entry).use { input ->
@@ -205,7 +204,7 @@ class Main : Plugin() {
                 pluginRoot.child("data/LICENSE-CC-BY-SA-4.0.TXT").delete()
                 pluginRoot.child("data/README_LITE.TXT").delete()
             }
-        } catch (e: IOException) {
+        } catch(e: IOException) {
             throw PluginException(e)
         }
     }

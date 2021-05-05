@@ -16,18 +16,18 @@ class sendMessage {
         }
     }
 
-    constructor(msg: String){
-        Core.app.post{
+    constructor(msg: String) {
+        Core.app.post {
             Call.sendMessage(msg)
         }
     }
 
-    constructor(player: Playerc, bundle: Bundle){
+    constructor(player: Playerc, bundle: Bundle) {
         this.player = player
         this.bundle = bundle
     }
 
-    operator fun get(msg: String, vararg parameter: String){
+    operator fun get(msg: String, vararg parameter: String) {
         Core.app.post {
             player.sendMessage(bundle.get(msg, *parameter))
         }

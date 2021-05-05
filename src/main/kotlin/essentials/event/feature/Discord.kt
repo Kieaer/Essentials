@@ -32,16 +32,15 @@ object Discord : ListenerAdapter() {
     private lateinit var event: MessageReceivedEvent
     val pins: ObjectMap<String, Int> = ObjectMap()
 
-    fun start() {
-        // TODO discord 방식 변경
+    fun start() { // TODO discord 방식 변경
         try {
             jda = JDABuilder.createDefault(Config.discordToken).build()
             jda.awaitReady()
             jda.addEventListener(Discord)
             Log.info("system.discord.enabled")
-        } catch (e: LoginException) {
+        } catch(e: LoginException) {
             Log.err("system.discord.error")
-        } catch (e: InterruptedException) {
+        } catch(e: InterruptedException) {
             Thread.currentThread().interrupt()
         }
     }
@@ -58,16 +57,16 @@ object Discord : ListenerAdapter() {
 
     override fun onMessageReceived(e: MessageReceivedEvent) {
         event = e
-        if (e.isFromType(ChannelType.PRIVATE) && !e.author.isBot) {
+        if(e.isFromType(ChannelType.PRIVATE) && !e.author.isBot) {
             val msg = e.message.contentRaw
             val arr = msg.split(" ").toTypedArray()
-            when (arr[0]) {
-                "!signup" -> if (arr.size == 3) {
-                    for (data in pins.entries()) {
+            when(arr[0]) {
+                "!signup" -> if(arr.size == 3) {
+                    for(data in pins.entries()) {
                         val name = data.key
-                        if (data.value == arr[1].toInt()) {
+                        if(data.value == arr[1].toInt()) {
                             var pw = arr[2]
-                            if (checkpw(e.author.name, name, pw)) {
+                            if(checkpw(e.author.name, name, pw)) {
                                 var pstmt: PreparedStatement? = null
                                 var rs: ResultSet? = null
                                 try {
@@ -75,16 +74,16 @@ object Discord : ListenerAdapter() {
                                     pstmt = DB.database.prepareStatement("SELECT * FROM players WHERE accountid=?")
                                     pstmt.setString(1, name)
                                     rs = pstmt.executeQuery()
-                                    if (!rs.next()) {
+                                    if(!rs.next()) {
                                         val player = Groups.player.find { p: Playerc -> p.name().equals(name, ignoreCase = true) }
-                                        if (player != null) {
+                                        if(player != null) {
                                             val lc = Tool.getGeo(player)
                                             val register = PlayerCore.register(player, player.name(), player.uuid(), name, pw)
-                                            if (register) {
+                                            if(register) {
                                                 PlayerCore.playerLoad(player, null)
                                                 val playerData = PluginData[player.uuid()]
-                                                sendMessage(player, Bundle(PluginData[player.uuid()]))["register-success"]
-                                                send(Bundle(PluginData[player.uuid()])["success"])
+                                                sendMessage(player, Bundle(playerData))["register-success"]
+                                                send(Bundle(playerData)["success"])
                                                 break
                                             }
                                         } else {
@@ -93,16 +92,16 @@ object Discord : ListenerAdapter() {
                                     } else {
                                         send("You're already have account!")
                                     }
-                                } catch (ex: Exception) {
+                                } catch(ex: Exception) {
                                     CrashReport(ex)
                                 } finally {
-                                    if (pstmt != null) try {
+                                    if(pstmt != null) try {
                                         pstmt.close()
-                                    } catch (ignored: SQLException) {
+                                    } catch(ignored: SQLException) {
                                     }
-                                    if (rs != null) try {
+                                    if(rs != null) try {
                                         rs.close()
-                                    } catch (ignored: SQLException) {
+                                    } catch(ignored: SQLException) {
                                     }
                                 }
                             } else {
@@ -128,39 +127,33 @@ object Discord : ListenerAdapter() {
         }
     }
 
-    private fun checkpw(username: String, id: String, pw: String): Boolean {
-        // 영문(소문자), 숫자, 7~20자리
+    private fun checkpw(username: String, id: String, pw: String): Boolean { // 영문(소문자), 숫자, 7~20자리
         var pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$"
         val matcher = Pattern.compile(pwPattern).matcher(pw)
 
         // 같은 문자 4개이상 사용 불가
         pwPattern = "(.)\\1\\1\\1"
         val matcher2 = Pattern.compile(pwPattern).matcher(pw)
-        if (!matcher.matches()) {
-            // 정규식에 맞지 않을경우
+        if(!matcher.matches()) { // 정규식에 맞지 않을경우
             send("The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!")
             Log.player("system.password.match.regex", username)
             return false
-        } else if (matcher2.find()) {
-            // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
+        } else if(matcher2.find()) { // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             send("Passwords should not be similar to nicknames!")
             Log.player("system.password.match.name", username)
             return false
-        } else if (pw.contains(id)) {
-            // 비밀번호와 ID가 완전히 같은경우
+        } else if(pw.contains(id)) { // 비밀번호와 ID가 완전히 같은경우
             send("Password shouldn't be the same as your nickname.")
             return false
-        } else if (pw.contains(" ")) {
-            // 비밀번호에 공백이 있을경우
+        } else if(pw.contains(" ")) { // 비밀번호에 공백이 있을경우
             send("Password must not contain spaces!")
             Log.player("system.password.match.blank", username)
             return false
-        } else if (id.contains(" ")) {
+        } else if(id.contains(" ")) {
             send("Username must not contain spaces!")
             Log.player("username-match-blank", username)
             return false
-        } else if (pw.matches(Regex("<(.*?)>"))) {
-            // 비밀번호 형식이 "<비밀번호>" 일경우
+        } else if(pw.matches(Regex("<(.*?)>"))) { // 비밀번호 형식이 "<비밀번호>" 일경우
             send("<password> format isn't allowed! Use /register password")
             Log.player("system.password.match.invalid", username)
             return false

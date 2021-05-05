@@ -1,17 +1,17 @@
 package essentials.event.feature
 
 enum class VoteType {
-    Kick{
+    Kick {
         override fun toString(): String {
             return "강퇴"
         }
     },
-    Map{
+    Map {
         override fun toString(): String {
             return "맵"
         }
     },
-    Gameover{
+    Gameover {
         override fun toString(): String {
             return "항복"
         }
@@ -26,7 +26,7 @@ enum class VoteType {
             return "빽섭"
         }
     },
-    None{
+    None {
         override fun toString(): String {
             return "없음"
         }

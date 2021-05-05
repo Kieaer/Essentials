@@ -42,16 +42,16 @@ object Config : Configs() {
     var spawnLimit = 0
     var prefix = "[green][Essentials] []"
 
-    enum class AuthType{
+    enum class AuthType {
         None, Password, Discord
     }
 
-    enum class NetworkMode{
+    enum class NetworkMode {
         Server, Client
     }
 
     override fun createFile() {
-        if (!pluginRoot.child("config.hjson").exists()) {
+        if(!pluginRoot.child("config.hjson").exists()) {
             obj = JsonObject().add("language", Locale.getDefault().toString())
             save()
         } else {
@@ -124,7 +124,7 @@ object Config : Configs() {
     override fun load() {
         val settings: JsonObject = obj["settings"].asObject()
         val lc = settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")).split(",").toTypedArray()[0]
-        locale = if (lc.split("_").toTypedArray().size == 2) {
+        locale = if(lc.split("_").toTypedArray().size == 2) {
             val array = lc.split("_").toTypedArray()
             Locale(array[0], array[1])
         } else {
@@ -145,7 +145,7 @@ object Config : Configs() {
         networkMode = EqualsIgnoreCase(NetworkMode.values(), network.get("networkMode").asString(), NetworkMode.Client)
         networkAddress = network.getString("server-port", "127.0.0.1:5000")
         banShare = network.getBoolean("banshare", false)
-        banTrust = if (network["bantrust"] == null) JsonValue.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() else network["bantrust"].asArray()
+        banTrust = if(network["bantrust"] == null) JsonValue.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() else network["bantrust"].asArray()
 
         val anti: JsonObject = obj["antigrief"].asObject()
         antiVPN = anti.getBoolean("antivpn", false)

@@ -2,12 +2,9 @@ package essentials.event
 
 import arc.Events
 import mindustry.game.EventType.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 object Event {
-    fun register() {
-        // 플레이어가 블록에 대해 어떠한 설정을 했을 때 작동
+    fun register() { // 플레이어가 블록에 대해 어떠한 설정을 했을 때 작동
         Events.on(ConfigEvent::class.java) {
             EventThread(EventThread.EventTypes.Config, it).run()
         }

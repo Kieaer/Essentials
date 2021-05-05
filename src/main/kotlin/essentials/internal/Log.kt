@@ -48,19 +48,19 @@ object Log {
         val oldlog = Paths.get(pluginRoot.child("log/old/$type/$date.log").path())
         var mainlog = pluginRoot.child("log/$type.log")
         val logfolder = pluginRoot.child("log")
-        if (mainlog != null && mainlog.length() > 1024 * 256) {
+        if(mainlog != null && mainlog.length() > 1024 * 256) {
             mainlog.writeString(Bundle()["log.file-end", date], true)
             try {
-                if(!pluginRoot.child("log/old/$type").exists()){
+                if(!pluginRoot.child("log/old/$type").exists()) {
                     pluginRoot.child("log/old/$type").mkdirs()
                 }
                 Files.move(newlog, oldlog, StandardCopyOption.REPLACE_EXISTING)
-            } catch (e: IOException) {
+            } catch(e: IOException) {
                 CrashReport(e)
             }
             mainlog = null
         }
-        if (mainlog == null) mainlog = logfolder.child("$type.log")
+        if(mainlog == null) mainlog = logfolder.child("$type.log")
         mainlog!!.writeString("[${Tool.getLocalTime()}] ${Config.bundle.get(value, *params)}\n", true)
     }
 
