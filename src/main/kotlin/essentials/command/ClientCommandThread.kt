@@ -335,7 +335,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                             }\n")
                         }
 
-                        sendMessage[message.toString().dropLast(2)]
+                        sendMessage[message.toString().dropLast(1)]
                     }
                 }
                 Save -> {
