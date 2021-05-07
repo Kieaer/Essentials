@@ -626,13 +626,12 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                     sendMessage(player, Bundle(data).prefix("servertime", nowString))
                 }
                 Tp -> {
-                    var other: Playerc? = null
-                    for(p in Groups.player) {
-                        val result = p.name.contains(arg[0])
-                        if(result) {
-                            other = p
-                        }
+                    val other = if (arg[0].toIntOrNull() != null) {
+                        Groups.player.find { e -> e.id == arg[0].toInt() }
+                    } else {
+                        Groups.player.find { e -> e.name().contains(arg[0]) }
                     }
+
                     if(other == null) {
                         sendMessage["player.not-found"]
                         return
