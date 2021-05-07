@@ -669,9 +669,12 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 Maps -> {
                     val list = Vars.maps.all()
                     val build = StringBuilder()
-                    var page = if(arg.isNotEmpty()) Strings.parseInt(arg[0]) else 1
-                    val pages = Mathf.ceil(list.size.toFloat() / 6)
-                    page--
+
+                    val page = if(arg.isNotEmpty()) arg[0].toInt() else 0
+
+                    val buffer = Mathf.ceil(list.size.toFloat() / 6)
+                    val pages = if(buffer > 1.0) buffer - 1 else 0
+
                     if(page > pages || page < 0) {
                         sendMessage["[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet]."]
                         return
