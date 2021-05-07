@@ -207,7 +207,8 @@ object Files : Configs() {
 
             if(!pluginRoot.child("BlockReqExp.hjson").exists()) {
                 pluginRoot.child("BlockReqExp.hjson").writeString(json.toString(Stringify.HJSON_COMMENTS))
-            } else if(!pluginRoot.child("Exp.hjson").exists()) {
+            }
+            if(!pluginRoot.child("Exp.hjson").exists()) {
                 pluginRoot.child("Exp.hjson").writeString(json.toString(Stringify.HJSON_COMMENTS))
             }
         }
