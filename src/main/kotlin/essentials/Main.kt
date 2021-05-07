@@ -157,6 +157,8 @@ class Main : Plugin() {
             if(e.player == null) return@addActionFilter true
             return@addActionFilter PluginData[e.player.uuid()] != null
         }
+
+        Log.info("If you find any bugs, please report them to https://github.com/kieaer/Essentials/issues")
     }
 
     override fun registerServerCommands(handler: CommandHandler) {

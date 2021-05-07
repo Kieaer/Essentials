@@ -134,7 +134,7 @@ object Config : Configs() {
         logging = settings.getBoolean("logging", true)
         update = settings.getBoolean("update", true)
         debug = settings.getBoolean("debug", false)
-        crashReport = settings.getBoolean("crashreport", true)
+        crashReport = settings.getBoolean("crashreport", false)
         prefix = settings.getString("prefix", "[green][Essentials] []")
 
         val database = settings["database"].asObject()
