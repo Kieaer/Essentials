@@ -1,9 +1,14 @@
 plugins {
     id 'java-library'
-/*    id "org.sonarqube" version "2.8"
-    id 'jacoco'*/
-    id 'org.jetbrains.kotlin.jvm' version '1.4.31'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.0'
 }
+
+sourceCompatibility = JavaVersion.VERSION_16
+
+configurations.all {
+    resolutionStrategy.cacheDynamicVersionsFor 7, 'days'
+}
+
 
 repositories {
     mavenCentral()
@@ -12,8 +17,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:126.2'
-    compileOnly 'com.github.Anuken.Mindustry:core:126.2'
+    compileOnly 'com.github.Anuken.Arc:arc-core:master-SNAPSHOT'
+    compileOnly 'com.github.Anuken.Mindustry:core:master-SNAPSHOT'
 
     implementation 'com.github.PersonTheCat:hjson-java:master'
     implementation 'de.svenkubiak:jBCrypt:+'
@@ -28,17 +33,17 @@ dependencies {
     implementation 'com.neovisionaries:nv-i18n:+'
     implementation files('libs/ip2location.jar')
 
-    testImplementation 'com.github.Anuken.arc:arc-core:126.2'
-    testImplementation 'com.github.Anuken.Mindustry:core:126.2'
-    testImplementation 'com.github.Anuken.Mindustry:server:126.2'
-    testImplementation 'com.github.Anuken.arc:backend-headless:126.2'
+    testImplementation 'com.github.Anuken.arc:arc-core:master-SNAPSHOT'
+    testImplementation 'com.github.Anuken.Mindustry:core:master-SNAPSHOT'
+    testImplementation 'com.github.Anuken.Mindustry:server:master-SNAPSHOT'
+    testImplementation 'com.github.Anuken.arc:backend-headless:master-SNAPSHOT'
 
     testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
 
     //testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:+"
-    testCompile "org.jetbrains.kotlin:kotlin-test:1.4.31"
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:1.4.31"
+    //testCompile "org.jetbrains.kotlin:kotlin-test:1.5.0"
+    //testCompile "org.jetbrains.kotlin:kotlin-test-junit:1.5.0"
 }
 
 jar {
@@ -59,37 +64,15 @@ jar {
     }
 }*/
 
-compileJava {
-    options.encoding = "UTF-8"
-}
+compileJava { options.encoding = "UTF-8" }
 
-wrapper {
-    gradleVersion = "7.0-rc-2"
-}
-
-/*test {
-    testLogging.showStandardStreams = true
-}
-
-sonarqube {
-    properties {
-        property "sonar.projectKey", "Kieaer_Essentials"
-        property "sonar.organization", "kieaer"
-        property "sonar.host.url", "https://sonarcloud.io"
-    }
-}
-
-jacocoTestReport{
-    reports{
-        xml.enabled = true
-    }
-}*/
+wrapper { gradleVersion = "7.0.2" }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = 15
+    kotlinOptions.jvmTarget = 16
     kotlinOptions.useIR = true
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = 15
+    kotlinOptions.jvmTarget = 16
     kotlinOptions.useIR = true
 }
