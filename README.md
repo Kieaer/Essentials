@@ -2,15 +2,14 @@
 # Essentials
 Add more commands to the server.
 
-**__Requires Java 14 or higher!__**
+**__Requires Java 16 or higher!__**
 
 I'm getting a lot of suggestions.<br>
 Please submit your idea to this repository issues or Mindustry official discord!
 
-## Essentials 12 Plans
+## Next plans
 - [ ] Fix bugs
   - [ ] Voting not working
-  - [x] Sometimes an account system not working
 - [ ] Fix many typos
 - [ ] Features separation
   - [ ] Web server
@@ -21,7 +20,6 @@ Please submit your idea to this repository issues or Mindustry official discord!
     - [ ] Check world status
       - [ ] Dynmap (idea from Minecraft)
       - [ ] Rest API
-- [ ] Security patches
 - [ ] All code clean
 
 ## Installation
