@@ -44,7 +44,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
         val data = PluginData[player.uuid()]
         val locale = if(data != null) Locale(data.countryCode) else Config.locale
         val bundle = if(data != null) Bundle(Locale(data.countryCode)) else Bundle()
-        if(!Permissions.check(player, type.name.toLowerCase())) return
+        if(!Permissions.check(player, type.name.lowercase(Locale.getDefault()))) return
         val sendMessage = sendMessage(player, bundle)
 
         try {
@@ -514,7 +514,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 }
                 Register -> {
                     if(Config.authType != Config.AuthType.None) {
-                        when(Config.authType.name.toLowerCase()) {
+                        when(Config.authType.name.lowercase(Locale.getDefault())) {
                             "discord" -> {
                                 sendMessage["Join discord and use !register command!"]
                                 if(!Discord.pins.containsKey(player.name())) Discord.queue(player)

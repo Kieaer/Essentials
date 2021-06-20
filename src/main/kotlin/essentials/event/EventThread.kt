@@ -384,7 +384,7 @@ class EventThread(private val type: EventTypes, private val event: Any) {
                     val e = event as EventType.PlayerBanEvent
 
                     if(Config.banShare && Config.networkMode == Config.NetworkMode.Client) {
-                        Client.request(Client.Request.BanSync, Nulls.player, null)
+                        Client.request(Client.Request.BanSync, Nulls.unit.player, null)
                     }
 
                     if(e.player != null) {
@@ -396,7 +396,7 @@ class EventThread(private val type: EventTypes, private val event: Any) {
                 }
                 PlayerIpBan -> {
                     if(Config.banShare && Client.activated) {
-                        Client.request(Client.Request.BanSync, Nulls.player, null)
+                        Client.request(Client.Request.BanSync, Nulls.unit.player, null)
                     }
                 }
                 PlayerUnban -> {
