@@ -265,7 +265,7 @@ object Tool {
         val texts = text.toCharArray()
         for(i in texts) {
             val pos = Seq<IntArray>()
-            val target = letters[i.toUpperCase().toString()]
+            val target = letters[i.uppercaseChar().toString()]
             var xv = 0
             var yv = 0
             when(target.size) {

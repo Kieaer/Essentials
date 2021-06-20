@@ -91,7 +91,7 @@ object Config : Configs() {
         db.add("DBurl", dbUrl)
 
         // 네트워크 설정
-        network.add("networkMode", networkMode.name.toLowerCase(), bundle["config.network"])
+        network.add("networkMode", networkMode.name.lowercase(Locale.getDefault()), bundle["config.network"])
         network.add("networkAddress", networkAddress)
         network.add("banshare", banShare, bundle["config.server.banshare"])
         network.add("bantrust", banTrust, bundle["config.server.bantrust"])
@@ -111,7 +111,7 @@ object Config : Configs() {
         features.add("afktime", afktime, bundle["config.feature.afktime"])
 
         // 로그인 설정
-        auth.add("authType", authType.name.toLowerCase(), bundle["config.account.login.method"])
+        auth.add("authType", authType.name.lowercase(Locale.getDefault()), bundle["config.account.login.method"])
 
         // Discord 설정 (auth 상속)
         auth.add("discord", discord, bundle["config.feature.discord.desc"])

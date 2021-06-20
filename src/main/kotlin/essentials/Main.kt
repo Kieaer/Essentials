@@ -46,22 +46,38 @@ class Main : Plugin() {
         val pluginRoot: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     }
 
-    init { //checkServerVersion() // Temporary disabled
-        fileExtract()
+    init {
+        try {
+            if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").exists()) {
+                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").writeString("")
+                Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").file())
+            }
 
-        // 서버 로비기능 설정
-        if(!Core.settings.has("isLobby")) {
-            Core.settings.put("isLobby", false)
-            Core.settings.saveValues()
-        } else if(Core.settings.getBool("isLobby")) {
-            Log.info("system.lobby")
-            Log.info("Lobby server can only be built by admins!") //TODO 언어별 추가
+            if(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()) {
+                ZipFile(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").absolutePath()).use { zip ->
+                    zip.entries().asSequence().forEach { entry ->
+                        if(entry.isDirectory) {
+                            File(pluginRoot.child("data").absolutePath(), entry.name).mkdirs()
+                        } else {
+                            zip.getInputStream(entry).use { input ->
+                                File(pluginRoot.child("data").absolutePath(), entry.name).outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                        }
+                    }
+                }
+                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").delete()
+                pluginRoot.child("data/LICENSE-CC-BY-SA-4.0.TXT").delete()
+                pluginRoot.child("data/README_LITE.TXT").delete()
+            }
+        } catch(e: IOException) {
+            throw PluginException(e)
         }
 
         // 설정 불러오기
         Files.createFile()
         Config.createFile()
-        Log.info("config.language", Config.locale.displayLanguage)
 
         // 플러그인 데이터 불러오기
         PluginData.loadAll()
@@ -182,32 +198,6 @@ class Main : Plugin() {
     }
 
     private fun fileExtract() {
-        try {
-            if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists() && !pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").exists()) {
-                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").writeString("")
-                Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").file())
-            }
 
-            if(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()) {
-                ZipFile(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").absolutePath()).use { zip ->
-                    zip.entries().asSequence().forEach { entry ->
-                        if(entry.isDirectory) {
-                            File(pluginRoot.child("data").absolutePath(), entry.name).mkdirs()
-                        } else {
-                            zip.getInputStream(entry).use { input ->
-                                File(pluginRoot.child("data").absolutePath(), entry.name).outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                        }
-                    }
-                }
-                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").delete()
-                pluginRoot.child("data/LICENSE-CC-BY-SA-4.0.TXT").delete()
-                pluginRoot.child("data/README_LITE.TXT").delete()
-            }
-        } catch(e: IOException) {
-            throw PluginException(e)
-        }
     }
 }

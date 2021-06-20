@@ -29,7 +29,7 @@ object PluginData {
     var votingClass: Vote? = null
     var isVoting: Boolean = false
     var votingType: VoteType = VoteType.None
-    var votingPlayer: Playerc = Nulls.player
+    var votingPlayer: Playerc = Nulls.unit.player
 
     private val json = Json()
 
@@ -128,7 +128,7 @@ object PluginData {
                     warptotals.add(WarpTotal(buffer["mapName"].asString(), buffer["tilePos"].asInt(), buffer["totalplayers"].asInt(), buffer["numbersize"].asInt()))
                 }
                 for(a in 0 until data["blacklist"].asArray().size()) {
-                    val buffer = data["warpzones"].asArray()[a].asArray()
+                    val buffer = data["blacklist"].asArray()[a].asArray()
                     blacklist.add(buffer[a].asString())
                 }
                 for(a in 0 until data["banned"].asArray().size()) {

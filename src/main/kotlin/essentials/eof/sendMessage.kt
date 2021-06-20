@@ -7,7 +7,7 @@ import mindustry.gen.Nulls
 import mindustry.gen.Playerc
 
 class sendMessage {
-    var player: Playerc = Nulls.player
+    var player: Playerc = Nulls.unit.player
     var bundle: Bundle = Bundle()
 
     constructor(player: Playerc, msg: String) {
