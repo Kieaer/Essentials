@@ -125,7 +125,7 @@ object Permissions {
             val size = perm[obj["group"].asString()].asObject()["permission"].asArray().size()
             for(a in 0 until size) {
                 val node = perm[obj["group"].asString()].asObject()["permission"].asArray()[a].asString()
-                if(node == command || node == "ALL") {
+                if(node == command || node.equals("all", true)) {
                     return true
                 }
             }
