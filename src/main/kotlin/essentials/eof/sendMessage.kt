@@ -7,16 +7,20 @@ import mindustry.gen.Nulls
 import mindustry.gen.Playerc
 
 class sendMessage {
-    var player: Playerc = Nulls.unit.player
-    var bundle: Bundle = Bundle()
+    var player: Playerc?
+    var bundle: Bundle?
 
     constructor(player: Playerc, msg: String) {
+        this.player = player
+        this.bundle = Bundle()
         Core.app.post {
             player.sendMessage(msg)
         }
     }
 
     constructor(msg: String) {
+        this.player = null
+        this.bundle = null
         Core.app.post {
             Call.sendMessage(msg)
         }
@@ -29,7 +33,7 @@ class sendMessage {
 
     operator fun get(msg: String, vararg parameter: String) {
         Core.app.post {
-            player.sendMessage(bundle.get(msg, *parameter))
+            player?.sendMessage(bundle?.get(msg, *parameter))
         }
     }
 }

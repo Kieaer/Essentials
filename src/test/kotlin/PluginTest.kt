@@ -8,6 +8,7 @@ import arc.graphics.Color
 import arc.util.CommandHandler
 import com.github.javafaker.Faker
 import essentials.Main
+import junit.framework.Assert.assertNotNull
 import mindustry.Vars
 import mindustry.core.FileTree
 import mindustry.core.GameState
@@ -27,7 +28,6 @@ import java.io.File
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
-import kotlin.test.assertNotNull
 
 class PluginTest {
     companion object {
@@ -121,6 +121,7 @@ class PluginTest {
         fun shutdown() {
             Core.app.listeners[0].dispose()
             path.child("mods/Essentials").deleteDirectory()
+            path.child("maps").deleteDirectory()
         }
 
         private fun getSaltString(): String {
@@ -139,8 +140,13 @@ class PluginTest {
 
             player.reset()
             player.con = object : NetConnection(r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
-                override fun send(o: Any, sendMode: mindustry.net.Net.SendMode) {}
-                override fun close() {}
+                override fun send(`object`: Any?, reliable: Boolean) {
+                    TODO("Not yet implemented")
+                }
+
+                override fun close() {
+                    TODO("Not yet implemented")
+                }
             }
             player.name(faker.name().username())
             player.uuid()

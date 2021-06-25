@@ -15,10 +15,7 @@ import essentials.event.EventThread.EventTypes.*
 import essentials.event.feature.Discord
 import essentials.event.feature.Permissions
 import essentials.external.IpAddressMatcher
-import essentials.internal.Bundle
-import essentials.internal.CrashReport
-import essentials.internal.Log
-import essentials.internal.Tool
+import essentials.internal.*
 import essentials.network.Client
 import essentials.network.Server
 import mindustry.Vars
@@ -36,6 +33,7 @@ import org.hjson.JsonValue
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
+import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.abs
 
@@ -74,6 +72,7 @@ class EventThread(private val type: EventTypes, private val event: Any) {
                                         Log.info("player.warped", e.player.name, data.ip + ":" + data.port)
                                         connect(e.player, data.ip, data.port)
                                     }
+                                    Bundle().get("register-success")
                                     break
                                 }
                             }
