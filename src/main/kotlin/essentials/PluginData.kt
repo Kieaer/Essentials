@@ -29,7 +29,7 @@ object PluginData {
     var votingClass: Vote? = null
     var isVoting: Boolean = false
     var votingType: VoteType = VoteType.None
-    var votingPlayer: Playerc = Nulls.unit.player
+    var votingPlayer: Playerc? = Nulls.unit.player
 
     private val json = Json()
 

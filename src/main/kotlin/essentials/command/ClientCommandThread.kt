@@ -658,7 +658,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 Mute -> {
                     val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
                     if(other == null) {
-                        sendMessage(player, Bundle(data).prefix("player.not-found"))
+                        sendMessage(player, Bundle().prefix("player.not-found"))
                     } else {
                         val target = PluginData[other.uuid()]
                         target!!.mute = !target.mute
