@@ -8,12 +8,13 @@ import essentials.Main.Companion.pluginRoot
 import essentials.PluginData
 import essentials.data.Config
 import essentials.data.PlayerCore
-import essentials.eof.kick
 import essentials.event.feature.Exp
 import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.Tool
-import mindustry.Vars.*
+import mindustry.Vars.netServer
+import mindustry.Vars.state
+import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.core.GameState
 import mindustry.game.EventType.Trigger.update
@@ -133,7 +134,7 @@ object TriggerThread : Runnable {
                         target.x = p.tileX()
                         target.y = p.tileY()
                         if(!state.rules.editor) Exp[target]
-                        if(kick) kick(p, "AFK")
+                        if(kick) Call.kick(p.con(), "AFK")
                     }
                 }
             }

@@ -15,7 +15,10 @@ import essentials.event.feature.AutoRollback
 import essentials.event.feature.Discord
 import essentials.event.feature.Permissions
 import essentials.event.feature.RainbowName
-import essentials.internal.*
+import essentials.internal.CrashReport
+import essentials.internal.Log
+import essentials.internal.PluginException
+import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
 import essentials.thread.PermissionWatch

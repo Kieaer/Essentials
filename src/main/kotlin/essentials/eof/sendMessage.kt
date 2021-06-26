@@ -3,7 +3,6 @@ package essentials.eof
 import arc.Core
 import essentials.internal.Bundle
 import mindustry.gen.Call
-import mindustry.gen.Nulls
 import mindustry.gen.Playerc
 
 class sendMessage {

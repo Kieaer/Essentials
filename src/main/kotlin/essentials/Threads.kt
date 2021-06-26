@@ -4,7 +4,6 @@ import arc.Core
 import arc.struct.ArrayMap
 import arc.struct.Seq
 import essentials.data.Config
-import essentials.eof.kick
 import essentials.eof.sendMessage
 import essentials.external.PingHost
 import essentials.internal.Bundle
@@ -158,9 +157,9 @@ object Threads : Runnable {
             } catch(e: Exception) {
                 for(p in Groups.player) {
                     if(PluginData[p.uuid()] != null) {
-                        kick(p, Bundle(Locale(PluginData[p.uuid()]!!.countryCode))["plugin-error-kick"])
+                        Call.kick(p.con(), Bundle(Locale(PluginData[p.uuid()]!!.countryCode))["plugin-error-kick"])
                     } else {
-                        kick(p, Bundle(Locale.ENGLISH)["plugin-error-kick"])
+                        Call.kick(p.con(), Bundle(Locale.ENGLISH)["plugin-error-kick"])
                     }
                 }
                 CrashReport(e)

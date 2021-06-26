@@ -4,10 +4,13 @@ import arc.Events
 import arc.struct.Seq
 import arc.util.Time
 import essentials.PluginData
-import essentials.eof.kick
 import essentials.eof.sendMessage
-import essentials.event.feature.VoteType.*
+import essentials.event.feature.VoteType.Gameover
+import essentials.event.feature.VoteType.Kick
 import essentials.event.feature.VoteType.Map
+import essentials.event.feature.VoteType.None
+import essentials.event.feature.VoteType.Rollback
+import essentials.event.feature.VoteType.Skipwave
 import essentials.internal.Bundle
 import essentials.internal.Log
 import essentials.internal.Log.LogType
@@ -15,6 +18,7 @@ import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.net.Packets
@@ -114,7 +118,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                     PluginData[target.uuid()]!!.kickcount++
                     Tool.sendMessageAll("vote.kick.done", target.name())
                     target.info.lastKicked = Time.millis() + 30 * 60 * 1000
-                    kick(target, Packets.KickReason.vote)
+                    Call.kick(target.con(), Packets.KickReason.vote)
                     Log.write(LogType.Player, "log.player.kick")
                 }
                 Rollback -> {

@@ -9,7 +9,8 @@ import java.io.IOException
 
 object Files : Configs() {
     @Throws(IOException::class)
-    override fun createFile() { // 기록 파일들
+    override fun createFile() {
+        // 기록 파일들
         if(!pluginRoot.child("log").exists()) {
             val names = arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
             for(a in names) {
@@ -18,9 +19,10 @@ object Files : Configs() {
                     pluginRoot.child("log/$a.log").file().createNewFile()
                 }
             }
-        } // motd
+        }
+        // motd
         if(!pluginRoot.child("motd").exists()) {
-            pluginRoot.child("motd ").mkdirs()
+            pluginRoot.child("motd").mkdirs()
             val names = arrayListOf("en_US", "ko_KR")
             val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en_US.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko_KR.txt[] 파일을 수정하세요.")
             for(a in 0 until names.size) {
@@ -28,7 +30,8 @@ object Files : Configs() {
                     pluginRoot.child("motd/${names[a]}.txt").writeString(texts[a])
                 }
             }
-        } // 블록 설치시 요구레벨 설정 파일
+        }
+        // 블록 설치시 요구레벨 설정 파일
         if(!pluginRoot.child("BlockReqExp.hjson").exists() || !pluginRoot.child("Exp.hjson").exists()) {
             val json = JsonObject()
 

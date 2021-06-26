@@ -8,7 +8,9 @@ import com.neovisionaries.i18n.CountryCode
 import essentials.Main.Companion.pluginRoot
 import essentials.PluginData
 import essentials.data.Config
-import mindustry.Vars.*
+import mindustry.Vars.content
+import mindustry.Vars.netServer
+import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -19,7 +21,12 @@ import mindustry.type.UnitType
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.logic.MessageBlock
-import java.io.*
+import java.io.BufferedOutputStream
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStreamReader
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
