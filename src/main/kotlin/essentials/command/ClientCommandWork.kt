@@ -7,15 +7,39 @@ import arc.util.Strings
 import arc.util.Tmp
 import arc.util.async.Threads
 import essentials.PluginData
-import essentials.command.ClientCommand.Command.*
+import essentials.command.ClientCommand.Command.Ch
+import essentials.command.ClientCommand.Command.Changepw
+import essentials.command.ClientCommand.Command.Chars
+import essentials.command.ClientCommand.Command.Color
+import essentials.command.ClientCommand.Command.Help
+import essentials.command.ClientCommand.Command.Info
+import essentials.command.ClientCommand.Command.Kill
+import essentials.command.ClientCommand.Command.KillAll
+import essentials.command.ClientCommand.Command.Login
+import essentials.command.ClientCommand.Command.Maps
+import essentials.command.ClientCommand.Command.Me
+import essentials.command.ClientCommand.Command.Motd
+import essentials.command.ClientCommand.Command.Mute
+import essentials.command.ClientCommand.Command.Players
+import essentials.command.ClientCommand.Command.Register
+import essentials.command.ClientCommand.Command.Router
+import essentials.command.ClientCommand.Command.Save
+import essentials.command.ClientCommand.Command.Spawn
+import essentials.command.ClientCommand.Command.Status
+import essentials.command.ClientCommand.Command.Team
+import essentials.command.ClientCommand.Command.Time
+import essentials.command.ClientCommand.Command.Tp
 import essentials.command.ClientCommand.Command.Vote
+import essentials.command.ClientCommand.Command.Warp
+import essentials.command.ClientCommand.Command.Weather
 import essentials.data.Config
 import essentials.data.PlayerCore
-import essentials.eof.constructFinish
-import essentials.eof.infoMessage
 import essentials.eof.sendMessage
-import essentials.eof.setPosition
-import essentials.event.feature.*
+import essentials.event.feature.Discord
+import essentials.event.feature.Exp
+import essentials.event.feature.Permissions
+import essentials.event.feature.RainbowName
+import essentials.event.feature.VoteType
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
@@ -39,7 +63,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.math.abs
 
-class ClientCommandThread(private val type: ClientCommand.Command, private val arg: Array<String>, private val player: Playerc) {
+class ClientCommandWork(private val type: ClientCommand.Command, private val arg: Array<String>, private val player: Playerc) {
     fun run() {
         val data = PluginData[player.uuid()]
         val locale = if(data != null) Locale(data.countryCode) else Config.locale
@@ -214,7 +238,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 [green]${bundle["player.pvpwincount"]}[] : ${data.pvpwincount}
                 [green]${bundle["player.pvplosecount"]}[] : ${data.pvplosecount}
                 """.trimIndent()
-                    infoMessage(player, datatext)
+                    Call.infoMessage(player.con(), datatext)
                 }
                 Warp -> {
                     val types = arrayOf("zone", "block", "count", "total")
@@ -310,7 +334,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                 Motd -> {
                     val motd = Tool.getMotd(locale)
                     val count = motd.split("\r\n|\r|\n").toTypedArray().size
-                    if(count > 10) infoMessage(player, motd) else sendMessage(player, motd)
+                    if(count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
                 }
                 Players -> {
                     val message = StringBuilder()
@@ -575,8 +599,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                             }
                         }
                         type.equals("block", true) -> {
-                            constructFinish(tile = player.tileOn(), block = Vars.content.blocks().find { it.name == name }, builder = player.unit(), rotation = parameter?.toByte()
-                                    ?: 0, team = player.team(), config = null)
+                            Call.constructFinish(player.tileOn(), Vars.content.blocks().find { it.name == name }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
                         }
                         else -> { // TODO 명령어 예외 만들기
                             return
@@ -636,7 +659,7 @@ class ClientCommandThread(private val type: ClientCommand.Command, private val a
                         sendMessage["player.not-found"]
                         return
                     }
-                    setPosition(player, other.x, other.y)
+                    Call.setPosition(player.con(), other.x, other.y)
                 }
                 Weather -> {
                     if(arg.isNullOrEmpty() || arg[0].toIntOrNull() !is Int) {

@@ -15,7 +15,11 @@ import java.io.BufferedReader
 import java.io.DataOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
-import java.net.*
+import java.net.InetAddress
+import java.net.Socket
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.TimeUnit

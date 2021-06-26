@@ -2,7 +2,11 @@ package essentials.network
 
 import arc.struct.Seq
 import essentials.data.Config
-import essentials.internal.*
+import essentials.internal.Bundle
+import essentials.internal.CrashReport
+import essentials.internal.Log
+import essentials.internal.PluginException
+import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.gen.Groups
 import org.hjson.JsonArray
