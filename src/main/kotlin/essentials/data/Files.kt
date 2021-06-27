@@ -2,6 +2,8 @@ package essentials.data
 
 import essentials.Main.Companion.pluginRoot
 import essentials.form.Configs
+import mindustry.content.Blocks
+import mindustry.ctype.ContentList
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
@@ -35,6 +37,8 @@ object Files : Configs() {
         if(!pluginRoot.child("BlockReqExp.hjson").exists() || !pluginRoot.child("Exp.hjson").exists()) {
             val json = JsonObject()
 
+            Blocks.additiveReconstructor
+
             // 제작 건물
             json.add("siliconSmelter", 0, "Crafting")
             json.add("siliconCrucible", 0)
@@ -62,6 +66,8 @@ object Files : Configs() {
             json.add("itemVoid", 0)
             json.add("liquidSource", 0)
             json.add("liquidVoid", 0)
+            json.add("payloadVoid", 0)
+            json.add("payloadSource", 0)
             json.add("illuminator", 0)
 
             // 방어 건물
@@ -74,7 +80,8 @@ object Files : Configs() {
             json.add("thoriumWall", 0)
             json.add("thoriumWallLarge", 0)
             json.add("door", 0)
-            json.add("doorLarge,phaseWall", 0)
+            json.add("doorLarge", 0)
+            json.add("phaseWall", 0)
             json.add("phaseWallLarge", 0)
             json.add("surgeWall", 0)
             json.add("surgeWallLarge", 0)
@@ -105,11 +112,12 @@ object Files : Configs() {
             json.add("overflowGate", 0)
             json.add("underflowGate", 0)
             json.add("massDriver", 0)
-            json.add("payloadConveyor", 0)
-            json.add("payloadRouter", 0)
+            json.add("duct", 0)
+            json.add("ductRouter", 0)
+            json.add("ductBridge", 0)
 
             // 액체 건물
-            json.add("mechanicalPump", 0, "Liquid")
+            json.add("mechanicalPump", 0, "Drills")
             json.add("rotaryPump", 0)
             json.add("thermalPump", 0)
             json.add("conduit", 0)
@@ -187,6 +195,11 @@ object Files : Configs() {
             json.add("repairPoint", 0)
             json.add("resupplyPoint", 0)
 
+            // 화물
+            json.add("payloadConveyor", 0, "Payloads")
+            json.add("payloadRouter", 0)
+            json.add("payloadPropulsionTower", 0)
+
             // 로직
             json.add("message", 0, "Logic")
             json.add("switchBlock", 0)
@@ -200,7 +213,6 @@ object Files : Configs() {
 
             // 캠페인
             json.add("launchPad", 0, "Campaign")
-            json.add("launchPadLarge", 0)
             json.add("interplanetaryAccelerator", 0)
 
             // 그 외 건물들
