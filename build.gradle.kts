@@ -9,6 +9,10 @@ java {
 repositories {
     mavenCentral()
     jcenter()
+    maven {
+        name = "m2-dv8tion"
+        url = uri("https://m2.dv8tion.net/releases")
+    }
     maven (url = "https://www.jitpack.io")
 }
 
@@ -26,6 +30,9 @@ dependencies {
     implementation("com.h2database:h2:1.4.200")
     implementation("com.neovisionaries:nv-i18n:+")
     implementation(files("libs/ip2location.jar"))
+    implementation("net.dv8tion:JDA:4.3.0_277") {
+        exclude(module = "opus-java")
+    }    
 
     testImplementation("com.github.Anuken.arc:arc-core:v127")
     testImplementation("com.github.Anuken.Mindustry:core:v127")
