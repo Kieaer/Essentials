@@ -37,17 +37,7 @@ object PermissionWatch : Runnable {
                             tried = !tried
                             Log.info("system.perm.updated")
                         }
-                    }/*if(kind.equals(StandardWatchEventKinds.ENTRY_CREATE)) {
-                        System.out.println("created something in directory");
-                    }else if(kind.equals(StandardWatchEventKinds.ENTRY_DELETE)) {
-                        System.out.println("delete something in directory");
-                    }else if(kind.equals(StandardWatchEventKinds.ENTRY_MODIFY)) {
-                        System.out.println("modified something in directory");
-                    }else if(kind.equals(StandardWatchEventKinds.OVERFLOW)) {
-                        System.out.println("overflow");
-                    }else {
-                        System.out.println("hello world");
-                    }*/
+                    }
                 }
                 if(!watchKey.reset()) {
                     try {

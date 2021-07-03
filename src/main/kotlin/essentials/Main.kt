@@ -12,7 +12,7 @@ import essentials.data.Files
 import essentials.data.PlayerCore
 import essentials.event.Event
 import essentials.event.feature.AutoRollback
-import essentials.event.feature.Discord
+import essentials.data.auth.Discord
 import essentials.event.feature.Permissions
 import essentials.event.feature.RainbowName
 import essentials.internal.CrashReport
@@ -23,7 +23,6 @@ import essentials.network.Client
 import essentials.network.Server
 import essentials.thread.PermissionWatch
 import essentials.thread.TriggerThread
-import essentials.thread.WarpBorder
 import mindustry.Vars.netServer
 import mindustry.core.Version
 import mindustry.mod.Plugin
@@ -47,6 +46,8 @@ class Main : Plugin() {
     }
 
     init {
+        checkServerVersion()
+
         try {
             if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").exists()) {
                 pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").writeString("")
@@ -91,7 +92,6 @@ class Main : Plugin() {
         mainThread.submit(RainbowName)
         timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())
         mainThread.submit(PermissionWatch)
-        mainThread.submit(WarpBorder)
 
         // DB 연결
         DB.start()
@@ -119,7 +119,6 @@ class Main : Plugin() {
                     Discord.shutdownNow() // Discord 서비스 종료
                     PlayerCore.saveAll() // 플레이어 데이터 저장
                     PluginData.saveAll() // 플러그인 데이터 저장
-                    WarpBorder.interrupt() // 서버간 이동 영역표시 종료
                     mainThread.shutdownNow() // 스레드 종료
                     // config.singleService.shutdownNow(); // 로그 스레드 종료
                     timer.cancel() // 일정 시간마다 실행되는 스레드 종료
@@ -146,7 +145,7 @@ class Main : Plugin() {
                         Log.info("client.shutdown")
                     }
 
-                    if(Server.isSocketInitialized() || Client.socket.isClosed || WarpBorder.isInterrupted || !DB.database.isClosed) {
+                    if(Server.isSocketInitialized() || Client.socket.isClosed || !DB.database.isClosed) {
                         Log.info("thread-disable-waiting")
                     } else {
                         Log.warn("thread-not-dead")
@@ -195,9 +194,5 @@ class Main : Plugin() {
                 PluginData.pluginVersion = version
             }
         }
-    }
-
-    private fun fileExtract() {
-
     }
 }

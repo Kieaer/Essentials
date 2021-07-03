@@ -326,45 +326,42 @@ object Tool {
         pwPattern = "(.)\\1\\1\\1"
         val matcher2 = Pattern.compile(pwPattern).matcher(password)
         if(password != password_repeat) { // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
-            /*player.sendMessage("""
-    [green][Essentials] [sky]The password isn't the same.
-    [green][Essentials] [sky]비밀번호가 똑같지 않습니다.
-    """.trimIndent())*/
+            player.sendMessage("""[green][Essentials] [sky]The password isn't the same.[green][Essentials] [sky]비밀번호가 똑같지 않습니다.""".trimIndent())
             return false
         } else if(!matcher.matches()) { // 정규식에 맞지 않을경우
-            /*player.sendMessage("""
-    [green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!
-    [green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!
-    """.trimIndent())*/
+            player.sendMessage("""
+                [green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!
+                [green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!
+                """.trimIndent())
             Log.player("system.password.match.regex", player.name())
             return false
         } else if(matcher2.find()) { // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
-            /*player.sendMessage("""
-    [green][Essentials] [sky]Passwords should not be similar to nicknames!
-    [green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!
-    """.trimIndent())*/
+            player.sendMessage("""
+                [green][Essentials] [sky]Passwords should not be similar to nicknames!
+                [green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!
+                """.trimIndent())
             Log.player("system.password.match.name", player.name())
             return false
         } else if(password.contains(id!!)) { // 비밀번호와 ID가 완전히 같은경우
-            /*player.sendMessage("""
-    [green][Essentials] [sky]Password shouldn't be the same as your nickname.
-    [green][Essentials] [sky]비밀번호는 ID와 비슷하게 설정할 수 없습니다!
-    """.trimIndent())*/
+            player.sendMessage("""
+                [green][Essentials] [sky]Password shouldn't be the same as your nickname.
+                [green][Essentials] [sky]비밀번호는 ID와 비슷하게 설정할 수 없습니다!
+                """.trimIndent())
             return false
         } else if(password.contains(" ")) { // 비밀번호에 공백이 있을경우
-            /*player.sendMessage("""
-    [green][Essentials] [sky]Password must not contain spaces!
-    [green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!
-    """.trimIndent())*/
+            player.sendMessage("""
+                [green][Essentials] [sky]Password must not contain spaces!
+                [green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!
+                """.trimIndent())
             Log.player("system.password.match.blank", player.name())
             return false
         } else if(password.matches(Regex("<(.*?)>"))) { // 비밀번호 형식이 "<비밀번호>" 일경우
-            /*player.sendMessage("""
-    [green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!
-    [green][Essentials] [sky]Use /register password
-    [green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!
-    [green][Essentials] [sky]/register password 형식으로 사용하세요.
-    """.trimIndent())*/
+            player.sendMessage("""
+                [green][Essentials] [green]<[sky]password[green]>[sky] format isn't allowed!
+                [green][Essentials] [sky]Use /register password
+                [green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!
+                [green][Essentials] [sky]/register password 형식으로 사용하세요.
+                """.trimIndent())
             Log.player("system.password.match.invalid", player.name())
             return false
         }

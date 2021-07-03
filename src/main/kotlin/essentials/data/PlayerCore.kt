@@ -68,32 +68,7 @@ object PlayerCore {
     fun createData(player: Playerc?, name: String, uuid: String, id: String, pw: String): PlayerData {
         val country = Tool.getGeo(player)
 
-        val json = JsonObject()
-        json.add("name", name)
-        json.add("uuid", uuid)
-        json.add("countryCode", country.toLanguageTag())
-        json.add("placecount", 0)
-        json.add("breakcount", 0)
-        json.add("joincount", 0)
-        json.add("kickcount", 0)
-        json.add("level", 0)
-        json.add("exp", 0)
-        json.add("firstdate", System.currentTimeMillis())
-        json.add("lastdate", System.currentTimeMillis())
-        json.add("playtime", 0L)
-        json.add("attackclear", 0)
-        json.add("pvpwincount", 0)
-        json.add("pvplosecount", 0)
-        json.add("pvpbreakout", 0)
-        json.add("bantime", 0L)
-        json.add("crosschat", false)
-        json.add("colornick", false)
-        json.add("permission", "default")
-        json.add("mute", false)
-        json.add("alert", false)
-        json.add("udid", 0L)
-
-        return PlayerData(uuid, json.toString(), id, pw)
+        return PlayerData(name, uuid, country.toLanguageTag(), id, pw, "default")
     }
 
     fun login(id: String, pw: String): Boolean {

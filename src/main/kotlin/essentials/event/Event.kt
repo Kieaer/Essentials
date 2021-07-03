@@ -9,7 +9,7 @@ import essentials.data.Config
 import essentials.data.DB
 import essentials.data.PlayerCore
 import essentials.eof.sendMessage
-import essentials.event.feature.Discord
+import essentials.data.auth.Discord
 import essentials.event.feature.Permissions
 import essentials.external.IpAddressMatcher
 import essentials.internal.Bundle
