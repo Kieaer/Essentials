@@ -24,7 +24,6 @@ import java.util.function.Consumer
 object Threads : Runnable {
     private var ping = 0.000
     private val servers = ArrayMap<String, Int>()
-    private var sleepCount = 0
 
     override fun run() {
         Thread.currentThread().name = "Essential main thread"
@@ -59,6 +58,7 @@ object Threads : Runnable {
                             }
                         }]
                     }
+
                     val memory = Seq<String>()
                     for(a in 0 until PluginData.warpblocks.size) {
                         val value = PluginData.warpblocks[a]
@@ -99,34 +99,17 @@ object Threads : Runnable {
                             }]
                         }
                     }
+
                     for(m in memory) {
                         val a = m.split("///").toTypedArray()
                         Call.label(a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
                     }
+
                     if(Core.settings.getBool("isLobby")) {
                         Core.settings.put("totalPlayers", totalPlayers)
                         Core.settings.saveValues()
                     }
                     ping = 0.000
-                }
-
-                // 로그인 요구 띄우기
-                if(sleepCount == 20) {
-                    for(p in Groups.player) {
-                        val playerData = PluginData[p.uuid()]
-                        if(playerData != null) {
-                            val locale = Locale(playerData.countryCode)
-                            val message: String = when(Config.authType) {
-                                Config.AuthType.Discord -> Bundle(locale)["system.login.require.discord"]
-                                Config.AuthType.Password -> Bundle(locale)["system.login.require.password"]
-                                else -> ""
-                            }
-                            if(message != "") sendMessage(p, message)
-                        }
-                    }
-                    sleepCount = 0
-                } else {
-                    sleepCount++
                 }
 
                 TimeUnit.SECONDS.sleep(3)

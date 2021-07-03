@@ -65,14 +65,6 @@ object TriggerThread : Runnable {
         while(!Thread.currentThread().isInterrupted) { // 서버 켜진시간 카운트
             PluginData.uptime = PluginData.uptime + 1
 
-            // 데이터 저장
-            val json = JsonObject()
-            json.add("servername", Core.settings.getString("servername"))
-            pluginRoot.child("data/data.json").writeString(json.toString())
-
-            // 현재 서버 이름에다가 클라이언트 서버에 대한 인원 새기기
-            // new changename().start();
-
             // 임시로 밴당한 유저 감시
             for(a in 0 until PluginData.banned.size) {
                 val time = LocalDateTime.now()
@@ -85,9 +77,7 @@ object TriggerThread : Runnable {
             }
 
             // 맵이 돌아가고 있을 때
-            if(state.`is`(GameState.State.playing)) { // 서버간 이동 패드에 플레이어가 있는지 확인
-                // new jumpzone().start();
-
+            if(state.`is`(GameState.State.playing)) {
                 // 맵 플탐 카운트
                 PluginData.playtime = PluginData.playtime + 1
 

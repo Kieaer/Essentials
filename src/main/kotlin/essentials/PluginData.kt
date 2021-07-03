@@ -33,10 +33,6 @@ object PluginData {
 
     private val json = Json()
 
-    // 일회성 플러그인 데이터
-    var messagewarps = Seq<MessageWarp>()
-    var process = Seq<Process?>()
-
     // 종료시 저장되는 플러그인 데이터
     var warpzones = Seq<WarpZone>()
     var warpblocks = Seq<WarpBlock>()
@@ -142,8 +138,6 @@ object PluginData {
             saveAll()
         }
     }
-
-    class MessageWarp(val pos: Int, val message: String)
 
     class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = world.tile(start)

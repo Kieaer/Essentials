@@ -35,7 +35,7 @@ import essentials.command.ClientCommand.Command.Weather
 import essentials.data.Config
 import essentials.data.PlayerCore
 import essentials.eof.sendMessage
-import essentials.event.feature.Discord
+import essentials.data.auth.Discord
 import essentials.event.feature.Exp
 import essentials.event.feature.Permissions
 import essentials.event.feature.RainbowName
