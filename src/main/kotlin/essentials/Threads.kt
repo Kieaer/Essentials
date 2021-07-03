@@ -30,29 +30,7 @@ object Threads : Runnable {
         Thread.currentThread().name = "Essential main thread"
         while(!Thread.currentThread().isInterrupted) {
             try {
-                if(state.`is`(GameState.State.playing)) { // 외부 서버 플레이어 인원 - 메세지 블럭
-                    for(a in 0 until PluginData.messagewarps.size) {
-                        val tile: Tile = world.tile(PluginData.messagewarps[a].pos)
-
-                        if(tile.block() !== Blocks.message) {
-                            PluginData.messagewarps.remove(a)
-                            break
-                        }
-                        Tool.setMessage(tile, "[green]Working...")
-                        val arr = PluginData.messagewarps[a]!!.message.split(" ").toTypedArray()
-                        val ip = arr[1]
-                        var port = 6567
-                        if(ip.contains(":")) {
-                            port = ip.split(":").toTypedArray()[1].toInt()
-                        }
-                        val finalPort = port
-                        PingHost[ip, port, Consumer { result: Host ->
-                            ping += if(result.name != null) ("0." + result.ping).toDouble() else 1.000
-                            Tool.setMessage(tile, if(result.name != null) "[green]" + result.players + " Players in this server." else "[scarlet]Server offline")
-                            addPlayers(ip, finalPort, result.players)
-                        }]
-                    }
-
+                if(state.`is`(GameState.State.playing)) {
                     // 서버 인원 확인
                     for(i in 0 until PluginData.warpcounts.size) {
                         val value = PluginData.warpcounts[i]
