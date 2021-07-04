@@ -42,7 +42,7 @@ class PlayerData {
     }
 
     // 플레이어 전체 데이터
-    constructor(name: String, uuid: String, countryCode: String, placecount: Int, breakcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, firstdate: Long, lastdate: Long, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, bantime: Long, crosschat: Boolean, colornick: Boolean, permission: String, mute: Boolean, udid: Long, accountid: String?, accountpw: String?) {
+    constructor(name: String, uuid: String, countryCode: String, placecount: Int, breakcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, firstdate: Long, lastdate: Long, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, bantime: Long, crosschat: Boolean, colornick: Boolean, permission: String, mute: Boolean, udid: Long) {
         this.name = name
         this.uuid = uuid
         this.countryCode = countryCode
@@ -64,7 +64,33 @@ class PlayerData {
         this.permission = permission
         this.mute = mute
         this.udid = udid
-        this.accountid = accountid
-        this.accountpw = accountpw
+    }
+
+    fun toJson(): JsonObject {
+        val map = JsonObject()
+        map.add("name", name)
+        map.add("uuid", uuid)
+        map.add("countryCode", countryCode)
+        map.add("placecount", placecount)
+        map.add("breakcount", breakcount)
+        map.add("joincount", joincount)
+        map.add("kickcount", kickcount)
+        map.add("level", level)
+        map.add("exp", exp)
+        map.add("firstdate", firstdate)
+        map.add("lastdate", lastdate)
+        map.add("playtime", playtime)
+        map.add("attackclear", attackclear)
+        map.add("pvpwincount", pvpwincount)
+        map.add("pvplosecount", pvplosecount)
+        map.add("bantime", bantime)
+        map.add("crosschat", crosschat)
+        map.add("colornick", colornick)
+        map.add("permission", permission)
+        map.add("mute", mute)
+        map.add("udid", udid)
+        map.add("accountid", accountid)
+        map.add("accountpw", accountpw)
+        return map
     }
 }

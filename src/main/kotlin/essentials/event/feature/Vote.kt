@@ -67,7 +67,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                         if(map == null) {
                             map = Vars.maps.all()[arg[1].toInt()]
                             if(map == null) {
-                                sendMessage(player, bundle.prefix("vote.map.not-found"))
+                                sendMessage(player, bundle["vote.map.not-found"])
                                 return
                             }
                         }
@@ -153,7 +153,7 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
         for(others in Groups.player) {
             val p = PluginData[others.uuid()]
             if(p != null && require - voted.size != -1) {
-                others.sendMessage(Bundle(p).prefix("vote.current-voted", voted.size.toString(), (require - voted.size).toString()))
+                others.sendMessage(Bundle(p)["vote.current-voted", voted.size.toString(), (require - voted.size).toString()])
             }
         }
         if(voted.size >= require) {
