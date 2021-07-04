@@ -40,7 +40,6 @@ object Config : Configs() {
     var saveTime = LocalTime.of(0, 10)
     var border = false
     var spawnLimit = 0
-    var prefix = "[green][Essentials] []"
 
     enum class AuthType {
         None, Password, Discord
@@ -83,7 +82,6 @@ object Config : Configs() {
         settings.add("update", update, bundle["config.update"])
         settings.add("debug", debug, bundle["config.debug"])
         settings.add("crash-report", crashReport)
-        settings.add("prefix", prefix, bundle["config.prefix"])
 
         // DB 설정 (settings 상속)
         settings.add("database", db)
@@ -135,7 +133,6 @@ object Config : Configs() {
         update = settings.getBoolean("update", true)
         debug = settings.getBoolean("debug", false)
         crashReport = settings.getBoolean("crashreport", false)
-        prefix = settings.getString("prefix", "[green][Essentials] []")
 
         val database = settings["database"].asObject()
         dbServer = database.getBoolean("DBServer", false)

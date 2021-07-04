@@ -13,10 +13,12 @@ import mindustry.gen.Playerc
 import mindustry.net.Packets
 import org.h2.tools.Server
 import org.hjson.JsonObject
+import org.hjson.JsonType
 import org.mindrot.jbcrypt.BCrypt
 import java.sql.SQLException
 import java.time.LocalDateTime
 import java.util.*
+import java.util.function.Consumer
 
 object PlayerCore {
     var server: Server? = null
@@ -100,8 +102,30 @@ object PlayerCore {
                 pstmt.setString(1, uuid)
                 if(id != null) pstmt.setString(2, id)
                 pstmt.executeQuery().use { rs ->
-                    while(rs.next()) {
-                        return PlayerData(rs.getString("uuid"), rs.getString("json"), rs.getString("accountid"), rs.getString("accountpw"))
+                    if(rs.next()) {
+                        return PlayerData(
+                            name = rs.getString("name"),
+                            uuid = rs.getString("uuid"),
+                            countryCode = rs.getString("countryCode"),
+                            placecount = rs.getInt("placecount"),
+                            breakcount = rs.getInt("breakcount"),
+                            joincount = rs.getInt("joincount"),
+                            kickcount = rs.getInt("kickcount"),
+                            level = rs.getInt("level"),
+                            exp = rs.getInt("exp"),
+                            firstdate = rs.getLong("firstdate"),
+                            lastdate = rs.getLong("lastdate"),
+                            playtime = rs.getLong("playtime"),
+                            attackclear = rs.getInt("attackclear"),
+                            pvpwincount = rs.getInt("pvpwincount"),
+                            pvplosecount = rs.getInt("pvplosecount"),
+                            bantime = rs.getLong("bantime"),
+                            crosschat = rs.getBoolean("crosschat"),
+                            colornick = rs.getBoolean("colornick"),
+                            permission = rs.getString("permission"),
+                            mute = rs.getBoolean("mute"),
+                            udid = rs.getLong("udid")
+                        )
                     }
                 }
             }
@@ -112,15 +136,46 @@ object PlayerCore {
     }
 
     fun save(playerData: PlayerData): Boolean {
+        val sql = StringBuilder()
+        val js = playerData.toJson()
+        sql.append("UPDATE players SET ")
+        js.forEach(Consumer { s: JsonObject.Member ->
+            val buf = s.name.lowercase(Locale.getDefault()) + "=?, "
+            sql.append(buf)
+        })
+        sql.deleteCharAt(sql.length - 2)
+        sql.append(" WHERE uuid=?")
         try {
-            database.prepareStatement("UPDATE players SET json=?, accountid=?, accountpw=? WHERE uuid=?").use { p ->
-                p.setString(1, playerData.json)
-                p.setString(2, playerData.accountid)
-                p.setString(3, playerData.accountpw)
-                p.setString(4, playerData.uuid)
+            database.prepareStatement(sql.toString()).use { p ->
+                js.forEach(object : Consumer<JsonObject.Member> {
+                    var index = 1
+                    override fun accept(o: JsonObject.Member) {
+                        try {
+                            val data = o.value
+                            val value = o.value.asRaw<Any>()
+                            if (value is String) {
+                                p.setString(index, data.asString())
+                            } else if (value is Boolean) {
+                                p.setBoolean(index, data.asBoolean())
+                            } else if (value is Int) {
+                                p.setInt(index, data.asInt())
+                            } else if (value is Long) {
+                                p.setLong(index, data.asLong())
+                            } else {
+                                if (o.value.type == JsonType.NUMBER) {
+                                    p.setInt(index, data.asInt())
+                                }
+                            }
+                        } catch (e: SQLException) {
+                            CrashReport(e)
+                        }
+                        index++
+                    }
+                })
+                p.setString(js.size() + 1, playerData.uuid)
                 return p.execute()
             }
-        } catch(e: SQLException) {
+        } catch (e: SQLException) {
             CrashReport(e)
             return false
         }
@@ -130,20 +185,45 @@ object PlayerCore {
         for(p in PluginData.playerData) save(p)
     }
 
-    fun register(player: Playerc?, name: String, uuid: String, id: String, pw: String): Boolean {
+    fun register(name: String, uuid: String, countryCode: String, id: String, pw: String, permission: String): Boolean {
         val sql = StringBuilder()
-        sql.append("INSERT INTO players VALUES(?,?,?,?)")
-        val new = createData(player, name, uuid, id, pw)
+        sql.append("INSERT INTO players VALUES(")
+        val newdata = PlayerData(name, uuid, countryCode, id, pw, permission)
+        val js = newdata.toJson()
+        js.forEach(Consumer { sql.append("?,") })
+        sql.deleteCharAt(sql.length - 1)
+        sql.append(")")
         try {
             database.prepareStatement(sql.toString()).use { p ->
-                p.setString(1, new.uuid)
-                p.setString(2, new.json)
-                p.setString(3, new.accountid)
-                p.setString(4, new.accountpw)
+                js.forEach(object : Consumer<JsonObject.Member> {
+                    var index = 1
+                    override fun accept(o: JsonObject.Member) {
+                        try {
+                            val data = o.value
+                            val value = o.value.asRaw<Any>()
+                            if (value is String) {
+                                p.setString(index, data.asString())
+                            } else if (value is Boolean) {
+                                p.setBoolean(index, data.asBoolean())
+                            } else if (value is Int) {
+                                p.setInt(index, data.asInt())
+                            } else if (value is Long) {
+                                p.setLong(index, data.asLong())
+                            } else {
+                                if (o.value.type == JsonType.NUMBER) {
+                                    p.setInt(index, data.asInt())
+                                }
+                            }
+                        } catch (e: SQLException) {
+                            CrashReport(e)
+                        }
+                        index++
+                    }
+                })
                 val count = p.executeUpdate()
                 return count > 0
             }
-        } catch(e: SQLException) {
+        } catch (e: SQLException) {
             CrashReport(e)
             return false
         }

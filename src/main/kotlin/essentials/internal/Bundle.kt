@@ -31,22 +31,6 @@ class Bundle {
         }
     }
 
-    fun prefix(key: String, vararg params: String?): String {
-        return try {
-            MessageFormat.format(Config.prefix + resource.getString(key), *params)
-        } catch(e: MissingResourceException) {
-            key
-        }
-    }
-
-    operator fun get(key: String): String {
-        return try {
-            MessageFormat.format(resource.getString(key))
-        } catch(e: MissingResourceException) {
-            key
-        }
-    }
-
     operator fun get(key: String, vararg parameter: String): String {
         return try {
             MessageFormat.format(resource.getString(key), *parameter)

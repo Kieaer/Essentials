@@ -43,7 +43,6 @@ import essentials.event.feature.VoteType
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
-import essentials.thread.WarpBorder
 import exceptions.ClientCommandError
 import mindustry.Vars
 import mindustry.Vars.netServer
@@ -280,8 +279,6 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                                         return
                                     }
                                     PluginData.warpzones.add(PluginData.WarpZone(name, Vars.world.tile(x, y).pos(), Vars.world.tile(x + size, y + size).pos(), clickable, ip, port))
-                                    WarpBorder.thread.clear()
-                                    WarpBorder.start()
                                     sendMessage["system.warp.added"]
                                 }
                             "block" -> if(parameters.isEmpty()) {
@@ -541,7 +538,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                         when(Config.authType.name.lowercase(Locale.getDefault())) {
                             "discord" -> {
                                 sendMessage["Join discord and use !register command!"]
-                                if(!Discord.pins.containsKey(player.name())) Discord.queue(player)
+                                if(!Discord.pin.containsKey(player.name())) Discord.queue(player)
                             }
                             "password" -> {
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
@@ -639,14 +636,14 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                         "green" -> player.team(mindustry.game.Team.green)
                         "purple" -> player.team(mindustry.game.Team.purple)
                         "blue" -> player.team(mindustry.game.Team.blue)
-                        else -> sendMessage(player, Bundle(data).prefix("command.team"))
+                        else -> sendMessage(player, Bundle(data)["command.team"])
                     }
                 }
                 Time -> {
                     val now = LocalDateTime.now()
                     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                     val nowString = now.format(dateTimeFormatter)
-                    sendMessage(player, Bundle(data).prefix("servertime", nowString))
+                    sendMessage(player, Bundle(data)["servertime", nowString])
                 }
                 Tp -> {
                     val other = if (arg[0].toIntOrNull() != null) {
@@ -681,7 +678,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                 Mute -> {
                     val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
                     if(other == null) {
-                        sendMessage(player, Bundle().prefix("player.not-found"))
+                        sendMessage(player, Bundle()["player.not-found"])
                     } else {
                         val target = PluginData[other.uuid()]
                         target!!.mute = !target.mute
