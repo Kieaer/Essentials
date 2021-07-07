@@ -1,11 +1,14 @@
 package essentials.data
 
+import essentials.Main
 import essentials.Main.Companion.pluginRoot
+import essentials.PluginData
 import essentials.form.Configs
 import mindustry.content.Blocks
 import mindustry.ctype.ContentList
 import org.hjson.JsonArray
 import org.hjson.JsonObject
+import org.hjson.JsonValue
 import org.hjson.Stringify
 import java.io.IOException
 
@@ -289,6 +292,8 @@ object Files : Configs() {
         if(!pluginRoot.child("permission_user.hjson").exists()) {
             pluginRoot.child("permission_user.hjson").writeString("{}")
         }
+
+        load()
     }
 
     override fun save() {
@@ -296,6 +301,6 @@ object Files : Configs() {
     }
 
     override fun load() {
-        TODO("Not yet implemented")
+        PluginData.expData = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
     }
 }

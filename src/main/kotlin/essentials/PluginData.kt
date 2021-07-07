@@ -19,6 +19,7 @@ import java.lang.Thread.sleep
 object PluginData {
     const val buildVersion = 127
     const val buildRevision = 0
+
     var serverIP: String = "127.0.0.1"
     var pluginVersion: String? = null
     var uptime = 0L
@@ -30,6 +31,8 @@ object PluginData {
     var isVoting: Boolean = false
     var votingType: VoteType = VoteType.None
     var votingPlayer: Playerc? = Nulls.unit.player
+
+    var expData: JsonObject = JsonObject()
 
     private val json = Json()
 
