@@ -78,25 +78,21 @@ object Event {
             val playerData = PluginData[it.player.uuid()]
             if(playerData != null) {
                 for(data in PluginData.warpblocks) {
-                    if(it.tile.x >= Vars.world.tile(data.pos).x && it.tile.x <= Vars.world.tile(data.pos).x) {
-                        if(it.tile.y >= Vars.world.tile(data.pos).y && it.tile.y <= Vars.world.tile(data.pos).y) {
-                            if(data.online) {
-                                Log.info("player.warped", it.player.name, data.ip + ":" + data.port)
-                                Call.connect(it.player.con(), data.ip, data.port)
-                            }
-                            Bundle().get("register-success")
-                            break
+                    if(it.tile.x >= Vars.world.tile(data.pos).x && it.tile.x <= Vars.world.tile(data.pos).x && it.tile.y >= Vars.world.tile(data.pos).y && it.tile.y <= Vars.world.tile(data.pos).y) {
+                        if(data.online) {
+                            Log.info("player.warped", it.player.name, data.ip + ":" + data.port)
+                            Call.connect(it.player.con(), data.ip, data.port)
                         }
+                        Bundle().get("register-success")
+                        break
                     }
                 }
 
                 for(data in PluginData.warpzones) {
-                    if(it.tile.x > data.startTile.x && it.tile.x < data.finishTile.x) {
-                        if(it.tile.y > data.startTile.y && it.tile.y < data.finishTile.y) {
-                            Log.info("player.warped", it.player.name, data.ip + ":" + data.port)
-                            Call.connect(it.player.con(), data.ip, data.port)
-                            break
-                        }
+                    if(it.tile.x > data.startTile.x && it.tile.x < data.finishTile.x && it.tile.y > data.startTile.y && it.tile.y < data.finishTile.y) {
+                        Log.info("player.warped", it.player.name, data.ip + ":" + data.port)
+                        Call.connect(it.player.con(), data.ip, data.port)
+                        break
                     }
                 }
             }
@@ -105,11 +101,9 @@ object Event {
         Events.on(WithdrawEvent::class.java) {
             if(it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 if(Config.logging) Log.write(Log.LogType.WithDraw, "log.withdraw", it.player.name, it.player.unit().item().name, it.amount.toString(), it.tile.block().name)
-                if(Vars.state.rules.pvp) {
-                    if(it.item.flammability > 0.001f) {
-                        it.player.sendMessage(Bundle(PluginData[it.player.uuid()])["system.flammable.disabled"])
-                        it.player.unit().clearItem()
-                    }
+                if(Vars.state.rules.pvp && it.item.flammability > 0.001f) {
+                    it.player.sendMessage(Bundle(PluginData[it.player.uuid()])["system.flammable.disabled"])
+                    it.player.unit().clearItem()
                 }
             }
         }
@@ -163,7 +157,8 @@ object Event {
                 }
             }
             if(Config.nameFixed) {
-                if(it.player.name.length > 32) Call.kick(it.player.con(), "Nickname too long!") //if (it.player.name.matches(Regex(".*\\[.*].*"))) kick(it.player, "Color tags can't be used for nicknames on this Server.");
+                if(it.player.name.length > 32) Call.kick(it.player.con(), "Nickname too long!")
+                if(it.player.name.matches(Regex(".*\\[.*].*"))) Call.kick(it.player.con(), "Color tags can't be used for nicknames on this Server.")
                 if(it.player.name.contains("　")) Call.kick(it.player.con(), "Don't use blank speical charactor nickname!")
                 if(it.player.name.contains(" ")) Call.kick(it.player.con(), "Nicknames can't be used on this server!")
                 if(Pattern.matches(".*\\[.*.].*", it.player.name)) Call.kick(it.player.con(), "Can't use only color tags nickname in this Server.")
@@ -268,27 +263,25 @@ object Event {
                             PluginData.votingClass!!.voted.add(it.player.uuid())
                         }
                     } else {
-                        if(!playerData.mute) {
-                            if(playerData.crosschat) {
-                                when {
-                                    Config.networkMode == Config.NetworkMode.Client -> {
-                                        if(Client.activated) Client.request(Client.Request.Chat, it.player, it.message)
-                                    }
-                                    Config.networkMode == Config.NetworkMode.Server -> {
-                                        val msg = "[" + it.player.name + "]: " + it.message
-                                        try {
-                                            for(ser in Server.list) {
-                                                ser!!.os.writeBytes(Tool.encrypt(msg, ser.spec))
-                                                ser.os.flush()
-                                            }
-                                        } catch(ex: Exception) {
-                                            Log.warn("Crosschat", ex)
+                        if(!playerData.mute && playerData.crosschat) {
+                            when {
+                                Config.networkMode == Config.NetworkMode.Client -> {
+                                    if(Client.activated) Client.request(Client.Request.Chat, it.player, it.message)
+                                }
+                                Config.networkMode == Config.NetworkMode.Server -> {
+                                    val msg = "[" + it.player.name + "]: " + it.message
+                                    try {
+                                        for(ser in Server.list) {
+                                            ser!!.os.writeBytes(Tool.encrypt(msg, ser.spec))
+                                            ser.os.flush()
                                         }
+                                    } catch(ex: Exception) {
+                                        Log.warn("Crosschat", ex)
                                     }
-                                    else -> {
-                                        sendMessage["no-any-network"]
-                                        playerData.crosschat = false
-                                    }
+                                }
+                                else -> {
+                                    sendMessage["no-any-network"]
+                                    playerData.crosschat = false
                                 }
                             }
                         }
@@ -313,14 +306,12 @@ object Event {
                 if(!it.breaking && !player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null && player.unit().buildPlan().block != null) {
                     val name = it.tile.block().name
                     try {
-                        val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
-                        val exp = obj.getInt(name, 0)
+                        val exp = PluginData.expData.getInt(name, 0)
                         target.placecount++
                         target.exp = target.exp + exp
                     } catch(ex: Exception) {
                         CrashReport(ex)
                     }
-
 
                     if(Config.debug) {
                         Log.info("anti-grief.build.finish", player.name, it.tile.block().name, it.tile.x, it.tile.y)
@@ -452,17 +443,14 @@ object Event {
                                         println(Bundle()["plugin-downloading-standby"])
                                         Main.timer.cancel()
                                         if(Config.networkMode == Config.NetworkMode.Server) {
-                                            try {
-                                                for(ser in Server.list) {
-                                                    ser!!.interrupt()
-                                                    ser.os.close()
-                                                    ser.br.close()
-                                                    ser.socket.close()
-                                                    Server.list.remove(ser)
-                                                }
-                                                Server.shutdown()
-                                            } catch(ignored: Exception) {
+                                            for(ser in Server.list) {
+                                                ser!!.interrupt()
+                                                ser.os.close()
+                                                ser.br.close()
+                                                ser.socket.close()
+                                                Server.list.remove(ser)
                                             }
+                                            Server.shutdown()
                                         }
                                         if(Config.networkMode == Config.NetworkMode.Client && Client.activated) {
                                             Client.request(Client.Request.Exit, null, null)

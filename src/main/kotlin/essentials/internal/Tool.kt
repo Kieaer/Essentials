@@ -60,7 +60,7 @@ object Tool {
     }
 
     fun longToDateTime(mils: Long): LocalDateTime {
-        return Timestamp(mils).toLocalDateTime() //return LocalDateTime.ofInstant(Instant.ofEpochMilli(mils), TimeZone.getDefault().toZoneId())
+        return Timestamp(mils).toLocalDateTime()
     }
 
     fun longToTime(seconds: Long): String {
@@ -318,14 +318,14 @@ object Tool {
         }
     }
 
-    fun checkPassword(player: Playerc, id: String?, password: String, password_repeat: String): Boolean { // 영문(소문자), 숫자, 7~20자리
+    fun checkPassword(player: Playerc, id: String?, password: String, repeat: String): Boolean { // 영문(소문자), 숫자, 7~20자리
         var pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$"
         val matcher = Pattern.compile(pwPattern).matcher(password)
 
         // 같은 문자 4개이상 사용 불가
         pwPattern = "(.)\\1\\1\\1"
         val matcher2 = Pattern.compile(pwPattern).matcher(password)
-        if(password != password_repeat) { // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
+        if(password != repeat) { // 비밀번호가 비밀번호 재확인 문자열과 똑같지 않을경우
             player.sendMessage("""[green][Essentials] [sky]The password isn't the same.[green][Essentials] [sky]비밀번호가 똑같지 않습니다.""".trimIndent())
             return false
         } else if(!matcher.matches()) { // 정규식에 맞지 않을경우
