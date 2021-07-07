@@ -535,6 +535,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                 }
                 Register -> {
                     if(Config.authType != Config.AuthType.None) {
+                        val locale = Tool.getGeo(player)
                         when(Config.authType.name.lowercase(Locale.getDefault())) {
                             "discord" -> {
                                 sendMessage["Join discord and use !register command!"]
@@ -542,17 +543,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                             }
                             "password" -> {
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(player, player.name(), player.uuid(), arg[0], hash)
-                                if(register) {
-                                    PlayerCore.playerLoad(player, null)
-                                    sendMessage["register-success"]
-                                } else {
-                                    sendMessage["[scarlet]Register failed"]
-                                }
-                            }
-                            else -> {
-                                val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(player, player.name(), player.uuid(), arg[0], hash)
+                                val register = PlayerCore.register(player.name(), player.uuid(), locale.toLanguageTag(), arg[0], hash, "default")
                                 if(register) {
                                     PlayerCore.playerLoad(player, null)
                                     sendMessage["register-success"]

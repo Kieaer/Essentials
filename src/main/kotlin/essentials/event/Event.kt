@@ -177,6 +177,8 @@ object Event {
 
         // 플레이어가 서버에 들어왔을 때 작동
         Events.on(PlayerJoin::class.java) { it ->
+            val locale = Tool.getGeo(it.player)
+
             if(Config.logging) Log.write(Log.LogType.Player, "log.player.join", it.player.name, it.player.uuid(), it.player.con.address)
             PluginData.players.add(it.player)
             it.player.admin(false)
@@ -191,11 +193,10 @@ object Event {
                         PlayerCore.playerLoad(it.player, null)
                     } else {
                         val message: String?
-                        val language = Tool.getGeo(it.player)
                         message = if(Config.authType == Config.AuthType.Discord) {
-                            Bundle(language)["system.login.require.discord"]
+                            Bundle(locale)["system.login.require.discord"]
                         } else {
-                            Bundle(language)["system.login.require.password"]
+                            Bundle(locale)["system.login.require.password"]
                         }
                         Call.infoMessage(it.player.con(), message)
                     }
@@ -213,7 +214,7 @@ object Event {
                     sendMessage["account.autologin"]
                     PlayerCore.playerLoad(it.player, null)
                 } else {
-                    val register = PlayerCore.register(it.player, it.player.name(), it.player.uuid(), "none", "none")
+                    val register = PlayerCore.register(it.player.name(), it.player.uuid(), locale.toLanguageTag(), "none", "none", "default")
                     if(register) {
                         if(!PlayerCore.playerLoad(it.player, null)) Call.kick(it.player.con(), Bundle()["plugin-error-kick"])
                     } else {

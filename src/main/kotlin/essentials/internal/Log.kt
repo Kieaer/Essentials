@@ -61,7 +61,7 @@ object Log {
             mainlog = null
         }
         if(mainlog == null) mainlog = logfolder.child("$type.log")
-        mainlog!!.writeString("[${Tool.getLocalTime()}] ${Config.bundle.get(value, *params)}\n", true)
+        mainlog!!.writeString("[${Tool.getLocalTime()}] ${Bundle().get(value, *params)}\n", true)
     }
 
     enum class LogType {

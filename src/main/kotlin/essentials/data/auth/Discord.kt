@@ -1,166 +1,44 @@
 package essentials.data.auth
 
 import arc.struct.ObjectMap
-import arc.util.async.Threads
 import com.mewna.catnip.Catnip
-import com.mewna.catnip.entity.message.Message
 import com.mewna.catnip.shard.DiscordEvent
-import essentials.PlayerData
 import essentials.PluginData
-import essentials.PluginData.banned
 import essentials.data.Config
-import essentials.data.DB
-import essentials.data.PlayerCore
 import essentials.eof.sendMessage
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Log
-import mindustry.gen.Groups
 import mindustry.gen.Playerc
-import org.hjson.JsonObject
-import org.mindrot.jbcrypt.BCrypt
-import java.security.SecureRandom
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.SQLException
 import java.util.*
-import java.util.regex.Pattern
-import javax.security.auth.login.LoginException
-import kotlin.system.exitProcess
 
 object Discord  {
     val pin: ObjectMap<String, Int> = ObjectMap()
-    var catnip: Catnip
+    private lateinit var catnip: Catnip
 
     init {
         if(Config.discordBotToken.isNotEmpty() && Config.discordChannelToken.isNotEmpty()) {
             catnip = Catnip.catnip(Config.discordBotToken)
         } else {
-            exitProcess(0)
+            Log.info("discord.disabled")
         }
     }
 
-    fun start() { // TODO discord 방식 변경
+    fun start() {
         catnip.observable(DiscordEvent.MESSAGE_CREATE).subscribe({
             if(it.channelIdAsLong().toString() == Config.discordChannelToken && !it.author().bot()) {
-                with(it.content()) {
-                    for(a in banned) {
-                        if(a.json.has("discord")) {
-                            if(it.author().idAsLong() == a.json.get("discord").asObject().get("id").asLong()) {
-                                it.guild().blockingGet().ban(it.author().idAsLong(), "차단된 계정", 0)
-                            }
-                        }
-                    }
-
-                    when {
-                        equals("!ping", true) -> {
-                            val start = java.lang.System.currentTimeMillis()
-                            it.reply("pong!", true).subscribe { ping: Message ->
-                                val end = java.lang.System.currentTimeMillis()
-                                ping.edit("pong! (" + (end - start) + "ms 소요됨).")
-                                arc.util.async.Threads.sleep(5000)
-                                ping.delete()
-                            }
-                        }
-                        equals("!help", true) -> {
-                            val message = """
-                                    ``!help`` 사용 가능한 서버 봇 명령어를 확인합니다.
-                                    ``!auth PIN`` 서버에 Discord 인증을 해서 서버에 특별한 효과를 추가시킵니다.
-                                    ``!ping`` 그냥 봇 작동 확인하는 용도입니다.
-                                """.trimIndent()
-                            it.reply(message, true).subscribe { m: Message ->
-                                arc.util.async.Threads.sleep(7000)
-                                m.delete()
-                            }
-                        }
-                        startsWith("!auth", true) -> {
-                            if(Config.authType == Config.AuthType.Discord) {
-                                val arg = it.content().replace("!auth ", "").split(" ")
-                                if(arg.size == 1) {
-                                    try {
-                                        val buffer = PlayerCore.getAllData()
-                                        var isMatch = false
-
-                                        for(a in buffer) {
-                                            if(a.json.has("discord")) {
-                                                if(a.json.get("discord").asObject().get("id").asLong() == it.author().idAsLong()) {
-                                                    isMatch = true
-                                                }
-                                            }
-                                        }
-
-                                        if(!isMatch) {
-                                            var data: PlayerData? = null
-                                            for(a in pin) {
-                                                if(a.value.asLong() == arg[0].toLong()) {
-                                                    data = PluginData[a.name]
-                                                }
-                                            }
-
-                                            if(data != null) {
-                                                val info = JsonObject()
-                                                info.add("name", it.author().username())
-                                                info.add("id", it.author().idAsLong())
-                                                info.add("isAuthorized", true)
-
-                                                data.json.add("discord", info)
-                                                it.reply("성공! 서버 재접속 후에 효과가 발동됩니다.", true).subscribe { m: Message ->
-                                                    arc.util.async.Threads.sleep(5000)
-                                                    m.delete()
-                                                }
-                                                PluginData[pin.remove(arg[0]).asString()]
-                                            } else {
-                                                it.reply("등록되지 않은 계정입니다!", true).subscribe { m: Message ->
-                                                    arc.util.async.Threads.sleep(5000)
-                                                    m.delete()
-                                                }
-                                            }
-                                        } else {
-                                            it.reply("이미 등록된 계정입니다!", true).subscribe { m: Message ->
-                                                arc.util.async.Threads.sleep(5000)
-                                                m.delete()
-                                            }
-                                        }
-                                    } catch(e: Exception) {
-                                        it.reply("올바른 PIN 번호가 아닙니다! 사용법: ``!auth <PIN 번호>``", true).subscribe { m: Message ->
-                                            arc.util.async.Threads.sleep(5000)
-                                            m.delete()
-                                        }
-                                    }
-                                } else {
-                                    it.reply("사용법: ``!auth <PIN 번호>``", true).subscribe { m: Message ->
-                                        arc.util.async.Threads.sleep(5000)
-                                        m.delete()
-                                    }
-                                }
-                            } else {
-                                it.reply("현재 서버에 Discord 인증이 활성화 되어 있지 않습니다!", true)
-                            }
-                        } // Console commands
-                        equals("") -> {
-                        }
-                        contains("!") -> {
-                            it.reply("알 수 없는 명령어 입니다!", true).subscribe { m: Message ->
-                                arc.util.async.Threads.sleep(5000)
-                                m.delete()
-                            }
-                        }
-                        else -> {
-
-                        }
-                    }
-                }
+                // TODO discord
             }
-        }) { e: Throwable -> ErrorReport(e) }
+        }) { e: Throwable -> CrashReport(e) }
     }
 
     fun queue(player: Playerc) {
-        val pin = Random().nextInt(9999)
-        pins.put(player.name(), pin)
-        sendMessage(player, Bundle(PluginData[player.uuid()])["discord-pin-queue", pin.toString()])
+        val number = Random().nextInt(9999)
+        pin.put(player.name(), number)
+        sendMessage(player, Bundle(PluginData[player.uuid()])["discord-pin-queue", number.toString()])
     }
 
-    override fun onGuildMemberJoin(e: GuildMemberJoinEvent) {
+    /*override fun onGuildMemberJoin(e: GuildMemberJoinEvent) {
         send("Use the ``!signup <PIN>`` command to register the server.")
     }
 
@@ -271,9 +149,9 @@ object Discord  {
 
     private fun send(message: String?) {
         if(Discord::event.isInitialized) event.privateChannel.sendMessage(message!!).queue()
-    }
+    }*/
 
     fun shutdownNow() {
-        if(Discord::jda.isInitialized) jda.shutdown()
+        if(Discord::catnip.isInitialized) catnip.shutdown()
     }
 }

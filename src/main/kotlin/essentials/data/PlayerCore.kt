@@ -124,7 +124,8 @@ object PlayerCore {
                             colornick = rs.getBoolean("colornick"),
                             permission = rs.getString("permission"),
                             mute = rs.getBoolean("mute"),
-                            udid = rs.getLong("udid")
+                            udid = rs.getLong("udid"),
+                            json = JsonObject.readJSON(rs.getString("json")).asObject()
                         )
                     }
                 }

@@ -15,30 +15,79 @@ import java.util.*
 
 object Config : Configs() {
     lateinit var obj: JsonObject
-    var locale: Locale = Locale.ENGLISH
-    var bundle: Bundle = Bundle(locale)
 
+    /** 플러그인에 표시되는 언어 */
+    var locale: Locale = Locale.getDefault()
+
+    private var bundle: Bundle = Bundle(locale)
+
+    /** 통신 모드 */
     var networkMode = NetworkMode.Client
+
+    /** 서버 주소 */
     var networkAddress: String = "127.0.0.1:5000"
+
+    /** 고정닉 설정 */
     var nameFixed = false
+
+    /** 커스텀 motd */
     var motd = false
+
+    /** 잠수 강퇴시간 설정 */
     var afktime = 0
+
+    /** 블럭 설치/파괴시 경험치 */
     var blockEXP = false
+
+    /** 서버에 레벨 업 알림 */
     var levelUpAlarm = false
+
+    /** 밴 공유 기능 */
     var banShare = false
+
+    /** 신뢰할 수 있는 밴 공유 서버 목록 */
     var banTrust = JsonArray()
+
+    /** VPN 차단 */
     var antiVPN = false
+
+    /** 플러그인 자체 투표기능 활성화 */
     var vote = false
+
+    /** 플러그인 로그 설정 */
     var logging = false
+
+    /** 자동 업데이트 설정 */
     var update = false
+
+    /** DB 서버 모드 */
     var dbServer = false
+
+    /** DB 서버 주소 */
     var dbUrl = "jdbc:h2:file:./config/mods/Essentials/data/player"
+
+    /** 서버 인증 방식 */
     var authType = AuthType.None
-    var discordToken = "none"
+
+    /** Discord 봇 토큰 */
+    var discordBotToken = ""
+
+    /** Discord 채널 토큰 */
+    var discordChannelToken = ""
+
+    /** 플러그인 디버그 모드 */
     var debug = false
+
+    /** 자동 오류보고 기능 */
     var crashReport = false
+
+    /** 자동 저장간격 */
     var saveTime = LocalTime.of(0, 10)
+
+    /* 맵 밖으로 나가면 사망 판정 설정 */
     var border = false
+
+    /** /spawn 명령어로 소환할 수 있는 최대 유닛 수 */
     var spawnLimit = 0
 
     enum class AuthType {
@@ -73,7 +122,7 @@ object Config : Configs() {
 
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
-        config.add("antigrief", anti)
+        config.add("anti-grief", anti)
         config.add("features", features)
         config.add("auth", auth)
 
@@ -113,7 +162,8 @@ object Config : Configs() {
 
         // Discord 설정 (auth 상속)
         auth.add("discord", discord, bundle["config.feature.discord.desc"])
-        discord.add("token", discordToken)
+        discord.add("bot-token", discordBotToken)
+        discord.add("channel-token", discordChannelToken)
 
         obj = config
         pluginRoot.child("config.hjson").writeString(config.toString(Stringify.HJSON_COMMENTS))
@@ -126,7 +176,7 @@ object Config : Configs() {
             val array = lc.split("_").toTypedArray()
             Locale(array[0], array[1])
         } else {
-            Locale.ENGLISH
+            Locale(System.getProperty("user.language") + "_" + System.getProperty("user.country"))
         }
 
         logging = settings.getBoolean("logging", true)
@@ -162,6 +212,7 @@ object Config : Configs() {
         authType = EqualsIgnoreCase(AuthType.values(), auth.get("authType").asString(), AuthType.None)
 
         val discord = auth["discord"].asObject()
-        discordToken = discord.getString("token", "none")
+        discordBotToken = discord.getString("bot-token", "")
+        discordChannelToken = discord.getString("channel-token", "")
     }
 }

@@ -117,11 +117,11 @@ object Tool {
         return String(text, StandardCharsets.UTF_8)
     }
 
-    fun sendMessageAll(value: String, vararg parameter: String?) {
+    fun sendMessageAll(value: String, vararg parameter: String) {
         Core.app.post {
             for(p in Groups.player) {
                 val playerData = PluginData[p.uuid()]
-                if(playerData != null) p.sendMessage(Bundle(Locale(playerData.countryCode)).prefix(value, *parameter))
+                if(playerData != null) p.sendMessage(Bundle(Locale(playerData.countryCode)).get(value, *parameter))
             }
         }
     }
