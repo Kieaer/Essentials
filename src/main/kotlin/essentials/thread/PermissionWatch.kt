@@ -30,13 +30,11 @@ object PermissionWatch : Runnable {
                 for(event in events) {
                     val kind = event.kind()
                     val paths = (event.context() as Path).fileName.toString()
-                    if(paths == "permission_user.hjson" || paths == "permission.hjson") {
-                        if(kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                            Permissions.reload(false)
-                            Permissions.update(false)
-                            tried = !tried
-                            Log.info("system.perm.updated")
-                        }
+                    if((paths == "permission_user.hjson" || paths == "permission.hjson") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                        Permissions.reload(false)
+                        Permissions.update(false)
+                        tried = !tried
+                        Log.info("system.perm.updated")
                     }
                 }
                 if(!watchKey.reset()) {
@@ -49,7 +47,6 @@ object PermissionWatch : Runnable {
                 }
             } catch(e: InterruptedException) {
                 Thread.currentThread().interrupt()
-            } catch(ignored: Exception) {
             }
         }
     }

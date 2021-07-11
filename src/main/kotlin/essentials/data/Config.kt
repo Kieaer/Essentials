@@ -90,6 +90,8 @@ object Config : Configs() {
     /** /spawn 명령어로 소환할 수 있는 최대 유닛 수 */
     var spawnLimit = 0
 
+    private val configFile = pluginRoot.child("config.hjson")
+
     enum class AuthType {
         None, Password, Discord
     }
@@ -99,11 +101,11 @@ object Config : Configs() {
     }
 
     override fun createFile() {
-        if(!pluginRoot.child("config.hjson").exists()) {
+        if(!configFile.exists()) {
             obj = JsonObject().add("language", Locale.getDefault().toString())
             save()
         } else {
-            obj = JsonValue.readHjson(pluginRoot.child("config.hjson").readString()).asObject()
+            obj = JsonValue.readHjson(configFile.readString()).asObject()
         }
         load()
     }
@@ -166,7 +168,7 @@ object Config : Configs() {
         discord.add("channel-token", discordChannelToken)
 
         obj = config
-        pluginRoot.child("config.hjson").writeString(config.toString(Stringify.HJSON_COMMENTS))
+        configFile.writeString(config.toString(Stringify.HJSON_COMMENTS))
     }
 
     override fun load() {

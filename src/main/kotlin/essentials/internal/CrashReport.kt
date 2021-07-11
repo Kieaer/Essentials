@@ -81,10 +81,7 @@ class CrashReport {
             println(sw.toString())
             success = true
         } finally {
-            try {
-                socket?.close()
-            } catch(ignored: IOException) {
-            }
+            socket?.close()
         }
     }
 

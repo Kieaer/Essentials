@@ -151,26 +151,11 @@ object PlayerCore {
                 js.forEach(object : Consumer<JsonObject.Member> {
                     var index = 1
                     override fun accept(o: JsonObject.Member) {
-                        try {
-                            val data = o.value
-                            val value = o.value.asRaw<Any>()
-                            if (value is String) {
-                                p.setString(index, data.asString())
-                            } else if (value is Boolean) {
-                                p.setBoolean(index, data.asBoolean())
-                            } else if (value is Int) {
-                                p.setInt(index, data.asInt())
-                            } else if (value is Long) {
-                                p.setLong(index, data.asLong())
-                            } else {
-                                if (o.value.type == JsonType.NUMBER) {
-                                    p.setInt(index, data.asInt())
-                                } else {
-                                    p.setString(index, data.toString())
-                                }
-                            }
-                        } catch (e: SQLException) {
-                            CrashReport(e)
+                        when(o.value.type) {
+                            JsonType.STRING -> p.setString(index, o.value.asString())
+                            JsonType.BOOLEAN -> p.setBoolean(index, o.value.asBoolean())
+                            JsonType.NUMBER -> p.setInt(index, o.value.asInt())
+                            else -> p.setString(index, o.value.toString())
                         }
                         index++
                     }
@@ -201,26 +186,11 @@ object PlayerCore {
                 js.forEach(object : Consumer<JsonObject.Member> {
                     var index = 1
                     override fun accept(o: JsonObject.Member) {
-                        try {
-                            val data = o.value
-                            val value = o.value.asRaw<Any>()
-                            if (value is String) {
-                                p.setString(index, data.asString())
-                            } else if (value is Boolean) {
-                                p.setBoolean(index, data.asBoolean())
-                            } else if (value is Int) {
-                                p.setInt(index, data.asInt())
-                            } else if (value is Long) {
-                                p.setLong(index, data.asLong())
-                            } else {
-                                if (o.value.type == JsonType.NUMBER) {
-                                    p.setInt(index, data.asInt())
-                                } else {
-                                    p.setString(index, data.toString())
-                                }
-                            }
-                        } catch (e: SQLException) {
-                            CrashReport(e)
+                        when(o.value.type) {
+                            JsonType.STRING -> p.setString(index, o.value.asString())
+                            JsonType.BOOLEAN -> p.setBoolean(index, o.value.asBoolean())
+                            JsonType.NUMBER -> p.setInt(index, o.value.asInt())
+                            else -> p.setString(index, o.value.toString())
                         }
                         index++
                     }

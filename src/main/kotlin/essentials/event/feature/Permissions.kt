@@ -21,6 +21,9 @@ object Permissions {
     var user: JsonObject = JsonObject()
     var default: String = "visitor"
 
+    private val file = pluginRoot.child("permission.hjson")
+    private val userFile = pluginRoot.child("permission_user.hjson")
+
     operator fun get(name: String): JsonObject? {
         return user.get(name)?.asObject()
     }
@@ -54,11 +57,11 @@ object Permissions {
         if(isSave) saveAll()
     }
 
-    fun rename(uuid: String, new_name: String?) {
+    fun rename(uuid: String, name: String?) {
         for(j in user) {
             if(j.name == uuid) {
-                val o = j.value.asObject().set("name", new_name)
-                o["name"] = new_name
+                val o = j.value.asObject().set("name", name)
+                o["name"] = name
                 user[uuid] = o
                 break
             }
@@ -66,14 +69,14 @@ object Permissions {
     }
 
     fun saveAll() {
-        pluginRoot.child("permission_user.hjson").writeString(user.toString(Stringify.FORMATTED))
+        userFile.writeString(user.toString(Stringify.FORMATTED))
     }
 
     fun reload(init: Boolean) {
-        if(pluginRoot.child("permission.hjson").exists()) {
+        if(file.exists()) {
             try {
                 var default: String? = null
-                perm = JsonValue.readHjson(pluginRoot.child("permission.hjson").reader()).asObject()
+                perm = JsonValue.readHjson(file.reader()).asObject()
                 for(data in perm) {
                     val name = data.name
                     if(Config.authType == Config.AuthType.None && perm.get(name).asObject().has("default")) {
@@ -104,9 +107,9 @@ object Permissions {
         } else {
             Log.warn("system.file-not-found", "permission.hjson")
         }
-        if(pluginRoot.child("permission_user.hjson").exists()) {
+        if(userFile.exists()) {
             try {
-                user = JsonValue.readHjson(pluginRoot.child("permission_user.hjson").reader()).asObject()
+                user = JsonValue.readHjson(userFile.reader()).asObject()
                 for(p in Groups.player) {
                     p.admin(isAdmin(PluginData.playerData.find { d: PlayerData -> d.name == p.name }))
                 }
@@ -114,7 +117,7 @@ object Permissions {
                 Log.err("Permission parsing: " + CrashReport(e).print())
             }
         } else {
-            pluginRoot.child("permission_user.hjson").writeString(JsonObject().toString(Stringify.FORMATTED))
+            userFile.writeString(JsonObject().toString(Stringify.FORMATTED))
         }
     }
 
