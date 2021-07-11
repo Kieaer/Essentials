@@ -50,7 +50,6 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                     }
                     Gameover -> Tool.sendMessageAll("vote.gameover")
                     Skipwave -> {
-                        println(arg[0])
                         amount = try {
                             arg[0].toInt()
                         } catch(ignored: NumberFormatException) {

@@ -208,7 +208,7 @@ object Event {
                 if(playerData != null) {
                     PlayerCore.playerLoad(it.player, null)
                 } else {
-                    val register = PlayerCore.register(it.player.name(), it.player.uuid(), locale.toLanguageTag(), "none", "none", "default")
+                    val register = PlayerCore.register(it.player.name(), it.player.uuid(), locale.isO3Country, "none", "none", "default")
                     if(register) {
                         if(!PlayerCore.playerLoad(it.player, null)) Call.kick(it.player.con(), Bundle()["plugin-error-kick"])
                     } else {

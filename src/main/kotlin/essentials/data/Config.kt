@@ -17,7 +17,7 @@ object Config : Configs() {
     lateinit var obj: JsonObject
 
     /** 플러그인에 표시되는 언어 */
-    var locale: Locale = Locale.getDefault()
+    var locale: Locale = Locale.US
 
     private var bundle: Bundle = Bundle(locale)
 
@@ -122,9 +122,11 @@ object Config : Configs() {
         val auth = JsonObject()
         val discord = JsonObject()
 
+        config.add("langauge", locale.isO3Country)
+
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
-        config.add("anti", anti)
+        config.add("anti-grief", anti)
         config.add("features", features)
         config.add("auth", auth)
 
