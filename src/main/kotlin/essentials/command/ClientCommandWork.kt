@@ -6,6 +6,7 @@ import arc.struct.Seq
 import arc.util.Strings
 import arc.util.Tmp
 import arc.util.async.Threads
+import com.neovisionaries.i18n.CountryCode
 import essentials.PluginData
 import essentials.command.ClientCommand.Command.Ch
 import essentials.command.ClientCommand.Command.Changepw
@@ -219,7 +220,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                 [#2B60DE]====================================[]
                 [green]${bundle["player.name"]}[] : ${player.name()}[white]
                 [green]${bundle["player.uuid"]}[] : ${data!!.uuid}[white]
-                [green]${bundle["player.country"]}[] : ${locale.getDisplayCountry(locale)}
+                [green]${bundle["player.country"]}[] : ${CountryCode.getByAlpha3Code(data.countryCode).toLocale().displayCountry}
                 [green]${bundle["player.placecount"]}[] : ${data.placecount}
                 [green]${bundle["player.breakcount"]}[] : ${data.breakcount}
                 [green]${bundle["player.joincount"]}[] : ${data.joincount}
@@ -543,7 +544,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                             }
                             "password" -> {
                                 val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt(12))
-                                val register = PlayerCore.register(player.name(), player.uuid(), locale1.toLanguageTag(), arg[0], hash, "default")
+                                val register = PlayerCore.register(player.name(), player.uuid(), locale1.isO3Country, arg[0], hash, "default")
                                 if(register) {
                                     PlayerCore.playerLoad(player, null)
                                     sendMessage["register-success"]

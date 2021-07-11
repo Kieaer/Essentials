@@ -69,8 +69,7 @@ object PlayerCore {
 
     fun createData(player: Playerc?, name: String, uuid: String, id: String, pw: String): PlayerData {
         val country = Tool.getGeo(player)
-
-        return PlayerData(name, uuid, country.toLanguageTag(), id, pw, "default")
+        return PlayerData(name, uuid, country.isO3Country, id, pw, "default")
     }
 
     fun login(id: String, pw: String): Boolean {

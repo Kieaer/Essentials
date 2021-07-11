@@ -27,6 +27,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.net.SocketException
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
@@ -144,10 +147,20 @@ object Tool {
         if(data == null) return Config.locale
         val ip = if(data is Playerc) netServer.admins.getInfo(data.uuid()).lastIP else (data as String?)!!
 
-        val res = ipre.IPQuery(ip)
-        val code = CountryCode.getByCode(res.countryShort)
+        val addr = InetAddress.getByName(ip)
+        val local = if(addr.isAnyLocalAddress || addr.isLoopbackAddress) true else try {
+            NetworkInterface.getByInetAddress(addr) != null
+        } catch(e: SocketException) {
+            false
+        }
 
-        return if(code == null) Config.locale else code.toLocale()
+        return if (local) {
+            Config.locale
+        } else {
+            val res = ipre.IPQuery(ip)
+            val code = CountryCode.getByCode(res.countryShort)
+            if(code == null) Config.locale else code.toLocale()
+        }
     }
 
     fun download(url: URL, savepath: File) {

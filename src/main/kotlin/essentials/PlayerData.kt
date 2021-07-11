@@ -1,12 +1,13 @@
 package essentials
 
+import com.neovisionaries.i18n.CountryCode
 import org.hjson.JsonObject
 import java.util.*
 
 class PlayerData {
     var name: String = "none"
     var uuid: String = "none"
-    var countryCode: String = Locale.getDefault().toLanguageTag()
+    var countryCode: String = Locale.getDefault().isO3Country
     var placecount: Int = 0
     var breakcount: Int = 0
     var joincount: Int = 0
