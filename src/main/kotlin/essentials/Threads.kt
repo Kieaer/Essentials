@@ -40,12 +40,14 @@ object Threads : Runnable {
                                 val digits = IntArray(str.length)
                                 for(a in str.indices) digits[a] = str[a] - '0'
                                 val tile = value.tile
-                                if(value.players != result.players) {
-                                    if(value.numbersize != digits.size) {
-                                        for(px in 0..2) {
-                                            for(py in 0..4) {
-                                                Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, null)
-                                            }
+                                if(value.players != result.players && value.numbersize != digits.size) {
+                                    for(px in 0..2) {
+                                        for(py in 0..4) {
+                                            Call.deconstructFinish(
+                                                world.tile(tile.x + 4 + px, tile.y + py),
+                                                Blocks.air,
+                                                null
+                                            )
                                         }
                                     }
                                 }

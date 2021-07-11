@@ -33,6 +33,9 @@ class PlayerData {
     var x: Int = 0
     var y: Int = 0
 
+    // 더미
+    constructor()
+
     // 계정 생성 데이터
     constructor(name: String, uuid: String, countryCode: String, id: String, pw: String, permission: String){
         this.name = name
@@ -94,6 +97,7 @@ class PlayerData {
         map.add("udid", udid)
         map.add("accountid", accountid)
         map.add("accountpw", accountpw)
+        map.add("json", json)
         return map
     }
 }

@@ -181,10 +181,11 @@ object Event {
             val playerData = PlayerCore.load(it.player.uuid(), null)
             val sendMessage = sendMessage(it.player, Bundle(playerData))
 
+            if(playerData != null) sendMessage["account.autologin"]
+
             if(Config.authType != Config.AuthType.None) {
                 if(Config.authType == Config.AuthType.Discord) {
                     if(playerData != null) {
-                        sendMessage["account.autologin"]
                         PlayerCore.playerLoad(it.player, null)
                     } else {
                         val message: String?
@@ -197,7 +198,6 @@ object Event {
                     }
                 } else {
                     if(playerData != null) {
-                        sendMessage["account.autologin"]
                         PlayerCore.playerLoad(it.player, null)
                     } else {
                         val language = Tool.getGeo(it.player)
@@ -206,7 +206,6 @@ object Event {
                 }
             } else { // 로그인 기능이 꺼져있을 때, 바로 계정 등록을 하고 데이터를 로딩함
                 if(playerData != null) {
-                    sendMessage["account.autologin"]
                     PlayerCore.playerLoad(it.player, null)
                 } else {
                     val register = PlayerCore.register(it.player.name(), it.player.uuid(), locale.toLanguageTag(), "none", "none", "default")
@@ -316,24 +315,6 @@ object Event {
                     if(Config.debug) {
                         Log.info("anti-grief.build.finish", player.name, it.tile.block().name, it.tile.x, it.tile.y)
                     }
-
-                    /*float range = new AntiGrief().getDistanceToCore(it.player, it.tile);
-                    if (config.antiGrief() && range < 35 && it.tile.block() == Blocks.thoriumReactor) {
-                        it.player.sendMessage(new Bundle(target.locale).get("anti-grief.reactor.close"));
-                        Call.DeconstructFinish(it.tile, Blocks.air, it.player.id);
-                    } else if (config.antiGrief()) {
-                        for (int rot = 0; rot < 4; rot++) {
-                            if (it.tile.getNearby(rot).block() != Blocks.liquidTank &&
-                                    it.tile.getNearby(rot).block() != Blocks.conduit &&
-                                    it.tile.getNearby(rot).block() != Blocks.bridgeConduit &&
-                                    it.tile.getNearby(rot).block() != Blocks.phaseConduit &&
-                                    it.tile.getNearby(rot).block() != Blocks.platedConduit &&
-                                    it.tile.getNearby(rot).block() != Blocks.pulseConduit) {
-                                // TODO 냉각수 감지 추가
-                                Call.sendMessage("No cryofluid reactor detected");
-                            }
-                        }
-                    }*/
                 }
             }
         }
@@ -463,13 +444,7 @@ object Event {
                                         println(Bundle()["plugin-downloading-fail"].trimIndent())
                                         CrashReport(ex)
                                     }
-
-                                    // TODO make checksum
-                                    /*try {
-                                            checksum sum = new checksum();
-                                            sum.check()
-                                            System.out.println(new Bundle().get("plugin-downloading-done"));
-                                        } catch (Exception ignored){}*/Core.app.exit()
+                                    Core.app.exit()
                                 }
                                 t.start()
                             }
