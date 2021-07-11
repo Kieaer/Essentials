@@ -32,7 +32,7 @@ object Permissions {
         val obj = JsonObject()
         obj.add("name", playerData.name)
         obj.add("group", if(Config.authType == Config.AuthType.None) "user" else default)
-        obj.add("prefix", perm[default].asObject().getString("prefix", "%1[orange] >[white] %2"))
+        obj.add("chatFormat", perm[default].asObject().getString("chatFormat", "%1[orange] >[white] %2"))
         obj.add("admin", false)
         user.add(playerData.uuid, obj)
     }
@@ -110,6 +110,13 @@ object Permissions {
         if(userFile.exists()) {
             try {
                 user = JsonValue.readHjson(userFile.reader()).asObject()
+
+                // KR-Plugin 하위 호환
+                user.forEach {
+                    val orignal = it.value.asObject().getString("prefix", "%1[orange] >[white] %2")
+                    it.value.asObject().set("chatFormat", orignal)
+                }
+
                 for(p in Groups.player) {
                     p.admin(isAdmin(PluginData.playerData.find { d: PlayerData -> d.name == p.name }))
                 }

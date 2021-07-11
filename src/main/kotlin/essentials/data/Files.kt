@@ -234,7 +234,7 @@ object Files : Configs() {
 
             val owner = JsonObject()
             owner.add("admin", true)
-            owner.add("prefix", "[sky][Owner] %1[orange] > [white]%2")
+            owner.add("chatFormat", "[sky][Owner] %1[orange] > [white]%2")
             owner.add("permission", JsonArray().add("all"))
 
             val admin = JsonObject()
@@ -248,7 +248,7 @@ object Files : Configs() {
 
             admin.add("inheritance", "user")
             admin.add("admin", true)
-            admin.add("prefix", "[yellow][Admin] %1[orange] > [white]%2")
+            admin.add("chatFormat", "[yellow][Admin] %1[orange] > [white]%2")
             admin.add("permission", adminPerm)
 
             val user = JsonObject()
@@ -265,7 +265,7 @@ object Files : Configs() {
             userPerm.add("vote")
 
             user.add("inheritance", "visitor")
-            user.add("prefix", "%1[orange] > [white]%2")
+            user.add("chatFormat", "%1[orange] > [white]%2")
             user.add("permission", userPerm)
 
             val visitor = JsonObject()
@@ -275,7 +275,7 @@ object Files : Configs() {
             visitorPerm.add("help")
             visitorPerm.add("t")
 
-            visitor.add("prefix", "%1[scarlet] > [white]%2")
+            visitor.add("chatFormat", "%1[scarlet] > [white]%2")
             visitor.add("default", true)
             visitor.add("permission", visitorPerm)
 

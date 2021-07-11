@@ -125,7 +125,9 @@ object PlayerCore {
                             permission = rs.getString("permission"),
                             mute = rs.getBoolean("mute"),
                             udid = rs.getLong("udid"),
-                            json = JsonObject.readJSON(rs.getString("json")).asObject()
+                            json = JsonObject.readJSON(rs.getString("json")).asObject(),
+                            accountid = rs.getString("accountid"),
+                            accountpw = rs.getString("accountpw")
                         )
                     }
                 }
