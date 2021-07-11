@@ -165,6 +165,8 @@ object PlayerCore {
                             } else {
                                 if (o.value.type == JsonType.NUMBER) {
                                     p.setInt(index, data.asInt())
+                                } else {
+                                    p.setString(index, data.toString())
                                 }
                             }
                         } catch (e: SQLException) {
@@ -213,6 +215,8 @@ object PlayerCore {
                             } else {
                                 if (o.value.type == JsonType.NUMBER) {
                                     p.setInt(index, data.asInt())
+                                } else {
+                                    p.setString(index, data.toString())
                                 }
                             }
                         } catch (e: SQLException) {

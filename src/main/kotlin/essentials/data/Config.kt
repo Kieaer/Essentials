@@ -122,7 +122,7 @@ object Config : Configs() {
 
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
-        config.add("anti-grief", anti)
+        config.add("anti", anti)
         config.add("features", features)
         config.add("auth", auth)
 
@@ -194,7 +194,7 @@ object Config : Configs() {
         banShare = network.getBoolean("banshare", false)
         banTrust = if(network["bantrust"] == null) JsonValue.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() else network["bantrust"].asArray()
 
-        val anti: JsonObject = obj["antigrief"].asObject()
+        val anti: JsonObject = obj["anti-grief"].asObject()
         antiVPN = anti.getBoolean("antivpn", false)
         nameFixed = anti.getBoolean("strict-name", false)
 
