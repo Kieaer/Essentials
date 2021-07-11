@@ -43,25 +43,28 @@ object Log {
     }
 
     fun write(type: LogType, value: String, vararg params: String) {
-        val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
-        val newlog = Paths.get(pluginRoot.child("log/$type.log").path())
-        val oldlog = Paths.get(pluginRoot.child("log/old/$type/$date.log").path())
-        var mainlog = pluginRoot.child("log/$type.log")
-        val logfolder = pluginRoot.child("log")
-        if(mainlog != null && mainlog.length() > 1024 * 256) {
-            mainlog.writeString(Bundle()["log.file-end", date], true)
-            try {
-                if(!pluginRoot.child("log/old/$type").exists()) {
-                    pluginRoot.child("log/old/$type").mkdirs()
+        if(Config.logging) {
+            val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
+            val newlog = Paths.get(pluginRoot.child("log/$type.log").path())
+            val oldlog = Paths.get(pluginRoot.child("log/old/$type/$date.log").path())
+            var mainlog = pluginRoot.child("log/$type.log")
+            val logfolder = pluginRoot.child("log")
+
+            if(mainlog != null && mainlog.length() > 1024 * 256) {
+                mainlog.writeString(Bundle()["log.file-end", date], true)
+                try {
+                    if(!pluginRoot.child("log/old/$type").exists()) {
+                        pluginRoot.child("log/old/$type").mkdirs()
+                    }
+                    Files.move(newlog, oldlog, StandardCopyOption.REPLACE_EXISTING)
+                } catch(e: IOException) {
+                    CrashReport(e)
                 }
-                Files.move(newlog, oldlog, StandardCopyOption.REPLACE_EXISTING)
-            } catch(e: IOException) {
-                CrashReport(e)
+                mainlog = null
             }
-            mainlog = null
+            if(mainlog == null) mainlog = logfolder.child("$type.log")
+            mainlog!!.writeString("[${Tool.getLocalTime()}] ${Bundle().get(value, *params)}\n", true)
         }
-        if(mainlog == null) mainlog = logfolder.child("$type.log")
-        mainlog!!.writeString("[${Tool.getLocalTime()}] ${Bundle().get(value, *params)}\n", true)
     }
 
     enum class LogType {

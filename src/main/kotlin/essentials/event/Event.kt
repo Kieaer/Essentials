@@ -74,7 +74,7 @@ object Event {
 
         // 플레이어가 블록을 터치하거나 클릭했을 때 작동
         Events.on(TapEvent::class.java) {
-            if(Config.logging) Log.write(Log.LogType.Tap, "log.tap", it.player.name, it.tile.block().name)
+            Log.write(Log.LogType.Tap, "log.tap", it.player.name, it.tile.block().name)
             val playerData = PluginData[it.player.uuid()]
             if(playerData != null) {
                 for(data in PluginData.warpblocks) {
@@ -83,7 +83,7 @@ object Event {
                             Log.info("player.warped", it.player.name, data.ip + ":" + data.port)
                             Call.connect(it.player.con(), data.ip, data.port)
                         }
-                        Bundle().get("register-success")
+                        Bundle()["register-success"]
                         break
                     }
                 }
@@ -100,7 +100,7 @@ object Event {
         
         Events.on(WithdrawEvent::class.java) {
             if(it.tile != null && it.player.unit().item() != null && it.player.name != null) {
-                if(Config.logging) Log.write(Log.LogType.WithDraw, "log.withdraw", it.player.name, it.player.unit().item().name, it.amount.toString(), it.tile.block().name)
+                Log.write(Log.LogType.WithDraw, "log.withdraw", it.player.name, it.player.unit().item().name, it.amount.toString(), it.tile.block().name)
                 if(Vars.state.rules.pvp && it.item.flammability > 0.001f) {
                     it.player.sendMessage(Bundle(PluginData[it.player.uuid()])["system.flammable.disabled"])
                     it.player.unit().clearItem()
@@ -142,7 +142,7 @@ object Event {
         }
 
         Events.on(PlayerConnect::class.java) {
-            if(Config.logging) Log.write(Log.LogType.Player, "log.player.connect", it.player.name, it.player.uuid(), it.player.con.address)
+            Log.write(Log.LogType.Player, "log.player.connect", it.player.name, it.player.uuid(), it.player.con.address)
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for(s in PluginData.blacklist) {
@@ -167,14 +167,14 @@ object Event {
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때 작동
         Events.on(DepositEvent::class.java) {
-            if(Config.logging) Log.write(Log.LogType.Deposit, "log.deposit", it.player.name, it.player.unit().item().name, it.tile.block().name)
+            Log.write(Log.LogType.Deposit, "log.deposit", it.player.name, it.player.unit().item().name, it.tile.block().name)
         }
 
         // 플레이어가 서버에 들어왔을 때 작동
         Events.on(PlayerJoin::class.java) { it ->
             val locale = Tool.getGeo(it.player)
 
-            if(Config.logging) Log.write(Log.LogType.Player, "log.player.join", it.player.name, it.player.uuid(), it.player.con.address)
+            Log.write(Log.LogType.Player, "log.player.join", it.player.name, it.player.uuid(), it.player.con.address)
             PluginData.players.add(it.player)
             it.player.admin(false)
 
@@ -234,7 +234,7 @@ object Event {
 
         // 플레이어가 서버에서 나갔을 때 작동
         Events.on(PlayerLeave::class.java) {
-            if(Config.logging) Log.write(Log.LogType.Player, "log.player.leave", it.player.name, it.player.uuid(), it.player.con.address)
+            Log.write(Log.LogType.Player, "log.player.leave", it.player.name, it.player.uuid(), it.player.con.address)
             val player = PluginData[it.player.uuid()]
             if(player != null) {
                 PlayerCore.save(player)
