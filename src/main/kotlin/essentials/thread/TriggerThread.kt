@@ -43,18 +43,16 @@ object TriggerThread : Runnable {
                     if(!value!!.touch) {
                         for(ix in 0 until Groups.player.size()) {
                             val player = Groups.player.getByID(ix)
-                            if(player.tileX() > value.startTile.x && player.tileX() < value.finishTile.x) {
-                                if(player.tileY() > value.startTile.y && player.tileY() < value.finishTile.y) {
-                                    var resultIP = value.ip
-                                    var port = 6567
-                                    if(resultIP.contains(":") && Strings.canParsePositiveInt(resultIP.split(":").toTypedArray()[1])) {
-                                        val temp = resultIP.split(":").toTypedArray()
-                                        resultIP = temp[0]
-                                        port = temp[1].toInt()
-                                    }
-                                    Log.info("player.warped", player.name, "$resultIP:$port")
-                                    Call.connect(player.con, resultIP, port)
+                            if(player.tileX() > value.startTile.x && player.tileX() < value.finishTile.x && player.tileY() > value.startTile.y && player.tileY() < value.finishTile.y) {
+                                var resultIP = value.ip
+                                var port = 6567
+                                if(resultIP.contains(":") && Strings.canParsePositiveInt(resultIP.split(":").toTypedArray()[1])) {
+                                    val temp = resultIP.split(":").toTypedArray()
+                                    resultIP = temp[0]
+                                    port = temp[1].toInt()
                                 }
+                                Log.info("player.warped", player.name, "$resultIP:$port")
+                                Call.connect(player.con, resultIP, port)
                             }
                         }
                     }
@@ -85,16 +83,14 @@ object TriggerThread : Runnable {
                 for(a in 0 until PluginData.warptotals.size) {
                     var result = 0
                     for(value in PluginData.warpcounts) result += value!!.players
-                    val str = result.toString() // TODO 인원 카운트 다시 만들기
+                    val str = result.toString()
                     val digits = IntArray(str.length)
                     for(b in str.indices) digits[b] = str[b] - '0'
                     val tile = PluginData.warptotals[a].tile
-                    if(PluginData.warptotals[a]!!.totalplayers != result) {
-                        if(PluginData.warptotals[a]!!.numbersize != digits.size) {
-                            for(px in 0..2) {
-                                for(py in 0..4) {
-                                    Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, Nulls.unit)
-                                }
+                    if(PluginData.warptotals[a]!!.totalplayers != result && PluginData.warptotals[a]!!.numbersize != digits.size) {
+                        for(px in 0..2) {
+                            for(py in 0..4) {
+                                Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, Nulls.unit)
                             }
                         }
                     }

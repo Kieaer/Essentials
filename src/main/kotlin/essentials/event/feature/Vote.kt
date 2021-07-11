@@ -8,7 +8,6 @@ import essentials.eof.sendMessage
 import essentials.event.feature.VoteType.Gameover
 import essentials.event.feature.VoteType.Kick
 import essentials.event.feature.VoteType.Map
-import essentials.event.feature.VoteType.None
 import essentials.event.feature.VoteType.Rollback
 import essentials.event.feature.VoteType.Skipwave
 import essentials.internal.Bundle
@@ -74,8 +73,6 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
 
                         Tool.sendMessageAll("vote.map", map.name())
                     }
-                    None -> {
-                    }
                 }
                 if(voting) {
                     counting.start()
@@ -132,8 +129,6 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                     AutoRollback.load(map)
                     Tool.sendMessageAll("vote.map.done")
                 }
-                None -> {
-                }
             }
         } else {
             when(type) {
@@ -142,8 +137,6 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                 Kick -> Tool.sendMessageAll("vote.kick.fail", target.name())
                 Rollback -> Tool.sendMessageAll("vote.rollback.fail")
                 Map -> Tool.sendMessageAll("vote.map.fail")
-                None -> {
-                }
             }
         }
     }

@@ -26,9 +26,4 @@ enum class VoteType {
             return "빽섭"
         }
     },
-    None {
-        override fun toString(): String {
-            return "없음"
-        }
-    }
 }

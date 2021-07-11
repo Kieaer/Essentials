@@ -49,13 +49,14 @@ class Main : Plugin() {
         checkServerVersion()
 
         try {
+            val file = pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP")
             if(!pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN").exists()) {
-                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").writeString("")
-                Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").file())
+                file.writeString("")
+                Tool.download(URL("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP"), file.file())
             }
 
-            if(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").exists()) {
-                ZipFile(pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").absolutePath()).use { zip ->
+            if(file.exists()) {
+                ZipFile(file.absolutePath()).use { zip ->
                     zip.entries().asSequence().forEach { entry ->
                         if(entry.isDirectory) {
                             File(pluginRoot.child("data").absolutePath(), entry.name).mkdirs()
@@ -68,7 +69,7 @@ class Main : Plugin() {
                         }
                     }
                 }
-                pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP").delete()
+                file.delete()
                 pluginRoot.child("data/LICENSE-CC-BY-SA-4.0.TXT").delete()
                 pluginRoot.child("data/README_LITE.TXT").delete()
             }

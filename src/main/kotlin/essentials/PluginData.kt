@@ -29,12 +29,10 @@ object PluginData {
 
     var votingClass: Vote? = null
     var isVoting: Boolean = false
-    var votingType: VoteType = VoteType.None
+    var votingType: VoteType = VoteType.Gameover
     var votingPlayer: Playerc? = Nulls.unit.player
 
     var expData: JsonObject = JsonObject()
-
-    private val json = Json()
 
     // 종료시 저장되는 플러그인 데이터
     var warpzones = Seq<WarpZone>()
@@ -43,6 +41,9 @@ object PluginData {
     var warptotals = Seq<WarpTotal>()
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
+
+    private val json = Json()
+    private val dataFile = pluginRoot.child("data/PluginData.object")
 
     operator fun get(uuid: String): PlayerData? {
         for(p in playerData) {
@@ -93,23 +94,22 @@ object PluginData {
         }
         data.add("banned", buffer)
 
-        val file = pluginRoot.child("data/PluginData.object").file()
         try {
-            file.writeText(data.toString())
+            dataFile.file().writeText(data.toString())
         } catch(e: FileNotFoundException) {
             Thread {
                 sleep(32)
-                file.writeText(data.toString())
+                dataFile.file().writeText(data.toString())
             }.start()
         }
     }
 
     fun loadAll() {
         try {
-            if(!pluginRoot.child("data/PluginData.object").exists()) {
+            if(!dataFile.exists()) {
                 saveAll()
             } else {
-                val data = JsonValue.readJSON(pluginRoot.child("data/PluginData.object").readString()).asObject()
+                val data = JsonValue.readJSON(dataFile.readString()).asObject()
                 for(a in 0 until data["warpzones"].asArray().size()) {
                     val buffer = data["warpzones"].asArray()[a].asObject()
                     warpzones.add(WarpZone(buffer["mapName"].asString(), buffer["start"].asInt(), buffer["finish"].asInt(), buffer["touch"].asBoolean(), buffer["ip"].asString(), buffer["port"].asInt()))
@@ -137,7 +137,7 @@ object PluginData {
                 Log.info("plugindata-loaded")
             }
         } catch(i: Exception) {
-            pluginRoot.child("data/PluginData.object").delete()
+            dataFile.delete()
             saveAll()
         }
     }
