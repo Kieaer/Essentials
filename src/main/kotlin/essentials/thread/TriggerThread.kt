@@ -105,7 +105,7 @@ object TriggerThread : Runnable {
                         var kick = false
 
                         // Exp 계산
-                        target.exp = target.exp + random.nextInt(50)
+                        target.exp = target.exp++
 
                         // 잠수 및 플레이 시간 계산
                         target.playtime = target.playtime + 1

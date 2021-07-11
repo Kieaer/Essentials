@@ -296,24 +296,26 @@ object Event {
 
         // 플레이어가 블럭 건설을 끝마쳤을 때 작동
         Events.on(BlockBuildEndEvent::class.java) {
-            if(!it.unit.isNull && it.unit.isPlayer) {
+            if(it.unit.isPlayer) {
                 val player = it.unit.player
-
-                Log.write(Log.LogType.Block, "log.block.place", player.name, it.tile.block().name)
                 val target = PluginData[player.uuid()]
 
-                if(!it.breaking && !player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null && player.unit().buildPlan().block != null) {
+                if(!player.unit().isNull && target != null && it.tile.block() != null){
                     val name = it.tile.block().name
-                    try {
+                    if(!it.breaking) {
+                        Log.write(Log.LogType.Block, "log.block.place", player.name, it.tile.block().name)
                         val exp = PluginData.expData.getInt(name, 0)
                         target.placecount++
                         target.exp = target.exp + exp
-                    } catch(ex: Exception) {
-                        CrashReport(ex)
-                    }
 
-                    if(Config.debug) {
-                        Log.info("anti-grief.build.finish", player.name, it.tile.block().name, it.tile.x, it.tile.y)
+                        if(Config.debug) Log.info("anti-grief.build.finish", player.name, it.tile.block().name, it.tile.x, it.tile.y)
+                    } else if(it.breaking){
+                        Log.write(Log.LogType.Block, "log.block.remove", player.name, player.unit().buildPlan().block.name)
+                        val exp = PluginData.expData.getInt(player.unit().buildPlan().block.name, 0)
+                        target.breakcount++
+                        target.exp = target.exp + exp
+
+                        if(Config.debug) Log.info("anti-grief.destroy", player.name, player.unit().buildPlan().block.name, it.tile.x, it.tile.y)
                     }
                 }
             }
@@ -321,44 +323,29 @@ object Event {
 
         // 플레이어가 블럭을 선택했을 때 작동 (파괴 등)
         Events.on(BuildSelectEvent::class.java) {
-            if(it.builder is Playerc && it.builder.buildPlan() != null && !Pattern.matches(".*build.*", it.builder.buildPlan().block.name) && it.tile.block() !== Blocks.air) {
-                if(it.breaking) {
-                    Log.write(Log.LogType.Block, "log.block.remove", (it.builder as Playerc).name(), it.tile.block().name, it.tile.x.toString(), it.tile.y.toString())
-                    val target = PluginData[(it.builder as Playerc).uuid()]
-                    if(target != null) {
-                        val name = it.tile.block().name
-                        try {
-                            val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
-                            val exp = obj.getInt(name, 0)
-                            target.breakcount++
-                            target.exp = target.exp + exp
-                        } catch(ex: Exception) {
-                            CrashReport(ex)
-                            Call.kick((it.builder as Playerc).con(), Bundle(target)["not-logged"])
-                        }
+            if(it.builder is Playerc && it.builder.buildPlan() != null && !Pattern.matches(".*build.*", it.builder.buildPlan().block.name) && it.tile.block() !== Blocks.air && it.breaking) {
+                Log.write(Log.LogType.Block, "log.block.remove", (it.builder as Playerc).name(), it.tile.block().name, it.tile.x.toString(), it.tile.y.toString())
+                val target = PluginData[(it.builder as Playerc).uuid()]
 
-                        // Exp Playing Game (EPG)
-                        if(Config.blockEXP) {
-                            val level = target.level
-                            try {
-                                val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
-                                if(obj[name] != null) {
-                                    val req = obj.getInt(name, 999)
-                                    if(level < req) {
-                                        Call.deconstructFinish(it.tile, it.tile.block(), (it.builder as Playerc).unit())
-                                        sendMessage((it.builder as Playerc), Bundle(PluginData[(it.builder as Playerc).uuid()])["system.epg.block-require", name, req.toString()])
-                                    }
-                                } else {
-                                    Log.err("system.epg.block-not-valid", name)
-                                }
-                            } catch(ex: Exception) {
-                                CrashReport(ex)
+                // Exp Playing Game (EPG)
+                if(target != null && Config.blockEXP) {
+                    val level = target.level
+                    val name = it.builder.buildPlan().block.name
+
+                    try {
+                        val obj = JsonValue.readHjson(Main.pluginRoot.child("Exp.hjson").reader()).asObject()
+                        if(obj[name] != null) {
+                            val req = obj.getInt(name, 999)
+                            if(level < req) {
+                                Call.deconstructFinish(it.tile, it.tile.block(), (it.builder as Playerc).unit())
+                                sendMessage((it.builder as Playerc), Bundle(PluginData[(it.builder as Playerc).uuid()])["system.epg.block-require", name, req.toString()])
                             }
+                        } else {
+                            Log.err("system.epg.block-not-valid", name)
                         }
+                    } catch(ex: Exception) {
+                        CrashReport(ex)
                     }
-                }
-                if(Config.debug) {
-                    Log.info("anti-grief.destroy", (it.builder as Playerc).name(), it.tile.block().name, it.tile.x, it.tile.y)
                 }
             }
         }
