@@ -252,7 +252,11 @@ object Event {
             val playerData = PluginData[it.player.uuid()]
             val sendMessage = sendMessage(it.player, Bundle(playerData))
 
-            if(!it.message.startsWith("/")) Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
+            if(!it.message.startsWith("/")) {
+                Log.write(Log.LogType.Chat, "log.chat", it.player.name, it.message)
+                Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
+            }
+
             if(playerData != null) {
                 if(!it.message.startsWith("/")) {
                     if(it.message == "y" && PluginData.votingClass != null && PluginData.isVoting) {
