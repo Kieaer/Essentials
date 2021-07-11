@@ -40,8 +40,6 @@ object Files : Configs() {
         if(!pluginRoot.child("BlockReqExp.hjson").exists() || !pluginRoot.child("Exp.hjson").exists()) {
             val json = JsonObject()
 
-            Blocks.additiveReconstructor
-
             // 제작 건물
             json.add("siliconSmelter", 0, "Crafting")
             json.add("siliconCrucible", 0)
