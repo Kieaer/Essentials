@@ -53,7 +53,8 @@ object PlayerCore {
 
         playerData.uuid = p.uuid()
         playerData.lastdate = System.currentTimeMillis()
-        playerData.joincount = playerData.joincount + 1
+        if(playerData.firstdate == 0L) playerData.firstdate = playerData.lastdate
+        playerData.joincount = playerData.joincount++
         playerData.exp = playerData.exp + playerData.joincount
 
         Permissions.setUserPerm(oldUUID, p.uuid())
@@ -67,7 +68,7 @@ object PlayerCore {
         return true
     }
 
-    fun createData(player: Playerc?, name: String, uuid: String, id: String, pw: String): PlayerData {
+    fun createData(player: Playerc, name: String, uuid: String, id: String, pw: String): PlayerData {
         val country = Tool.getGeo(player)
         return PlayerData(name, uuid, country.isO3Country, id, pw, "default")
     }
