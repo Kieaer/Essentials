@@ -55,7 +55,7 @@ object Config : Configs() {
     var vote = false
 
     /** 플러그인 로그 설정 */
-    var logging = false
+    var logging = true
 
     /** 자동 업데이트 설정 */
     var update = false
