@@ -290,7 +290,7 @@ object Event {
                         }
                     }
                     if(NetClient.colorizeName(it.player.id, it.player.name) != null) {
-                        sendMessage(Permissions.user[playerData.uuid].asObject()["prefix"].asString().replace("%1", NetClient.colorizeName(it.player.id, it.player.name)).replace("%2", it.message))
+                        sendMessage(Permissions.user[playerData.uuid].asObject()["chatFormat"].asString().replace("%1", NetClient.colorizeName(it.player.id, it.player.name)).replace("%2", it.message))
                     }
                 }
             } else {

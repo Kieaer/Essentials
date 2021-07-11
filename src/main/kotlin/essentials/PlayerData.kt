@@ -47,7 +47,7 @@ class PlayerData {
     }
 
     // 플레이어 전체 데이터
-    constructor(name: String, uuid: String, countryCode: String, placecount: Int, breakcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, firstdate: Long, lastdate: Long, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, bantime: Long, crosschat: Boolean, colornick: Boolean, permission: String, mute: Boolean, udid: Long, json: JsonObject) {
+    constructor(name: String, uuid: String, countryCode: String, placecount: Int, breakcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, firstdate: Long, lastdate: Long, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, bantime: Long, crosschat: Boolean, colornick: Boolean, permission: String, mute: Boolean, udid: Long, json: JsonObject, accountid: String, accountpw: String) {
         this.name = name
         this.uuid = uuid
         this.countryCode = countryCode
@@ -70,6 +70,8 @@ class PlayerData {
         this.mute = mute
         this.udid = udid
         this.json = json
+        this.accountid = accountid
+        this.accountpw = accountpw
     }
 
     fun toJson(): JsonObject {
