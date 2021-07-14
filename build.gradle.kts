@@ -13,8 +13,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.github.Anuken.Arc:arc-core:v127")
-    compileOnly("com.github.Anuken.Mindustry:core:v127")
+    compileOnly("com.github.Anuken.Arc:arc-core:v128")
+    compileOnly("com.github.Anuken.Mindustry:core:v128")
 
     implementation("com.github.PersonTheCat:hjson-java:master")
     implementation("de.svenkubiak:jBCrypt:+")
@@ -27,10 +27,10 @@ dependencies {
     implementation("com.neovisionaries:nv-i18n:+")
     implementation(files("libs/ip2location.jar"))
 
-    testImplementation("com.github.Anuken.arc:arc-core:v127")
-    testImplementation("com.github.Anuken.Mindustry:core:v127")
-    testImplementation("com.github.Anuken.Mindustry:server:v127")
-    testImplementation("com.github.Anuken.arc:backend-headless:v127")
+    testImplementation("com.github.Anuken.arc:arc-core:v128")
+    testImplementation("com.github.Anuken.Mindustry:core:v128")
+    testImplementation("com.github.Anuken.Mindustry:server:v128")
+    testImplementation("com.github.Anuken.arc:backend-headless:v128")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("com.github.javafaker:javafaker:1.0.2")
 }

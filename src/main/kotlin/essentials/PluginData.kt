@@ -17,7 +17,7 @@ import java.io.FileNotFoundException
 import java.lang.Thread.sleep
 
 object PluginData {
-    const val buildVersion = 127
+    const val buildVersion = 128
     const val buildRevision = 0
 
     var serverIP: String = "127.0.0.1"
