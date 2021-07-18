@@ -12,7 +12,7 @@ import essentials.internal.Log
 import mindustry.gen.Playerc
 import java.util.*
 
-object Discord  {
+object Discord {
     val pin: ObjectMap<String, Int> = ObjectMap()
     private lateinit var catnip: Catnip
 

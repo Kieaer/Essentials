@@ -17,6 +17,7 @@ import org.hjson.JsonType
 import org.mindrot.jbcrypt.BCrypt
 import java.sql.SQLException
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.util.*
 import java.util.function.Consumer
 
@@ -53,7 +54,6 @@ object PlayerCore {
 
         playerData.uuid = p.uuid()
         playerData.lastdate = System.currentTimeMillis()
-        if(playerData.firstdate == 0L) playerData.firstdate = playerData.lastdate
         playerData.joincount = playerData.joincount++
         playerData.exp = playerData.exp + playerData.joincount
 
@@ -70,7 +70,7 @@ object PlayerCore {
 
     fun createData(player: Playerc, name: String, uuid: String, id: String, pw: String): PlayerData {
         val country = Tool.getGeo(player)
-        return PlayerData(name, uuid, country.isO3Country, id, pw, "default")
+        return PlayerData(name, uuid, country.isO3Country, System.currentTimeMillis(), id, pw, "default")
     }
 
     fun login(id: String, pw: String): Boolean {
@@ -113,7 +113,7 @@ object PlayerCore {
                             kickcount = rs.getInt("kickcount"),
                             level = rs.getInt("level"),
                             exp = rs.getInt("exp"),
-                            firstdate = rs.getLong("firstdate"),
+                            joinDate = rs.getLong("joindate"),
                             lastdate = rs.getLong("lastdate"),
                             playtime = rs.getLong("playtime"),
                             attackclear = rs.getInt("attackclear"),
@@ -156,7 +156,7 @@ object PlayerCore {
                         when(o.value.type) {
                             JsonType.STRING -> p.setString(index, o.value.asString())
                             JsonType.BOOLEAN -> p.setBoolean(index, o.value.asBoolean())
-                            JsonType.NUMBER -> p.setInt(index, o.value.asInt())
+                            JsonType.NUMBER -> p.setLong(index, o.value.asLong())
                             else -> p.setString(index, o.value.toString())
                         }
                         index++
@@ -178,7 +178,7 @@ object PlayerCore {
     fun register(name: String, uuid: String, countryCode: String, id: String, pw: String, permission: String): Boolean {
         val sql = StringBuilder()
         sql.append("INSERT INTO players VALUES(")
-        val newdata = PlayerData(name, uuid, countryCode, id, pw, permission)
+        val newdata = PlayerData(name, uuid, countryCode, System.currentTimeMillis(), id, pw, permission)
         val js = newdata.toJson()
         js.forEach(Consumer { sql.append("?,") })
         sql.deleteCharAt(sql.length - 1)
@@ -191,7 +191,7 @@ object PlayerCore {
                         when(o.value.type) {
                             JsonType.STRING -> p.setString(index, o.value.asString())
                             JsonType.BOOLEAN -> p.setBoolean(index, o.value.asBoolean())
-                            JsonType.NUMBER -> p.setInt(index, o.value.asInt())
+                            JsonType.NUMBER -> p.setLong(index, o.value.asLong())
                             else -> p.setString(index, o.value.toString())
                         }
                         index++

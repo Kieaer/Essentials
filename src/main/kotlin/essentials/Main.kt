@@ -97,6 +97,9 @@ class Main : Plugin() {
         // DB 연결
         DB.start()
 
+        // 하위 버전 호환
+        DB.backword()
+
         // 네트워크 연결
         if(Config.networkMode == Config.NetworkMode.Server) {
             mainThread.submit(Server)
