@@ -1,13 +1,16 @@
 package essentials.data
 
 import arc.struct.Seq
+import com.neovisionaries.i18n.CountryCode
 import essentials.Main.Companion.pluginRoot
 import essentials.PlayerData
 import essentials.form.Service
+import essentials.internal.Tool
 import org.hjson.JsonObject
 import org.hjson.JsonType
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.ResultSet
 import java.sql.SQLException
 
 object DB : Service() {
@@ -53,22 +56,24 @@ object DB : Service() {
             val db = DriverManager.getConnection("jdbc:h2:file:./config/mods/Essentials/kr", "", "")
             val buffer = Seq<PlayerData>()
 
-            val result = db.prepareStatement("SELECT * FROM players").executeQuery()
+            val db2 = db.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)
+            var result = db2.executeQuery("SELECT * FROM players")
 
             var total = 0
             var count = 0
             if(result.last()) {
                 total = result.row
-                result.beforeFirst()
+                result.close()
             }
 
+            result = db2.executeQuery("SELECT * FROM players")
             while(result.next()){
                 count++
                 print("\r변환중... $count/$total")
                 val data = PlayerData(
                     name = result.getString("name"),
                     uuid = result.getString("uuid"),
-                    countryCode = result.getString("country"),
+                    countryCode = "null",
                     placecount = result.getInt("placeCount"),
                     breakcount = result.getInt("breakCount"),
                     joincount = result.getInt("joinCount"),
@@ -93,22 +98,21 @@ object DB : Service() {
                 )
 
                 buffer.add(data)
-
-                PlayerCore.save(data)
+                PlayerCore.register(data)
             }
 
             print("\n")
             result.close()
             db.close()
+            db2.close()
 
             count = 0
-
             buffer.forEach {
                 count++
                 print("\r검사중... $count/$total")
-                val r = PlayerCore.load(it.uuid, it.accountid)
+                val r = PlayerCore.load(it.uuid, null)
                 if (r == null){
-                    println("검사 실패.")
+                    println("\n검사 실패.")
                     return
                 }
             }
