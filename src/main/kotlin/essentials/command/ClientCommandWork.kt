@@ -588,7 +588,15 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                             }
                         }
                         type.equals("block", true) -> {
-                            Call.constructFinish(player.tileOn(), Vars.content.blocks().find { it.name == name }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
+                            if (Vars.content.blocks().find { it.name == name } != null){
+                                Call.constructFinish(player.tileOn(), Vars.content.blocks().find { it.name.equals(name, true) }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
+                            } else {
+                                val names = StringBuilder()
+                                Vars.content.blocks().each {
+                                    names.append("${it.name}, ")
+                                } // TODO bundle
+                                sendMessage["Avaliable block names: ${names.dropLast(2)}"]
+                            }
                         }
                         else -> { // TODO 명령어 예외 만들기
                             return
