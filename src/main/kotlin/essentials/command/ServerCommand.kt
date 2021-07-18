@@ -5,6 +5,7 @@ import arc.util.CommandHandler
 import essentials.Main
 import essentials.PluginData
 import essentials.data.DB
+import essentials.data.DB.database
 import essentials.event.feature.Permissions
 import essentials.external.StringUtils
 import essentials.internal.CrashReport
@@ -12,6 +13,7 @@ import essentials.internal.Log
 import essentials.internal.Tool
 import essentials.network.Client
 import mindustry.Vars
+import mindustry.gen.Groups
 import java.sql.SQLException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -81,11 +83,46 @@ object ServerCommand {
                             pstmt.setString(1, p.id)
                             pstmt.executeQuery().use { rs ->
                                 if(rs.next()) {
-                                    Log.info("${rs.getString("name")} Player information\n" + "=====================================\n" + "name: ${rs.getString("name")}\n" + "uuid: ${rs.getString("uuid")}\n" + "country: ${rs.getString("country")}\n" + "countryCode: ${rs.getString("countryCode")}\n" + "language: ${rs.getString("language")}\n" + "isAdmin: ${rs.getBoolean("isAdmin")}\n" + "placecount: ${rs.getInt("placecount")}\n" + "breakcount: ${rs.getInt("breakcount")}\n" + "killcount: ${rs.getInt("killcount")}\n" + "deathcount: ${rs.getInt("deathcount")}\n" + "joincount: ${rs.getInt("joincount")}\n" + "kickcount: ${rs.getInt("kickcount")}\n" + "level: ${rs.getInt("level")}\n" + "exp: ${rs.getInt("exp")}\n" + "reqexp: ${rs.getInt("reqexp")}\n" + "firstdate: ${
-                                        Tool.longToDateTime(rs.getLong("firstdate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
-                                    }\n" + "lastdate: ${
-                                        Tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
-                                    }\n" + "lastplacename: ${rs.getString("lastplacename")}\n" + "lastbreakname: ${rs.getString("lastbreakname")}\n" + "lastchat: ${rs.getString("lastchat")}\n" + "playtime: ${Tool.longToTime(rs.getLong("playtime"))}\n" + "attackclear: ${rs.getInt("attackclear")}\n" + "pvpwincount: ${rs.getInt("pvpwincount")}\n" + "pvplosecount: ${rs.getInt("pvplosecount")}\n" + "pvpbreakout: ${rs.getInt("pvpbreakout")}\n" + "reactorcount: ${rs.getInt("reactorcount")}\n" + "bantime: ${rs.getString("bantime")}\n" + "crosschat: ${rs.getBoolean("crosschat")}\n" + "colornick: ${rs.getBoolean("colornick")}\n" + "connected: ${rs.getBoolean("connected")}\n" + "connserver: ${rs.getString("connserver")}\n" + "permission: ${rs.getString("permission")}\n" + "mute: ${rs.getBoolean("mute")}\n" + "alert: ${rs.getBoolean("alert")}\n" + "udid: ${rs.getLong("udid")}\n" + "accountid: ${rs.getString("accountid")}")
+                                    Log.info("""
+                                        ${rs.getString("name")} Player information\n
+                                        =====================================\n
+                                        name: ${rs.getString("name")}\n
+                                        uuid: ${rs.getString("uuid")}\n
+                                        country: ${rs.getString("country")}\n
+                                        countryCode: ${rs.getString("countryCode")}\n
+                                        language: ${rs.getString("language")}\n
+                                        isAdmin: ${rs.getBoolean("isAdmin")}\n
+                                        placecount: ${rs.getInt("placecount")}\n
+                                        breakcount: ${rs.getInt("breakcount")}\n
+                                        killcount: ${rs.getInt("killcount")}\n
+                                        deathcount: ${rs.getInt("deathcount")}\n
+                                        joincount: ${rs.getInt("joincount")}\n
+                                        kickcount: ${rs.getInt("kickcount")}\n
+                                        level: ${rs.getInt("level")}\n
+                                        exp: ${rs.getInt("exp")}\n
+                                        reqexp: ${rs.getInt("reqexp")}\n
+                                        joindate: ${Tool.longToDateTime(rs.getLong("joindate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n
+                                        lastdate: ${Tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n
+                                        lastplacename: ${rs.getString("lastplacename")}\n
+                                        lastbreakname: ${rs.getString("lastbreakname")}\n
+                                        lastchat: ${rs.getString("lastchat")}\n
+                                        playtime: ${Tool.longToTime(rs.getLong("playtime"))}\n
+                                        attackclear: ${rs.getInt("attackclear")}\n
+                                        pvpwincount: ${rs.getInt("pvpwincount")}\n
+                                        pvplosecount: ${rs.getInt("pvplosecount")}\n
+                                        pvpbreakout: ${rs.getInt("pvpbreakout")}\n
+                                        reactorcount: ${rs.getInt("reactorcount")}\n
+                                        bantime: ${rs.getString("bantime")}\n
+                                        crosschat: ${rs.getBoolean("crosschat")}\n
+                                        colornick: ${rs.getBoolean("colornick")}\n
+                                        connected: ${rs.getBoolean("connected")}\n
+                                        connserver: ${rs.getString("connserver")}\n
+                                        permission: ${rs.getString("permission")}\n
+                                        mute: ${rs.getBoolean("mute")}\n
+                                        alert: ${rs.getBoolean("alert")}\n
+                                        udid: ${rs.getLong("udid")}\n
+                                        accountid: ${rs.getString("accountid")}
+                                        """)
                                 } else {
                                     Log.info("player.not-found")
                                 }
@@ -104,6 +141,23 @@ object ServerCommand {
         }
         handler.register("blacklist", "<add/remove> [name]") {
 
+        }
+        handler.register("debug", "<code>", "Debug message. plugin developer only.") {
+            if(it[0] == "db"){
+                for(p in Groups.player){
+                    p.con.close()
+                }
+                database.prepareStatement("DELETE FROM players").execute()
+                Log.info("success")
+            } else if (it[0] == "import"){
+                if(Main.pluginRoot.child("kr.mv.db").exists()) {
+                    DB.backword()
+                } else {
+                    Log.info("파일 없음")
+                }
+            } else if (it[0] == "backword"){
+                DB.backword()
+            }
         }
 
         commands = handler

@@ -1,6 +1,8 @@
 package essentials
 
+import essentials.internal.Tool
 import org.hjson.JsonObject
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class PlayerData {
@@ -13,7 +15,7 @@ class PlayerData {
     var kickcount: Int = 0
     var level: Int = 0
     var exp: Int = 0
-    var firstdate: Long = 0L
+    var joinDate: Long = 0L
     var lastdate: Long = 0L
     var playtime: Long = 0L
     var attackclear: Int = 0
@@ -37,17 +39,18 @@ class PlayerData {
     constructor()
 
     // 계정 생성 데이터
-    constructor(name: String, uuid: String, countryCode: String, id: String, pw: String, permission: String){
+    constructor(name: String, uuid: String, countryCode: String, joinDate: Long, id: String, pw: String, permission: String){
         this.name = name
         this.uuid = uuid
         this.countryCode = countryCode
+        this.joinDate = joinDate
         this.accountid = id
         this.accountpw = pw
         this.permission = permission
     }
 
     // 플레이어 전체 데이터
-    constructor(name: String, uuid: String, countryCode: String, placecount: Int, breakcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, firstdate: Long, lastdate: Long, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, bantime: Long, crosschat: Boolean, colornick: Boolean, permission: String, mute: Boolean, udid: Long, json: JsonObject, accountid: String, accountpw: String) {
+    constructor(name: String, uuid: String, countryCode: String, placecount: Int, breakcount: Int, joincount: Int, kickcount: Int, level: Int, exp: Int, joinDate: Long, lastdate: Long, playtime: Long, attackclear: Int, pvpwincount: Int, pvplosecount: Int, bantime: Long, crosschat: Boolean, colornick: Boolean, permission: String, mute: Boolean, udid: Long, json: JsonObject, accountid: String, accountpw: String) {
         this.name = name
         this.uuid = uuid
         this.countryCode = countryCode
@@ -57,7 +60,7 @@ class PlayerData {
         this.kickcount = kickcount
         this.level = level
         this.exp = exp
-        this.firstdate = firstdate
+        this.joinDate = joinDate
         this.lastdate = lastdate
         this.playtime = playtime
         this.attackclear = attackclear
@@ -85,7 +88,7 @@ class PlayerData {
         map.add("kickcount", kickcount)
         map.add("level", level)
         map.add("exp", exp)
-        map.add("firstdate", firstdate)
+        map.add("joindate", joinDate)
         map.add("lastdate", lastdate)
         map.add("playtime", playtime)
         map.add("attackclear", attackclear)

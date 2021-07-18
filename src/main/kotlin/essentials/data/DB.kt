@@ -8,6 +8,7 @@ import org.hjson.JsonObject
 import org.hjson.JsonType
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.SQLException
 
 object DB : Service() {
     lateinit var database: Connection
@@ -21,8 +22,8 @@ object DB : Service() {
             sql.append("${it.name} ")
             when (it.value.type){
                 JsonType.STRING -> sql.append("TEXT ")
-                JsonType.BOOLEAN -> sql.append("TINYINT(4) ")
-                JsonType.NUMBER -> sql.append("INT(11) ")
+                JsonType.BOOLEAN -> sql.append("BOOLEAN ")
+                JsonType.NUMBER -> sql.append("BIGINT ")
                 else -> sql.append("TEXT ")
             }
             sql.append("NOT NULL,")
@@ -36,7 +37,18 @@ object DB : Service() {
     }
 
     // KR-Plugin 호환
-    private fun backword() {
+    fun backword() {
+        try {
+            val db = database.createStatement()
+            db.execute("ALTER TABLE players ALTER COLUMN IF EXISTS firstDate RENAME TO joinDate")
+            db.execute("ALTER TABLE players ALTER COLUMN joindate SET DATA TYPE BIGINT")
+            db.execute("ALTER TABLE players ALTER COLUMN lastdate SET DATA TYPE BIGINT")
+            db.execute("ALTER TABLE players ALTER COLUMN playtime SET DATA TYPE BIGINT")
+            db.close()
+        } catch (e: SQLException){
+            e.printStackTrace()
+        }
+
         if(pluginRoot.child("kr.mv.db").exists()){
             val db = DriverManager.getConnection("jdbc:h2:file:./config/mods/Essentials/kr", "", "")
             val buffer = Seq<PlayerData>()
@@ -63,7 +75,7 @@ object DB : Service() {
                     kickcount = result.getInt("kickCount"),
                     level = result.getInt("level"),
                     exp = result.getInt("exp"),
-                    firstdate = result.getLong("joinDate"),
+                    joinDate = result.getLong("joinDate"),
                     lastdate = result.getLong("lastDate"),
                     playtime = result.getLong("playTime"),
                     attackclear = result.getInt("attackWinner"),

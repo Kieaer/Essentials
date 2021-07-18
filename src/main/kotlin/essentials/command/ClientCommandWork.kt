@@ -227,8 +227,8 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                 [green]${bundle["player.kickcount"]}[] : ${data.kickcount}
                 [green]${bundle["player.level"]}[] : ${data.level}
                 [green]${bundle["player.reqtotalexp"]}[] : ${Exp[data]}
-                [green]${bundle["player.firstdate"]}[] : ${
-                        Tool.longToDateTime(data.firstdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
+                [green]${bundle["player.joindate"]}[] : ${
+                        Tool.longToDateTime(data.joinDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
                     }
                 [green]${bundle["player.lastdate"]}[] : ${
                         Tool.longToDateTime(data.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
