@@ -38,6 +38,10 @@ object PlayerCore {
             return false
         }
 
+        if(playerData.countryCode == "null"){
+            playerData.countryCode = Tool.getGeo(p).isO3Country
+        }
+
         if(Config.motd) {
             val motd = Tool.getMotd(Locale(playerData.countryCode))
             val count = motd.split("\r\n|\r|\n").toTypedArray().size
@@ -180,6 +184,36 @@ object PlayerCore {
         sql.append("INSERT INTO players VALUES(")
         val newdata = PlayerData(name, uuid, countryCode, System.currentTimeMillis(), id, pw, permission)
         val js = newdata.toJson()
+        js.forEach(Consumer { sql.append("?,") })
+        sql.deleteCharAt(sql.length - 1)
+        sql.append(")")
+        try {
+            database.prepareStatement(sql.toString()).use { p ->
+                js.forEach(object : Consumer<JsonObject.Member> {
+                    var index = 1
+                    override fun accept(o: JsonObject.Member) {
+                        when(o.value.type) {
+                            JsonType.STRING -> p.setString(index, o.value.asString())
+                            JsonType.BOOLEAN -> p.setBoolean(index, o.value.asBoolean())
+                            JsonType.NUMBER -> p.setLong(index, o.value.asLong())
+                            else -> p.setString(index, o.value.toString())
+                        }
+                        index++
+                    }
+                })
+                val count = p.executeUpdate()
+                return count > 0
+            }
+        } catch (e: SQLException) {
+            CrashReport(e)
+            return false
+        }
+    }
+
+    fun register(playerData: PlayerData): Boolean{
+        val sql = StringBuilder()
+        sql.append("INSERT INTO players VALUES(")
+        val js = playerData.toJson()
         js.forEach(Consumer { sql.append("?,") })
         sql.deleteCharAt(sql.length - 1)
         sql.append(")")
