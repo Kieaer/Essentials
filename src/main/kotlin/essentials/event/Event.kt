@@ -56,7 +56,7 @@ import kotlin.math.abs
 object Event {
     fun register() { // 플레이어가 블록에 대해 어떠한 설정을 했을 때 작동
         Events.on(ConfigEvent::class.java) {
-            if(it.tile != null && it.tile.block() != null && it.player != null) { // Source by BasedUser(router)
+            if(it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) { // Source by BasedUser(router)
                 val entity = it.tile
                 val other = Vars.world.tile(it.value as Int)
                 val valid = other != null && other.block().hasPower
