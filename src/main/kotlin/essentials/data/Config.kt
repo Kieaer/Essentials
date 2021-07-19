@@ -102,7 +102,7 @@ object Config : Configs() {
 
     override fun createFile() {
         if(!configFile.exists()) {
-            obj = JsonObject().add("language", Locale.getDefault().toString())
+            obj = JsonObject().add("language", Locale.getDefault().isO3Language)
             save()
         } else {
             obj = JsonValue.readHjson(configFile.readString()).asObject()
@@ -126,7 +126,7 @@ object Config : Configs() {
 
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
-        config.add("anti-grief", anti)
+        config.add("antigrief", anti)
         config.add("features", features)
         config.add("auth", auth)
 
@@ -148,7 +148,7 @@ object Config : Configs() {
         network.add("bantrust", banTrust, bundle["config.server.bantrust"])
 
         // 테러방지 설정
-        anti.add("antivpn", antiVPN, bundle["config.anti-grief.vpn"])
+        anti.add("antivpn", antiVPN, bundle["config.antigrief.vpn"])
         anti.add("nameFixed", nameFixed, bundle["config-strict-name-description"])
 
         // 특별한 기능 설정
@@ -198,7 +198,7 @@ object Config : Configs() {
         banShare = network.getBoolean("banshare", false)
         banTrust = if(network["bantrust"] == null) JsonValue.readJSON("[\"127.0.0.1\",\"localhost\"]").asArray() else network["bantrust"].asArray()
 
-        val anti: JsonObject = obj["anti-grief"].asObject()
+        val anti: JsonObject = obj["antigrief"].asObject()
         antiVPN = anti.getBoolean("antivpn", false)
         nameFixed = anti.getBoolean("strict-name", false)
 
