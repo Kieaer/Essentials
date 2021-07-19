@@ -1,6 +1,5 @@
 import arc.ApplicationCore
 import arc.Core
-import arc.Net
 import arc.Settings
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
@@ -8,17 +7,19 @@ import arc.graphics.Color
 import arc.util.CommandHandler
 import com.github.javafaker.Faker
 import essentials.Main
-import junit.framework.Assert.assertNotNull
+import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.core.FileTree
 import mindustry.core.GameState
 import mindustry.core.Logic
 import mindustry.core.NetServer
+import mindustry.core.Version
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.maps.Map
+import mindustry.net.Net
 import mindustry.net.NetConnection
 import org.junit.AfterClass
 import org.junit.Assert
@@ -46,8 +47,7 @@ class PluginTest {
             path = Core.settings.dataDirectory
 
             path.child("locales").writeString("en")
-            path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=6\nbuild=custom build")
-            Core.net = Net()
+            path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build")
 
             if(!path.child("maps").exists()) {
                 path.child("maps").mkdirs()
@@ -74,7 +74,7 @@ class PluginTest {
                 val core: ApplicationCore = object : ApplicationCore() {
                     override fun setup() {
                         Vars.headless = true
-                        Vars.net = mindustry.net.Net(null)
+                        Vars.net = Net(null)
                         Vars.tree = FileTree()
                         Vars.init()
                         Vars.content.createBaseContent()
@@ -105,6 +105,9 @@ class PluginTest {
             Groups.init()
             Vars.world.loadMap(testMap[0])
             Vars.state.set(GameState.State.playing)
+            Version.build = 128
+            Version.revision = 0
+
             path.child("locales").delete()
             path.child("version.properties").delete()
 
