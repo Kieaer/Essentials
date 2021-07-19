@@ -1,5 +1,7 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.5.0"
+    id("org.sonarqube") version "3.3"
+    jacoco
 }
 
 java {
@@ -45,10 +47,35 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
+tasks.jacocoTestReport {
+    reports {
+        xml.isEnabled = true
+    }
+    dependsOn(tasks.test) // tests are required to run before generating the report
+}
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
+}
+
+
 sourceSets{
     test{
         resources{
             srcDir("src/main/resources")
         }
     }
+}
+
+sonarqube {
+    properties {
+        property("sonar.projectKey", "Kieaer_Essentials")
+        property("sonar.organization", "kieaer")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.sourceEncoding","utf-8")
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.7"
 }
