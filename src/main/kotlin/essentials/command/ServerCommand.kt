@@ -2,19 +2,21 @@ package essentials.command
 
 import arc.Core
 import arc.util.CommandHandler
+import com.neovisionaries.i18n.CountryCode
 import essentials.Main
 import essentials.PluginData
 import essentials.data.DB
 import essentials.data.DB.database
+import essentials.data.PlayerCore
+import essentials.event.feature.Exp
 import essentials.event.feature.Permissions
 import essentials.external.StringUtils
-import essentials.internal.CrashReport
+import essentials.internal.Bundle
 import essentials.internal.Log
 import essentials.internal.Tool
 import essentials.network.Client
 import mindustry.Vars
 import mindustry.gen.Groups
-import java.sql.SQLException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -50,7 +52,7 @@ object ServerCommand {
             val tmp = "$client$result"
 
             result = StringBuilder()
-            for(command in ServerCommand.commands.commandList) {
+            for(command in commands.commandList) {
                 val temp = "| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"
                 result.append(temp)
             }
@@ -78,59 +80,35 @@ object ServerCommand {
             val players = Vars.netServer.admins.findByName(it[0])
             if(players.size != 0) {
                 for(p in players) {
-                    try {
-                        DB.database.prepareStatement("SELECT * from players WHERE uuid=?").use { pstmt ->
-                            pstmt.setString(1, p.id)
-                            pstmt.executeQuery().use { rs ->
-                                if(rs.next()) {
-                                    Log.info("""
-                                        ${rs.getString("name")} Player information\n
-                                        =====================================\n
-                                        name: ${rs.getString("name")}\n
-                                        uuid: ${rs.getString("uuid")}\n
-                                        country: ${rs.getString("country")}\n
-                                        countryCode: ${rs.getString("countryCode")}\n
-                                        language: ${rs.getString("language")}\n
-                                        isAdmin: ${rs.getBoolean("isAdmin")}\n
-                                        placecount: ${rs.getInt("placecount")}\n
-                                        breakcount: ${rs.getInt("breakcount")}\n
-                                        killcount: ${rs.getInt("killcount")}\n
-                                        deathcount: ${rs.getInt("deathcount")}\n
-                                        joincount: ${rs.getInt("joincount")}\n
-                                        kickcount: ${rs.getInt("kickcount")}\n
-                                        level: ${rs.getInt("level")}\n
-                                        exp: ${rs.getInt("exp")}\n
-                                        reqexp: ${rs.getInt("reqexp")}\n
-                                        joindate: ${Tool.longToDateTime(rs.getLong("joindate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n
-                                        lastdate: ${Tool.longToDateTime(rs.getLong("lastDate")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}\n
-                                        lastplacename: ${rs.getString("lastplacename")}\n
-                                        lastbreakname: ${rs.getString("lastbreakname")}\n
-                                        lastchat: ${rs.getString("lastchat")}\n
-                                        playtime: ${Tool.longToTime(rs.getLong("playtime"))}\n
-                                        attackclear: ${rs.getInt("attackclear")}\n
-                                        pvpwincount: ${rs.getInt("pvpwincount")}\n
-                                        pvplosecount: ${rs.getInt("pvplosecount")}\n
-                                        pvpbreakout: ${rs.getInt("pvpbreakout")}\n
-                                        reactorcount: ${rs.getInt("reactorcount")}\n
-                                        bantime: ${rs.getString("bantime")}\n
-                                        crosschat: ${rs.getBoolean("crosschat")}\n
-                                        colornick: ${rs.getBoolean("colornick")}\n
-                                        connected: ${rs.getBoolean("connected")}\n
-                                        connserver: ${rs.getString("connserver")}\n
-                                        permission: ${rs.getString("permission")}\n
-                                        mute: ${rs.getBoolean("mute")}\n
-                                        alert: ${rs.getBoolean("alert")}\n
-                                        udid: ${rs.getLong("udid")}\n
-                                        accountid: ${rs.getString("accountid")}
-                                        """)
-                                } else {
-                                    Log.info("player.not-found")
-                                }
-                            }
-                        }
-                    } catch(e: SQLException) {
-                        CrashReport(e)
+                    val data = PlayerCore.load(p.id, null)
+                    val bundle = Bundle()
+                    val text: String
+                    if (data != null){
+                        text = """
+                        [#DEA82A]${Bundle(data)["player.info"]}[]
+                        [#2B60DE]====================================[]
+                        [green]${bundle["player.name"]}[] : ${data.name}[white]
+                        [green]${bundle["player.uuid"]}[] : ${data.uuid}[white]
+                        [green]${bundle["player.country"]}[] : ${CountryCode.getByAlpha3Code(data.countryCode).toLocale().displayCountry}
+                        [green]${bundle["player.placecount"]}[] : ${data.placecount}
+                        [green]${bundle["player.breakcount"]}[] : ${data.breakcount}
+                        [green]${bundle["player.joincount"]}[] : ${data.joincount}
+                        [green]${bundle["player.kickcount"]}[] : ${data.kickcount}
+                        [green]${bundle["player.level"]}[] : ${data.level}
+                        [green]${bundle["player.reqtotalexp"]}[] : ${Exp[data]}
+                        [green]${bundle["player.joindate"]}[] : ${
+                            Tool.longToDateTime(data.joinDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                        [green]${bundle["player.lastdate"]}[] : ${
+                            Tool.longToDateTime(data.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                        [green]${bundle["player.playtime"]}[] : ${Tool.longToTime(data.playtime)}
+                        [green]${bundle["player.attackclear"]}[] : ${data.attackclear}
+                        [green]${bundle["player.pvpwincount"]}[] : ${data.pvpwincount}
+                        [green]${bundle["player.pvplosecount"]}[] : ${data.pvplosecount}
+                        """.trimIndent()
+                    } else {
+                        text = bundle["player.not-found"]
                     }
+                    Log.info(text)
                 }
             }
         }
