@@ -7,7 +7,6 @@ import arc.util.Strings
 import arc.util.Tmp
 import arc.util.async.Threads
 import com.neovisionaries.i18n.CountryCode
-import essentials.PlayerData
 import essentials.PluginData
 import essentials.command.ClientCommand.Command.Ch
 import essentials.command.ClientCommand.Command.Changepw
@@ -241,27 +240,27 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                         """.trimIndent()
                     } else if (arg.isNotEmpty() && Groups.player.find { it.name.contains(arg[0]) } != null && player.admin()) {
                         val player = Groups.player.find { it.name.contains(arg[0]) }
-                        val data = PluginData[player.uuid()]
+                        val otherData = PluginData[player.uuid()]
                         datatext = """
-                        [#DEA82A]${Bundle(data)["player.info"]}[]
+                        [#DEA82A]${Bundle(otherData)["player.info"]}[]
                         [#2B60DE]====================================[]
                         [green]${bundle["player.name"]}[] : ${player.name()}[white]
-                        [green]${bundle["player.uuid"]}[] : ${data!!.uuid}[white]
-                        [green]${bundle["player.country"]}[] : ${CountryCode.getByAlpha3Code(data.countryCode).toLocale().displayCountry}
-                        [green]${bundle["player.placecount"]}[] : ${data.placecount}
-                        [green]${bundle["player.breakcount"]}[] : ${data.breakcount}
-                        [green]${bundle["player.joincount"]}[] : ${data.joincount}
-                        [green]${bundle["player.kickcount"]}[] : ${data.kickcount}
-                        [green]${bundle["player.level"]}[] : ${data.level}
-                        [green]${bundle["player.reqtotalexp"]}[] : ${Exp[data]}
+                        [green]${bundle["player.uuid"]}[] : ${otherData!!.uuid}[white]
+                        [green]${bundle["player.country"]}[] : ${CountryCode.getByAlpha3Code(otherData.countryCode).toLocale().displayCountry}
+                        [green]${bundle["player.placecount"]}[] : ${otherData.placecount}
+                        [green]${bundle["player.breakcount"]}[] : ${otherData.breakcount}
+                        [green]${bundle["player.joincount"]}[] : ${otherData.joincount}
+                        [green]${bundle["player.kickcount"]}[] : ${otherData.kickcount}
+                        [green]${bundle["player.level"]}[] : ${otherData.level}
+                        [green]${bundle["player.reqtotalexp"]}[] : ${Exp[otherData]}
                         [green]${bundle["player.joindate"]}[] : ${
-                            Tool.longToDateTime(data.joinDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                            Tool.longToDateTime(otherData.joinDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
                         [green]${bundle["player.lastdate"]}[] : ${
-                            Tool.longToDateTime(data.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                        [green]${bundle["player.playtime"]}[] : ${Tool.longToTime(data.playtime)}
-                        [green]${bundle["player.attackclear"]}[] : ${data.attackclear}
-                        [green]${bundle["player.pvpwincount"]}[] : ${data.pvpwincount}
-                        [green]${bundle["player.pvplosecount"]}[] : ${data.pvplosecount}
+                            Tool.longToDateTime(otherData.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                        [green]${bundle["player.playtime"]}[] : ${Tool.longToTime(otherData.playtime)}
+                        [green]${bundle["player.attackclear"]}[] : ${otherData.attackclear}
+                        [green]${bundle["player.pvpwincount"]}[] : ${otherData.pvpwincount}
+                        [green]${bundle["player.pvplosecount"]}[] : ${otherData.pvplosecount}
                         """.trimIndent()
                     }
                     Call.infoMessage(player.con(), datatext)
