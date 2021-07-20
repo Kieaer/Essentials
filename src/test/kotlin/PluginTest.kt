@@ -1,5 +1,6 @@
 import arc.ApplicationCore
 import arc.Core
+import arc.Events
 import arc.Settings
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
@@ -9,11 +10,14 @@ import com.github.javafaker.Faker
 import essentials.Main
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
+import mindustry.Vars.world
+import mindustry.content.Items
 import mindustry.core.FileTree
 import mindustry.core.GameState
 import mindustry.core.Logic
 import mindustry.core.NetServer
 import mindustry.core.Version
+import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -21,6 +25,7 @@ import mindustry.gen.Playerc
 import mindustry.maps.Map
 import mindustry.net.Net
 import mindustry.net.NetConnection
+import mindustry.world.Tile
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.BeforeClass
@@ -166,6 +171,35 @@ class PluginTest {
             assertNotNull(player) //assertNotNull(player.unit())
             return player
         }
+    }
+
+    fun randomTile(): Tile {
+        val random = Random()
+        return world.tile(random.nextInt(100), random.nextInt(100))
+    }
+
+    @Test
+    fun events(){
+        val random = Random()
+        Events.fire(EventType.ServerLoadEvent())
+
+        Events.fire(EventType.PlayerConnect(player.self()))
+        Events.fire(EventType.PlayerJoin(player.self()))
+
+        Events.fire(EventType.ConfigEvent(randomTile().build, player.self(), random.nextInt(5)))
+        Events.fire(EventType.TapEvent(player.self(), randomTile()))
+        Events.fire(EventType.WithdrawEvent(randomTile().build, player.self(), Items.coal, random.nextInt(30)))
+        Events.fire(EventType.GameOverEvent(Team.sharded))
+
+        player.unit().addItem(Items.copper, 30)
+        //Events.fire(EventType.DepositEvent(randomTile().build, player.self(), Items.copper, 30))
+        Events.fire(EventType.PlayerChatEvent(player.self(), "안녕"))
+        Events.fire(EventType.BlockBuildEndEvent(randomTile(), player.unit(), Team.sharded, false, null))
+        Events.fire(EventType.BlockBuildEndEvent(randomTile(), player.unit(), Team.sharded, true, null))
+        Events.fire(EventType.BuildSelectEvent(randomTile(), Team.crux, player.unit(), false))
+        Events.fire(EventType.BuildSelectEvent(randomTile(), Team.crux, player.unit(), true))
+
+        Events.fire(EventType.PlayerLeave(player.self()))
     }
 
     @Test

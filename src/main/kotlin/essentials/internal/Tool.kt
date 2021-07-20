@@ -31,6 +31,7 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.SocketException
 import java.net.URL
+import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.sql.Timestamp
@@ -147,10 +148,16 @@ object Tool {
         if(data == null) return Config.locale
         val ip = if(data is Playerc) netServer.admins.getInfo(data.uuid()).lastIP else (data as String?)!!
 
-        val addr = InetAddress.getByName(ip)
-        val local = if(addr.isAnyLocalAddress || addr.isLoopbackAddress) true else try {
-            NetworkInterface.getByInetAddress(addr) != null
+        val local = try {
+            val addr = InetAddress.getByName(ip)
+            if(addr.isAnyLocalAddress || addr.isLoopbackAddress) {
+                true
+            } else {
+                NetworkInterface.getByInetAddress(addr) != null
+            }
         } catch(e: SocketException) {
+            false
+        } catch(e: UnknownHostException) {
             false
         }
 
