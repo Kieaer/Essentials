@@ -22,7 +22,7 @@ object Config : Configs() {
     private var bundle: Bundle = Bundle(locale)
 
     /** 통신 모드 */
-    var networkMode = NetworkMode.Client
+    var networkMode = NetworkMode.Disabled
 
     /** 서버 주소 */
     var networkAddress: String = "127.0.0.1:5000"
@@ -97,7 +97,7 @@ object Config : Configs() {
     }
 
     enum class NetworkMode {
-        Server, Client
+        Server, Client, Disabled
     }
 
     override fun createFile() {

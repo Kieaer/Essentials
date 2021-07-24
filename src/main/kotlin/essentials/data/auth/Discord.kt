@@ -19,8 +19,6 @@ object Discord {
     init {
         if(Config.discordBotToken.isNotEmpty() && Config.discordChannelToken.isNotEmpty()) {
             catnip = Catnip.catnip(Config.discordBotToken)
-        } else {
-            Log.info("discord.disabled")
         }
     }
 
@@ -152,6 +150,9 @@ object Discord {
     }*/
 
     fun shutdownNow() {
-        if(Discord::catnip.isInitialized) catnip.shutdown()
+        if(Discord::catnip.isInitialized) {
+            catnip.shutdown()
+            Log.info("discord.disabled")
+        }
     }
 }
