@@ -45,6 +45,8 @@ tasks.jar {
         exclude("**/META-INF/*.RSA")
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    finalizedBy(tasks.getByName("copy"))
 }
 
 tasks.jacocoTestReport {
@@ -58,6 +60,10 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
 }
 
+tasks.register<Copy>("copy") {
+    from("$buildDir/libs/Essentials.jar")
+    into("C:/Users/cloud/OneDrive/바탕 화면/server/config/mods")
+}
 
 sourceSets{
     test{
