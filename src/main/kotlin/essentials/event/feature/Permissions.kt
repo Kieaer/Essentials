@@ -107,14 +107,17 @@ object Permissions {
         } else {
             Log.warn("system.file-not-found", "permission.hjson")
         }
+
         if(userFile.exists()) {
             try {
                 user = JsonValue.readHjson(userFile.reader()).asObject()
 
                 // KR-Plugin 하위 호환
                 user.forEach {
-                    val orignal = it.value.asObject().getString("prefix", "%1[orange] >[white] %2")
-                    it.value.asObject().set("chatFormat", orignal)
+                    if (it.value.asObject().has("prefix")) {
+                        val original = it.value.asObject().getString("prefix", "%1[orange] >[white] %2")
+                        it.value.asObject().set("chatFormat", original)
+                    }
                 }
 
                 for(p in Groups.player) {
