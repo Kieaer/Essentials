@@ -25,39 +25,28 @@ object ServerCommand {
 
     fun register(handler: CommandHandler) {
         handler.register("gendocs", "Generate Essentials README.md") {
-            val server = "## Server commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-            val client = "## Client commands\n\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+            val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+            val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
             val time = "README.md Generated time: ${
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())
             }"
             Log.info("readme-generating")
             var result = StringBuilder()
 
-            for(a in 0 until Vars.netServer.clientCommands.commandList.size) {
-                val command = Vars.netServer.clientCommands.commandList[a]
-                var duplicate = false
-                for(b in ClientCommand.commands.commandList) {
-                    if(command.text == b.text) {
-                        duplicate = true
-                        break
-                    }
-                }
-
-                if(!duplicate) {
-                    val temp = "| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"
-                    result.append(temp)
-                }
-            }
-
-            val tmp = "$client$result"
-
-            result = StringBuilder()
-            for(command in commands.commandList) {
-                val temp = "| ${command.text} | ${StringUtils.encodeHtml(command.paramText)} | ${command.description} |"
+            for(b in ClientCommand.commands.commandList) {
+                val temp = "| ${b.text} | ${StringUtils.encodeHtml(b.paramText)} | ${b.description} |\n"
                 result.append(temp)
             }
 
-            Main.pluginRoot.child("README.md").writeString("$tmp$server$result$time")
+            val tmp = "$client$result\n\n"
+
+            result.clear()
+            for(c in commands.commandList) {
+                val temp = "| ${c.text} | ${StringUtils.encodeHtml(c.paramText)} | ${c.description} |\n"
+                result.append(temp)
+            }
+
+            Main.pluginRoot.child("README.md").writeString("$tmp$server$result\n\n\n$time")
             Log.info("readme-generated")
         }
         handler.register("lobby", "Toggle lobby server features") {
