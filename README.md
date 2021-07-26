@@ -27,56 +27,43 @@ Please submit your idea to this repository issues or Mindustry official discord!
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 ## Client commands
-
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| alert |  | Turn on/off alerts |
 | ch |  | Send chat to another server. |
 | changepw | &lt;new_password&gt; &lt;new_password_repeat&gt; | Change account password |
 | chars | &lt;Text...&gt; | Make pixel texts |
 | color |  | Enable color nickname |
-| difficulty | &lt;difficulty&gt; | Set server difficulty |
 | killall |  | Kill all enemy units |
-| event | &lt;host/join&gt; &lt;roomname&gt; [map] [gamemode] | Host your own server |
+| help | [page] | Show command lists |
 | info |  | Show your information |
 | warp | &lt;zone/block/count/total&gt; [ip] [parameters...] | Create a server-to-server warp zone. |
-| kickall |  | Kick all players |
 | kill | [player] | Kill player. |
 | login | &lt;id&gt; &lt;password&gt; | Access your account |
-| logout |  | Log-out of your account. |
 | maps | [page] | Show server maps |
 | me | &lt;text...&gt; | broadcast * message |
 | motd |  | Show server motd. |
+| players | [page] | Show players list |
 | save |  | Auto rollback map early save |
-| r | &lt;player&gt; [message] | Send Direct message to target player |
-| reset | &lt;zone/count/total/block&gt; [ip] | Remove a server-to-server warp zone data. |
 | router |  | Router |
-| register | &lt;accountid&gt; &lt;password&gt; | Register account |
-| spawn | &lt;mob_name&gt; &lt;count&gt; [team] [playerName] | Spawn mob in player position |
-| setperm | &lt;player_name&gt; &lt;group&gt; | Set player permission |
-| spawn-core | &lt;smail/normal/big&gt; | Make new core |
-| setmech | &lt;Mech&gt; [player] | Set player mech |
+| register |  | Register account |
+| spawn | &lt;unit/block&gt; &lt;name&gt; [amount/rotate] | Spawn mob in player position |
 | status |  | Show server status |
-| suicide |  | Kill yourself. |
 | team | &lt;team_name&gt; | Change team |
-| tempban | &lt;player&gt; &lt;time&gt; &lt;reason&gt; | Temporarily ban player. time unit: 1 minute |
 | time |  | Show server time |
 | tp | &lt;player&gt; | Teleport to other players |
-| tpp | &lt;source&gt; &lt;target&gt; | Teleport to other players |
-| tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
-| vote | &lt;mode&gt; [parameter...] | Voting system (Use /vote to check detail commands) |
-| weather | &lt;day/eday/night/enight&gt; | Change map light |
+| weather | &lt;rain/snow/sandstorm/sporestorm&gt; &lt;seconds&gt; | Change map light |
 | mute | &lt;Player_name&gt; | Mute/unmute player |
 
 ## Server commands
-
 | Command | Parameter | Description |
 |:---|:---|:--- |
+| gendocs |  | Generate Essentials README.md |
 | lobby |  | Toggle lobby server features |
-| edit | &lt;uuid&gt; &lt;name&gt; [value] | Edit PlayerData directly |
-| saveall |  | desc |
+| saveall |  | Manually save all plugin data |
 | bansync |  | Synchronize ban list with server |
-| setperm | &lt;player_name/uuid&gt; &lt;group&gt; | Set player permission |
+| info | &lt;player/uuid&gt; | Show player information |
 | reload |  | Reload Essential plugin data |
+| blacklist |  | <add/remove> [name] |
+| debug | &lt;code&gt; | Debug message. plugin developer only. |
 
-README.md Generated time: 2020-07-29 23:09:08
+README.md Generated time: 2021-07-26 19:53:49
