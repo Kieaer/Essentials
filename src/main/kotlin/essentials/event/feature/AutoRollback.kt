@@ -1,5 +1,6 @@
 package essentials.event.feature
 
+import arc.Core
 import arc.struct.Seq
 import arc.struct.Seq.SeqIterable
 import essentials.internal.CrashReport
@@ -18,11 +19,13 @@ import java.util.*
 
 object AutoRollback : TimerTask() {
     fun save() {
-        try {
-            val file = Vars.saveDirectory.child("rollback.${Vars.saveExtension}")
-            if(Vars.state.`is`(GameState.State.playing)) SaveIO.save(file)
-        } catch(e: Exception) {
-            CrashReport(e)
+        Core.app.post {
+            try {
+                val file = Vars.saveDirectory.child("rollback.${Vars.saveExtension}")
+                if (Vars.state.`is`(GameState.State.playing)) SaveIO.save(file)
+            } catch (e: Exception) {
+                CrashReport(e)
+            }
         }
     }
 

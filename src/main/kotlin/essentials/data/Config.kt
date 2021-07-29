@@ -1,5 +1,6 @@
 package essentials.data
 
+import com.neovisionaries.i18n.CountryCode
 import essentials.Main.Companion.pluginRoot
 import essentials.form.Configs
 import essentials.form.Garbage.EqualsIgnoreCase
@@ -102,7 +103,7 @@ object Config : Configs() {
 
     override fun createFile() {
         if(!configFile.exists()) {
-            obj = JsonObject().add("language", Locale.getDefault().isO3Language)
+            obj = JsonObject().add("language", Locale.getDefault().isO3Country)
             save()
         } else {
             obj = JsonValue.readHjson(configFile.readString()).asObject()
@@ -111,7 +112,7 @@ object Config : Configs() {
     }
 
     override fun save() {
-        locale = Tool.textToLocale(obj.getString("language", locale.toString()))
+        locale = CountryCode.getByAlpha3Code(obj.getString("language", locale.toString())).toLocale()
         bundle = Bundle(locale)
         val config = JsonObject()
         val settings = JsonObject()
@@ -122,7 +123,7 @@ object Config : Configs() {
         val auth = JsonObject()
         val discord = JsonObject()
 
-        config.add("langauge", locale.isO3Country)
+        config.add("language", locale.isO3Country)
 
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
@@ -175,13 +176,7 @@ object Config : Configs() {
 
     override fun load() {
         val settings: JsonObject = obj["settings"].asObject()
-        val lc = settings.getString("language", System.getProperty("user.language") + "_" + System.getProperty("user.country")).split(",").toTypedArray()[0]
-        locale = if(lc.split("_").toTypedArray().size == 2) {
-            val array = lc.split("_").toTypedArray()
-            Locale(array[0], array[1])
-        } else {
-            Locale(System.getProperty("user.language") + "_" + System.getProperty("user.country"))
-        }
+        locale = CountryCode.getByAlpha3Code(settings.getString("language", Locale.getDefault().isO3Country)).toLocale()
 
         logging = settings.getBoolean("logging", true)
         update = settings.getBoolean("update", true)

@@ -88,10 +88,10 @@ class Main : Plugin() {
         Permissions.reload(true)
 
         // 스레드 시작
-        mainThread.submit(TriggerThread)
         mainThread.submit(Threads)
         mainThread.submit(RainbowName)
         timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())
+        timer.scheduleAtFixedRate(TriggerThread, 1000L, 1000L)
         mainThread.submit(PermissionWatch)
 
         // DB 연결
