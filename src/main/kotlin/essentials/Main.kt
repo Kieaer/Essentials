@@ -44,7 +44,8 @@ class Main : Plugin() {
     }
 
     init {
-        checkServerVersion()
+        // 지금은 필요없음
+        // checkServerVersion()
 
         try {
             val file = pluginRoot.child("data/IP2LOCATION-LITE-DB1.BIN.ZIP")
