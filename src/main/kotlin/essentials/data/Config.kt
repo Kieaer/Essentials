@@ -5,13 +5,10 @@ import essentials.Main.Companion.pluginRoot
 import essentials.form.Configs
 import essentials.form.Garbage.EqualsIgnoreCase
 import essentials.internal.Bundle
-import essentials.internal.Tool
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 object Config : Configs() {
@@ -81,9 +78,6 @@ object Config : Configs() {
 
     /** 자동 오류보고 기능 */
     var crashReport = false
-
-    /** 자동 저장간격 */
-    var saveTime = LocalTime.of(0, 10)
 
     /* 맵 밖으로 나가면 사망 판정 설정 */
     var border = false
@@ -157,7 +151,6 @@ object Config : Configs() {
         features.add("blockEXP", blockEXP, bundle["config.feature.exp.limit"])
         features.add("levelupalarm", levelUpAlarm, bundle["config.feature.exp.levelup-alarm"])
         features.add("vote", vote, bundle["config.feature.vote"])
-        features.add("savetime", saveTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")), bundle["config.feature.save-time"])
         features.add("border", border, bundle["config.feature.border"])
         features.add("spawnlimit", spawnLimit, bundle["config.feature.spawn-limit"])
         features.add("afktime", afktime, bundle["config.feature.afktime"])
@@ -202,7 +195,6 @@ object Config : Configs() {
         blockEXP = features.getBoolean("explimit", false)
         levelUpAlarm = features.getBoolean("levelupalarm", false)
         vote = features.getBoolean("vote", true)
-        saveTime = LocalTime.parse(features.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"))
         border = features.getBoolean("border", false)
         spawnLimit = features.getInt("spawnlimit", 500)
         afktime = features.getInt("afktime", 0)
