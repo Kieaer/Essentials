@@ -74,30 +74,32 @@ object ServerCommand {
                     val text: String
                     if (data != null){
                         text = """
-                        [#DEA82A]${Bundle(data)["player.info"]}[]
-                        [#2B60DE]====================================[]
-                        [green]${bundle["player.name"]}[] : ${data.name}[white]
-                        [green]${bundle["player.uuid"]}[] : ${data.uuid}[white]
-                        [green]${bundle["player.country"]}[] : ${CountryCode.getByAlpha3Code(data.countryCode).toLocale().displayCountry}
-                        [green]${bundle["player.placecount"]}[] : ${data.placecount}
-                        [green]${bundle["player.breakcount"]}[] : ${data.breakcount}
-                        [green]${bundle["player.joincount"]}[] : ${data.joincount}
-                        [green]${bundle["player.kickcount"]}[] : ${data.kickcount}
-                        [green]${bundle["player.level"]}[] : ${data.level}
-                        [green]${bundle["player.reqtotalexp"]}[] : ${Exp[data]}
-                        [green]${bundle["player.joindate"]}[] : ${
+                        ${Bundle(data)["player.info"]}
+                        ====================================
+                        ${bundle["player.name"]}[] : ${data.name}
+                        ${bundle["player.uuid"]}[] : ${data.uuid}
+                        ${bundle["player.country"]}[] : ${CountryCode.getByAlpha3Code(data.countryCode).toLocale().displayCountry}
+                        ${bundle["player.placecount"]}[] : ${data.placecount}
+                        ${bundle["player.breakcount"]}[] : ${data.breakcount}
+                        ${bundle["player.joincount"]}[] : ${data.joincount}
+                        ${bundle["player.kickcount"]}[] : ${data.kickcount}
+                        ${bundle["player.level"]}[] : ${data.level}
+                        ${bundle["player.reqtotalexp"]}[] : ${Exp[data]}
+                        ${bundle["player.joindate"]}[] : ${
                             Tool.longToDateTime(data.joinDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                        [green]${bundle["player.lastdate"]}[] : ${
+                        ${bundle["player.lastdate"]}[] : ${
                             Tool.longToDateTime(data.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                        [green]${bundle["player.playtime"]}[] : ${Tool.longToTime(data.playtime)}
-                        [green]${bundle["player.attackclear"]}[] : ${data.attackclear}
-                        [green]${bundle["player.pvpwincount"]}[] : ${data.pvpwincount}
-                        [green]${bundle["player.pvplosecount"]}[] : ${data.pvplosecount}
+                        ${bundle["player.playtime"]}[] : ${Tool.longToTime(data.playtime)}
+                        ${bundle["player.attackclear"]}[] : ${data.attackclear}
+                        ${bundle["player.pvpwincount"]}[] : ${data.pvpwincount}
+                        ${bundle["player.pvplosecount"]}[] : ${data.pvplosecount}
                         """.trimIndent()
                     } else {
                         text = bundle["player.not-found"]
                     }
-                    Log.info(text)
+
+                    val result = text.split(System.getProperty("line.separator"))
+                    for(a in result) Log.info(a)
                 }
             }
         }
