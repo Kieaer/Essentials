@@ -31,7 +31,7 @@ object ServerCommand {
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())
             }"
             Log.info("readme-generating")
-            var result = StringBuilder()
+            val result = StringBuilder()
 
             for(b in ClientCommand.commands.commandList) {
                 val temp = "| ${b.text} | ${StringUtils.encodeHtml(b.paramText)} | ${b.description} |\n"
@@ -74,32 +74,29 @@ object ServerCommand {
                     val text: String
                     if (data != null){
                         text = """
-                        ${Bundle(data)["player.info"]}
                         ====================================
-                        ${bundle["player.name"]}[] : ${data.name}
-                        ${bundle["player.uuid"]}[] : ${data.uuid}
-                        ${bundle["player.country"]}[] : ${CountryCode.getByAlpha3Code(data.countryCode).toLocale().displayCountry}
-                        ${bundle["player.placecount"]}[] : ${data.placecount}
-                        ${bundle["player.breakcount"]}[] : ${data.breakcount}
-                        ${bundle["player.joincount"]}[] : ${data.joincount}
-                        ${bundle["player.kickcount"]}[] : ${data.kickcount}
-                        ${bundle["player.level"]}[] : ${data.level}
-                        ${bundle["player.reqtotalexp"]}[] : ${Exp[data]}
-                        ${bundle["player.joindate"]}[] : ${
+                        ${bundle["player.name"]}: ${data.name}
+                        ${bundle["player.uuid"]}: ${data.uuid}
+                        ${bundle["player.country"]}: ${if(CountryCode.getByAlpha3Code(data.countryCode) != null) CountryCode.getByAlpha3Code(data.countryCode).toLocale().displayCountry else "Data not found"}
+                        ${bundle["player.placecount"]}: ${data.placecount}
+                        ${bundle["player.breakcount"]}: ${data.breakcount}
+                        ${bundle["player.joincount"]}: ${data.joincount}
+                        ${bundle["player.kickcount"]}: ${data.kickcount}
+                        ${bundle["player.level"]}: ${data.level}
+                        ${bundle["player.reqtotalexp"]}: ${Exp[data]}
+                        ${bundle["player.joindate"]}: ${
                             Tool.longToDateTime(data.joinDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                        ${bundle["player.lastdate"]}[] : ${
+                        ${bundle["player.lastdate"]}: ${
                             Tool.longToDateTime(data.lastdate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                        ${bundle["player.playtime"]}[] : ${Tool.longToTime(data.playtime)}
-                        ${bundle["player.attackclear"]}[] : ${data.attackclear}
-                        ${bundle["player.pvpwincount"]}[] : ${data.pvpwincount}
-                        ${bundle["player.pvplosecount"]}[] : ${data.pvplosecount}
+                        ${bundle["player.playtime"]}: ${Tool.longToTime(data.playtime)}
+                        ${bundle["player.attackclear"]}: ${data.attackclear}
+                        ${bundle["player.pvpwincount"]}: ${data.pvpwincount}
+                        ${bundle["player.pvplosecount"]}: ${data.pvplosecount}
                         """.trimIndent()
-                    } else {
-                        text = bundle["player.not-found"]
-                    }
 
-                    val result = text.split(System.getProperty("line.separator"))
-                    for(a in result) Log.info(a)
+                        val result = text.lines()
+                        for(a in result) Log.info(a)
+                    }
                 }
             }
         }
