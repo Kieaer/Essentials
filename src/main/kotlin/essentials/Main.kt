@@ -21,7 +21,6 @@ import essentials.internal.Tool
 import essentials.network.Client
 import essentials.network.Server
 import essentials.thread.PermissionWatch
-import essentials.thread.TriggerThread
 import mindustry.Vars.netServer
 import mindustry.core.Version
 import mindustry.mod.Plugin
@@ -89,7 +88,6 @@ class Main : Plugin() {
         // 스레드 시작
         mainThread.submit(Threads)
         mainThread.submit(RainbowName)
-        timer.scheduleAtFixedRate(TriggerThread, 1000L, 1000L)
         mainThread.submit(PermissionWatch)
 
         // DB 연결
