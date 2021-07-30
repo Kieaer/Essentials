@@ -11,15 +11,20 @@ import essentials.event.feature.VoteType.Map
 import essentials.event.feature.VoteType.Rollback
 import essentials.event.feature.VoteType.Skipwave
 import essentials.internal.Bundle
+import essentials.internal.CrashReport
 import essentials.internal.Log
 import essentials.internal.Log.LogType
 import essentials.internal.Tool
 import mindustry.Vars
+import mindustry.core.GameState
 import mindustry.game.EventType.GameOverEvent
+import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.gen.Playerc
+import mindustry.io.SaveIO
 import mindustry.net.Packets
 
 class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
@@ -120,12 +125,12 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
                 Rollback -> {
                     Log.info("Vote rollback passed!")
                     Tool.sendMessageAll("vote.rollback.done")
-                    AutoRollback.load()
+                    worldLoad()
                 }
                 Map -> {
                     Log.info("Vote map passed!")
                     Tool.sendMessageAll("vote.map.done")
-                    AutoRollback.load(map)
+                    worldLoad(map)
                     Tool.sendMessageAll("vote.map.done")
                 }
             }
@@ -151,6 +156,57 @@ class Vote(val player: Playerc, val type: VoteType, vararg val arg: String) {
         if(voted.size >= require) {
             interrupt()
             success(voted.size >= require)
+        }
+    }
+
+    private fun worldLoad() {
+        val players = Seq<Player>()
+        for(p in Groups.player) {
+            players.add(p)
+            p.dead()
+        }
+        Vars.logic.reset()
+        Call.worldDataBegin()
+        try {
+            val file = Vars.saveDirectory.child("rollback.${Vars.saveExtension}")
+            SaveIO.load(file)
+            Vars.logic.play()
+            for(p in players) {
+                if(p.con() == null) continue
+                p.reset()
+                if(Vars.state.rules.pvp) {
+                    p.team(Vars.netServer.assignTeam(p, Seq.SeqIterable(players)))
+                }
+                Vars.netServer.sendWorldData(p)
+            }
+        } catch(e: SaveIO.SaveException) {
+            CrashReport(e)
+        }
+        Log.info("Map rollbacked.")
+        if(Vars.state.`is`(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.")
+    }
+
+    private fun worldLoad(map: mindustry.maps.Map?) {
+        val players = Seq<Player>()
+        for(p in Groups.player) {
+            players.add(p)
+            p.dead()
+        }
+        Vars.logic.reset()
+        Call.worldDataBegin()
+        try {
+            Vars.world.loadMap(map, map!!.applyRules(Gamemode.survival)) //SaveIO.load(map.file);
+            Vars.logic.play()
+            for(p in players) {
+                if(p.con() == null) continue
+                p.reset()
+                if(Vars.state.rules.pvp) {
+                    p.team(Vars.netServer.assignTeam(p, Seq.SeqIterable(players)))
+                }
+                Vars.netServer.sendWorldData(p)
+            }
+        } catch(e: SaveIO.SaveException) {
+            CrashReport(e)
         }
     }
 }

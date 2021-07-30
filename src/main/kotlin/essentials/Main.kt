@@ -10,9 +10,8 @@ import essentials.data.Config
 import essentials.data.DB
 import essentials.data.Files
 import essentials.data.PlayerCore
-import essentials.event.Event
-import essentials.event.feature.AutoRollback
 import essentials.data.auth.Discord
+import essentials.event.Event
 import essentials.event.feature.Permissions
 import essentials.event.feature.RainbowName
 import essentials.internal.CrashReport
@@ -90,7 +89,6 @@ class Main : Plugin() {
         // 스레드 시작
         mainThread.submit(Threads)
         mainThread.submit(RainbowName)
-        timer.scheduleAtFixedRate(AutoRollback, Config.saveTime.toSecondOfDay().toLong(), Config.saveTime.toSecondOfDay().toLong())
         timer.scheduleAtFixedRate(TriggerThread, 1000L, 1000L)
         mainThread.submit(PermissionWatch)
 
