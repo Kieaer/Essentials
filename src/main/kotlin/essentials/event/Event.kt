@@ -9,8 +9,9 @@ import essentials.PluginData
 import essentials.data.Config
 import essentials.data.DB
 import essentials.data.PlayerCore
-import essentials.eof.sendMessage
 import essentials.data.auth.Discord
+import essentials.eof.sendMessage
+import essentials.event.feature.Exp
 import essentials.event.feature.Permissions
 import essentials.external.IpAddressMatcher
 import essentials.internal.Bundle
@@ -24,24 +25,7 @@ import mindustry.content.Blocks
 import mindustry.core.GameState
 import mindustry.core.NetClient
 import mindustry.game.EventType
-import mindustry.game.EventType.BlockBuildEndEvent
-import mindustry.game.EventType.BuildSelectEvent
-import mindustry.game.EventType.ConfigEvent
-import mindustry.game.EventType.DepositEvent
-import mindustry.game.EventType.GameOverEvent
-import mindustry.game.EventType.PlayerBanEvent
-import mindustry.game.EventType.PlayerChatEvent
-import mindustry.game.EventType.PlayerConnect
-import mindustry.game.EventType.PlayerIpBanEvent
-import mindustry.game.EventType.PlayerIpUnbanEvent
-import mindustry.game.EventType.PlayerJoin
-import mindustry.game.EventType.PlayerLeave
-import mindustry.game.EventType.PlayerUnbanEvent
-import mindustry.game.EventType.ServerLoadEvent
-import mindustry.game.EventType.TapEvent
-import mindustry.game.EventType.UnitDestroyEvent
-import mindustry.game.EventType.WithdrawEvent
-import mindustry.game.EventType.WorldLoadEvent
+import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
@@ -53,10 +37,14 @@ import org.hjson.JsonValue
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 import kotlin.math.abs
 
 object Event {
+    var tick: Int = 0
+
     fun register() { // 플레이어가 블록에 대해 어떠한 설정을 했을 때 작동
         Events.on(ConfigEvent::class.java) {
             if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) { // Source by BasedUser(router)
@@ -226,8 +214,7 @@ object Event {
                     if (playerData != null) {
                         PlayerCore.playerLoad(it.player, null)
                     } else {
-                        val message: String?
-                        message = if (Config.authType == Config.AuthType.Discord) {
+                        val message = if (Config.authType == Config.AuthType.Discord) {
                             Bundle(locale)["system.login.require.discord"]
                         } else {
                             Bundle(locale)["system.login.require.password"]
@@ -281,7 +268,7 @@ object Event {
         }
 
         // 플레이어가 서버에서 나갔을 때 작동
-        Events.on(PlayerLeave::class.java) {
+        Events.on(PlayerLeave::class.java) { it ->
             Log.write(Log.LogType.Player, "log.player.leave", it.player.name, it.player.uuid(), it.player.con.address)
             val player = PluginData[it.player.uuid()]
             if (player != null) {
@@ -316,11 +303,11 @@ object Event {
                         }
                     } else {
                         if (!playerData.mute && playerData.crosschat) {
-                            when {
-                                Config.networkMode == Config.NetworkMode.Client -> {
+                            when (Config.networkMode) {
+                                Config.NetworkMode.Client -> {
                                     if (Client.activated) Client.request(Client.Request.Chat, it.player, it.message)
                                 }
-                                Config.networkMode == Config.NetworkMode.Server -> {
+                                Config.NetworkMode.Server -> {
                                     val msg = "[" + it.player.name + "]: " + it.message
                                     try {
                                         for (ser in Server.list) {
@@ -562,6 +549,84 @@ object Event {
         }
 
         Events.on(EventType.Trigger.update::class.java) {
+            if(tick >= 60){
+                PluginData.uptime = PluginData.uptime + 1
+
+                // 임시로 밴당한 유저 감시
+                for (a in 0 until PluginData.banned.size) {
+                    val time = LocalDateTime.now()
+                    if (time.isAfter(Tool.longToDateTime(PluginData.banned[a].time))) {
+                        PluginData.banned.remove(a)
+                        Vars.netServer.admins.unbanPlayerID(PluginData.banned[a]!!.uuid)
+                        Log.info("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + PluginData.banned[a]!!.name + "/" + PluginData.banned[a]!!.uuid + " player unbanned!")
+                        break
+                    }
+                }
+
+                // 맵이 돌아가고 있을 때
+                if (Vars.state.`is`(GameState.State.playing)) {
+                    // 맵 플탐 카운트
+                    PluginData.playtime = PluginData.playtime + 1
+
+                    // 모든 클라이언트 서버에 대한 인원 총합 카운트
+                    for (a in 0 until PluginData.warptotals.size) {
+                        var result = 0
+                        for (value in PluginData.warpcounts) result += value!!.players
+                        val str = result.toString()
+                        val digits = IntArray(str.length)
+                        for (b in str.indices) digits[b] = str[b] - '0'
+                        val tile = PluginData.warptotals[a].tile
+                        if (PluginData.warptotals[a]!!.totalplayers != result && PluginData.warptotals[a]!!.numbersize != digits.size) {
+                            for (px in 0..2) {
+                                for (py in 0..4) {
+                                    Call.deconstructFinish(Vars.world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, Nulls.unit)
+                                }
+                            }
+                        }
+                        Tool.setTileText(tile, Blocks.copperWall, result.toString())
+                        PluginData.warptotals[a] = PluginData.WarpTotal(Vars.state.map.name(), tile.pos(), result, digits.size)
+                    }
+
+                    // 플레이어 플탐 카운트 및 잠수확인
+                    for (p in Groups.player) {
+                        val target = PluginData[p.uuid()]
+                        if (target != null) {
+                            var kick = false
+
+                            // Exp 계산
+                            target.exp = target.exp++
+
+                            // 잠수 및 플레이 시간 계산
+                            target.playtime = target.playtime + 1
+                            if (target.x == p.tileX() && target.y == p.tileY()) {
+                                target.afk = target.afk + 1
+                                if (Config.afktime != 0 && Config.afktime < target.afk) {
+                                    kick = true
+                                }
+                            } else {
+                                target.afk = 0
+                            }
+                            target.x = p.tileX()
+                            target.y = p.tileY()
+                            if (!Vars.state.rules.editor) Exp[target]
+                            if (kick) Call.kick(p.con(), "AFK")
+                        }
+                    }
+                }
+
+                // 데이터 저장
+                try {
+                    PlayerCore.saveAll()
+                    PluginData.saveAll()
+                } catch (e: Exception) {
+                    CrashReport(e)
+                }
+
+                tick = 0
+            } else {
+                tick++
+            }
+
             if (Vars.state.`is`(GameState.State.playing)) {
                 if (Config.border) {
                     for (p in Groups.player) {
