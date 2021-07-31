@@ -50,7 +50,7 @@ object Event {
             if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) { // Source by BasedUser(router)
                 val entity = it.tile
                 val other = Vars.world.tile(it.value as Int)
-                val valid = other != null && other.block().hasPower
+                val valid = other != null && entity.power != null && other.block().hasPower
                 if (valid) {
                     val oldGraph = entity.power.graph
                     val newGraph = other.build.power.graph
