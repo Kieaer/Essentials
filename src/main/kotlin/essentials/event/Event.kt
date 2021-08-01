@@ -351,7 +351,7 @@ object Event {
                 val player = it.unit.player
                 val target = PluginData[player.uuid()]
 
-                if (!player.unit().isNull && target != null && it.tile.block() != null) {
+                if (!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
                     val name = it.tile.block().name
                     if (!it.breaking) {
                         Log.write(Log.LogType.Block, "log.block.place", player.name, it.tile.block().name)
