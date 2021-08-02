@@ -12,7 +12,7 @@ import org.hjson.Stringify
 import java.util.*
 
 object Config : Configs() {
-    lateinit var obj: JsonObject
+    var obj: JsonObject = JsonObject()
 
     /** 플러그인에 표시되는 언어 */
     var locale: Locale = Locale.US
@@ -97,7 +97,6 @@ object Config : Configs() {
 
     override fun createFile() {
         if(!configFile.exists()) {
-            obj = JsonObject().add("language", Locale.getDefault().isO3Country)
             save()
         } else {
             obj = JsonValue.readHjson(configFile.readString()).asObject()
@@ -106,7 +105,8 @@ object Config : Configs() {
     }
 
     override fun save() {
-        locale = CountryCode.getByAlpha3Code(obj.getString("language", locale.toString())).toLocale()
+        if(obj.has("settings")) locale = CountryCode.getByAlpha3Code(obj.get("settings").asObject().getString("language", locale.isO3Country)).toLocale()
+
         bundle = Bundle(locale)
         val config = JsonObject()
         val settings = JsonObject()
@@ -117,8 +117,6 @@ object Config : Configs() {
         val auth = JsonObject()
         val discord = JsonObject()
 
-        config.add("language", locale.isO3Country)
-
         config.add("settings", settings, bundle["config-description"])
         config.add("network", network)
         config.add("antigrief", anti)
@@ -126,6 +124,7 @@ object Config : Configs() {
         config.add("auth", auth)
 
         // 플러그인 설정
+        settings.add("language", locale.isO3Country.uppercase())
         settings.add("logging", logging, bundle["config.feature.logging"])
         settings.add("update", update, bundle["config.update"])
         settings.add("debug", debug, bundle["config.debug"])
@@ -169,7 +168,7 @@ object Config : Configs() {
 
     override fun load() {
         val settings: JsonObject = obj["settings"].asObject()
-        locale = CountryCode.getByAlpha3Code(settings.getString("language", Locale.getDefault().isO3Country)).toLocale()
+        locale = CountryCode.getByAlpha3Code(obj.get("settings").asObject().getString("language", locale.isO3Country)).toLocale()
 
         logging = settings.getBoolean("logging", true)
         update = settings.getBoolean("update", true)

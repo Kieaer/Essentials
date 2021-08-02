@@ -8,35 +8,11 @@ import arc.util.Tmp
 import arc.util.async.Threads
 import com.neovisionaries.i18n.CountryCode
 import essentials.PluginData
-import essentials.command.ClientCommand.Command.Ch
-import essentials.command.ClientCommand.Command.Changepw
-import essentials.command.ClientCommand.Command.Chars
-import essentials.command.ClientCommand.Command.Color
-import essentials.command.ClientCommand.Command.Help
-import essentials.command.ClientCommand.Command.Info
-import essentials.command.ClientCommand.Command.Kill
-import essentials.command.ClientCommand.Command.KillAll
-import essentials.command.ClientCommand.Command.Login
-import essentials.command.ClientCommand.Command.Maps
-import essentials.command.ClientCommand.Command.Me
-import essentials.command.ClientCommand.Command.Motd
-import essentials.command.ClientCommand.Command.Mute
-import essentials.command.ClientCommand.Command.Players
-import essentials.command.ClientCommand.Command.Register
-import essentials.command.ClientCommand.Command.Router
-import essentials.command.ClientCommand.Command.Save
-import essentials.command.ClientCommand.Command.Spawn
-import essentials.command.ClientCommand.Command.Status
-import essentials.command.ClientCommand.Command.Team
-import essentials.command.ClientCommand.Command.Time
-import essentials.command.ClientCommand.Command.Tp
-import essentials.command.ClientCommand.Command.Vote
-import essentials.command.ClientCommand.Command.Warp
-import essentials.command.ClientCommand.Command.Weather
+import essentials.command.ClientCommand.Command.*
 import essentials.data.Config
 import essentials.data.PlayerCore
-import essentials.eof.sendMessage
 import essentials.data.auth.Discord
+import essentials.eof.sendMessage
 import essentials.event.feature.Exp
 import essentials.event.feature.Permissions
 import essentials.event.feature.RainbowName
@@ -66,8 +42,9 @@ import kotlin.math.abs
 class ClientCommandWork(private val type: ClientCommand.Command, private val arg: Array<String>, private val player: Playerc) {
     fun run() {
         val data = PluginData[player.uuid()]
-        val locale = if(data != null) Locale(data.countryCode) else Config.locale
-        val bundle = if(data != null) Bundle(Locale(data.countryCode)) else Bundle()
+        val locale = if(data != null) CountryCode.getByAlpha3Code(data.countryCode).toLocale() else Config.locale
+        val bundle = if(Config.locale != locale) Bundle(locale) else Bundle()
+
         if(!Permissions.check(player, type.name.lowercase(Locale.getDefault()))) return
         val sendMessage = sendMessage(player, bundle)
 
@@ -218,7 +195,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                     var datatext = ""
                     if(arg.size == 0){
                         datatext = """
-                        [#DEA82A]${Bundle(data)["player.info"]}[]
+                        [#DEA82A]${bundle["player.info"]}[]
                         [#2B60DE]====================================[]
                         [green]${bundle["player.name"]}[] : ${player.name()}[white]
                         [green]${bundle["player.uuid"]}[] : ${data!!.uuid}[white]
@@ -684,7 +661,7 @@ class ClientCommandWork(private val type: ClientCommand.Command, private val arg
                     Call.setPosition(player.con(), other.x, other.y)
                 }
                 Weather -> {
-                    if(arg.isNullOrEmpty() || arg[0].toIntOrNull() !is Int) {
+                    if(arg.isEmpty() || arg[0].toIntOrNull() !is Int) {
                         sendMessage["command-invalid"]
                         return
                     }
