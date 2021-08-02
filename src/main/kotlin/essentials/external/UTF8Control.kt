@@ -7,7 +7,7 @@ import java.util.*
 // Source from https://stackoverflow.com/questions/4659929/how-to-use-utf-8-in-resource-properties-with-resourcebundle
 class UTF8Control : ResourceBundle.Control() {
     override fun getFallbackLocale(aBaseName: String, aLocale: Locale): Locale {
-        return Locale.getDefault()
+        return Locale.US
     }
 
     override fun newBundle(baseName: String, locale: Locale, format: String, loader: ClassLoader, reload: Boolean): ResourceBundle { // The below is a copy of the default implementation.
