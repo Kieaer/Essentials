@@ -145,12 +145,10 @@ class Main : Plugin() {
                         Client.request(Client.Request.Exit, null, null)
                         Log.info("client.shutdown")
                     }
+                    Client.shutdown()
 
-                    if(Server.isSocketInitialized() || Client.socket.isClosed || !DB.database.isClosed) {
-                        Log.info("thread-disable-waiting")
-                    } else {
-                        Log.warn("thread-not-dead")
-                    }
+                    //if(Server.isSocketInitialized() || Client.isSocketInitialized())Log.info("thread-disable-waiting")
+                    //Log.warn("thread-not-dead")
                 } catch(e: Exception) {
                     CrashReport(e)
                     exitProcess(1) // 오류로 인한 강제 종료

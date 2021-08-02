@@ -8,9 +8,7 @@ import com.neovisionaries.i18n.CountryCode
 import essentials.Main.Companion.pluginRoot
 import essentials.PluginData
 import essentials.data.Config
-import mindustry.Vars.content
-import mindustry.Vars.netServer
-import mindustry.Vars.world
+import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -21,17 +19,8 @@ import mindustry.type.UnitType
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.logic.MessageBlock
-import java.io.BufferedOutputStream
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.InputStreamReader
-import java.net.InetAddress
-import java.net.NetworkInterface
-import java.net.SocketException
-import java.net.URL
-import java.net.UnknownHostException
+import java.io.*
+import java.net.*
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.sql.Timestamp
@@ -289,6 +278,8 @@ object Tool {
         letters.put("!", intArrayOf(1, 1, 1, 1, 0, 1))
         letters.put("?", intArrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0))
         letters.put(" ", intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+
+        // TODO 숫자 1~9, ? 가 올바르게 작동 안됨됨
         val texts = text.toCharArray()
         for(i in texts) {
             val pos = Seq<IntArray>()
@@ -301,7 +292,7 @@ object Tool {
                     yv = 4
                 }
                 15 -> {
-                    xv = 5
+                   xv = 5
                     yv = 3
                 }
                 18 -> {

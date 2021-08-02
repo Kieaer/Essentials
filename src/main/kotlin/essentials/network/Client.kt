@@ -15,11 +15,7 @@ import java.io.BufferedReader
 import java.io.DataOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
-import java.net.InetAddress
-import java.net.Socket
-import java.net.SocketException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
+import java.net.*
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -37,6 +33,7 @@ object Client : Runnable {
     private var disconnected = false
 
     private lateinit var ip: List<String>
+    fun isSocketInitialized() = ::socket.isInitialized
 
     fun shutdown() {
         try {
@@ -45,7 +42,7 @@ object Client : Runnable {
             br.close()
             socket.close()
             activated = false
-        } catch(ignored: IOException) {
+        } catch(ignored: UninitializedPropertyAccessException) {
         }
     }
 

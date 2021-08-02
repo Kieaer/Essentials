@@ -2,11 +2,7 @@ package essentials.network
 
 import arc.struct.Seq
 import essentials.data.Config
-import essentials.internal.Bundle
-import essentials.internal.CrashReport
-import essentials.internal.Log
-import essentials.internal.PluginException
-import essentials.internal.Tool
+import essentials.internal.*
 import mindustry.Vars
 import mindustry.gen.Groups
 import org.hjson.JsonArray
@@ -36,6 +32,8 @@ object Server : Runnable {
             serverSocket.close()
         } catch(e: IOException) {
             CrashReport(e)
+        } catch(ignored: UninitializedPropertyAccessException){
+
         }
     }
 
