@@ -7,7 +7,6 @@ import essentials.external.PingHost
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
-import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -60,11 +59,10 @@ object Threads : Runnable {
                     }
 
                     val memory = Seq<String>()
-                    for(a in 0 until PluginData.warpblocks.size) {
-                        val value = PluginData.warpblocks[a]
+                    for(value in PluginData.warpblocks) {
                         val tile = world.tile(value.pos)
                         if(tile.block() === Blocks.air) {
-                            PluginData.warpblocks.remove(a)
+                            PluginData.warpblocks.remove(value)
                         } else {
                             PingHost[value.ip, value.port, Consumer { result: Host ->
                                 var margin = 0f
@@ -85,7 +83,7 @@ object Threads : Runnable {
                                     }
                                 }
                                 val y = tile.drawy() + if(isDup) margin - 8 else margin
-                                if(result.address != null) {
+                                if(result.name != null) {
                                     ping += ("0." + result.ping).toDouble()
                                     memory.add("[yellow]" + result.players + "[] Players///" + x + "///" + y)
                                     value.online = true
@@ -106,8 +104,8 @@ object Threads : Runnable {
                     }
 
                     if(Core.settings.getBool("isLobby")) {
-                        if (Vars.state.`is`(GameState.State.playing)){
-                            Vars.world.tiles.forEach {
+                        if (state.`is`(GameState.State.playing)){
+                            world.tiles.forEach {
                                 if(it.build != null){
                                     it.build.health(it.build.health)
                                 }
