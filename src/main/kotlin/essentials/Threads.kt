@@ -3,12 +3,11 @@ package essentials
 import arc.Core
 import arc.struct.ArrayMap
 import arc.struct.Seq
-import essentials.data.Config
-import essentials.eof.sendMessage
 import essentials.external.PingHost
 import essentials.internal.Bundle
 import essentials.internal.CrashReport
 import essentials.internal.Tool
+import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -16,7 +15,6 @@ import mindustry.core.GameState
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.net.Host
-import mindustry.world.Tile
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -87,7 +85,7 @@ object Threads : Runnable {
                                     }
                                 }
                                 val y = tile.drawy() + if(isDup) margin - 8 else margin
-                                if(result.name != null) {
+                                if(result.address != null) {
                                     ping += ("0." + result.ping).toDouble()
                                     memory.add("[yellow]" + result.players + "[] Players///" + x + "///" + y)
                                     value.online = true
@@ -108,7 +106,14 @@ object Threads : Runnable {
                     }
 
                     if(Core.settings.getBool("isLobby")) {
-                        Core.settings.put("totalPlayers", totalPlayers)
+                        if (Vars.state.`is`(GameState.State.playing)){
+                            Vars.world.tiles.forEach {
+                                if(it.build != null){
+                                    it.build.health(it.build.health)
+                                }
+                            }
+                        }
+                        Core.settings.put("totalPlayers", totalPlayers + Groups.player.size())
                         Core.settings.saveValues()
                     }
                     ping = 0.000
