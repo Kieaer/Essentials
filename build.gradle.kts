@@ -15,24 +15,33 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.github.Anuken.Arc:arc-core:v128")
-    compileOnly("com.github.Anuken.Mindustry:core:v128")
+    val exposedVersion: String by project
+    val mindustryVersion: String by project
+
+    compileOnly("com.github.Anuken.Arc:arc-core:$mindustryVersion")
+    compileOnly("com.github.Anuken.Mindustry:core:$mindustryVersion")
 
     implementation("com.github.PersonTheCat:hjson-java:master")
-    implementation("de.svenkubiak:jBCrypt:+")
+    implementation("de.svenkubiak:jBCrypt:0.4.3")
     implementation("com.mewna:catnip:3.1.0")
-    implementation("org.apache.maven:maven-artifact:+")
-    implementation("org.jsoup:jsoup:+")
-    implementation("com.github.gimlet2:kottpd:+")
-    implementation("org.slf4j:slf4j-nop:+")
+    implementation("org.apache.maven:maven-artifact:3.8.1")
+    implementation("org.jsoup:jsoup:1.14.2")
+    implementation("com.github.gimlet2:kottpd:0.2.1")
+    implementation("org.slf4j:slf4j-nop:1.7.32")
     implementation("com.h2database:h2:1.4.200")
-    implementation("com.neovisionaries:nv-i18n:+")
+
+    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+
+    implementation("com.neovisionaries:nv-i18n:1.29")
     implementation(files("libs/ip2location.jar"))
 
-    testImplementation("com.github.Anuken.arc:arc-core:v128")
-    testImplementation("com.github.Anuken.Mindustry:core:v128")
-    testImplementation("com.github.Anuken.Mindustry:server:v128")
-    testImplementation("com.github.Anuken.arc:backend-headless:v128")
+    testImplementation("com.github.Anuken.arc:arc-core:$mindustryVersion")
+    testImplementation("com.github.Anuken.Mindustry:core:$mindustryVersion")
+    testImplementation("com.github.Anuken.Mindustry:server:$mindustryVersion")
+    testImplementation("com.github.Anuken.arc:backend-headless:$mindustryVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("com.github.javafaker:javafaker:1.0.2")
 }

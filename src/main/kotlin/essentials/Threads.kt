@@ -111,7 +111,7 @@ object Threads : Runnable {
                                 }
                             }
                         }
-                        Core.settings.put("totalPlayers", totalPlayers + Groups.player.size())
+                        Core.settings.put("totalPlayers", totalPlayers() + Groups.player.size())
                         Core.settings.saveValues()
                     }
                     ping = 0.000
@@ -142,12 +142,11 @@ object Threads : Runnable {
         }
     }
 
-    private val totalPlayers: Int
-        get() {
-            var total = 0
-            for(v in servers) {
-                total += v.value
-            }
-            return total
+    private fun totalPlayers(): Int {
+        var total = 0
+        for (v in servers) {
+            total += v.value
         }
+        return total
+    }
 }

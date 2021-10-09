@@ -27,10 +27,7 @@ import mindustry.core.NetClient
 import mindustry.game.EventType
 import mindustry.game.EventType.*
 import mindustry.game.Team
-import mindustry.gen.Call
-import mindustry.gen.Groups
-import mindustry.gen.Nulls
-import mindustry.gen.Playerc
+import mindustry.gen.*
 import mindustry.net.Packets
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
@@ -44,6 +41,10 @@ import kotlin.math.abs
 
 object Event {
     var tick: Int = 0
+
+    fun test(hitter: Bullet){
+        hitter.owner
+    }
 
     fun register() { // 플레이어가 블록에 대해 어떠한 설정을 했을 때 작동
         Events.on(ConfigEvent::class.java) {
@@ -246,7 +247,6 @@ object Event {
                             it.player.con(),
                             Bundle()["plugin-error-kick"]
                         )
-                    } else {
                         Call.kick(it.player.con(), Bundle()["plugin-error-kick"])
                     }
                 }
