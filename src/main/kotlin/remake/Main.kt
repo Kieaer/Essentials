@@ -116,7 +116,37 @@ class Main : Plugin(){
         }
 
         if(!root.child("permission_user.hjson").exists()) {
-            root.child("permission_user.hjson").writeString("{}")
+            val obj = JsonArray()
+            obj.setComment("""
+                Usage
+                {
+                    uuid: String (Must need)
+                    name: String (Set player name)
+                    group: String (Set player permission group)
+                    chatFormat: String (Set player chat format. %1 is name, %2 is text.)
+                    admin: Boolean (Set player admin status)
+                }
+                
+                Examples
+                [
+                    {
+                        uuid: uuids
+                        name: "my fun name"
+                    },
+                    {
+                        uuid: uuida
+                        chatFormat: "%1: %2"
+                    },
+                    {
+                        uuid: babysuuid
+                        name: baby
+                        group: admin
+                        chatFormat: "[blue][ADMIN][]%1[white]: %2"
+                        admin: true
+                    }
+                ]
+            """.trimIndent())
+            root.child("permission_user.hjson").writeString(obj.toString(Stringify.HJSON_COMMENTS))
         }
     }
 }

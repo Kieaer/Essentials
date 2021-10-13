@@ -70,7 +70,7 @@ object Config {
             features.add("afk", afk, "Auto AFK player kick")
             features.add("afkTime", afkTime, "Auto AFK player kick time")
             features.add("border", border, "Kill units world outside")
-            features.add("chatFormat", "Set default chat format")
+            features.add("chatFormat", chatFormat, "Set default chat format")
 
             obj.add("plugin", plugin)
             obj.add("features", features)
@@ -86,13 +86,16 @@ object Config {
         }
 
         val config = JsonObject.readHjson(root.readString("utf-8")).asObject()
-        update = config.get("update").asBoolean()
-        channel = config.get("channel").asString()
-        afk = config.get("afk").asBoolean()
-        afkTime = config.get("afkTime").asInt()
-        border = config.get("border").asBoolean()
-        report = config.get("report").asBoolean()
-        authType = AuthType.valueOf(config.get("authType").asString().lowercase())
-        chatFormat = config.get("chatFormat").asString()
+        val plugin = config.get("plugin").asObject()
+        val features = config.get("features").asObject()
+
+        update = plugin.get("update").asBoolean()
+        channel = plugin.get("channel").asString()
+        afk = features.get("afk").asBoolean()
+        afkTime = features.get("afkTime").asInt()
+        border = features.get("border").asBoolean()
+        report = plugin.get("report").asBoolean()
+        authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
+        chatFormat = features.get("chatFormat").asString()
     }
 }
