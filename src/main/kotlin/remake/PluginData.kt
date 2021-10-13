@@ -72,7 +72,7 @@ object PluginData {
         banned.forEach { buffer.add(json.toJson(it)) }
         data.add("banned", buffer)
 
-        root.file().writeText(data.toString(Stringify.FORMATTED))
+        root.writeString(data.toString(Stringify.FORMATTED))
     }
 
     fun load(){
