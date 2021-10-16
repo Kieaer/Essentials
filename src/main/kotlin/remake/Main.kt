@@ -9,9 +9,12 @@ import mindustry.mod.Plugin
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class Main : Plugin(){
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+    private val daemon: ExecutorService = Executors.newCachedThreadPool()
     
     init {
         Log.info("[Essentials] Initializing..")
@@ -19,6 +22,7 @@ class Main : Plugin(){
         createFile()
         Config.load()
         PluginData.load()
+
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
@@ -28,7 +32,7 @@ class Main : Plugin(){
     }
 
     fun start(){
-
+        daemon.submit(FileWatchService)
     }
     
     override fun registerClientCommands(handler: CommandHandler) {

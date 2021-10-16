@@ -10,7 +10,7 @@ import java.net.URI
 import java.util.*
 
 object Config {
-    var obj = JsonObject()
+    private var obj = JsonObject()
 
     var update = true
     var channel = "release"
@@ -32,7 +32,7 @@ object Config {
         when (sc.nextLine()) {
             "y", "Y" -> {
                 if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                    Desktop.getDesktop().browse(URI("https://github.com/Kieaer/Essentials/wiki"));
+                    Desktop.getDesktop().browse(URI("https://github.com/Kieaer/Essentials/wiki"))
                 }
             }
         }

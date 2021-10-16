@@ -5,24 +5,34 @@ import arc.math.Mathf
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.CommandHandler
+import arc.util.Log
 import arc.util.Strings
 import arc.util.async.Threads
+import com.neovisionaries.i18n.CountryCode
 import essentials.Main
 import essentials.PluginData
 import essentials.data.Config
 import essentials.event.feature.Permissions
+import essentials.internal.Tool
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.gen.Unit
 import mindustry.type.UnitType
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.net.SocketException
+import java.net.UnknownHostException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.math.abs
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.full.memberProperties
 
 
-class Commands(val handler:CommandHandler) {
+class Commands(handler:CommandHandler) {
     init {
         handler.removeCommand("help")
         
@@ -246,7 +256,38 @@ class Commands(val handler:CommandHandler) {
             } else if(arg[1] == arg[2]) {
                 player.sendMessage("Password repeat value isn't same.")
             } else {
+                val data = DB.PlayerData
 
+                val ip = player.ip()
+                val isLocal = try {
+                    val address = InetAddress.getByName(ip)
+                    if(address.isAnyLocalAddress || address.isLoopbackAddress) {
+                        true
+                    } else {
+                        NetworkInterface.getByInetAddress(address) != null
+                    }
+                } catch(e: SocketException) {
+                    false
+                } catch(e: UnknownHostException) {
+                    false
+                }
+
+                data.countryCode = if (isLocal) {
+                    Locale.getDefault().isO3Country
+                } else {
+                    val res = Tool.ipre.IPQuery(ip)
+                    val code = CountryCode.getByCode(res.countryShort)
+                    if(code == null) Locale.getDefault().isO3Country else code.toLocale().isO3Country
+                }
+
+                data.name = player.name()
+                data.uuid = player.uuid()
+                data.joinDate = System.currentTimeMillis().toInt()
+                data.id = player.name()
+                data.pw = arg[1]
+
+                DB.createData(data)
+                Log.info("${player.name()} data created.")
             }
         }
 
@@ -430,11 +471,14 @@ class Commands(val handler:CommandHandler) {
 
         fun effect(){
             // 효과 표시 기능
+            //Effect effect, float x, float y, float rotation, Color color
+            //Call.effect()
         }
 
         fun god(){
-            player.unit().heal()
             // 무적 기능
+            player.unit().health(99999999f)
+            player.sendMessage("Set high player unit health.")
         }
 
         fun random(){
@@ -456,8 +500,6 @@ class Commands(val handler:CommandHandler) {
             // 강제 게임오버 기능
             Call.gameOver(Team.crux)
         }
-
-
 
         fun kill(){
             // 자신 또는 특정 플레이어 유닛을 파괴하는 기능
@@ -600,7 +642,7 @@ class Commands(val handler:CommandHandler) {
                                 }
                                 if (!(data.status.get("router") as Boolean)) {
                                     data.status.remove("router")
-                                    break;
+                                    break
                                 }
                                 Threads.sleep(5000)
                                 for (i in loop.indices.reversed()) {
@@ -638,6 +680,12 @@ class Commands(val handler:CommandHandler) {
 
         fun config(){
             // 설정 편집 기능
+            // /config 이름 값
+            val property = remake.Config::class.memberProperties.find { it.name == arg[0] }
+            if (property is KMutableProperty<*>) {
+                property.setter.call(arg[0], arg[1])
+                player.sendMessage("Set ${arg[0]} to ${arg[1]}")
+            }
         }
 
         fun search(){

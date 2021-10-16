@@ -2,14 +2,17 @@ package remake
 
 import arc.Core
 import arc.files.Fi
+import essentials.data.Config
+import essentials.event.feature.Permissions
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
 
-class Permission {
+object Permission {
     var perm = JsonObject()
     var data = JsonArray()
+    var default = "visitor"
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.hjson")
     private val user: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.hjson")
 
@@ -21,15 +24,23 @@ class Permission {
     fun load(){
         perm = JsonValue.readHjson(root.reader()).asObject()
         data = JsonValue.readHjson(user.reader()).asArray()
-    }
 
-    fun create(data: DB.PlayerData){
-        val obj = JsonObject()
-        obj.add("name", data.name)
-        obj.add("uuid", data.uuid)
-        obj.add("group", if(Config.authType == Config.AuthType.None) "user" else "visitor")
-        obj.add("chatFormat", perm[data.permission].asObject().getString("chatFormat", Config.chatFormat))
-        obj.add("admin", perm[data.permission].asObject().getBoolean("admin", false))
+        for(data in perm) {
+            val name = data.name
+            if(Config.authType == Config.AuthType.None && Permissions.perm.get(name).asObject().has("default")) {
+                default = name
+            }
+
+            if(Permissions.perm.get(name).asObject().has("inheritance")) {
+                var inheritance = perm.get(name).asObject().getString("inheritance", null)
+                while(inheritance != null) {
+                    for(a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()) {
+                        perm.get(name).asObject().get("permission").asArray().add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
+                    }
+                    inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
+                }
+            }
+        }
     }
 
     fun read() : PermissionData{
