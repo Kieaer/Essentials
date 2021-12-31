@@ -25,9 +25,9 @@ object DB {
         val kickcount = integer("kickcount")
         val level = integer("level")
         val exp = integer("exp")
-        val joinDate = integer("joinDate")
-        val lastdate = integer("lastdate")
-        val playtime = integer("playtime")
+        val joinDate = long("joinDate")
+        val lastdate = long("lastdate")
+        val playtime = long("playtime")
         val attackclear = integer("attackclear")
         val pvpwincount = integer("pvpwincount")
         val pvplosecount = integer("pvplosecount")
@@ -47,9 +47,9 @@ object DB {
         var kickcount: Int = 0
         var level: Int = 0
         var exp: Int = 0
-        var joinDate: Int = 0
-        var lastdate: Int = 0
-        var playtime: Int = 0
+        var joinDate: Long = 0
+        var lastdate: Long = 0
+        var playtime: Long = 0
         var attackclear: Int = 0
         var pvpwincount: Int = 0
         var pvplosecount: Int = 0
