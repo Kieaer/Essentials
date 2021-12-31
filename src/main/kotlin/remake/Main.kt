@@ -23,10 +23,12 @@ class Main : Plugin(){
         Config.load()
         PluginData.load()
 
+        Event.register()
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
-
+                DB.close()
+                daemon.shutdown()
             }
         })
     }
@@ -34,7 +36,7 @@ class Main : Plugin(){
     fun start(){
         daemon.submit(FileWatchService)
     }
-    
+
     override fun registerClientCommands(handler: CommandHandler) {
         Commands(handler)
     }

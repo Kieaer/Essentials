@@ -8,25 +8,19 @@ import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.Strings
 import arc.util.async.Threads
-import com.neovisionaries.i18n.CountryCode
 import essentials.Main
 import essentials.PluginData
 import essentials.data.Config
 import essentials.event.feature.Permissions
-import essentials.internal.Tool
 import mindustry.Vars
+import mindustry.Vars.mods
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.gen.Unit
 import mindustry.type.UnitType
-import java.net.InetAddress
-import java.net.NetworkInterface
-import java.net.SocketException
-import java.net.UnknownHostException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 import kotlin.math.abs
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.memberProperties
@@ -64,7 +58,7 @@ class Commands(handler:CommandHandler) {
         handler.register("god", "[Player_name]", "Force gameover") { a, p: Playerc -> Work(a, p).god() }
         handler.register("random", "", "Random events") { a, p: Playerc -> Work(a, p).random() }
         handler.register("pause", "Pause server") { a, p: Playerc -> Work(a, p).pause() }
-        //handler.register("eval", "[code]", "Execute JavaScript codes") { a, p: Playerc -> Work(a, p).eval() }
+        handler.register("js", "[code]", "Execute JavaScript codes") { a, p: Playerc -> Work(a, p).js() }
         handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Work(a, p).search() }
     }
 
@@ -256,37 +250,7 @@ class Commands(handler:CommandHandler) {
             } else if(arg[1] == arg[2]) {
                 player.sendMessage("Password repeat value isn't same.")
             } else {
-                val data = DB.PlayerData
-
-                val ip = player.ip()
-                val isLocal = try {
-                    val address = InetAddress.getByName(ip)
-                    if(address.isAnyLocalAddress || address.isLoopbackAddress) {
-                        true
-                    } else {
-                        NetworkInterface.getByInetAddress(address) != null
-                    }
-                } catch(e: SocketException) {
-                    false
-                } catch(e: UnknownHostException) {
-                    false
-                }
-
-                data.countryCode = if (isLocal) {
-                    Locale.getDefault().isO3Country
-                } else {
-                    val res = Tool.ipre.IPQuery(ip)
-                    val code = CountryCode.getByCode(res.countryShort)
-                    if(code == null) Locale.getDefault().isO3Country else code.toLocale().isO3Country
-                }
-
-                data.name = player.name()
-                data.uuid = player.uuid()
-                data.joinDate = System.currentTimeMillis().toInt()
-                data.id = player.name()
-                data.pw = arg[1]
-
-                DB.createData(data)
+                Trigger.createPlayer(player, arg[1])
                 Log.info("${player.name()} data created.")
             }
         }
@@ -492,8 +456,31 @@ class Commands(handler:CommandHandler) {
             player.sendMessage(if(pause) "Game paused" else "Game unpaused")
         }
 
+        fun js(){
+            val output = mods.scripts.runConsole(arg[0])
+            try {
+                val errorName = output?.substring(0, output.indexOf(' ') - 1)
+                Class.forName("org.mozilla.javascript.$errorName")
+                player.sendMessage("> [#ff341c]$output")
+            } catch (e: Throwable) {
+                player.sendMessage("> $output")
+            }
+        }
+
         fun hub() {
             // 서버간 이동 기능
+            // type ip
+            when(arg[0]){
+                "block" -> {
+
+                }
+                "zone" -> {
+
+                }
+                "reset" -> {
+
+                }
+            }
         }
 
         fun gg(){
@@ -690,6 +677,7 @@ class Commands(handler:CommandHandler) {
 
         fun search(){
             // 플레이어 데이터 검색 기능
+            // arg[0] 이름 또는 uuid 값
         }
     }
 }
