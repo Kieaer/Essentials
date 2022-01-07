@@ -5,6 +5,7 @@ import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Log
+import mindustry.Vars
 import mindustry.mod.Plugin
 import org.hjson.JsonArray
 import org.hjson.JsonObject
@@ -35,6 +36,15 @@ class Main : Plugin(){
 
     fun start(){
         daemon.submit(FileWatchService)
+    }
+
+    override fun init() {
+        Vars.netServer.admins.addChatFilter { _, _ -> null }
+
+        Vars.netServer.admins.addActionFilter { e ->
+            if(e.player == null) return@addActionFilter true
+            return@addActionFilter DB[e.player.uuid()] != null
+        }
     }
 
     override fun registerClientCommands(handler: CommandHandler) {
