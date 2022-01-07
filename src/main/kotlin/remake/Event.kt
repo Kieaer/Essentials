@@ -1,13 +1,21 @@
 package remake
 
 import arc.Events
+import mindustry.core.NetClient
 import mindustry.game.EventType
 import mindustry.game.EventType.ConfigEvent
+import mindustry.gen.Call
 
 object Event {
     fun register(){
         Events.on(EventType.PlayerChatEvent::class.java){
-
+            if (NetClient.colorizeName(it.player.id, it.player.name) != null) {
+                Call.sendMessage(
+                    Permission.data[it.player.id].asObject()["chatFormat"].asString()
+                        .replace("%1", NetClient.colorizeName(it.player.id, it.player.name))
+                        .replace("%2", it.message)
+                )
+            }
         }
 
         Events.on(EventType.WithdrawEvent::class.java){
@@ -67,7 +75,7 @@ object Event {
         }
 
         Events.on(EventType.PlayerJoin::class.java){
-            var data = DB[it.player.uuid()]
+            val data = DB[it.player.uuid()]
             if(data != null){
                 Trigger.loadPlayer(it.player, data)
             } else {
