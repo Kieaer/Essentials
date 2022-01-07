@@ -14,10 +14,12 @@ import essentials.data.Config
 import essentials.event.feature.Permissions
 import mindustry.Vars
 import mindustry.Vars.mods
+import mindustry.Vars.netServer
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.gen.Unit
+import mindustry.net.Administration
 import mindustry.type.UnitType
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -192,8 +194,8 @@ class Commands(handler:CommandHandler) {
                 return
             }
             val temp = Seq<String>()
-            for(a in 0 until Vars.netServer.clientCommands.commandList.size) {
-                val command = Vars.netServer.clientCommands.commandList[a]
+            for(a in 0 until netServer.clientCommands.commandList.size) {
+                val command = netServer.clientCommands.commandList[a]
                 if(Permissions.check(player, command.text)) {
                     temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}\n")
                 }
@@ -247,10 +249,10 @@ class Commands(handler:CommandHandler) {
             // reg <pw> <pw_repeat>
             if(arg.size != 2){
                 player.sendMessage("Usage: /reg <password> <password repeat>")
-            } else if(arg[1] == arg[2]) {
+            } else if(arg[0] == arg[1]) {
                 player.sendMessage("Password repeat value isn't same.")
             } else {
-                Trigger.createPlayer(player, arg[1])
+                Trigger.createPlayer(player, arg[0])
                 Log.info("${player.name()} data created.")
             }
         }
@@ -372,8 +374,8 @@ class Commands(handler:CommandHandler) {
 
         fun status(){
             // 서버 상태 표시
-            val bans = Vars.netServer.admins.banned.size
-            val ipbans = Vars.netServer.admins.bannedIPs.size
+            val bans = netServer.admins.banned.size
+            val ipbans = netServer.admins.bannedIPs.size
 
             player.sendMessage("""
                 [#DEA82A]Server status[]
@@ -678,6 +680,45 @@ class Commands(handler:CommandHandler) {
         fun search(){
             // 플레이어 데이터 검색 기능
             // arg[0] 이름 또는 uuid 값
+            val result = ArrayList<DB.PlayerData?>()
+            val data = netServer.admins.findByName(arg[0])
+            if (data.size > 0){
+                for (info : Administration.PlayerInfo in data){
+                    result.add(DB[info.id])
+                }
+            } else {
+                result.add(DB[arg[0]])
+            }
+
+            if (result.size > 0){
+                for(a in result){
+                    if (a != null) {
+                        val texts = """
+                        name: ${a.name}
+                        uuid: ${a.uuid}
+                        countryCode: ${a.countryCode}
+                        placecount: ${a.placecount}
+                        breakcount: ${a.breakcount}
+                        joincount: ${a.joincount}
+                        kickcount: ${a.kickcount}
+                        level: ${a.level}
+                        exp: ${a.exp}
+                        joinDate: ${a.joinDate}
+                        lastdate: ${a.lastdate}
+                        playtime: ${a.playtime}
+                        attackclear: ${a.attackclear}
+                        pvpwincount: ${a.pvpwincount}
+                        pvplosecount: ${a.pvplosecount}
+                        colornick: ${a.colornick}
+                        permission: ${a.permission}
+                        mute: ${a.mute}
+                        status: ${a.status}
+                        """.trimIndent()
+
+                        Log.info(texts)
+                    }
+                }
+            }
         }
     }
 }
