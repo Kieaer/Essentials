@@ -1,7 +1,7 @@
 package remake
 
 import arc.Events
-import mindustry.core.NetClient
+import mindustry.Vars.netServer
 import mindustry.game.EventType
 import mindustry.game.EventType.ConfigEvent
 import mindustry.gen.Call
@@ -9,10 +9,10 @@ import mindustry.gen.Call
 object Event {
     fun register(){
         Events.on(EventType.PlayerChatEvent::class.java){
-            if (NetClient.colorizeName(it.player.id, it.player.name) != null) {
+            if (netServer.chatFormatter.format(it.player, it.player.name) != null) {
                 Call.sendMessage(
                     Permission.data[it.player.id].asObject()["chatFormat"].asString()
-                        .replace("%1", NetClient.colorizeName(it.player.id, it.player.name))
+                        .replace("%1", netServer.chatFormatter.format(it.player, it.player.name))
                         .replace("%2", it.message)
                 )
             }
@@ -51,7 +51,12 @@ object Event {
         }
 
         Events.on(EventType.BlockBuildEndEvent::class.java){
-
+            if (it.unit.isPlayer){
+                val player = DB[it.unit.player.uuid()]
+                if (player != null) {
+                    if (!it.breaking) player.placecount++ else player.breakcount++
+                }
+            }
         }
 
         Events.on(EventType.BuildSelectEvent::class.java){
@@ -83,10 +88,6 @@ object Event {
                     Trigger.createPlayer(it.player, null)
                 }
             }
-        }
-
-        Events.on(EventType.PlayerChatEvent::class.java){
-
         }
 
         Events.on(EventType.PlayerLeave::class.java){
