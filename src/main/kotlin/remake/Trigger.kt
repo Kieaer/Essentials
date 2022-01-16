@@ -1,5 +1,7 @@
 package remake
 
+import arc.util.Log
+import arc.util.Timer
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
 import mindustry.gen.Playerc
@@ -54,5 +56,15 @@ object Trigger {
         data.pw = password ?: player.name()
 
         DB.createData(data)
+        loadPlayer(player, data)
+    }
+
+    class Time: TimerTask() {
+        override fun run() {
+            DB.players.forEach {
+                Log.info(it.playtime)
+                it.playtime = it.playtime+1
+            }
+        }
     }
 }

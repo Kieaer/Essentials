@@ -5,6 +5,7 @@ import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Log
+import arc.util.Timer
 import mindustry.Vars
 import mindustry.mod.Plugin
 import org.hjson.JsonArray
@@ -12,10 +13,12 @@ import org.hjson.JsonObject
 import org.hjson.Stringify
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 
 class Main : Plugin(){
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     private val daemon: ExecutorService = Executors.newCachedThreadPool()
+    private val timer = java.util.Timer()
     
     init {
         Log.info("[Essentials] Initializing..")
@@ -30,17 +33,17 @@ class Main : Plugin(){
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
+                timer.cancel()
                 DB.close()
                 daemon.shutdown()
             }
         })
     }
 
-    fun start(){
-        daemon.submit(FileWatchService)
-    }
-
     override fun init() {
+        daemon.submit(FileWatchService)
+        timer.scheduleAtFixedRate(Trigger.Time(), 1000, 1000)
+
         Vars.netServer.admins.addChatFilter { _, _ -> null }
 
         Vars.netServer.admins.addActionFilter { e ->

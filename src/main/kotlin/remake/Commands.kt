@@ -18,6 +18,7 @@ import mindustry.gen.*
 import mindustry.gen.Unit
 import mindustry.net.Administration
 import mindustry.type.UnitType
+import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
@@ -218,15 +219,16 @@ class Commands(handler:CommandHandler) {
         }
 
         fun info(){
-            val result = DB.players.find { it.uuid.equals(player.uuid()) }
+            val result = DB.players.find { it.uuid == player.uuid() }
+            Log.info(result.playtime)
             val texts = """
                 name: ${result.name}
                 placecount: ${result.placecount}
                 breakcount: ${result.breakcount}
                 level: ${result.level}
                 exp: ${result.exp}
-                joinDate: ${result.joinDate}
-                playtime: ${result.playtime}
+                joinDate: ${Timestamp(result.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                playtime: ${String.format("%d:%02d:%02d:%02d", (result.playtime/60/60/24) % 365, (result.playtime/60/24) % 24, (result.playtime/60) % 60, (result.playtime) % 60)}
                 attackclear: ${result.attackclear}
                 pvpwincount: ${result.pvpwincount}
                 pvplosecount: ${result.pvplosecount}
