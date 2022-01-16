@@ -107,7 +107,11 @@ object Event {
         }
 
         Events.on(EventType.PlayerLeave::class.java){
-
+            val data = DB.players.find { data -> data.uuid == it.player.uuid() }
+            if(data != null){
+                DB.update(it.player.uuid(), data)
+            }
+            DB.players.remove(data)
         }
 
         Events.on(EventType.PlayerBanEvent::class.java){

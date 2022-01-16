@@ -220,7 +220,6 @@ class Commands(handler:CommandHandler) {
 
         fun info(){
             val result = DB.players.find { it.uuid == player.uuid() }
-            Log.info(result.playtime)
             val texts = """
                 name: ${result.name}
                 placecount: ${result.placecount}
