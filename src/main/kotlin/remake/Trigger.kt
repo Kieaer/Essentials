@@ -62,7 +62,6 @@ object Trigger {
     class Time: TimerTask() {
         override fun run() {
             DB.players.forEach {
-                Log.info(it.playtime)
                 it.playtime = it.playtime+1
             }
         }
