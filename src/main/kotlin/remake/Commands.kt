@@ -1,6 +1,7 @@
 package remake
 
 import arc.Core
+import arc.files.Fi
 import arc.math.Mathf
 import arc.struct.ObjectMap
 import arc.struct.Seq
@@ -8,10 +9,6 @@ import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.Strings
 import arc.util.async.Threads
-import essentials.Main
-import essentials.PluginData
-import essentials.data.Config
-import essentials.event.feature.Permissions
 import mindustry.Vars
 import mindustry.Vars.mods
 import mindustry.Vars.netServer
@@ -29,6 +26,8 @@ import kotlin.reflect.full.memberProperties
 
 
 class Commands(handler:CommandHandler) {
+    val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+
     init {
         handler.removeCommand("help")
         
@@ -196,7 +195,7 @@ class Commands(handler:CommandHandler) {
             val temp = Seq<String>()
             for(a in 0 until netServer.clientCommands.commandList.size) {
                 val command = netServer.clientCommands.commandList[a]
-                if(Permissions.check(player, command.text)) {
+                if(Permission.check(player, command.text)) {
                     temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}\n")
                 }
             }
@@ -287,10 +286,10 @@ class Commands(handler:CommandHandler) {
         fun motd(){
             // 서버 motd 표시
             // todo countryCode
-            val motd = if(Main.pluginRoot.child("motd/${data.countryCode}.txt").exists()) {
-                Main.pluginRoot.child("motd/${data.countryCode}.txt").readString()
+            val motd = if(root.child("motd/${data.countryCode}.txt").exists()) {
+                root.child("motd/${data.countryCode}.txt").readString()
             } else {
-                val file = Main.pluginRoot.child("motd/" + Config.locale.toString() + ".txt")
+                val file = root.child("motd/en_US.txt")
                 if(file.exists()) file.readString() else ""
             }
             val count = motd.split("\r\n|\r|\n").toTypedArray().size
@@ -417,7 +416,7 @@ class Commands(handler:CommandHandler) {
             if(other == null) {
                 player.sendMessage("Target player not found!")
             } else {
-                val target = PluginData[other.uuid()]
+                val target = DB[other.uuid()]
                 target!!.mute = true
                 player.sendMessage("Target player ${target.name} is muted.")
             }
@@ -429,7 +428,7 @@ class Commands(handler:CommandHandler) {
             if(other == null) {
                 player.sendMessage("Target player not found!")
             } else {
-                val target = PluginData[other.uuid()]
+                val target = DB[other.uuid()]
                 target!!.mute = false
                 player.sendMessage("Target player ${target.name} is unmuted.")
             }

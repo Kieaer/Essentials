@@ -25,7 +25,7 @@ object FileWatchService : Runnable {
                     val kind = event.kind()
                     val paths = (event.context() as Path).fileName.toString()
                     if((paths == "permission_user.hjson" || paths == "permission.hjson") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        Permission.read()
+                        Permission.load()
                         Log.info("Permission file updated!")
                     }
                 }

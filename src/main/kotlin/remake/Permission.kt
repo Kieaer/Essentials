@@ -2,8 +2,7 @@ package remake
 
 import arc.Core
 import arc.files.Fi
-import essentials.data.Config
-import essentials.event.feature.Permissions
+import mindustry.gen.Playerc
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
@@ -21,48 +20,75 @@ object Permission {
         user.writeString(data.toString(Stringify.HJSON))
     }
 
-    fun load(){
+    fun load() {
         perm = JsonValue.readHjson(root.reader()).asObject()
         data = JsonValue.readHjson(user.reader()).asArray()
 
-        for(data in perm) {
+        for (data in perm) {
             val name = data.name
-            if(Config.authType == Config.AuthType.None && Permissions.perm.get(name).asObject().has("default")) {
+            if (Config.authType == Config.AuthType.None && perm.get(name).asObject().has("default")) {
                 default = name
             }
 
-            if(Permissions.perm.get(name).asObject().has("inheritance")) {
+            if (perm.get(name).asObject().has("inheritance")) {
                 var inheritance = perm.get(name).asObject().getString("inheritance", null)
-                while(inheritance != null) {
-                    for(a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()) {
-                        perm.get(name).asObject().get("permission").asArray().add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
+                while (inheritance != null) {
+                    for (a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()) {
+                        perm.get(name).asObject().get("permission").asArray()
+                            .add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
                     }
                     inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
                 }
             }
         }
+
+        for (a in data) {
+            val b = a.asObject()
+            val result = JsonObject()
+
+            if (b.has("uuid")) result.add("uuid",b.get("uuid").asString())
+            if (b.has("name")) result.add("name",b.get("name").asString())
+            if (b.has("group")) result.add("group",b.get("group").asString())
+            if (b.has("chatFormat")) result.add("chatFormat",b.get("chatFormat").asString())
+            if (b.has("admin")) result.add("admin",b.get("admin").asBoolean())
+
+            data.add(result)
+        }
     }
 
-    fun read() : PermissionData{
+    operator fun get(player: Playerc) : PermissionData{
         data.forEach {
             val data = it.asObject()
             val result = PermissionData
 
-            if (data.has("uuid")) result.uuid = data.get("uuid").asString()
-            if (data.has("name")) result.name = data.get("name").asString()
-            if (data.has("group")) result.group = data.get("group").asString()
-            if (data.has("chatFormat")) result.chatFormat = data.get("chatFormat").asString()
-            if (data.has("admin")) result.admin = data.get("admin").asBoolean()
-            return result
+            result.uuid = data.getString("uuid", player.uuid())
+            result.name = data.getString("name", player.name())
+            result.group = data.getString("group", default)
+            result.chatFormat = data.getString("chatFormat", "%1[orange] > [white]%2")
+            result.admin = data.getBoolean("admin", false)
+
+            return if (player.uuid() == result.uuid) result else PermissionData
         }
         return PermissionData
+    }
+
+    fun check(player: Playerc, command: String): Boolean {
+        val data = get(player).group
+        val size = perm[data].asObject()["permission"].asArray().size()
+        for(a in 0 until size) {
+            val node = perm[data].asObject()["permission"].asArray()[a].asString()
+            if(node == command || node.equals("all", true)) {
+                return true
+            }
+        }
+        return false
     }
 
     object PermissionData{
         var name = ""
         var uuid = ""
-        var group = ""
-        var chatFormat = ""
+        var group = default
+        var chatFormat = "%1[orange] > [white]%2"
         var admin = false
     }
 }

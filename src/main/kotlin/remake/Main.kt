@@ -21,7 +21,9 @@ class Main : Plugin(){
         Log.info("[Essentials] Initializing..")
 
         createFile()
+        DB.open()
         Config.load()
+        Permission.load()
         PluginData.load()
 
         Event.register()
