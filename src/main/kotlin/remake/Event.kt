@@ -6,6 +6,8 @@ import mindustry.Vars.netServer
 import mindustry.game.EventType
 import mindustry.game.EventType.ConfigEvent
 import mindustry.gen.Call
+import org.hjson.Stringify
+import remake.DB.createData
 import remake.DB.root
 import java.io.IOException
 import java.nio.file.Files
@@ -20,13 +22,11 @@ object Event {
             if (!it.message.startsWith("/")) {
                 log(LogType.Chat, "${it.player.name}: ${it.message}")
                 Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
-            }
 
-            // todo 채팅 포맷 변경
-            if (netServer.chatFormatter.format(it.player, it.message) != null) {
+                // todo 채팅 포맷 변경
                 Call.sendMessage(
-                    Permission.data[it.player.id].asObject()["chatFormat"].asString()
-                        .replace("%1", netServer.chatFormatter.format(it.player, it.message))
+                    Permission[it.player].chatFormat
+                        .replace("%1", it.player.coloredName())
                         .replace("%2", it.message)
                 )
             }
@@ -97,6 +97,9 @@ object Event {
 
         Events.on(EventType.PlayerJoin::class.java){
             val data = DB[it.player.uuid()]
+            if(Config.authType == Config.AuthType.None){
+                Trigger.createPlayer(it.player, it.player.name)
+            }
             if(data != null){
                 Trigger.loadPlayer(it.player, data)
             } else {

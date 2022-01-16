@@ -1,7 +1,7 @@
 package remake
 
+import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
-import essentials.internal.Tool
 import mindustry.gen.Playerc
 import java.net.InetAddress
 import java.net.NetworkInterface
@@ -40,7 +40,7 @@ object Trigger {
         data.countryCode = if (isLocal) {
             Locale.getDefault().isO3Country
         } else {
-            val res = Tool.ipre.IPQuery(ip)
+            val res = IP2Location().IPQuery(ip)
             val code = CountryCode.getByCode(res.countryShort)
             if(code == null) Locale.getDefault().isO3Country else code.toLocale().isO3Country
         }

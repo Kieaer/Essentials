@@ -4,16 +4,30 @@ import arc.Core
 import arc.files.Fi
 import arc.struct.ObjectMap
 import arc.struct.Seq
+import arc.util.Log
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.sql.DriverManager
+import java.sql.ResultSet
 import java.util.*
 
 
 object DB {
     val players: Seq<PlayerData> = Seq<PlayerData>()
     val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-    val db: Database = Database.connect(root.child("data/database.db").absolutePath(), driver = "org.sqlite.JDBC")
+    lateinit var db: Database
+
+    fun open() {
+        try {
+            Log.info("DB init")
+            db = Database.connect("jdbc:sqlite:${root.child("data/database.db").absolutePath()}")
+            transaction { SchemaUtils.create(Player) }
+        } catch (e: Exception){
+            e.printStackTrace()
+            Core.app.exit()
+        }
+    }
 
     object Player : Table(){
         val name = text("name").index()
@@ -63,7 +77,6 @@ object DB {
 
     fun createData(data: PlayerData){
         transaction {
-            SchemaUtils.create(Player)
             Player.insert {
                 it[name] = data.name
                 it[uuid] = data.uuid
@@ -89,60 +102,65 @@ object DB {
     }
 
     operator fun get(uuid: String) : PlayerData?{
-        Player.select {Player.uuid.eq(uuid)}.forEach{
-            val data = PlayerData
-            data.name = it[Player.name]
-            data.uuid = it[Player.uuid]
-            data.countryCode = it[Player.countryCode]
-            data.placecount = it[Player.placecount]
-            data.breakcount = it[Player.breakcount]
-            data.joincount = it[Player.joincount]
-            data.kickcount = it[Player.kickcount]
-            data.level = it[Player.level]
-            data.exp = it[Player.exp]
-            data.joinDate = it[Player.joinDate]
-            data.lastdate = it[Player.lastdate]
-            data.playtime = it[Player.playtime]
-            data.attackclear = it[Player.attackclear]
-            data.pvpwincount = it[Player.pvpwincount]
-            data.pvplosecount = it[Player.pvplosecount]
-            data.colornick = it[Player.colornick]
-            data.mute = it[Player.mute]
-            data.id = it[Player.accountid]
-            data.pw = it[Player.accountpw]
-
-            return data
+        transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }.apply {
+            if (this != null){
+                val data = PlayerData
+                data.name = this[Player.name]
+                data.uuid = this[Player.uuid]
+                data.countryCode = this[Player.countryCode]
+                data.placecount = this[Player.placecount]
+                data.breakcount = this[Player.breakcount]
+                data.joincount = this[Player.joincount]
+                data.kickcount = this[Player.kickcount]
+                data.level = this[Player.level]
+                data.exp = this[Player.exp]
+                data.joinDate = this[Player.joinDate]
+                data.lastdate = this[Player.lastdate]
+                data.playtime = this[Player.playtime]
+                data.attackclear = this[Player.attackclear]
+                data.pvpwincount = this[Player.pvpwincount]
+                data.pvplosecount = this[Player.pvplosecount]
+                data.colornick = this[Player.colornick]
+                data.mute = this[Player.mute]
+                data.id = this[Player.accountid]
+                data.pw = this[Player.accountpw]
+                return data
+            } else {
+                return null
+            }
         }
-        // 데이터를 찾지 못했을 경우 null
-        return null
     }
 
     fun update(id: String, data: PlayerData){
-        Player.update({Player.uuid eq id}) {
-            it[name] = data.name
-            it[uuid] = data.uuid
-            it[countryCode] = data.countryCode
-            it[placecount] = data.placecount
-            it[breakcount] = data.breakcount
-            it[joincount] = data.joincount
-            it[kickcount] = data.kickcount
-            it[level] = data.level
-            it[exp] = data.exp
-            it[joinDate] = data.joinDate
-            it[lastdate] = data.lastdate
-            it[playtime] = data.playtime
-            it[attackclear] = data.attackclear
-            it[pvpwincount] = data.pvpwincount
-            it[pvplosecount] = data.pvplosecount
-            it[colornick] = data.colornick
-            it[mute] = data.mute
-            it[accountid] = data.id
-            it[accountpw] = data.pw
+        transaction {
+            Player.update({ Player.uuid eq id }) {
+                it[name] = data.name
+                it[uuid] = data.uuid
+                it[countryCode] = data.countryCode
+                it[placecount] = data.placecount
+                it[breakcount] = data.breakcount
+                it[joincount] = data.joincount
+                it[kickcount] = data.kickcount
+                it[level] = data.level
+                it[exp] = data.exp
+                it[joinDate] = data.joinDate
+                it[lastdate] = data.lastdate
+                it[playtime] = data.playtime
+                it[attackclear] = data.attackclear
+                it[pvpwincount] = data.pvpwincount
+                it[pvplosecount] = data.pvplosecount
+                it[colornick] = data.colornick
+                it[mute] = data.mute
+                it[accountid] = data.id
+                it[accountpw] = data.pw
+            }
         }
     }
 
     fun delete(id: String){
-        Player.deleteWhere { Player.uuid.eq(id) }
+        transaction {
+            Player.deleteWhere { Player.uuid.eq(id) }
+        }
     }
 
     fun close(){
