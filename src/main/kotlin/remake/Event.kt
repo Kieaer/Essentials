@@ -97,9 +97,6 @@ object Event {
 
         Events.on(EventType.PlayerJoin::class.java){
             val data = DB[it.player.uuid()]
-            if(Config.authType == Config.AuthType.None){
-                Trigger.createPlayer(it.player, it.player.name)
-            }
             if(data != null){
                 Trigger.loadPlayer(it.player, data)
             } else {

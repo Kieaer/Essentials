@@ -54,6 +54,10 @@ class Main : Plugin(){
     }
 
     private fun createFile(){
+        if(!root.child("data").exists()) {
+            root.child("data").mkdirs()
+        }
+
         if(!root.child("log").exists()) {
             val names = arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
             for(a in names) {
