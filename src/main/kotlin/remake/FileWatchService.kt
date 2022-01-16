@@ -4,6 +4,7 @@ import arc.Core
 import arc.files.Fi
 import arc.util.Log
 import arc.util.async.Threads.sleep
+import mindustry.gen.Groups
 import java.io.IOException
 import java.nio.file.*
 
@@ -26,6 +27,11 @@ object FileWatchService : Runnable {
                     val paths = (event.context() as Path).fileName.toString()
                     if((paths == "permission_user.hjson" || paths == "permission.hjson") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         Permission.load()
+
+                        for (c in Groups.player){
+                            c.name = Permission[c].name
+                            c.admin = Permission[c].admin
+                        }
                         Log.info("Permission file updated!")
                     }
                 }

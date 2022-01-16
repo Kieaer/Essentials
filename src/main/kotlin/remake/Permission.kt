@@ -2,6 +2,9 @@ package remake
 
 import arc.Core
 import arc.files.Fi
+import arc.util.Log
+import mindustry.Vars.netServer
+import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import org.hjson.JsonArray
 import org.hjson.JsonObject
@@ -22,7 +25,7 @@ object Permission {
 
     fun load() {
         perm = JsonValue.readHjson(root.reader()).asObject()
-        data = JsonValue.readHjson(user.reader()).asArray()
+        data = JsonArray()
 
         for (data in perm) {
             val name = data.name
@@ -42,7 +45,7 @@ object Permission {
             }
         }
 
-        for (a in data) {
+        for (a in JsonValue.readHjson(user.reader()).asArray()) {
             val b = a.asObject()
             val result = JsonObject()
 
@@ -62,12 +65,12 @@ object Permission {
             val result = PermissionData
 
             result.uuid = data.getString("uuid", player.uuid())
-            result.name = data.getString("name", player.name())
+            result.name = data.getString("name", netServer.admins.findByIP(player.ip()).lastName)
             result.group = data.getString("group", default)
             result.chatFormat = data.getString("chatFormat", "%1[orange] > [white]%2")
             result.admin = data.getBoolean("admin", false)
 
-            return if (player.uuid() == result.uuid) result else PermissionData
+            return if (player.uuid() == data.get("uuid").asString()) result else PermissionData
         }
         return PermissionData
     }
