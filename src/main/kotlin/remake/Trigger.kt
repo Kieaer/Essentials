@@ -18,6 +18,8 @@ object Trigger {
         player.name(data.name)
         data.lastdate = System.currentTimeMillis()
         data.joincount++
+
+        DB.players.add(data)
     }
 
     fun createPlayer(player: Playerc, password: String?){
