@@ -21,6 +21,9 @@ object Trigger {
         data.lastdate = System.currentTimeMillis()
         data.joincount++
 
+        player.name(Permission[player].name)
+        player.admin(Permission[player].admin)
+
         DB.players.add(data)
     }
 
