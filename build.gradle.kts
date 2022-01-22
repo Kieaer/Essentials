@@ -1,11 +1,11 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.5.0"
+    id("org.jetbrains.kotlin.jvm") version "1.6.10"
     id("org.sonarqube") version "3.3"
     jacoco
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_16
+    sourceCompatibility = JavaVersion.VERSION_17
 }
 
 repositories {
