@@ -44,6 +44,7 @@ object FileWatchService : Runnable {
                     }
                 }
             } catch(e: InterruptedException) {
+                watchService.close()
                 Thread.currentThread().interrupt()
             }
         }

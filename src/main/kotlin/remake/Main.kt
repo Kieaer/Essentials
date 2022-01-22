@@ -35,7 +35,7 @@ class Main : Plugin(){
             override fun dispose() {
                 timer.cancel()
                 DB.close()
-                daemon.shutdown()
+                daemon.shutdownNow()
             }
         })
     }
