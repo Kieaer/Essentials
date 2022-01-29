@@ -18,6 +18,7 @@ import mindustry.gen.*
 import mindustry.gen.Unit
 import mindustry.net.Administration
 import mindustry.type.UnitType
+import remake.Main.Companion.bundle
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -221,16 +222,16 @@ class Commands(handler:CommandHandler) {
         fun info(){
             val result = DB.players.find { it.uuid == player.uuid() }
             val texts = """
-                name: ${result.name}
-                placecount: ${result.placecount}
-                breakcount: ${result.breakcount}
-                level: ${result.level}
-                exp: ${result.exp}
-                joinDate: ${Timestamp(result.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                playtime: ${String.format("%d:%02d:%02d:%02d", (result.playtime/60/60/24) % 365, (result.playtime/60/24) % 24, (result.playtime/60) % 60, (result.playtime) % 60)}
-                attackclear: ${result.attackclear}
-                pvpwincount: ${result.pvpwincount}
-                pvplosecount: ${result.pvplosecount}
+                ${bundle["name"]}: ${result.name}
+                ${bundle["placecount"]}: ${result.placecount}
+                ${bundle["breakcount"]}: ${result.breakcount}
+                ${bundle["level"]}: ${result.level}
+                ${bundle["exp"]}: ${result.exp}
+                ${bundle["joindate"]}: ${Timestamp(result.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (result.playtime/60/60/24) % 365, (result.playtime/60/24) % 24, (result.playtime/60) % 60, (result.playtime) % 60)}
+                ${bundle["attackclear"]}: ${result.attackclear}
+                ${bundle["pvpwincount"]}: ${result.pvpwincount}
+                ${bundle["pvplosecount"]}: ${result.pvplosecount}
             """.trimIndent()
             Call.infoMessage(player.con(), texts)
         }
@@ -248,12 +249,12 @@ class Commands(handler:CommandHandler) {
             // 계정을 등록할 때 사용
             // reg <pw> <pw_repeat>
             if(arg.size != 2){
-                player.sendMessage("Usage: /reg <password> <password repeat>")
+                player.sendMessage(bundle["command.reg.usage"])
             } else if(arg[0] == arg[1]) {
-                player.sendMessage("Password repeat value isn't same.")
+                player.sendMessage(bundle["command.reg.incorrect"])
             } else {
                 Trigger.createPlayer(player, arg[0])
-                Log.info("${player.name()} data created.")
+                Log.info(bundle["log.data_created", player.name()])
             }
         }
 
@@ -290,7 +291,7 @@ class Commands(handler:CommandHandler) {
             val motd = if(root.child("motd/${data.countryCode}.txt").exists()) {
                 root.child("motd/${data.countryCode}.txt").readString()
             } else {
-                val file = root.child("motd/en_US.txt")
+                val file = root.child("motd/en.txt")
                 if(file.exists()) file.readString() else ""
             }
             val count = motd.split("\r\n|\r|\n").toTypedArray().size

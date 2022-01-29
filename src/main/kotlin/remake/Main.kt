@@ -19,9 +19,14 @@ class Main : Plugin(){
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     private val daemon: ExecutorService = Executors.newCachedThreadPool()
     private val timer = java.util.Timer()
+
+    companion object{
+        val bundle = Bundle()
+    }
     
     init {
-        Log.info("[Essentials] Initializing..")
+
+        Log.info("[Essentials] ${bundle["initializing"]}")
 
         createFile()
         DB.open()
@@ -73,8 +78,8 @@ class Main : Plugin(){
 
         if(!root.child("motd").exists()) {
             root.child("motd").mkdirs()
-            val names = arrayListOf("en_US", "ko_KR")
-            val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en_US.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko_KR.txt[] 파일을 수정하세요.")
+            val names = arrayListOf("en", "ko")
+            val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요.")
             for(a in 0 until names.size) {
                 if(!root.child("motd/${names[a]}.txt").exists()) {
                     root.child("motd/${names[a]}.txt").writeString(texts[a])
