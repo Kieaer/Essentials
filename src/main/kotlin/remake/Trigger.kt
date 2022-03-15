@@ -19,9 +19,12 @@ object Trigger {
     fun loadPlayer(player: Playerc, data: DB.PlayerData){
         player.name(data.name)
         data.lastdate = System.currentTimeMillis()
-        data.joincount++
+        data.joincount
 
-        player.name(Permission[player].name)
+        val perm = Permission[player]
+        if(perm.name.isNotEmpty()) player.name(Permission[player].name)
+
+
         player.admin(Permission[player].admin)
 
         DB.players.add(data)
