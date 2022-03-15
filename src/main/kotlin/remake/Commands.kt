@@ -33,9 +33,9 @@ class Commands(handler:CommandHandler) {
     init {
         handler.removeCommand("help")
         
-        handler.register("chars", "<Text...>", "Make pixel texts") { a, p: Playerc -> Work(a, p).chars() }
+        handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Work(a, p).chars() }
         handler.register("color", "Enable color nickname") { a, p: Playerc -> Work(a, p).color() }
-        handler.register("killall", "Kill all enemy units") { a, p: Playerc -> Work(a, p).killall() }
+        handler.register("killall", "[team]", "Kill all enemy units") { a, p: Playerc -> Work(a, p).killall() }
         handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Work(a, p).help() }
         handler.register("info", "Show your information") { a, p: Playerc -> Work(a, p).info() }
         handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server-to-server warp zone.") { a, p: Playerc -> Work(a, p).hub() }
