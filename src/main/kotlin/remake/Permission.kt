@@ -60,19 +60,28 @@ object Permission {
     }
 
     operator fun get(player: Playerc) : PermissionData{
+        val result = PermissionData
+
+        result.uuid = player.uuid()
+        result.name = netServer.admins.findByIP(player.ip()).lastName
+        result.group = default
+        result.chatFormat = "%1[orange] > [white]%2"
+        result.admin = false
+
         data.forEach {
             val data = it.asObject()
-            val result = PermissionData
 
-            result.uuid = data.getString("uuid", player.uuid())
-            result.name = data.getString("name", netServer.admins.findByIP(player.ip()).lastName)
-            result.group = data.getString("group", default)
-            result.chatFormat = data.getString("chatFormat", "%1[orange] > [white]%2")
-            result.admin = data.getBoolean("admin", false)
+            if(data.has("uuid") && data.get("uuid").asString().equals(player.uuid())){
+                result.uuid = data.getString("uuid", player.uuid())
+                result.name = data.getString("name", netServer.admins.findByIP(player.ip()).lastName)
+                result.group = data.getString("group", default)
+                result.chatFormat = data.getString("chatFormat", "%1[orange] > [white]%2")
+                result.admin = data.getBoolean("admin", false)
+            }
 
             return if (player.uuid() == data.get("uuid").asString()) result else PermissionData
         }
-        return PermissionData
+        return result
     }
 
     fun check(player: Playerc, command: String): Boolean {
