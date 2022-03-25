@@ -1,10 +1,10 @@
 package remake
 
 import arc.util.Log
-import arc.util.Timer
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
 import mindustry.gen.Playerc
+import remake.Main.Companion.database
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.SocketException
@@ -19,15 +19,13 @@ object Trigger {
     fun loadPlayer(player: Playerc, data: DB.PlayerData){
         player.name(data.name)
         data.lastdate = System.currentTimeMillis()
-        data.joincount
+        data.joincount = data.joincount++
 
         val perm = Permission[player]
         if(perm.name.isNotEmpty()) player.name(Permission[player].name)
-
-
         player.admin(Permission[player].admin)
 
-        DB.players.add(data)
+        database.players.add(data)
     }
 
     fun createPlayer(player: Playerc, password: String?){
@@ -61,13 +59,13 @@ object Trigger {
         data.id = player.name()
         data.pw = password ?: player.name()
 
-        DB.createData(data)
+        database.createData(data)
         loadPlayer(player, data)
     }
 
     class Time: TimerTask() {
         override fun run() {
-            DB.players.forEach {
+            database.players.forEach {
                 it.playtime = it.playtime+1
             }
         }

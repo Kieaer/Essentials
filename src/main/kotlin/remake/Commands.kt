@@ -19,6 +19,7 @@ import mindustry.gen.Unit
 import mindustry.net.Administration
 import mindustry.type.UnitType
 import remake.Main.Companion.bundle
+import remake.Main.Companion.database
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -58,7 +59,7 @@ class Commands(handler:CommandHandler) {
         handler.register("config", "<name> [value]", "Edit server config") { a, p: Playerc -> Work(a, p).config() }
         handler.register("gg", "[delay]", "Force gameover") { a, p: Playerc -> Work(a, p).gg() }
         handler.register("effect", "[effects]", "effects") { a, p: Playerc -> Work(a, p).effect() }
-        handler.register("god", "[Player_name]", "Force gameover") { a, p: Playerc -> Work(a, p).god() }
+        handler.register("god", "[Player_name]", "Set max player health") { a, p: Playerc -> Work(a, p).god() }
         handler.register("random", "", "Random events") { a, p: Playerc -> Work(a, p).random() }
         handler.register("pause", "Pause server") { a, p: Playerc -> Work(a, p).pause() }
         handler.register("js", "[code]", "Execute JavaScript codes") { a, p: Playerc -> Work(a, p).js() }
@@ -66,9 +67,10 @@ class Commands(handler:CommandHandler) {
     }
 
     private inner class Work(val arg: Array<String>, val player: Playerc){
-        val data : DB.PlayerData = DB.players.find { it.uuid == player.uuid() }
+        val data : DB.PlayerData? = database.players.find { a -> a.uuid == player.uuid() }
 
         fun chars(){
+            if (!Permission.check(player, "chars")) return
             // 블록으로 글자 표시
             // arg: <글자>
             if(Vars.world != null) {
@@ -166,6 +168,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun killall(){
+            if (!Permission.check(player, "killall")) return
             // 모든 또는 특정 유닛 파괴
             // arg: [팀]
             if(arg.isEmpty()){
@@ -189,6 +192,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun help(){
+            if (!Permission.check(player, "help")) return
             // 명령어 도움말 표시
             if(arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
                 player.sendMessage("Page value must be number!")
@@ -220,32 +224,40 @@ class Commands(handler:CommandHandler) {
         }
 
         fun info(){
-            val result = DB.players.find { it.uuid == player.uuid() }
-            val texts = """
-                ${bundle["name"]}: ${result.name}
-                ${bundle["placecount"]}: ${result.placecount}
-                ${bundle["breakcount"]}: ${result.breakcount}
-                ${bundle["level"]}: ${result.level}
-                ${bundle["exp"]}: ${result.exp}
-                ${bundle["joindate"]}: ${Timestamp(result.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (result.playtime/60/60/24) % 365, (result.playtime/60/24) % 24, (result.playtime/60) % 60, (result.playtime) % 60)}
-                ${bundle["attackclear"]}: ${result.attackclear}
-                ${bundle["pvpwincount"]}: ${result.pvpwincount}
-                ${bundle["pvplosecount"]}: ${result.pvplosecount}
-            """.trimIndent()
-            Call.infoMessage(player.con(), texts)
+            if (!Permission.check(player, "info")) return
+            val result = database.players.find { a -> a.uuid == player.uuid() }
+            if (result == null){
+                Call.sendMessage("Player not found!")
+            } else {
+                val texts = """
+                    ${bundle["name"]}: ${result.name}
+                    ${bundle["placecount"]}: ${result.placecount}
+                    ${bundle["breakcount"]}: ${result.breakcount}
+                    ${bundle["level"]}: ${result.level}
+                    ${bundle["exp"]}: ${result.exp}
+                    ${bundle["joindate"]}: ${Timestamp(result.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                    ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (result.playtime/60/60/24) % 365, (result.playtime/60/24) % 24, (result.playtime/60) % 60, (result.playtime) % 60)}
+                    ${bundle["attackclear"]}: ${result.attackclear}
+                    ${bundle["pvpwincount"]}: ${result.pvpwincount}
+                    ${bundle["pvplosecount"]}: ${result.pvplosecount}
+                """.trimIndent()
+                Call.infoMessage(player.con(), texts)
+            }
         }
 
         fun color(){
+            if (!Permission.check(player, "color")) return
             // 무지개 닉네임 기능
         }
 
         fun login(){
+            if (!Permission.check(player, "login")) return
             // 계정에 로그인 할 때 사용
             // login <id> <pw>
         }
 
         fun register(){
+            if (!Permission.check(player, "register")) return
             // 계정을 등록할 때 사용
             // reg <pw> <pw_repeat>
             if(arg.size != 2){
@@ -259,6 +271,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun maps(){
+            if (!Permission.check(player, "maps")) return
             // 서버에 있는 맵 기능 표시
             val list = Vars.maps.all()
             val build = StringBuilder()
@@ -281,14 +294,16 @@ class Commands(handler:CommandHandler) {
         }
 
         fun me(){
+            if (!Permission.check(player, "me")) return
             // 특수 포맷으로 채팅 표시
             Call.sendMessage("*${player.name()}: ${arg[0]}")
         }
 
         fun motd(){
+            if (!Permission.check(player, "motd")) return
             // 서버 motd 표시
             // todo countryCode
-            val motd = if(root.child("motd/${data.countryCode}.txt").exists()) {
+            val motd = if(root.child("motd/${data!!.countryCode}.txt").exists()) {
                 root.child("motd/${data.countryCode}.txt").readString()
             } else {
                 val file = root.child("motd/en.txt")
@@ -300,6 +315,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun players(){
+            if (!Permission.check(player, "players")) return
             // 서버에 있는 플레이어 목록 표시
             val message = StringBuilder()
             val page = if(arg.isNotEmpty()) arg[0].toInt() else 0
@@ -326,6 +342,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun spawn(){
+            if (!Permission.check(player, "spawn")) return
             // 몹 스폰
             val type = arg[0]
             val name = arg[1]
@@ -357,8 +374,8 @@ class Commands(handler:CommandHandler) {
                     }
                 }
                 type.equals("block", true) -> {
-                    if (Vars.content.blocks().find { it.name == name } != null){
-                        Call.constructFinish(player.tileOn(), Vars.content.blocks().find { it.name.equals(name, true) }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
+                    if (Vars.content.blocks().find { a -> a.name == name } != null){
+                        Call.constructFinish(player.tileOn(), Vars.content.blocks().find { a -> a.name.equals(name, true) }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
                     } else {
                         val names = StringBuilder()
                         Vars.content.blocks().each {
@@ -374,6 +391,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun status(){
+            if (!Permission.check(player, "status")) return
             // 서버 상태 표시
             val bans = netServer.admins.banned.size
             val ipbans = netServer.admins.bannedIPs.size
@@ -390,6 +408,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun team(){
+            if (!Permission.check(player, "team")) return
             // 팀 변경
             when(arg[0]) {
                 "derelict" -> player.team(Team.derelict)
@@ -402,6 +421,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun time(){
+            if (!Permission.check(player, "time")) return
             // 서버 시간 표시
             val now = LocalDateTime.now()
             val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -409,50 +429,57 @@ class Commands(handler:CommandHandler) {
         }
 
         fun weather(){
+            if (!Permission.check(player, "weather")) return
             // 날씨 기능
         }
 
         fun mute(){
+            if (!Permission.check(player, "mute")) return
             // 특정 플레이어 채팅 금지 기능
             val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
             if(other == null) {
                 player.sendMessage("Target player not found!")
             } else {
-                val target = DB[other.uuid()]
+                val target = database[other.uuid()]
                 target!!.mute = true
                 player.sendMessage("Target player ${target.name} is muted.")
             }
         }
 
         fun unmute(){
+            if (!Permission.check(player, "unmute")) return
             // 특정 플레이어 채팅 금지 해제
             val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
             if(other == null) {
                 player.sendMessage("Target player not found!")
             } else {
-                val target = DB[other.uuid()]
+                val target = database[other.uuid()]
                 target!!.mute = false
                 player.sendMessage("Target player ${target.name} is unmuted.")
             }
         }
 
         fun effect(){
+            if (!Permission.check(player, "effect")) return
             // 효과 표시 기능
             //Effect effect, float x, float y, float rotation, Color color
             //Call.effect()
         }
 
         fun god(){
+            if (!Permission.check(player, "god")) return
             // 무적 기능
-            player.unit().health(99999999f)
+            player.unit().health(1.0E8f)
             player.sendMessage("Set high player unit health.")
         }
 
         fun random(){
+            if (!Permission.check(player, "random")) return
             // 무작위 이벤트 기능
         }
 
         fun pause(){
+            if (!Permission.check(player, "pause")) return
             // 서버 일시정지 기능
             val pause = arg[0] == "on"
             Vars.state.serverPaused = pause
@@ -460,17 +487,23 @@ class Commands(handler:CommandHandler) {
         }
 
         fun js(){
-            val output = mods.scripts.runConsole(arg[0])
-            try {
-                val errorName = output?.substring(0, output.indexOf(' ') - 1)
-                Class.forName("org.mozilla.javascript.$errorName")
-                player.sendMessage("> [#ff341c]$output")
-            } catch (e: Throwable) {
-                player.sendMessage("> $output")
+            if (!Permission.check(player, "js")) return
+            if (arg.isEmpty()){
+                player.sendMessage("Please write javascript source code!")
+            } else {
+                val output = mods.scripts.runConsole(arg[0])
+                try {
+                    val errorName = output?.substring(0, output.indexOf(' ') - 1)
+                    Class.forName("org.mozilla.javascript.$errorName")
+                    player.sendMessage("> [#ff341c]$output")
+                } catch (e: Throwable) {
+                    player.sendMessage("> $output")
+                }
             }
         }
 
         fun hub() {
+            if (!Permission.check(player, "hub")) return
             // 서버간 이동 기능
             // type ip
             when(arg[0]){
@@ -487,11 +520,13 @@ class Commands(handler:CommandHandler) {
         }
 
         fun gg(){
+            if (!Permission.check(player, "gg")) return
             // 강제 게임오버 기능
             Call.gameOver(Team.crux)
         }
 
         fun kill(){
+            if (!Permission.check(player, "kill")) return
             // 자신 또는 특정 플레이어 유닛을 파괴하는 기능
             if(arg.isEmpty()) {
                 player.unit().kill()
@@ -503,6 +538,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun meme(){
+            if (!Permission.check(player, "meme")) return
             // 밈
             when(arg[0]){
                 "router" -> {
@@ -620,10 +656,10 @@ class Commands(handler:CommandHandler) {
                             [#6B6B6B][#585858][#6B6B6B]
                             """
                     )
-                    if(data.status.containsKey("router")){
+                    if(data!!.status.containsKey("router")){
                         data.status.put("router", false)
                     } else {
-                        Core.app.post {
+                        Thread{
                             data.status.put("router", true)
                             while (!player.isNull) {
                                 for (d in loop) {
@@ -644,7 +680,7 @@ class Commands(handler:CommandHandler) {
                                     Threads.sleep(500)
                                 }
                             }
-                        }
+                        }.start()
                     }
                 }
                 "music" -> {
@@ -654,6 +690,7 @@ class Commands(handler:CommandHandler) {
         }
 
         fun tp(){
+            if (!Permission.check(player, "tp")) return
             // 플레이어에게 이동하는 기능
             val other = if (arg[0].toIntOrNull() != null) {
                 Groups.player.find { e -> e.id == arg[0].toInt() }
@@ -669,9 +706,10 @@ class Commands(handler:CommandHandler) {
         }
 
         fun config(){
+            if (!Permission.check(player, "config")) return
             // 설정 편집 기능
             // /config 이름 값
-            val property = remake.Config::class.memberProperties.find { it.name == arg[0] }
+            val property = Config::class.memberProperties.find{ a -> a.name == arg[0] }
             if (property is KMutableProperty<*>) {
                 property.setter.call(arg[0], arg[1])
                 player.sendMessage("Set ${arg[0]} to ${arg[1]}")
@@ -679,16 +717,17 @@ class Commands(handler:CommandHandler) {
         }
 
         fun search(){
+            if (!Permission.check(player, "search")) return
             // 플레이어 데이터 검색 기능
             // arg[0] 이름 또는 uuid 값
             val result = ArrayList<DB.PlayerData?>()
             val data = netServer.admins.findByName(arg[0])
             if (data.size > 0){
                 for (info : Administration.PlayerInfo in data){
-                    result.add(DB[info.id])
+                    result.add(database[info.id])
                 }
             } else {
-                result.add(DB[arg[0]])
+                result.add(database[arg[0]])
             }
 
             if (result.size > 0){
