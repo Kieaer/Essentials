@@ -8,20 +8,17 @@ import arc.util.Log
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.sql.DriverManager
-import java.sql.ResultSet
 import java.util.*
 
 
-object DB {
-    val players: Seq<PlayerData> = Seq<PlayerData>()
-    val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+class DB {
+    val players: Seq<PlayerData> = Seq()
     lateinit var db: Database
 
     fun open() {
         try {
             Log.info("DB init")
-            db = Database.connect("jdbc:sqlite:${root.child("data/database.db").absolutePath()}")
+            db = Database.connect("jdbc:sqlite:${Core.settings.dataDirectory.child("mods/Essentials/data/database.db").absolutePath()}")
             transaction { SchemaUtils.create(Player) }
         } catch (e: Exception){
             e.printStackTrace()

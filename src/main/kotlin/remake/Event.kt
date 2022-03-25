@@ -1,14 +1,13 @@
 package remake
 
+import arc.Core
 import arc.Events
+import arc.files.Fi
 import arc.util.Log
-import mindustry.Vars.netServer
 import mindustry.game.EventType
 import mindustry.game.EventType.ConfigEvent
 import mindustry.gen.Call
-import org.hjson.Stringify
-import remake.DB.createData
-import remake.DB.root
+import remake.Main.Companion.database
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -68,7 +67,7 @@ object Event {
 
         Events.on(EventType.BlockBuildEndEvent::class.java){
             if (it.unit.isPlayer){
-                val player = DB[it.unit.player.uuid()]
+                val player = database[it.unit.player.uuid()]
                 if (player != null) {
                     if (!it.breaking) player.placecount++ else player.breakcount++
                 }
@@ -96,7 +95,7 @@ object Event {
         }
 
         Events.on(EventType.PlayerJoin::class.java){
-            val data = DB[it.player.uuid()]
+            val data = database[it.player.uuid()]
             if(data != null){
                 Trigger.loadPlayer(it.player, data)
             } else {
@@ -107,11 +106,11 @@ object Event {
         }
 
         Events.on(EventType.PlayerLeave::class.java){
-            val data = DB.players.find { data -> data.uuid == it.player.uuid() }
+            val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if(data != null){
-                DB.update(it.player.uuid(), data)
+                database.update(it.player.uuid(), data)
             }
-            DB.players.remove(data)
+            database.players.remove(data)
         }
 
         Events.on(EventType.PlayerBanEvent::class.java){
@@ -132,6 +131,8 @@ object Event {
     }
 
     fun log(type: LogType, text: String) {
+        val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+
         val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
         val new = Paths.get(root.child("log/$type.log").path())
         val old = Paths.get(root.child("log/old/$type/$date.log").path())

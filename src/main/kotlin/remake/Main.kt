@@ -5,7 +5,6 @@ import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Log
-import arc.util.Timer
 import mindustry.Vars
 import mindustry.mod.Plugin
 import org.hjson.JsonArray
@@ -13,7 +12,6 @@ import org.hjson.JsonObject
 import org.hjson.Stringify
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 
 class Main : Plugin(){
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
@@ -22,6 +20,7 @@ class Main : Plugin(){
 
     companion object{
         val bundle = Bundle()
+        val database = DB()
     }
     
     init {
@@ -29,7 +28,7 @@ class Main : Plugin(){
         Log.info("[Essentials] ${bundle["initializing"]}")
 
         createFile()
-        DB.open()
+        database.open()
         Config.load()
         Permission.load()
         PluginData.load()
@@ -39,7 +38,7 @@ class Main : Plugin(){
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 timer.cancel()
-                DB.close()
+                database.close()
                 daemon.shutdownNow()
             }
         })
@@ -53,7 +52,7 @@ class Main : Plugin(){
 
         Vars.netServer.admins.addActionFilter { e ->
             if(e.player == null) return@addActionFilter true
-            return@addActionFilter DB[e.player.uuid()] != null
+            return@addActionFilter database[e.player.uuid()] != null
         }
     }
 

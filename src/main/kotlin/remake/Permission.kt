@@ -79,7 +79,7 @@ object Permission {
                 result.admin = data.getBoolean("admin", false)
             }
 
-            return if (player.uuid() == data.get("uuid").asString()) result else PermissionData
+            return result
         }
         return result
     }
