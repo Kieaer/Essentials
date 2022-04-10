@@ -173,16 +173,16 @@ class Commands(handler:CommandHandler) {
             // arg: [팀]
             if(arg.isEmpty()){
                 for(a in Team.all.indices) {
-                    Groups.unit.each { u: Unit -> if(player.team() != u.team) u.kill() }
+                    Groups.unit.each { u: Unit -> if(player.team() == u.team) u.kill() }
                 }
             } else {
                 when (arg[0].lowercase()){
-                    "derelict" -> Groups.unit.each { u: Unit -> if(Team.derelict != u.team) u.kill() }
-                    "sharded" -> Groups.unit.each { u: Unit -> if(Team.sharded != u.team) u.kill() }
-                    "crux" -> Groups.unit.each { u: Unit -> if(Team.crux != u.team) u.kill() }
-                    "green" -> Groups.unit.each { u: Unit -> if(Team.green != u.team) u.kill() }
-                    "purple" -> Groups.unit.each { u: Unit -> if(Team.purple != u.team) u.kill() }
-                    "blue" -> Groups.unit.each { u: Unit -> if(Team.blue != u.team) u.kill() }
+                    "derelict" -> Groups.unit.each { u: Unit -> if(Team.derelict == u.team) u.kill() }
+                    "sharded" -> Groups.unit.each { u: Unit -> if(Team.sharded == u.team) u.kill() }
+                    "crux" -> Groups.unit.each { u: Unit -> if(Team.crux == u.team) u.kill() }
+                    "green" -> Groups.unit.each { u: Unit -> if(Team.green == u.team) u.kill() }
+                    "purple" -> Groups.unit.each { u: Unit -> if(Team.purple == u.team) u.kill() }
+                    "blue" -> Groups.unit.each { u: Unit -> if(Team.blue == u.team) u.kill() }
                     else -> {
                         player.sendMessage("Incorrect team name! available team is derelict, sharded, crux, green, purple, blue")
                     }
@@ -418,20 +418,22 @@ class Commands(handler:CommandHandler) {
                 "purple" -> player.team(Team.purple)
                 "blue" -> player.team(Team.blue)
             }
-            if (arg.size > 1) {
-                val other = if (arg[1].toIntOrNull() != null) {
-                    Groups.player.find { e -> e.id == arg[1].toInt() }
-                } else {
-                    Groups.player.find { e -> e.name().contains(arg[1]) }
-                }
-                if (other != null) {
-                    when (arg[0]) {
-                        "derelict" -> other.team(Team.derelict)
-                        "sharded" -> other.team(Team.sharded)
-                        "crux" -> other.team(Team.crux)
-                        "green" -> other.team(Team.green)
-                        "purple" -> other.team(Team.purple)
-                        "blue" -> other.team(Team.blue)
+            if (player.admin()){
+                if (arg.size > 1) {
+                    val other = if (arg[1].toIntOrNull() != null) {
+                        Groups.player.find { e -> e.id == arg[1].toInt() }
+                    } else {
+                        Groups.player.find { e -> e.name().contains(arg[1]) }
+                    }
+                    if (other != null) {
+                        when (arg[0]) {
+                            "derelict" -> other.team(Team.derelict)
+                            "sharded" -> other.team(Team.sharded)
+                            "crux" -> other.team(Team.crux)
+                            "green" -> other.team(Team.green)
+                            "purple" -> other.team(Team.purple)
+                            "blue" -> other.team(Team.blue)
+                        }
                     }
                 }
             }
