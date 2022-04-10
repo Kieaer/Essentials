@@ -50,7 +50,7 @@ class Commands(handler:CommandHandler) {
         handler.register("register", "<accountid> <password>", "Register account") { a, p: Playerc -> Work(a, p).register() }
         handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawn mob in player position") { a, p: Playerc -> Work(a, p).spawn() }
         handler.register("status", "Show server status") { a, p: Playerc -> Work(a, p).status() }
-        handler.register("team", "<team_name> <player_name>", "Change team") { a, p: Playerc -> Work(a, p).team() }
+        handler.register("team", "<team_name> [player_name]", "Change team") { a, p: Playerc -> Work(a, p).team() }
         handler.register("time", "Show server time") { a, p: Playerc -> Work(a, p).time() }
         handler.register("tp", "<player>", "Teleport to other players") { a, p: Playerc -> Work(a, p).tp() }
         handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Change map light") { a, p: Playerc -> Work(a, p).weather() }
