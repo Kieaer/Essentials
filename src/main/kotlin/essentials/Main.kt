@@ -46,7 +46,8 @@ class Main : Plugin() {
         val pluginRoot: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     }
 
-    init { //checkServerVersion() // Temporary disabled
+    init {
+        // checkServerVersion() // Temporary disabled
         fileExtract()
 
         // 서버 로비기능 설정
