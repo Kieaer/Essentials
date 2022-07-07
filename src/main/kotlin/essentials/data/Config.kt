@@ -15,7 +15,7 @@ import java.util.*
 
 object Config : Configs() {
     lateinit var obj: JsonObject
-    var locale: Locale = Locale.getDefault()
+    var locale: Locale = Locale.ENGLISH
     var bundle: Bundle = Bundle(locale)
 
     var networkMode = NetworkMode.Client
@@ -128,7 +128,7 @@ object Config : Configs() {
             val array = lc.split("_").toTypedArray()
             Locale(array[0], array[1])
         } else {
-            Locale(System.getProperty("user.language") + "_" + System.getProperty("user.country"))
+            Locale.ENGLISH
         }
 
         logging = settings.getBoolean("logging", true)
