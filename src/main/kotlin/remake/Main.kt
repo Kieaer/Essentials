@@ -24,7 +24,6 @@ class Main : Plugin(){
     }
     
     init {
-
         Log.info("[Essentials] ${bundle["initializing"]}")
 
         createFile()
