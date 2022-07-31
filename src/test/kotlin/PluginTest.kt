@@ -1,3 +1,4 @@
+
 import arc.ApplicationCore
 import arc.Core
 import arc.Events
@@ -7,16 +8,13 @@ import arc.files.Fi
 import arc.graphics.Color
 import arc.util.CommandHandler
 import com.github.javafaker.Faker
-import essentials.Main
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
+import mindustry.Vars.netServer
 import mindustry.Vars.world
 import mindustry.content.Items
-import mindustry.core.FileTree
-import mindustry.core.GameState
-import mindustry.core.Logic
-import mindustry.core.NetServer
-import mindustry.core.Version
+import mindustry.content.UnitTypes
+import mindustry.core.*
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Groups
@@ -30,10 +28,12 @@ import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.Test
+import remake.Main
 import java.io.File
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
+
 
 class PluginTest {
     companion object {
@@ -108,7 +108,7 @@ class PluginTest {
             }
 
             Groups.init()
-            Vars.world.loadMap(testMap[0])
+            world.loadMap(testMap[0])
             Vars.state.set(GameState.State.playing)
             Version.build = 128
             Version.revision = 0
@@ -145,9 +145,10 @@ class PluginTest {
         private fun createPlayer(): Player {
             val player = Player.create()
             val faker = Faker.instance(Locale.KOREA)
+            val ip = r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)
 
             player.reset()
-            player.con = object : NetConnection(r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)) {
+            player.con = object : NetConnection(ip) {
                 override fun send(`object`: Any?, reliable: Boolean) {
                     TODO("Not yet implemented")
                 }
@@ -163,12 +164,14 @@ class PluginTest {
             player.set(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
             player.color.set(Color.rgb(r.nextInt(255), r.nextInt(255), r.nextInt(255)))
             player.color.a = r.nextFloat()
-            player.team(Team.sharded) //player.unit(UnitTypes.dagger.spawn(r.nextInt(300).toFloat(), r.nextInt(500).toFloat()))
+            player.team(Team.sharded)
+            player.unit(UnitTypes.dagger.spawn(r.nextInt(300).toFloat(), r.nextInt(500).toFloat()))
             player.add()
-            Vars.netServer.admins.getInfo(player.uuid())
+            netServer.admins.getInfo(player.uuid())
+            netServer.admins.updatePlayerJoined(player.uuid(), player.con.address, player.name)
             Groups.player.update()
 
-            assertNotNull(player) //assertNotNull(player.unit())
+            assertNotNull(player)
             return player
         }
     }
@@ -184,6 +187,8 @@ class PluginTest {
         Events.fire(EventType.ServerLoadEvent())
 
         Events.fire(EventType.PlayerConnect(player.self()))
+        println(netServer.admins.getInfo(player.uuid()).lastIP)
+        println(netServer.admins.getInfo(player.uuid()).lastName)
         Events.fire(EventType.PlayerJoin(player.self()))
 
         Events.fire(EventType.ConfigEvent(randomTile().build, player.self(), random.nextInt(5)))
