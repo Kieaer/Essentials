@@ -63,6 +63,7 @@ object Trigger {
         loadPlayer(player, data)
     }
 
+    // 1초마다 작동함
     class Time : TimerTask() {
         private var colorOffset = 0
 
@@ -76,12 +77,16 @@ object Trigger {
                     val p = database[player.uuid()]
 
                     if (p != null) {
+                        // 무지개 닉네임
                         if (p.colornick) {
                             val name = p.name.replace("\\[(.*?)]".toRegex(), "")
                             nickcolor(name, player)
                         } else {
                             player.name(p.name)
                         }
+
+                        // 잠수 플레이어 카운트
+
                     }
                 }
             }
