@@ -325,23 +325,23 @@ object Event {
                             }
                         }
                     }
-                    if (NetClient.colorizeName(it.player.id, it.player.name) != null) {
+                    /*if (NetClient.colorizeName(it.player.id, it.player.name) != null) {
                         sendMessage(
                             Permissions.user[playerData.uuid].asObject()["chatFormat"].asString()
                                 .replace("%1", NetClient.colorizeName(it.player.id, it.player.name))
                                 .replace("%2", it.message)
                         )
-                    }
+                    }*/
                 }
             } else {
-                sendMessage(
+                /*sendMessage(
                     "[gray][Unauthorized] ${
                         NetClient.colorizeName(
                             it.player.id,
                             it.player.name
                         )
                     }[white]: ${it.message}"
-                )
+                )*/
             }
         }
 

@@ -79,6 +79,9 @@ class DB {
         var id: String = name
         var pw: String = "none"
         var status: ObjectMap<String, Any> = ObjectMap()
+        var x: Int = 0
+        var y: Int = 0
+        var afkTime : Int = 0
     }
 
     fun createData(data: PlayerData) {

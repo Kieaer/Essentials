@@ -8,6 +8,7 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
+import remake.Main.Companion.database
 
 object Permission {
     var perm = JsonObject()
@@ -62,7 +63,7 @@ object Permission {
 
         result.uuid = player.uuid()
         result.name = netServer.admins.findByIP(player.ip()).lastName
-        result.group = default
+        result.group = database[player.uuid()]!!.permission
         result.chatFormat = "%1[orange] > [white]%2"
         result.admin = false
 

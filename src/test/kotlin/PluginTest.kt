@@ -29,6 +29,7 @@ import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.Test
 import remake.Main
+import remake.Main.Companion.database
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -41,11 +42,11 @@ import kotlin.io.path.Path
 class PluginTest {
     companion object {
         private lateinit var main: Main
-        private val serverCommand = CommandHandler("")
-        private val clientCommand = CommandHandler("/")
         private val r = Random()
         private lateinit var player: Playerc
         private lateinit var path: Fi
+        private val serverCommand: CommandHandler = CommandHandler("")
+        private val clientCommand: CommandHandler = CommandHandler("/")
 
         @BeforeClass
         @JvmStatic
@@ -87,7 +88,7 @@ class PluginTest {
                         Vars.init()
                         Vars.content.createBaseContent()
                         add(Logic().also { Vars.logic = it })
-                        add(NetServer().also { Vars.netServer = it })
+                        add(NetServer().also { netServer = it })
                         Vars.content.init()
                     }
 
@@ -124,7 +125,12 @@ class PluginTest {
             main.registerClientCommands(clientCommand)
             main.registerServerCommands(serverCommand)
 
+            // 플레이어 생성
             player = createPlayer()
+
+            // Call 오류 해결
+            Vars.player = player as Player
+            Vars.netClient = NetClient()
         }
 
         @AfterClass
@@ -191,7 +197,7 @@ class PluginTest {
     }
 
     @Test
-    fun events(){
+    fun test(){
         val random = Random()
         Events.fire(EventType.ServerLoadEvent())
 
@@ -211,48 +217,72 @@ class PluginTest {
         Events.fire(EventType.BuildSelectEvent(randomTile(), Team.crux, player.unit(), false))
         Events.fire(EventType.BuildSelectEvent(randomTile(), Team.crux, player.unit(), true))
 
-        Events.fire(EventType.PlayerLeave(player.self()))
-    }
+        database[player.uuid()]!!.permission = "owner"
 
-    @Test
-    fun register() {
-        println()
         clientCommand.handleMessage("/chars test", player)
-        clientCommand.handleMessage("/color", player)
-        clientCommand.handleMessage("/killall", player)
-        clientCommand.handleMessage("/help", player)
-        clientCommand.handleMessage("/info", player)
-        clientCommand.handleMessage("/hub", player)
-        clientCommand.handleMessage("/kill", player)
-        clientCommand.handleMessage("/login", player)
-        clientCommand.handleMessage("/me", player)
-        clientCommand.handleMessage("/maps", player)
-        clientCommand.handleMessage("/motd", player)
-        clientCommand.handleMessage("/players", player)
-        clientCommand.handleMessage("/meme", player)
-        clientCommand.handleMessage("/register", player)
-        clientCommand.handleMessage("/spawn", player)
-        clientCommand.handleMessage("/status", player)
-        clientCommand.handleMessage("/team", player)
-        clientCommand.handleMessage("/time", player)
-        clientCommand.handleMessage("/tp", player)
-        clientCommand.handleMessage("/weather", player)
-        clientCommand.handleMessage("/mute", player)
-        clientCommand.handleMessage("/unmute", player)
-        clientCommand.handleMessage("/config", player)
-        clientCommand.handleMessage("/gg", player)
-        clientCommand.handleMessage("/effect", player)
-        clientCommand.handleMessage("/god", player)
-        clientCommand.handleMessage("/random", player)
-        clientCommand.handleMessage("/pause", player)
-        clientCommand.handleMessage("/js", player)
-        clientCommand.handleMessage("/search", player)
-        clientCommand.handleMessage("/", player)
-        clientCommand.handleMessage("/", player)
-        clientCommand.handleMessage("/", player)
 
+        repeat(2) { clientCommand.handleMessage("/color", player) }
+
+        clientCommand.handleMessage("/config", player)
+
+        clientCommand.handleMessage("/effect", player)
+
+        clientCommand.handleMessage("/gg 10", player)
+
+        repeat(2) { clientCommand.handleMessage("/god ${player.name()}", player) }
+
+        clientCommand.handleMessage("/help", player)
+
+        clientCommand.handleMessage("/hub", player)
+
+        clientCommand.handleMessage("/info", player)
+
+        clientCommand.handleMessage("/js", player)
+
+        clientCommand.handleMessage("/kill", player)
+
+        clientCommand.handleMessage("/killall", player)
+
+        clientCommand.handleMessage("/login", player)
+
+        clientCommand.handleMessage("/maps", player)
+
+        clientCommand.handleMessage("/me", player)
+
+        clientCommand.handleMessage("/meme", player)
+
+        clientCommand.handleMessage("/motd", player)
+
+        clientCommand.handleMessage("/mute", player)
+
+        clientCommand.handleMessage("/pause on", player)
+        clientCommand.handleMessage("/pause off", player)
+
+        clientCommand.handleMessage("/players", player)
+
+        clientCommand.handleMessage("/random", player)
+
+        clientCommand.handleMessage("/register", player)
+
+        clientCommand.handleMessage("/search ${player.name()}", player)
+
+        clientCommand.handleMessage("/spawn", player)
+
+        clientCommand.handleMessage("/status", player)
+
+        clientCommand.handleMessage("/team", player)
+
+        clientCommand.handleMessage("/time", player)
+
+        clientCommand.handleMessage("/tp", player)
+
+        clientCommand.handleMessage("/unmute", player)
+
+        clientCommand.handleMessage("/weather", player)
 
 
         serverCommand.handleMessage("gen")
+
+        Events.fire(EventType.PlayerLeave(player.self()))
     }
 }
