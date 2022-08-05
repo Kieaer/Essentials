@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class Main : Plugin() {
-    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+    val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     private val daemon: ExecutorService = Executors.newCachedThreadPool()
     private val timer = java.util.Timer()
 
