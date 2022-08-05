@@ -2,9 +2,7 @@ package remake
 
 import arc.Core
 import arc.files.Fi
-import arc.util.Log
 import mindustry.Vars.netServer
-import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import org.hjson.JsonArray
 import org.hjson.JsonObject
@@ -15,10 +13,10 @@ object Permission {
     var perm = JsonObject()
     var data = JsonArray()
     var default = "visitor"
-    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.hjson")
-    private val user: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.hjson")
+    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
+    private val user: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
 
-    fun save(){
+    fun save() {
         root.writeString(perm.toString(Stringify.HJSON))
         user.writeString(data.toString(Stringify.HJSON))
     }
@@ -49,17 +47,17 @@ object Permission {
             val b = a.asObject()
             val result = JsonObject()
 
-            if (b.has("uuid")) result.add("uuid",b.get("uuid").asString())
-            if (b.has("name")) result.add("name",b.get("name").asString())
-            if (b.has("group")) result.add("group",b.get("group").asString())
-            if (b.has("chatFormat")) result.add("chatFormat",b.get("chatFormat").asString())
-            if (b.has("admin")) result.add("admin",b.get("admin").asBoolean())
+            if (b.has("uuid")) result.add("uuid", b.get("uuid").asString())
+            if (b.has("name")) result.add("name", b.get("name").asString())
+            if (b.has("group")) result.add("group", b.get("group").asString())
+            if (b.has("chatFormat")) result.add("chatFormat", b.get("chatFormat").asString())
+            if (b.has("admin")) result.add("admin", b.get("admin").asBoolean())
 
             data.add(result)
         }
     }
 
-    operator fun get(player: Playerc) : PermissionData{
+    operator fun get(player: Playerc): PermissionData {
         val result = PermissionData
 
         result.uuid = player.uuid()
@@ -71,7 +69,7 @@ object Permission {
         data.forEach {
             val data = it.asObject()
 
-            if(data.has("uuid") && data.get("uuid").asString().equals(player.uuid())){
+            if (data.has("uuid") && data.get("uuid").asString().equals(player.uuid())) {
                 result.uuid = data.getString("uuid", player.uuid())
                 result.name = data.getString("name", netServer.admins.findByIP(player.ip()).lastName)
                 result.group = data.getString("group", default)
@@ -87,16 +85,16 @@ object Permission {
     fun check(player: Playerc, command: String): Boolean {
         val data = get(player).group
         val size = perm[data].asObject()["permission"].asArray().size()
-        for(a in 0 until size) {
+        for (a in 0 until size) {
             val node = perm[data].asObject()["permission"].asArray()[a].asString()
-            if(node == command || node.equals("all", true)) {
+            if (node == command || node.equals("all", true)) {
                 return true
             }
         }
         return false
     }
 
-    object PermissionData{
+    object PermissionData {
         var name = ""
         var uuid = ""
         var group = default

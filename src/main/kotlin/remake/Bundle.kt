@@ -14,7 +14,7 @@ class Bundle {
         resource = ResourceBundle.getBundle("bundle", locale)
     }
 
-    operator fun get(key: String): String{
+    operator fun get(key: String): String {
         return MessageFormat.format(resource.getString(key))
     }
 

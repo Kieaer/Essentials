@@ -13,16 +13,16 @@ import org.hjson.Stringify
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class Main : Plugin(){
+class Main : Plugin() {
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     private val daemon: ExecutorService = Executors.newCachedThreadPool()
     private val timer = java.util.Timer()
 
-    companion object{
+    companion object {
         val bundle = Bundle()
         val database = DB()
     }
-    
+
     init {
         Log.info("[Essentials] ${bundle["initializing"]}")
 
@@ -39,6 +39,7 @@ class Main : Plugin(){
                 timer.cancel()
                 database.close()
                 daemon.shutdownNow()
+                Commands.Discord.shutdownNow()
             }
         })
     }
@@ -50,42 +51,46 @@ class Main : Plugin(){
         Vars.netServer.admins.addChatFilter { _, _ -> null }
 
         Vars.netServer.admins.addActionFilter { e ->
-            if(e.player == null) return@addActionFilter true
+            if (e.player == null) return@addActionFilter true
             return@addActionFilter database[e.player.uuid()] != null
         }
     }
 
     override fun registerClientCommands(handler: CommandHandler) {
-        Commands(handler)
+        Commands(handler, true)
     }
 
-    private fun createFile(){
-        if(!root.child("data").exists()) {
-            root.child("data").mkdirs()
-        }
+    override fun registerServerCommands(handler: CommandHandler) {
+        Commands(handler, false)
+    }
 
-        if(!root.child("log").exists()) {
-            val names = arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
-            for(a in names) {
-                if(!root.child("log/$a.log").exists()) {
+    private fun createFile() {
+        if (!root.child("log").exists()) {
+            val names =
+                arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
+            for (a in names) {
+                if (!root.child("log/$a.log").exists()) {
                     root.child("log").mkdirs()
                     root.child("log/$a.log").file().createNewFile()
                 }
             }
         }
 
-        if(!root.child("motd").exists()) {
+        if (!root.child("motd").exists()) {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
-            val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요.")
-            for(a in 0 until names.size) {
-                if(!root.child("motd/${names[a]}.txt").exists()) {
+            val texts = arrayListOf(
+                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]",
+                "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
+            )
+            for (a in 0 until names.size) {
+                if (!root.child("motd/${names[a]}.txt").exists()) {
                     root.child("motd/${names[a]}.txt").writeString(texts[a])
                 }
             }
         }
 
-        if(!root.child("permission.hjson").exists()) {
+        if (!root.child("permission.txt").exists()) {
             val json = JsonObject()
 
             val owner = JsonObject()
@@ -119,6 +124,7 @@ class Main : Plugin(){
             userPerm.add("time")
             userPerm.add("tp")
             userPerm.add("vote")
+            userPerm.add("discord")
 
             user.add("inheritance", "visitor")
             user.add("chatFormat", "%1[orange] > [white]%2")
@@ -140,12 +146,13 @@ class Main : Plugin(){
             json.add("user", user)
             json.add("visitor", visitor)
 
-            root.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
+            root.child("permission.txt").writeString(json.toString(Stringify.HJSON))
         }
 
-        if(!root.child("permission_user.hjson").exists()) {
+        if (!root.child("permission_user.txt").exists()) {
             val obj = JsonArray()
-            obj.setComment("""
+            obj.setComment(
+                """
                 Usage
                 {
                     uuid: String (Must need)
@@ -173,8 +180,9 @@ class Main : Plugin(){
                         admin: true
                     }
                 ]
-            """.trimIndent())
-            root.child("permission_user.hjson").writeString(obj.toString(Stringify.HJSON_COMMENTS))
+            """.trimIndent()
+            )
+            root.child("permission_user.txt").writeString(obj.toString(Stringify.HJSON_COMMENTS))
         }
     }
 }

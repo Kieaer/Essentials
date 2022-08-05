@@ -23,16 +23,25 @@ object Config {
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
 
-    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.hjson")
+    var botToken = ""
+    var channelToken = ""
+
+    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
 
     private fun wizard() {
         Log.info("Do you want to read Essentials plugin documents (y/N)")
         val sc = Scanner(System.`in`)
 
-        when (sc.nextLine()) {
-            "y", "Y" -> {
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                    Desktop.getDesktop().browse(URI("https://github.com/Kieaer/Essentials/wiki"))
+        if (sc.hasNextLine()) {
+            when (sc.nextLine()) {
+                "y", "Y" -> {
+                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                        Desktop.getDesktop().browse(URI("https://github.com/Kieaer/Essentials/wiki"))
+                    }
+                }
+
+                else -> {
+
                 }
             }
         }
@@ -56,8 +65,8 @@ object Config {
         }
     }
 
-    fun save(){
-        if(!root.exists()) {
+    fun save() {
+        if (!root.exists()) {
             wizard()
 
             val plugin = JsonObject()
@@ -72,22 +81,28 @@ object Config {
             features.add("border", border, "Kill units world outside")
             features.add("chatFormat", chatFormat, "Set default chat format")
 
+            val discord = JsonObject()
+            discord.add("botToken", botToken, "Set discord bot token")
+            discord.add("channelToken", channelToken, "Set channel ID")
+
             obj.add("plugin", plugin)
             obj.add("features", features)
-            obj.add("database", "jdbc:sqlite:file:./config/mods/Essentials/data/player")
+            obj.add("discord", discord)
+            obj.add("database", "jdbc:sqlite:file:./config/mods/Essentials/database")
 
             root.writeString(obj.toString(Stringify.HJSON_COMMENTS))
         }
     }
 
-    fun load(){
-        if(!root.exists()) {
+    fun load() {
+        if (!root.exists()) {
             save()
         }
 
         val config = JsonObject.readHjson(root.readString("utf-8")).asObject()
         val plugin = config.get("plugin").asObject()
         val features = config.get("features").asObject()
+        val discord = config.get("discord").asObject()
 
         update = plugin.get("update").asBoolean()
         channel = plugin.get("channel").asString()
@@ -97,5 +112,7 @@ object Config {
         report = plugin.get("report").asBoolean()
         authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
         chatFormat = features.get("chatFormat").asString()
+        botToken = discord.get("botToken").asString()
+        channelToken = discord.get("channelToken").asString()
     }
 }

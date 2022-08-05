@@ -30,9 +30,12 @@ import org.junit.BeforeClass
 import org.junit.Test
 import remake.Main
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
+import kotlin.io.path.Path
 
 
 class PluginTest {
@@ -130,6 +133,13 @@ class PluginTest {
             Core.app.listeners[0].dispose()
             path.child("mods/Essentials").deleteDirectory()
             path.child("maps").deleteDirectory()
+
+            val pathToBeDeleted: Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
+
+            Files.walk(pathToBeDeleted)
+                .sorted(Comparator.reverseOrder())
+                .map { obj: Path -> obj.toFile() }
+                .forEach { obj: File -> obj.delete() }
         }
 
         private fun getSaltString(): String {
@@ -157,8 +167,7 @@ class PluginTest {
                     TODO("Not yet implemented")
                 }
             }
-            player.name(faker.name().username())
-            player.uuid()
+            player.name(faker.gameOfThrones().character())
             player.con.uuid = getSaltString()
             player.con.usid = getSaltString()
             player.set(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
@@ -187,8 +196,6 @@ class PluginTest {
         Events.fire(EventType.ServerLoadEvent())
 
         Events.fire(EventType.PlayerConnect(player.self()))
-        println(netServer.admins.getInfo(player.uuid()).lastIP)
-        println(netServer.admins.getInfo(player.uuid()).lastName)
         Events.fire(EventType.PlayerJoin(player.self()))
 
         Events.fire(EventType.ConfigEvent(randomTile().build, player.self(), random.nextInt(5)))
@@ -209,6 +216,43 @@ class PluginTest {
 
     @Test
     fun register() {
-        clientCommand.handleMessage("/register @as123P", player)
+        println()
+        clientCommand.handleMessage("/chars test", player)
+        clientCommand.handleMessage("/color", player)
+        clientCommand.handleMessage("/killall", player)
+        clientCommand.handleMessage("/help", player)
+        clientCommand.handleMessage("/info", player)
+        clientCommand.handleMessage("/hub", player)
+        clientCommand.handleMessage("/kill", player)
+        clientCommand.handleMessage("/login", player)
+        clientCommand.handleMessage("/me", player)
+        clientCommand.handleMessage("/maps", player)
+        clientCommand.handleMessage("/motd", player)
+        clientCommand.handleMessage("/players", player)
+        clientCommand.handleMessage("/meme", player)
+        clientCommand.handleMessage("/register", player)
+        clientCommand.handleMessage("/spawn", player)
+        clientCommand.handleMessage("/status", player)
+        clientCommand.handleMessage("/team", player)
+        clientCommand.handleMessage("/time", player)
+        clientCommand.handleMessage("/tp", player)
+        clientCommand.handleMessage("/weather", player)
+        clientCommand.handleMessage("/mute", player)
+        clientCommand.handleMessage("/unmute", player)
+        clientCommand.handleMessage("/config", player)
+        clientCommand.handleMessage("/gg", player)
+        clientCommand.handleMessage("/effect", player)
+        clientCommand.handleMessage("/god", player)
+        clientCommand.handleMessage("/random", player)
+        clientCommand.handleMessage("/pause", player)
+        clientCommand.handleMessage("/js", player)
+        clientCommand.handleMessage("/search", player)
+        clientCommand.handleMessage("/", player)
+        clientCommand.handleMessage("/", player)
+        clientCommand.handleMessage("/", player)
+
+
+
+        serverCommand.handleMessage("gen")
     }
 }
