@@ -25,7 +25,6 @@ import remake.Main.Companion.database
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
@@ -50,7 +49,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("config", "<name> [value]", "Edit server config") { a, p: Playerc -> Client(a, p).config() }
             handler.register("effect", "[effects]", "effects") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("gg", "[delay]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
-            handler.register("god", "[Player_name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
+            handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
             handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server-to-server warp zone.") { a, p: Playerc -> Client(a, p).hub() }
             handler.register("info", "Show your information") { a, p: Playerc -> Client(a, p).info() }
@@ -62,7 +61,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("me", "<text...>", "broadcast * message") { a, p: Playerc -> Client(a, p).me() }
             handler.register("meme", "<type>", "Router") { a, p: Playerc -> Client(a, p).meme() }
             handler.register("motd", "Show server motd.") { a, p: Playerc -> Client(a, p).motd() }
-            handler.register("mute", "<Player_name>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
+            handler.register("mute", "<name>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
             handler.register("random", "", "Random events") { a, p: Playerc -> Client(a, p).random() }
@@ -70,10 +69,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawn mob in player position") { a, p: Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p: Playerc -> Client(a, p).status() }
-            handler.register("team", "<team_name> [player_name]", "Change team") { a, p: Playerc -> Client(a, p).team() }
+            handler.register("team", "<team_name> [name]", "Change team") { a, p: Playerc -> Client(a, p).team() }
             handler.register("time", "Show server time") { a, p: Playerc -> Client(a, p).time() }
             handler.register("tp", "<player>", "Teleport to other players") { a, p: Playerc -> Client(a, p).tp() }
-            handler.register("unmute", "<Player_name>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
+            handler.register("unmute", "<name>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
             handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Change map light") { a, p: Playerc -> Client(a, p).weather() }
 
             clientCommands = handler
@@ -732,7 +731,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             """
                     )
                     if (data!!.status.containsKey("router")) {
-                        data.status.put("router", false)
+                        data.status.remove("router")
                     } else {
                         Thread {
                             data.status.put("router", true)
@@ -741,10 +740,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                     player.name(d)
                                     Threads.sleep(500)
                                 }
-                                if (!(data.status.get("router") as Boolean)) {
-                                    data.status.remove("router")
-                                    break
-                                }
+                                if (!data.status.containsKey("router")) break
                                 Threads.sleep(5000)
                                 for (i in loop.indices.reversed()) {
                                     player.name(loop[i])
@@ -797,13 +793,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             // 플레이어 데이터 검색 기능
             // arg[0] 이름 또는 uuid 값
             val result = ArrayList<DB.PlayerData?>()
-            val data = netServer.admins.findByName(arg[0])
-            if (data.size > 0) {
-                for (info: Administration.PlayerInfo in data) {
-                    result.add(database[info.id])
+
+            val data = if (arg[0].toIntOrNull() != null) {
+                Groups.player.find { e -> e.id == arg[0].toInt() }
+            } else {
+                Groups.player.find { e -> e.name().contains(arg[0]) }
+            }
+
+            if (data == null) {
+                val e = netServer.admins.findByName(arg[0])
+                if (e.size > 0) {
+                    for (info: Administration.PlayerInfo in e) {
+                        result.add(database[info.id])
+                    }
+                } else {
+                    result.add(database[arg[0]])
                 }
             } else {
-                result.add(database[arg[0]])
+                result.add(database[data.uuid()])
             }
 
             if (result.size > 0) {
@@ -959,7 +966,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun queue(player: Playerc): Int {
-            val number = Random().nextInt(9999)
+            val number = (Math.random() * 9999).toInt()
             pin.put(player.uuid(), number)
             return number
         }

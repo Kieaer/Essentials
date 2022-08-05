@@ -31,6 +31,7 @@ import org.junit.Test
 import remake.Main
 import remake.Main.Companion.database
 import java.io.File
+import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -106,7 +107,7 @@ class PluginTest {
                         exceptionThrown[0]!!.printStackTrace()
                         Assert.fail()
                     }
-                    Thread.sleep(10)
+                    sleep(10)
                 }
             } catch(e: Exception) {
                 e.printStackTrace()
@@ -137,7 +138,6 @@ class PluginTest {
         @AfterClass
         @JvmStatic
         fun shutdown() {
-            Core.app.listeners[0].dispose()
             path.child("mods/Essentials").deleteDirectory()
             path.child("maps").deleteDirectory()
 
@@ -206,6 +206,11 @@ class PluginTest {
         Events.fire(EventType.PlayerConnect(player.self()))
         Events.fire(EventType.PlayerJoin(player.self()))
 
+        // 더미 플레이어
+        val dummy : Playerc = createPlayer()
+        Events.fire(EventType.PlayerConnect(dummy.self()))
+        Events.fire(EventType.PlayerJoin(dummy.self()))
+
         Events.fire(EventType.ConfigEvent(randomTile().build, player.self(), random.nextInt(5)))
         Events.fire(EventType.TapEvent(player.self(), randomTile()))
         Events.fire(EventType.WithdrawEvent(randomTile().build, player.self(), Items.coal, random.nextInt(30)))
@@ -219,9 +224,11 @@ class PluginTest {
         Events.fire(EventType.BuildSelectEvent(randomTile(), Team.crux, player.unit(), false))
         Events.fire(EventType.BuildSelectEvent(randomTile(), Team.crux, player.unit(), true))
 
+        // 플레이어 설정
         database[player.uuid()]!!.permission = "owner"
+        player.admin(true)
 
-        clientCommand.handleMessage("/chars test", player)
+        clientCommand.handleMessage("/chars abcdefghijklmnopqrstuvwxyz1234567890", player)
 
         repeat(2) { clientCommand.handleMessage("/color", player) }
 
@@ -233,7 +240,9 @@ class PluginTest {
 
         repeat(2) { clientCommand.handleMessage("/god ${player.name()}", player) }
 
+        clientCommand.handleMessage("/help aa", player)
         clientCommand.handleMessage("/help", player)
+        clientCommand.handleMessage("/help 99", player)
 
         clientCommand.handleMessage("/hub", player)
 
@@ -242,49 +251,75 @@ class PluginTest {
         clientCommand.handleMessage("/js", player)
 
         clientCommand.handleMessage("/kill", player)
+        clientCommand.handleMessage("/kill ${dummy.name()}", player)
 
         clientCommand.handleMessage("/killall", player)
 
-        clientCommand.handleMessage("/login", player)
+        clientCommand.handleMessage("/login testas test123", player)
 
         clientCommand.handleMessage("/maps", player)
+        clientCommand.handleMessage("/maps 999", player)
 
-        clientCommand.handleMessage("/me", player)
+        clientCommand.handleMessage("/me hello!", player)
 
-        clientCommand.handleMessage("/meme", player)
+        clientCommand.handleMessage("/meme router", player)
 
         clientCommand.handleMessage("/motd", player)
 
-        clientCommand.handleMessage("/mute", player)
+        clientCommand.handleMessage("/mute ${dummy.name()}", player)
 
         clientCommand.handleMessage("/pause on", player)
         clientCommand.handleMessage("/pause off", player)
 
         clientCommand.handleMessage("/players", player)
+        clientCommand.handleMessage("/players 999", player)
 
         clientCommand.handleMessage("/random", player)
 
-        clientCommand.handleMessage("/register", player)
+        clientCommand.handleMessage("/register testas test123", player)
 
-        clientCommand.handleMessage("/search ${player.name()}", player)
+        clientCommand.handleMessage("/search ${player.id()}", player)
 
-        clientCommand.handleMessage("/spawn", player)
+        clientCommand.handleMessage("/spawn unit dagger 10", player)
+        clientCommand.handleMessage("/spawn unit invalid 10", player)
+        clientCommand.handleMessage("/spawn block copper-wall", player)
+        clientCommand.handleMessage("/spawn block invalid", player)
 
         clientCommand.handleMessage("/status", player)
 
-        clientCommand.handleMessage("/team", player)
+        clientCommand.handleMessage("/team derelict", player)
+        clientCommand.handleMessage("/team blue", player)
+        clientCommand.handleMessage("/team crux", player)
+        clientCommand.handleMessage("/team green", player)
+        clientCommand.handleMessage("/team malis", player)
+        clientCommand.handleMessage("/team sharded", player)
 
         clientCommand.handleMessage("/time", player)
 
-        clientCommand.handleMessage("/tp", player)
+        clientCommand.handleMessage("/tp ${dummy.id()}", player)
 
-        clientCommand.handleMessage("/unmute", player)
+        clientCommand.handleMessage("/unmute ${dummy.name()}", player)
 
         clientCommand.handleMessage("/weather", player)
 
-
         serverCommand.handleMessage("gen")
 
+        main.root.child("permission.txt").writeString(main.root.child("permission.txt").readString())
+
         Events.fire(EventType.PlayerLeave(player.self()))
+
+        println("서비스 실행까지 기다리는 중..")
+        sleep(15000)
+        Core.app.listeners[0].dispose()
+
+        // 서버 재시작 테스트
+        main = Main()
+        main.init()
+        main.registerClientCommands(clientCommand)
+        main.registerServerCommands(serverCommand)
+
+        println("서비스 실행까지 기다리는 중.. 2차")
+        sleep(15000)
+        Core.app.listeners[0].dispose()
     }
 }
