@@ -37,6 +37,7 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
+import kotlin.io.path.exists
 
 
 class PluginTest {
@@ -141,11 +142,12 @@ class PluginTest {
             path.child("maps").deleteDirectory()
 
             val pathToBeDeleted: Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
-
-            Files.walk(pathToBeDeleted)
-                .sorted(Comparator.reverseOrder())
-                .map { obj: Path -> obj.toFile() }
-                .forEach { obj: File -> obj.delete() }
+            if (pathToBeDeleted.exists()) {
+                Files.walk(pathToBeDeleted)
+                    .sorted(Comparator.reverseOrder())
+                    .map { obj: Path -> obj.toFile() }
+                    .forEach { obj: File -> obj.delete() }
+            }
         }
 
         private fun getSaltString(): String {
