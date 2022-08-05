@@ -1,7 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.6.10"
-    id("org.sonarqube") version "3.3"
-    jacoco
+    id("org.sonarqube") version "3.4.0.2513"
 }
 
 java {
@@ -10,7 +9,6 @@ java {
 
 repositories {
     mavenCentral()
-    jcenter()
     maven (url = "https://www.jitpack.io")
 }
 
@@ -24,11 +22,11 @@ dependencies {
     implementation("com.github.PersonTheCat:hjson-java:master")
     implementation("de.svenkubiak:jBCrypt:0.4.3")
     implementation("com.mewna:catnip:3.1.0")
-    implementation("org.apache.maven:maven-artifact:3.8.1")
-    implementation("org.jsoup:jsoup:1.14.2")
+    implementation("org.apache.maven:maven-artifact:3.8.5")
+    implementation("org.jsoup:jsoup:1.14.3")
     implementation("com.github.gimlet2:kottpd:0.2.1")
-    implementation("org.slf4j:slf4j-nop:1.7.32")
-    implementation("com.h2database:h2:1.4.200")
+    implementation("org.slf4j:slf4j-nop:2.0.0-alpha7")
+    implementation("com.h2database:h2:2.1.214")
 
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
@@ -54,24 +52,6 @@ tasks.jar {
         exclude("**/META-INF/*.RSA")
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-    finalizedBy(tasks.getByName("copy"))
-}
-
-tasks.jacocoTestReport {
-    reports {
-        xml.isEnabled = true
-    }
-    dependsOn(tasks.test) // tests are required to run before generating the report
-}
-
-tasks.test {
-    finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
-}
-
-tasks.register<Copy>("copy") {
-    from("$buildDir/libs/Essentials.jar")
-    into("C:/Users/cloud/OneDrive/바탕 화면/server/config/mods")
 }
 
 sourceSets{
@@ -89,8 +69,4 @@ sonarqube {
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.sourceEncoding","utf-8")
     }
-}
-
-jacoco {
-    toolVersion = "0.8.7"
 }

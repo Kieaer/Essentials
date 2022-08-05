@@ -1,10 +1,8 @@
 package remake
 
 import arc.Core
-import arc.files.Fi
 import arc.struct.ObjectMap
 import arc.struct.Seq
-import arc.util.Log
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -17,16 +15,26 @@ class DB {
 
     fun open() {
         try {
-            Log.info("DB init")
-            db = Database.connect("jdbc:sqlite:${Core.settings.dataDirectory.child("mods/Essentials/data/database.db").absolutePath()}")
-            transaction { SchemaUtils.create(Player) }
-        } catch (e: Exception){
+            db = Database.connect(
+                "jdbc:sqlite:${
+                    Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
+                }"
+            )
+            transaction {
+                SchemaUtils.create(Player)
+                SchemaUtils.create(Data)
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
             Core.app.exit()
         }
     }
 
-    object Player : Table(){
+    object Data : Table() {
+        val data = text("data")
+    }
+
+    object Player : Table() {
         val name = text("name").index()
         val uuid = text("uuid")
         val countryCode = text("countryCode")
@@ -46,6 +54,7 @@ class DB {
         val mute = bool("mute")
         val accountid = text("id")
         val accountpw = text("pw")
+        val status = text("status")
     }
 
     object PlayerData {
@@ -72,7 +81,7 @@ class DB {
         var status: ObjectMap<String, Any> = ObjectMap()
     }
 
-    fun createData(data: PlayerData){
+    fun createData(data: PlayerData) {
         transaction {
             Player.insert {
                 it[name] = data.name
@@ -94,13 +103,14 @@ class DB {
                 it[mute] = data.mute
                 it[accountid] = data.id
                 it[accountpw] = data.pw
+                it[status] = data.status.toString()
             }
         }
     }
 
-    operator fun get(uuid: String) : PlayerData?{
+    operator fun get(uuid: String): PlayerData? {
         transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }.apply {
-            if (this != null){
+            if (this != null) {
                 val data = PlayerData
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
@@ -121,6 +131,7 @@ class DB {
                 data.mute = this[Player.mute]
                 data.id = this[Player.accountid]
                 data.pw = this[Player.accountpw]
+                data.status = ObjectMap.of(this[Player.status])
                 return data
             } else {
                 return null
@@ -128,7 +139,7 @@ class DB {
         }
     }
 
-    fun update(id: String, data: PlayerData){
+    fun update(id: String, data: PlayerData) {
         transaction {
             Player.update({ Player.uuid eq id }) {
                 it[name] = data.name
@@ -150,17 +161,49 @@ class DB {
                 it[mute] = data.mute
                 it[accountid] = data.id
                 it[accountpw] = data.pw
+                it[status] = data.status.toString()
             }
         }
     }
 
-    fun delete(id: String){
+    fun delete(id: String) {
         transaction {
             Player.deleteWhere { Player.uuid.eq(id) }
         }
     }
 
-    fun close(){
+    fun search(id: String, pw: String): PlayerData? {
+        transaction { Player.select { (Player.accountid eq id) and (Player.accountpw eq pw) }.firstOrNull() }.apply {
+            if (this != null) {
+                val data = PlayerData
+                data.name = this[Player.name]
+                data.uuid = this[Player.uuid]
+                data.countryCode = this[Player.countryCode]
+                data.placecount = this[Player.placecount]
+                data.breakcount = this[Player.breakcount]
+                data.joincount = this[Player.joincount]
+                data.kickcount = this[Player.kickcount]
+                data.level = this[Player.level]
+                data.exp = this[Player.exp]
+                data.joinDate = this[Player.joinDate]
+                data.lastdate = this[Player.lastdate]
+                data.playtime = this[Player.playtime]
+                data.attackclear = this[Player.attackclear]
+                data.pvpwincount = this[Player.pvpwincount]
+                data.pvplosecount = this[Player.pvplosecount]
+                data.colornick = this[Player.colornick]
+                data.mute = this[Player.mute]
+                data.id = this[Player.accountid]
+                data.pw = this[Player.accountpw]
+                data.status = ObjectMap.of(this[Player.status])
+                return data
+            } else {
+                return null
+            }
+        }
+    }
+
+    fun close() {
         TransactionManager.closeAndUnregister(db)
     }
 }

@@ -3,7 +3,7 @@ package remake
 import arc.Core
 import arc.files.Fi
 import arc.util.Log
-import arc.util.async.Threads.sleep
+import arc.util.Threads.sleep
 import mindustry.gen.Groups
 import java.io.IOException
 import java.nio.file.*
@@ -15,35 +15,41 @@ object FileWatchService : Runnable {
     override fun run() {
         var watchKey: WatchKey
         val path = Paths.get(root.absolutePath())
-        path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.OVERFLOW)
+        path.register(
+            watchService,
+            StandardWatchEventKinds.ENTRY_CREATE,
+            StandardWatchEventKinds.ENTRY_DELETE,
+            StandardWatchEventKinds.ENTRY_MODIFY,
+            StandardWatchEventKinds.OVERFLOW
+        )
 
-        while(!Thread.currentThread().isInterrupted) {
+        while (!Thread.currentThread().isInterrupted) {
             try {
                 watchKey = watchService.take()
                 sleep(50)
                 val events = watchKey.pollEvents()
-                for(event in events) {
+                for (event in events) {
                     val kind = event.kind()
                     val paths = (event.context() as Path).fileName.toString()
-                    if((paths == "permission_user.hjson" || paths == "permission.hjson") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                    if ((paths == "permission_user.txt" || paths == "permission.txt") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         Permission.load()
 
-                        for (c in Groups.player){
+                        for (c in Groups.player) {
                             c.name = Permission[c].name
                             c.admin = Permission[c].admin
                         }
                         Log.info("Permission file updated!")
                     }
                 }
-                if(!watchKey.reset()) {
+                if (!watchKey.reset()) {
                     try {
                         watchService.close()
                         break
-                    } catch(e: IOException) {
+                    } catch (e: IOException) {
                         println(e)
                     }
                 }
-            } catch(e: InterruptedException) {
+            } catch (e: InterruptedException) {
                 watchService.close()
                 Thread.currentThread().interrupt()
             }

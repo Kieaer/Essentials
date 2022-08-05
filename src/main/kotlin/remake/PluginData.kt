@@ -1,13 +1,15 @@
 package remake
 
-import arc.Core
 import arc.struct.Seq
 import arc.util.serialization.Json
 import mindustry.Vars
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.hjson.Stringify
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.io.IOException
 
 object PluginData {
@@ -23,18 +25,38 @@ object PluginData {
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
 
-    private val root = Core.settings.dataDirectory.child("mods/Essentials/data/PluginData.object")
-
-    data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
+    data class WarpZone(
+        val mapName: String,
+        val start: Int,
+        val finish: Int,
+        val touch: Boolean,
+        val ip: String,
+        val port: Int
+    ) {
         val startTile: Tile get() = Vars.world.tile(start)
         val finishTile: Tile get() = Vars.world.tile(finish)
     }
 
-    data class WarpBlock(val mapName: String, val pos: Int, val tileName: String, val size: Int, val ip: String, val port: Int, val description: String) {
+    data class WarpBlock(
+        val mapName: String,
+        val pos: Int,
+        val tileName: String,
+        val size: Int,
+        val ip: String,
+        val port: Int,
+        val description: String
+    ) {
         var online = false
     }
 
-    data class WarpCount(val mapName: String, val pos: Int, val ip: String, val port: Int, var players: Int, var numbersize: Int) {
+    data class WarpCount(
+        val mapName: String,
+        val pos: Int,
+        val ip: String,
+        val port: Int,
+        var players: Int,
+        var numbersize: Int
+    ) {
         val tile: Tile get() = Vars.world.tile(pos)
     }
 
@@ -44,7 +66,7 @@ object PluginData {
 
     data class Banned(val time: Long, val name: String, val uuid: String, val reason: String)
 
-    fun save(){
+    fun save() {
         val json = Json()
         val data = JsonObject()
         var buffer = JsonArray()
@@ -72,23 +94,39 @@ object PluginData {
         banned.forEach { buffer.add(json.toJson(it)) }
         data.add("banned", buffer)
 
-        root.writeString(data.toString(Stringify.FORMATTED))
+        if (transaction { DB.Data.selectAll().firstOrNull() == null }){
+            transaction {
+                DB.Data.insert {
+                    it[this.data] = data.toString()
+                }
+            }
+        } else {
+            transaction {
+                DB.Data.update {
+                    it[this.data] = data.toString()
+                }
+            }
+        }
     }
 
-    fun load(){
+    fun load() {
         val json = Json()
 
         try {
-            if (!root.exists()) {
+            if (transaction { DB.Data.selectAll().firstOrNull() == null }){
                 save()
             } else {
-                val data = JsonObject.readJSON(root.readString("utf-8")).asObject()
-                data["warpZones"].asArray().forEach { warpZones.add(json.fromJson(WarpZone::class.java, it.toString())) }
-                data["warpBlocks"].asArray().forEach { warpBlocks.add(json.fromJson(WarpBlock::class.java, it.toString())) }
-                data["warpCounts"].asArray().forEach { warpCounts.add(json.fromJson(WarpCount::class.java, it.toString())) }
-                data["warpTotals"].asArray().forEach { warpTotals.add(json.fromJson(WarpTotal::class.java, it.toString())) }
-                data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
-                data["banned"].asArray().forEach { banned.add(json.fromJson(Banned::class.java, it.toString())) }
+                transaction {
+                    DB.Data.selectAll().first().apply {
+                        val data = JsonObject.readJSON(this[DB.Data.data]).asObject()
+                        data["warpZones"].asArray().forEach { warpZones.add(json.fromJson(WarpZone::class.java, it.toString())) }
+                        data["warpBlocks"].asArray().forEach { warpBlocks.add(json.fromJson(WarpBlock::class.java, it.toString())) }
+                        data["warpCounts"].asArray().forEach { warpCounts.add(json.fromJson(WarpCount::class.java, it.toString())) }
+                        data["warpTotals"].asArray().forEach { warpTotals.add(json.fromJson(WarpTotal::class.java, it.toString())) }
+                        data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
+                        data["banned"].asArray().forEach { banned.add(json.fromJson(Banned::class.java, it.toString())) }
+                    }
+                }
             }
         } catch (e: IOException) {
             println(e)
