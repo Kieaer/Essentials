@@ -1,6 +1,7 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.6.10"
     id("org.sonarqube") version "3.4.0.2513"
+    jacoco
 }
 
 java {
@@ -54,6 +55,13 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
+tasks.jacocoTestReport {
+    reports {
+        xml.required.set(true)
+        xml.outputLocation.set(file("$buildDir/reports/coverage"))
+    }
+}
+
 sourceSets{
     test{
         resources{
@@ -68,5 +76,6 @@ sonarqube {
         property("sonar.organization", "kieaer")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.sourceEncoding","utf-8")
+        property("sonar.coverage.jacoco.xmlReportPaths", "$buildDir/reports/coverage")
     }
 }
