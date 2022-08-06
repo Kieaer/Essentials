@@ -105,6 +105,7 @@ class Main : Plugin() {
             adminPerm.add("weather")
             adminPerm.add("kill")
             adminPerm.add("team")
+            adminPerm.add("team.other")
             adminPerm.add("mute")
 
             admin.add("inheritance", "user")

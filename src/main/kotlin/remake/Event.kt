@@ -105,7 +105,7 @@ object Event {
                 Trigger.loadPlayer(it.player, data)
             } else {
                 if (Config.authType == Config.AuthType.None) {
-                    Trigger.createPlayer(it.player, null)
+                    Trigger.createPlayer(it.player, null, null)
                 }
             }
         }

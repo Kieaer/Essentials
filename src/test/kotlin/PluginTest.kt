@@ -28,6 +28,7 @@ import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.Test
+import remake.Config
 import remake.Main
 import remake.Main.Companion.database
 import java.io.File
@@ -38,7 +39,6 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
-import kotlin.io.path.exists
 
 
 class PluginTest {
@@ -53,6 +53,13 @@ class PluginTest {
         @BeforeClass
         @JvmStatic
         fun init() {
+            if (System.getProperty("os.name").contains("Windows")) {
+                val pathToBeDeleted: Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
+                if (File("${System.getenv("AppData")}\\app").exists()) {
+                    Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj: Path -> obj.toFile() }.forEach { obj: File -> obj.delete() }
+                }
+            }
+
             Core.settings = Settings()
             Core.settings.dataDirectory = Fi("")
             path = Core.settings.dataDirectory
@@ -140,14 +147,6 @@ class PluginTest {
         fun shutdown() {
             path.child("mods/Essentials").deleteDirectory()
             path.child("maps").deleteDirectory()
-
-            val pathToBeDeleted: Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
-            if (pathToBeDeleted.exists()) {
-                Files.walk(pathToBeDeleted)
-                    .sorted(Comparator.reverseOrder())
-                    .map { obj: Path -> obj.toFile() }
-                    .forEach { obj: File -> obj.delete() }
-            }
         }
 
         private fun getSaltString(): String {
@@ -162,7 +161,7 @@ class PluginTest {
 
         private fun createPlayer(): Player {
             val player = Player.create()
-            val faker = Faker.instance(Locale.KOREA)
+            val faker = Faker.instance(Locale.ENGLISH)
             val ip = r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)
 
             player.reset()
@@ -175,7 +174,7 @@ class PluginTest {
                     TODO("Not yet implemented")
                 }
             }
-            player.name(faker.gameOfThrones().character())
+            player.name(faker.name().lastName())
             player.con.uuid = getSaltString()
             player.con.usid = getSaltString()
             player.set(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
@@ -206,6 +205,11 @@ class PluginTest {
         Events.fire(EventType.PlayerConnect(player.self()))
         Events.fire(EventType.PlayerJoin(player.self()))
 
+        Config.authType = Config.AuthType.Password
+        clientCommand.handleMessage("/reg testas test123 test123", player)
+        clientCommand.handleMessage("/login testas test123", player)
+        database[player.uuid()]!!.permission = "owner"
+
         // 더미 플레이어
         val dummy : Playerc = createPlayer()
         Events.fire(EventType.PlayerConnect(dummy.self()))
@@ -225,14 +229,11 @@ class PluginTest {
         Events.fire(EventType.BuildSelectEvent(randomTile(), Team.crux, player.unit(), true))
 
         // 플레이어 설정
-        database[player.uuid()]!!.permission = "owner"
-        player.admin(true)
-
         clientCommand.handleMessage("/chars abcdefghijklmnopqrstuvwxyz1234567890", player)
 
-        repeat(2) { clientCommand.handleMessage("/color", player) }
-
-        clientCommand.handleMessage("/config", player)
+        clientCommand.handleMessage("/color", player)
+        sleep(3000)
+        clientCommand.handleMessage("/color", player)
 
         clientCommand.handleMessage("/effect", player)
 
@@ -245,6 +246,13 @@ class PluginTest {
         clientCommand.handleMessage("/help 99", player)
 
         clientCommand.handleMessage("/hub", player)
+        clientCommand.handleMessage("/hub zone", player)
+        clientCommand.handleMessage("/hub zone 127.0.0.1:6567 aa true", player)
+        clientCommand.handleMessage("/hub zone 127.0.0.1:6567 5 true", player)
+        clientCommand.handleMessage("/hub block", player)
+        clientCommand.handleMessage("/hub block 127.0.0.1:6567 aa", player)
+        clientCommand.handleMessage("/hub count 127.0.0.1:6567", player)
+        clientCommand.handleMessage("/hub total", player)
 
         clientCommand.handleMessage("/info", player)
 
@@ -253,9 +261,12 @@ class PluginTest {
         clientCommand.handleMessage("/kill", player)
         clientCommand.handleMessage("/kill ${dummy.name()}", player)
 
-        clientCommand.handleMessage("/killall", player)
-
-        clientCommand.handleMessage("/login testas test123", player)
+        clientCommand.handleMessage("/killall derelict", player)
+        clientCommand.handleMessage("/killall blue", player)
+        clientCommand.handleMessage("/killall crux", player)
+        clientCommand.handleMessage("/killall green", player)
+        clientCommand.handleMessage("/killall malis", player)
+        clientCommand.handleMessage("/killall sharded", player)
 
         clientCommand.handleMessage("/maps", player)
         clientCommand.handleMessage("/maps 999", player)
@@ -268,15 +279,13 @@ class PluginTest {
 
         clientCommand.handleMessage("/mute ${dummy.name()}", player)
 
-        clientCommand.handleMessage("/pause on", player)
-        clientCommand.handleMessage("/pause off", player)
+        clientCommand.handleMessage("/pause", player)
+        clientCommand.handleMessage("/pause", player)
 
         clientCommand.handleMessage("/players", player)
         clientCommand.handleMessage("/players 999", player)
 
         clientCommand.handleMessage("/random", player)
-
-        clientCommand.handleMessage("/register testas test123", player)
 
         clientCommand.handleMessage("/search ${player.id()}", player)
 
@@ -309,7 +318,7 @@ class PluginTest {
         Events.fire(EventType.PlayerLeave(player.self()))
 
         println("서비스 실행까지 기다리는 중..")
-        sleep(15000)
+        sleep(10000)
         Core.app.listeners[0].dispose()
 
         // 서버 재시작 테스트
@@ -319,7 +328,7 @@ class PluginTest {
         main.registerServerCommands(serverCommand)
 
         println("서비스 실행까지 기다리는 중.. 2차")
-        sleep(15000)
+        sleep(2000)
         Core.app.listeners[0].dispose()
     }
 }
