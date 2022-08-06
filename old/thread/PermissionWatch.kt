@@ -30,7 +30,7 @@ object PermissionWatch : Runnable {
                 for(event in events) {
                     val kind = event.kind()
                     val paths = (event.context() as Path).fileName.toString()
-                    if((paths == "permission_user.hjson" || paths == "permission.hjson") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                    if((paths == "permission_user.hjson" || paths == "permission.txt") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         Permissions.reload(false)
                         Permissions.update(false)
                         tried = !tried

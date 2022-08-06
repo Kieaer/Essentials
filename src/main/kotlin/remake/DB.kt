@@ -176,6 +176,9 @@ class DB {
     }
 
     fun search(id: String, pw: String): PlayerData? {
+        transaction { Player.selectAll().first() }.apply {
+            println("${this[Player.name]}, ${this[Player.accountid]}, ${this[Player.accountpw]}")
+        }
         transaction { Player.select { (Player.accountid eq id) and (Player.accountpw eq pw) }.firstOrNull() }.apply {
             if (this != null) {
                 val data = PlayerData

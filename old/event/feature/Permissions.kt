@@ -21,8 +21,8 @@ object Permissions {
     var user: JsonObject = JsonObject()
     var default: String = "visitor"
 
-    private val file = pluginRoot.child("permission.hjson")
-    private val userFile = pluginRoot.child("permission_user.hjson")
+    private val file = pluginRoot.child("permission.txt")
+    private val userFile = pluginRoot.child("permission_user.txt")
 
     operator fun get(name: String): JsonObject? {
         return user.get(name)?.asObject()
@@ -105,7 +105,7 @@ object Permissions {
                 CrashReport(e)
             }
         } else {
-            Log.warn("system.file-not-found", "permission.hjson")
+            Log.warn("system.file-not-found", "permission.txt")
         }
 
         if(userFile.exists()) {

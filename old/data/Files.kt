@@ -229,7 +229,7 @@ object Files : Configs() {
             }
         }
 
-        if(!pluginRoot.child("permission.hjson").exists()) {
+        if(!pluginRoot.child("permission.txt").exists()) {
             val json = JsonObject()
 
             val owner = JsonObject()
@@ -284,7 +284,7 @@ object Files : Configs() {
             json.add("user", user)
             json.add("visitor", visitor)
 
-            pluginRoot.child("permission.hjson").writeString(json.toString(Stringify.HJSON))
+            pluginRoot.child("permission.txt").writeString(json.toString(Stringify.HJSON))
         }
 
         if(!pluginRoot.child("permission_user.hjson").exists()) {

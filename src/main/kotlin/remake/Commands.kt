@@ -20,6 +20,7 @@ import mindustry.gen.*
 import mindustry.gen.Unit
 import mindustry.net.Administration
 import mindustry.type.UnitType
+import mindustry.world.Tile
 import remake.Main.Companion.bundle
 import remake.Main.Companion.database
 import java.sql.Timestamp
@@ -28,8 +29,6 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.full.memberProperties
 
 
 class Commands(handler: CommandHandler, isClient: Boolean) {
@@ -46,12 +45,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars() }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
-            handler.register("config", "<name> [value]", "Edit server config") { a, p: Playerc -> Client(a, p).config() }
             handler.register("effect", "[effects]", "effects") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("gg", "[delay]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
             handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
-            handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server-to-server warp zone.") { a, p: Playerc -> Client(a, p).hub() }
+            handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
             handler.register("info", "Show your information") { a, p: Playerc -> Client(a, p).info() }
             handler.register("js", "[code]", "Execute JavaScript codes") { a, p: Playerc -> Client(a, p).js() }
             handler.register("kill", "[player]", "Kill player.") { a, p: Playerc -> Client(a, p).kill() }
@@ -65,7 +63,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
             handler.register("random", "", "Random events") { a, p: Playerc -> Client(a, p).random() }
-            handler.register("register", "<accountid> <password>", "Register account") { a, p: Playerc -> Client(a, p).register() }
+            handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawn mob in player position") { a, p: Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p: Playerc -> Client(a, p).status() }
@@ -256,20 +254,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     ${bundle["placecount"]}: ${result.placecount}
                     ${bundle["breakcount"]}: ${result.breakcount}
                     ${bundle["level"]}: ${result.level}
-                    ${bundle["exp"]}: ${result.exp}
-                    ${bundle["joindate"]}: ${
-                    Timestamp(result.joinDate).toLocalDateTime()
-                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
-                }
-                    ${bundle["playtime"]}: ${
-                    String.format(
-                        "%d:%02d:%02d:%02d",
-                        (result.playtime / 60 / 60 / 24) % 365,
-                        (result.playtime / 60 / 24) % 24,
-                        (result.playtime / 60) % 60,
-                        (result.playtime) % 60
-                    )
-                }
+                    ${bundle["exp"]}: ${Exp[result]}
+                    ${bundle["joindate"]}: ${Timestamp(result.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                    ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (result.playtime / 60 / 60 / 24) % 365, (result.playtime / 60 / 24) % 24, (result.playtime / 60) % 60, (result.playtime) % 60)}
                     ${bundle["attackclear"]}: ${result.attackclear}
                     ${bundle["pvpwincount"]}: ${result.pvpwincount}
                     ${bundle["pvplosecount"]}: ${result.pvplosecount}
@@ -298,13 +285,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun register() {
             if (!Permission.check(player, "register")) return
             // 계정을 등록할 때 사용
-            // reg <pw> <pw_repeat>
-            if (arg.size != 2) {
+            // reg <id> <pw> <pw_repeat>
+            if (arg.size != 3) {
                 player.sendMessage(bundle["command.reg.usage"])
-            } else if (arg[0] == arg[1]) {
+            } else if (arg[1] == arg[2]) {
                 player.sendMessage(bundle["command.reg.incorrect"])
             } else {
-                Trigger.createPlayer(player, arg[0])
+                Trigger.createPlayer(player, arg[1], arg[2])
                 Log.info(bundle["log.data_created", player.name()])
             }
         }
@@ -324,8 +311,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
                 return
             }
-            build.append("[green]==[white] Server maps page ").append(page).append("/").append(pages)
-                .append(" [green]==[white]\n")
+            build.append("[green]==[white] Server maps page ").append(page).append("/").append(pages).append(" [green]==[white]\n")
             for (a in 6 * page until (6 * (page + 1)).coerceAtMost(list.size)) {
                 build.append("[gray]").append(a).append("[] ").append(list[a].name()).append("\n")
             }
@@ -372,11 +358,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 Groups.player.each { e: Playerc -> players.add(e) }
 
                 for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Groups.player.size())) {
-                    message.append(
-                        "[gray]${players.get(a).id()}[white] ${
-                            players.get(a).name()
-                        }\n"
-                    )
+                    message.append("[gray]${players.get(a).id()}[white] ${players.get(a).name()}\n")
                 }
 
                 player.sendMessage(message.toString().dropLast(1))
@@ -418,14 +400,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                 type.equals("block", true) -> {
                     if (Vars.content.blocks().find { a -> a.name == name } != null) {
-                        Call.constructFinish(
-                            player.tileOn(),
-                            Vars.content.blocks().find { a -> a.name.equals(name, true) },
-                            player.unit(),
-                            parameter?.toByte() ?: 0,
-                            player.team(),
-                            null
-                        )
+                        Call.constructFinish(player.tileOn(), Vars.content.blocks().find { a -> a.name.equals(name, true) }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
                     } else {
                         val names = StringBuilder()
                         Vars.content.blocks().each {
@@ -471,7 +446,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 "malis" -> player.team(Team.malis)
                 "blue" -> player.team(Team.blue)
             }
-            if (player.admin()) {
+            if (!Permission.check(player, "team.other")) {
                 if (arg.size > 1) {
                     val other = if (arg[1].toIntOrNull() != null) {
                         Groups.player.find { e -> e.id == arg[1].toInt() }
@@ -513,8 +488,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage("Target player not found!")
             } else {
                 val target = database[other.uuid()]
-                target!!.mute = true
-                player.sendMessage("Target player ${target.name} is muted.")
+                if (target != null) {
+                    target.mute = true
+                    player.sendMessage("Target player ${target.name} is muted.")
+                } else {
+                    player.sendMessage("Target player isn't registered.")
+                }
             }
         }
 
@@ -526,8 +505,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage("Target player not found!")
             } else {
                 val target = database[other.uuid()]
-                target!!.mute = false
-                player.sendMessage("Target player ${target.name} is unmuted.")
+                if (target != null) {
+                    target.mute = false
+                    player.sendMessage("Target player ${target.name} is un-muted.")
+                } else {
+                    player.sendMessage("Target player isn't registered.")
+                }
             }
         }
 
@@ -541,6 +524,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun god() {
             if (!Permission.check(player, "god")) return
             // 무적 기능
+
             player.unit().health(1.0E8f)
             player.sendMessage("Set high player unit health.")
         }
@@ -553,9 +537,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun pause() {
             if (!Permission.check(player, "pause")) return
             // 서버 일시정지 기능
-            val pause = arg[0] == "on"
-            Vars.state.serverPaused = pause
-            player.sendMessage(if (pause) "Game paused" else "Game unpaused")
+            Vars.state.serverPaused = !Vars.state.serverPaused
+            player.sendMessage(if (Vars.state.serverPaused) "Game paused" else "Game unpaused")
         }
 
         fun js() {
@@ -575,21 +558,65 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun hub() {
-            if (!Permission.check(player, "hub")) return
-            // 서버간 이동 기능
-            // type ip
-            when (arg[0]) {
-                "block" -> {
+            if (!Permission.check(player, "hub")) return // 서버간 이동 기능
+            // <zone/block/count/total> [ip] [parameters...]
+            val type = arg[0]
+            val x = player.tileX()
+            val y = player.tileY()
+            val name = Vars.state.map.name()
+            val size: Int
+            val clickable: Boolean
+            var ip = ""
+            var port = 6567
+            if (arg.size > 1) {
+                if (arg[1].contains(":")) {
+                    val address = arg[1].split(":").toTypedArray()
+                    ip = address[0]
+                    port = address[1].toInt()
+                } else {
+                    ip = arg[1]
+                }
+            }
+            val parameters: Array<String> = if (arg.size == 3) {
+                arg[2].split(" ").toTypedArray()
+            } else {
+                arrayOf()
+            }
+            when (type) {
+                "zone" -> //ip size clickable
+                    if (parameters.size != 2) {
+                        player.sendMessage("Need zone size! use /hub zone <ip address> <size> <clickable>")
+                    } else {
+                        try {
+                            size = parameters[0].toInt()
+                            clickable = java.lang.Boolean.parseBoolean(parameters[1])
+                        } catch (ignored: NumberFormatException) {
+                            player.sendMessage("size value isn't number!")
+                            return
+                        }
+                        PluginData.warpZones.add(PluginData.WarpZone(name, Vars.world.tile(x, y).pos(), Vars.world.tile(x + size, y + size).pos(), clickable, ip, port))
+                        player.sendMessage("IP $ip, $x:$y, ${if (clickable) "clickable" else "enter"} zone added.")
+                    }
 
+                "block" -> if (parameters.isEmpty()) {
+                    player.sendMessage("Need parameter! use /hub block <ip address> <description>")
+                } else {
+                    val t: Tile = Vars.world.tile(x, y)
+                    PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
+                    player.sendMessage("IP $ip, $x:$y, Description ${arg[2]}[white] block added.")
                 }
 
-                "zone" -> {
-
+                "count" -> {
+                    PluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 0))
+                    player.sendMessage("IP $ip, $x:$y, Server player counter added.")
                 }
 
-                "reset" -> {
-
+                "total" -> {
+                    PluginData.warpTotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 0))
+                    player.sendMessage("$x:$y, All server player counter added.")
                 }
+
+                else -> player.sendMessage("Wrong command. Use [green]/help hub[white] to check how to use command.")
             }
         }
 
@@ -777,17 +804,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             Call.setPosition(player.con(), other.x, other.y)
         }
 
-        fun config() {
-            if (!Permission.check(player, "config")) return
-            // 설정 편집 기능
-            // /config 이름 값
-            val property = Config::class.memberProperties.find { a -> a.name == arg[0] }
-            if (property is KMutableProperty<*>) {
-                property.setter.call(arg[0], arg[1])
-                player.sendMessage("Set ${arg[0]} to ${arg[1]}")
-            }
-        }
-
         fun search() {
             if (!Permission.check(player, "search")) return
             // 플레이어 데이터 검색 기능
@@ -837,7 +853,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         mute: ${a.mute}
                         status: ${a.status}
                         """.trimIndent()
-
                         Log.info(texts)
                     }
                 }
@@ -908,18 +923,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         private fun calculateFullTargetXp(level: Int): Double {
             var requiredXP = 0.0
-            for (i in 0..level) {
-                requiredXP += calcXpForLevel(i)
-            }
+            for (i in 0..level) requiredXP += calcXpForLevel(i)
             return requiredXP
         }
 
         private fun calculateLevel(xp: Double): Int {
             var level = 0
             var maxXp = calcXpForLevel(0)
-            do {
-                maxXp += calcXpForLevel(++level)
-            } while (maxXp < xp)
+            do maxXp += calcXpForLevel(++level) while (maxXp < xp)
             return level
         }
 
@@ -929,9 +940,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val xp = target.exp
             val levelXp = max - xp
             val level = calculateLevel(xp.toDouble())
-            // val reqexp = floor(max.toDouble()).toInt()
             target.level = level
-            return xp.toString() + "(" + floor(levelXp.toDouble()).toInt() + ") / " + floor(max.toDouble()).toInt()
+            return "$xp (${floor(levelXp.toDouble()).toInt()}) / ${floor(max.toDouble()).toInt()}"
         }
     }
 

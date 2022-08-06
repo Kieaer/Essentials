@@ -28,7 +28,7 @@ object Trigger {
         database.players.add(data)
     }
 
-    fun createPlayer(player: Playerc, password: String?) {
+    fun createPlayer(player: Playerc, id: String?, password: String?) {
         val data = DB.PlayerData
 
         val ip = player.ip()
@@ -56,7 +56,7 @@ object Trigger {
         data.name = player.name()
         data.uuid = player.uuid()
         data.joinDate = System.currentTimeMillis()
-        data.id = player.name()
+        data.id = id ?: player.name()
         data.pw = password ?: player.name()
 
         database.createData(data)
@@ -74,7 +74,7 @@ object Trigger {
 
             for (player in Groups.player) {
                 if (!player.isNull) {
-                    val p = database[player.uuid()]
+                    val p = database.players.find { a -> a.uuid == player.uuid() }
 
                     if (p != null) {
                         // 무지개 닉네임
