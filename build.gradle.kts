@@ -1,7 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.6.10"
     id("org.sonarqube") version "3.4.0.2513"
-    jacoco
 }
 
 java {
@@ -24,7 +23,7 @@ dependencies {
     implementation("de.svenkubiak:jBCrypt:0.4.3")
     implementation("com.mewna:catnip:3.1.0")
     implementation("org.apache.maven:maven-artifact:3.8.5")
-    implementation("org.jsoup:jsoup:1.14.3")
+    implementation("org.jsoup:jsoup:1.15.2")
     implementation("com.github.gimlet2:kottpd:0.2.1")
     implementation("org.slf4j:slf4j-nop:2.0.0-alpha7")
     implementation("com.h2database:h2:2.1.214")
@@ -55,13 +54,6 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
-tasks.jacocoTestReport {
-    reports {
-        xml.required.set(true)
-        xml.outputLocation.set(file("$buildDir/reports/coverage"))
-    }
-}
-
 sourceSets{
     test{
         resources{
@@ -76,6 +68,5 @@ sonarqube {
         property("sonar.organization", "kieaer")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.sourceEncoding","utf-8")
-        property("sonar.coverage.jacoco.xmlReportPaths", "$buildDir/reports/coverage")
     }
 }
