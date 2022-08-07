@@ -50,7 +50,7 @@ object Trigger {
         } else {
             val res = IP2Location().IPQuery(ip)
             val code = CountryCode.getByCode(res.countryShort)
-            if (code == null) Locale.getDefault().isO3Country else code.toLocale().isO3Country
+            if (code == null) Locale.ENGLISH.isO3Country else code.toLocale().isO3Country
         }
 
         data.name = player.name()

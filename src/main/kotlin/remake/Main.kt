@@ -52,7 +52,16 @@ class Main : Plugin() {
 
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
-            return@addActionFilter database[e.player.uuid()] != null
+            val data = database.players.find { it.uuid == e.player.uuid() }
+            if (Config.authType == Config.AuthType.None){
+                if (data != null) {
+                    !data.mute
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
         }
     }
 
