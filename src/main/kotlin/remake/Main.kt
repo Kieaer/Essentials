@@ -4,7 +4,6 @@ import arc.ApplicationListener
 import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
-import arc.util.Log
 import mindustry.Vars
 import mindustry.mod.Plugin
 import org.hjson.JsonArray
@@ -19,13 +18,10 @@ class Main : Plugin() {
     private val timer = java.util.Timer()
 
     companion object {
-        val bundle = Bundle()
         val database = DB()
     }
 
     init {
-        Log.info("[Essentials] ${bundle["initializing"]}")
-
         createFile()
         database.open()
         Config.load()
@@ -39,6 +35,7 @@ class Main : Plugin() {
                 timer.cancel()
                 database.close()
                 daemon.shutdownNow()
+                Permission.save()
                 Commands.Discord.shutdownNow()
             }
         })
@@ -110,12 +107,12 @@ class Main : Plugin() {
             val admin = JsonObject()
             val adminPerm = JsonArray()
             adminPerm.add("color")
-            adminPerm.add("spawn")
-            adminPerm.add("weather")
             adminPerm.add("kill")
+            adminPerm.add("mute")
+            adminPerm.add("spawn")
             adminPerm.add("team")
             adminPerm.add("team.other")
-            adminPerm.add("mute")
+            adminPerm.add("weather")
 
             admin.add("inheritance", "user")
             admin.add("admin", true)
@@ -124,7 +121,10 @@ class Main : Plugin() {
 
             val user = JsonObject()
             val userPerm = JsonArray()
+            userPerm.add("*login")
+            userPerm.add("*reg")
             userPerm.add("ch")
+            userPerm.add("discord")
             userPerm.add("info")
             userPerm.add("maps")
             userPerm.add("me")
@@ -134,7 +134,6 @@ class Main : Plugin() {
             userPerm.add("time")
             userPerm.add("tp")
             userPerm.add("vote")
-            userPerm.add("discord")
 
             user.add("inheritance", "visitor")
             user.add("chatFormat", "%1[orange] > [white]%2")
@@ -142,9 +141,9 @@ class Main : Plugin() {
 
             val visitor = JsonObject()
             val visitorPerm = JsonArray()
-            visitorPerm.add("register")
-            visitorPerm.add("login")
             visitorPerm.add("help")
+            visitorPerm.add("login")
+            visitorPerm.add("reg")
             visitorPerm.add("t")
 
             visitor.add("chatFormat", "%1[scarlet] > [white]%2")

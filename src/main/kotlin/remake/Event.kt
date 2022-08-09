@@ -106,6 +106,8 @@ object Event {
             } else {
                 if (Config.authType == Config.AuthType.None) {
                     Trigger.createPlayer(it.player, null, null)
+                } else {
+                    it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
                 }
             }
         }

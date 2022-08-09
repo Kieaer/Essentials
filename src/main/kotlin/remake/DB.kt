@@ -37,7 +37,7 @@ class DB {
     object Player : Table() {
         val name = text("name").index()
         val uuid = text("uuid")
-        val countryCode = text("countryCode")
+        val languageTag = text("languageTag")
         val placecount = integer("placecount")
         val breakcount = integer("breakcount")
         val joincount = integer("joincount")
@@ -51,6 +51,7 @@ class DB {
         val pvpwincount = integer("pvpwincount")
         val pvplosecount = integer("pvplosecount")
         val colornick = bool("colornick")
+        val permission = text("permission")
         val mute = bool("mute")
         val accountid = text("id")
         val accountpw = text("pw")
@@ -60,7 +61,7 @@ class DB {
     object PlayerData {
         var name: String = "none"
         var uuid: String = "none"
-        var countryCode: String = Locale.getDefault().isO3Country
+        var languageTag: String = Locale.getDefault().toLanguageTag()
         var placecount: Int = 0
         var breakcount: Int = 0
         var joincount: Int = 0
@@ -82,6 +83,10 @@ class DB {
         var x: Int = 0
         var y: Int = 0
         var afkTime : Int = 0
+
+        override fun toString(): String {
+            return "name: $name, uuid: $uuid, languageTag: $languageTag, placecount: $placecount, breakcount: $breakcount, joincount: $joincount, kickcount: $kickcount, level: $level, exp: $exp, joinDate: $joinDate, lastdate: $lastdate, playtime: $playtime, attackclear: $attackclear, pvpwincount: $pvpwincount, pvplosecount: $pvplosecount, colornick: $colornick, permission: $permission, mute: $mute, id: $id, pw: $pw, status: $status, x: $x, y: $y, afkTime: $afkTime"
+        }
     }
 
     fun createData(data: PlayerData) {
@@ -89,7 +94,7 @@ class DB {
             Player.insert {
                 it[name] = data.name
                 it[uuid] = data.uuid
-                it[countryCode] = data.countryCode
+                it[languageTag] = data.languageTag
                 it[placecount] = data.placecount
                 it[breakcount] = data.breakcount
                 it[joincount] = data.joincount
@@ -103,6 +108,7 @@ class DB {
                 it[pvpwincount] = data.pvpwincount
                 it[pvplosecount] = data.pvplosecount
                 it[colornick] = data.colornick
+                it[permission] = data.permission
                 it[mute] = data.mute
                 it[accountid] = data.id
                 it[accountpw] = data.pw
@@ -117,7 +123,7 @@ class DB {
                 val data = PlayerData
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
-                data.countryCode = this[Player.countryCode]
+                data.languageTag = this[Player.languageTag]
                 data.placecount = this[Player.placecount]
                 data.breakcount = this[Player.breakcount]
                 data.joincount = this[Player.joincount]
@@ -131,6 +137,7 @@ class DB {
                 data.pvpwincount = this[Player.pvpwincount]
                 data.pvplosecount = this[Player.pvplosecount]
                 data.colornick = this[Player.colornick]
+                data.permission = this[Player.permission]
                 data.mute = this[Player.mute]
                 data.id = this[Player.accountid]
                 data.pw = this[Player.accountpw]
@@ -147,7 +154,7 @@ class DB {
             Player.update({ Player.uuid eq id }) {
                 it[name] = data.name
                 it[uuid] = data.uuid
-                it[countryCode] = data.countryCode
+                it[languageTag] = data.languageTag
                 it[placecount] = data.placecount
                 it[breakcount] = data.breakcount
                 it[joincount] = data.joincount
@@ -169,12 +176,6 @@ class DB {
         }
     }
 
-    fun delete(id: String) {
-        transaction {
-            Player.deleteWhere { Player.uuid.eq(id) }
-        }
-    }
-
     fun search(id: String, pw: String): PlayerData? {
         transaction { Player.selectAll().first() }.apply {
             println("${this[Player.name]}, ${this[Player.accountid]}, ${this[Player.accountpw]}")
@@ -184,7 +185,7 @@ class DB {
                 val data = PlayerData
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
-                data.countryCode = this[Player.countryCode]
+                data.languageTag = this[Player.languageTag]
                 data.placecount = this[Player.placecount]
                 data.breakcount = this[Player.breakcount]
                 data.joincount = this[Player.joincount]
@@ -198,6 +199,7 @@ class DB {
                 data.pvpwincount = this[Player.pvpwincount]
                 data.pvplosecount = this[Player.pvplosecount]
                 data.colornick = this[Player.colornick]
+                data.permission = this[Player.permission]
                 data.mute = this[Player.mute]
                 data.id = this[Player.accountid]
                 data.pw = this[Player.accountpw]
