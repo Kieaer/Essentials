@@ -5,17 +5,13 @@ import com.neovisionaries.i18n.CountryCode
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import remake.Main.Companion.database
-import java.net.InetAddress
-import java.net.NetworkInterface
-import java.net.SocketException
-import java.net.UnknownHostException
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.*
 import java.util.*
 
+
 object Trigger {
-    fun load() {
-
-    }
-
     fun loadPlayer(player: Playerc, data: DB.PlayerData) {
         player.name(data.name)
         data.lastdate = System.currentTimeMillis()
@@ -24,8 +20,11 @@ object Trigger {
         val perm = Permission[player]
         if (perm.name.isNotEmpty()) player.name(Permission[player].name)
         player.admin(Permission[player].admin)
+        data.permission = Permission[player].group
 
         database.players.add(data)
+
+        player.sendMessage("Data Loaded. Welcome to the server.")
     }
 
     fun createPlayer(player: Playerc, id: String?, password: String?) {
@@ -45,21 +44,28 @@ object Trigger {
             false
         }
 
-        data.countryCode = if (isLocal) {
-            Locale.getDefault().isO3Country
-        } else {
-            val res = IP2Location().IPQuery(ip)
-            val code = CountryCode.getByCode(res.countryShort)
-            if (code == null) Locale.ENGLISH.isO3Country else code.toLocale().isO3Country
-        }
+        val ip2location = IP2Location()
+        ip2location.Open(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN").readBytes())
 
+        val res = if (isLocal) {
+            val add = BufferedReader(InputStreamReader(URL("http://checkip.amazonaws.com").openStream())).readLine()
+            ip2location.IPQuery(add).countryShort
+        } else {
+            ip2location.IPQuery(player.ip()).countryShort
+        }
+        val locale = CountryCode.getByCode(res).toLocale()
+
+        data.languageTag = locale.toLanguageTag()
         data.name = player.name()
         data.uuid = player.uuid()
         data.joinDate = System.currentTimeMillis()
         data.id = id ?: player.name()
         data.pw = password ?: player.name()
+        data.permission = "user"
 
         database.createData(data)
+
+        player.sendMessage("Player data registered!")
         loadPlayer(player, data)
     }
 

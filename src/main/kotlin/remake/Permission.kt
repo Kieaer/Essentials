@@ -13,7 +13,7 @@ import remake.Main.Companion.database
 object Permission {
     var perm = JsonObject()
     var data = JsonArray()
-    var default = "visitor"
+    var default = if(Config.authType == Config.AuthType.None) "user" else "visitor"
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
     private val user: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
 
@@ -36,8 +36,9 @@ object Permission {
                 var inheritance = perm.get(name).asObject().getString("inheritance", null)
                 while (inheritance != null) {
                     for (a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()) {
-                        perm.get(name).asObject().get("permission").asArray()
-                            .add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
+                        if (!perm.get(inheritance).asObject()["permission"].asArray()[a].asString().contains("*")) {
+                            perm.get(name).asObject().get("permission").asArray().add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
+                        }
                     }
                     inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
                 }
@@ -74,7 +75,7 @@ object Permission {
                 result.uuid = data.getString("uuid", player.uuid())
                 result.name = data.getString("name", netServer.admins.findByIP(player.ip()).lastName)
                 result.group = data.getString("group", default)
-                result.chatFormat = data.getString("chatFormat", "%1[orange] > [white]%2")
+                result.chatFormat = data.getString("chatFormat", result.chatFormat)
                 result.admin = data.getBoolean("admin", false)
             }
 

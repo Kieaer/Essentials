@@ -2,7 +2,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kieaer_Essentials&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Kieaer_Essentials)
 # Essentials
 Add more commands to the server.<br>
-**__Requires Java 16 or higher!__**
+**__Requires Java 18 or higher!__**
 
 ## Installation
 Put this plugin in the ``<server folder location>/config/mods`` folder.

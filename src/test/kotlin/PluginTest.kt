@@ -8,6 +8,8 @@ import arc.files.Fi
 import arc.graphics.Color
 import arc.util.CommandHandler
 import com.github.javafaker.Faker
+import com.ip2location.IP2Location
+import com.neovisionaries.i18n.CountryCode
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.Vars.netServer
@@ -330,5 +332,13 @@ class PluginTest {
         println("서비스 실행까지 기다리는 중.. 2차")
         sleep(2000)
         Core.app.listeners[0].dispose()
+    }
+
+    @Test
+    fun ip(){
+        val ip2location = IP2Location()
+        ip2location.Open(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN").readAllBytes())
+        val res = ip2location.IPQuery("39.112.27.69").countryShort
+        println(CountryCode.getByCode(res).toLocale().toLanguageTag())
     }
 }

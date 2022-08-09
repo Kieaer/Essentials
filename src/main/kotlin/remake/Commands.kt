@@ -21,7 +21,6 @@ import mindustry.gen.Unit
 import mindustry.net.Administration
 import mindustry.type.UnitType
 import mindustry.world.Tile
-import remake.Main.Companion.bundle
 import remake.Main.Companion.database
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -76,13 +75,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             clientCommands = handler
         } else {
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
+            handler.register("debug", "Show plugin internal informations") { a -> Server(a).debug() }
 
             serverCommands = handler
         }
     }
 
     private inner class Client(val arg: Array<String>, val player: Playerc) {
+        var bundle = Bundle()
         val data: DB.PlayerData? = database.players.find { a -> a.uuid == player.uuid() }
+
+        init {
+            if (data != null) bundle = Bundle(data.languageTag)
+        }
 
         fun chars() {
             if (!Permission.check(player, "chars")) return
@@ -245,21 +250,18 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun info() {
             if (!Permission.check(player, "info")) return
-            val result = database.players.find { a -> a.uuid == player.uuid() }
-            if (result == null) {
-                Call.sendMessage("Player not found!")
-            } else {
+            if (data != null) {
                 val texts = """
-                    ${bundle["name"]}: ${result.name}
-                    ${bundle["placecount"]}: ${result.placecount}
-                    ${bundle["breakcount"]}: ${result.breakcount}
-                    ${bundle["level"]}: ${result.level}
-                    ${bundle["exp"]}: ${Exp[result]}
-                    ${bundle["joindate"]}: ${Timestamp(result.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
-                    ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (result.playtime / 60 / 60 / 24) % 365, (result.playtime / 60 / 24) % 24, (result.playtime / 60) % 60, (result.playtime) % 60)}
-                    ${bundle["attackclear"]}: ${result.attackclear}
-                    ${bundle["pvpwincount"]}: ${result.pvpwincount}
-                    ${bundle["pvplosecount"]}: ${result.pvplosecount}
+                    ${bundle["name"]}: ${data.name}
+                    ${bundle["placecount"]}: ${data.placecount}
+                    ${bundle["breakcount"]}: ${data.breakcount}
+                    ${bundle["level"]}: ${data.level}
+                    ${bundle["exp"]}: ${Exp[data]}
+                    ${bundle["joindate"]}: ${Timestamp(data.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                    ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (data.playtime / 60 / 60 / 24) % 365, (data.playtime / 60 / 24) % 24, (data.playtime / 60) % 60, (data.playtime) % 60)}
+                    ${bundle["attackclear"]}: ${data.attackclear}
+                    ${bundle["pvpwincount"]}: ${data.pvpwincount}
+                    ${bundle["pvplosecount"]}: ${data.pvplosecount}
                 """.trimIndent()
                 Call.infoMessage(player.con(), texts)
             }
@@ -288,10 +290,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             // reg <id> <pw> <pw_repeat>
             if (arg.size != 3) {
                 player.sendMessage(bundle["command.reg.usage"])
-            } else if (arg[1] == arg[2]) {
+            } else if (arg[1] != arg[2]) {
                 player.sendMessage(bundle["command.reg.incorrect"])
             } else {
-                Trigger.createPlayer(player, arg[1], arg[2])
+                player.sendMessage("Account registering...")
+                Trigger.createPlayer(player, arg[0], arg[1])
                 Log.info(bundle["log.data_created", player.name()])
             }
         }
@@ -329,8 +332,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (!Permission.check(player, "motd")) return
             // 서버 motd 표시
             // todo countryCode
-            val motd = if (root.child("motd/${data!!.countryCode}.txt").exists()) {
-                root.child("motd/${data.countryCode}.txt").readString()
+            val motd = if (root.child("motd/${data!!.languageTag}.txt").exists()) {
+                root.child("motd/${data.languageTag}.txt").readString()
             } else {
                 val file = root.child("motd/en.txt")
                 if (file.exists()) file.readString() else ""
@@ -446,22 +449,20 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 "malis" -> player.team(Team.malis)
                 "blue" -> player.team(Team.blue)
             }
-            if (!Permission.check(player, "team.other")) {
-                if (arg.size > 1) {
-                    val other = if (arg[1].toIntOrNull() != null) {
-                        Groups.player.find { e -> e.id == arg[1].toInt() }
-                    } else {
-                        Groups.player.find { e -> e.name().contains(arg[1]) }
-                    }
-                    if (other != null) {
-                        when (arg[0]) {
-                            "derelict" -> other.team(Team.derelict)
-                            "sharded" -> other.team(Team.sharded)
-                            "crux" -> other.team(Team.crux)
-                            "green" -> other.team(Team.green)
-                            "malis" -> other.team(Team.malis)
-                            "blue" -> other.team(Team.blue)
-                        }
+            if (!Permission.check(player, "team.other") && arg.size > 1) {
+                val other = if (arg[1].toIntOrNull() != null) {
+                    Groups.player.find { e -> e.id == arg[1].toInt() }
+                } else {
+                    Groups.player.find { e -> e.name().contains(arg[1]) }
+                }
+                if (other != null) {
+                    when (arg[0]) {
+                        "derelict" -> other.team(Team.derelict)
+                        "sharded" -> other.team(Team.sharded)
+                        "crux" -> other.team(Team.crux)
+                        "green" -> other.team(Team.green)
+                        "malis" -> other.team(Team.malis)
+                        "blue" -> other.team(Team.blue)
                     }
                 }
             }
@@ -835,7 +836,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         val texts = """
                         name: ${a.name}
                         uuid: ${a.uuid}
-                        countryCode: ${a.countryCode}
+                        languageTag: ${a.languageTag}
                         placecount: ${a.placecount}
                         breakcount: ${a.breakcount}
                         joincount: ${a.joincount}
@@ -901,6 +902,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             println("$tmp$server$result\n\n\n$time")
         }
 
+        fun debug(){
+            println("""
+                == PluginData class
+                uptime: ${PluginData.uptime}
+                playtime: ${PluginData.playtime}
+                pluginVersion: ${PluginData.pluginVersion}
+                
+                warpZones: ${PluginData.warpZones}
+                warpBlocks: ${PluginData.warpBlocks}
+                warpCounts: ${PluginData.warpCounts}
+                warpTotals: ${PluginData.warpTotals}
+                blacklist: ${PluginData.blacklist}
+                banned: ${PluginData.banned}
+                
+                == DB class
+            """.trimIndent())
+            database.players.forEach { println(it.toString()) }
+        }
     }
 
     fun longToDateTime(mils: Long): LocalDateTime {
