@@ -25,6 +25,8 @@ object PluginData {
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
 
+    var expData = JsonObject()
+
     data class WarpZone(
         val mapName: String,
         val start: Int,
@@ -131,5 +133,9 @@ object PluginData {
         } catch (e: IOException) {
             println(e)
         }
+    }
+
+    fun expData(){
+
     }
 }

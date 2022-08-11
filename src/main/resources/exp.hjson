@@ -1,0 +1,297 @@
+{
+    # crafting
+    siliconSmelter: 0
+    siliconCrucible: 0
+    kiln: 0
+    graphitePress: 0
+    plastaniumCompressor: 0
+    multiPress: 0
+    phaseWeaver: 0
+    surgeSmelter: 0
+    pyratiteMixer: 0
+    blastMixer: 0
+    cryofluidMixer: 0
+    melter: 0
+    separator: 0
+    disassembler: 0
+    sporePress: 0
+    pulverizer: 0
+    incinerator: 0
+    coalCentrifuge: 0
+
+    # crafting - erekir
+    siliconArcFurnace: 0
+    electrolyzer: 0
+    oxidationChamber: 0
+    atmosphericConcentrator: 0
+    electricHeater: 0
+    slagHeater: 0
+    phaseHeater: 0
+    heatRedirector: 0
+    slagIncinerator: 0
+    carbideCrucible: 0
+    slagCentrifuge: 0
+    surgeCrucible: 0
+    cyanogenSynthesizer: 0
+    phaseSynthesizer: 0
+    heatReactor: 0
+
+    # sandbox
+    powerSource: 0
+    powerVoid: 0
+    itemSource: 0
+    itemVoid: 0
+    liquidSource: 0
+    liquidVoid: 0
+    payloadSource: 0
+    payloadVoid: 0
+    illuminator: 0
+    heatSource: 0
+
+    # defense
+    copperWall: 0
+    copperWallLarge: 0
+    titaniumWall: 0
+    titaniumWallLarge: 0
+    plastaniumWall: 0
+    plastaniumWallLarge: 0
+    thoriumWall: 0
+    thoriumWallLarge: 0
+    door: 0
+    doorLarge: 0
+    phaseWall: 0
+    phaseWallLarge: 0
+    surgeWall: 0
+    surgeWallLarge: 0
+
+    # walls - erekir
+    berylliumWall: 0
+    berylliumWallLarge: 0
+    tungstenWall: 0
+    tungstenWallLarge: 0
+    blastDoor: 0
+    reinforcedSurgeWall: 0
+    reinforcedSurgeWallLarge: 0
+    carbideWall: 0
+    carbideWallLarge: 0
+    shieldedWall: 0
+
+    mender: 0
+    mendProjector: 0
+    overdriveProjector: 0
+    overdriveDome: 0
+    forceProjector: 0
+    shockMine: 0
+    scrapWall: 0
+    scrapWallLarge: 0
+    scrapWallHuge: 0
+    scrapWallGigantic: 0
+    thruster: 0
+
+    # defense - erekir
+    radar: 0
+    buildTower: 0
+    regenProjector: 0
+    barrierProjector: 0
+    shockwaveTower: 0
+    shieldProjector: 0
+    largeShieldProjector: 0
+    shieldBreaker: 0
+
+    # transport
+    conveyor: 0
+    titaniumConveyor: 0
+    plastaniumConveyor: 0
+    armoredConveyor: 0
+    distributor: 0
+    junction: 0
+    itemBridge: 0
+    phaseConveyor: 0
+    sorter: 0
+    invertedSorter: 0
+    router: 0
+    overflowGate: 0
+    underflowGate: 0
+    massDriver: 0
+
+    # transport - alternate
+    duct: 0
+    armoredDuct: 0
+    ductRouter: 0
+    overflowDuct: 0
+    underflowDuct: 0
+    ductBridge: 0
+    ductUnloader: 0
+    surgeConveyor: 0
+    surgeRouter: 0
+
+    unitCargoLoader: 0
+    unitCargoUnloadPoint: 0
+
+    # liquid
+    mechanicalPump: 0
+    rotaryPump: 0
+    impulsePump: 0
+    conduit: 0
+    pulseConduit: 0
+    platedConduit: 0
+    liquidRouter: 0
+    liquidContainer: 0
+    liquidTank: 0
+    liquidJunction: 0
+    bridgeConduit: 0
+    phaseConduit: 0
+
+    # liquid - reinforced
+    reinforcedPump: 0
+    reinforcedConduit: 0
+    reinforcedLiquidJunction: 0
+    reinforcedBridgeConduit: 0
+    reinforcedLiquidRouter: 0
+    reinforcedLiquidContainer: 0
+    reinforcedLiquidTank: 0
+
+    # power
+    combustionGenerator: 0
+    thermalGenerator: 0
+    steamGenerator: 0
+    differentialGenerator: 0
+    rtgGenerator: 0
+    solarPanel: 0
+    largeSolarPanel: 0
+    thoriumReactor: 0
+    impactReactor: 0
+    battery: 0
+    batteryLarge: 0
+    powerNode: 0
+    powerNodeLarge: 0
+    surgeTower: 0
+    diode: 0
+
+    # power - erekir
+    turbineCondenser: 0
+    ventCondenser: 0
+    chemicalCombustionChamber: 0
+    pyrolysisGenerator: 0
+    fluxReactor: 0
+    neoplasiaReactor: 0
+    beamNode: 0
+    beamTower: 0
+    beamLink: 0
+
+    # production
+    mechanicalDrill: 0
+    pneumaticDrill: 0
+    laserDrill: 0
+    blastDrill: 0
+    waterExtractor: 0
+    oilExtractor: 0
+    cultivator: 0
+    cliffCrusher: 0
+    plasmaBore: 0
+    largePlasmaBore: 0
+    impactDrill: 0
+    eruptionDrill: 0
+
+    # storage
+    coreShard: 0
+    coreFoundation: 0
+    coreNucleus: 0
+    vault: 0
+    container: 0
+    unloader: 0
+    coreBastion: 0
+    coreCitadel: 0
+    coreAcropolis: 0
+    reinforcedContainer: 0
+    reinforcedVault: 0
+
+    # turrets
+    duo: 0
+    scatter: 0
+    scorch: 0
+    hail: 0
+    arc: 0
+    wave: 0
+    lancer: 0
+    swarmer: 0
+    salvo: 0
+    fuse: 0
+    ripple: 0
+    cyclone: 0
+    foreshadow: 0
+    spectre: 0
+    meltdown: 0
+    segment: 0
+    parallax: 0
+    tsunami: 0
+
+    # turrets - erekir
+    breach: 0
+    diffuse: 0
+    sublimate: 0
+    titan: 0
+    disperse: 0
+    afflict: 0
+    lustre: 0
+    scathe: 0
+    smite: 0
+    malign: 0
+
+    # units
+    groundFactory: 0
+    airFactory: 0
+    navalFactory: 0
+    additiveReconstructor: 0
+    multiplicativeReconstructor: 0
+    exponentialReconstructor: 0
+    tetrativeReconstructor: 0
+    repairPoint: 0
+    repairTurret: 0
+
+    # units - erekir
+    tankFabricator: 0
+    shipFabricator: 0
+    mechFabricator: 0
+    tankRefabricator: 0
+    shipRefabricator: 0
+    mechRefabricator: 0
+    primeRefabricator: 0
+    tankAssembler: 0
+    shipAssembler: 0
+    mechAssembler: 0
+    basicAssemblerModule: 0
+    unitRepairTower: 0
+
+    # payloads
+    payloadConveyor: 0
+    payloadRouter: 0
+    reinforcedPayloadConveyor: 0
+    reinforcedPayloadRouter: 0
+    payloadMassDriver: 0
+    payloadPropulsionTower: 0
+    smallDeconstructor: 0
+    deconstructor: 0
+    constructor: 0
+    largeConstructor: 0
+    payloadLoader: 0
+    payloadUnloader: 0
+
+    # logic
+    message: 0
+    switchBlock: 0
+    microProcessor: 0
+    logicProcessor: 0
+    hyperProcessor: 0
+    largeLogicDisplay: 0
+    logicDisplay: 0
+    memoryCell: 0
+    memoryBank: 0
+    canvas: 0
+    worldProcessor: 0
+    worldCell: 0
+
+    # campaign
+    launchPad: 0
+    interplanetaryAccelerator: 0
+}

@@ -6,22 +6,23 @@ import arc.files.Fi
 import arc.util.CommandHandler
 import mindustry.Vars
 import mindustry.mod.Plugin
-import org.hjson.JsonArray
-import org.hjson.JsonObject
-import org.hjson.Stringify
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class Main : Plugin() {
-    val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-    private val daemon: ExecutorService = Executors.newCachedThreadPool()
+    private val daemon: ExecutorService = Executors.newSingleThreadExecutor()
     private val timer = java.util.Timer()
 
     companion object {
         val database = DB()
+        val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
     }
 
     init {
+        if (Core.settings.has("debugMode") && Core.settings.getBool("debugMode")){
+            root.child("database.db").delete()
+        }
+
         createFile()
         database.open()
         Config.load()
@@ -29,9 +30,11 @@ class Main : Plugin() {
         PluginData.load()
 
         Event.register()
+        Trigger.thread.run()
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
+                Trigger.interrupted = true
                 timer.cancel()
                 database.close()
                 daemon.shutdownNow()
@@ -43,7 +46,7 @@ class Main : Plugin() {
 
     override fun init() {
         daemon.submit(FileWatchService)
-        timer.scheduleAtFixedRate(Trigger.Time(), 1000, 1000)
+        timer.scheduleAtFixedRate(Trigger.Seconds(), 1000, 1000)
 
         Vars.netServer.admins.addChatFilter { _, _ -> null }
 
@@ -94,104 +97,6 @@ class Main : Plugin() {
                     root.child("motd/${names[a]}.txt").writeString(texts[a])
                 }
             }
-        }
-
-        if (!root.child("permission.txt").exists()) {
-            val json = JsonObject()
-
-            val owner = JsonObject()
-            owner.add("admin", true)
-            owner.add("chatFormat", "[sky][Owner] %1[orange] > [white]%2")
-            owner.add("permission", JsonArray().add("all"))
-
-            val admin = JsonObject()
-            val adminPerm = JsonArray()
-            adminPerm.add("color")
-            adminPerm.add("kill")
-            adminPerm.add("mute")
-            adminPerm.add("spawn")
-            adminPerm.add("team")
-            adminPerm.add("team.other")
-            adminPerm.add("weather")
-
-            admin.add("inheritance", "user")
-            admin.add("admin", true)
-            admin.add("chatFormat", "[yellow][Admin] %1[orange] > [white]%2")
-            admin.add("permission", adminPerm)
-
-            val user = JsonObject()
-            val userPerm = JsonArray()
-            userPerm.add("*login")
-            userPerm.add("*reg")
-            userPerm.add("ch")
-            userPerm.add("discord")
-            userPerm.add("info")
-            userPerm.add("maps")
-            userPerm.add("me")
-            userPerm.add("motd")
-            userPerm.add("players")
-            userPerm.add("status")
-            userPerm.add("time")
-            userPerm.add("tp")
-            userPerm.add("vote")
-
-            user.add("inheritance", "visitor")
-            user.add("chatFormat", "%1[orange] > [white]%2")
-            user.add("permission", userPerm)
-
-            val visitor = JsonObject()
-            val visitorPerm = JsonArray()
-            visitorPerm.add("help")
-            visitorPerm.add("login")
-            visitorPerm.add("reg")
-            visitorPerm.add("t")
-
-            visitor.add("chatFormat", "%1[scarlet] > [white]%2")
-            visitor.add("default", true)
-            visitor.add("permission", visitorPerm)
-
-            json.add("owner", owner)
-            json.add("admin", admin)
-            json.add("user", user)
-            json.add("visitor", visitor)
-
-            root.child("permission.txt").writeString(json.toString(Stringify.HJSON))
-        }
-
-        if (!root.child("permission_user.txt").exists()) {
-            val obj = JsonArray()
-            obj.setComment(
-                """
-                Usage
-                {
-                    uuid: String (Must need)
-                    name: String (Set player name)
-                    group: String (Set player permission group)
-                    chatFormat: String (Set player chat format. %1 is name, %2 is text.)
-                    admin: Boolean (Set player admin status)
-                }
-                
-                Examples
-                [
-                    {
-                        uuid: uuids
-                        name: "my fun name"
-                    },
-                    {
-                        uuid: uuida
-                        chatFormat: "%1: %2"
-                    },
-                    {
-                        uuid: babysuuid
-                        name: baby
-                        group: admin
-                        chatFormat: "[blue][ADMIN][]%1[white]: %2"
-                        admin: true
-                    }
-                ]
-            """.trimIndent()
-            )
-            root.child("permission_user.txt").writeString(obj.toString(Stringify.HJSON_COMMENTS))
         }
     }
 }

@@ -15,11 +15,7 @@ class DB {
 
     fun open() {
         try {
-            db = Database.connect(
-                "jdbc:sqlite:${
-                    Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
-                }"
-            )
+            db = Database.connect("jdbc:sqlite:${Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()}")
             transaction {
                 SchemaUtils.create(Player)
                 SchemaUtils.create(Data)
@@ -177,9 +173,6 @@ class DB {
     }
 
     fun search(id: String, pw: String): PlayerData? {
-        transaction { Player.selectAll().first() }.apply {
-            println("${this[Player.name]}, ${this[Player.accountid]}, ${this[Player.accountpw]}")
-        }
         transaction { Player.select { (Player.accountid eq id) and (Player.accountpw eq pw) }.firstOrNull() }.apply {
             if (this != null) {
                 val data = PlayerData
