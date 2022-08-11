@@ -1,17 +1,37 @@
 package remake
 
+import arc.Core
+import arc.func.Prov
+import arc.struct.ArrayMap
+import arc.struct.Seq
+import arc.util.Time
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
+import mindustry.Vars.state
+import mindustry.Vars.world
+import mindustry.content.Blocks
+import mindustry.core.GameState
+import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.gen.Playerc
+import mindustry.net.Host
+import mindustry.net.NetworkIO.readServerData
 import remake.Main.Companion.database
 import java.io.BufferedReader
+import java.io.IOException
 import java.io.InputStreamReader
 import java.net.*
+import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 
 object Trigger {
+    val thread = Thread()
+    var interrupted = false
+
     fun loadPlayer(player: Playerc, data: DB.PlayerData) {
         player.name(data.name)
         data.lastdate = System.currentTimeMillis()
@@ -20,7 +40,6 @@ object Trigger {
         val perm = Permission[player]
         if (perm.name.isNotEmpty()) player.name(Permission[player].name)
         player.admin(Permission[player].admin)
-        data.permission = Permission[player].group
 
         database.players.add(data)
 
@@ -30,47 +49,57 @@ object Trigger {
     fun createPlayer(player: Playerc, id: String?, password: String?) {
         val data = DB.PlayerData
 
-        val ip = player.ip()
-        val isLocal = try {
-            val address = InetAddress.getByName(ip)
-            if (address.isAnyLocalAddress || address.isLoopbackAddress) {
-                true
-            } else {
-                NetworkInterface.getByInetAddress(address) != null
+        Thread() {
+            val ip = player.ip()
+            val isLocal = try {
+                val address = InetAddress.getByName(ip)
+                if (address.isAnyLocalAddress || address.isLoopbackAddress) {
+                    true
+                } else {
+                    NetworkInterface.getByInetAddress(address) != null
+                }
+            } catch (e: SocketException) {
+                false
+            } catch (e: UnknownHostException) {
+                false
             }
-        } catch (e: SocketException) {
-            false
-        } catch (e: UnknownHostException) {
-            false
-        }
 
-        val ip2location = IP2Location()
-        ip2location.Open(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN").readBytes())
+            //
+            val ip2location = IP2Location()
+            ip2location.Open(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN").readBytes())
 
-        val res = if (isLocal) {
-            val add = BufferedReader(InputStreamReader(URL("http://checkip.amazonaws.com").openStream())).readLine()
-            ip2location.IPQuery(add).countryShort
-        } else {
-            ip2location.IPQuery(player.ip()).countryShort
-        }
-        val locale = CountryCode.getByCode(res).toLocale()
+            val res = if (isLocal) {
+                val add = BufferedReader(InputStreamReader(URL("http://checkip.amazonaws.com").openStream())).readLine()
+                ip2location.IPQuery(add).countryShort
+            } else {
+                ip2location.IPQuery(player.ip()).countryShort
+            }
 
-        data.languageTag = locale.toLanguageTag()
-        data.name = player.name()
-        data.uuid = player.uuid()
-        data.joinDate = System.currentTimeMillis()
-        data.id = id ?: player.name()
-        data.pw = password ?: player.name()
-        data.permission = "user"
+            val locale = if (CountryCode.getByCode(res) == null) {
+                Locale.ENGLISH
+            } else {
+                CountryCode.getByCode(res).toLocale()
+            }
 
-        database.createData(data)
+            data.languageTag = locale.toLanguageTag()
+            data.name = player.name()
+            data.uuid = player.uuid()
+            data.joinDate = System.currentTimeMillis()
+            data.id = id ?: player.name()
+            data.pw = password ?: player.name()
+            data.permission = "user"
 
-        player.sendMessage("Player data registered!")
-        loadPlayer(player, data)
+            Core.app.post {
+                database.createData(data)
+
+                player.sendMessage("Player data registered!")
+                loadPlayer(player, data)
+            }
+        }.start()
     }
 
     // 1초마다 작동함
-    class Time : TimerTask() {
+    class Seconds : TimerTask() {
         private var colorOffset = 0
 
         override fun run() {
@@ -127,6 +156,137 @@ object Trigger {
                 stringBuilder.append(s)
             }
             player.name(stringBuilder.toString())
+        }
+    }
+
+
+    class Thread : Runnable{
+        private var ping = 0.000
+        private val servers = ArrayMap<String, Int>()
+        override fun run() {
+            while (!interrupted) {
+                for (i in 0 until PluginData.warpCounts.size) {
+                    val value = PluginData.warpCounts[i]
+                    pingHostImpl(value.ip, value.port) { r: Host ->
+                        if (r.name != null) {
+                            ping += ("0." + r.ping).toDouble()
+                            val str = r.players.toString()
+                            val digits = IntArray(str.length)
+                            for (a in str.indices) digits[a] = str[a] - '0'
+                            val tile = value.tile
+                            if (value.players != r.players && value.numbersize != digits.size) {
+                                for (px in 0..2) {
+                                    for (py in 0..4) {
+                                        Call.deconstructFinish(
+                                            world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, null
+                                        )
+                                    }
+                                }
+                            }
+                            Commands.Client(arrayOf(str), Player.create()).chars(tile) // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                            PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, r.players, digits.size)
+                            addPlayers(value.ip, value.port, r.players)
+                        } else {
+                            ping += 1.000
+                            Commands.Client(arrayOf("no"), Player.create()).chars(value.tile)
+                        }
+                    }
+                }
+
+                val memory = Seq<String>()
+                for (value in PluginData.warpBlocks) {
+                    val tile = world.tile(value.pos)
+                    if (tile.block() === Blocks.air) {
+                        PluginData.warpBlocks.remove(value)
+                    } else {
+                        pingHostImpl(value.ip, value.port) { r: Host ->
+                            var margin = 0f
+                            var isDup = false
+                            var x = tile.drawx()
+                            when (value.size) {
+                                1 -> margin = 8f
+                                2 -> {
+                                    margin = 16f
+                                    x = tile.drawx() - 4f
+                                    isDup = true
+                                }
+
+                                3 -> margin = 16f
+                                4 -> {
+                                    x = tile.drawx() - 4f
+                                    margin = 24f
+                                    isDup = true
+                                }
+                            }
+                            val y = tile.drawy() + if (isDup) margin - 8 else margin
+                            if (r.name != null) {
+                                ping += ("0." + r.ping).toDouble()
+                                memory.add("[yellow]" + r.players + "[] Players///" + x + "///" + y)
+                                value.online = true
+                            } else {
+                                ping += 1.000
+                                memory.add("[scarlet]Offline///$x///$y")
+                                value.online = false
+                            }
+                            memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin))
+                            addPlayers(value.ip, value.port, r.players)
+                        }
+                    }
+                }
+
+                for (m in memory) {
+                    val a = m.split("///").toTypedArray()
+                    Call.label(a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
+                }
+
+                if (Core.settings.getBool("isLobby")) {
+                    if (state.`is`(GameState.State.playing)) {
+                        world.tiles.forEach {
+                            if (it.build != null) {
+                                it.build.health(it.build.health)
+                            }
+                        }
+                    }
+                    Core.settings.put("totalPlayers", totalPlayers() + Groups.player.size())
+                    Core.settings.saveValues()
+                }
+                ping = 0.000
+            }
+
+            TimeUnit.SECONDS.sleep(3)
+        }
+
+        @Throws(IOException::class)
+        private fun pingHostImpl(address: String, port: Int, listener: Consumer<Host>) {
+            val packetSupplier: Prov<DatagramPacket> = Prov<DatagramPacket> { DatagramPacket(ByteArray(512), 512) }
+
+            DatagramSocket().use { socket ->
+                val seconds: Long = Time.millis()
+                socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(address), port))
+                socket.soTimeout = 2000
+                val packet: DatagramPacket = packetSupplier.get()
+                socket.receive(packet)
+                val buffer = ByteBuffer.wrap(packet.data)
+                val host = readServerData(Time.timeSinceMillis(seconds).toInt(), packet.address.hostAddress, buffer)
+                host.port = port
+                listener.accept(host)
+            }
+        }
+
+
+        private fun addPlayers(ip: String?, port: Int, players: Int) {
+            val mip = "$ip:$port"
+            if(!servers.containsKey(mip)) {
+                servers.put(mip, players)
+            }
+        }
+
+        private fun totalPlayers(): Int {
+            var total = 0
+            for (v in servers) {
+                total += v.value
+            }
+            return total
         }
     }
 }

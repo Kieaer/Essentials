@@ -8,8 +8,6 @@ import arc.files.Fi
 import arc.graphics.Color
 import arc.util.CommandHandler
 import com.github.javafaker.Faker
-import com.ip2location.IP2Location
-import com.neovisionaries.i18n.CountryCode
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.Vars.netServer
@@ -33,6 +31,7 @@ import org.junit.Test
 import remake.Config
 import remake.Main
 import remake.Main.Companion.database
+import remake.Main.Companion.root
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -315,7 +314,7 @@ class PluginTest {
 
         serverCommand.handleMessage("gen")
 
-        main.root.child("permission.txt").writeString(main.root.child("permission.txt").readString())
+        root.child("permission.txt").writeString(root.child("permission.txt").readString())
 
         Events.fire(EventType.PlayerLeave(player.self()))
 
@@ -335,10 +334,12 @@ class PluginTest {
     }
 
     @Test
-    fun ip(){
-        val ip2location = IP2Location()
-        ip2location.Open(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN").readAllBytes())
-        val res = ip2location.IPQuery("39.112.27.69").countryShort
-        println(CountryCode.getByCode(res).toLocale().toLanguageTag())
+    fun pertest() {
+        Events.fire(EventType.ServerLoadEvent())
+
+        Events.fire(EventType.PlayerConnect(player.self()))
+        Events.fire(EventType.PlayerJoin(player.self()))
+
+        serverCommand.handleMessage("debug")
     }
 }

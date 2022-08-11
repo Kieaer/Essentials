@@ -13,20 +13,19 @@ repositories {
 }
 
 dependencies {
-    val exposedVersion: String by project
-    val mindustryVersion: String by project
+    val exposedVersion = "0.39.2"
+    val mindustryVersion = "v137"
 
     compileOnly("com.github.Anuken.Arc:arc-core:$mindustryVersion")
     compileOnly("com.github.Anuken.Mindustry:core:$mindustryVersion")
 
-    implementation("com.github.PersonTheCat:hjson-java:master")
-    implementation("de.svenkubiak:jBCrypt:0.4.3")
+    implementation("com.github.PersonTheCat:hjson-java:3.0.0-C11")
+    //implementation("de.svenkubiak:jBCrypt:0.4.3")
     implementation("com.mewna:catnip:3.1.0")
     //implementation("com.github.gimlet2:kottpd:0.2.1")
 
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
     implementation("com.neovisionaries:nv-i18n:1.29")
@@ -50,9 +49,9 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
-/*tasks.compileKotlin {
-    kotlinOptions.allWarningsAsErrors = true
-}*/
+tasks.compileKotlin {
+    kotlinOptions.allWarningsAsErrors = false
+}
 
 sourceSets{
     test{

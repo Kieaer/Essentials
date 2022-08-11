@@ -21,7 +21,9 @@ import mindustry.gen.Unit
 import mindustry.net.Administration
 import mindustry.type.UnitType
 import mindustry.world.Tile
+import remake.Event.findPlayers
 import remake.Main.Companion.database
+import remake.Main.Companion.root
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -42,7 +44,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         if (isClient) {
             handler.removeCommand("help")
 
-            handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars() }
+            handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
             handler.register("effect", "[effects]", "effects") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("gg", "[delay]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
@@ -75,26 +77,28 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             clientCommands = handler
         } else {
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
-            handler.register("debug", "Show plugin internal informations") { a -> Server(a).debug() }
+            handler.register("debug", "[bool]","Show plugin internal informations") { a -> Server(a).debug() }
 
             serverCommands = handler
         }
     }
 
-    private inner class Client(val arg: Array<String>, val player: Playerc) {
+    class Client(val arg: Array<String>, val player: Playerc) {
         var bundle = Bundle()
-        val data: DB.PlayerData? = database.players.find { a -> a.uuid == player.uuid() }
+        val data: DB.PlayerData? = findPlayers(player.uuid())
 
         init {
             if (data != null) bundle = Bundle(data.languageTag)
         }
 
-        fun chars() {
-            if (!Permission.check(player, "chars")) return
+        fun chars(tile: Tile?) {
+            if (tile != null) {
+                if (!Permission.check(player, "chars")) return
+            }
             // 블록으로 글자 표시
             // arg: <글자>
             if (Vars.world != null) {
-                var t = Vars.world.tile(player.tileX(), player.tileY())
+                var t = tile ?: Vars.world.tile(player.tileX(), player.tileY())
                 val letters = ObjectMap<String, IntArray>()
                 letters.put("A", intArrayOf(0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1))
                 letters.put("B", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0))
@@ -878,7 +882,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
     }
 
-    private inner class Server(val arg: Array<String>) {
+    class Server(val arg: Array<String>) {
         fun genDocs(){
             val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
             val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
@@ -903,6 +907,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun debug(){
+            if (arg.isNotEmpty()) {
+                if (arg[0].toBoolean()) {
+                    Core.settings.put("debugMode", true)
+                } else {
+                    Core.settings.put("debugMode", false)
+                }
+            }
             println("""
                 == PluginData class
                 uptime: ${PluginData.uptime}
@@ -1047,5 +1058,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             htmlEncodeChars.put('\u0022', "&quot;")
             htmlEncodeChars.put('\u00A0', "&nbsp;")
         }
+    }
+
+    fun findPlayers(uuid: String) : DB.PlayerData?{
+        return database.players.find { e -> e.uuid == uuid }
     }
 }
