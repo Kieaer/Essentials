@@ -30,7 +30,6 @@ import org.junit.BeforeClass
 import org.junit.Test
 import remake.Config
 import remake.Main
-import remake.Main.Companion.database
 import remake.Main.Companion.root
 import java.io.File
 import java.lang.Thread.sleep
@@ -141,6 +140,8 @@ class PluginTest {
             // Call 오류 해결
             Vars.player = player as Player
             Vars.netClient = NetClient()
+
+            Core.app
         }
 
         @AfterClass
@@ -208,8 +209,10 @@ class PluginTest {
 
         Config.authType = Config.AuthType.Password
         clientCommand.handleMessage("/reg testas test123 test123", player)
+        sleep(300)
         clientCommand.handleMessage("/login testas test123", player)
-        database[player.uuid()]!!.permission = "owner"
+        sleep(500)
+        Main.database.players.find { e -> e.uuid == player.uuid() }.permission = "owner"
 
         // 더미 플레이어
         val dummy : Playerc = createPlayer()
@@ -319,8 +322,8 @@ class PluginTest {
         Events.fire(EventType.PlayerLeave(player.self()))
 
         println("서비스 실행까지 기다리는 중..")
-        sleep(10000)
-        Core.app.listeners[0].dispose()
+        sleep(15000)
+        Core.app.listeners[1].dispose()
 
         // 서버 재시작 테스트
         main = Main()
@@ -330,16 +333,6 @@ class PluginTest {
 
         println("서비스 실행까지 기다리는 중.. 2차")
         sleep(2000)
-        Core.app.listeners[0].dispose()
-    }
-
-    @Test
-    fun pertest() {
-        Events.fire(EventType.ServerLoadEvent())
-
-        Events.fire(EventType.PlayerConnect(player.self()))
-        Events.fire(EventType.PlayerJoin(player.self()))
-
-        serverCommand.handleMessage("debug")
+        Core.app.listeners[1].dispose()
     }
 }

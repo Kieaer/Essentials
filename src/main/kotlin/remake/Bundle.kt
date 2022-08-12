@@ -26,7 +26,7 @@ class Bundle {
         return MessageFormat.format(resource.getString(key))
     }
 
-    operator fun get(key: String, vararg parameter: String): String {
+    operator fun get(key: String, vararg parameter: Any): String {
         return MessageFormat.format(resource.getString(key), *parameter)
     }
 }
