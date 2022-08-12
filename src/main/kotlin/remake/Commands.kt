@@ -1,7 +1,6 @@
 package remake
 
 import arc.Core
-import arc.files.Fi
 import arc.math.Mathf
 import arc.struct.ObjectMap
 import arc.struct.Seq
@@ -21,7 +20,6 @@ import mindustry.gen.Unit
 import mindustry.net.Administration
 import mindustry.type.UnitType
 import mindustry.world.Tile
-import remake.Event.findPlayers
 import remake.Main.Companion.database
 import remake.Main.Companion.root
 import java.sql.Timestamp
@@ -33,8 +31,6 @@ import kotlin.math.pow
 
 
 class Commands(handler: CommandHandler, isClient: Boolean) {
-    val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-
     companion object {
         var clientCommands = CommandHandler("/")
         var serverCommands = CommandHandler("")
@@ -213,7 +209,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     "malis" -> Groups.unit.each { u: Unit -> if (Team.malis == u.team) u.kill() }
                     "blue" -> Groups.unit.each { u: Unit -> if (Team.blue == u.team) u.kill() }
                     else -> {
-                        player.sendMessage("Incorrect team name! available team is derelict, sharded, crux, green, malis, blue")
+                        player.sendMessage(bundle["command.team.invalid"])
                     }
                 }
             }
@@ -224,7 +220,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (!Permission.check(player, "help")) return
             // 명령어 도움말 표시
             if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
-                player.sendMessage("Page value must be number!")
+                player.sendMessage(bundle["command.page.number"])
                 return
             }
             val temp = Seq<String>()
@@ -241,11 +237,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             page--
 
             if (page >= pages || page < 0) {
-                player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
+                player.sendMessage(bundle["command.page.range", pages])
                 return
             }
 
-            result.append(Strings.format("[orange]-- Commands Page[lightgray] ${page + 1}[gray]/[lightgray]${pages}[orange] --\n"))
+            result.append("[orange]-- ${bundle["command.page"]}[lightgray] ${page + 1}[gray]/[lightgray]${pages}[orange] --\n")
             for (a in per * page until (per * (page + 1)).coerceAtMost(temp.size)) {
                 result.append(temp[a])
             }
@@ -261,7 +257,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     ${bundle["breakcount"]}: ${data.breakcount}
                     ${bundle["level"]}: ${data.level}
                     ${bundle["exp"]}: ${Exp[data]}
-                    ${bundle["joindate"]}: ${Timestamp(data.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}
+                    ${bundle["joindate"]}: ${Timestamp(data.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
                     ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (data.playtime / 60 / 60 / 24) % 365, (data.playtime / 60 / 24) % 24, (data.playtime / 60) % 60, (data.playtime) % 60)}
                     ${bundle["attackclear"]}: ${data.attackclear}
                     ${bundle["pvpwincount"]}: ${data.pvpwincount}
@@ -297,7 +293,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else if (arg[1] != arg[2]) {
                 player.sendMessage(bundle["command.reg.incorrect"])
             } else {
-                player.sendMessage("Account registering...")
                 Trigger.createPlayer(player, arg[0], arg[1])
                 Log.info(bundle["log.data_created", player.name()])
             }
@@ -315,12 +310,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val pages = if (buffer > 1.0) buffer - 1 else 0
 
             if (page > pages || page < 0) {
-                player.sendMessage("[scarlet]'page' must be a number between[orange] 1[] and[orange] $pages[scarlet].")
+                player.sendMessage(bundle["command.page.range", pages])
                 return
             }
-            build.append("[green]==[white] Server maps page ").append(page).append("/").append(pages).append(" [green]==[white]\n")
+            build.append("[green]==[white] ${bundle["command.page.server"]} $page/$pages [green]==[white]\n")
             for (a in 6 * page until (6 * (page + 1)).coerceAtMost(list.size)) {
-                build.append("[gray]").append(a).append("[] ").append(list[a].name()).append("\n")
+                build.append("[gray]$a[] ${list[a].name()}\n")
             }
 
             player.sendMessage(build.toString())
@@ -357,9 +352,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val pages = if (buffer > 1.0) buffer - 1 else 0
 
             if (pages < page) {
-                player.sendMessage("[scarlet]페이지 쪽수는 최대 [orange]$pages[] 까지 있습니다")
+                player.sendMessage(bundle["command.page.range", pages])
             } else {
-                message.append("[green]==[white] 현재 서버 플레이어 목록. [sky]페이지 [orange]$page[]/[orange]$pages\n")
+                message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
 
                 val players: Seq<Playerc> = Seq<Playerc>()
                 Groups.player.each { e: Playerc -> players.add(e) }
@@ -391,17 +386,17 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                     baseUnit.add()
                                 }
                             } else {
-                                player.sendMessage("Block isn't unit. don't spawn it.")
+                                player.sendMessage(bundle["command.spawn.block"])
                             }
                         } else {
-                            player.sendMessage("system.mob.not-number")
+                            player.sendMessage(bundle["command.spawn.number"])
                         }
                     } else {
                         val names = StringBuilder()
                         Vars.content.units().each {
                             names.append("${it.name}, ")
                         }
-                        player.sendMessage("Avaliable unit names: ${names.dropLast(2)}")
+                        player.sendMessage("${bundle["command.spawn.units"]}: ${names.dropLast(2)}")
                     }
                 }
 
@@ -413,7 +408,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         Vars.content.blocks().each {
                             names.append("${it.name}, ")
                         }
-                        player.sendMessage("Avaliable block names: ${names.dropLast(2)}")
+                        player.sendMessage("${bundle["command.spawn.blocks"]}: ${names.dropLast(2)}")
                     }
                 }
 
@@ -431,13 +426,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             player.sendMessage(
                 """
-                [#DEA82A]Server status[]
+                [#DEA82A]${bundle["command.status.info"]}[]
                 [#2B60DE]========================================[]
-                ${Core.graphics.framesPerSecond} TPS, ${Groups.player.size()} players online.
-                Total [scarlet]${bans + ipbans}[]($bans/$ipbans) players banned.
-                World playtime: ${PluginData.playtime}
-                Server uptime: ${PluginData.uptime}
-                Plugin version: ${PluginData.pluginVersion}
+                TPS: ${Core.graphics.framesPerSecond}/20
+                ${bundle["command.status.banned", bans + ipbans, "$bans/$ipbans"]}
+                ${bundle["command.status.playtime"]}: ${PluginData.playtime}
+                ${bundle["command.status.uptime"]}: ${PluginData.uptime}
             """.trimIndent()
             )
         }
@@ -452,6 +446,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 "green" -> player.team(Team.green)
                 "malis" -> player.team(Team.malis)
                 "blue" -> player.team(Team.blue)
+                else -> {
+                    player.sendMessage(bundle["command.team.invalid"])
+                }
             }
             if (!Permission.check(player, "team.other") && arg.size > 1) {
                 val other = if (arg[1].toIntOrNull() != null) {
@@ -467,6 +464,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         "green" -> other.team(Team.green)
                         "malis" -> other.team(Team.malis)
                         "blue" -> other.team(Team.blue)
+                        else -> {
+                            player.sendMessage(bundle["command.team.invalid"])
+                        }
                     }
                 }
             }
@@ -477,7 +477,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             // 서버 시간 표시
             val now = LocalDateTime.now()
             val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            player.sendMessage("Server time: ${now.format(dateTimeFormatter)}")
+            player.sendMessage("${bundle["command.time"]}: ${now.format(dateTimeFormatter)}")
         }
 
         fun weather() {
@@ -490,14 +490,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             // 특정 플레이어 채팅 금지 기능
             val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
             if (other == null) {
-                player.sendMessage("Target player not found!")
+                player.sendMessage(bundle["player.not.found"])
             } else {
                 val target = database[other.uuid()]
                 if (target != null) {
                     target.mute = true
-                    player.sendMessage("Target player ${target.name} is muted.")
+                    player.sendMessage(bundle["command.mute", target.name])
                 } else {
-                    player.sendMessage("Target player isn't registered.")
+                    player.sendMessage(bundle["player.not.registered"])
                 }
             }
         }
@@ -507,14 +507,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             // 특정 플레이어 채팅 금지 해제
             val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
             if (other == null) {
-                player.sendMessage("Target player not found!")
+                player.sendMessage(bundle["player.not.found"])
             } else {
                 val target = database[other.uuid()]
                 if (target != null) {
                     target.mute = false
-                    player.sendMessage("Target player ${target.name} is un-muted.")
+                    player.sendMessage(bundle["command.unmute", target.name])
                 } else {
-                    player.sendMessage("Target player isn't registered.")
+                    player.sendMessage(bundle["player.not.registered"])
                 }
             }
         }
@@ -531,7 +531,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             // 무적 기능
 
             player.unit().health(1.0E8f)
-            player.sendMessage("Set high player unit health.")
+            player.sendMessage(bundle["command.god"])
         }
 
         fun random() {
@@ -543,13 +543,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (!Permission.check(player, "pause")) return
             // 서버 일시정지 기능
             Vars.state.serverPaused = !Vars.state.serverPaused
-            player.sendMessage(if (Vars.state.serverPaused) "Game paused" else "Game unpaused")
+            player.sendMessage(if (Vars.state.serverPaused) bundle["command.pause.paused"] else bundle["command.pause.unpaused"])
         }
 
         fun js() {
             if (!Permission.check(player, "js")) return
             if (arg.isEmpty()) {
-                player.sendMessage("Please write javascript source code!")
+                player.sendMessage(bundle["command.js.invalid"])
             } else {
                 val output = mods.scripts.runConsole(arg[0])
                 try {
@@ -557,7 +557,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     Class.forName("org.mozilla.javascript.$errorName")
                     player.sendMessage("> [#ff341c]$output")
                 } catch (e: Throwable) {
-                    player.sendMessage("> $output")
+                    player.sendMessage("[scarlet]> $output")
                 }
             }
         }
@@ -590,38 +590,39 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             when (type) {
                 "zone" -> //ip size clickable
                     if (parameters.size != 2) {
-                        player.sendMessage("Need zone size! use /hub zone <ip address> <size> <clickable>")
+                        player.sendMessage(bundle["command.hub.zone.help"])
                     } else {
                         try {
                             size = parameters[0].toInt()
                             clickable = java.lang.Boolean.parseBoolean(parameters[1])
                         } catch (ignored: NumberFormatException) {
-                            player.sendMessage("size value isn't number!")
+                            player.sendMessage(bundle["command.hub.size.invalid"])
                             return
                         }
                         PluginData.warpZones.add(PluginData.WarpZone(name, Vars.world.tile(x, y).pos(), Vars.world.tile(x + size, y + size).pos(), clickable, ip, port))
-                        player.sendMessage("IP $ip, $x:$y, ${if (clickable) "clickable" else "enter"} zone added.")
+
+                        player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (clickable) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
                     }
 
                 "block" -> if (parameters.isEmpty()) {
-                    player.sendMessage("Need parameter! use /hub block <ip address> <description>")
+                    player.sendMessage(bundle["command.hub.block.parameter"])
                 } else {
                     val t: Tile = Vars.world.tile(x, y)
                     PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
-                    player.sendMessage("IP $ip, $x:$y, Description ${arg[2]}[white] block added.")
+                    player.sendMessage(bundle["command.hub.block.added", "$x:$y", ip])
                 }
 
                 "count" -> {
                     PluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 0))
-                    player.sendMessage("IP $ip, $x:$y, Server player counter added.")
+                    player.sendMessage(bundle["command.hub.count", "$x:$y", ip])
                 }
 
                 "total" -> {
                     PluginData.warpTotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 0))
-                    player.sendMessage("$x:$y, All server player counter added.")
+                    player.sendMessage(bundle["command.hub.total", "$x:$y"])
                 }
 
-                else -> player.sendMessage("Wrong command. Use [green]/help hub[white] to check how to use command.")
+                else -> player.sendMessage(bundle["command.hub.help"])
             }
         }
 
@@ -638,7 +639,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.unit().kill()
             } else {
                 val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
-                if (other == null) player.sendMessage("Target player not found!") else other.unit().kill()
+                if (other == null) player.sendMessage(bundle["player.not.found"]) else other.unit().kill()
             }
 
         }
@@ -803,7 +804,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
 
             if (other == null) {
-                player.sendMessage("Target player not found!")
+                player.sendMessage(bundle["player.not.found"])
                 return
             }
             Call.setPosition(player.con(), other.x, other.y)
@@ -873,12 +874,15 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     } else {
                         Discord.queue(player)
                     }
-                    player.sendMessage("Your PIN number is [green]$number")
-                    player.sendMessage("Enter your PIN number to Discord bot channel.")
+                    player.sendMessage(bundle["command.discord.pin", number])
                 } else {
-                    player.sendMessage("You're already discord authorized.")
+                    player.sendMessage(bundle["command.discord.already"])
                 }
             }
+        }
+
+        fun findPlayers(uuid: String) : DB.PlayerData?{
+            return database.players.find { e -> e.uuid == uuid }
         }
     }
 
@@ -1012,10 +1016,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun shutdownNow() {
-            if (Discord::catnip.isInitialized) {
-                catnip.shutdown()
-                Log.info("discord.disabled")
-            }
+            if (Discord::catnip.isInitialized) catnip.shutdown()
         }
     }
 
@@ -1058,9 +1059,5 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             htmlEncodeChars.put('\u0022', "&quot;")
             htmlEncodeChars.put('\u00A0', "&nbsp;")
         }
-    }
-
-    fun findPlayers(uuid: String) : DB.PlayerData?{
-        return database.players.find { e -> e.uuid == uuid }
     }
 }

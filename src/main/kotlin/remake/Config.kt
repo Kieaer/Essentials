@@ -9,6 +9,7 @@ import java.awt.Desktop
 import java.net.URI
 import java.util.*
 
+
 object Config {
     private var obj = JsonObject()
 
@@ -35,9 +36,10 @@ object Config {
     var channelToken = ""
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
+    private val bundle = Bundle(Locale(System.getProperty("user.language"), System.getProperty("user.country")).toLanguageTag())
 
     private fun wizard() {
-        Log.info("Do you want to read Essentials plugin documents (y/N)")
+        Log.info(bundle["config.wiki"])
         val sc = Scanner(System.`in`)
 
         if (sc.hasNextLine()) {
@@ -96,30 +98,30 @@ object Config {
             wizard()
 
             val plugin = JsonObject()
-            plugin.add("update", update, "Plugin auto update")
-            plugin.add("channel", channel, "Plugin update release channel. (release/beta/dev)")
-            plugin.add("report", report, "Auto report plugin error")
-            plugin.add("authType", authType.toString(), "Server authorize type (none, password, discord)")
+            plugin.add("update", update, bundle["config.update"])
+            plugin.add("channel", channel, bundle["config.update.channel"])
+            plugin.add("report", report, bundle["config.report"])
+            plugin.add("authType", authType.toString(), bundle["config.authtype"])
 
             val features = JsonObject()
-            features.add("afk", afk, "Automatically kick AFK users.")
-            features.add("afkTime", afkTime, "Automatic kick time (unit: seconds)")
-            features.add("border", border, "Destroy units that moved out of the world")
-            features.add("chatFormat", chatFormat, "Set default chat format (%1 is name, %2 is chat)")
-            features.add("spawnLimit", spawnLimit, "Specifies the maximum number of units that can be accommodated in the world.")
-            features.add("vote", vote, "Use the voting feature provided by the plugin, not the voting feature built into the game.")
-            features.add("fixedName", fixedName, "Even if the player joins after changing the name, it's forcibly changed to the original nickname.")
-            features.add("antiVPN", antiVPN, "Block access to the IP used by the VPN service.")
+            features.add("afk", afk, bundle["config.afk"])
+            features.add("afkTime", afkTime, bundle["config.afk.time"])
+            features.add("border", border, bundle["config.border"])
+            features.add("chatFormat", chatFormat, bundle["config.chatformat"])
+            features.add("spawnLimit", spawnLimit, bundle["config.spawnlimit"])
+            features.add("vote", vote, bundle["config.vote"])
+            features.add("fixedName", fixedName, bundle["config.fixedname"])
+            features.add("antiVPN", antiVPN, bundle["config.antivpn"])
 
             val ban = JsonObject()
-            ban.add("shareBanList", shareBanList, "Share the current server's ban list with other servers.")
-            ban.add("shareBanListType", shareBanListType.toString(), "Set the sharing mode. (server/client/global)")
+            ban.add("shareBanList", shareBanList, bundle["config.shareban.list"])
+            ban.add("shareBanListType", shareBanListType.toString(), bundle["config.shareban.list.type"])
 
             val discord = JsonObject()
-            discord.add("botToken", botToken, "Set discord bot token")
-            discord.add("channelToken", channelToken, "Set channel ID")
+            discord.add("botToken", botToken, bundle["config.discord.token"])
+            discord.add("channelToken", channelToken, bundle["config.discord.channel"])
 
-            obj.setComment("See https://github.com/Kieaer/Essentials/wiki/Config-detail-information for a detailed explanation.")
+            obj.setComment(bundle["config.detail", "https://github.com/Kieaer/Essentials/wiki/Config-detail-information"])
             obj.add("plugin", plugin)
             obj.add("features", features)
             obj.add("discord", discord)

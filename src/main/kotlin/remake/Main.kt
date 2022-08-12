@@ -10,7 +10,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class Main : Plugin() {
-    private val daemon: ExecutorService = Executors.newSingleThreadExecutor()
+    private val daemon: ExecutorService = Executors.newFixedThreadPool(2)
     private val timer = java.util.Timer()
 
     companion object {
@@ -30,11 +30,10 @@ class Main : Plugin() {
         PluginData.load()
 
         Event.register()
-        Trigger.thread.run()
+
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
-                Trigger.interrupted = true
                 timer.cancel()
                 database.close()
                 daemon.shutdownNow()
@@ -46,6 +45,7 @@ class Main : Plugin() {
 
     override fun init() {
         daemon.submit(FileWatchService)
+        daemon.submit(Trigger.Thread())
         timer.scheduleAtFixedRate(Trigger.Seconds(), 1000, 1000)
 
         Vars.netServer.admins.addChatFilter { _, _ -> null }
