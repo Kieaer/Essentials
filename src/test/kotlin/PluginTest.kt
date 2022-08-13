@@ -31,6 +31,7 @@ import org.junit.Test
 import remake.Config
 import remake.Main
 import remake.Main.Companion.root
+import remake.Trigger
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -38,6 +39,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
+import kotlin.concurrent.thread
 import kotlin.io.path.Path
 
 
@@ -334,5 +336,18 @@ class PluginTest {
         println("서비스 실행까지 기다리는 중.. 2차")
         sleep(2000)
         Core.app.listeners[1].dispose()
+    }
+
+    @Test
+    fun networkTest(){
+        try {
+            thread { Trigger.Server() }
+            val client = Trigger.Client()
+            client.client.send("send")
+            client.client.send("receive")
+            client.client.send("exit")
+        } catch (e: Exception){
+            e.printStackTrace()
+        }
     }
 }
