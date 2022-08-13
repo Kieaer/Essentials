@@ -4,6 +4,7 @@ import arc.Core
 import arc.func.Prov
 import arc.struct.ArrayMap
 import arc.struct.Seq
+import arc.util.Log
 import arc.util.Time
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
@@ -23,9 +24,11 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.net.*
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
+import kotlin.concurrent.thread
 
 
 object Trigger {
@@ -293,11 +296,113 @@ object Trigger {
         }
     }
 
-    class Server(){
+    class Server {
+        val server = ServerSocket(9999)
 
+        init {
+            while(true){
+                val client = server.accept()
+
+                thread { Handler(client).run() }
+            }
+        }
+
+        class Handler(val client: Socket) {
+            val reader = Scanner(client.getInputStream())
+            val writer = client.getOutputStream()
+            var run = false
+
+            fun run() {
+                run = true
+
+                while(run) {
+                    try {
+                        when (reader.nextLine()) {
+                            // Client 에게 데이터 전달 준비
+                            "send" -> {
+                                write("ok")
+                                val data = reader.nextLine()
+                                println("[SERVER] data received: message is $data")
+                            }
+                            // Client 에게서 오는 데이터 수신
+                            "receive" -> {
+                                //val data = netServer.admins.banned.toString("&&")
+                                write("send dummy data")
+                                println("[SERVER] dummy data send.")
+                            }
+                            "exit" -> {
+                                shutdown()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        shutdown()
+                    }
+                }
+            }
+
+            private fun write(msg: String) {
+                writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
+            }
+
+            private fun shutdown() {
+                run = false
+                client.close()
+            }
+        }
     }
 
-    class Client(){
-        
+    class Client{
+        val address = "127.0.0.1"
+        val port = 9999
+
+        val client = Handler(address, port)
+
+        class Handler(address: String, port: Int) {
+            val socket = Socket()
+            var connected = false
+
+            init {
+                try {
+                    socket.connect(InetSocketAddress(address, port), 5000)
+                    connected = true
+                    Log.info("You're connected to server.")
+                } catch (e: SocketTimeoutException) {
+                    Log.info("Connection timed out.")
+                }
+            }
+
+            val reader = Scanner(socket.getInputStream())
+            val writer = socket.getOutputStream()
+
+            fun send(command: String){
+                if (connected) {
+                    when (command) {
+                        "send" -> {
+                            write("send")
+                            reader.nextLine()
+                            write("client sent data to server")
+                            println("[CLIENT] send data to server")
+                        }
+
+                        "receive" -> {
+                            write("receive")
+                            val data = reader.nextLine()
+                            println("[CLIENT] $data")
+                        }
+
+                        "exit" -> {
+                            write("exit")
+                            reader.close()
+                            socket.close()
+                        }
+                    }
+                }
+            }
+
+            private fun write(msg: String) {
+                writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
+            }
+        }
     }
 }

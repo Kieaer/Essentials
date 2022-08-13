@@ -61,7 +61,7 @@ README.md Generated time: 2022-08-05 13:54:36
 * FileWatchService - A service that monitors permissions and config files so that they are applied in real time when you modify them.
 * Permission - Read the permission file and check the permissions between players.
 * PluginData - Save and load using SQLite to store plugin data.
-* Trigger - Save and load player data, added feature triggers.
+* Trigger - Save and load player data, start ban sharing server/client, added feature triggers.
 
 ## License
 **Free License**
