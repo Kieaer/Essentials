@@ -6,6 +6,7 @@ import mindustry.Vars.netServer
 import mindustry.gen.Playerc
 import org.hjson.*
 import remake.Main.Companion.database
+import java.util.*
 
 object Permission {
     var perm = JsonObject()
@@ -14,14 +15,16 @@ object Permission {
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
     private val user: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
 
+    val bundle = Bundle(Locale(System.getProperty("user.language"), System.getProperty("user.country")).toLanguageTag())
+
     val comment = """
         Usage
         {
-            uuid: String (Must need)
-            name: String (Set player name)
-            group: String (Set player permission group)
-            chatFormat: String (Set player chat format. %1 is name, %2 is text.)
-            admin: Boolean (Set player admin status)
+            uuid: ${bundle["permission.usage.uuid"]}
+            name: ${bundle["permission.usage.name"]}
+            group: ${bundle["permission.usage.group"]}
+            chatFormat: ${bundle["permission.usage.chatformat"]}
+            admin: ${bundle["permission.usage.admin"]}
         }
         
         Examples
