@@ -135,6 +135,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 letters.put("!", intArrayOf(1,1,1,0,1))
                 letters.put("?", intArrayOf(0,1,0,0,0,0,1,0,0,1,0,1,0,1,1,0,0,0))
                 letters.put(" ", intArrayOf(0,0,0,0,0,0,0,0,0,0))
+                letters.put("#", intArrayOf(0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0))
+                letters.put("%", intArrayOf(1,1,0,0,1,1,1,0,1,0,0,0,1,0,0,0,1,0,1,1,1,0,0,1,1))
+                letters.put("^", intArrayOf(0,1,1,0,0,1))
+                letters.put("&", intArrayOf(0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1))
+                letters.put("*", intArrayOf(0,1,0,1,0,1,0,1,0))
+                letters.put("(", intArrayOf(0,1,1,1,0,1,0,0,0,1))
+                letters.put(")", intArrayOf(1,0,0,0,1,0,1,1,1,0))
+                letters.put(";", intArrayOf(1,0,1,1))
+                letters.put(":", intArrayOf(0,1,0,1,0))
+                letters.put("'", intArrayOf(1,1))
+                letters.put("[", intArrayOf(1,1,1,1,1,1,0,0,0,1))
+                letters.put("]", intArrayOf(1,0,0,0,1,1,1,1,1,1))
+                letters.put("\"", intArrayOf(1,1,0,0,1,1))
 
                 // TODO 숫자 1~9, ? 가 올바르게 작동 안됨
                 val texts = arg[0].toCharArray()
@@ -145,40 +158,45 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     var yv = 0 // 가로 크기
                     // 배열 크기
                     when (target.size) {
-                        // ABCDEFGHJKLNPRSU
-                        20 -> {
-                            xv = 5
-                            yv = 4
-                        }
-
-                        // I1234567890
-                        15 -> {
-                            xv = 5
-                            yv = 3
-                        }
-
-                        // !
-                        5 -> {
-                            xv = 5
-                            yv = 1
-                        }
-
-                        // ?
-                        18 -> {
-                            xv = 6
-                            yv = 3
-                        }
-
-                        // MOQTVWXYZ
                         25 -> {
                             xv = 5
                             yv = 5
                         }
-
-                        // (공백)
+                        20 -> {
+                            xv = 5
+                            yv = 4
+                        }
+                        18 -> {
+                            xv = 6
+                            yv = 3
+                        }
+                        15 -> {
+                            xv = 5
+                            yv = 3
+                        }
                         10 -> {
                             xv = 5
                             yv = 2
+                        }
+                        9 -> {
+                            xv = 3
+                            yv = 3
+                        }
+                        6 -> {
+                            xv = 2
+                            yv = 3
+                        }
+                        4 -> {
+                            xv = 4
+                            yv = 1
+                        }
+                        5 -> {
+                            xv = 5
+                            yv = 1
+                        }
+                        2 -> {
+                            xv = 2
+                            yv = 1
                         }
                     }
                     for (y in 0 until yv) {
@@ -202,7 +220,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             xv
                         }
                         5 -> {
-                            xv - 3
+                            xv - 2
                         }
                         25 -> {
                             xv + 2
