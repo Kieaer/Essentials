@@ -31,14 +31,14 @@ class Main : Plugin() {
 
         Event.register()
 
-
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 timer.cancel()
                 database.close()
                 daemon.shutdownNow()
-                Permission.save()
                 Commands.Discord.shutdownNow()
+                Permission.save()
+                Permission.sort()
             }
         })
     }
