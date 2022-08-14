@@ -18,6 +18,7 @@ object Permission {
     val bundle = Bundle(Locale(System.getProperty("user.language"), System.getProperty("user.country")).toLanguageTag())
 
     val comment = """
+        ${bundle["permission.sort"]}
         Usage
         {
             uuid: ${bundle["permission.usage.uuid"]}
@@ -120,9 +121,14 @@ object Permission {
         root.writeString(perm.toString(Stringify.HJSON))
     }
 
+    fun sort() {
+        user.writeString(data.setComment(comment).toString(Stringify.HJSON_COMMENTS))
+    }
+
+    @Throws(ParseException::class)
     fun load() {
         perm = JsonValue.readHjson(root.reader()).asObject()
-        data = JsonValue.readHjson(user.reader(), HjsonOptions().setOutputComments(true)).asArray()
+        data = JsonValue.readHjson(user.reader()).asArray()
 
         for (data in perm) {
             val name = data.name
@@ -154,6 +160,12 @@ object Permission {
             if (b.has("admin")) result.add("admin", b.get("admin").asBoolean())
 
             data.add(result)
+
+            val data = database[b.get("uuid").asString()]
+            if (data != null && b.has("group")) {
+                data.permission = b.get("group").asString()
+                database.update(b.get("uuid").asString(), data)
+            }
         }
     }
 

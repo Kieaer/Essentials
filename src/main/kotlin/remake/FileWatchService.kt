@@ -3,8 +3,8 @@ package remake
 import arc.Core
 import arc.files.Fi
 import arc.util.Log
-import arc.util.Threads.sleep
 import mindustry.gen.Groups
+import org.hjson.ParseException
 import java.io.IOException
 import java.nio.file.*
 
@@ -26,19 +26,22 @@ object FileWatchService : Runnable {
         while (!Thread.currentThread().isInterrupted) {
             try {
                 watchKey = watchService.take()
-                sleep(50)
                 val events = watchKey.pollEvents()
                 for (event in events) {
                     val kind = event.kind()
                     val paths = (event.context() as Path).fileName.toString()
                     if ((paths == "permission_user.txt" || paths == "permission.txt") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        Permission.load()
+                        try {
+                            Permission.load()
 
-                        for (c in Groups.player) {
-                            c.name = Permission[c].name
-                            c.admin = Permission[c].admin
+                            for (c in Groups.player) {
+                                c.name = Permission[c].name
+                                c.admin = Permission[c].admin
+                            }
+                            Log.info("Permission file updated!")
+                        } catch (e: ParseException){
+                            Log.err(e)
                         }
-                        Log.info("Permission file updated!")
                     }
                 }
                 if (!watchKey.reset()) {
