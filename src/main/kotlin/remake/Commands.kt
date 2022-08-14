@@ -311,7 +311,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun color() {
             if (!Permission.check(player, "color")) return
-            if (data != null) data.colornick = true
+            if (data != null) data.colornick = !data.colornick
         }
 
         fun login() {
