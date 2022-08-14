@@ -121,57 +121,64 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 letters.put("W", intArrayOf(1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0))
                 letters.put("X", intArrayOf(1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1))
                 letters.put("Y", intArrayOf(1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0))
-                letters.put("Z", intArrayOf(1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1))
-                letters.put("0", intArrayOf(1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1))
-                letters.put("1", intArrayOf(0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1))
-                letters.put("2", intArrayOf(1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1))
-                letters.put("3", intArrayOf(1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1))
-                letters.put("4", intArrayOf(1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1))
-                letters.put("5", intArrayOf(1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1))
-                letters.put("6", intArrayOf(1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1))
-                letters.put("7", intArrayOf(1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1))
-                letters.put("8", intArrayOf(1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1))
-                letters.put("9", intArrayOf(1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1))
-                letters.put("!", intArrayOf(1, 1, 1, 1, 0, 1))
-                letters.put("?", intArrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0))
-                letters.put(" ", intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+                letters.put("Z", intArrayOf(1,0,0,0,1,1,0,0,1,1,1,0,1,0,1,1,1,0,0,1,1,0,0,0,1))
+                letters.put("0", intArrayOf(1,1,1,1,1,1,0,0,0,1,1,1,1,1,1))
+                letters.put("1", intArrayOf(0,1,0,0,1,1,1,1,1,1,0,0,0,0,1))
+                letters.put("2", intArrayOf(1,0,1,1,1,1,0,1,0,1,1,1,1,0,1))
+                letters.put("3", intArrayOf(1,0,1,0,1,1,0,1,0,1,1,1,1,1,1))
+                letters.put("4", intArrayOf(1,1,1,0,0,0,0,1,0,0,1,1,1,1,1))
+                letters.put("5", intArrayOf(1,1,1,0,1,1,0,1,0,1,1,0,1,1,1))
+                letters.put("6", intArrayOf(1,1,1,1,1,1,0,1,0,1,1,0,1,1,1))
+                letters.put("7", intArrayOf(1,1,0,0,0,1,0,0,0,0,1,1,1,1,1))
+                letters.put("8", intArrayOf(1,1,1,1,1,1,0,1,0,1,1,1,1,1,1))
+                letters.put("9", intArrayOf(1,1,1,0,1,1,0,1,0,1,1,1,1,1,1))
+                letters.put("!", intArrayOf(1,1,1,0,1))
+                letters.put("?", intArrayOf(0,1,0,0,0,0,1,0,0,1,0,1,0,1,1,0,0,0))
+                letters.put(" ", intArrayOf(0,0,0,0,0,0,0,0,0,0))
 
                 // TODO 숫자 1~9, ? 가 올바르게 작동 안됨
                 val texts = arg[0].toCharArray()
                 for (i in texts) {
                     val pos = Seq<IntArray>()
                     val target = letters[i.uppercaseChar().toString()]
-                    var xv = 0
-                    var yv = 0
+                    var xv = 0 // 세로 크기
+                    var yv = 0 // 가로 크기
+                    // 배열 크기
                     when (target.size) {
+                        // ABCDEFGHJKLNPRSU
                         20 -> {
                             xv = 5
                             yv = 4
                         }
 
+                        // I1234567890
                         15 -> {
                             xv = 5
                             yv = 3
                         }
 
+                        // !
+                        5 -> {
+                            xv = 5
+                            yv = 1
+                        }
+
+                        // ?
                         18 -> {
                             xv = 6
                             yv = 3
                         }
 
+                        // MOQTVWXYZ
                         25 -> {
                             xv = 5
                             yv = 5
                         }
 
-                        6 -> {
-                            xv = 6
-                            yv = 1
-                        }
-
+                        // (공백)
                         10 -> {
-                            xv = 2
-                            yv = 5
+                            xv = 5
+                            yv = 2
                         }
                     }
                     for (y in 0 until yv) {
@@ -187,7 +194,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             Call.deconstructFinish(tar, Blocks.air, Nulls.unit)
                         }
                     }
-                    t = Vars.world.tile(t.x + (xv + 1), t.y.toInt())
+                    val left: Int = when (target.size) {
+                        20 -> {
+                            xv + 1
+                        }
+                        15, 18 -> {
+                            xv
+                        }
+                        5 -> {
+                            xv - 3
+                        }
+                        25 -> {
+                            xv + 2
+                        }
+                        else -> {
+                            xv - 1
+                        }
+                    }
+                    t = Vars.world.tile(t.x + left, t.y.toInt())
                 }
             }
         }
@@ -422,14 +446,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (!Permission.check(player, "status")) return
             // 서버 상태 표시
             val bans = netServer.admins.banned.size
-            val ipbans = netServer.admins.bannedIPs.size
 
             player.sendMessage(
                 """
                 [#DEA82A]${bundle["command.status.info"]}[]
                 [#2B60DE]========================================[]
                 TPS: ${Core.graphics.framesPerSecond}/20
-                ${bundle["command.status.banned", bans + ipbans, "$bans/$ipbans"]}
+                ${bundle["command.status.banned", bans]}
                 ${bundle["command.status.playtime"]}: ${PluginData.playtime}
                 ${bundle["command.status.uptime"]}: ${PluginData.uptime}
             """.trimIndent()
