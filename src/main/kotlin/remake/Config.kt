@@ -24,13 +24,15 @@ object Config {
     var vote = true
     var fixedName = true
     var antiVPN = false
+    var pvpPeace = false
+    var pvpPeaceTime = 300
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
 
     var shareBanList = false
     var shareBanListType = BanType.Server
-    var shareBanListServer = ""
+    var shareBanListServer = "mindustry.kr"
 
     var botToken = ""
     var channelToken = ""
@@ -112,6 +114,8 @@ object Config {
             features.add("vote", vote, bundle["config.vote"])
             features.add("fixedName", fixedName, bundle["config.fixedname"])
             features.add("antiVPN", antiVPN, bundle["config.antivpn"])
+            features.add("pvpPeace", pvpPeace, bundle["config.pvp"])
+            features.add("pvpPeaceTime", pvpPeaceTime, bundle["config.pvp.time"])
 
             val ban = JsonObject()
             ban.add("shareBanList", shareBanList, bundle["config.share.list"])

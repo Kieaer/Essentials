@@ -54,6 +54,7 @@ object Trigger {
     var voteWave : Int? = null
     val voted = Seq<String>()
     var lastVoted = LocalTime.now()
+    var pvpCount = Config.pvpPeaceTime
 
     init {
         Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN").run {
@@ -369,6 +370,16 @@ object Trigger {
                 voteWave = null
                 voted.clear()
             }
+
+            if (Config.pvpPeace) {
+                if (pvpCount != 0){
+                    pvpCount--
+                } else {
+                    state.rules.blockDamageMultiplier = Event.orignalBlockMultiplier
+                    state.rules.unitDamageMultiplier = Event.orignalUnitMultiplier
+                    send("trigger.pvp.end")
+                }
+            }
         }
 
         private fun nickcolor(name: String, player: Playerc) {
@@ -555,7 +566,7 @@ object Trigger {
     }
 
     class Server {
-        val server = ServerSocket(9999)
+        val server = ServerSocket(6000)
 
         init {
             while(true){
@@ -612,7 +623,7 @@ object Trigger {
 
     class Client{
         val address = "127.0.0.1"
-        val port = 9999
+        val port = 6000
 
         val client = Handler(address, port)
 
