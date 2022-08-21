@@ -4,14 +4,15 @@ import arc.ApplicationListener
 import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
+import arc.util.Log
 import mindustry.Vars
 import mindustry.mod.Plugin
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class Main : Plugin() {
-    private val daemon: ExecutorService = Executors.newFixedThreadPool(2)
-    private val timer = java.util.Timer()
+    val daemon: ExecutorService = Executors.newFixedThreadPool(2)
+    val timer = java.util.Timer()
 
     companion object {
         val database = DB()
@@ -19,6 +20,7 @@ class Main : Plugin() {
     }
 
     init {
+        Log.info("[Essentials] Starting...")
         if (Core.settings.has("debugMode") && Core.settings.getBool("debugMode")){
             root.child("database.db").delete()
         }
@@ -47,6 +49,7 @@ class Main : Plugin() {
         daemon.submit(FileWatchService)
         daemon.submit(Trigger.Thread())
         timer.scheduleAtFixedRate(Trigger.Seconds(), 1000, 1000)
+        timer.scheduleAtFixedRate(Trigger.Minutes(), 0, 60000)
 
         Vars.netServer.admins.addChatFilter { _, _ -> null }
 
@@ -63,6 +66,7 @@ class Main : Plugin() {
                 false
             }
         }
+        Log.info("[Essentials] Service started.")
     }
 
     override fun registerClientCommands(handler: CommandHandler) {

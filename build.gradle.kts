@@ -14,9 +14,10 @@ repositories {
 
 dependencies {
     val exposedVersion = "0.39.2"
-    val mindustryVersion = "v137"
+    val mindustryVersion = "master-SNAPSHOT"
+    val arcVersion = "v137"
 
-    compileOnly("com.github.Anuken.Arc:arc-core:$mindustryVersion")
+    compileOnly("com.github.Anuken.Arc:arc-core:$arcVersion")
     compileOnly("com.github.Anuken.Mindustry:core:$mindustryVersion")
 
     implementation("com.github.PersonTheCat:hjson-java:3.0.0-C11")
@@ -31,10 +32,10 @@ dependencies {
     implementation("com.neovisionaries:nv-i18n:1.29")
     implementation(files("libs/ip2location.jar"))
 
-    testImplementation("com.github.Anuken.arc:arc-core:$mindustryVersion")
+    testImplementation("com.github.Anuken.arc:arc-core:$arcVersion")
     testImplementation("com.github.Anuken.Mindustry:core:$mindustryVersion")
     testImplementation("com.github.Anuken.Mindustry:server:$mindustryVersion")
-    testImplementation("com.github.Anuken.arc:backend-headless:$mindustryVersion")
+    testImplementation("com.github.Anuken.arc:backend-headless:$arcVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("com.github.javafaker:javafaker:1.0.2")
 }

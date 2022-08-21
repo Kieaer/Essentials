@@ -3,8 +3,10 @@ package remake
 import arc.Core
 import arc.Events
 import arc.files.Fi
+import arc.struct.ArrayMap
 import arc.util.Log
 import mindustry.Vars
+import mindustry.Vars.netServer
 import mindustry.content.Blocks
 import mindustry.game.EventType
 import mindustry.game.EventType.*
@@ -30,6 +32,8 @@ import kotlin.math.abs
 
 object Event {
     val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson").reader()).asObject()
+    var order = 0
+    val players = ArrayMap<Playerc, Int>()
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
@@ -39,6 +43,10 @@ object Event {
 
                 // todo 채팅 포맷 변경
                 Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
+
+                if (database.players.find { e -> e.uuid == it.player.uuid() } != null && Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())){
+                    Trigger.voted.add(it.player.uuid())
+                }
             }
         }
 
@@ -77,7 +85,7 @@ object Event {
 
         Events.on(TapEvent::class.java) {
             log(LogType.Tap, "${it.player.name} clicks on ${it.tile.block().name}")
-            val playerData = findPlayers(it.player.uuid())
+            val playerData = findPlayerData(it.player.uuid())
             if (playerData != null) {
                 for (data in PluginData.warpBlocks) {
                     if (it.tile.x >= Vars.world.tile(data.pos).x && it.tile.x <= Vars.world.tile(data.pos).x && it.tile.y >= Vars.world.tile(data.pos).y && it.tile.y <= Vars.world.tile(data.pos).y) {
@@ -117,7 +125,7 @@ object Event {
                 }
                 if (index == 1) {
                     for (player in Groups.player) {
-                        val target = findPlayers(player.uuid())
+                        val target = findPlayerData(player.uuid())
                         if (target != null) {
                             if (player.team().name == it.winner.name) {
                                 target.pvpwincount++
@@ -129,7 +137,7 @@ object Event {
                 }
             } else if (Vars.state.rules.attackMode) {
                 for (p in Groups.player) {
-                    val target = findPlayers(p.uuid())
+                    val target = findPlayerData(p.uuid())
                     if (target != null) target.attackclear++
                 }
             }
@@ -141,7 +149,7 @@ object Event {
 
         Events.on(BlockBuildEndEvent::class.java) {
             if (it.unit.isPlayer) {
-                val player = findPlayers(it.unit.player.uuid())
+                val player = findPlayerData(it.unit.player.uuid())
                 if (player != null) {
                     if (!it.breaking) player.placecount++ else player.breakcount++
                 }
@@ -151,7 +159,7 @@ object Event {
 
             if (it.unit.isPlayer) {
                 val player = it.unit.player
-                val target = findPlayers(player.uuid())
+                val target = findPlayerData(player.uuid())
 
                 if (!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
                     val name = it.tile.block().name
@@ -201,6 +209,7 @@ object Event {
         }
 
         Events.on(PlayerJoin::class.java) {
+            players.put(it.player, order)
             log(LogType.Player, "${it.player.plainName()}(${it.player.uuid()}, ${it.player.con.address} joined.")
             it.player.admin(false)
 
@@ -217,9 +226,15 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
+            players.removeKey(it.player)
             log(LogType.Player, "${it.player.plainName()}(${it.player.uuid()}, ${it.player.con.address} disconnected.")
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
-            if (data != null) database.update(it.player.uuid(), data)
+            if (data != null) {
+                database.update(it.player.uuid(), data)
+            } else {
+                Log.info("Data is null!")
+            }
+            Log.info(data.permission)
             database.players.remove(data)
         }
 
@@ -233,6 +248,15 @@ object Event {
 
         Events.on(PlayerConnect::class.java) { e ->
             log(LogType.Player, "${e.player.plainName()}(${e.player.uuid()}, ${e.player.con.address} connected.")
+
+            val data = database[e.player.uuid()]
+            if (data != null){
+                if (data.status.containsKey("ban")){
+                    if (LocalDateTime.now().isAfter(LocalDateTime.parse(data.status.get("ban")))){
+                        netServer.admins.unbanPlayerID(e.player.uuid())
+                    }
+                }
+            }
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (s in PluginData.blacklist) {
@@ -354,7 +378,15 @@ object Event {
         }
     }
 
-    fun findPlayers(uuid: String) : DB.PlayerData?{
+    fun findPlayerData(uuid: String) : DB.PlayerData?{
         return database.players.find { e -> e.uuid == uuid }
+    }
+
+    fun findPlayers(any: Any) : Playerc? {
+        return if(any.toString().toIntOrNull() == null) {
+            Groups.player.find { e -> e.name.contains(any.toString(), true) }
+        } else {
+            players.getKeyAt(any.toString().toInt())
+        }
     }
 }

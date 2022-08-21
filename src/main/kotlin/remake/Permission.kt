@@ -19,6 +19,7 @@ object Permission {
 
     val comment = """
         ${bundle["permission.sort"]}
+        ${bundle["permission.notice"]}
         Usage
         {
             uuid: ${bundle["permission.usage.uuid"]}
@@ -65,6 +66,7 @@ object Permission {
             adminPerm.add("team")
             adminPerm.add("team.other")
             adminPerm.add("weather")
+            adminPerm.add("info.other")
 
             admin.add("inheritance", "user")
             admin.add("admin", true)
@@ -151,20 +153,15 @@ object Permission {
 
         for (a in JsonValue.readHjson(user.reader()).asArray()) {
             val b = a.asObject()
-            val result = JsonObject()
-
-            if (b.has("uuid")) result.add("uuid", b.get("uuid").asString())
-            if (b.has("name")) result.add("name", b.get("name").asString())
-            if (b.has("group")) result.add("group", b.get("group").asString())
-            if (b.has("chatFormat")) result.add("chatFormat", b.get("chatFormat").asString())
-            if (b.has("admin")) result.add("admin", b.get("admin").asBoolean())
-
-            data.add(result)
-
-            val data = database[b.get("uuid").asString()]
-            if (data != null && b.has("group")) {
-                data.permission = b.get("group").asString()
-                database.update(b.get("uuid").asString(), data)
+            val c = database.players.find { e -> e.uuid == b.get("uuid").asString() }
+            if (c == null){
+                val data = database[b.get("uuid").asString()]
+                if (data != null && b.has("group")) {
+                    data.permission = b.get("group").asString()
+                    database.update(b.get("uuid").asString(), data)
+                }
+            } else {
+                c.permission = b.get("group").asString()
             }
         }
     }

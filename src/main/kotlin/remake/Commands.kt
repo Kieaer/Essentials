@@ -1,30 +1,38 @@
 package remake
 
 import arc.Core
+import arc.graphics.Color
 import arc.math.Mathf
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.Strings
-import arc.util.Threads
+import arc.util.Threads.sleep
 import com.mewna.catnip.Catnip
 import com.mewna.catnip.shard.DiscordEvent
 import mindustry.Vars
 import mindustry.Vars.mods
 import mindustry.Vars.netServer
 import mindustry.content.Blocks
+import mindustry.content.Fx
+import mindustry.content.Weathers
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.gen.Unit
 import mindustry.net.Administration
+import mindustry.net.Packets
 import mindustry.type.UnitType
 import mindustry.world.Tile
+import remake.Event.findPlayerData
+import remake.Event.findPlayers
 import remake.Main.Companion.database
 import remake.Main.Companion.root
+import remake.Permission.bundle
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
@@ -42,13 +50,15 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
-            handler.register("effect", "[effects]", "effects") { a, p: Playerc -> Client(a, p).effect() }
-            handler.register("gg", "[delay]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
+            handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
+            handler.register("effect", "[effect] [x] [y] [rotate] [color]", "effects") { a, p: Playerc -> Client(a, p).effect() }
+            handler.register("gg", "[delay]", "Force gameover") { a, p: Playerc -> Client(a, p).gg(false) }
             handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
             handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
-            handler.register("info", "Show your information") { a, p: Playerc -> Client(a, p).info() }
+            handler.register("info", "[player]", "Show your information") { a, p: Playerc -> Client(a, p).info() }
             handler.register("js", "[code]", "Execute JavaScript codes") { a, p: Playerc -> Client(a, p).js() }
+            handler.register("kickall", "All users except yourself and the administrator will be kicked") { a, p: Playerc -> Client(a, p).kickall()}
             handler.register("kill", "[player]", "Kill player.") { a, p: Playerc -> Client(a, p).kill() }
             handler.register("killall", "[team]", "Kill all enemy units") { a, p: Playerc -> Client(a, p).killall() }
             handler.register("login", "<id> <password>", "Access your account") { a, p: Playerc -> Client(a, p).login() }
@@ -56,32 +66,35 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("me", "<text...>", "broadcast * message") { a, p: Playerc -> Client(a, p).me() }
             handler.register("meme", "<type>", "Router") { a, p: Playerc -> Client(a, p).meme() }
             handler.register("motd", "Show server motd.") { a, p: Playerc -> Client(a, p).motd() }
-            handler.register("mute", "<name>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
+            handler.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
-            handler.register("random", "", "Random events") { a, p: Playerc -> Client(a, p).random() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
-            handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawn mob in player position") { a, p: Playerc -> Client(a, p).spawn() }
+            handler.register("setperm, <player> <group>", "Set the player's permission group.") { a, p: Playerc -> Client(a, p).setperm() }
+            handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p: Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p: Playerc -> Client(a, p).status() }
             handler.register("team", "<team_name> [name]", "Change team") { a, p: Playerc -> Client(a, p).team() }
+            handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.")  { a, p: Playerc -> Client(a, p).tempban() }
             handler.register("time", "Show server time") { a, p: Playerc -> Client(a, p).time() }
             handler.register("tp", "<player>", "Teleport to other players") { a, p: Playerc -> Client(a, p).tp() }
-            handler.register("unmute", "<name>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
+            handler.register("unmute", "<player>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
+            handler.register("url", "<command>", "Opens a URL contained in a specific command.")  { a, p: Playerc -> Client(a, p).url() }
+            handler.register("vote", "<kick/map/gameover/skipwave/rollback/random> [player/amount/world_name] [reason]", "Start voting") { a, p: Playerc -> Client(a, p).vote() }
             handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Change map light") { a, p: Playerc -> Client(a, p).weather() }
-
             clientCommands = handler
         } else {
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
             handler.register("debug", "[bool]","Show plugin internal informations") { a -> Server(a).debug() }
-
+            handler.register("setperm, <player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
+            handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
             serverCommands = handler
         }
     }
 
     class Client(val arg: Array<String>, val player: Playerc) {
         var bundle = Bundle()
-        val data: DB.PlayerData? = findPlayers(player.uuid())
+        val data: DB.PlayerData? = findPlayerData(player.uuid())
 
         init {
             if (data != null) bundle = Bundle(data.languageTag)
@@ -153,6 +166,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val texts = arg[0].toCharArray()
                 for (i in texts) {
                     val pos = Seq<IntArray>()
+                    if (!letters.containsKey(i.uppercaseChar().toString())) continue
                     val target = letters[i.uppercaseChar().toString()]
                     var xv = 0 // 세로 크기
                     var yv = 0 // 가로 크기
@@ -262,9 +276,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (!Permission.check(player, "help")) return
             // 명령어 도움말 표시
             if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
-                player.sendMessage(bundle["command.page.number"])
+                try {
+                    player.sendMessage(bundle["command.help.${arg[0]}"])
+                } catch (e: MissingResourceException) {
+                    player.sendMessage(bundle["command.help.not.exists"])
+                }
                 return
             }
+
             val temp = Seq<String>()
             for (a in 0 until netServer.clientCommands.commandList.size) {
                 val command = netServer.clientCommands.commandList[a]
@@ -292,8 +311,34 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun info() {
             if (!Permission.check(player, "info")) return
-            if (data != null) {
-                val texts = """
+            if (arg.isNotEmpty()){
+                if (!Permission.check(player, "info.other")) return
+                val target = findPlayers(arg[0])
+                if (target != null) {
+                    val other = findPlayerData(target.uuid())
+                    if (other != null) {
+                        val texts = """
+                        ${bundle["name"]}: ${other.name}
+                        ${bundle["placecount"]}: ${other.placecount}
+                        ${bundle["breakcount"]}: ${other.breakcount}
+                        ${bundle["level"]}: ${other.level}
+                        ${bundle["exp"]}: ${Exp[other]}
+                        ${bundle["joindate"]}: ${Timestamp(other.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
+                        ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (other.playtime / 60 / 60 / 24) % 365, (other.playtime / 60 / 24) % 24, (other.playtime / 60) % 60, (other.playtime) % 60)}
+                        ${bundle["attackclear"]}: ${other.attackclear}
+                        ${bundle["pvpwincount"]}: ${other.pvpwincount}
+                        ${bundle["pvplosecount"]}: ${other.pvplosecount}
+                        """.trimIndent()
+                        Call.infoMessage(player.con(), texts)
+                    } else {
+                        player.sendMessage(bundle["player.not.registered"])
+                    }
+                } else {
+                    player.sendMessage(bundle["player.not.found"])
+                }
+            } else {
+                if (data != null) {
+                    val texts = """
                     ${bundle["name"]}: ${data.name}
                     ${bundle["placecount"]}: ${data.placecount}
                     ${bundle["breakcount"]}: ${data.breakcount}
@@ -305,7 +350,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     ${bundle["pvpwincount"]}: ${data.pvpwincount}
                     ${bundle["pvplosecount"]}: ${data.pvplosecount}
                 """.trimIndent()
-                Call.infoMessage(player.con(), texts)
+                    Call.infoMessage(player.con(), texts)
+                }
             }
         }
 
@@ -390,7 +436,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val message = StringBuilder()
             val page = if (arg.isNotEmpty()) arg[0].toInt() else 0
 
-            val buffer = Mathf.ceil(Groups.player.size().toFloat() / 6)
+            val buffer = Mathf.ceil(Event.players.size.toFloat() / 6)
             val pages = if (buffer > 1.0) buffer - 1 else 0
 
             if (pages < page) {
@@ -398,11 +444,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else {
                 message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
 
-                val players: Seq<Playerc> = Seq<Playerc>()
-                Groups.player.each { e: Playerc -> players.add(e) }
-
-                for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Groups.player.size())) {
-                    message.append("[gray]${players.get(a).id()}[white] ${players.get(a).name()}\n")
+                for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Event.players.size)) {
+                    val b = Event.players.keys[a]
+                    val c = Event.players.values[a]
+                    message.append("[gray]$c[white] ${b.name()}\n")
                 }
 
                 player.sendMessage(message.toString().dropLast(1))
@@ -421,11 +466,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val unit = Vars.content.units().find { unitType: UnitType -> unitType.name == name }
                     if (unit != null) {
                         if (parameter != null) {
-                            if (name != "block") {
+                            if (name != "block" && name != "turret-unit-build-tower") {
                                 for (a in 1..parameter) {
-                                    val baseUnit = unit.create(player.team())
-                                    baseUnit.set(player.x, player.y)
-                                    baseUnit.add()
+                                    unit.spawn(player.team(), player.x, player.y)
                                 }
                             } else {
                                 player.sendMessage(bundle["command.spawn.block"])
@@ -460,6 +503,21 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
+        fun setperm() {
+            if (!Permission.check(player, "setperm")) return
+            val target = findPlayers(arg[0])
+            if (target != null){
+                val data = findPlayerData(target.uuid())
+                if (data != null){
+                    data.permission = arg[1]
+                } else {
+                    player.sendMessage(bundle["player.not.registered"])
+                }
+            } else {
+                player.sendMessage(bundle["player.not.found"])
+            }
+        }
+
         fun status() {
             if (!Permission.check(player, "status")) return
             // 서버 상태 표시
@@ -469,7 +527,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 """
                 [#DEA82A]${bundle["command.status.info"]}[]
                 [#2B60DE]========================================[]
-                TPS: ${Core.graphics.framesPerSecond}/20
+                TPS: ${Core.graphics.framesPerSecond}/60
                 ${bundle["command.status.banned", bans]}
                 ${bundle["command.status.playtime"]}: ${PluginData.playtime}
                 ${bundle["command.status.uptime"]}: ${PluginData.uptime}
@@ -509,6 +567,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             player.sendMessage(bundle["command.team.invalid"])
                         }
                     }
+                } else {
+                    player.sendMessage(bundle["player.not.found"])
                 }
             }
         }
@@ -524,6 +584,23 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun weather() {
             if (!Permission.check(player, "weather")) return
             // 날씨 기능
+            val weather = when (arg[0]) {
+                "snow" -> Weathers.snow
+                "sandstorm" -> Weathers.sandstorm
+                "sporestorm" -> Weathers.sporestorm
+                "fog" -> Weathers.fog
+                "suspendParticles" -> Weathers.suspendParticles
+                else -> Weathers.rain
+            }
+            try {
+                val intensity = arg[1].toFloat()
+                val duration = arg[2].toFloat()
+                val x = arg[3].toFloat()
+                val y = arg[4].toFloat()
+                Call.createWeather(weather,intensity,duration,x,y)
+            } catch (e: NumberFormatException){
+                player.sendMessage(bundle["command.weather.not.number"])
+            }
         }
 
         fun mute() {
@@ -546,7 +623,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun unmute() {
             if (!Permission.check(player, "unmute")) return
             // 특정 플레이어 채팅 금지 해제
-            val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
+            val other = findPlayers(arg[0])
             if (other == null) {
                 player.sendMessage(bundle["player.not.found"])
             } else {
@@ -562,9 +639,244 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun effect() {
             if (!Permission.check(player, "effect")) return
-            // 효과 표시 기능
-            //Effect effect, float x, float y, float rotation, Color color
-            //Call.effect()
+            // 하드 코딩 ㅋㅋㅋㅋㅋ
+            val effect = when (arg[0]){
+                "blockCrash" -> Fx.blockCrash
+                "trailFade" -> Fx.trailFade
+                "unitSpawn" -> Fx.unitSpawn
+                "unitCapKill" -> Fx.unitCapKill
+                "unitEnvKill" -> Fx.unitEnvKill
+                "unitControl" -> Fx.unitControl
+                "unitDespawn" -> Fx.unitDespawn
+                "unitSpirit" -> Fx.unitSpirit
+                "itemTransfer" -> Fx.itemTransfer
+                "pointBeam" -> Fx.pointBeam
+                "pointHit" -> Fx.pointHit
+                "lightning" -> Fx.lightning
+                "coreBuildShockwave" -> Fx.coreBuildShockwave
+                "coreBuildBlock" -> Fx.coreBuildBlock
+                "pointShockwave" -> Fx.pointShockwave
+                "moveCommand" -> Fx.moveCommand
+                "attackCommand" -> Fx.attackCommand
+                "commandSend" -> Fx.commandSend
+                "upgradeCore" -> Fx.upgradeCore
+                "upgradeCoreBloom" -> Fx.upgradeCoreBloom
+                "placeBlock" -> Fx.placeBlock
+                "coreLaunchConstruct" -> Fx.coreLaunchConstruct
+                "tapBlock" -> Fx.tapBlock
+                "breakBlock" -> Fx.breakBlock
+                "payloadDeposit" -> Fx.payloadDeposit
+                "select" -> Fx.select
+                "smoke" -> Fx.smoke
+                "fallSmoke" -> Fx.fallSmoke
+                "unitWreck" -> Fx.unitWreck
+                "rocketSmoke" -> Fx.rocketSmoke
+                "rocketSmokeLarge" -> Fx.rocketSmokeLarge
+                "magmasmoke" -> Fx.magmasmoke
+                "spawn" -> Fx.spawn
+                "unitAssemble" -> Fx.unitAssemble
+                "padlaunch" -> Fx.padlaunch
+                "breakProp" -> Fx.breakProp
+                "unitDrop" -> Fx.unitDrop
+                "unitLand" -> Fx.unitLand
+                "unitDust" -> Fx.unitDust
+                "unitLandSmall" -> Fx.unitLandSmall
+                "unitPickup" -> Fx.unitPickup
+                "crawlDust" -> Fx.crawlDust
+                "landShock" -> Fx.landShock
+                "pickup" -> Fx.pickup
+                "titanExplosion" -> Fx.titanExplosion
+                "titanSmoke" -> Fx.titanSmoke
+                "missileTrailSmoke" -> Fx.missileTrailSmoke
+                "neoplasmSplat" -> Fx.neoplasmSplat
+                "scatheExplosion" -> Fx.scatheExplosion
+                "scatheLight" -> Fx.scatheLight
+                "dynamicSpikes" -> Fx.dynamicSpikes
+                "greenBomb" -> Fx.greenBomb
+                "greenLaserCharge" -> Fx.greenLaserCharge
+                "greenLaserChargeSmall" -> Fx.greenLaserChargeSmall
+                "greenCloud" -> Fx.greenCloud
+                "healWaveDynamic" -> Fx.healWaveDynamic
+                "healWave" -> Fx.healWave
+                "heal" -> Fx.heal
+                "shieldWave" -> Fx.shieldWave
+                "shieldApply" -> Fx.shieldApply
+                "disperseTrail" -> Fx.disperseTrail
+                "hitBulletSmall" -> Fx.hitBulletSmall
+                "hitBulletColor" -> Fx.hitBulletColor
+                "hitSquaresColor" -> Fx.hitSquaresColor
+                "hitFuse" -> Fx.hitFuse
+                "hitBulletBig" -> Fx.hitBulletBig
+                "hitFlameSmall" -> Fx.hitFlameSmall
+                "hitFlamePlasma" -> Fx.hitFlamePlasma
+                "hitLiquid" -> Fx.hitLiquid
+                "hitLaserBlast" -> Fx.hitLaserBlast
+                "hitEmpSpark" -> Fx.hitEmpSpark
+                "hitLancer" -> Fx.hitLancer
+                "hitBeam" -> Fx.hitBeam
+                "hitFlameBeam" -> Fx.hitFlameBeam
+                "hitMeltdown" -> Fx.hitMeltdown
+                "hitMeltHeal" -> Fx.hitMeltHeal
+                "instBomb" -> Fx.instBomb
+                "instTrail" -> Fx.instTrail
+                "instShoot" -> Fx.instShoot
+                "instHit" -> Fx.instHit
+                "hitLaser" -> Fx.hitLaser
+                "hitLaserColor" -> Fx.hitLaserColor
+                "despawn" -> Fx.despawn
+                "airBubble" -> Fx.airBubble
+                "plasticExplosion" -> Fx.plasticExplosion
+                "plasticExplosionFlak" -> Fx.plasticExplosionFlak
+                "blastExplosion" -> Fx.blastExplosion
+                "sapExplosion" -> Fx.sapExplosion
+                "massiveExplosion" -> Fx.massiveExplosion
+                "artilleryTrail" -> Fx.artilleryTrail
+                "incendTrail" -> Fx.incendTrail
+                "missileTrail" -> Fx.missileTrail
+                "absorb" -> Fx.absorb
+                "forceShrink" -> Fx.forceShrink
+                "burning" -> Fx.burning
+                "fireRemove" -> Fx.fireRemove
+                "fire" -> Fx.fire
+                "fireHit" -> Fx.fireHit
+                "fireSmoke" -> Fx.fireSmoke
+                "neoplasmHeal" -> Fx.neoplasmHeal
+                "ventSteam" -> Fx.ventSteam
+                "vaporSmall" -> Fx.vaporSmall
+                "fireballsmoke" -> Fx.fireballsmoke
+                "ballfire" -> Fx.ballfire
+                "freezing" -> Fx.freezing
+                "melting" -> Fx.melting
+                "wet" -> Fx.wet
+                "muddy" -> Fx.muddy
+                "sapped" -> Fx.sapped
+                "electrified" -> Fx.electrified
+                "sporeSlowed" -> Fx.sporeSlowed
+                "oily" -> Fx.oily
+                "overdriven" -> Fx.overdriven
+                "overclocked" -> Fx.overclocked
+                "dropItem" -> Fx.dropItem
+                "shockwave" -> Fx.shockwave
+                "bigShockwave" -> Fx.bigShockwave
+                "spawnShockwave" -> Fx.spawnShockwave
+                "explosion" -> Fx.explosion
+                "dynamicExplosion" -> Fx.dynamicExplosion
+                "reactorExplosion" -> Fx.reactorExplosion
+                "impactReactorExplosion" -> Fx.impactReactorExplosion
+                "blockExplosionSmoke" -> Fx.blockExplosionSmoke
+                "shootSmall" -> Fx.shootSmall
+                "shootSmallColor" -> Fx.shootSmallColor
+                "shootHeal" -> Fx.shootHeal
+                "shootHealYellow" -> Fx.shootHealYellow
+                "shootSmallSmoke" -> Fx.shootSmallSmoke
+                "shootBig" -> Fx.shootBig
+                "shootBig2" -> Fx.shootBig2
+                "shootBigColor" -> Fx.shootBigColor
+                "shootTitan" -> Fx.shootTitan
+                "shootBigSmoke" -> Fx.shootBigSmoke
+                "shootBigSmoke2" -> Fx.shootBigSmoke2
+                "shootSmokeDisperse" -> Fx.shootSmokeDisperse
+                "shootSmokeSquare" -> Fx.shootSmokeSquare
+                "shootSmokeSquareSparse" -> Fx.shootSmokeSquareSparse
+                "shootSmokeSquareBig" -> Fx.shootSmokeSquareBig
+                "shootSmokeTitan" -> Fx.shootSmokeTitan
+                "shootSmokeSmite" -> Fx.shootSmokeSmite
+                "shootSmokeMissile" -> Fx.shootSmokeMissile
+                "regenParticle" -> Fx.regenParticle
+                "regenSuppressParticle" -> Fx.regenSuppressParticle
+                "regenSuppressSeek" -> Fx.regenSuppressSeek
+                "neoplasiaSmoke" -> Fx.neoplasiaSmoke
+                "heatReactorSmoke" -> Fx.heatReactorSmoke
+                "circleColorSpark" -> Fx.circleColorSpark
+                "colorSpark" -> Fx.colorSpark
+                "colorSparkBig" -> Fx.colorSparkBig
+                "randLifeSpark" -> Fx.randLifeSpark
+                "shootPayloadDriver" -> Fx.shootPayloadDriver
+                "shootSmallFlame" -> Fx.shootSmallFlame
+                "shootPyraFlame" -> Fx.shootPyraFlame
+                "shootLiquid" -> Fx.shootLiquid
+                "casing1" -> Fx.casing1
+                "railTrail" -> Fx.railTrail
+                "railHit" -> Fx.railHit
+                "lancerLaserShoot" -> Fx.lancerLaserShoot
+                "lancerLaserShootSmoke" -> Fx.lancerLaserShootSmoke
+                "lancerLaserCharge" -> Fx.lancerLaserCharge
+                "lancerLaserChargeBegin" -> Fx.lancerLaserChargeBegin
+                "lightningCharge" -> Fx.lightningCharge
+                "sparkShoot" -> Fx.sparkShoot
+                "lightningShoot" -> Fx.lightningShoot
+                "thoriumShoot" -> Fx.thoriumShoot
+                "reactorsmoke" -> Fx.reactorsmoke
+                "redgeneratespark" -> Fx.redgeneratespark
+                "fuelburn" -> Fx.fuelburn
+                "incinerateSlag" -> Fx.incinerateSlag
+                "coreBurn" -> Fx.coreBurn
+                "plasticburn" -> Fx.plasticburn
+                "conveyorPoof" -> Fx.conveyorPoof
+                "pulverize" -> Fx.pulverize
+                "pulverizeRed" -> Fx.pulverizeRed
+                "pulverizeSmall" -> Fx.pulverizeSmall
+                "pulverizeMedium" -> Fx.pulverizeMedium
+                "producesmoke" -> Fx.producesmoke
+                "artilleryTrailSmoke" -> Fx.artilleryTrailSmoke
+                "smokeCloud" -> Fx.smokeCloud
+                "smeltsmoke" -> Fx.smeltsmoke
+                "coalSmeltsmoke" -> Fx.coalSmeltsmoke
+                "formsmoke" -> Fx.formsmoke
+                "blastsmoke" -> Fx.blastsmoke
+                "lava" -> Fx.lava
+                "dooropen" -> Fx.dooropen
+                "doorclose" -> Fx.doorclose
+                "dooropenlarge" -> Fx.dooropenlarge
+                "doorcloselarge" -> Fx.doorcloselarge
+                "generate" -> Fx.generate
+                "mineWallSmall" -> Fx.mineWallSmall
+                "mineSmall" -> Fx.mineSmall
+                "mine" -> Fx.mine
+                "mineBig" -> Fx.mineBig
+                "mineHuge" -> Fx.mineHuge
+                "mineImpact" -> Fx.mineImpact
+                "mineImpactWave" -> Fx.mineImpactWave
+                "payloadReceive" -> Fx.payloadReceive
+                "teleportActivate" -> Fx.teleportActivate
+                "teleport" -> Fx.teleport
+                "teleportOut" -> Fx.teleportOut
+                "ripple" -> Fx.ripple
+                "launch" -> Fx.launch
+                "launchPod" -> Fx.launchPod
+                "healWaveMend" -> Fx.healWaveMend
+                "overdriveWave" -> Fx.overdriveWave
+                "healBlock" -> Fx.healBlock
+                "healBlockFull" -> Fx.healBlockFull
+                "rotateBlock" -> Fx.rotateBlock
+                "lightBlock" -> Fx.lightBlock
+                "overdriveBlockFull" -> Fx.overdriveBlockFull
+                "shieldBreak" -> Fx.shieldBreak
+                "chainLightning" -> Fx.chainLightning
+                "chainEmp" -> Fx.chainEmp
+                "legDestroy" -> Fx.legDestroy
+                else -> Fx.none
+            }
+
+            try {
+                val x = arg[1].toIntOrNull()
+                val y = arg[2].toIntOrNull()
+
+                if (x == null || y == null){
+                    player.sendMessage(bundle["command.effect.int.invalid"])
+                } else {
+                    val rot = arg[3].toFloatOrNull()
+                    if (rot != null && rot > 360){
+                        val color = Color.valueOf(arg[4])
+                        val tile = Vars.world.tile(x, y)
+                        Call.effect(effect, tile.getX(), tile.getY(), rot, color)
+                    } else {
+                        player.sendMessage(bundle["command.effect.rotate.invalid"])
+                    }
+                }
+            } catch (e: IllegalArgumentException){
+                player.sendMessage(bundle["command.effect.color.invalid"])
+            }
         }
 
         fun god() {
@@ -573,11 +885,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             player.unit().health(1.0E8f)
             player.sendMessage(bundle["command.god"])
-        }
-
-        fun random() {
-            if (!Permission.check(player, "random")) return
-            // 무작위 이벤트 기능
         }
 
         fun pause() {
@@ -600,6 +907,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 } catch (e: Throwable) {
                     player.sendMessage("[scarlet]> $output")
                 }
+            }
+        }
+
+        fun kickall(){
+            if (!Permission.check(player, "kickall")) return
+            for(a in Groups.player){
+                if (!a.admin) Call.kick(a.con,Packets.KickReason.kick)
             }
         }
 
@@ -629,7 +943,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 arrayOf()
             }
             when (type) {
-                "zone" -> //ip size clickable
+                "zone" ->
                     if (parameters.size != 2) {
                         player.sendMessage(bundle["command.hub.zone.help"])
                     } else {
@@ -654,8 +968,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
 
                 "count" -> {
-                    PluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 0))
-                    player.sendMessage(bundle["command.hub.count", "$x:$y", ip])
+                    if (parameters.isEmpty()) {
+                        player.sendMessage(bundle["command.hub.count.parameter"])
+                    } else {
+                        PluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 0))
+                        player.sendMessage(bundle["command.hub.count", "$x:$y", ip])
+                    }
                 }
 
                 "total" -> {
@@ -667,10 +985,28 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
-        fun gg() {
-            if (!Permission.check(player, "gg")) return
-            // 강제 게임오버 기능
-            Call.gameOver(Team.crux)
+        fun gg(isVote: Boolean) {
+            if (!Permission.check(player, "gg") && !isVote) return // 강제 게임오버 기능
+            Thread {
+                for (a in 0..Vars.world.tiles.height) {
+                    for (b in 0..Vars.world.tiles.width) {
+                        Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
+                        if (Vars.world.tile(a, b) != null){
+                            try {
+                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                            } catch (e: Exception){
+                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                            }
+                            try {
+                                Call.removeTile(Vars.world.tile(a, b))
+                            } catch (e: Exception){
+                                Call.removeTile(Vars.world.tile(a, b))
+                            }
+                        }
+                    }
+                    sleep(8)
+                }
+            }.start()
         }
 
         fun kill() {
@@ -679,10 +1015,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (arg.isEmpty()) {
                 player.unit().kill()
             } else {
-                val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
+                val other = findPlayers(arg[0])
                 if (other == null) player.sendMessage(bundle["player.not.found"]) else other.unit().kill()
             }
-
         }
 
         fun meme() {
@@ -808,29 +1143,25 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         data.status.remove("router")
                     } else {
                         Thread {
-                            data.status.put("router", true)
+                            data.status.put("router", "true")
                             while (!player.isNull) {
                                 for (d in loop) {
                                     player.name(d)
-                                    Threads.sleep(500)
+                                    sleep(500)
                                 }
                                 if (!data.status.containsKey("router")) break
-                                Threads.sleep(5000)
+                                sleep(5000)
                                 for (i in loop.indices.reversed()) {
                                     player.name(loop[i])
-                                    Threads.sleep(500)
+                                    sleep(500)
                                 }
                                 for (d in zero) {
                                     player.name(d)
-                                    Threads.sleep(500)
+                                    sleep(500)
                                 }
                             }
                         }.start()
                     }
-                }
-
-                "music" -> {
-                    // Router 의 밈
                 }
             }
         }
@@ -838,30 +1169,54 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun tp() {
             if (!Permission.check(player, "tp")) return
             // 플레이어에게 이동하는 기능
-            val other = if (arg[0].toIntOrNull() != null) {
-                Groups.player.find { e -> e.id == arg[0].toInt() }
-            } else {
-                Groups.player.find { e -> e.name().contains(arg[0]) }
-            }
+            val other = findPlayers(arg[0])
 
             if (other == null) {
                 player.sendMessage(bundle["player.not.found"])
-                return
+            } else {
+                Call.setPosition(player.con(), other.x, other.y)
             }
-            Call.setPosition(player.con(), other.x, other.y)
+        }
+
+        fun tempban(){
+            if (!Permission.check(player, "tempban")) return
+            val other = findPlayers(arg[0])
+
+            if (other == null) {
+                player.sendMessage(bundle["player.not.found"])
+            } else {
+                val d = findPlayerData(other.uuid())
+                if (d == null) {
+                    player.sendMessage(bundle["command.tempban.not.registered"])
+                    netServer.admins.banPlayer(other.uuid())
+                    Call.kick(other.con(), Packets.KickReason.banned)
+                } else {
+                    val time = LocalDateTime.now()
+                    val minute = arg[1].toLongOrNull()
+                    val reason = arg[2]
+
+                    if (minute != null){
+                        d.status.put("ban", time.plusMinutes(minute.toLong()).toString())
+                        netServer.admins.banPlayer(other.uuid())
+                        Call.kick(other.con(), reason)
+                    } else {
+                        player.sendMessage(bundle["command.tempban.not.number"])
+                    }
+                }
+            }
         }
 
         fun search() {
             if (!Permission.check(player, "search")) return
             // 플레이어 데이터 검색 기능
             // arg[0] 이름 또는 uuid 값
-            val result = ArrayList<DB.PlayerData?>()
-
-            val data = if (arg[0].toIntOrNull() != null) {
-                Groups.player.find { e -> e.id == arg[0].toInt() }
-            } else {
-                Groups.player.find { e -> e.name().contains(arg[0]) }
+            if (arg[0].isEmpty()){
+                player.sendMessage("player.not.found")
+                return
             }
+
+            val result = ArrayList<DB.PlayerData?>()
+            val data = findPlayers(arg[0])
 
             if (data == null) {
                 val e = netServer.admins.findByName(arg[0])
@@ -900,9 +1255,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         mute: ${a.mute}
                         status: ${a.status}
                         """.trimIndent()
-                        Log.info(texts)
+                        player.sendMessage(texts)
                     }
                 }
+                player.sendMessage(bundle["command.search.total", result.size])
             }
         }
 
@@ -922,8 +1278,98 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
-        fun findPlayers(uuid: String) : DB.PlayerData?{
-            return database.players.find { e -> e.uuid == uuid }
+        fun url(){
+            if (!Permission.check(player, "url")) return
+            when (arg[0]){
+                "effect" -> Call.openURI(player.con(), "https://github.com/Anuken/Mindustry/blob/master/core/src/mindustry/content/Fx.java")
+                else -> {}
+            }
+        }
+
+        fun vote(){
+            fun sendStart(message: String, vararg parameter: String){
+                Groups.player.forEach{
+                    val data = findPlayerData(it.uuid())
+                    if (data != null){
+                        val bundle = Bundle(data.languageTag)
+                        it.sendMessage(bundle["command.vote.starter", player.name()])
+                        it.sendMessage(bundle[message, parameter])
+                    }
+                }
+            }
+            if (!Permission.check(player, "vote")) return
+            // <kick/map/gameover/skipwave/rollback/random> [player/amount/world_name] [reason]
+            if (!Trigger.voting) {
+                when (arg[0]) {
+                    "kick" -> {
+                        val target = findPlayers(arg[1])
+                        if (target != null) {
+                            Trigger.voteTarget = target
+                            Trigger.voteTargetUUID = target.uuid()
+                            Trigger.voteReason = arg[2]
+                            Trigger.voteType = "kick"
+                            Trigger.voting = true
+                            sendStart("command.vote.kick.start", target.name(), arg[2])
+                        } else {
+                            player.sendMessage(bundle["player.not.found"])
+                        }
+                    }
+
+                    "map" -> {
+                        if (arg[1].toIntOrNull() != null) {
+                            try {
+                                var target = Vars.maps.all().find { e -> e.name().contains(arg[1]) }
+                                if (target == null) {
+                                    target = Vars.maps.all().get(arg[1].toInt())
+                                }
+                                Trigger.voteType = "map"
+                                Trigger.voteMap = target
+                                Trigger.voteReason = arg[2]
+                                Trigger.voting = true
+                                sendStart("command.vote.map.start", target.name(), arg[2])
+                            } catch (e: IndexOutOfBoundsException){
+                                player.sendMessage(bundle["command.vote.map.not.exists"])
+                            }
+                        } else {
+                            player.sendMessage(bundle["command.vote.map.not.exists"])
+                        }
+                    }
+
+                    "gg" -> {
+                        Trigger.voteType = "gg"
+                        Trigger.voting = true
+                        sendStart("command.vote.gg.start")
+                    }
+
+                    "skip" -> {
+                        if (arg[1].toIntOrNull() != null){
+                            Trigger.voteType = "skip"
+                            Trigger.voteWave = arg[1].toInt()
+                            Trigger.voting = true
+                            sendStart("command.vote.skip.start", arg[1])
+                        } else {
+                            player.sendMessage(bundle["command.vote.skip.wrong"])
+                        }
+                    }
+
+                    "back" -> {
+                        Trigger.voteType = "back"
+                        Trigger.voteReason = arg[1]
+                        Trigger.voting = true
+                        sendStart("command.vote.back.start", arg[1])
+                    }
+
+                    "random" -> {
+                        Trigger.voteType = "random"
+                        Trigger.voting = true
+                        sendStart("command.vote.random.start")
+                    }
+
+                    else -> {
+                        player.sendMessage(bundle["command.vote.wrong"])
+                    }
+                }
+            }
         }
     }
 
@@ -975,6 +1421,50 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 == DB class
             """.trimIndent())
             database.players.forEach { println(it.toString()) }
+        }
+
+        fun setperm() {
+            val target = Groups.player.find{ a -> a.name == arg[0]}
+            if (target != null){
+                val data = findPlayerData(target.uuid())
+                if (data != null){
+                    data.permission = arg[2]
+                } else {
+                    Log.info(bundle["player.not.registered"])
+                }
+            } else {
+                Log.info(bundle["player.not.found"])
+            }
+        }
+
+        fun tempban(){
+            val other = if (arg[0].toIntOrNull() != null) {
+                Groups.player.find { e -> e.id == arg[0].toInt() }
+            } else {
+                Groups.player.find { e -> e.name().contains(arg[0]) }
+            }
+
+            if (other == null) {
+                Log.info(bundle["player.not.found"])
+            } else {
+                val d = findPlayerData(other.uuid())
+                if (d == null) {
+                    Log.info(bundle["command.tempban.not.registered"])
+                    netServer.admins.banPlayer(other.uuid())
+                    Call.kick(other.con, Packets.KickReason.banned)
+                } else {
+                    val time = LocalDateTime.now()
+                    val minute = arg[1].toLongOrNull()
+                    val reason = arg[2]
+
+                    if (minute != null){
+                        d.status.put("ban", time.plusMinutes(minute.toLong()).toString())
+                        Call.kick(other.con, reason)
+                    } else {
+                        Log.info(bundle["command.tempban.not.number"])
+                    }
+                }
+            }
         }
     }
 

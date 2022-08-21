@@ -75,7 +75,7 @@ class DB {
         var mute: Boolean = false
         var id: String = name
         var pw: String = "none"
-        var status: ObjectMap<String, Any> = ObjectMap()
+        var status: ObjectMap<String, String> = ObjectMap()
         var x: Int = 0
         var y: Int = 0
         var afkTime : Int = 0
@@ -145,6 +145,36 @@ class DB {
         }
     }
 
+    fun getAll(): Seq<PlayerData> {
+        val d = Seq<PlayerData>()
+        transaction { Player.selectAll() }.forEach {
+            val data = PlayerData
+            data.name = it[Player.name]
+            data.uuid = it[Player.uuid]
+            data.languageTag = it[Player.languageTag]
+            data.placecount = it[Player.placecount]
+            data.breakcount = it[Player.breakcount]
+            data.joincount = it[Player.joincount]
+            data.kickcount = it[Player.kickcount]
+            data.level = it[Player.level]
+            data.exp = it[Player.exp]
+            data.joinDate = it[Player.joinDate]
+            data.lastdate = it[Player.lastdate]
+            data.playtime = it[Player.playtime]
+            data.attackclear = it[Player.attackclear]
+            data.pvpwincount = it[Player.pvpwincount]
+            data.pvplosecount = it[Player.pvplosecount]
+            data.colornick = it[Player.colornick]
+            data.permission = it[Player.permission]
+            data.mute = it[Player.mute]
+            data.id = it[Player.accountid]
+            data.pw = it[Player.accountpw]
+            data.status = ObjectMap.of(it[Player.status])
+            d.add(data)
+        }
+        return d
+    }
+
     fun update(id: String, data: PlayerData) {
         transaction {
             Player.update({ Player.uuid eq id }) {
@@ -164,6 +194,7 @@ class DB {
                 it[pvpwincount] = data.pvpwincount
                 it[pvplosecount] = data.pvplosecount
                 it[colornick] = data.colornick
+                it[permission] = data.permission
                 it[mute] = data.mute
                 it[accountid] = data.id
                 it[accountpw] = data.pw
