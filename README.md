@@ -41,13 +41,6 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | js | [code] | Execute JavaScript codes |
 | search | [value] | Search player data |
 
-
-## Server commands
-| Command | Parameter | Description |
-|:---|:---|:--- |
-| gen |  | Generate README.md texts |
-
-
 README.md Generated time: 2022-08-05 13:54:36
 
 ## Contribute guide

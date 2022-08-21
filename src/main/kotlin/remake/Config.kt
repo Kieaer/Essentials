@@ -114,8 +114,9 @@ object Config {
             features.add("antiVPN", antiVPN, bundle["config.antivpn"])
 
             val ban = JsonObject()
-            ban.add("shareBanList", shareBanList, bundle["config.shareban.list"])
-            ban.add("shareBanListType", shareBanListType.toString(), bundle["config.shareban.list.type"])
+            ban.add("shareBanList", shareBanList, bundle["config.share.list"])
+            ban.add("shareBanListType", shareBanListType.toString(), bundle["config.share.list.type"])
+            ban.add("shareBanListServer", shareBanListServer, bundle["config.share.server"])
 
             val discord = JsonObject()
             discord.add("botToken", botToken, bundle["config.discord.token"])
