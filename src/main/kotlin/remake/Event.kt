@@ -7,6 +7,7 @@ import arc.struct.ArrayMap
 import arc.util.Log
 import mindustry.Vars
 import mindustry.Vars.netServer
+import mindustry.Vars.state
 import mindustry.content.Blocks
 import mindustry.game.EventType
 import mindustry.game.EventType.*
@@ -34,6 +35,8 @@ object Event {
     val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson").reader()).asObject()
     var order = 0
     val players = ArrayMap<Playerc, Int>()
+    var orignalBlockMultiplier = 1f
+    var orignalUnitMultiplier = 1f
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
@@ -116,10 +119,10 @@ object Event {
         }
 
         Events.on(GameOverEvent::class.java) {
-            if (Vars.state.rules.pvp) {
+            if (state.rules.pvp) {
                 var index = 5
                 for (a in 0..4) {
-                    if (Vars.state.teams[Team.all[index]].cores.isEmpty) {
+                    if (state.teams[Team.all[index]].cores.isEmpty) {
                         index--
                     }
                 }
@@ -135,7 +138,7 @@ object Event {
                         }
                     }
                 }
-            } else if (Vars.state.rules.attackMode) {
+            } else if (state.rules.attackMode) {
                 for (p in Groups.player) {
                     val target = findPlayerData(p.uuid())
                     if (target != null) target.attackclear++
@@ -244,6 +247,12 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
+            if (state.rules.pvp && Config.pvpPeace){
+                orignalBlockMultiplier = state.rules.blockDamageMultiplier
+                orignalUnitMultiplier = state.rules.unitDamageMultiplier
+                state.rules.blockDamageMultiplier = 0f
+                state.rules.unitDamageMultiplier = 0f
+            }
         }
 
         Events.on(PlayerConnect::class.java) { e ->
