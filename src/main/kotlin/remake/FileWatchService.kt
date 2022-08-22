@@ -30,17 +30,22 @@ object FileWatchService : Runnable {
                 for (event in events) {
                     val kind = event.kind()
                     val paths = (event.context() as Path).fileName.toString()
-                    if ((paths == "permission_user.txt" || paths == "permission.txt") && kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        try {
-                            Permission.load()
+                    if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                        if (paths == "permission_user.txt" || paths == "permission.txt") {
+                            try {
+                                Permission.load()
 
-                            for (c in Groups.player) {
-                                c.name = Permission[c].name
-                                c.admin = Permission[c].admin
+                                for (c in Groups.player) {
+                                    c.name = Permission[c].name
+                                    c.admin = Permission[c].admin
+                                }
+                                Log.info(Bundle()["config.permission.updated"])
+                            } catch (e: ParseException){
+                                Log.err(e)
                             }
-                            Log.info("Permission file updated!")
-                        } catch (e: ParseException){
-                            Log.err(e)
+                        } else if (paths == "config.txt") {
+                            Config.load()
+                            Log.info(Bundle()["config.reloaded"])
                         }
                     }
                 }

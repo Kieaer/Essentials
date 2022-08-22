@@ -24,6 +24,8 @@ import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.type.UnitType
 import mindustry.world.Tile
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import remake.Event.findPlayerData
 import remake.Event.findPlayers
 import remake.Main.Companion.database
@@ -47,12 +49,15 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
     init {
         if (isClient) {
             handler.removeCommand("help")
+            handler.removeCommand("t")
+            handler.removeCommand("a")
+            if (Config.vote) handler.removeCommand("votekick")
 
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
             handler.register("effect", "[effect] [x] [y] [rotate] [color]", "effects") { a, p: Playerc -> Client(a, p).effect() }
-            handler.register("gg", "[delay]", "Force gameover") { a, p: Playerc -> Client(a, p).gg(false) }
+            handler.register("gg", "Force gameover") { a, p: Playerc -> Client(a, p).gg(false) }
             handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
             handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
@@ -64,7 +69,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("login", "<id> <password>", "Access your account") { a, p: Playerc -> Client(a, p).login() }
             handler.register("maps", "[page]", "Show server maps") { a, p: Playerc -> Client(a, p).maps() }
             handler.register("me", "<text...>", "broadcast * message") { a, p: Playerc -> Client(a, p).me() }
-            handler.register("meme", "<type>", "Router") { a, p: Playerc -> Client(a, p).meme() }
+            handler.register("meme", "<type>", "Enjoy meme features!") { a, p: Playerc -> Client(a, p).meme() }
             handler.register("motd", "Show server motd.") { a, p: Playerc -> Client(a, p).motd() }
             handler.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
@@ -81,11 +86,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("unmute", "<player>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
             handler.register("url", "<command>", "Opens a URL contained in a specific command.")  { a, p: Playerc -> Client(a, p).url() }
             handler.register("vote", "<kick/map/gameover/skipwave/rollback/random> [player/amount/world_name] [reason]", "Start voting") { a, p: Playerc -> Client(a, p).vote() }
-            handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Change map light") { a, p: Playerc -> Client(a, p).weather() }
+            handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Adds a weather effect to the map.") { a, p: Playerc -> Client(a, p).weather() }
             clientCommands = handler
         } else {
-            handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
             handler.register("debug", "[bool]","Show plugin internal informations") { a -> Server(a).debug() }
+            handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
             handler.register("setperm, <player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
             serverCommands = handler
@@ -381,8 +386,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else if (arg[1] != arg[2]) {
                 player.sendMessage(bundle["command.reg.incorrect"])
             } else {
-                Trigger.createPlayer(player, arg[0], arg[1])
-                Log.info(bundle["log.data_created", player.name()])
+                if (transaction { DB.Player.select { DB.Player.accountid.eq(arg[0]) }.firstOrNull() } == null) {
+                    Trigger.createPlayer(player, arg[0], arg[1])
+                    Log.info(Bundle()["log.data_created", player.name()])
+                } else {
+                    player.sendMessage("command.reg.exists")
+                }
             }
         }
 
@@ -434,7 +443,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (!Permission.check(player, "players")) return
             // 서버에 있는 플레이어 목록 표시
             val message = StringBuilder()
-            val page = if (arg.isNotEmpty()) arg[0].toInt() else 0
+            val page = if (arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0
 
             val buffer = Mathf.ceil(Event.players.size.toFloat() / 6)
             val pages = if (buffer > 1.0) buffer - 1 else 0
@@ -443,11 +452,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage(bundle["command.page.range", pages])
             } else {
                 message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
-
                 for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Event.players.size)) {
-                    val b = Event.players.keys[a]
-                    val c = Event.players.values[a]
-                    message.append("[gray]$c[white] ${b.name()}\n")
+                    message.append("[gray]${Event.players.get(a)}[white] ${Event.players.get(a)}\n")
                 }
 
                 player.sendMessage(message.toString().dropLast(1))
@@ -639,7 +645,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun effect() {
             if (!Permission.check(player, "effect")) return
-            // 하드 코딩 ㅋㅋㅋㅋㅋ
+            if (arg.isEmpty()){
+                player.sendMessage(bundle["command.effect.arg.empty"])
+                return
+            } else if (arg.size != 5){
+                player.sendMessage(bundle["command.effect.arg.need"])
+                return
+            }
             val effect = when (arg[0]){
                 "blockCrash" -> Fx.blockCrash
                 "trailFade" -> Fx.trailFade
@@ -1298,10 +1310,18 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
             }
             if (!Permission.check(player, "vote")) return
+            if (arg.isEmpty()){
+                player.sendMessage("command.vote.arg.empty")
+                return
+            }
             // <kick/map/gameover/skipwave/rollback/random> [player/amount/world_name] [reason]
             if (!Trigger.voting) {
                 when (arg[0]) {
                     "kick" -> {
+                        if (arg.size == 2){
+                            player.sendMessage(bundle["command.vote.no.reason"])
+                            return
+                        }
                         val target = findPlayers(arg[1])
                         if (target != null) {
                             Trigger.voteTarget = target
@@ -1316,6 +1336,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     }
 
                     "map" -> {
+                        if (arg.size == 2){
+                            player.sendMessage(bundle["command.vote.no.reason"])
+                            return
+                        }
                         if (arg[1].toIntOrNull() != null) {
                             try {
                                 var target = Vars.maps.all().find { e -> e.name().contains(arg[1]) }
@@ -1353,8 +1377,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     }
 
                     "back" -> {
+                        if (arg.size == 1){
+                            player.sendMessage(bundle["command.vote.no.reason"])
+                            return
+                        }
                         Trigger.voteType = "back"
-                        Trigger.voteReason = arg[1]
+                        Trigger.voteReason = arg[2]
                         Trigger.voting = true
                         sendStart("command.vote.back.start", arg[1])
                     }
@@ -1375,52 +1403,57 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
     class Server(val arg: Array<String>) {
         fun genDocs(){
-            val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-            val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-            val time = "README.md Generated time: ${DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())}"
+            if (System.getenv("DEBUG_KEY") != null) {
+                val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+                val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+                val time = "README.md Generated time: ${DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())}"
 
-            val result = StringBuilder()
+                val result = StringBuilder()
 
-            for(b in clientCommands.commandList) {
-                val temp = "| ${b.text} | ${StringUtils.encodeHtml(b.paramText)} | ${b.description} |\n"
-                result.append(temp)
+                for (b in clientCommands.commandList) {
+                    val temp = "| ${b.text} | ${StringUtils.encodeHtml(b.paramText)} | ${b.description} |\n"
+                    result.append(temp)
+                }
+
+                val tmp = "$client$result\n\n"
+
+                result.clear()
+                for (c in serverCommands.commandList) {
+                    val temp = "| ${c.text} | ${StringUtils.encodeHtml(c.paramText)} | ${c.description} |\n"
+                    result.append(temp)
+                }
+
+                println("$tmp$server$result\n\n\n$time")
             }
-
-            val tmp = "$client$result\n\n"
-
-            result.clear()
-            for(c in serverCommands.commandList) {
-                val temp = "| ${c.text} | ${StringUtils.encodeHtml(c.paramText)} | ${c.description} |\n"
-                result.append(temp)
-            }
-
-            println("$tmp$server$result\n\n\n$time")
         }
 
         fun debug(){
-            if (arg.isNotEmpty()) {
-                if (arg[0].toBoolean()) {
-                    Core.settings.put("debugMode", true)
-                } else {
-                    Core.settings.put("debugMode", false)
+            if (System.getenv("DEBUG_KEY") != null) {
+                if (arg.isNotEmpty()) {
+                    if (arg[0].toBoolean()) {
+                        Core.settings.put("debugMode", true)
+                    } else {
+                        Core.settings.put("debugMode", false)
+                    }
                 }
+                println("""
+                    == PluginData class
+                    uptime: ${PluginData.uptime}
+                    playtime: ${PluginData.playtime}
+                    pluginVersion: ${PluginData.pluginVersion}
+                    
+                    warpZones: ${PluginData.warpZones}
+                    warpBlocks: ${PluginData.warpBlocks}
+                    warpCounts: ${PluginData.warpCounts}
+                    warpTotals: ${PluginData.warpTotals}
+                    blacklist: ${PluginData.blacklist}
+                    banned: ${PluginData.banned}
+                    
+                    == DB class
+                """.trimIndent()
+                )
+                database.players.forEach { println(it.toString()) }
             }
-            println("""
-                == PluginData class
-                uptime: ${PluginData.uptime}
-                playtime: ${PluginData.playtime}
-                pluginVersion: ${PluginData.pluginVersion}
-                
-                warpZones: ${PluginData.warpZones}
-                warpBlocks: ${PluginData.warpBlocks}
-                warpCounts: ${PluginData.warpCounts}
-                warpTotals: ${PluginData.warpTotals}
-                blacklist: ${PluginData.blacklist}
-                banned: ${PluginData.banned}
-                
-                == DB class
-            """.trimIndent())
-            database.players.forEach { println(it.toString()) }
         }
 
         fun setperm() {

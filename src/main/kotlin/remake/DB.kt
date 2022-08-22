@@ -147,30 +147,32 @@ class DB {
 
     fun getAll(): Seq<PlayerData> {
         val d = Seq<PlayerData>()
-        transaction { Player.selectAll() }.forEach {
-            val data = PlayerData
-            data.name = it[Player.name]
-            data.uuid = it[Player.uuid]
-            data.languageTag = it[Player.languageTag]
-            data.placecount = it[Player.placecount]
-            data.breakcount = it[Player.breakcount]
-            data.joincount = it[Player.joincount]
-            data.kickcount = it[Player.kickcount]
-            data.level = it[Player.level]
-            data.exp = it[Player.exp]
-            data.joinDate = it[Player.joinDate]
-            data.lastdate = it[Player.lastdate]
-            data.playtime = it[Player.playtime]
-            data.attackclear = it[Player.attackclear]
-            data.pvpwincount = it[Player.pvpwincount]
-            data.pvplosecount = it[Player.pvplosecount]
-            data.colornick = it[Player.colornick]
-            data.permission = it[Player.permission]
-            data.mute = it[Player.mute]
-            data.id = it[Player.accountid]
-            data.pw = it[Player.accountpw]
-            data.status = ObjectMap.of(it[Player.status])
-            d.add(data)
+        transaction {
+            Player.selectAll().map {
+                val data = PlayerData
+                data.name = it[Player.name]
+                data.uuid = it[Player.uuid]
+                data.languageTag = it[Player.languageTag]
+                data.placecount = it[Player.placecount]
+                data.breakcount = it[Player.breakcount]
+                data.joincount = it[Player.joincount]
+                data.kickcount = it[Player.kickcount]
+                data.level = it[Player.level]
+                data.exp = it[Player.exp]
+                data.joinDate = it[Player.joinDate]
+                data.lastdate = it[Player.lastdate]
+                data.playtime = it[Player.playtime]
+                data.attackclear = it[Player.attackclear]
+                data.pvpwincount = it[Player.pvpwincount]
+                data.pvplosecount = it[Player.pvplosecount]
+                data.colornick = it[Player.colornick]
+                data.permission = it[Player.permission]
+                data.mute = it[Player.mute]
+                data.id = it[Player.accountid]
+                data.pw = it[Player.accountpw]
+                data.status = ObjectMap.of(it[Player.status])
+                d.add(data)
+            }
         }
         return d
     }

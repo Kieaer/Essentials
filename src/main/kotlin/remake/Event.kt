@@ -34,7 +34,7 @@ import kotlin.math.abs
 object Event {
     val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson").reader()).asObject()
     var order = 0
-    val players = ArrayMap<Playerc, Int>()
+    val players = ArrayMap<Int, String>()
     var orignalBlockMultiplier = 1f
     var orignalUnitMultiplier = 1f
 
@@ -212,7 +212,7 @@ object Event {
         }
 
         Events.on(PlayerJoin::class.java) {
-            players.put(it.player, order)
+            players.put(order, it.player.name)
             log(LogType.Player, "${it.player.plainName()}(${it.player.uuid()}, ${it.player.con.address} joined.")
             it.player.admin(false)
 
@@ -229,7 +229,7 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
-            players.removeKey(it.player)
+            players.removeValue(it.player.name, true)
             log(LogType.Player, "${it.player.plainName()}(${it.player.uuid()}, ${it.player.con.address} disconnected.")
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
@@ -395,7 +395,7 @@ object Event {
         return if(any.toString().toIntOrNull() == null) {
             Groups.player.find { e -> e.name.contains(any.toString(), true) }
         } else {
-            players.getKeyAt(any.toString().toInt())
+            Groups.player.find { e-> e.name.equals(players.getValueAt(any.toString().toInt())) }
         }
     }
 }
