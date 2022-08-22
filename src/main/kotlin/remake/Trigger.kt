@@ -85,6 +85,7 @@ object Trigger {
         data.permission = "user"
 
         database.createData(data)
+        Permission.apply()
 
         player.sendMessage("Player data registered!")
         loadPlayer(player, data)
@@ -126,7 +127,7 @@ object Trigger {
         private var colorOffset = 0
         var count = 60
 
-        fun send(message: String, vararg parameter: String){
+        fun send(message: String, vararg parameter: Array<String>){
             Groups.player.forEach{
                 val data = findPlayerData(it.uuid())
                 if (data != null){
@@ -238,22 +239,22 @@ object Trigger {
 
             if (voting){
                 if(count%10 == 0){
-                    send("command.vote.count", count.toString())
+                    send("command.vote.count", arrayOf(count.toString()))
                     if (voteType == "kick" && voteTarget == null){
                         send("command.vote.kick.target.leave")
                     }
-                    count--
                 }
+                count--
                 if (count == 0 || check() <= voted.size) {
                     when (voteType) {
                         "kick" -> {
                             val name = netServer.admins.getInfo(voteTargetUUID).lastName
                             if (voteTarget == null){
                                 netServer.admins.banPlayer(voteTargetUUID)
-                                send("command.vote.kick.target.banned", name)
+                                send("command.vote.kick.target.banned", arrayOf(name))
                             } else {
                                 voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
-                                send("command.vote.kick.target.kicked", name)
+                                send("command.vote.kick.target.kicked", arrayOf(name))
                             }
                         }
 
@@ -267,7 +268,7 @@ object Trigger {
 
                         "skip" -> {
                             for(a in 0..voteWave!!) logic.runWave()
-                            send("command.vote.skip.done", voteWave.toString())
+                            send("command.vote.skip.done", arrayOf(voteWave.toString()))
                         }
 
                         "back" -> {
@@ -369,6 +370,7 @@ object Trigger {
                 voteMap = null
                 voteWave = null
                 voted.clear()
+                count = 60
             }
 
             if (Config.pvpPeace) {

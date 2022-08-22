@@ -59,14 +59,24 @@ object Permission {
 
             val admin = JsonObject()
             val adminPerm = JsonArray()
+            adminPerm.add("chars")
             adminPerm.add("color")
+            adminPerm.add("effect")
+            adminPerm.add("gg")
+            adminPerm.add("god")
+            adminPerm.add("info.other")
             adminPerm.add("kill")
+            adminPerm.add("kill.other")
+            adminPerm.add("meme")
             adminPerm.add("mute")
+            adminPerm.add("pause")
+            adminPerm.add("search")
             adminPerm.add("spawn")
             adminPerm.add("team")
             adminPerm.add("team.other")
+            adminPerm.add("tempban")
+            adminPerm.add("unmute")
             adminPerm.add("weather")
-            adminPerm.add("info.other")
 
             admin.add("inheritance", "user")
             admin.add("admin", true)
@@ -77,7 +87,6 @@ object Permission {
             val userPerm = JsonArray()
             userPerm.add("*login")
             userPerm.add("*reg")
-            userPerm.add("ch")
             userPerm.add("discord")
             userPerm.add("info")
             userPerm.add("maps")
@@ -87,6 +96,7 @@ object Permission {
             userPerm.add("status")
             userPerm.add("time")
             userPerm.add("tp")
+            userPerm.add("url")
             userPerm.add("vote")
 
             user.add("inheritance", "visitor")
@@ -151,6 +161,10 @@ object Permission {
             }
         }
 
+        apply()
+    }
+
+    fun apply(){
         for (a in JsonValue.readHjson(user.reader()).asArray()) {
             val b = a.asObject()
             val c = database.players.find { e -> e.uuid == b.get("uuid").asString() }

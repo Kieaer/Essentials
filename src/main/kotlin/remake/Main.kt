@@ -50,6 +50,7 @@ class Main : Plugin() {
         daemon.submit(Trigger.Thread())
         timer.scheduleAtFixedRate(Trigger.Seconds(), 1000, 1000)
         timer.scheduleAtFixedRate(Trigger.Minutes(), 0, 60000)
+        if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
         Vars.netServer.admins.addChatFilter { _, _ -> null }
 
