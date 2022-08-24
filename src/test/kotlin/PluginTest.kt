@@ -340,11 +340,18 @@ class PluginTest {
 
     @Test
     fun networkTest(){
+        val stack = """
+            blahblah0
+                at blahddd3
+                at blahddd2
+                at blahddd1
+        """.trimIndent()
         try {
             thread { Trigger.Server() }
             val client = Trigger.Client()
             client.client.send("send")
             client.client.send("receive")
+            client.client.send("crash", stack)
             client.client.send("exit")
         } catch (e: Exception){
             e.printStackTrace()

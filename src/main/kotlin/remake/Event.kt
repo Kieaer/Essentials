@@ -204,7 +204,15 @@ object Event {
         }
 
         Events.on(UnitCreateEvent::class.java) {
-
+            if (Groups.unit.size() > Config.spawnLimit){
+                Groups.player.forEach{
+                    val data = findPlayerData(it.uuid())
+                    if (data != null){
+                        val bundle = Bundle(data.languageTag)
+                        it.sendMessage(bundle["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${Config.spawnLimit}"])
+                    }
+                }
+            }
         }
 
         Events.on(UnitChangeEvent::class.java) {

@@ -15,7 +15,7 @@ import java.io.IOException
 object PluginData {
     var uptime = 0L
     var playtime = 0L
-    var pluginVersion = 0L
+    var pluginVersion = ""
 
     // 종료시 저장되는 플러그인 데이터
     var warpZones = Seq<WarpZone>()
