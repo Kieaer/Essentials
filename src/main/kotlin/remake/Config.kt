@@ -14,8 +14,6 @@ object Config {
     private var obj = JsonObject()
 
     var update = true
-    var channel = "release"
-
     var afk = false
     var afkTime = 300
     var border = false
@@ -101,7 +99,6 @@ object Config {
 
             val plugin = JsonObject()
             plugin.add("update", update, bundle["config.update"])
-            plugin.add("channel", channel, bundle["config.update.channel"])
             plugin.add("report", report, bundle["config.report"])
             plugin.add("authType", authType.toString(), bundle["config.authtype"])
 
@@ -146,7 +143,6 @@ object Config {
         val discord = config.get("discord").asObject()
 
         update = plugin.getBoolean("update", update)
-        channel = plugin.getString("channel", channel)
         report = plugin.getBoolean("report", report)
         authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
 

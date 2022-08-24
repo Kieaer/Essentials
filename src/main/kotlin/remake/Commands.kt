@@ -426,8 +426,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun motd() {
             if (!Permission.check(player, "motd")) return
-            // 서버 motd 표시
-            // todo countryCode
             val motd = if (root.child("motd/${data!!.languageTag}.txt").exists()) {
                 root.child("motd/${data.languageTag}.txt").readString()
             } else {
@@ -467,6 +465,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val name = arg[1]
             val parameter = if (arg.size == 3) arg[2].toIntOrNull() else 1
 
+            // todo 유닛이 8마리까지 밖에 스폰이 안됨
             when {
                 type.equals("unit", true) -> {
                     val unit = Vars.content.units().find { unitType: UnitType -> unitType.name == name }

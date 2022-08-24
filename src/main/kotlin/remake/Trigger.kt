@@ -28,6 +28,7 @@ import mindustry.net.NetworkIO.readServerData
 import mindustry.net.Packets
 import remake.Event.findPlayerData
 import remake.Main.Companion.database
+import remake.Main.Companion.root
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -588,23 +589,36 @@ object Trigger {
 
                 while(run) {
                     try {
-                        when (reader.nextLine()) {
-                            // Client 에게 데이터 전달 준비
+                        when (reader.nextLine()) { // Client 에게 데이터 전달 준비
                             "send" -> {
                                 write("ok")
                                 val data = reader.nextLine()
                                 println("[SERVER] data received: message is $data")
-                            }
-                            // Client 에게서 오는 데이터 수신
-                            "receive" -> {
-                                //val data = netServer.admins.banned.toString("&&")
+                            } // Client 에게서 오는 데이터 수신
+                            "receive" -> { //val data = netServer.admins.banned.toString("&&")
                                 write("send dummy data")
                                 println("[SERVER] dummy data send.")
                             }
+
+                            "crash" -> {
+                                if (System.getenv("DEBUG_KEY") != null) {
+                                    write("ok")
+                                    val stacktrace = StringBuffer()
+                                    while (reader.hasNextLine()) {
+                                        stacktrace.append(reader.nextLine() + "\n")
+                                    }
+                                    root.child("report/${LocalDateTime.now().withNano(0)}.txt")
+                                    write("done")
+                                    Log.info("Crash log received from ${client.inetAddress.hostAddress}")
+                                }
+                            }
+
                             "exit" -> {
                                 shutdown()
                             }
                         }
+                    } catch (e: NoSuchElementException) {
+                        shutdown()
                     } catch (e: Exception) {
                         e.printStackTrace()
                         shutdown()
@@ -613,7 +627,7 @@ object Trigger {
             }
 
             private fun write(msg: String) {
-                writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
+                writer.write((msg + '\n').toByteArray(Charset.forName("UTF-8")))
             }
 
             private fun shutdown() {
@@ -624,7 +638,7 @@ object Trigger {
     }
 
     class Client{
-        val address = "127.0.0.1"
+        val address = Config.shareBanListServer
         val port = 6000
 
         val client = Handler(address, port)
@@ -646,7 +660,7 @@ object Trigger {
             val reader = Scanner(socket.getInputStream())
             val writer = socket.getOutputStream()
 
-            fun send(command: String){
+            fun send(command: String, vararg parameter: String){
                 if (connected) {
                     when (command) {
                         "send" -> {
@@ -655,13 +669,29 @@ object Trigger {
                             write("client sent data to server")
                             println("[CLIENT] send data to server")
                         }
-
                         "receive" -> {
                             write("receive")
                             val data = reader.nextLine()
                             println("[CLIENT] $data")
                         }
-
+                        "crash" -> {
+                            try {
+                                Socket("mindustry.kr", 6000).use {
+                                    it.soTimeout = 5000
+                                    socket.getOutputStream().use { out ->
+                                        out.write("crash\n".toByteArray(Charset.forName("UTF-8")))
+                                        Scanner(socket.getInputStream()).use {sc ->
+                                            sc.nextLine() // ok
+                                            out.write("${parameter[0]}\n".toByteArray(Charset.forName("UTF-8")))
+                                            sc.nextLine()
+                                            Log.info("Crash log reported!")
+                                        }
+                                    }
+                                }
+                            } catch (e: SocketTimeoutException) {
+                                Log.info("Connection timed out. crash report server may be closed.")
+                            }
+                        }
                         "exit" -> {
                             write("exit")
                             reader.close()
@@ -672,7 +702,7 @@ object Trigger {
             }
 
             private fun write(msg: String) {
-                writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
+                writer.write((msg + '\n').toByteArray(Charset.forName("UTF-8")))
             }
         }
     }
