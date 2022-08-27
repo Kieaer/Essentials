@@ -142,8 +142,6 @@ class PluginTest {
             // Call 오류 해결
             Vars.player = player as Player
             Vars.netClient = NetClient()
-
-            Core.app
         }
 
         @AfterClass
@@ -385,5 +383,10 @@ class PluginTest {
     @Test
     fun genDocs(){
         serverCommand.handleMessage("gen")
+    }
+
+    @Test
+    fun sleep(){
+        sleep(3000)
     }
 }
