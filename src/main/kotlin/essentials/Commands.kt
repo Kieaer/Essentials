@@ -931,7 +931,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun js() {
-            if (!Permission.check(player, "js")) return
+            if (!Permission.check(player, "js")) {
+                Call.kick(player.con(), bundle["command.js.no.permission"])
+                return
+            }
             if (arg.isEmpty()) {
                 player.sendMessage(bundle["command.js.invalid"])
             } else {
