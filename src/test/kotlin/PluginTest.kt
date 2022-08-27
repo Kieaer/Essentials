@@ -8,6 +8,10 @@ import arc.files.Fi
 import arc.graphics.Color
 import arc.util.CommandHandler
 import com.github.javafaker.Faker
+import essentials.Config
+import essentials.Main
+import essentials.Main.Companion.root
+import essentials.Trigger
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.Vars.netServer
@@ -28,10 +32,6 @@ import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.Test
-import remake.Config
-import remake.Main
-import remake.Main.Companion.root
-import remake.Trigger
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -380,5 +380,10 @@ class PluginTest {
         sleep(2000)
         //Events.fire(EventType.PlayerChatEvent(player.self(), "y"))
         sleep(3000)
+    }
+
+    @Test
+    fun genDocs(){
+        serverCommand.handleMessage("gen")
     }
 }

@@ -1,11 +1,11 @@
-package remake
+package essentials
 
 import arc.Core
 import arc.files.Fi
 import mindustry.Vars.netServer
 import mindustry.gen.Playerc
 import org.hjson.*
-import remake.Main.Companion.database
+import essentials.Main.Companion.database
 import java.util.*
 
 object Permission {

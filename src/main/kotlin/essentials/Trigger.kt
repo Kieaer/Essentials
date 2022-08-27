@@ -1,4 +1,4 @@
-package remake
+package essentials
 
 import arc.Core
 import arc.files.Fi
@@ -18,6 +18,7 @@ import mindustry.content.UnitTypes
 import mindustry.content.Weathers
 import mindustry.core.GameState
 import mindustry.entities.Damage
+import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -27,9 +28,10 @@ import mindustry.maps.Map
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
 import mindustry.net.Packets
-import remake.Event.findPlayerData
-import remake.Main.Companion.database
-import remake.Main.Companion.root
+import org.mindrot.jbcrypt.BCrypt
+import essentials.Event.findPlayerData
+import essentials.Main.Companion.database
+import essentials.Main.Companion.root
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -54,6 +56,7 @@ object Trigger {
     var voteReason: String? = null
     var voteMap: Map? = null
     var voteWave: Int? = null
+    var voteStarter: Playerc? = null
     val voted = Seq<String>()
     var lastVoted = LocalTime.now()
     var pvpCount = Config.pvpPeaceTime
@@ -83,7 +86,7 @@ object Trigger {
         data.uuid = player.uuid()
         data.joinDate = System.currentTimeMillis()
         data.id = id ?: player.name()
-        data.pw = password ?: player.name()
+        data.pw = if (password == null) player.name() else BCrypt.hashpw(password, BCrypt.gensalt())
         data.permission = "user"
 
         database.createData(data)
@@ -299,6 +302,7 @@ object Trigger {
                                 lastVoted = LocalTime.now()
                                 send("command.vote.random.done")
                                 Thread {
+                                    val map: Map
                                     val random = Random()
                                     send("command.vote.random.is")
                                     sleep(3000)
@@ -306,7 +310,11 @@ object Trigger {
                                         0 -> {
                                             send("command.vote.random.unit")
                                             Groups.unit.each {
-                                                if (it.team == player.team()) it.kill()
+                                                if (voteStarter != null) {
+                                                    if (it.team == voteStarter!!.team()) it.kill()
+                                                } else {
+                                                    it.kill()
+                                                }
                                             }
                                             send("command.vote.random.unit.wave")
                                             logic.runWave()
@@ -320,8 +328,12 @@ object Trigger {
                                         2 -> {
                                             send("command.vote.random.health")
                                             Groups.build.each {
-                                                if (it.team == player.team()) {
-                                                    Core.app.post { Damage.tileDamage(player.team(), it.tileX(), it.tileY(), 1f, 50f) }
+                                                if (voteStarter != null){
+                                                    if (it.team == voteStarter!!.team()) {
+                                                        Core.app.post { Damage.tileDamage(voteStarter!!.team(), it.tileX(), it.tileY(), 1f, 50f) }
+                                                    }
+                                                } else {
+                                                    Core.app.post { Damage.tileDamage(it.team(), it.tileX(), it.tileY(), 1f, 50f) }
                                                 }
                                             }
                                             for (a in Groups.player) {
@@ -332,8 +344,14 @@ object Trigger {
 
                                         3 -> {
                                             send("command.vote.random.fill.core")
-                                            for (item in content.items()) {
-                                                state.teams.cores(player.team()).first().items.add(item, Random(516).nextInt(500))
+                                            if (voteStarter != null){
+                                                for (item in content.items()) {
+                                                    state.teams.cores(voteStarter!!.team()).first().items.add(item, Random(516).nextInt(500))
+                                                }
+                                            } else {
+                                                for (item in content.items()) {
+                                                    state.teams.cores(Team.sharded).first().items.add(item, Random(516).nextInt(500))
+                                                }
                                             }
                                         }
 
@@ -351,8 +369,9 @@ object Trigger {
                                                 }
                                             }
                                             var tick = 600
+                                            map = state.map
 
-                                            while (tick != 0) {
+                                            while (tick != 0 && map == state.map) {
                                                 sleep(1000)
                                                 tick--
                                                 Core.app.post {
@@ -366,7 +385,11 @@ object Trigger {
                                                 if (tick == 300) {
                                                     send("command.vote.random.supply")
                                                     repeat(2) {
-                                                        UnitTypes.oct.spawn(player.team(), player.getX(), player.getY())
+                                                        if (voteStarter != null) {
+                                                            UnitTypes.oct.spawn(voteStarter!!.team(), voteStarter!!.x, voteStarter!!.y)
+                                                        } else {
+                                                            UnitTypes.oct.spawn(Team.sharded, state.teams.cores(Team.sharded).first().x, state.teams.cores(Team.sharded).first().y)
+                                                        }
                                                     }
                                                 }
                                             }
@@ -392,6 +415,7 @@ object Trigger {
                     voteReason = null
                     voteMap = null
                     voteWave = null
+                    voteStarter = null
                     voted.clear()
                     count = 60
                 }
