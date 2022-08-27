@@ -2,7 +2,7 @@ name: Build
 on:
   push:
     branches:
-      - mindustry-7.0
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
