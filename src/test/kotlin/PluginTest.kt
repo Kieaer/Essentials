@@ -57,7 +57,7 @@ class PluginTest {
         fun init() {
             if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted: Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
-                if (File("${System.getenv("AppData")}\\app").exists()) {
+                if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
                     Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj: Path -> obj.toFile() }.forEach { obj: File -> obj.delete() }
                 }
             }
@@ -315,6 +315,9 @@ class PluginTest {
 
         clientCommand.handleMessage("/unmute ${dummy.name()}", player)
 
+        clientCommand.handleMessage("/vote", player)
+        clientCommand.handleMessage("/vote gg", player)
+
         clientCommand.handleMessage("/weather", player)
 
         serverCommand.handleMessage("gen")
@@ -356,5 +359,26 @@ class PluginTest {
         } catch (e: Exception){
             e.printStackTrace()
         }
+    }
+
+    @Test
+    fun voteTest(){
+        Events.fire(EventType.PlayerConnect(player.self()))
+        Events.fire(EventType.PlayerJoin(player.self()))
+
+        Config.authType = Config.AuthType.Password
+        clientCommand.handleMessage("/reg testas test123 test123", player)
+        sleep(300)
+        clientCommand.handleMessage("/login testas test123", player)
+        sleep(500)
+        Main.database.players.find { e -> e.uuid == player.uuid() }.permission = "owner"
+
+        sleep(1000)
+
+        clientCommand.handleMessage("/vote gg", player)
+        //Events.fire(EventType.PlayerChatEvent(player.self(), "/vote gg"))
+        sleep(2000)
+        //Events.fire(EventType.PlayerChatEvent(player.self(), "y"))
+        sleep(3000)
     }
 }

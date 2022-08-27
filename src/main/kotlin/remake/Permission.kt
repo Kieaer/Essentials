@@ -62,6 +62,7 @@ object Permission {
             adminPerm.add("chars")
             adminPerm.add("color")
             adminPerm.add("effect")
+            adminPerm.add("fillitems")
             adminPerm.add("gg")
             adminPerm.add("god")
             adminPerm.add("info.other")
@@ -164,11 +165,11 @@ object Permission {
         apply()
     }
 
-    fun apply(){
+    fun apply() {
         for (a in JsonValue.readHjson(user.reader()).asArray()) {
             val b = a.asObject()
             val c = database.players.find { e -> e.uuid == b.get("uuid").asString() }
-            if (c == null){
+            if (c == null) {
                 val data = database[b.get("uuid").asString()]
                 if (data != null && b.has("group")) {
                     data.permission = b.get("group").asString()

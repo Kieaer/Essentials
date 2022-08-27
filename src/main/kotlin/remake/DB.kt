@@ -78,7 +78,7 @@ class DB {
         var status: ObjectMap<String, String> = ObjectMap()
         var x: Int = 0
         var y: Int = 0
-        var afkTime : Int = 0
+        var afkTime: Int = 0
 
         override fun toString(): String {
             return "name: $name, uuid: $uuid, languageTag: $languageTag, placecount: $placecount, breakcount: $breakcount, joincount: $joincount, kickcount: $kickcount, level: $level, exp: $exp, joinDate: $joinDate, lastdate: $lastdate, playtime: $playtime, attackclear: $attackclear, pvpwincount: $pvpwincount, pvplosecount: $pvplosecount, colornick: $colornick, permission: $permission, mute: $mute, id: $id, pw: $pw, status: $status, x: $x, y: $y, afkTime: $afkTime"

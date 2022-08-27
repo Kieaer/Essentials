@@ -27,38 +27,16 @@ object PluginData {
 
     var expData = JsonObject()
 
-    data class WarpZone(
-        val mapName: String,
-        val start: Int,
-        val finish: Int,
-        val touch: Boolean,
-        val ip: String,
-        val port: Int
-    ) {
+    data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = Vars.world.tile(start)
         val finishTile: Tile get() = Vars.world.tile(finish)
     }
 
-    data class WarpBlock(
-        val mapName: String,
-        val pos: Int,
-        val tileName: String,
-        val size: Int,
-        val ip: String,
-        val port: Int,
-        val description: String
-    ) {
+    data class WarpBlock(val mapName: String, val pos: Int, val tileName: String, val size: Int, val ip: String, val port: Int, val description: String) {
         var online = false
     }
 
-    data class WarpCount(
-        val mapName: String,
-        val pos: Int,
-        val ip: String,
-        val port: Int,
-        var players: Int,
-        var numbersize: Int
-    ) {
+    data class WarpCount(val mapName: String, val pos: Int, val ip: String, val port: Int, var players: Int, var numbersize: Int) {
         val tile: Tile get() = Vars.world.tile(pos)
     }
 
@@ -96,7 +74,7 @@ object PluginData {
         banned.forEach { buffer.add(json.toJson(it)) }
         data.add("banned", buffer)
 
-        if (transaction { DB.Data.selectAll().firstOrNull() == null }){
+        if (transaction { DB.Data.selectAll().firstOrNull() == null }) {
             transaction {
                 DB.Data.insert {
                     it[this.data] = data.toString()
@@ -115,7 +93,7 @@ object PluginData {
         val json = Json()
 
         try {
-            if (transaction { DB.Data.selectAll().firstOrNull() == null }){
+            if (transaction { DB.Data.selectAll().firstOrNull() == null }) {
                 save()
             } else {
                 transaction {
@@ -135,7 +113,7 @@ object PluginData {
         }
     }
 
-    fun expData(){
+    fun expData() {
 
     }
 }

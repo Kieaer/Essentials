@@ -16,11 +16,7 @@ object FileWatchService : Runnable {
         var watchKey: WatchKey
         val path = Paths.get(root.absolutePath())
         path.register(
-            watchService,
-            StandardWatchEventKinds.ENTRY_CREATE,
-            StandardWatchEventKinds.ENTRY_DELETE,
-            StandardWatchEventKinds.ENTRY_MODIFY,
-            StandardWatchEventKinds.OVERFLOW
+            watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.OVERFLOW
         )
 
         while (!Thread.currentThread().isInterrupted) {
@@ -40,7 +36,7 @@ object FileWatchService : Runnable {
                                     c.admin = Permission[c].admin
                                 }
                                 Log.info(Bundle()["config.permission.updated"])
-                            } catch (e: ParseException){
+                            } catch (e: ParseException) {
                                 Log.err(e)
                             }
                         } else if (paths == "config.txt") {

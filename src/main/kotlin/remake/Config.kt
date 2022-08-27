@@ -24,6 +24,7 @@ object Config {
     var antiVPN = false
     var pvpPeace = false
     var pvpPeaceTime = 300
+    var rollbackTime = 1
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -113,6 +114,7 @@ object Config {
             features.add("antiVPN", antiVPN, bundle["config.antivpn"])
             features.add("pvpPeace", pvpPeace, bundle["config.pvp"])
             features.add("pvpPeaceTime", pvpPeaceTime, bundle["config.pvp.time"])
+            features.add("rollbackTime", rollbackTime, bundle["config.rollback.time"])
 
             val ban = JsonObject()
             ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -154,6 +156,9 @@ object Config {
         vote = features.getBoolean("vote", vote)
         fixedName = features.getBoolean("fixedName", fixedName)
         antiVPN = features.getBoolean("antiVPN", antiVPN)
+        pvpPeace = features.getBoolean("pvpPeace", pvpPeace)
+        pvpPeaceTime = features.getInt("pvpPeaceTime", pvpPeaceTime)
+        rollbackTime = features.getInt("rollbackTime", rollbackTime)
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)
