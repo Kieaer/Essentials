@@ -25,7 +25,7 @@ class Main : Plugin() {
 
     init {
         Log.info("[Essentials] Loading")
-        if (Core.settings.has("debugMode") && Core.settings.getBool("debugMode")){
+        if (Core.settings.has("debugMode") && Core.settings.getBool("debugMode")) {
             root.child("database.db").delete()
         }
 
@@ -57,7 +57,7 @@ class Main : Plugin() {
         timer.scheduleAtFixedRate(Trigger.Minutes(), 0, 60000)
         if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
-        if(Config.update) {
+        if (Config.update) {
             try {
                 Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest") {
                     if (it.status == Http.HttpStatus.OK) {
@@ -77,12 +77,12 @@ class Main : Plugin() {
                         }
                     }
                 }
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         } else {
-            for(a in 0 until Vars.mods.list().size) {
-                if(Vars.mods.list()[a].meta.name == "Essentials") {
+            for (a in 0 until Vars.mods.list().size) {
+                if (Vars.mods.list()[a].meta.name == "Essentials") {
                     PluginData.pluginVersion = Vars.mods.list()[a].meta.version
                     break
                 }
@@ -94,7 +94,7 @@ class Main : Plugin() {
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
-            if (Config.authType == Config.AuthType.None){
+            if (Config.authType == Config.AuthType.None) {
                 if (data != null) {
                     !data.mute
                 } else {
@@ -117,8 +117,7 @@ class Main : Plugin() {
 
     private fun createFile() {
         if (!root.child("log").exists()) {
-            val names =
-                arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
+            val names = arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
             for (a in names) {
                 if (!root.child("log/$a.log").exists()) {
                     root.child("log").mkdirs()
@@ -131,8 +130,7 @@ class Main : Plugin() {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf(
-                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]",
-                "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
+                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
             )
             for (a in 0 until names.size) {
                 if (!root.child("motd/${names[a]}.txt").exists()) {

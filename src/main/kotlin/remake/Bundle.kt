@@ -15,7 +15,7 @@ class Bundle {
     }
 
     constructor(languageTag: String) {
-        val locale = when (languageTag.substring(0,2)) {
+        val locale = when (languageTag.substring(0, 2)) {
             "ko" -> Locale.KOREA
             else -> Locale.ENGLISH
         }

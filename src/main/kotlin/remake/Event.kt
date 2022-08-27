@@ -47,8 +47,10 @@ object Event {
                 // todo 채팅 포맷 변경
                 Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
 
-                if (database.players.find { e -> e.uuid == it.player.uuid() } != null && Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())){
+                val data = database.players.find { e -> e.uuid == it.player.uuid() }
+                if (data != null && Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())) {
                     Trigger.voted.add(it.player.uuid())
+                    it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
                 }
             }
         }
@@ -73,12 +75,8 @@ object Event {
                 if (valid) {
                     val oldGraph = entity.power.graph
                     val newGraph = other.build.power.graph
-                    val oldGraphCount = oldGraph.toString()
-                        .substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], l"))
-                        .replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
-                    val newGraphCount = newGraph.toString()
-                        .substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], l"))
-                        .replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                    val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                    val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
                     if (abs(oldGraphCount - newGraphCount) > 10) {
                         Call.sendMessage("${it.player.name} [white]player has [scarlet]unlinked[] the [yellow]power node[]. Number of connected buildings: [green] ${oldGraphCount.coerceAtLeast(newGraphCount)} [cyan]->[scarlet] ${oldGraphCount.coerceAtMost(newGraphCount)} [white](" + it.tile.x + ", " + it.tile.y + ")")
                     }
@@ -204,10 +202,10 @@ object Event {
         }
 
         Events.on(UnitCreateEvent::class.java) {
-            if (Groups.unit.size() > Config.spawnLimit){
-                Groups.player.forEach{
+            if (Groups.unit.size() > Config.spawnLimit) {
+                Groups.player.forEach {
                     val data = findPlayerData(it.uuid())
-                    if (data != null){
+                    if (data != null) {
                         val bundle = Bundle(data.languageTag)
                         it.sendMessage(bundle["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${Config.spawnLimit}"])
                     }
@@ -228,7 +226,7 @@ object Event {
                 val data = database[it.player.uuid()]
                 if (data != null) {
                     Trigger.loadPlayer(it.player, data)
-                } else if (Config.authType == Config.AuthType.Password){
+                } else if (Config.authType == Config.AuthType.Password) {
                     it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
                 } else {
                     Trigger.createPlayer(it.player, null, null)
@@ -242,10 +240,7 @@ object Event {
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
                 database.update(it.player.uuid(), data)
-            } else {
-                Log.info("Data is null!")
             }
-            Log.info(data.permission)
             database.players.remove(data)
         }
 
@@ -255,7 +250,7 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
-            if (state.rules.pvp && Config.pvpPeace){
+            if (state.rules.pvp && Config.pvpPeace) {
                 orignalBlockMultiplier = state.rules.blockDamageMultiplier
                 orignalUnitMultiplier = state.rules.unitDamageMultiplier
                 state.rules.blockDamageMultiplier = 0f
@@ -267,9 +262,9 @@ object Event {
             log(LogType.Player, "${e.player.plainName()}(${e.player.uuid()}, ${e.player.con.address} connected.")
 
             val data = database[e.player.uuid()]
-            if (data != null){
-                if (data.status.containsKey("ban")){
-                    if (LocalDateTime.now().isAfter(LocalDateTime.parse(data.status.get("ban")))){
+            if (data != null) {
+                if (data.status.containsKey("ban")) {
+                    if (LocalDateTime.now().isAfter(LocalDateTime.parse(data.status.get("ban")))) {
                         netServer.admins.unbanPlayerID(e.player.uuid())
                     }
                 }
@@ -344,22 +339,22 @@ object Event {
         private val requiredAddress: InetAddress
         fun matches(address: String): Boolean {
             val remoteAddress = parseAddress(address)
-            if(requiredAddress.javaClass != remoteAddress.javaClass) {
+            if (requiredAddress.javaClass != remoteAddress.javaClass) {
                 return false
             }
-            if(nMaskBits < 0) {
+            if (nMaskBits < 0) {
                 return remoteAddress == requiredAddress
             }
             val remAddr = remoteAddress.address
             val reqAddr = requiredAddress.address
             val nMaskFullBytes = nMaskBits / 8
             val finalByte = (0xFF00 shr (nMaskBits and 0x07)).toByte()
-            for(i in 0 until nMaskFullBytes) {
-                if(remAddr[i] != reqAddr[i]) {
+            for (i in 0 until nMaskFullBytes) {
+                if (remAddr[i] != reqAddr[i]) {
                     return false
                 }
             }
-            return if(finalByte.toInt() != 0) {
+            return if (finalByte.toInt() != 0) {
                 remAddr[nMaskFullBytes] and finalByte == reqAddr[nMaskFullBytes] and finalByte
             } else true
         }
@@ -367,21 +362,14 @@ object Event {
         private fun parseAddress(address: String): InetAddress {
             return try {
                 InetAddress.getByName(address)
-            } catch(e: UnknownHostException) {
+            } catch (e: UnknownHostException) {
                 throw IllegalArgumentException("Failed to parse address$address", e)
             }
         }
 
-        /**
-         * Takes a specific IP address or a range specified using the IP/Netmask (e.g.
-         * 192.168.1.0/24 or 202.24.0.0/14).
-         *
-         * @param ipAddress the address or range of addresses from which the request must
-         * come.
-         */
         init {
             var address = ipAddress
-            if(address.indexOf('/') > 0) {
+            if (address.indexOf('/') > 0) {
                 val addressAndMask = address.split("/").toTypedArray()
                 address = addressAndMask[0]
                 nMaskBits = addressAndMask[1].toInt()
@@ -395,15 +383,15 @@ object Event {
         }
     }
 
-    fun findPlayerData(uuid: String) : DB.PlayerData?{
+    fun findPlayerData(uuid: String): DB.PlayerData? {
         return database.players.find { e -> e.uuid == uuid }
     }
 
-    fun findPlayers(any: Any) : Playerc? {
-        return if(any.toString().toIntOrNull() == null) {
+    fun findPlayers(any: Any): Playerc? {
+        return if (any.toString().toIntOrNull() == null) {
             Groups.player.find { e -> e.name.contains(any.toString(), true) }
         } else {
-            Groups.player.find { e-> e.name.equals(players.getValueAt(any.toString().toInt())) }
+            Groups.player.find { e -> e.name.equals(players.getValueAt(any.toString().toInt())) }
         }
     }
 }
