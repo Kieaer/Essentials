@@ -289,7 +289,7 @@ class PluginTest {
 
         clientCommand.handleMessage("/random", player)
 
-        clientCommand.handleMessage("/search ${player.id()}", player)
+        clientCommand.handleMessage("/search 999", player)
 
         clientCommand.handleMessage("/spawn unit dagger 10", player)
         clientCommand.handleMessage("/spawn unit invalid 10", player)

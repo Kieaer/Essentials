@@ -5,6 +5,7 @@ import arc.Events
 import arc.files.Fi
 import arc.struct.ArrayMap
 import arc.util.Log
+import essentials.Main.Companion.database
 import mindustry.Vars
 import mindustry.Vars.netServer
 import mindustry.Vars.state
@@ -16,7 +17,6 @@ import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import org.hjson.JsonObject
-import essentials.Main.Companion.database
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -391,7 +391,14 @@ object Event {
         return if (any.toString().toIntOrNull() == null) {
             Groups.player.find { e -> e.name.contains(any.toString(), true) }
         } else {
-            Groups.player.find { e -> e.name.equals(players.getValueAt(any.toString().toInt())) }
+            val target = players.find {
+                it.key.equals(any.toString().toInt())
+            }
+            if (target != null) {
+                Groups.player.find { e -> e.name.equals(target.value) }
+            } else {
+                null
+            }
         }
     }
 }
