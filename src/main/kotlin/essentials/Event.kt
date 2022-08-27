@@ -40,18 +40,22 @@ object Event {
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
-            if (!it.message.startsWith("/")) {
-                log(LogType.Chat, "${it.player.name}: ${it.message}")
-                Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
+            if (findPlayerData(it.player.uuid()) != null) {
+                if (!it.message.startsWith("/")) {
+                    log(LogType.Chat, "${it.player.name}: ${it.message}")
+                    Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
 
-                // todo 채팅 포맷 변경
-                Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
+                    // todo 채팅 포맷 변경
+                    Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
 
-                val data = database.players.find { e -> e.uuid == it.player.uuid() }
-                if (data != null && Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())) {
-                    Trigger.voted.add(it.player.uuid())
-                    it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                    val data = database.players.find { e -> e.uuid == it.player.uuid() }
+                    if (data != null && Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())) {
+                        Trigger.voted.add(it.player.uuid())
+                        it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                    }
                 }
+            } else {
+                Call.sendMessage("[gray]${it.player.name} [orange] > [gray]${it.message}")
             }
         }
 

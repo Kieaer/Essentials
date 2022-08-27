@@ -2,10 +2,10 @@ package essentials
 
 import arc.Core
 import arc.files.Fi
+import essentials.Main.Companion.database
 import mindustry.Vars.netServer
 import mindustry.gen.Playerc
 import org.hjson.*
-import essentials.Main.Companion.database
 import java.util.*
 
 object Permission {
@@ -43,7 +43,7 @@ object Permission {
                 uuid: uuid123
                 name: asdfg
                 group: admin
-                chatFormat: "[blue][ADMIN][]%1[white]: %2"
+                chatFormat: "[blue][ADMIN] []%1[orange] > [white] %2"
                 admin: true
             }
         ]""".trimIndent()
@@ -223,7 +223,7 @@ object Permission {
         var name = ""
         var uuid = ""
         var group = default
-        var chatFormat = "%1[orange] > [white]%2"
+        var chatFormat = Config.chatFormat
         var admin = false
     }
 }
