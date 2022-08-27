@@ -11,6 +11,9 @@ import arc.util.Threads
 import arc.util.Time
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
+import essentials.Event.findPlayerData
+import essentials.Main.Companion.database
+import essentials.Main.Companion.root
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -29,9 +32,6 @@ import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
 import mindustry.net.Packets
 import org.mindrot.jbcrypt.BCrypt
-import essentials.Event.findPlayerData
-import essentials.Main.Companion.database
-import essentials.Main.Companion.root
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -75,6 +75,7 @@ object Trigger {
         val perm = Permission[player]
         if (perm.name.isNotEmpty()) player.name(Permission[player].name)
         player.admin(Permission[player].admin)
+        player.sendMessage(Bundle(data.languageTag)["event.player.loaded"])
 
         database.players.add(data)
     }

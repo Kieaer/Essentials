@@ -232,11 +232,13 @@ object Event {
                 val data = database[it.player.uuid()]
                 if (data != null) {
                     Trigger.loadPlayer(it.player, data)
-                } else if (Config.authType == Config.AuthType.Password) {
-                    it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
-                } else {
-                    Trigger.createPlayer(it.player, null, null)
+                    return@on
                 }
+                if (Config.authType == Config.AuthType.Password) {
+                    it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
+                    return@on
+                }
+                Trigger.createPlayer(it.player, null, null)
             }
         }
 
