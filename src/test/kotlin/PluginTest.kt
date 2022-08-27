@@ -11,7 +11,6 @@ import com.github.javafaker.Faker
 import essentials.Config
 import essentials.Main
 import essentials.Main.Companion.root
-import essentials.Trigger
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.Vars.netServer
@@ -39,7 +38,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
-import kotlin.concurrent.thread
 import kotlin.io.path.Path
 
 
@@ -337,56 +335,5 @@ class PluginTest {
         println("서비스 실행까지 기다리는 중.. 2차")
         sleep(2000)
         Core.app.listeners[1].dispose()
-    }
-
-    @Test
-    fun networkTest(){
-        val stack = """
-            blahblah0
-                at blahddd3
-                at blahddd2
-                at blahddd1
-        """.trimIndent()
-        try {
-            thread { Trigger.Server() }
-            val client = Trigger.Client()
-            client.client.send("send")
-            client.client.send("receive")
-            client.client.send("crash", stack)
-            client.client.send("exit")
-        } catch (e: Exception){
-            e.printStackTrace()
-        }
-    }
-
-    @Test
-    fun voteTest(){
-        Events.fire(EventType.PlayerConnect(player.self()))
-        Events.fire(EventType.PlayerJoin(player.self()))
-
-        Config.authType = Config.AuthType.Password
-        clientCommand.handleMessage("/reg testas test123 test123", player)
-        sleep(300)
-        clientCommand.handleMessage("/login testas test123", player)
-        sleep(500)
-        Main.database.players.find { e -> e.uuid == player.uuid() }.permission = "owner"
-
-        sleep(1000)
-
-        clientCommand.handleMessage("/vote gg", player)
-        //Events.fire(EventType.PlayerChatEvent(player.self(), "/vote gg"))
-        sleep(2000)
-        //Events.fire(EventType.PlayerChatEvent(player.self(), "y"))
-        sleep(3000)
-    }
-
-    @Test
-    fun genDocs(){
-        serverCommand.handleMessage("gen")
-    }
-
-    @Test
-    fun sleep(){
-        sleep(3000)
     }
 }
