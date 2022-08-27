@@ -1,4 +1,4 @@
-package remake
+package essentials
 
 import arc.Core
 import arc.struct.ObjectMap
@@ -6,6 +6,7 @@ import arc.struct.Seq
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 
 
@@ -114,7 +115,7 @@ class DB {
     }
 
     operator fun get(uuid: String): PlayerData? {
-        transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }.apply {
+        transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }.run {
             if (this != null) {
                 val data = PlayerData
                 data.name = this[Player.name]
@@ -206,7 +207,7 @@ class DB {
     }
 
     fun search(id: String, pw: String): PlayerData? {
-        transaction { Player.select { (Player.accountid eq id) and (Player.accountpw eq pw) }.firstOrNull() }.apply {
+        transaction { Player.select { Player.accountid eq id }.firstOrNull() }.run {
             if (this != null) {
                 val data = PlayerData
                 data.name = this[Player.name]
@@ -230,7 +231,8 @@ class DB {
                 data.id = this[Player.accountid]
                 data.pw = this[Player.accountpw]
                 data.status = ObjectMap.of(this[Player.status])
-                return data
+
+                return if (data.id == data.pw) data else if (BCrypt.checkpw(pw, data.pw)) data else null
             } else {
                 return null
             }

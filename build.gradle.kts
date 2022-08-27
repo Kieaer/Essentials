@@ -22,7 +22,7 @@ dependencies {
     compileOnly("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
 
     implementation("com.github.PersonTheCat:hjson-java:3.0.0-C11")
-    //implementation("de.svenkubiak:jBCrypt:0.4.3")
+    implementation("de.svenkubiak:jBCrypt:0.4.3")
     implementation("com.mewna:catnip:3.1.0")
     //implementation("com.github.gimlet2:kottpd:0.2.1")
     implementation("org.apache.maven:maven-artifact:3.8.5")

@@ -1,4 +1,4 @@
-package remake
+package essentials
 
 import arc.Core
 import arc.Events
@@ -16,7 +16,7 @@ import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import org.hjson.JsonObject
-import remake.Main.Companion.database
+import essentials.Main.Companion.database
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader

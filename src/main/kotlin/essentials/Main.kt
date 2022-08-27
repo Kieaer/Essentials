@@ -1,4 +1,4 @@
-package remake
+package essentials
 
 import arc.ApplicationListener
 import arc.Core
@@ -10,7 +10,7 @@ import mindustry.Vars
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
-import remake.Permission.bundle
+import essentials.Permission.bundle
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 

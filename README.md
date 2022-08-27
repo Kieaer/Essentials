@@ -8,40 +8,53 @@ Add more commands to the server.<br>
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 ## Client commands
-| Command | Parameter | Description |
-|:---|:---|:--- |
-| chars | &lt;text...&gt; | Make pixel texts |
-| color |  | Enable color nickname |
-| killall | [team] | Kill all enemy units |
-| help | [page] | Show command lists |
-| info |  | Show your information |
-| hub | &lt;zone/block/count/total&gt; [ip] [parameters...] | Create a server-to-server warp zone. |
-| kill | [player] | Kill player. |
-| login | &lt;id&gt; &lt;password&gt; | Access your account |
-| maps | [page] | Show server maps |
-| me | &lt;text...&gt; | broadcast * message |
-| motd |  | Show server motd. |
-| players | [page] | Show players list |
-| meme | &lt;type&gt; | Router |
-| register | &lt;accountid&gt; &lt;password&gt; | Register account |
-| spawn | &lt;unit/block&gt; &lt;name&gt; [amount/rotate] | Spawn mob in player position |
-| status |  | Show server status |
-| team | &lt;team_name&gt; [player_name] | Change team |
-| time |  | Show server time |
-| tp | &lt;player&gt; | Teleport to other players |
-| weather | &lt;rain/snow/sandstorm/sporestorm&gt; &lt;seconds&gt; | Change map light |
-| mute | &lt;Player_name&gt; | Mute player |
-| unmute | &lt;Player_name&gt; | Unmute player |
-| config | &lt;name&gt; [value] | Edit server config |
-| gg | [delay] | Force gameover |
-| effect | [effects] | effects |
-| god | [Player_name] | Set max player health |
-| random |  | Random events |
-| pause |  | Pause server |
-| js | [code] | Execute JavaScript codes |
-| search | [value] | Search player data |
+| Command   | Parameter                                                                | Description                                                    |
+|:----------|:-------------------------------------------------------------------------|:---------------------------------------------------------------|
+| chars     | &lt;text...&gt;                                                          | Make pixel texts                                               |
+| color     |                                                                          | Enable color nickname                                          |
+| discord   |                                                                          | Authenticate your Discord account to the server.               |
+| effect    | [effect] [x] [y] [rotate] [color]                                        | effects                                                        |
+| fillitems | &lt;team&gt;                                                             | Fill the core with items.                                      |
+| gg        |                                                                          | Force gameover                                                 |
+| god       | [name]                                                                   | Set max player health                                          |
+| help      | [page]                                                                   | Show command lists                                             |
+| hub       | &lt;zone/block/count/total&gt; [ip] [parameters...]                      | Create a server to server point.                               |
+| info      | [player]                                                                 | Show your information                                          |
+| js        | [code]                                                                   | Execute JavaScript codes                                       |
+| kickall   |                                                                          | All users except yourself and the administrator will be kicked |
+| kill      | [player]                                                                 | Kill player.                                                   |
+| killall   | [team]                                                                   | Kill all enemy units                                           |
+| login     | &lt;id&gt; &lt;password&gt;                                              | Access your account                                            |
+| maps      | [page]                                                                   | Show server maps                                               |
+| me        | &lt;text...&gt;                                                          | broadcast * message                                            |
+| meme      | &lt;type&gt;                                                             | Enjoy meme features!                                           |
+| motd      |                                                                          | Show server motd.                                              |
+| mute      | &lt;player&gt;                                                           | Mute player                                                    |
+| pause     |                                                                          | Pause server                                                   |
+| players   | [page]                                                                   | Show players list                                              |
+| reg       | &lt;id&gt; &lt;password&gt; &lt;password_repeat&gt;                      | Register account                                               |
+| search    | [value]                                                                  | Search player data                                             |
+| setperm   | &lt;player&gt; &lt;group&gt;                                             | Set the player's permission group.                             |
+| spawn     | &lt;unit/block&gt; &lt;name&gt; [amount/rotate]                          | Spawns units at the player's location.                         |
+| status    |                                                                          | Show server status                                             |
+| team      | &lt;team_name&gt; [name]                                                 | Change team                                                    |
+| tempban   | &lt;player&gt; &lt;time&gt; [reason]                                     | Ban the player for a certain period of time.                   |
+| time      |                                                                          | Show server time                                               |
+| tp        | &lt;player&gt;                                                           | Teleport to other players                                      |
+| unmute    | &lt;player&gt;                                                           | Unmute player                                                  |
+| url       | &lt;command&gt;                                                          | Opens a URL contained in a specific command.                   |
+| vote      | &lt;kick/map/gg/skip/back/random&gt; [player/amount/world_name] [reason] | Start voting                                                   |
+| weather   | &lt;rain/snow/sandstorm/sporestorm&gt; &lt;seconds&gt;                   | Adds a weather effect to the map.                              |
 
-README.md Generated time: 2022-08-05 13:54:36
+## Server commands
+| Command | Parameter                            | Description                                  |
+|:--------|:-------------------------------------|:---------------------------------------------|
+| debug   | [bool]                               | Show plugin internal informations            |
+| gen     |                                      | Generate README.md texts                     |
+| setperm | &lt;player&gt; &lt;group&gt;         | Set the player's permission group.           |
+| tempban | &lt;player&gt; &lt;time&gt; [reason] | Ban the player for a certain period of time. |
+
+README.md Generated time: 2022-08-27 19:04:45
 
 ## Contribute guide
 ### File description

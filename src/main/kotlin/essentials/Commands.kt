@@ -1,4 +1,4 @@
-package remake
+package essentials
 
 import arc.Core
 import arc.graphics.Color
@@ -11,6 +11,11 @@ import arc.util.Strings
 import arc.util.Threads.sleep
 import com.mewna.catnip.Catnip
 import com.mewna.catnip.shard.DiscordEvent
+import essentials.Event.findPlayerData
+import essentials.Event.findPlayers
+import essentials.Main.Companion.database
+import essentials.Main.Companion.root
+import essentials.Permission.bundle
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -24,11 +29,6 @@ import mindustry.type.UnitType
 import mindustry.world.Tile
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import remake.Event.findPlayerData
-import remake.Event.findPlayers
-import remake.Main.Companion.database
-import remake.Main.Companion.root
-import remake.Permission.bundle
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -90,7 +90,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         } else {
             handler.register("debug", "[bool]", "Show plugin internal informations") { a -> Server(a).debug() }
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
-            handler.register("setperm, <player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
+            handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
             serverCommands = handler
         }
@@ -1351,6 +1351,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             Trigger.voteTargetUUID = target.uuid()
                             Trigger.voteReason = arg[2]
                             Trigger.voteType = "kick"
+                            Trigger.voteStarter = player
                             Trigger.voting = true
                             sendStart("command.vote.kick.start", target.name(), arg[2])
                         } else {
@@ -1372,6 +1373,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                 Trigger.voteType = "map"
                                 Trigger.voteMap = target
                                 Trigger.voteReason = arg[2]
+                                Trigger.voteStarter = player
                                 Trigger.voting = true
                                 sendStart("command.vote.map.start", target.name(), arg[2])
                             } catch (e: IndexOutOfBoundsException) {
@@ -1384,6 +1386,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     "gg" -> {
                         Trigger.voteType = "gg"
+                        Trigger.voteStarter = player
                         Trigger.voting = true
                         sendStart("command.vote.gg.start")
                     }
@@ -1392,6 +1395,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         if (arg[1].toIntOrNull() != null) {
                             Trigger.voteType = "skip"
                             Trigger.voteWave = arg[1].toInt()
+                            Trigger.voteStarter = player
                             Trigger.voting = true
                             sendStart("command.vote.skip.start", arg[1])
                         } else {
@@ -1410,12 +1414,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                         Trigger.voteType = "back"
                         Trigger.voteReason = arg[1]
+                        Trigger.voteStarter = player
                         Trigger.voting = true
                         sendStart("command.vote.back.start", arg[1])
                     }
 
                     "random" -> {
                         Trigger.voteType = "random"
+                        Trigger.voteStarter = player
                         Trigger.voting = true
                         sendStart("command.vote.random.start")
                     }
