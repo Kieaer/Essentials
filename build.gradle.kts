@@ -2,6 +2,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.6.10"
     id("org.sonarqube") version "3.4.0.2513"
     id("de.undercouch.download") version "4.0.0"
+    jacoco
 }
 
 java {
@@ -70,5 +71,11 @@ sonarqube {
         property("sonar.organization", "kieaer")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.sourceEncoding","utf-8")
+    }
+}
+
+tasks.jacocoTestReport {
+    reports {
+        xml.required.set(true)
     }
 }
