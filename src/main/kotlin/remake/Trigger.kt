@@ -366,7 +366,7 @@ object Trigger {
                                                 if (tick == 300) {
                                                     send("command.vote.random.supply")
                                                     repeat(2) {
-                                                        UnitTypes.oct.spawn(player.team(), random.nextFloat(world.width() * 8f), random.nextFloat(world.height() * 8f))
+                                                        UnitTypes.oct.spawn(player.team(), player.getX(), player.getY())
                                                     }
                                                 }
                                             }
