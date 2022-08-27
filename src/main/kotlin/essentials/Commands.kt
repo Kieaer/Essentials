@@ -451,7 +451,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else {
                 message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
                 for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Event.players.size)) {
-                    message.append("[gray]${Event.players.get(a)}[white] ${Event.players.get(a)}\n")
+                    message.append("[gray]${Event.players.getKey(Event.players.get(a), true)}[white] ${Event.players.get(a)}\n")
                 }
 
                 player.sendMessage(message.toString().dropLast(1))
