@@ -6,11 +6,11 @@ import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
+import essentials.Permission.bundle
 import mindustry.Vars
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
-import essentials.Permission.bundle
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -45,6 +45,7 @@ class Main : Plugin() {
                 Commands.Discord.shutdownNow()
                 Permission.save()
                 Permission.sort()
+                Config.save()
             }
         })
     }

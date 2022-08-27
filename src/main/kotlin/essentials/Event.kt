@@ -68,17 +68,23 @@ object Event {
         }
 
         Events.on(ConfigEvent::class.java) {
-            if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) { // Source by BasedUser(router)
+            if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int && Config.antiGrief) {
                 val entity = it.tile
                 val other = Vars.world.tile(it.value as Int)
                 val valid = other != null && entity.power != null && other.block().hasPower
                 if (valid) {
                     val oldGraph = entity.power.graph
                     val newGraph = other.build.power.graph
-                    val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
-                    val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], l")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                    val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                    val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
                     if (abs(oldGraphCount - newGraphCount) > 10) {
-                        Call.sendMessage("${it.player.name} [white]player has [scarlet]unlinked[] the [yellow]power node[]. Number of connected buildings: [green] ${oldGraphCount.coerceAtLeast(newGraphCount)} [cyan]->[scarlet] ${oldGraphCount.coerceAtMost(newGraphCount)} [white](" + it.tile.x + ", " + it.tile.y + ")")
+                        Groups.player.forEach { a ->
+                            val data = findPlayerData(a.uuid())
+                            if (data != null) {
+                                val bundle = Bundle(data.languageTag)
+                                a.sendMessage(bundle["event.antigrief.node", it.player.name, oldGraphCount.coerceAtLeast(newGraphCount), oldGraphCount.coerceAtMost(newGraphCount), "${it.tile.x}, ${it.tile.y}"])
+                            }
+                        }
                     }
                 }
             }
