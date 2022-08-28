@@ -74,6 +74,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
+            handler.register("rtv", "<fakeParameter>", "Command remapping. It doesn't actually work.")  { a, p: Playerc -> Client(a, p).rtv() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p: Playerc -> Client(a, p).setperm() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p: Playerc -> Client(a, p).spawn() }
@@ -396,6 +397,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     player.sendMessage("command.reg.exists")
                 }
             }
+        }
+
+        fun rtv() {
+            player.sendMessage("This server does not use the rtv plugin.")
+            player.sendMessage("If you want, go to the server that uses that plugin.")
         }
 
         fun maps() {
