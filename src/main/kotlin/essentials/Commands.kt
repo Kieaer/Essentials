@@ -385,17 +385,21 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun register() {
             if (!Permission.check(player, "register")) return
-            if (arg.size != 3) {
-                player.sendMessage(bundle["command.reg.usage"])
-            } else if (arg[1] != arg[2]) {
-                player.sendMessage(bundle["command.reg.incorrect"])
-            } else {
-                if (transaction { DB.Player.select { DB.Player.accountid.eq(arg[0]) }.firstOrNull() } == null) {
-                    Trigger.createPlayer(player, arg[0], arg[1])
-                    Log.info(Bundle()["log.data_created", player.name()])
+            if (Config.authType != Config.AuthType.None) {
+                if (arg.size != 3) {
+                    player.sendMessage(bundle["command.reg.usage"])
+                } else if (arg[1] != arg[2]) {
+                    player.sendMessage(bundle["command.reg.incorrect"])
                 } else {
-                    player.sendMessage("command.reg.exists")
+                    if (transaction { DB.Player.select { DB.Player.accountid.eq(arg[0]) }.firstOrNull() } == null) {
+                        Trigger.createPlayer(player, arg[0], arg[1])
+                        Log.info(Bundle()["log.data_created", player.name()])
+                    } else {
+                        player.sendMessage("command.reg.exists")
+                    }
                 }
+            } else {
+                player.sendMessage("[scarlet]This server doesn't use authentication.")
             }
         }
 

@@ -7,6 +7,7 @@ import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.graphics.Color
 import arc.util.CommandHandler
+import arc.util.Log
 import com.github.javafaker.Faker
 import essentials.Config
 import essentials.Main
@@ -20,6 +21,7 @@ import mindustry.content.UnitTypes
 import mindustry.core.*
 import mindustry.game.EventType
 import mindustry.game.Team
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
@@ -38,7 +40,10 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
+import javax.sound.midi.MidiSystem
 import kotlin.io.path.Path
+import kotlin.math.min
+import kotlin.math.pow
 
 
 class PluginTest {
@@ -335,5 +340,56 @@ class PluginTest {
         println("서비스 실행까지 기다리는 중.. 2차")
         sleep(2000)
         Core.app.listeners[1].dispose()
+    }
+
+    @Test
+    fun midiTest(){
+        var midi = false;
+        var volume = 20;
+        var instrument = "press"
+        var pitch = 0.98
+
+        val midiSystem = MidiSystem.getSequencer()
+        val sequence = MidiSystem.getSequence(Main::class.java.classLoader.getResourceAsStream("input.mid"))
+        midiSystem.open()
+        midiSystem.sequence = sequence
+        midiSystem.start()
+
+        var stream = Core.files.absolute("/dev/midi3").read()
+        midi = true
+
+        val startMidiAsync = Thread {
+            try {
+                stream.close()
+            } catch (e: Exception) {
+                stream = null
+            }
+        }
+
+        val parserAsync  = Thread {
+            while(midi){
+                try{
+                    var b = stream.read()
+                    if (b in 144..159 && b != 153) {
+                        var p = stream.read()
+                        var v = stream.read()
+                        if (v != 0) {
+                            Call.sendChatMessage("/js Call.sound(Sounds.$instrument,${volume*v/127},${min(pitch* 1.0594630943592953.pow(((p - 60).toDouble())),512.toDouble())},0")
+                        }
+                    }
+                } catch (e: Exception){
+                    Log.err(e)
+                    midi = false
+                }
+            }
+        }
+        parserAsync.isDaemon = true
+
+        parserAsync.start()
+    }
+
+    @Test
+    fun midiTest2(){
+
     }
 }
