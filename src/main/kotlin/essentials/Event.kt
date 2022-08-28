@@ -46,16 +46,20 @@ object Event {
                     Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
 
                     // todo 채팅 포맷 변경
-                    Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
 
                     val data = database.players.find { e -> e.uuid == it.player.uuid() }
-                    if (data != null && Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())) {
-                        Trigger.voted.add(it.player.uuid())
-                        it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+
+                    if (data != null && !data.mute) {
+                        if (Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())) {
+                            Trigger.voted.add(it.player.uuid())
+                            it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                        }
+                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
                     }
+
                 }
             } else {
-                Call.sendMessage("[gray]${it.player.name} [orange] > [gray]${it.message}")
+                Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}")
             }
         }
 
@@ -236,13 +240,11 @@ object Event {
                 val data = database[it.player.uuid()]
                 if (data != null) {
                     Trigger.loadPlayer(it.player, data)
-                    return@on
-                }
-                if (Config.authType == Config.AuthType.Password) {
+                } else if (Config.authType != Config.AuthType.None) {
                     it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
-                    return@on
+                } else if (Config.authType == Config.AuthType.None) {
+                    Trigger.createPlayer(it.player, null, null)
                 }
-                Trigger.createPlayer(it.player, null, null)
             }
         }
 

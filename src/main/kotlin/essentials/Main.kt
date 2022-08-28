@@ -96,11 +96,7 @@ class Main : Plugin() {
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
             if (Config.authType == Config.AuthType.None) {
-                if (data != null) {
-                    !data.mute
-                } else {
-                    false
-                }
+                data != null
             } else {
                 false
             }
