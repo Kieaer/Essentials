@@ -182,13 +182,12 @@ object Permission {
     }
 
     operator fun get(player: Playerc): PermissionData {
-        val result = PermissionData
+        val result = PermissionData()
         val p = database.players.find { e -> e.uuid == player.uuid() }
 
         result.uuid = player.uuid()
         result.name = netServer.admins.findByIP(player.ip()).lastName
         result.group = p?.permission ?: default
-        result.chatFormat = PermissionData.chatFormat
         result.admin = false
 
         data.forEach {
@@ -198,7 +197,7 @@ object Permission {
                 result.uuid = data.getString("uuid", player.uuid())
                 result.name = data.getString("name", netServer.admins.findByIP(player.ip()).lastName)
                 result.group = data.getString("group", default)
-                result.chatFormat = data.getString("chatFormat", PermissionData.chatFormat)
+                result.chatFormat = data.getString("chatFormat", Config.chatFormat)
                 result.admin = data.getBoolean("admin", false)
             }
 
@@ -219,7 +218,7 @@ object Permission {
         return false
     }
 
-    object PermissionData {
+    class PermissionData {
         var name = ""
         var uuid = ""
         var group = default
