@@ -81,7 +81,7 @@ object Trigger {
     }
 
     fun createPlayer(player: Playerc, id: String?, password: String?) {
-        val data = DB.PlayerData
+        val data = DB.PlayerData()
 
         data.name = player.name()
         data.uuid = player.uuid()

@@ -7,7 +7,6 @@ import arc.struct.ArrayMap
 import arc.util.Log
 import essentials.Main.Companion.database
 import mindustry.Vars
-import mindustry.Vars.netServer
 import mindustry.Vars.state
 import mindustry.content.Blocks
 import mindustry.game.EventType
@@ -40,8 +39,8 @@ object Event {
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
-            if (findPlayerData(it.player.uuid()) != null) {
-                if (!it.message.startsWith("/")) {
+            if (!it.message.startsWith("/")) {
+                if (findPlayerData(it.player.uuid()) != null) {
                     log(LogType.Chat, "${it.player.name}: ${it.message}")
                     Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
 
@@ -54,12 +53,12 @@ object Event {
                             Trigger.voted.add(it.player.uuid())
                             it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
                         }
+
                         Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
                     }
-
+                } else {
+                    Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}")
                 }
-            } else {
-                Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}")
             }
         }
 
@@ -233,7 +232,7 @@ object Event {
 
         Events.on(PlayerJoin::class.java) {
             players.put(order, it.player.name)
-            log(LogType.Player, "${it.player.plainName()}(${it.player.uuid()}, ${it.player.con.address} joined.")
+            log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
             it.player.admin(false)
 
             if (Config.authType == Config.AuthType.None) {
@@ -249,8 +248,8 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
-            players.removeValue(it.player.name, true)
-            log(LogType.Player, "${it.player.plainName()}(${it.player.uuid()}, ${it.player.con.address} disconnected.")
+            players.removeValue(it.player.name, false)
+            log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) disconnected.")
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
                 database.update(it.player.uuid(), data)
@@ -273,16 +272,7 @@ object Event {
         }
 
         Events.on(PlayerConnect::class.java) { e ->
-            log(LogType.Player, "${e.player.plainName()}(${e.player.uuid()}, ${e.player.con.address} connected.")
-
-            val data = database[e.player.uuid()]
-            if (data != null) {
-                if (data.status.containsKey("ban")) {
-                    if (LocalDateTime.now().isAfter(LocalDateTime.parse(data.status.get("ban")))) {
-                        netServer.admins.unbanPlayerID(e.player.uuid())
-                    }
-                }
-            }
+            log(LogType.Player, "${e.player.plainName()} (${e.player.uuid()}, ${e.player.con.address}) connected.")
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (s in PluginData.blacklist) {

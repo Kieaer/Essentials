@@ -55,7 +55,7 @@ class DB {
         val status = text("status")
     }
 
-    object PlayerData {
+    class PlayerData {
         var name: String = "none"
         var uuid: String = "none"
         var languageTag: String = Locale.getDefault().toLanguageTag()
@@ -117,7 +117,7 @@ class DB {
     operator fun get(uuid: String): PlayerData? {
         transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }.run {
             if (this != null) {
-                val data = PlayerData
+                val data = PlayerData()
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
                 data.languageTag = this[Player.languageTag]
@@ -150,7 +150,7 @@ class DB {
         val d = Seq<PlayerData>()
         transaction {
             Player.selectAll().map {
-                val data = PlayerData
+                val data = PlayerData()
                 data.name = it[Player.name]
                 data.uuid = it[Player.uuid]
                 data.languageTag = it[Player.languageTag]
@@ -209,7 +209,7 @@ class DB {
     fun search(id: String, pw: String): PlayerData? {
         transaction { Player.select { Player.accountid eq id }.firstOrNull() }.run {
             if (this != null) {
-                val data = PlayerData
+                val data = PlayerData()
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
                 data.languageTag = this[Player.languageTag]
