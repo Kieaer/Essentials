@@ -445,7 +445,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             val count = motd.split("\r\n|\r|\n").toTypedArray().size
             if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
-
         }
 
         fun players() {
@@ -461,9 +460,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else {
                 message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
                 for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Event.players.size)) {
-                    message.append("[gray]${Event.players.getKey(Event.players.get(a), true)}[white] ${Event.players.get(a)}\n")
+                    message.append("[gray]${Event.players.get(a).keys().first()} [white]${Event.players.get(a).values().first()}\n")
                 }
-
                 player.sendMessage(message.toString().dropLast(1))
             }
         }
@@ -1034,26 +1032,23 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun gg() {
             if (!Permission.check(player, "gg")) return
-            Thread {
-                for (a in 0..world.tiles.height) {
-                    for (b in 0..world.tiles.width) {
-                        Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
-                        if (world.tile(a, b) != null) {
-                            try {
-                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                            } catch (e: Exception) {
-                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                            }
-                            try {
-                                Call.removeTile(world.tile(a, b))
-                            } catch (e: Exception) {
-                                Call.removeTile(world.tile(a, b))
-                            }
+            for (a in 0..world.tiles.height) {
+                for (b in 0..world.tiles.width) {
+                    Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
+                    if (world.tile(a, b) != null) {
+                        try {
+                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
+                        } catch (e: Exception) {
+                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
+                        }
+                        try {
+                            Call.removeTile(world.tile(a, b))
+                        } catch (e: Exception) {
+                            Call.removeTile(world.tile(a, b))
                         }
                     }
-                    sleep(8)
                 }
-            }.start()
+            }
         }
 
         fun kill() {

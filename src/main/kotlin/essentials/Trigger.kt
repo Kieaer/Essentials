@@ -7,7 +7,6 @@ import arc.graphics.Color
 import arc.struct.ArrayMap
 import arc.struct.Seq
 import arc.util.Log
-import arc.util.Threads
 import arc.util.Time
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
@@ -265,26 +264,23 @@ object Trigger {
                         }
 
                         "gg" -> {
-                            Thread {
-                                for (a in 0..world.tiles.height) {
-                                    for (b in 0..world.tiles.width) {
-                                        Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
-                                        if (world.tile(a, b) != null) {
-                                            try {
-                                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                                            } catch (e: Exception) {
-                                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                                            }
-                                            try {
-                                                Call.removeTile(world.tile(a, b))
-                                            } catch (e: Exception) {
-                                                Call.removeTile(world.tile(a, b))
-                                            }
+                            for (a in 0..world.tiles.height) {
+                                for (b in 0..world.tiles.width) {
+                                    Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
+                                    if (world.tile(a, b) != null) {
+                                        try {
+                                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
+                                        } catch (e: Exception) {
+                                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
+                                        }
+                                        try {
+                                            Call.removeTile(world.tile(a, b))
+                                        } catch (e: Exception) {
+                                            Call.removeTile(world.tile(a, b))
                                         }
                                     }
-                                    Threads.sleep(8)
                                 }
-                            }.start()
+                            }
                         }
 
                         "skip" -> {

@@ -3,7 +3,8 @@ package essentials
 import arc.Core
 import arc.Events
 import arc.files.Fi
-import arc.struct.ArrayMap
+import arc.struct.ObjectMap
+import arc.struct.Seq
 import arc.util.Log
 import essentials.Main.Companion.database
 import mindustry.Vars
@@ -33,7 +34,7 @@ import kotlin.math.abs
 object Event {
     val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson").reader()).asObject()
     var order = 0
-    val players = ArrayMap<Int, String>()
+    val players = Seq<ObjectMap<Int, String>>()
     var orignalBlockMultiplier = 1f
     var orignalUnitMultiplier = 1f
 
@@ -180,7 +181,7 @@ object Event {
                     if (!it.breaking) {
                         log(LogType.Block, "${player.name} placed ${it.tile.block().name}")
                         val exp = PluginData.expData.getInt(name, 0)
-                        target.placecount++
+                        target.placecount + 1
                         target.exp = target.exp + exp
 
                         if (isDebug) {
@@ -189,7 +190,7 @@ object Event {
                     } else if (it.breaking) {
                         log(LogType.Block, "${player.name} break ${player.unit().buildPlan().block.name}")
                         val exp = PluginData.expData.getInt(player.unit().buildPlan().block.name, 0)
-                        target.breakcount++
+                        target.breakcount + 1
                         target.exp = target.exp + exp
 
                         if (isDebug) {
@@ -231,7 +232,11 @@ object Event {
         }
 
         Events.on(PlayerJoin::class.java) {
-            players.put(order, it.player.name)
+            val ee = ObjectMap<Int, String>()
+            ee.put(order, it.player.plainName())
+            players.add(ee)
+            order++
+
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
             it.player.admin(false)
 
@@ -248,7 +253,7 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
-            players.removeValue(it.player.name, false)
+            players.remove { a -> a.containsValue(it.player.name, false) }
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) disconnected.")
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
@@ -395,14 +400,13 @@ object Event {
         return if (any.toString().toIntOrNull() == null) {
             Groups.player.find { e -> e.name.contains(any.toString(), true) }
         } else {
-            val target = players.find {
-                it.key.equals(any.toString().toInt())
+            for (a in players) {
+                val d = Groups.player.find { e -> e.name.equals(a.get(any.toString().toInt())) }
+                if (d != null) {
+                    return d
+                }
             }
-            if (target != null) {
-                Groups.player.find { e -> e.name.equals(target.value) }
-            } else {
-                null
-            }
+            null
         }
     }
 }

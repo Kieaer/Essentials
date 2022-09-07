@@ -16,8 +16,8 @@ repositories {
 
 dependencies {
     val exposedVersion = "0.39.2"
-    val mindustryVersion = "main-SNAPSHOT"
-    val arcVersion = "v137"
+    val mindustryVersion = "v138"
+    val arcVersion = "v138"
 
     compileOnly("com.github.Anuken.Arc:arc-core:$arcVersion")
     compileOnly("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
@@ -28,7 +28,7 @@ dependencies {
     //implementation("com.github.gimlet2:kottpd:0.2.1")
     implementation("org.apache.maven:maven-artifact:3.8.5")
 
-    implementation("org.xerial:sqlite-jdbc:3.39.2.0")
+    implementation("org.xerial:sqlite-jdbc:3.39.2.1")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
