@@ -488,6 +488,8 @@ object Trigger {
     class Thread : Runnable {
         private var ping = 0.000
         private val servers = ArrayMap<String, Int>()
+        private val dummy = Player.create()
+
         override fun run() {
             while (!java.lang.Thread.currentThread().isInterrupted) {
                 try {
@@ -500,21 +502,25 @@ object Trigger {
                                 val digits = IntArray(str.length)
                                 for (a in str.indices) digits[a] = str[a] - '0'
                                 val tile = value.tile
-                                if (value.players != r.players && value.numbersize != digits.size) {
+                                if (value.players != r.players) {
                                     for (px in 0..2) {
                                         for (py in 0..4) {
-                                            Call.deconstructFinish(
-                                                world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, null
-                                            )
+                                            Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
                                         }
                                     }
                                 }
-                                Commands.Client(arrayOf(str), Player.create()).chars(tile) // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                                dummy.x = tile.getX()
+                                dummy.y = tile.getY()
+
+                                Commands.Client(arrayOf(str), dummy).chars(tile) // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
                                 PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, r.players, digits.size)
                                 addPlayers(value.ip, value.port, r.players)
                             } else {
                                 ping += 1.000
-                                Commands.Client(arrayOf("no"), Player.create()).chars(value.tile)
+
+                                dummy.x = value.tile.getX()
+                                dummy.y = value.tile.getY()
+                                Commands.Client(arrayOf("no"), dummy).chars(value.tile)
                             }
                         }
                     }
@@ -567,14 +573,24 @@ object Trigger {
                         Call.label(a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
                     }
 
-                    if (Core.settings.getBool("isLobby")) {
-                        if (state.`is`(GameState.State.playing)) {
-                            world.tiles.forEach {
-                                if (it.build != null) {
-                                    it.build.health(it.build.health)
+                    for (i in 0 until PluginData.warpTotals.size) {
+                        val value = PluginData.warpTotals[i]
+                        if (state.map.name() == value.mapName) {
+                            if (value.totalplayers != totalPlayers()) {
+                                for (px in 0..2) {
+                                    for (py in 0..4) {
+                                        Call.deconstructFinish(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, dummy.unit())
+                                    }
                                 }
                             }
+
+                            dummy.x = value.tile.getX()
+                            dummy.y = value.tile.getY()
+                            Commands.Client(arrayOf(totalPlayers().toString()), dummy).chars(value.tile)
                         }
+                    }
+
+                    if (Config.countAllServers) {
                         Core.settings.put("totalPlayers", totalPlayers() + Groups.player.size())
                         Core.settings.saveValues()
                     }

@@ -26,6 +26,7 @@ object Config {
     var pvpPeaceTime = 300
     var rollbackTime = 1
     var antiGrief = false
+    var countAllServers = false
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -117,6 +118,7 @@ object Config {
             features.add("pvpPeaceTime", pvpPeaceTime, bundle["config.pvp.time"])
             features.add("rollbackTime", rollbackTime, bundle["config.rollback.time"])
             features.add("antiGrief", antiGrief, bundle["config.antigrief"])
+            features.add("countAllServers", countAllServers, bundle["config.countallservers"])
 
             val ban = JsonObject()
             ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -162,6 +164,7 @@ object Config {
         pvpPeaceTime = features.getInt("pvpPeaceTime", pvpPeaceTime)
         rollbackTime = features.getInt("rollbackTime", rollbackTime)
         antiGrief = features.getBoolean("antiGrief", antiGrief)
+        countAllServers = features.getBoolean("countAllServers", countAllServers)
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)
