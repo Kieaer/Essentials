@@ -534,27 +534,33 @@ object Trigger {
                             pingHostImpl(value.ip, value.port) { r: Host ->
                                 var margin = 0f
                                 var isDup = false
-                                var x = tile.drawx()
+                                var x = tile.build.getX()
+
                                 when (value.size) {
                                     1 -> margin = 8f
                                     2 -> {
                                         margin = 16f
-                                        x = tile.drawx()
                                         isDup = true
                                     }
 
                                     3 -> margin = 16f
                                     4 -> {
-                                        x = tile.drawx()
                                         margin = 24f
                                         isDup = true
                                     }
+                                    5 -> margin = 24f
+                                    6 -> {
+                                        margin = 32f
+                                        isDup = true
+                                    }
+                                    7 -> margin = 32f
                                 }
-                                Call.effect(Fx.pointHit, tile.block().offset, tile.block().offset, 0f, Color.forest)
-                                Call.effect(Fx.pointHit, tile.drawx(), tile.drawy(), 0f, Color.cyan)
-                                val y = tile.drawy() + if (isDup) margin - 8 else margin
+
+                                var y = tile.build.getY() + if (isDup) margin - 8 else margin
+
                                 if (r.name != null) {
                                     ping += ("0." + r.ping).toDouble()
+                                    if (isDup) y += 4
                                     memory.add("[yellow]" + r.players + "[] Players///" + x + "///" + y)
                                     value.online = true
                                 } else {
@@ -562,7 +568,8 @@ object Trigger {
                                     memory.add("[scarlet]Offline///$x///$y")
                                     value.online = false
                                 }
-                                memory.add(value.description + "///" + x + "///" + (tile.drawy() - margin))
+                                if (isDup) margin -= 4
+                                memory.add(value.description + "///" + x + "///" + (tile.build.getY() - margin))
                                 addPlayers(value.ip, value.port, r.players)
                             }
                         }

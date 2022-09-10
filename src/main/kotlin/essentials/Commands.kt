@@ -1020,7 +1020,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     player.sendMessage(bundle["command.hub.block.parameter"])
                 } else {
                     val t: Tile = player.tileOn()
-                    println("${t.block().name}, ${t.block().size}, ${t.block().offset}")
                     PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
                     player.sendMessage(bundle["command.hub.block.added", "$x:$y", ip])
                 }
