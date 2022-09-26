@@ -10,6 +10,8 @@ import essentials.Main.Companion.database
 import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.content.Blocks
+import mindustry.content.Fx
+import mindustry.entities.Damage
 import mindustry.game.EventType
 import mindustry.game.EventType.*
 import mindustry.game.Team
@@ -208,7 +210,10 @@ object Event {
         }
 
         Events.on(BlockDestroyEvent::class.java) {
-
+            if (Config.destroyCore && state.rules.coreCapture) {
+                Fx.spawnShockwave.at(it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius);
+                Damage.damage(Vars.world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true);
+            }
         }
 
         Events.on(UnitDestroyEvent::class.java) {
