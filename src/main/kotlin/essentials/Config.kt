@@ -40,7 +40,7 @@ object Config {
     var channelToken = ""
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
-    private val bundle = Bundle(Locale(System.getProperty("user.language"), System.getProperty("user.country")).toLanguageTag())
+    private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
 
     private fun wizard() {
         Log.info(bundle["config.wiki"])
