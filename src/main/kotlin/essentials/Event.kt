@@ -319,33 +319,39 @@ object Event {
         }
     }
 
-    fun log(type: LogType, text: String) {
+    fun log(type: LogType, text: String, vararg name: String) {
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+        val time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
-        val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
-        val new = Paths.get(root.child("log/$type.log").path())
-        val old = Paths.get(root.child("log/old/$type/$date.log").path())
-        var main = root.child("log/$type.log")
-        val folder = root.child("log")
+        if (type != LogType.Report) {
+            val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
+            val new = Paths.get(root.child("log/$type.log").path())
+            val old = Paths.get(root.child("log/old/$type/$date.log").path())
+            var main = root.child("log/$type.log")
+            val folder = root.child("log")
 
-        if (main != null && main.length() > 2048 * 256) {
-            main.writeString("end of file. $date", true)
-            try {
-                if (!root.child("log/old/$type").exists()) {
-                    root.child("log/old/$type").mkdirs()
+            if (main != null && main.length() > 2048 * 256) {
+                main.writeString("end of file. $date", true)
+                try {
+                    if (!root.child("log/old/$type").exists()) {
+                        root.child("log/old/$type").mkdirs()
+                    }
+                    Files.move(new, old, StandardCopyOption.REPLACE_EXISTING)
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
-                Files.move(new, old, StandardCopyOption.REPLACE_EXISTING)
-            } catch (e: IOException) {
-                e.printStackTrace()
+                main = null
             }
-            main = null
+            if (main == null) main = folder.child("$type.log")
+            main!!.writeString("[$time] $text\n", true)
+        } else {
+            val main = root.child("log/report/$time $name.txt")
+            main.writeString(text)
         }
-        if (main == null) main = folder.child("$type.log")
-        main!!.writeString("[${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))}] $text\n", true)
     }
 
     enum class LogType {
-        Log, Warn, Error, Debug, Server, ServerWarn, ServerError, Client, ClientWarn, ClientError, Config, Player, PlayerWarn, PlayerError, Tap, WithDraw, Block, Deposit, Chat, Griefer, Web
+        Player, Tap, WithDraw, Block, Deposit, Chat, Report
     }
 
     class IpAddressMatcher(ipAddress: String) {

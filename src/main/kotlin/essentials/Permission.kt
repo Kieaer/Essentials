@@ -99,6 +99,7 @@ object Permission {
             userPerm.add("tp")
             userPerm.add("url")
             userPerm.add("vote")
+            userPerm.add("report")
 
             user.add("inheritance", "visitor")
             user.add("chatFormat", "%1[orange] > [white]%2")

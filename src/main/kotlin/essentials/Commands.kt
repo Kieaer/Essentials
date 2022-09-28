@@ -77,7 +77,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
-            handler.register("rtv", "<fakeParameter>", "Command remapping. It doesn't actually work.")  { a, p: Playerc -> Client(a, p).rtv() }
+            handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p: Playerc -> Client(a, p).setperm() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p: Playerc -> Client(a, p).spawn() }
@@ -415,9 +415,38 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
-        fun rtv() {
-            player.sendMessage("This server does not use the rtv plugin.")
-            player.sendMessage("If you want, go to the server that uses that plugin.")
+        fun report(){
+            if (!Permission.check(player, "report")) return
+            if (arg.isEmpty()) {
+                player.sendMessage(bundle["command.report.arg.empty"])
+            } else if (arg.size == 1) {
+                player.sendMessage(bundle["command.report.no.reason"])
+            } else if (arg.size > 2) {
+                val target = findPlayers(arg[0])
+                if (target != null) {
+                    val reason = arg[2]
+                    val infos = netServer.admins.findByIP(target.con().address)
+                    // TODO 보고서 번역
+                    val text = """
+                        == ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+                        Target player: ${target.name()}
+                        Reporter: ${player.name()}
+                        Reason: $reason
+                        
+                        == Target player information
+                        Last name: ${infos.lastName}
+                        Names: ${infos.names}
+                        uuid: ${infos.id}
+                        Last IP: ${infos.lastIP}
+                        IP: ${infos.ips}
+                    """.trimIndent()
+                    Event.log(Event.LogType.Report, text, target.plainName())
+                    Log.info(Bundle()["command.report.received", player.plainName(), target.plainName(), reason])
+                    player.sendMessage(bundle["command.report.done", target.plainName()])
+                } else {
+                    player.sendMessage(bundle["player.not.found"])
+                }
+            }
         }
 
         fun maps() {
