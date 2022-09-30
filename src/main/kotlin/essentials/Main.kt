@@ -38,6 +38,10 @@ class Main : Plugin() {
         Event.register()
 
         Core.app.addListener(object : ApplicationListener {
+            override fun update() {
+                Trigger.update()
+            }
+
             override fun dispose() {
                 timer.cancel()
                 database.close()

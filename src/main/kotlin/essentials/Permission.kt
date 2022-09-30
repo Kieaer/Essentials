@@ -78,6 +78,7 @@ object Permission {
             adminPerm.add("tempban")
             adminPerm.add("unmute")
             adminPerm.add("weather")
+            adminPerm.add("freeze")
 
             admin.add("inheritance", "user")
             admin.add("admin", true)

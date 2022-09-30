@@ -58,6 +58,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
             handler.register("effect", "[effect] [x] [y] [rotate] [color]", "effects") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("fillitems", "<team>", "Fill the core with items.") { a, p: Playerc -> Client(a, p).fillitems() }
+            handler.register("freeze", "<player>", "Stop player unit movement") { a, p: Playerc -> Client(a, p).freeze() }
             handler.register("gg", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
             handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
@@ -382,7 +383,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             if (data != null) {
                 data.languageTag = arg[0]
-                Locale(arg[0])
                 player.sendMessage(bundle["command.language.set", Locale(arg[0]).language])
                 player.sendMessage(bundle["command.language.preview", Bundle(Locale(arg[0]).toLanguageTag())])
             }
@@ -967,6 +967,31 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
 
             player.sendMessage(bundle["command.fillitems.core.filled"])
+        }
+
+        fun freeze(){
+            if (!Permission.check(player, "freeze")) return
+            if (arg.isEmpty()){
+                player.sendMessage(bundle["player.not.found"])
+            } else {
+                val target = findPlayers(arg[0])
+                if (target != null) {
+                    val data = findPlayerData(target.uuid())
+                    if (data != null) {
+                        if (data.status.containsKey("freeze")) {
+                            data.status.remove("freeze")
+                            player.sendMessage(bundle["command.freeze.undo", target.plainName()])
+                        } else {
+                            data.status.put("freeze", "${target.x}/${target.y}")
+                            player.sendMessage(bundle["command.freeze.done", target.plainName()])
+                        }
+                    } else {
+                        player.sendMessage(bundle["player.not.registered"])
+                    }
+                } else {
+                    player.sendMessage(bundle["player.not.found"])
+                }
+            }
         }
 
         fun god() {

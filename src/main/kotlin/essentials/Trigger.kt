@@ -11,6 +11,7 @@ import arc.util.Time
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
 import essentials.Event.findPlayerData
+import essentials.Event.findPlayers
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import mindustry.Vars.*
@@ -641,6 +642,18 @@ object Trigger {
                 total += v.value
             }
             return total
+        }
+    }
+
+    fun update() {
+        for (a in database.players) {
+            if (a.status.containsKey("freeze")) {
+                val player = findPlayers(a.uuid)
+                if (player != null) {
+                    val split = a.status.get("freeze").toString().split("/")
+                    player.set(split[0].toFloat(), split[1].toFloat())
+                }
+            }
         }
     }
 
