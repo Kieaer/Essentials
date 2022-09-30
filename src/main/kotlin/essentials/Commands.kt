@@ -234,9 +234,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     for (a in 0 until pos.size) {
                         val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
                         if (target[a] == 1) {
-                            Call.constructFinish(tar, Blocks.copperWall, Nulls.unit, 0.toByte(), Team.sharded, false)
+                            Call.setTile(tar, Blocks.scrapWall, Team.sharded, 0)
                         } else if (tar != null) {
-                            Call.deconstructFinish(tar, Blocks.air, Nulls.unit)
+                            Call.setTile(tar, tar.block(), Team.sharded, 0)
                         }
                     }
                     val left: Int = when (target.size) {
@@ -382,6 +382,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             if (data != null) {
                 data.languageTag = arg[0]
+                Locale(arg[0])
+                player.sendMessage(bundle["command.language.set", Locale(arg[0]).language])
+                player.sendMessage(bundle["command.language.preview", Bundle(Locale(arg[0]).toLanguageTag())])
             }
         }
 
@@ -1057,13 +1060,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     if (parameters.isNotEmpty()) {
                         player.sendMessage(bundle["command.hub.count.parameter"])
                     } else {
-                        PluginData.warpCounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 0))
+                        PluginData.warpCounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 1))
                         player.sendMessage(bundle["command.hub.count", "$x:$y", ip])
                     }
                 }
 
                 "total" -> {
-                    PluginData.warpTotals.add(PluginData.WarpTotal(name, world.tile(x, y).pos(), 0, 0))
+                    PluginData.warpTotals.add(PluginData.WarpTotal(name, world.tile(x, y).pos(), 0, 1))
                     player.sendMessage(bundle["command.hub.total", "$x:$y"])
                 }
 
