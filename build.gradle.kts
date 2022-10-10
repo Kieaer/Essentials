@@ -16,8 +16,8 @@ repositories {
 
 dependencies {
     val exposedVersion = "0.39.2"
-    val mindustryVersion = "v138"
-    val arcVersion = "v138"
+    val mindustryVersion = "v139"
+    val arcVersion = "v139"
 
     compileOnly("com.github.Anuken.Arc:arc-core:$arcVersion")
     compileOnly("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
