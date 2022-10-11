@@ -585,9 +585,20 @@ object Trigger {
                         val value = PluginData.warpTotals[i]
                         if (state.map.name() == value.mapName) {
                             if (value.totalplayers != totalPlayers()) {
-                                for (px in 0..2) {
-                                    for (py in 0..4) {
-                                        Call.deconstructFinish(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, dummy.unit())
+                                when (totalPlayers()) {
+                                    0,1,2,3,4,5,6,7,8,9 -> {
+                                        for (px in 0..2) {
+                                            for (py in 0..4) {
+                                                Call.deconstructFinish(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, dummy.unit())
+                                            }
+                                        }
+                                    }
+                                    else -> {
+                                        for (px in 0..5) {
+                                            for (py in 0..4) {
+                                                Call.deconstructFinish(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, dummy.unit())
+                                            }
+                                        }
                                     }
                                 }
                             }
