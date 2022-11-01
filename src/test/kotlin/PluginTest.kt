@@ -16,6 +16,7 @@ import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.Vars.netServer
 import mindustry.Vars.world
+import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.UnitTypes
 import mindustry.core.*
@@ -134,6 +135,8 @@ class PluginTest {
             path.child("locales").delete()
             path.child("version.properties").delete()
 
+            Core.settings.put("debugMode", true)
+
             main = Main()
             main.init()
             main.registerClientCommands(clientCommand)
@@ -200,6 +203,11 @@ class PluginTest {
     fun randomTile(): Tile {
         val random = Random()
         return world.tile(random.nextInt(100), random.nextInt(100))
+    }
+
+    @Test
+    fun genDocs(){
+        serverCommand.handleMessage("gen")
     }
 
     @Test
@@ -391,5 +399,217 @@ class PluginTest {
     @Test
     fun midiTest2(){
 
+    }
+
+    @Test
+    fun commandTest() {
+        for (a in clientCommand.commandList) {
+            val d = StringBuilder()
+            if (a.params.isNotEmpty()) {
+                for (b in a.params) {
+                    d.append(b.name)
+                }
+                println("${a.text} ${d.toString()}")
+            } else {
+                println(a.text)
+            }
+        }
+
+        for (a in clientCommand.commandList) {
+            if (a.params.isEmpty()) {
+                clientCommand.handleMessage(a.text)
+
+            } else {
+
+            }
+            clientCommand.handleMessage(a.text)
+        }
+    }
+
+    @Test
+    fun client_chars() {
+        clientCommand.handleMessage("/chars abcdefghijklmnopqrstuvwxyz1234567890", player)
+        assert(player.tileOn().block() == Blocks.scrapWall)
+    }
+
+    @Test
+    fun client_color() {
+        clientCommand.handleMessage("/color", player)
+        assert(player.name().contains(Regex("[[^)]*]")))
+    }
+
+    @Test
+    fun client_discord() {
+        clientCommand.handleMessage("/discord", player)
+    }
+
+    @Test
+    fun client_effect() {
+        clientCommand.handleMessage("/effect")
+    }
+
+    @Test
+    fun client_fillitems() {
+        clientCommand.handleMessage("/fillitems")
+    }
+
+    @Test
+    fun client_freeze() {
+        clientCommand.handleMessage("/freeze")
+    }
+
+    @Test
+    fun client_gg() {
+        clientCommand.handleMessage("/gg")
+    }
+
+    @Test
+    fun client_god() {
+        clientCommand.handleMessage("/god")
+    }
+
+    @Test
+    fun client_help() {
+        clientCommand.handleMessage("/help")
+    }
+
+    @Test
+    fun client_hub() {
+        clientCommand.handleMessage("/hub")
+    }
+
+    @Test
+    fun client_info() {
+        clientCommand.handleMessage("/info")
+    }
+
+    @Test
+    fun client_js() {
+        clientCommand.handleMessage("/js")
+    }
+
+    @Test
+    fun client_kickall() {
+        clientCommand.handleMessage("/kickall")
+    }
+
+    @Test
+    fun client_kill() {
+        clientCommand.handleMessage("/kill")
+    }
+
+    @Test
+    fun client_killall() {
+        clientCommand.handleMessage("/killall")
+    }
+
+    @Test
+    fun client_language() {
+        clientCommand.handleMessage("/language")
+    }
+
+    @Test
+    fun client_login() {
+        clientCommand.handleMessage("/login")
+    }
+
+    @Test
+    fun client_maps() {
+        clientCommand.handleMessage("/maps")
+    }
+
+    @Test
+    fun client_me() {
+        clientCommand.handleMessage("/me")
+    }
+
+    @Test
+    fun client_meme() {
+        clientCommand.handleMessage("/meme")
+    }
+
+    @Test
+    fun client_motd() {
+        clientCommand.handleMessage("/motd")
+    }
+
+    @Test
+    fun client_mute() {
+        clientCommand.handleMessage("/mute")
+    }
+
+    @Test
+    fun client_pause() {
+        clientCommand.handleMessage("/pause")
+    }
+
+    @Test
+    fun client_players() {
+        clientCommand.handleMessage("/players")
+    }
+
+    @Test
+    fun client_reg() {
+        clientCommand.handleMessage("/reg")
+    }
+
+    @Test
+    fun client_report() {
+        clientCommand.handleMessage("/report")
+    }
+
+    @Test
+    fun client_search() {
+        clientCommand.handleMessage("/search")
+    }
+
+    @Test
+    fun client_setperm() {
+        clientCommand.handleMessage("/setperm")
+    }
+
+    @Test
+    fun client_spawn() {
+        clientCommand.handleMessage("/spawn")
+    }
+
+    @Test
+    fun client_status() {
+        clientCommand.handleMessage("/status")
+    }
+
+    @Test
+    fun client_team() {
+        clientCommand.handleMessage("/team")
+    }
+
+    @Test
+    fun client_tempban() {
+        clientCommand.handleMessage("/tempban")
+    }
+
+    @Test
+    fun client_time() {
+        clientCommand.handleMessage("/time")
+    }
+
+    @Test
+    fun client_tp() {
+        clientCommand.handleMessage("/tp")
+    }
+
+    @Test
+    fun client_unmute() {
+        clientCommand.handleMessage("/unmute")
+    }
+
+    @Test
+    fun client_url() {
+        clientCommand.handleMessage("/url")
+    }
+
+    @Test
+    fun client_weather() {
+        clientCommand.handleMessage("/weather")
     }
 }

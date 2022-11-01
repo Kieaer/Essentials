@@ -99,7 +99,7 @@ object Config {
 
     fun save() {
         if (!root.exists()) {
-            wizard()
+            if (System.getenv("DEBUG_KEY") == null) wizard()
 
             val plugin = JsonObject()
             plugin.add("update", update, bundle["config.update"])
