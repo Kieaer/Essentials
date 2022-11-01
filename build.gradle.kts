@@ -1,12 +1,9 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.6.10"
-    id("org.sonarqube") version "3.4.0.2513"
-    id("de.undercouch.download") version "4.0.0"
-    jacoco
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_18
+    sourceCompatibility = JavaVersion.VERSION_17
 }
 
 repositories {
@@ -15,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    val exposedVersion = "0.39.2"
+    val exposedVersion = "0.40.1"
     val mindustryVersion = "v139"
     val arcVersion = "v139"
 
@@ -62,20 +59,5 @@ sourceSets{
         resources{
             srcDir("src/main/resources")
         }
-    }
-}
-
-sonarqube {
-    properties {
-        property("sonar.projectKey", "Kieaer_Essentials")
-        property("sonar.organization", "kieaer")
-        property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.sourceEncoding","utf-8")
-    }
-}
-
-tasks.jacocoTestReport {
-    reports {
-        xml.required.set(true)
     }
 }
