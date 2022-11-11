@@ -29,6 +29,7 @@ import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import java.util.regex.Pattern
 import kotlin.experimental.and
 import kotlin.math.abs
@@ -182,7 +183,7 @@ object Event {
                     val name = it.tile.block().name
                     if (!it.breaking) {
                         log(LogType.Block, "${player.name} placed ${it.tile.block().name}")
-                        val exp = PluginData.expData.getInt(name, 0)
+                        val exp = PluginData.expData.getInt(name, 1)
                         target.placecount + 1
                         target.exp = target.exp + exp
 
@@ -191,7 +192,7 @@ object Event {
                         }
                     } else if (it.breaking) {
                         log(LogType.Block, "${player.name} break ${player.unit().buildPlan().block.name}")
-                        val exp = PluginData.expData.getInt(player.unit().buildPlan().block.name, 0)
+                        val exp = PluginData.expData.getInt(player.unit().buildPlan().block.name, 1)
                         target.breakcount + 1
                         target.exp = target.exp + exp
 
@@ -311,7 +312,15 @@ object Event {
         }
 
         Events.on(MenuOptionChooseEvent::class.java) {
-
+            if (it.menuId == 0) {
+                if (it.option == 0) {
+                    val d = findPlayerData(it.player.uuid())
+                    if (d != null) {
+                        d.languageTag = "ko"
+                        it.player.sendMessage(Bundle(d.languageTag)["command.language.preview", Locale(d.languageTag).toLanguageTag()])
+                    }
+                }
+            }
         }
 
         Events.run(EventType.Trigger.impactPower) {

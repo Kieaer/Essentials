@@ -126,6 +126,8 @@ object Trigger {
 
             data.languageTag = locale.toLanguageTag()
         }.start()
+
+        Call.menu(player.con(), 0, "Select your language", "Select plugin language\n플러그인 언어를 선택하세요.", arrayOf(arrayOf("한국어", "English")))
     }
 
     // 1초마다 작동함
