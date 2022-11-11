@@ -165,7 +165,7 @@ object Trigger {
                 p.dead()
             }
             if (map == null) {
-                state.serverPaused = true
+                state.set(GameState.State.paused)
             }
 
             Core.app.post {
@@ -177,7 +177,6 @@ object Trigger {
                     if (map != null) {
                         world.loadMap(map, map.applyRules(mode))
                         state.rules = map.applyRules(mode)
-                        state.serverPaused = false
                         state.set(GameState.State.playing)
                         logic.play()
                     } else {

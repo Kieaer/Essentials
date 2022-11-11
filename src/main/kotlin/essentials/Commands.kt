@@ -20,6 +20,7 @@ import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Fx
 import mindustry.content.Weathers
+import mindustry.core.GameState
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.gen.Unit
@@ -68,7 +69,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("kickall", "All users except yourself and the administrator will be kicked") { a, p: Playerc -> Client(a, p).kickall() }
             handler.register("kill", "[player]", "Kill player.") { a, p: Playerc -> Client(a, p).kill() }
             handler.register("killall", "[team]", "Kill all enemy units") { a, p: Playerc -> Client(a, p).killall() }
-            handler.register("language", "<language_tag>", "Set the language for your account.") { a, p: Playerc -> Client(a, p).language() }
+            handler.register("lang", "<language_tag>", "Set the language for your account.") { a, p: Playerc -> Client(a, p).language() }
             handler.register("login", "<id> <password>", "Access your account") { a, p: Playerc -> Client(a, p).login() }
             handler.register("maps", "[page]", "Show server maps") { a, p: Playerc -> Client(a, p).maps() }
             handler.register("me", "<text...>", "broadcast * message") { a, p: Playerc -> Client(a, p).me() }
@@ -1003,8 +1004,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun pause() {
             if (!Permission.check(player, "pause")) return
-            state.serverPaused = !state.serverPaused
-            player.sendMessage(if (state.serverPaused) bundle["command.pause.paused"] else bundle["command.pause.unpaused"])
+            if (state.isPaused) {
+                state.set(GameState.State.playing)
+                player.sendMessage(bundle["command.pause.unpaused"])
+            } else {
+                state.set(GameState.State.paused)
+                player.sendMessage(bundle["command.pause.paused"])
+            }
         }
 
         fun js() {
