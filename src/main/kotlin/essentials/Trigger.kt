@@ -19,7 +19,6 @@ import mindustry.content.Blocks
 import mindustry.content.Fx
 import mindustry.content.UnitTypes
 import mindustry.content.Weathers
-import mindustry.core.GameState
 import mindustry.entities.Damage
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -31,6 +30,7 @@ import mindustry.maps.Map
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
 import mindustry.net.Packets
+import mindustry.net.WorldReloader
 import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedReader
 import java.io.IOException
@@ -166,39 +166,24 @@ object Trigger {
                 players.add(p)
                 p.dead()
             }
-            if (map == null) {
-                state.set(GameState.State.paused)
-            }
 
             Core.app.post {
-                Call.worldDataBegin()
-                logic.reset()
-                val mode = state.rules.mode()
-
                 try {
+                    val mode = state.rules.mode()
+                    val reloader = WorldReloader()
+
+                    reloader.begin()
+
                     if (map != null) {
                         world.loadMap(map, map.applyRules(mode))
-                        state.rules = map.applyRules(mode)
-                        state.set(GameState.State.playing)
-                        logic.play()
                     } else {
                         SaveIO.load(savePath)
                     }
 
-                    for (p in players) {
-                        if (p.con() == null) continue
-                        p.reset()
-                        if (state.rules.pvp) {
-                            p.team(netServer.assignTeam(p, Seq.SeqIterable(players)))
-                        }
-                        netServer.sendWorldData(p)
-                        val data = findPlayerData(p.uuid())
-                        if (data != null) {
-                            p.sendMessage(Bundle(data.languageTag)["command.vote.back.wait"])
-                        } else {
-                            p.sendMessage(Bundle()["command.vote.back.wait"])
-                        }
-                    }
+                    state.rules = state.map.applyRules(mode)
+
+                    logic.play()
+                    reloader.end()
                 } catch (t: Exception) {
                     t.printStackTrace()
                 }
