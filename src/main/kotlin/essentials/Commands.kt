@@ -49,8 +49,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         if (isClient) {
             handler.removeCommand("help")
             if (Config.vote) {
+                handler.removeCommand("vote")
                 handler.removeCommand("votekick")
-            } else {
                 handler.register("vote", "<kick/map/gg/skip/back/random> [player/amount/world_name] [reason]", "Start voting") { a, p: Playerc -> Client(a, p).vote() }
             }
 
@@ -1413,6 +1413,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         val bundle = Bundle(data.languageTag)
                         it.sendMessage(bundle["command.vote.starter", player.name()])
                         it.sendMessage(bundle.get(message, *parameter))
+                        it.sendMessage(bundle["command.vote.how"])
                     }
                 }
             }
