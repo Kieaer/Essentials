@@ -1444,6 +1444,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     }
 
                     "map" -> {
+                        if (arg.size == 1) {
+                            player.sendMessage(bundle["command.vote.no.map"])
+                            return
+                        }
                         if (arg.size == 2) {
                             player.sendMessage(bundle["command.vote.no.reason"])
                             return
