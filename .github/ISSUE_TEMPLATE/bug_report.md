@@ -9,13 +9,10 @@ assignees: ''
 <!--
 First, make sure your latest essential plugin version.
 If bug is alive, report here.
--->
 
-**How to reproduce**
-Steps to reproduce the behavior:
-1.
-2.
-3.
+You're not need write step by step how to reproduce.
+I will take care of tracking down the cause and solving it.
+-->
 
 **Logs**
 ```
