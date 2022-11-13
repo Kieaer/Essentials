@@ -266,6 +266,13 @@ object Event {
                 database.update(it.player.uuid(), data)
             }
             database.players.remove(data)
+
+            for (a in players) {
+                if (a.values().first() == it.player.name) {
+                    players.remove(a)
+                    break
+                }
+            }
         }
 
         Events.on(PlayerBanEvent::class.java) {
