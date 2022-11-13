@@ -71,6 +71,7 @@ object Trigger {
         player.name(data.name)
         data.lastdate = System.currentTimeMillis()
         data.joincount = data.joincount++
+        data.player = player
 
         val perm = Permission[player]
         if (perm.name.isNotEmpty()) player.name(Permission[player].name)
@@ -140,7 +141,7 @@ object Trigger {
                 val data = findPlayerData(it.uuid())
                 if (data != null) {
                     val bundle = Bundle(data.languageTag)
-                    it.sendMessage(bundle.get(message, *parameter))
+                    Core.app.post { it.sendMessage(bundle.get(message, *parameter)) }
                 }
             }
         }
@@ -449,7 +450,10 @@ object Trigger {
     }
 
     class Minutes : TimerTask() {
-        var count = Config.rollbackTime
+        var rollbackCount = Config.rollbackTime
+        var messageCount = Config.messageTime
+
+        var messageOrder = 0
 
         override fun run() {
             val data = database.getAll()
@@ -462,11 +466,28 @@ object Trigger {
                 }
             }
 
-            if (count == 0) {
+            if (rollbackCount == 0) {
                 SaveIO.save(saveDirectory.child("rollback.msav"))
-                count = Config.rollbackTime
+                rollbackCount = Config.rollbackTime
             } else {
-                count--
+                rollbackCount--
+            }
+
+            if (Config.message) {
+                for (a in database.players) {
+                    val message = if (root.child("messages/${a.languageTag}.txt").exists()) {
+                        root.child("messages/${a.languageTag}.txt").readString()
+                    } else {
+                        val file = root.child("messages/en.txt")
+                        if (file.exists()) file.readString() else ""
+                    }
+                    val count = message.lines()
+                    if ((count.size - 1) < messageOrder) {
+                        messageOrder = 0
+                    }
+                    a.player!!.sendMessage(count[messageOrder])
+                }
+                messageOrder++
             }
         }
     }

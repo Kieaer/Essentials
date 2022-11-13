@@ -127,11 +127,26 @@ class Main : Plugin() {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf(
-                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
+                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]",
+                "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
             )
             for (a in 0 until names.size) {
                 if (!root.child("motd/${names[a]}.txt").exists()) {
                     root.child("motd/${names[a]}.txt").writeString(texts[a])
+                }
+            }
+        }
+
+        if (!root.child("messages").exists()) {
+            root.child("messages").mkdirs()
+            val names = arrayListOf("en", "ko")
+            val texts = arrayListOf(
+                "To edit this message, open [green]config/mods/Essentials/messages[] folder and edit [green]en.txt[]",
+                "이 메세지를 수정할려면 [green]config/mods/Essentials/messages[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
+            )
+            for (a in 0 until names.size) {
+                if (!root.child("messages/${names[a]}.txt").exists()) {
+                    root.child("messages/${names[a]}.txt").writeString(texts[a])
                 }
             }
         }

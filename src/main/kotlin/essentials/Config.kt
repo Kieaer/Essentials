@@ -24,7 +24,9 @@ object Config {
     var antiVPN = false
     var pvpPeace = false
     var pvpPeaceTime = 300
-    var rollbackTime = 1
+    var rollbackTime = 10
+    var message = false
+    var messageTime = 10
     var antiGrief = false
     var countAllServers = false
     var destroyCore = false
@@ -118,6 +120,8 @@ object Config {
             features.add("pvpPeace", pvpPeace, bundle["config.pvp"])
             features.add("pvpPeaceTime", pvpPeaceTime, bundle["config.pvp.time"])
             features.add("rollbackTime", rollbackTime, bundle["config.rollback.time"])
+            features.add("message", message, bundle["config.message"])
+            features.add("messageTime", messageTime, bundle["config.message.time"])
             features.add("antiGrief", antiGrief, bundle["config.antigrief"])
             features.add("countAllServers", countAllServers, bundle["config.countallservers"])
             features.add("destroyCore", destroyCore, bundle["config.destroycore"])
@@ -165,6 +169,8 @@ object Config {
         pvpPeace = features.getBoolean("pvpPeace", pvpPeace)
         pvpPeaceTime = features.getInt("pvpPeaceTime", pvpPeaceTime)
         rollbackTime = features.getInt("rollbackTime", rollbackTime)
+        message = features.getBoolean("message", message)
+        messageTime = features.getInt("messageTime", messageTime)
         antiGrief = features.getBoolean("antiGrief", antiGrief)
         countAllServers = features.getBoolean("countAllServers", countAllServers)
         destroyCore = features.getBoolean("destroyCore", destroyCore)
