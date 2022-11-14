@@ -547,12 +547,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
 
                 type.equals("block", true) -> {
-                    if (content.blocks().find { a -> a.name == name } != null) {
+                    if (content.blocks().find { a -> a.name == name && a.isVisibleOn(state.planet) } != null) {
                         Call.constructFinish(player.tileOn(), content.blocks().find { a -> a.name.equals(name, true) }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
                     } else {
                         val names = StringBuilder()
                         content.blocks().each {
-                            names.append("${it.name}, ")
+                            if (it.isVisibleOn(state.planet)) {
+                                names.append("${it.name}, ")
+                            }
                         }
                         player.sendMessage("${bundle["command.spawn.blocks"]}: ${names.dropLast(2)}")
                     }
