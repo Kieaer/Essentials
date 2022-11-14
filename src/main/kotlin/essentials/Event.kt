@@ -7,6 +7,7 @@ import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import com.cybozu.labs.langdetect.DetectorFactory
+import com.cybozu.labs.langdetect.LangDetectException
 import essentials.Main.Companion.database
 import mindustry.Vars
 import mindustry.Vars.state
@@ -67,9 +68,13 @@ object Event {
                             val d = DetectorFactory.create()
                             val languages = Config.chatlanguage.split(",")
                             d.append(it.message)
-                            if (!languages.contains(d.detect())) {
-                                it.player.sendMessage(Bundle(data.languageTag)["chat.language.not.allow"])
-                                return@on
+                            try {
+                                if (!languages.contains(d.detect())) {
+                                    it.player.sendMessage(Bundle(data.languageTag)["chat.language.not.allow"])
+                                    return@on
+                                }
+                            } catch (_: LangDetectException) {
+
                             }
                         }
 
