@@ -20,6 +20,7 @@ object Config {
     var report = true
     var spawnLimit = 3000
     var vote = true
+    var votekick = false
     var fixedName = true
     var antiVPN = false
     var pvpPeace = false
@@ -122,7 +123,6 @@ object Config {
             features.add("rollbackTime", rollbackTime, bundle["config.rollback.time"])
             features.add("message", message, bundle["config.message"])
             features.add("messageTime", messageTime, bundle["config.message.time"])
-            features.add("antiGrief", antiGrief, bundle["config.antigrief"])
             features.add("countAllServers", countAllServers, bundle["config.countallservers"])
             features.add("destroyCore", destroyCore, bundle["config.destroycore"])
 
@@ -130,6 +130,10 @@ object Config {
             ban.add("shareBanList", shareBanList, bundle["config.share.list"])
             ban.add("shareBanListType", shareBanListType.toString(), bundle["config.share.list.type"])
             ban.add("shareBanListServer", shareBanListServer, bundle["config.share.server"])
+
+            val security = JsonObject()
+            security.add("votekick", votekick, bundle["config.votekick"])
+            security.add("antiGrief", antiGrief, bundle["config.antigrief"])
 
             val discord = JsonObject()
             discord.add("botToken", botToken, bundle["config.discord.token"])
@@ -140,6 +144,7 @@ object Config {
             obj.add("features", features)
             obj.add("discord", discord)
             obj.add("ban", ban)
+            obj.add("security", security)
             obj.add("database", "jdbc:sqlite:file:./config/mods/Essentials/database")
 
             root.writeString(obj.toString(Stringify.HJSON_COMMENTS))
@@ -153,6 +158,7 @@ object Config {
         val plugin = config.get("plugin").asObject()
         val features = config.get("features").asObject()
         val discord = config.get("discord").asObject()
+        val security = config.get("security").asObject()
 
         update = plugin.getBoolean("update", update)
         report = plugin.getBoolean("report", report)
@@ -171,9 +177,11 @@ object Config {
         rollbackTime = features.getInt("rollbackTime", rollbackTime)
         message = features.getBoolean("message", message)
         messageTime = features.getInt("messageTime", messageTime)
-        antiGrief = features.getBoolean("antiGrief", antiGrief)
         countAllServers = features.getBoolean("countAllServers", countAllServers)
         destroyCore = features.getBoolean("destroyCore", destroyCore)
+
+        votekick = security.getBoolean("votekick", votekick)
+        antiGrief = security.getBoolean("antiGrief", antiGrief)
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)

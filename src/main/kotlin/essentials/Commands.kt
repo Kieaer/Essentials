@@ -50,7 +50,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.removeCommand("help")
             if (Config.vote) {
                 handler.removeCommand("vote")
-                handler.removeCommand("votekick")
+                if (!Config.votekick) {
+                    handler.removeCommand("votekick")
+                    handler.register("votekick", "<name...>", "Start kick voting") { a, p: Playerc -> Client(a, p).votekick() }
+                }
                 handler.register("vote", "<kick/map/gg/skip/back/random> [player/amount/world_name] [reason]", "Start voting") { a, p: Playerc -> Client(a, p).vote() }
             }
 
@@ -518,6 +521,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val parameter = if (arg.size == 3) arg[2].toIntOrNull() else 1
 
             // todo 유닛이 8마리까지 밖에 스폰이 안됨
+            // todo 세르플로/에르키아 별로 유닛 분리
             when {
                 type.equals("unit", true) -> {
                     val unit = content.units().find { unitType: UnitType -> unitType.name == name }
@@ -1424,8 +1428,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             if (!Trigger.voting) {
                 when (arg[0]) {
+                    // vote kick <player name> <reason>
                     "kick" -> {
-                        if (arg.size == 2) {
+                        if (arg.size != 3) {
                             player.sendMessage(bundle["command.vote.no.reason"])
                             return
                         }
@@ -1443,6 +1448,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                     }
 
+                    // vote map <map name> <reason>
                     "map" -> {
                         if (arg.size == 1) {
                             player.sendMessage(bundle["command.vote.no.map"])
@@ -1472,6 +1478,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                     }
 
+                    // vote gg
                     "gg" -> {
                         Trigger.voteType = "gg"
                         Trigger.voteStarter = player
@@ -1479,6 +1486,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         sendStart("command.vote.gg.start")
                     }
 
+                    // vote skip <count>
                     "skip" -> {
                         if (arg[1].toIntOrNull() != null) {
                             Trigger.voteType = "skip"
@@ -1491,6 +1499,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                     }
 
+                    // vote back <reason>
                     "back" -> {
                         if (!saveDirectory.child("rollback.msav").exists()) {
                             player.sendMessage("command.vote.back.no.file")
@@ -1507,6 +1516,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         sendStart("command.vote.back.start", arg[1])
                     }
 
+                    // vote random
                     "random" -> {
                         Trigger.voteType = "random"
                         Trigger.voteStarter = player
@@ -1519,6 +1529,17 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     }
                 }
             }
+        }
+
+        fun votekick() {
+            val found = if (arg[0].length > 1 && arg[0].startsWith("#") && Strings.canParseInt(arg[0].substring(1))) {
+                val id = Strings.parseInt(arg.get(0).substring(1))
+                Groups.player.find { p -> p.id() == id }
+            } else {
+                Groups.player.find { p -> p.name.equals(arg[0], true) }
+            }
+
+            Call.sendChatMessage("/vote kick ${found.name} None")
         }
     }
 

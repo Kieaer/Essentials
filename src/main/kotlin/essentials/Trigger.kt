@@ -160,15 +160,9 @@ object Trigger {
         }
 
         fun back(map: Map?) {
-            val savePath: Fi = saveDirectory.child("rollback.msav")
-
-            val players = Seq<Player>()
-            for (p in Groups.player) {
-                players.add(p)
-                p.dead()
-            }
-
             Core.app.post {
+                val savePath: Fi = saveDirectory.child("rollback.msav")
+
                 try {
                     val mode = state.rules.mode()
                     val reloader = WorldReloader()
@@ -673,6 +667,8 @@ object Trigger {
                 }
             }
         }
+
+        // TODO 유저들 마우스 위치 추적 기능
     }
 
     class Server {
