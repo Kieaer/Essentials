@@ -3,7 +3,7 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_16
 }
 
 repositories {
@@ -13,8 +13,8 @@ repositories {
 
 dependencies {
     val exposedVersion = "0.40.1"
-    val mindustryVersion = "v140.3"
-    val arcVersion = "v140.3"
+    val mindustryVersion = "v140.4"
+    val arcVersion = "v140.4"
 
     compileOnly("com.github.Anuken.Arc:arc-core:$arcVersion")
     compileOnly("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
