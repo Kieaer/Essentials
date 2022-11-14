@@ -91,6 +91,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p: Playerc -> Client(a, p).tempban() }
             handler.register("time", "Show server time") { a, p: Playerc -> Client(a, p).time() }
             handler.register("tp", "<player>", "Teleport to other players") { a, p: Playerc -> Client(a, p).tp() }
+            handler.register("track", "Displays the mouse positions of players.") { a, p: Playerc -> Client(a, p).track() }
             handler.register("unmute", "<player>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
             handler.register("url", "<command>", "Opens a URL contained in a specific command.") { a, p: Playerc -> Client(a, p).url() }
             handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Adds a weather effect to the map.") { a, p: Playerc -> Client(a, p).weather() }
@@ -1294,6 +1295,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage(bundle["player.not.found"])
             } else {
                 Call.setPosition(player.con(), other.x, other.y)
+            }
+        }
+
+        fun track() {
+            if (!Permission.check(player, "tp")) return
+            if (data != null) {
+                if (data.status.containsKey("tracking")) {
+                    data.status.remove("tracking")
+                    player.sendMessage(bundle["command.track.toggle.disabled"])
+                } else {
+                    data.status.put("tracking", "enabled")
+                    player.sendMessage(bundle["command.track.toggle"])
+                }
             }
         }
 

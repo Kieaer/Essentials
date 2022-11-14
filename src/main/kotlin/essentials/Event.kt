@@ -55,7 +55,6 @@ object Event {
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
-            // TODO 특정 언어 외에 다른 언어 나오면 경고 문구 기능
             if (!it.message.startsWith("/")) {
                 if (findPlayerData(it.player.uuid()) != null) {
                     log(LogType.Chat, "${it.player.name}: ${it.message}")

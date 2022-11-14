@@ -102,6 +102,7 @@ object Permission {
             userPerm.add("vote")
             userPerm.add("report")
             userPerm.add("lang")
+            userPerm.add("track")
 
             user.add("inheritance", "visitor")
             user.add("chatFormat", "%1[orange] > [white]%2")

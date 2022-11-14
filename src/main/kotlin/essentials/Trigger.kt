@@ -668,7 +668,13 @@ object Trigger {
             }
         }
 
-        // TODO 유저들 마우스 위치 추적 기능
+        for (a in database.players) {
+            if (a.status.containsKey("tracking")) {
+                for (b in Groups.player) {
+                    Call.label(a.player!!.con(), b.name, 0.32f, b.mouseX, b.mouseY)
+                }
+            }
+        }
     }
 
     class Server {
