@@ -6,6 +6,7 @@ import arc.files.Fi
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
+import com.cybozu.labs.langdetect.DetectorFactory
 import essentials.Main.Companion.database
 import mindustry.Vars
 import mindustry.Vars.state
@@ -24,6 +25,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.net.InetAddress
 import java.net.UnknownHostException
+import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -34,12 +36,22 @@ import java.util.regex.Pattern
 import kotlin.experimental.and
 import kotlin.math.abs
 
+
 object Event {
-    val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson").reader()).asObject()
+    val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson")!!.reader()).asObject()
     var order = 0
     val players = Seq<ObjectMap<Int, String>>()
     var orignalBlockMultiplier = 1f
     var orignalUnitMultiplier = 1f
+
+    init {
+        val aa = arrayOf("af","ar","bg","bn","cs","da","de","el","en","es","et","fa","fi","fr","gu","he","hi","hr","hu","id","it","ja","kn","ko","lt","lv","mk","ml","mr","ne","nl","no","pa","pl","pt","ro","ru","sk","sl","so","sq","sv","sw","ta","te","th","tl","tr","uk","ur","vi","zh-cn","zh-tw")
+        val bb = arrayListOf<String>()
+        for (a in aa){
+            bb.add(Main::class.java.classLoader.getResource("profiles/$a")!!.readText(Charset.forName("UTF-8")))
+        }
+        DetectorFactory.loadProfile(bb)
+    }
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
@@ -49,10 +61,19 @@ object Event {
                     log(LogType.Chat, "${it.player.name}: ${it.message}")
                     Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
 
-                    // todo 채팅 포맷 변경
                     val data = database.players.find { e -> e.uuid == it.player.uuid() }
 
                     if (data != null && !data.mute) {
+                        if (Config.chatlimit) {
+                            val d = DetectorFactory.create()
+                            val languages = Config.chatlanguage.split(",")
+                            d.append(it.message)
+                            if (!languages.contains(d.detect())) {
+                                it.player.sendMessage(Bundle(data.languageTag)["chat.language.not.allow"])
+                                return@on
+                            }
+                        }
+
                         if (Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())) {
                             Trigger.voted.add(it.player.uuid())
                             it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])

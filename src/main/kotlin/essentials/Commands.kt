@@ -521,7 +521,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val parameter = if (arg.size == 3) arg[2].toIntOrNull() else 1
 
             // todo 유닛이 8마리까지 밖에 스폰이 안됨
-            // todo 세르플로/에르키아 별로 유닛 분리
             when {
                 type.equals("unit", true) -> {
                     val unit = content.units().find { unitType: UnitType -> unitType.name == name }

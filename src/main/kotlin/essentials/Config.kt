@@ -31,6 +31,8 @@ object Config {
     var antiGrief = false
     var countAllServers = false
     var destroyCore = false
+    var chatlimit = false
+    var chatlanguage = "ko,en"
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -125,6 +127,8 @@ object Config {
             features.add("messageTime", messageTime, bundle["config.message.time"])
             features.add("countAllServers", countAllServers, bundle["config.countallservers"])
             features.add("destroyCore", destroyCore, bundle["config.destroycore"])
+            features.add("chatlimit", chatlimit, bundle["config.chatlimit"])
+            features.add("chatlanguage", chatlanguage, bundle["config.chatlanguage"])
 
             val ban = JsonObject()
             ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -179,6 +183,8 @@ object Config {
         messageTime = features.getInt("messageTime", messageTime)
         countAllServers = features.getBoolean("countAllServers", countAllServers)
         destroyCore = features.getBoolean("destroyCore", destroyCore)
+        chatlimit = features.getBoolean("chatlimit", chatlimit)
+        chatlanguage = features.getString("chatlanguage", chatlanguage)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)

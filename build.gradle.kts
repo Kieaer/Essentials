@@ -31,6 +31,9 @@ dependencies {
 
     implementation("com.neovisionaries:nv-i18n:1.29")
     implementation(files("libs/ip2location.jar"))
+    implementation(files("libs/langdetect.jar"))
+    implementation(files("libs/jsonic-1.2.0.jar"))
+
 
     testImplementation("com.github.Anuken.arc:arc-core:$arcVersion")
     testImplementation("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
