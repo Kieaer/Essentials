@@ -468,20 +468,25 @@ object Trigger {
             }
 
             if (Config.message) {
-                for (a in database.players) {
-                    val message = if (root.child("messages/${a.languageTag}.txt").exists()) {
-                        root.child("messages/${a.languageTag}.txt").readString()
-                    } else {
-                        val file = root.child("messages/en.txt")
-                        if (file.exists()) file.readString() else ""
+                if (messageCount == Config.messageTime) {
+                    for (a in database.players) {
+                        val message = if (root.child("messages/${a.languageTag}.txt").exists()) {
+                            root.child("messages/${a.languageTag}.txt").readString()
+                        } else {
+                            val file = root.child("messages/en.txt")
+                            if (file.exists()) file.readString() else ""
+                        }
+                        val count = message.lines()
+                        if ((count.size - 1) < messageOrder) {
+                            messageOrder = 0
+                        }
+                        a.player!!.sendMessage(count[messageOrder])
                     }
-                    val count = message.lines()
-                    if ((count.size - 1) < messageOrder) {
-                        messageOrder = 0
-                    }
-                    a.player!!.sendMessage(count[messageOrder])
+                    messageOrder++
+                    messageCount = 0
+                } else {
+                    messageCount++
                 }
-                messageOrder++
             }
         }
     }
