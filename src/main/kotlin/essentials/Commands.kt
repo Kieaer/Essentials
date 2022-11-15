@@ -504,15 +504,17 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val message = StringBuilder()
             val page = if (arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0
 
-            val buffer = Mathf.ceil(Event.players.size.toFloat() / 6)
+            val buffer = Mathf.ceil(Event.players.size().toFloat() / 6)
             val pages = if (buffer > 1.0) buffer - 1 else 0
 
             if (pages < page) {
                 player.sendMessage(bundle["command.page.range", pages])
             } else {
                 message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
-                for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Event.players.size)) {
-                    message.append("[gray]${Event.players.get(a).keys().first()} [white]${Event.players.get(a).values().first()}\n")
+                for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Event.players.size())) {
+                    val name = Event.players.get(a).asObject().get("name").asString()
+                    val id = Event.players.get(a).asObject().get("id").asInt()
+                    message.append("[gray]$id [white]$name\n")
                 }
                 player.sendMessage(message.toString().dropLast(1))
             }

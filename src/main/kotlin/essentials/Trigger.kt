@@ -18,6 +18,7 @@ import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
+import org.hjson.JsonObject
 import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedReader
 import java.io.IOException
@@ -54,6 +55,15 @@ object Trigger {
         player.sendMessage(Bundle(data.languageTag)["event.player.loaded"])
 
         database.players.add(data)
+
+        val ee = JsonObject()
+        ee.add("id", Event.order)
+        ee.add("name", data.name)
+        ee.add("uuid", player.uuid())
+
+        Event.players.add(ee)
+        Event.order++
+
     }
 
     fun createPlayer(player: Playerc, id: String?, password: String?) {

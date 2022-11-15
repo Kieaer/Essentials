@@ -4,7 +4,6 @@ import arc.Core
 import arc.Events
 import arc.files.Fi
 import arc.graphics.Color
-import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
@@ -28,6 +27,7 @@ import mindustry.io.SaveIO
 import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
+import org.hjson.JsonArray
 import org.hjson.JsonObject
 import java.io.BufferedReader
 import java.io.IOException
@@ -50,7 +50,7 @@ import kotlin.math.abs
 object Event {
     val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson")!!.reader()).asObject()
     var order = 0
-    val players = Seq<ObjectMap<Int, String>>()
+    val players = JsonArray()
     var orignalBlockMultiplier = 1f
     var orignalUnitMultiplier = 1f
 
@@ -285,11 +285,6 @@ object Event {
         }
 
         Events.on(PlayerJoin::class.java) {
-            val ee = ObjectMap<Int, String>()
-            ee.put(order, it.player.plainName())
-            players.add(ee)
-            order++
-
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
             it.player.admin(false)
 
@@ -306,20 +301,18 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
-            players.remove { a -> a.containsValue(it.player.name, false) }
+            for (a in 0..players.size()) {
+                if (players.get(a).asObject().get("uuid").asString().equals(it.player.uuid())) {
+                    players.remove(a)
+                    break
+                }
+            }
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) disconnected.")
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
                 database.update(it.player.uuid(), data)
             }
             database.players.remove(data)
-
-            for (a in players) {
-                if (a.values().first() == it.player.name) {
-                    players.remove(a)
-                    break
-                }
-            }
         }
 
         Events.on(PlayerBanEvent::class.java) {
@@ -863,15 +856,10 @@ object Event {
 
     fun findPlayers(any: Any): Playerc? {
         return if (any.toString().toIntOrNull() == null) {
-            Groups.player.find { e -> e.name.contains(any.toString(), true) }
+            Groups.player.find { p -> p.name.contains(any.toString(), true) }
         } else {
-            for (a in players) {
-                val d = Groups.player.find { e -> e.name.equals(a.get(any.toString().toInt())) }
-                if (d != null) {
-                    return d
-                }
-            }
-            null
+            val d = players.find { it.asObject().get("id").asInt() == any.toString().toInt() }
+            if (d != null) Groups.player.find { p -> p.uuid() == d.asObject().get("uuid").asString() } else null
         }
     }
 }
