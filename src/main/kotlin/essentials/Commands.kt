@@ -309,7 +309,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             for (a in 0 until netServer.clientCommands.commandList.size) {
                 val command = netServer.clientCommands.commandList[a]
                 if (Permission.check(player, command.text)) {
-                    temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${command.description}\n")
+                    temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- ${bundle["command.description." + command.text]}\n")
                 }
             }
             val result = StringBuilder()

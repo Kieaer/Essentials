@@ -750,7 +750,6 @@ object Event {
                             if (c.size <= messageOrder) {
                                 messageOrder = 0
                             }
-                            println(messageOrder)
                             a.player.sendMessage(c[messageOrder])
 
                         }
