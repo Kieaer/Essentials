@@ -9,11 +9,11 @@ import org.hjson.*
 import java.util.*
 
 object Permission {
-    var perm = JsonObject()
-    var data = JsonArray()
-    var default = if (Config.authType == Config.AuthType.None) "user" else "visitor"
-    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
-    private val user: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
+    private var main = JsonObject()
+    private var user = JsonArray()
+    private var default = if (Config.authType == Config.AuthType.None) "user" else "visitor"
+    private val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
+    private val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
 
     val bundle = Bundle(Locale(System.getProperty("user.language"), System.getProperty("user.country")).toLanguageTag())
 
@@ -49,7 +49,7 @@ object Permission {
         ]""".trimIndent()
 
     init {
-        if (!root.exists()) {
+        if (!mainFile.exists()) {
             val json = JsonObject()
 
             val owner = JsonObject()
@@ -124,44 +124,41 @@ object Permission {
             json.add("user", user)
             json.add("visitor", visitor)
 
-            root.writeString(json.toString(Stringify.HJSON))
+            mainFile.writeString(json.toString(Stringify.HJSON))
         }
 
-        if (!user.exists()) {
+        if (!userFile.exists()) {
             val obj = JsonArray()
             obj.setComment(comment)
-            Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt").writeString(obj.toString(Stringify.HJSON_COMMENTS))
+            userFile.writeString(obj.toString(Stringify.HJSON_COMMENTS))
         }
-    }
-
-    fun save() {
-        root.writeString(perm.toString(Stringify.HJSON))
     }
 
     fun sort() {
-        user.writeString(data.setComment(comment).toString(Stringify.HJSON_COMMENTS))
+        userFile.writeString(user.setComment(comment).toString(Stringify.HJSON_COMMENTS))
+        mainFile.writeString(JsonValue.readHjson(mainFile.reader()).toString(Stringify.HJSON))
     }
 
     @Throws(ParseException::class)
     fun load() {
-        perm = JsonValue.readHjson(root.reader()).asObject()
-        data = JsonValue.readHjson(user.reader()).asArray()
+        main = JsonValue.readHjson(mainFile.reader()).asObject()
+        user = JsonValue.readHjson(userFile.reader()).asArray()
 
-        for (data in perm) {
+        for (data in main) {
             val name = data.name
-            if (Config.authType == Config.AuthType.None && perm.get(name).asObject().has("default")) {
+            if (Config.authType == Config.AuthType.None && main.get(name).asObject().has("default")) {
                 default = name
             }
 
-            if (perm.get(name).asObject().has("inheritance")) {
-                var inheritance = perm.get(name).asObject().getString("inheritance", null)
+            if (main.get(name).asObject().has("inheritance")) {
+                var inheritance = main.get(name).asObject().getString("inheritance", null)
                 while (inheritance != null) {
-                    for (a in 0 until perm.get(inheritance).asObject()["permission"].asArray().size()) {
-                        if (!perm.get(inheritance).asObject()["permission"].asArray()[a].asString().contains("*")) {
-                            perm.get(name).asObject().get("permission").asArray().add(perm.get(inheritance).asObject()["permission"].asArray()[a].asString())
+                    for (a in 0 until main.get(inheritance).asObject()["permission"].asArray().size()) {
+                        if (!main.get(inheritance).asObject()["permission"].asArray()[a].asString().contains("*")) {
+                            main.get(name).asObject().get("permission").asArray().add(main.get(inheritance).asObject()["permission"].asArray()[a].asString())
                         }
                     }
-                    inheritance = perm.get(inheritance).asObject().getString("inheritance", null)
+                    inheritance = main.get(inheritance).asObject().getString("inheritance", null)
                 }
             }
         }
@@ -170,17 +167,22 @@ object Permission {
     }
 
     fun apply() {
-        for (a in JsonValue.readHjson(user.reader()).asArray()) {
+        for (a in JsonValue.readHjson(userFile.reader()).asArray()) {
             val b = a.asObject()
             val c = database.players.find { e -> e.uuid == b.get("uuid").asString() }
             if (c == null) {
                 val data = database[b.get("uuid").asString()]
                 if (data != null && b.has("group")) {
                     data.permission = b.get("group").asString()
+                    data.name = b.getString("name", data.name)
                     database.update(b.get("uuid").asString(), data)
                 }
             } else {
                 c.permission = b.get("group").asString()
+                c.name = b.getString("name", netServer.admins.findByIP(c.player.ip()).lastName)
+                c.player.admin(b.getBoolean("admin", false))
+                c.player.name(b.getString("name", netServer.admins.findByIP(c.player.ip()).lastName))
+                database.update(b.get("uuid").asString(), c)
             }
         }
     }
@@ -189,32 +191,28 @@ object Permission {
         val result = PermissionData()
         val p = database.players.find { e -> e.uuid == player.uuid() }
 
-        result.uuid = player.uuid()
-        result.name = netServer.admins.findByIP(player.ip()).lastName
-        result.group = p?.permission ?: default
-        result.admin = false
-
-        data.forEach {
-            val data = it.asObject()
-
-            if (data.has("uuid") && data.get("uuid").asString().equals(player.uuid())) {
-                result.uuid = data.getString("uuid", player.uuid())
-                result.name = data.getString("name", netServer.admins.findByIP(player.ip()).lastName)
-                result.group = data.getString("group", default)
-                result.chatFormat = data.getString("chatFormat", Config.chatFormat)
-                result.admin = data.getBoolean("admin", false)
-            }
-
-            return result
+        val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString().equals(player.uuid()) }
+        if (u != null) {
+            result.uuid = u.asObject().getString("uuid", player.uuid())
+            result.name = u.asObject().getString("name", netServer.admins.findByIP(player.ip()).lastName)
+            result.group = u.asObject().getString("group", default)
+            result.chatFormat = u.asObject().getString("chatFormat", Config.chatFormat)
+            result.admin = u.asObject().getBoolean("admin", false)
+        } else {
+            result.uuid = player.uuid()
+            result.name = netServer.admins.findByIP(player.ip()).lastName
+            result.group = p?.permission ?: default
+            result.admin = false
         }
+
         return result
     }
 
     fun check(player: Playerc, command: String): Boolean {
         val data = get(player).group
-        val size = perm[data].asObject()["permission"].asArray().size()
+        val size = main[data].asObject()["permission"].asArray().size()
         for (a in 0 until size) {
-            val node = perm[data].asObject()["permission"].asArray()[a].asString()
+            val node = main[data].asObject()["permission"].asArray()[a].asString()
             if (node == command || node.equals("all", true)) {
                 return true
             }

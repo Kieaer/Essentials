@@ -39,7 +39,6 @@ class Main : Plugin() {
                 database.close()
                 daemon.shutdownNow()
                 Commands.Discord.shutdownNow()
-                Permission.save()
                 Permission.sort()
                 Config.save()
             }

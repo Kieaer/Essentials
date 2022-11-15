@@ -3,7 +3,6 @@ package essentials
 import arc.Core
 import arc.files.Fi
 import arc.util.Log
-import mindustry.gen.Groups
 import org.hjson.ParseException
 import java.io.IOException
 import java.nio.file.*
@@ -16,7 +15,7 @@ object FileWatchService : Runnable {
         var watchKey: WatchKey
         val path = Paths.get(root.absolutePath())
         path.register(
-            watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.OVERFLOW
+            watchService, StandardWatchEventKinds.ENTRY_MODIFY
         )
 
         while (!Thread.currentThread().isInterrupted) {
@@ -30,11 +29,6 @@ object FileWatchService : Runnable {
                         if (paths == "permission_user.txt" || paths == "permission.txt") {
                             try {
                                 Permission.load()
-
-                                for (c in Groups.player) {
-                                    c.name = Permission[c].name
-                                    c.admin = Permission[c].admin
-                                }
                                 Log.info(Bundle()["config.permission.updated"])
                             } catch (e: ParseException) {
                                 Log.err(e)
