@@ -65,6 +65,8 @@ object Event {
     val voted = Seq<String>()
     var lastVoted = LocalTime.now()
 
+    var destroyAll = false
+
     init {
         val aa = arrayOf("af","ar","bg","bn","cs","da","de","el","en","es","et","fa","fi","fr","gu","he","hi","hr","hu","id","it","ja","kn","ko","lt","lv","mk","ml","mr","ne","nl","no","pa","pl","pt","ro","ru","sk","sl","so","sq","sv","sw","ta","te","th","tl","tr","uk","ur","vi","zh-cn","zh-tw")
         val bb = arrayListOf<String>()
@@ -486,6 +488,29 @@ object Event {
                 }
             }
 
+            if (destroyAll) {
+                Call.gameOver(Team.derelict)
+
+                for (a in 0..Vars.world.tiles.height) {
+                    for (b in 0..Vars.world.tiles.width) {
+                        Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
+                        if (Vars.world.tile(a, b) != null) {
+                            try {
+                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                            } catch (e: Exception) {
+                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                            }
+                            try {
+                                Call.removeTile(Vars.world.tile(a, b))
+                            } catch (e: Exception) {
+                                Call.removeTile(Vars.world.tile(a, b))
+                            }
+                        }
+                    }
+                }
+                destroyAll = false
+            }
+
             if (secondCount == 60) {
                 PluginData.uptime++
                 PluginData.playtime++
@@ -540,23 +565,7 @@ object Event {
                             }
 
                             "gg" -> {
-                                for (a in 0..Vars.world.tiles.height) {
-                                    for (b in 0..Vars.world.tiles.width) {
-                                        Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
-                                        if (Vars.world.tile(a, b) != null) {
-                                            try {
-                                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
-                                            } catch (e: Exception) {
-                                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
-                                            }
-                                            try {
-                                                Call.removeTile(Vars.world.tile(a, b))
-                                            } catch (e: Exception) {
-                                                Call.removeTile(Vars.world.tile(a, b))
-                                            }
-                                        }
-                                    }
-                                }
+                                destroyAll = true
                             }
 
                             "skip" -> {

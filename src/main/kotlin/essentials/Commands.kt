@@ -1115,23 +1115,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun gg() {
             if (!Permission.check(player, "gg")) return
-            for (a in 0..world.tiles.height) {
-                for (b in 0..world.tiles.width) {
-                    Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
-                    if (world.tile(a, b) != null) {
-                        try {
-                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                        } catch (e: Exception) {
-                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                        }
-                        try {
-                            Call.removeTile(world.tile(a, b))
-                        } catch (e: Exception) {
-                            Call.removeTile(world.tile(a, b))
-                        }
-                    }
-                }
-            }
+            Event.destroyAll = true
         }
 
         fun kill() {
