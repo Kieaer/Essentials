@@ -499,6 +499,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun players() {
+            // todo 중복 버그
             if (!Permission.check(player, "players")) return
             val message = StringBuilder()
             val page = if (arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0

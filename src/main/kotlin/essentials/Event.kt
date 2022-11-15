@@ -62,7 +62,7 @@ object Event {
     var voteMap: Map? = null
     var voteWave: Int? = null
     var voteStarter: Playerc? = null
-    val voted = Seq<String>()
+    var voted = Seq<String>()
     var lastVoted = LocalTime.now()
 
     var destroyAll = false
@@ -490,7 +490,6 @@ object Event {
 
             if (destroyAll) {
                 Call.gameOver(Team.derelict)
-
                 for (a in 0..Vars.world.tiles.height) {
                     for (b in 0..Vars.world.tiles.width) {
                         Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
@@ -537,9 +536,8 @@ object Event {
                 }
 
                 if (voting) {
-
                     if (count % 10 == 0) {
-                        send("command.vote.count", count.toString(), check().toString())
+                        send("command.vote.count", count.toString(), check() - voted.size)
                         if (voteType == "kick" && voteTarget == null) {
                             send("command.vote.kick.target.leave")
                         }
@@ -694,7 +692,7 @@ object Event {
                         voteMap = null
                         voteWave = null
                         voteStarter = null
-                        voted.clear()
+                        voted = Seq<String>()
                         count = 60
                     } else if (count == 0 && check() > voted.size) {
                         send("command.vote.failed")
@@ -707,7 +705,7 @@ object Event {
                         voteMap = null
                         voteWave = null
                         voteStarter = null
-                        voted.clear()
+                        voted = Seq<String>()
                         count = 60
                     }
                 }
