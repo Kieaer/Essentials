@@ -536,7 +536,7 @@ object Event {
                         }
                     }
                     count--
-                    if (count == 0 || check() <= voted.size) {
+                    if ((count == 0 && check() <= voted.size) || check() <= voted.size) {
                         send("command.vote.success")
 
                         when (voteType) {
