@@ -257,8 +257,8 @@ object Event {
 
         Events.on(BlockDestroyEvent::class.java) {
             if (Config.destroyCore && state.rules.coreCapture) {
-                Fx.spawnShockwave.at(it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius);
-                Damage.damage(Vars.world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true);
+                Fx.spawnShockwave.at(it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius)
+                Damage.damage(Vars.world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true)
             }
         }
 
@@ -603,10 +603,10 @@ object Event {
                                                 Groups.build.each {
                                                     if (voteStarter != null) {
                                                         if (it.team == voteStarter!!.team()) {
-                                                            Damage.tileDamage(voteStarter!!.team(), it.tileX(), it.tileY(), 1f, 50f)
+                                                            it.block.health = it.block.health / 2
                                                         }
                                                     } else {
-                                                        Damage.tileDamage(it.team(), it.tileX(), it.tileY(), 1f, 50f)
+                                                        it.block.health = it.block.health / 2
                                                     }
                                                 }
                                                 for (a in Groups.player) {
@@ -652,7 +652,7 @@ object Event {
                                                             it.health(it.health() - 10f)
                                                         }
                                                         Groups.build.each {
-                                                            Damage.tileDamage(it.team(), it.tileX(), it.tileY(), 1f, 2f)
+                                                            it.block.health = it.block.health / 30
                                                         }
                                                     }
                                                     if (tick == 300) {
@@ -745,12 +745,14 @@ object Event {
                                 val file = Main.root.child("messages/en.txt")
                                 if (file.exists()) file.readString() else ""
                             }
-                            val c = message.split(Regex("\n"))
+                            val c = message.split(Regex("\r\n"))
 
-                            a.player.sendMessage(c[messageOrder])
-                            if (c.size < messageOrder) {
+                            if (c.size <= messageOrder) {
                                 messageOrder = 0
                             }
+                            println(messageOrder)
+                            a.player.sendMessage(c[messageOrder])
+
                         }
                         messageOrder++
                         messageCount = 0

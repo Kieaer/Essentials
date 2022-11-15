@@ -389,8 +389,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             if (data != null) {
                 data.languageTag = arg[0]
+                database.update(player.uuid(), data)
                 player.sendMessage(bundle["command.language.set", Locale(arg[0]).language])
-                player.sendMessage(bundle["command.language.preview", Bundle(Locale(arg[0]).toLanguageTag())])
+                player.sendMessage(Bundle(arg[0])["command.language.preview", Locale(arg[0]).toLanguageTag()])
             }
         }
 
