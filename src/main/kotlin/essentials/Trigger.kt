@@ -1,46 +1,31 @@
 package essentials
 
 import arc.Core
-import arc.files.Fi
 import arc.func.Prov
-import arc.graphics.Color
 import arc.struct.ArrayMap
 import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
 import com.ip2location.IP2Location
 import com.neovisionaries.i18n.CountryCode
-import essentials.Event.findPlayerData
-import essentials.Event.findPlayers
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import mindustry.Vars.*
 import mindustry.content.Blocks
-import mindustry.content.Fx
-import mindustry.content.UnitTypes
-import mindustry.content.Weathers
-import mindustry.entities.Damage
-import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
-import mindustry.io.SaveIO
-import mindustry.maps.Map
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
-import mindustry.net.Packets
-import mindustry.net.WorldReloader
 import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.lang.Thread.sleep
 import java.net.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -49,16 +34,6 @@ import kotlin.concurrent.thread
 
 object Trigger {
     val ip2location = IP2Location()
-    var voting = false
-    var voteType: String? = null
-    var voteTarget: Playerc? = null
-    var voteTargetUUID: String? = null
-    var voteReason: String? = null
-    var voteMap: Map? = null
-    var voteWave: Int? = null
-    var voteStarter: Playerc? = null
-    val voted = Seq<String>()
-    var lastVoted = LocalTime.now()
     var pvpCount = Config.pvpPeaceTime
 
     init {
@@ -130,367 +105,6 @@ object Trigger {
 
         Call.menu(player.con(), 0, "Select your language", "Select plugin language\n플러그인 언어를 선택하세요.", arrayOf(arrayOf("한국어", "English")))
     }
-
-    // 1초마다 작동함
-    class Seconds : TimerTask() {
-        private var colorOffset = 0
-        var count = 60
-
-        fun send(message: String, vararg parameter: Any) {
-            Groups.player.forEach {
-                val data = findPlayerData(it.uuid())
-                if (data != null) {
-                    val bundle = Bundle(data.languageTag)
-                    Core.app.post { it.sendMessage(bundle.get(message, *parameter)) }
-                }
-            }
-        }
-
-        fun check(): Int {
-            return when (database.players.size) {
-                1 -> 1
-                in 2..4 -> 2
-                in 5..6 -> 3
-                7 -> 4
-                in 8..9 -> 5
-                in 10..11 -> 6
-                12 -> 7
-                else -> 8
-            }
-        }
-
-        fun back(map: Map?) {
-            Core.app.post {
-                val savePath: Fi = saveDirectory.child("rollback.msav")
-
-                try {
-                    val mode = state.rules.mode()
-                    val reloader = WorldReloader()
-
-                    reloader.begin()
-
-                    if (map != null) {
-                        world.loadMap(map, map.applyRules(mode))
-                    } else {
-                        SaveIO.load(savePath)
-                    }
-
-                    state.rules = state.map.applyRules(mode)
-
-                    logic.play()
-                    reloader.end()
-                } catch (t: Exception) {
-                    t.printStackTrace()
-                }
-                send("command.vote.back.done")
-            }
-        }
-
-        override fun run() {
-            database.players.forEach {
-                it.playtime = it.playtime + 1
-            }
-            PluginData.uptime++
-            PluginData.playtime++
-
-            for (player in Groups.player) {
-                if (!player.isNull) {
-                    val p = database.players.find { a -> a.uuid == player.uuid() }
-
-                    if (p != null) { // 무지개 닉네임
-                        if (p.colornick) {
-                            val name = p.name.replace("\\[(.*?)]".toRegex(), "")
-                            nickcolor(name, player)
-                        } else {
-                            player.name(p.name)
-                        }
-
-                        // 잠수 플레이어 카운트
-                        if (p.x == player.tileX() && p.y == player.tileY()) {
-                            p.afkTime++
-                            if (p.afkTime == Config.afkTime) {
-                                player.kick("AFK")
-                            }
-                        } else {
-                            p.afkTime = 0
-                        }
-                    }
-                }
-            }
-
-            if (voting) {
-                if (count % 10 == 0) {
-                    send("command.vote.count", count.toString(), check().toString())
-                    if (voteType == "kick" && voteTarget == null) {
-                        send("command.vote.kick.target.leave")
-                    }
-                }
-                count--
-                if (count == 0 || check() <= voted.size) {
-                    send("command.vote.success")
-
-                    when (voteType) {
-                        "kick" -> {
-                            val name = netServer.admins.getInfo(voteTargetUUID).lastName
-                            if (voteTarget == null) {
-                                netServer.admins.banPlayer(voteTargetUUID)
-                                send("command.vote.kick.target.banned", name)
-                            } else {
-                                voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
-                                send("command.vote.kick.target.kicked", name)
-                            }
-                        }
-
-                        "map" -> {
-                            back(voteMap)
-                        }
-
-                        "gg" -> {
-                            for (a in 0..world.tiles.height) {
-                                for (b in 0..world.tiles.width) {
-                                    Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
-                                    if (world.tile(a, b) != null) {
-                                        try {
-                                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                                        } catch (e: Exception) {
-                                            Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                                        }
-                                        try {
-                                            Call.removeTile(world.tile(a, b))
-                                        } catch (e: Exception) {
-                                            Call.removeTile(world.tile(a, b))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        "skip" -> {
-                            for (a in 0..voteWave!!) logic.runWave()
-                            send("command.vote.skip.done", voteWave!!.toString())
-                        }
-
-                        "back" -> {
-                            back(null)
-                        }
-
-                        "random" -> {
-                            if (lastVoted.plusMinutes(10).isBefore(LocalTime.now())) {
-                                send("command.vote.random.cool")
-                            } else {
-                                lastVoted = LocalTime.now()
-                                send("command.vote.random.done")
-                                Thread {
-                                    val map: Map
-                                    val random = Random()
-                                    send("command.vote.random.is")
-                                    sleep(3000)
-                                    when (random.nextInt(7)) {
-                                        0 -> {
-                                            send("command.vote.random.unit")
-                                            Groups.unit.each {
-                                                if (voteStarter != null) {
-                                                    if (it.team == voteStarter!!.team()) it.kill()
-                                                } else {
-                                                    it.kill()
-                                                }
-                                            }
-                                            send("command.vote.random.unit.wave")
-                                            logic.runWave()
-                                        }
-
-                                        1 -> {
-                                            send("command.vote.random.wave")
-                                            for (a in 0..5) logic.runWave()
-                                        }
-
-                                        2 -> {
-                                            send("command.vote.random.health")
-                                            Groups.build.each {
-                                                if (voteStarter != null){
-                                                    if (it.team == voteStarter!!.team()) {
-                                                        Core.app.post { Damage.tileDamage(voteStarter!!.team(), it.tileX(), it.tileY(), 1f, 50f) }
-                                                    }
-                                                } else {
-                                                    Core.app.post { Damage.tileDamage(it.team(), it.tileX(), it.tileY(), 1f, 50f) }
-                                                }
-                                            }
-                                            for (a in Groups.player) {
-                                                Call.worldDataBegin(a.con)
-                                                netServer.sendWorldData(a)
-                                            }
-                                        }
-
-                                        3 -> {
-                                            send("command.vote.random.fill.core")
-                                            if (voteStarter != null){
-                                                for (item in content.items()) {
-                                                    state.teams.cores(voteStarter!!.team()).first().items.add(item, Random(516).nextInt(500))
-                                                }
-                                            } else {
-                                                for (item in content.items()) {
-                                                    state.teams.cores(Team.sharded).first().items.add(item, Random(516).nextInt(500))
-                                                }
-                                            }
-                                        }
-
-                                        4 -> {
-                                            send("command.vote.random.storm")
-                                            sleep(1000)
-                                            Call.createWeather(Weathers.rain, 10f, 60 * 60f, 50f, 10f)
-                                        }
-
-                                        5 -> {
-                                            send("command.vote.random.fire")
-                                            for (x in 0 until world.width()) {
-                                                for (y in 0 until world.height()) {
-                                                    Core.app.post { Call.effect(Fx.fire, (x * 8).toFloat(), (y * 8).toFloat(), 0f, Color.red) }
-                                                }
-                                            }
-                                            var tick = 600
-                                            map = state.map
-
-                                            while (tick != 0 && map == state.map) {
-                                                sleep(1000)
-                                                tick--
-                                                Core.app.post {
-                                                    Groups.unit.each {
-                                                        it.health(it.health() - 10f)
-                                                    }
-                                                    Groups.build.each {
-                                                        Damage.tileDamage(it.team(), it.tileX(), it.tileY(), 1f, 2f)
-                                                    }
-                                                }
-                                                if (tick == 300) {
-                                                    send("command.vote.random.supply")
-                                                    repeat(2) {
-                                                        if (voteStarter != null) {
-                                                            UnitTypes.oct.spawn(voteStarter!!.team(), voteStarter!!.x, voteStarter!!.y)
-                                                        } else {
-                                                            UnitTypes.oct.spawn(Team.sharded, state.teams.cores(Team.sharded).first().x, state.teams.cores(Team.sharded).first().y)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        else -> {
-                                            send("command.vote.random.nothing")
-                                        }
-                                    }
-                                }.start()
-                            }
-                        }
-                    }
-                    voting = false
-                } else if (count == 0 && check() > voted.size) {
-                    send("command.vote.failed")
-                }
-
-                if (!voting) {
-                    voteType = null
-                    voteTarget = null
-                    voteTargetUUID = null
-                    voteReason = null
-                    voteMap = null
-                    voteWave = null
-                    voteStarter = null
-                    voted.clear()
-                    count = 60
-                }
-            }
-
-            if (Config.pvpPeace) {
-                if (pvpCount != 0) {
-                    pvpCount--
-                } else {
-                    state.rules.blockDamageMultiplier = Event.orignalBlockMultiplier
-                    state.rules.unitDamageMultiplier = Event.orignalUnitMultiplier
-                    send("trigger.pvp.end")
-                }
-            }
-        }
-
-        private fun nickcolor(name: String, player: Playerc) {
-            val stringBuilder = StringBuilder()
-            val colors = arrayOfNulls<String>(11)
-            colors[0] = "[#ff0000]"
-            colors[1] = "[#ff7f00]"
-            colors[2] = "[#ffff00]"
-            colors[3] = "[#7fff00]"
-            colors[4] = "[#00ff00]"
-            colors[5] = "[#00ff7f]"
-            colors[6] = "[#00ffff]"
-            colors[7] = "[#007fff]"
-            colors[8] = "[#0000ff]"
-            colors[9] = "[#8000ff]"
-            colors[10] = "[#ff00ff]"
-            val newName = arrayOfNulls<String>(name.length)
-            for (i in name.indices) {
-                val c = name[i]
-                var colorIndex = (i + colorOffset) % colors.size
-                if (colorIndex < 0) {
-                    colorIndex += colors.size
-                }
-                val newtext = colors[colorIndex] + c
-                newName[i] = newtext
-            }
-            colorOffset--
-            for (s in newName) {
-                stringBuilder.append(s)
-            }
-            player.name(stringBuilder.toString())
-        }
-    }
-
-    class Minutes : TimerTask() {
-        var rollbackCount = Config.rollbackTime
-        var messageCount = Config.messageTime
-
-        var messageOrder = 0
-
-        override fun run() {
-            val data = database.getAll()
-
-            for (a in data) {
-                if (a.status.containsKey("ban")) {
-                    if (LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
-                        netServer.admins.unbanPlayerID(a.uuid)
-                    }
-                }
-            }
-
-            if (rollbackCount == 0) {
-                SaveIO.save(saveDirectory.child("rollback.msav"))
-                rollbackCount = Config.rollbackTime
-            } else {
-                rollbackCount--
-            }
-
-            if (Config.message) {
-                if (messageCount == Config.messageTime) {
-                    for (a in database.players) {
-                        val message = if (root.child("messages/${a.languageTag}.txt").exists()) {
-                            root.child("messages/${a.languageTag}.txt").readString()
-                        } else {
-                            val file = root.child("messages/en.txt")
-                            if (file.exists()) file.readString() else ""
-                        }
-                        val count = message.lines()
-                        if ((count.size - 1) < messageOrder) {
-                            messageOrder = 0
-                        }
-                        a.player!!.sendMessage(count[messageOrder])
-                    }
-                    messageOrder++
-                    messageCount = 0
-                } else {
-                    messageCount++
-                }
-            }
-        }
-    }
-
 
     class Thread : Runnable {
         private var ping = 0.000
@@ -659,26 +273,6 @@ object Trigger {
                 total += v.value
             }
             return total
-        }
-    }
-
-    fun update() {
-        for (a in database.players) {
-            if (a.status.containsKey("freeze")) {
-                val player = findPlayers(a.uuid)
-                if (player != null) {
-                    val split = a.status.get("freeze").toString().split("/")
-                    player.set(split[0].toFloat(), split[1].toFloat())
-                }
-            }
-        }
-
-        for (a in database.players) {
-            if (a.status.containsKey("tracking")) {
-                for (b in Groups.player) {
-                    Call.label(a.player!!.con(), b.name, 0.32f, b.mouseX, b.mouseY)
-                }
-            }
         }
     }
 

@@ -50,11 +50,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.removeCommand("help")
             if (Config.vote) {
                 handler.removeCommand("vote")
-                if (!Config.votekick) {
-                    handler.removeCommand("votekick")
+                handler.register("vote", "<kick/map/gg/skip/back/random> [player/amount/world_name] [reason]", "Start voting") { a, p: Playerc -> Client(a, p).vote(p, a) }
+
+                handler.removeCommand("votekick")
+                if (Config.votekick) {
                     handler.register("votekick", "<name...>", "Start kick voting") { a, p: Playerc -> Client(a, p).votekick() }
                 }
-                handler.register("vote", "<kick/map/gg/skip/back/random> [player/amount/world_name] [reason]", "Start voting") { a, p: Playerc -> Client(a, p).vote() }
             }
 
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
@@ -1424,7 +1425,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
-        fun vote() {
+        fun vote(player: Playerc, arg: Array<out String>) {
             fun sendStart(message: String, vararg parameter: Any) {
                 Groups.player.forEach {
                     val data = findPlayerData(it.uuid())
@@ -1441,7 +1442,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage("command.vote.arg.empty")
                 return
             }
-            if (!Trigger.voting) {
+            if (!Event.voting) {
                 when (arg[0]) {
                     // vote kick <player name> <reason>
                     "kick" -> {
@@ -1451,12 +1452,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                         val target = findPlayers(arg[1])
                         if (target != null) {
-                            Trigger.voteTarget = target
-                            Trigger.voteTargetUUID = target.uuid()
-                            Trigger.voteReason = arg[2]
-                            Trigger.voteType = "kick"
-                            Trigger.voteStarter = player
-                            Trigger.voting = true
+                            Event.voteTarget = target
+                            Event.voteTargetUUID = target.uuid()
+                            Event.voteReason = arg[2]
+                            Event.voteType = "kick"
+                            Event.voteStarter = player
+                            Event.voting = true
                             sendStart("command.vote.kick.start", target.name(), arg[2])
                         } else {
                             player.sendMessage(bundle["player.not.found"])
@@ -1479,11 +1480,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                 if (target == null) {
                                     target = maps.all().get(arg[1].toInt())
                                 }
-                                Trigger.voteType = "map"
-                                Trigger.voteMap = target
-                                Trigger.voteReason = arg[2]
-                                Trigger.voteStarter = player
-                                Trigger.voting = true
+                                Event.voteType = "map"
+                                Event.voteMap = target
+                                Event.voteReason = arg[2]
+                                Event.voteStarter = player
+                                Event.voting = true
                                 sendStart("command.vote.map.start", target.name(), arg[2])
                             } catch (e: IndexOutOfBoundsException) {
                                 player.sendMessage(bundle["command.vote.map.not.exists"])
@@ -1495,19 +1496,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote gg
                     "gg" -> {
-                        Trigger.voteType = "gg"
-                        Trigger.voteStarter = player
-                        Trigger.voting = true
+                        Event.voteType = "gg"
+                        Event.voteStarter = player
+                        Event.voting = true
                         sendStart("command.vote.gg.start")
                     }
 
                     // vote skip <count>
                     "skip" -> {
                         if (arg[1].toIntOrNull() != null) {
-                            Trigger.voteType = "skip"
-                            Trigger.voteWave = arg[1].toInt()
-                            Trigger.voteStarter = player
-                            Trigger.voting = true
+                            Event.voteType = "skip"
+                            Event.voteWave = arg[1].toInt()
+                            Event.voteStarter = player
+                            Event.voting = true
                             sendStart("command.vote.skip.start", arg[1])
                         } else {
                             player.sendMessage(bundle["command.vote.skip.wrong"])
@@ -1524,18 +1525,18 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             player.sendMessage(bundle["command.vote.no.reason"])
                             return
                         }
-                        Trigger.voteType = "back"
-                        Trigger.voteReason = arg[1]
-                        Trigger.voteStarter = player
-                        Trigger.voting = true
+                        Event.voteType = "back"
+                        Event.voteReason = arg[1]
+                        Event.voteStarter = player
+                        Event.voting = true
                         sendStart("command.vote.back.start", arg[1])
                     }
 
                     // vote random
                     "random" -> {
-                        Trigger.voteType = "random"
-                        Trigger.voteStarter = player
-                        Trigger.voting = true
+                        Event.voteType = "random"
+                        Event.voteStarter = player
+                        Event.voting = true
                         sendStart("command.vote.random.start")
                     }
 
@@ -1547,14 +1548,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun votekick() {
-            val found = if (arg[0].length > 1 && arg[0].startsWith("#") && Strings.canParseInt(arg[0].substring(1))) {
-                val id = Strings.parseInt(arg.get(0).substring(1))
-                Groups.player.find { p -> p.id() == id }
-            } else {
-                Groups.player.find { p -> p.name.equals(arg[0], true) }
-            }
+            val f = Groups.player.find { p -> p.id() == arg[0].substring(1).toInt()}
 
-            Call.sendChatMessage("/vote kick ${found.name} None")
+            val array = arrayOf("kick", f.name, "QuickKick")
+            vote(player, array)
         }
     }
 

@@ -3,9 +3,11 @@ package essentials
 import arc.Core
 import arc.Events
 import arc.files.Fi
+import arc.graphics.Color
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
+import arc.util.Time
 import com.cybozu.labs.langdetect.DetectorFactory
 import com.cybozu.labs.langdetect.LangDetectException
 import essentials.Main.Companion.database
@@ -13,6 +15,8 @@ import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.content.Blocks
 import mindustry.content.Fx
+import mindustry.content.UnitTypes
+import mindustry.content.Weathers
 import mindustry.entities.Damage
 import mindustry.game.EventType
 import mindustry.game.EventType.*
@@ -20,6 +24,10 @@ import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
+import mindustry.io.SaveIO
+import mindustry.maps.Map
+import mindustry.net.Packets
+import mindustry.net.WorldReloader
 import org.hjson.JsonObject
 import java.io.BufferedReader
 import java.io.IOException
@@ -31,6 +39,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.regex.Pattern
@@ -44,6 +53,17 @@ object Event {
     val players = Seq<ObjectMap<Int, String>>()
     var orignalBlockMultiplier = 1f
     var orignalUnitMultiplier = 1f
+
+    var voting = false
+    var voteType: String? = null
+    var voteTarget: Playerc? = null
+    var voteTargetUUID: String? = null
+    var voteReason: String? = null
+    var voteMap: Map? = null
+    var voteWave: Int? = null
+    var voteStarter: Playerc? = null
+    val voted = Seq<String>()
+    var lastVoted = LocalTime.now()
 
     init {
         val aa = arrayOf("af","ar","bg","bn","cs","da","de","el","en","es","et","fa","fi","fr","gu","he","hi","hr","hu","id","it","ja","kn","ko","lt","lv","mk","ml","mr","ne","nl","no","pa","pl","pt","ro","ru","sk","sl","so","sq","sv","sw","ta","te","th","tl","tr","uk","ur","vi","zh-cn","zh-tw")
@@ -64,23 +84,23 @@ object Event {
                     val data = database.players.find { e -> e.uuid == it.player.uuid() }
 
                     if (data != null && !data.mute) {
+                        if (voting && it.message.equals("y", true) && !voted.contains(it.player.uuid())) {
+                            voted.add(it.player.uuid())
+                            it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                        }
+
                         if (Config.chatlimit) {
                             val d = DetectorFactory.create()
                             val languages = Config.chatlanguage.split(",")
                             d.append(it.message)
                             try {
-                                if (!languages.contains(d.detect())) {
+                                if (!languages.contains(d.detect()) && (voting && it.message.equals("y", true) && !voted.contains(it.player.uuid()))) {
                                     it.player.sendMessage(Bundle(data.languageTag)["chat.language.not.allow"])
                                     return@on
                                 }
                             } catch (_: LangDetectException) {
 
                             }
-                        }
-
-                        if (Trigger.voting && it.message.equals("y", true) && !Trigger.voted.contains(it.player.uuid())) {
-                            Trigger.voted.add(it.player.uuid())
-                            it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
                         }
 
                         Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
@@ -357,6 +377,391 @@ object Event {
 
         Events.run(EventType.Trigger.impactPower) {
 
+        }
+
+        fun send(message: String, vararg parameter: Any) {
+            Groups.player.forEach {
+                val data = findPlayerData(it.uuid())
+                if (data != null) {
+                    val bundle = Bundle(data.languageTag)
+                    Core.app.post { it.sendMessage(bundle.get(message, *parameter)) }
+                }
+            }
+        }
+
+        fun check(): Int {
+            return when (database.players.size) {
+                1 -> 1
+                in 2..4 -> 2
+                in 5..6 -> 3
+                7 -> 4
+                in 8..9 -> 5
+                in 10..11 -> 6
+                12 -> 7
+                else -> 8
+            }
+        }
+
+        fun back(map: Map?) {
+            Core.app.post {
+                val savePath: Fi = Vars.saveDirectory.child("rollback.msav")
+
+                try {
+                    val mode = state.rules.mode()
+                    val reloader = WorldReloader()
+
+                    reloader.begin()
+
+                    if (map != null) {
+                        Vars.world.loadMap(map, map.applyRules(mode))
+                    } else {
+                        SaveIO.load(savePath)
+                    }
+
+                    state.rules = state.map.applyRules(mode)
+
+                    Vars.logic.play()
+                    reloader.end()
+                } catch (t: Exception) {
+                    t.printStackTrace()
+                }
+                send("command.vote.back.done")
+            }
+        }
+
+        var colorOffset = 0
+        fun nickcolor(name: String, player: Playerc) {
+            val stringBuilder = StringBuilder()
+            val colors = arrayOfNulls<String>(11)
+            colors[0] = "[#ff0000]"
+            colors[1] = "[#ff7f00]"
+            colors[2] = "[#ffff00]"
+            colors[3] = "[#7fff00]"
+            colors[4] = "[#00ff00]"
+            colors[5] = "[#00ff7f]"
+            colors[6] = "[#00ffff]"
+            colors[7] = "[#007fff]"
+            colors[8] = "[#0000ff]"
+            colors[9] = "[#8000ff]"
+            colors[10] = "[#ff00ff]"
+            val newName = arrayOfNulls<String>(name.length)
+            for (i in name.indices) {
+                val c = name[i]
+                var colorIndex = (i + colorOffset) % colors.size
+                if (colorIndex < 0) {
+                    colorIndex += colors.size
+                }
+                val newtext = colors[colorIndex] + c
+                newName[i] = newtext
+            }
+            colorOffset--
+            for (s in newName) {
+                stringBuilder.append(s)
+            }
+            player.name(stringBuilder.toString())
+        }
+
+        var secondCount = 0
+        var minuteCount = 0
+        var count = 60
+
+        var rollbackCount = Config.rollbackTime
+        var messageCount = Config.messageTime
+        var messageOrder = 0
+
+        Events.run(EventType.Trigger.update) {
+            for (a in database.players) {
+                if (a.status.containsKey("freeze")) {
+                    val player = findPlayers(a.uuid)
+                    if (player != null) {
+                        val split = a.status.get("freeze").toString().split("/")
+                        player.set(split[0].toFloat(), split[1].toFloat())
+                    }
+                }
+
+                if (a.status.containsKey("tracking")) {
+                    for (b in Groups.player) {
+                        Call.label(a.player.con(), b.name, Time.delta/2, b.mouseX, b.mouseY)
+                    }
+                }
+            }
+
+            if (secondCount == 60) {
+                PluginData.uptime++
+                PluginData.playtime++
+
+                for (a in database.players) {
+                    a.playtime = a.playtime + 1
+
+                    if (a.colornick) {
+                        val name = a.name.replace("\\[(.*?)]".toRegex(), "")
+                        nickcolor(name, a.player)
+                    } else {
+                        a.player.name(a.name)
+                    }
+
+                    // 잠수 플레이어 카운트
+                    if (a.x == a.player.tileX() && a.y == a.player.tileY()) {
+                        a.afkTime++
+                        if (a.afkTime == Config.afkTime) {
+                            a.player.kick("AFK")
+                        }
+                    } else {
+                        a.afkTime = 0
+                    }
+                }
+
+                if (voting) {
+
+                    if (count % 10 == 0) {
+                        send("command.vote.count", count.toString(), check().toString())
+                        if (voteType == "kick" && voteTarget == null) {
+                            send("command.vote.kick.target.leave")
+                        }
+                    }
+                    count--
+                    if (count == 0 || check() <= voted.size) {
+                        send("command.vote.success")
+
+                        when (voteType) {
+                            "kick" -> {
+                                val name = Vars.netServer.admins.getInfo(voteTargetUUID).lastName
+                                if (voteTarget == null) {
+                                    Vars.netServer.admins.banPlayer(voteTargetUUID)
+                                    send("command.vote.kick.target.banned", name)
+                                } else {
+                                    voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
+                                    send("command.vote.kick.target.kicked", name)
+                                }
+                            }
+
+                            "map" -> {
+                                back(voteMap)
+                            }
+
+                            "gg" -> {
+                                for (a in 0..Vars.world.tiles.height) {
+                                    for (b in 0..Vars.world.tiles.width) {
+                                        Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
+                                        if (Vars.world.tile(a, b) != null) {
+                                            try {
+                                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                                            } catch (e: Exception) {
+                                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                                            }
+                                            try {
+                                                Call.removeTile(Vars.world.tile(a, b))
+                                            } catch (e: Exception) {
+                                                Call.removeTile(Vars.world.tile(a, b))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            "skip" -> {
+                                for (a in 0..voteWave!!) Vars.logic.runWave()
+                                send("command.vote.skip.done", voteWave!!.toString())
+                            }
+
+                            "back" -> {
+                                back(null)
+                            }
+
+                            "random" -> {
+                                if (lastVoted.plusMinutes(10).isBefore(LocalTime.now())) {
+                                    send("command.vote.random.cool")
+                                } else {
+                                    lastVoted = LocalTime.now()
+                                    send("command.vote.random.done")
+                                    Thread {
+                                        val map: Map
+                                        val random = Random()
+                                        send("command.vote.random.is")
+                                        Thread.sleep(3000)
+                                        when (random.nextInt(7)) {
+                                            0 -> {
+                                                send("command.vote.random.unit")
+                                                Groups.unit.each {
+                                                    if (voteStarter != null) {
+                                                        if (it.team == voteStarter!!.team()) it.kill()
+                                                    } else {
+                                                        it.kill()
+                                                    }
+                                                }
+                                                send("command.vote.random.unit.wave")
+                                                Vars.logic.runWave()
+                                            }
+
+                                            1 -> {
+                                                send("command.vote.random.wave")
+                                                for (a in 0..5) Vars.logic.runWave()
+                                            }
+
+                                            2 -> {
+                                                send("command.vote.random.health")
+                                                Groups.build.each {
+                                                    if (voteStarter != null) {
+                                                        if (it.team == voteStarter!!.team()) {
+                                                            Damage.tileDamage(voteStarter!!.team(), it.tileX(), it.tileY(), 1f, 50f)
+                                                        }
+                                                    } else {
+                                                        Damage.tileDamage(it.team(), it.tileX(), it.tileY(), 1f, 50f)
+                                                    }
+                                                }
+                                                for (a in Groups.player) {
+                                                    Call.worldDataBegin(a.con)
+                                                    Vars.netServer.sendWorldData(a)
+                                                }
+                                            }
+
+                                            3 -> {
+                                                send("command.vote.random.fill.core")
+                                                if (voteStarter != null) {
+                                                    for (item in Vars.content.items()) {
+                                                        state.teams.cores(voteStarter!!.team()).first().items.add(item, Random(516).nextInt(500))
+                                                    }
+                                                } else {
+                                                    for (item in Vars.content.items()) {
+                                                        state.teams.cores(Team.sharded).first().items.add(item, Random(516).nextInt(500))
+                                                    }
+                                                }
+                                            }
+
+                                            4 -> {
+                                                send("command.vote.random.storm")
+                                                Thread.sleep(1000)
+                                                Call.createWeather(Weathers.rain, 10f, 60 * 60f, 50f, 10f)
+                                            }
+
+                                            5 -> {
+                                                send("command.vote.random.fire")
+                                                for (x in 0 until Vars.world.width()) {
+                                                    for (y in 0 until Vars.world.height()) {
+                                                        Call.effect(Fx.fire, (x * 8).toFloat(), (y * 8).toFloat(), 0f, Color.red)
+                                                    }
+                                                }
+                                                var tick = 600
+                                                map = state.map
+
+                                                while (tick != 0 && map == state.map) {
+                                                    Thread.sleep(1000)
+                                                    tick--
+                                                    Core.app.post {
+                                                        Groups.unit.each {
+                                                            it.health(it.health() - 10f)
+                                                        }
+                                                        Groups.build.each {
+                                                            Damage.tileDamage(it.team(), it.tileX(), it.tileY(), 1f, 2f)
+                                                        }
+                                                    }
+                                                    if (tick == 300) {
+                                                        send("command.vote.random.supply")
+                                                        repeat(2) {
+                                                            if (voteStarter != null) {
+                                                                UnitTypes.oct.spawn(voteStarter!!.team(), voteStarter!!.x, voteStarter!!.y)
+                                                            } else {
+                                                                UnitTypes.oct.spawn(Team.sharded, state.teams.cores(Team.sharded).first().x, state.teams.cores(Team.sharded).first().y)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            else -> {
+                                                send("command.vote.random.nothing")
+                                            }
+                                        }
+                                    }.start()
+                                }
+                            }
+                        }
+
+                        voting = false
+                        voteType = null
+                        voteTarget = null
+                        voteTargetUUID = null
+                        voteReason = null
+                        voteMap = null
+                        voteWave = null
+                        voteStarter = null
+                        voted.clear()
+                        count = 60
+                    } else if (count == 0 && check() > voted.size) {
+                        send("command.vote.failed")
+
+                        voting = false
+                        voteType = null
+                        voteTarget = null
+                        voteTargetUUID = null
+                        voteReason = null
+                        voteMap = null
+                        voteWave = null
+                        voteStarter = null
+                        voted.clear()
+                        count = 60
+                    }
+                }
+
+                if (Config.pvpPeace) {
+                    if (Trigger.pvpCount != 0) {
+                        Trigger.pvpCount--
+                    } else {
+                        state.rules.blockDamageMultiplier = orignalBlockMultiplier
+                        state.rules.unitDamageMultiplier = orignalUnitMultiplier
+                        send("trigger.pvp.end")
+                    }
+                }
+
+                secondCount = 0
+            } else {
+                secondCount++
+            }
+
+            if (minuteCount == 3600) {
+                val data = database.getAll()
+
+                for (a in data) {
+                    if (a.status.containsKey("ban")) {
+                        if (LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
+                            Vars.netServer.admins.unbanPlayerID(a.uuid)
+                        }
+                    }
+                }
+
+                if (rollbackCount == 0) {
+                    Core.app.post { SaveIO.save(Vars.saveDirectory.child("rollback.msav")) }
+                    rollbackCount = Config.rollbackTime
+                } else {
+                    rollbackCount--
+                }
+
+                if (Config.message) {
+                    if (messageCount == Config.messageTime) {
+                        for (a in database.players) {
+                            val message = if (Main.root.child("messages/${a.languageTag}.txt").exists()) {
+                                Main.root.child("messages/${a.languageTag}.txt").readString()
+                            } else {
+                                val file = Main.root.child("messages/en.txt")
+                                if (file.exists()) file.readString() else ""
+                            }
+                            val c = message.split(Regex("\n"))
+
+                            a.player.sendMessage(c[messageOrder])
+                            if (c.size < messageOrder) {
+                                messageOrder = 0
+                            }
+                        }
+                        messageOrder++
+                        messageCount = 0
+                    } else {
+                        messageCount++
+                    }
+                }
+                minuteCount = 0
+            } else {
+                minuteCount++
+            }
         }
     }
 

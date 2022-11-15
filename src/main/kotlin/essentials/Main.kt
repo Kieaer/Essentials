@@ -16,7 +16,6 @@ import java.util.concurrent.Executors
 
 class Main : Plugin() {
     val daemon: ExecutorService = Executors.newFixedThreadPool(2)
-    val timer = java.util.Timer()
 
     companion object {
         val database = DB()
@@ -35,15 +34,8 @@ class Main : Plugin() {
         Permission.load()
         PluginData.load()
 
-        Event.register()
-
         Core.app.addListener(object : ApplicationListener {
-            override fun update() {
-                Trigger.update()
-            }
-
             override fun dispose() {
-                timer.cancel()
                 database.close()
                 daemon.shutdownNow()
                 Commands.Discord.shutdownNow()
@@ -52,14 +44,14 @@ class Main : Plugin() {
                 Config.save()
             }
         })
+
+        Event.register()
     }
 
     override fun init() {
         Log.info("[Essentials] Starting")
         daemon.submit(FileWatchService)
         daemon.submit(Trigger.Thread())
-        timer.scheduleAtFixedRate(Trigger.Seconds(), 1000, 1000)
-        timer.scheduleAtFixedRate(Trigger.Minutes(), 0, 60000)
         if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
         if (Config.update) {
