@@ -25,8 +25,6 @@ object PluginData {
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
 
-    var expData = JsonObject()
-
     data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = Vars.world.tile(start)
         val finishTile: Tile get() = Vars.world.tile(finish)
@@ -111,9 +109,5 @@ object PluginData {
         } catch (e: IOException) {
             println(e)
         }
-    }
-
-    fun expData() {
-
     }
 }

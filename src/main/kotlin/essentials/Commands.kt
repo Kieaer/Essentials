@@ -1440,13 +1440,17 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                         val target = findPlayers(arg[1])
                         if (target != null) {
-                            Event.voteTarget = target
-                            Event.voteTargetUUID = target.uuid()
-                            Event.voteReason = arg[2]
-                            Event.voteType = "kick"
-                            Event.voteStarter = player
-                            Event.voting = true
-                            sendStart("command.vote.kick.start", target.name(), arg[2])
+                            if (Permission.check(target, "kick.admin")) {
+                                player.sendMessage(bundle["command.vote.kick.target.admin"])
+                            } else {
+                                Event.voteTarget = target
+                                Event.voteTargetUUID = target.uuid()
+                                Event.voteReason = arg[2]
+                                Event.voteType = "kick"
+                                Event.voteStarter = player
+                                Event.voting = true
+                                sendStart("command.vote.kick.start", target.name(), arg[2])
+                            }
                         } else {
                             player.sendMessage(bundle["player.not.found"])
                         }
@@ -1492,14 +1496,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote skip <count>
                     "skip" -> {
-                        if (arg[1].toIntOrNull() != null) {
+                        if (arg.size == 1) {
+                            player.sendMessage(bundle["command.vote.skip.wrong"])
+                        } else if (arg[1].toIntOrNull() != null) {
                             Event.voteType = "skip"
                             Event.voteWave = arg[1].toInt()
                             Event.voteStarter = player
                             Event.voting = true
                             sendStart("command.vote.skip.start", arg[1])
-                        } else {
-                            player.sendMessage(bundle["command.vote.skip.wrong"])
                         }
                     }
 
@@ -1538,8 +1542,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun votekick() {
             val f = Groups.player.find { p -> p.id() == arg[0].substring(1).toInt()}
 
-            val array = arrayOf("kick", f.name, "QuickKick")
-            vote(player, array)
+            if (Permission.check(f, "kick.admin")){
+                player.sendMessage(bundle["command.vote.kick.target.admin"])
+            } else {
+                val array = arrayOf("kick", f.name, "Kick")
+                vote(player, array)
+            }
         }
     }
 
@@ -1641,10 +1649,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     }
                 }
             }
-        }
-
-        fun longToDateTime(mils: Long): LocalDateTime {
-            return Timestamp(mils).toLocalDateTime()
         }
     }
 
