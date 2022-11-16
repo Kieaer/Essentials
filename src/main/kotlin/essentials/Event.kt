@@ -868,12 +868,16 @@ object Event {
         return database.players.find { e -> e.uuid == uuid }
     }
 
-    fun findPlayers(any: Any): Playerc? {
-        return if (any.toString().toIntOrNull() == null) {
-            Groups.player.find { p -> p.name.contains(any.toString(), true) }
+    fun findPlayers(name: String): Playerc? {
+        return if (name.toIntOrNull() != null) {
+            val d = players.find { it.asObject().get("id").asInt() == name.toInt() }
+            if (d != null) {
+                Groups.player.find { p -> p.uuid() == d.asObject().get("uuid").asString() }
+            } else {
+                null
+            }
         } else {
-            val d = players.find { it.asObject().get("id").asInt() == any.toString().toInt() }
-            if (d != null) Groups.player.find { p -> p.uuid() == d.asObject().get("uuid").asString() } else null
+            Groups.player.find { p -> p.name.contains(name, true) }
         }
     }
 }
