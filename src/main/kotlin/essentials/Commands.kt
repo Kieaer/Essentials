@@ -30,6 +30,7 @@ import mindustry.type.UnitType
 import mindustry.world.Tile
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.mindrot.jbcrypt.BCrypt
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -58,7 +59,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
             }
 
-            handler.register("changepw", "<new_password>", "Change account password.") { a, p: Playerc -> Client(a, p).changepw() }
+            handler.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p: Playerc -> Client(a, p).changepw() }
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
@@ -117,6 +118,22 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun changepw() {
             if (!Permission.check(player, "changepw")) return
+            if (arg.size != 2) {
+                player.sendMessage(bundle["command.changepw.empty"])
+                return
+            }
+
+            if (arg[0] != arg[1]) {
+                player.sendMessage(bundle["command.changepw.same"])
+                return
+            }
+
+            val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
+            if (data != null) {
+                data.pw = password
+                database.update(player.uuid(), data)
+                player.sendMessage(bundle["command.changepw.apply"])
+            }
         }
 
         fun chars(tile: Tile?) {
