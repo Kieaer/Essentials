@@ -397,11 +397,16 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun login() {
             if (!Permission.check(player, "login")) return
-            val result = database.search(arg[0], arg[1])
-            if (result != null) {
-                Trigger.loadPlayer(player, result)
+            if (Config.authType == Config.AuthType.Password) {
+                // todo 비밀번호 틀려도 로그인 되는 문제가 있음
+                val result = database.search(arg[0], arg[1])
+                if (result != null) {
+                    Trigger.loadPlayer(player, result)
+                } else {
+                    player.sendMessage(bundle["account-not-match"])
+                }
             } else {
-                player.sendMessage(bundle["account-not-match"])
+                player.sendMessage("[scarlet]This server doesn't use authentication.")
             }
         }
 
