@@ -29,7 +29,6 @@ import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import org.hjson.JsonArray
-import org.hjson.JsonObject
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -51,7 +50,6 @@ import kotlin.math.roundToInt
 
 
 object Event {
-    val file = JsonObject.readHjson(Main::class.java.classLoader.getResourceAsStream("exp.hjson")!!.reader()).asObject()
     var order = 0
     val players = JsonArray()
     var orignalBlockMultiplier = 1f
@@ -72,6 +70,8 @@ object Event {
 
     var enemyCores = 0
     var enemyCoresCounted = false
+
+    var random = Random()
 
     init {
         val aa = arrayOf("af","ar","bg","bn","cs","da","de","el","en","es","et","fa","fi","fr","gu","he","hi","hr","hu","id","it","ja","kn","ko","lt","lv","mk","ml","mr","ne","nl","no","pa","pl","pt","ro","ru","sk","sl","so","sq","sv","sw","ta","te","th","tl","tr","uk","ur","vi","zh-cn","zh-tw")
@@ -596,6 +596,8 @@ object Event {
                     } else {
                         a.afkTime = 0
                     }
+
+                    a.exp = a.exp + random.nextInt(50)
                 }
 
                 if (voting) {
