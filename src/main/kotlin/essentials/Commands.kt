@@ -596,7 +596,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun freeze(){
             if (!Permission.check(player, "freeze")) return
-            // todo 작동 안함
             if (arg.isEmpty()){
                 player.sendMessage(bundle["player.not.found"])
             } else {
@@ -1707,13 +1706,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
     }
 
     object Exp {
-        private const val baseXP = 10000
+        private const val baseXP = 1000
         private const val exponent = 1.12
         private fun calcXpForLevel(level: Int): Double {
             return baseXP + baseXP * level.toDouble().pow(exponent)
         }
 
-        private fun calculateFullTargetXp(level: Int): Double {
+        fun calculateFullTargetXp(level: Int): Double {
             var requiredXP = 0.0
             for (i in 0..level) requiredXP += calcXpForLevel(i)
             return requiredXP

@@ -35,6 +35,7 @@ object Config {
     var chatlanguage = "ko,en"
     var chatBlacklist = false
     var chatBlacklistRegex = false
+    var expDisplay = false
     var minimalName = false
 
     var authType = AuthType.None
@@ -134,6 +135,7 @@ object Config {
             features.add("chatlanguage", chatlanguage, bundle["config.chatlanguage"])
             features.add("chatBlacklist", chatBlacklist, bundle["config.chatblacklist"])
             features.add("chatBlacklistRegex", chatBlacklistRegex, bundle["config.chatblacklist.regex"])
+            features.add("expDisplay", expDisplay, bundle["config.expDisplay"])
 
             val ban = JsonObject()
             ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -193,6 +195,7 @@ object Config {
         chatlanguage = features.getString("chatlanguage", chatlanguage)
         chatBlacklist = features.getBoolean("chatBlacklist", chatBlacklist)
         chatBlacklistRegex = features.getBoolean("chatBlacklistRegex", chatBlacklistRegex)
+        expDisplay = features.getBoolean("expDisplay", expDisplay)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)

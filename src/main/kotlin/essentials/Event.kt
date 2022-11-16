@@ -4,15 +4,15 @@ import arc.Core
 import arc.Events
 import arc.files.Fi
 import arc.graphics.Color
+import arc.struct.ObjectMap
 import arc.struct.Seq
+import arc.util.Align
 import arc.util.Log
 import arc.util.Time
 import com.cybozu.labs.langdetect.DetectorFactory
 import com.cybozu.labs.langdetect.LangDetectException
 import essentials.Main.Companion.database
-import mindustry.Vars
-import mindustry.Vars.netServer
-import mindustry.Vars.state
+import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Fx
 import mindustry.content.UnitTypes
@@ -45,8 +45,8 @@ import java.util.*
 import java.util.regex.Pattern
 import kotlin.experimental.and
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 
 object Event {
@@ -73,10 +73,12 @@ object Event {
 
     var random = Random()
 
+    var exp = ObjectMap<String, Int>()
+
     init {
-        val aa = arrayOf("af","ar","bg","bn","cs","da","de","el","en","es","et","fa","fi","fr","gu","he","hi","hr","hu","id","it","ja","kn","ko","lt","lv","mk","ml","mr","ne","nl","no","pa","pl","pt","ro","ru","sk","sl","so","sq","sv","sw","ta","te","th","tl","tr","uk","ur","vi","zh-cn","zh-tw")
+        val aa = arrayOf("af", "ar", "bg", "bn", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi", "fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "kn", "ko", "lt", "lv", "mk", "ml", "mr", "ne", "nl", "no", "pa", "pl", "pt", "ro", "ru", "sk", "sl", "so", "sq", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur", "vi", "zh-cn", "zh-tw")
         val bb = arrayListOf<String>()
-        for (a in aa){
+        for (a in aa) {
             bb.add(Main::class.java.classLoader.getResource("profiles/$a")!!.readText(Charset.forName("UTF-8")))
         }
         DetectorFactory.loadProfile(bb)
@@ -106,7 +108,8 @@ object Event {
                                     it.player.sendMessage(Bundle(data.languageTag)["chat.language.not.allow"])
                                     return@on
                                 }
-                            } catch (_: LangDetectException) {}
+                            } catch (_: LangDetectException) {
+                            }
                         }
 
                         if (Config.chatBlacklist) {
@@ -150,7 +153,7 @@ object Event {
         Events.on(ConfigEvent::class.java) {
             if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int && Config.antiGrief) {
                 val entity = it.tile
-                val other = Vars.world.tile(it.value as Int)
+                val other = world.tile(it.value as Int)
                 val valid = other != null && entity.power != null && other.block().hasPower
                 if (valid) {
                     val oldGraph = entity.power.graph
@@ -175,7 +178,7 @@ object Event {
             val playerData = findPlayerData(it.player.uuid())
             if (playerData != null) {
                 for (data in PluginData.warpBlocks) {
-                    if (it.tile.x >= Vars.world.tile(data.pos).x && it.tile.x <= Vars.world.tile(data.pos).x && it.tile.y >= Vars.world.tile(data.pos).y && it.tile.y <= Vars.world.tile(data.pos).y) {
+                    if (it.tile.x >= world.tile(data.pos).x && it.tile.x <= world.tile(data.pos).x && it.tile.y >= world.tile(data.pos).y && it.tile.y <= world.tile(data.pos).y) {
                         if (data.online) {
                             Log.info("${it.player.name} moves to server ${data.ip}:${data.port}")
                             Call.connect(it.player.con(), data.ip, data.port)
@@ -200,6 +203,16 @@ object Event {
 
         Events.on(UnitControlEvent::class.java) {
 
+        }
+
+        Events.on(ServerLoadEvent::class.java) {
+            content.blocks().each {
+                var buf = 0
+                for (b in it.requirements) {
+                    buf = +b.amount
+                }
+                exp.put(it.name, buf)
+            }
         }
 
         Events.on(GameOverEvent::class.java) {
@@ -264,13 +277,10 @@ object Event {
 
                 if (!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
                     val block = it.tile.block()
-                    val exp = block.buildCostMultiplier
-
                     if (!it.breaking) {
                         log(LogType.Block, "${player.name} placed ${block.name}")
-
                         target.placecount + 1
-                        target.exp = target.exp + exp.roundToInt()
+                        target.exp = target.exp + exp.get(block.name)
 
                         if (isDebug) {
                             Log.info("${player.name} placed ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
@@ -278,10 +288,10 @@ object Event {
                     } else if (it.breaking) {
                         log(LogType.Block, "${player.name} break ${player.unit().buildPlan().block.name}")
                         target.breakcount + 1
-                        target.exp = target.exp - exp.roundToInt()
+                        target.exp = target.exp - exp.get(player.unit().buildPlan().block.name)
 
                         if (isDebug) {
-                            Log.info("${player.name} break ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
+                            Log.info("${player.name} break ${player.unit().buildPlan().block.name} to ${it.tile.x},${it.tile.y}")
                         }
                     }
                 }
@@ -297,7 +307,7 @@ object Event {
         Events.on(BlockDestroyEvent::class.java) {
             if (Config.destroyCore && state.rules.coreCapture) {
                 Fx.spawnShockwave.at(it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius)
-                Damage.damage(Vars.world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true)
+                Damage.damage(world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true)
             }
         }
 
@@ -456,7 +466,7 @@ object Event {
 
         fun back(map: Map?) {
             Core.app.post {
-                val savePath: Fi = Vars.saveDirectory.child("rollback.msav")
+                val savePath: Fi = saveDirectory.child("rollback.msav")
 
                 try {
                     val mode = state.rules.mode()
@@ -465,14 +475,14 @@ object Event {
                     reloader.begin()
 
                     if (map != null) {
-                        Vars.world.loadMap(map, map.applyRules(mode))
+                        world.loadMap(map, map.applyRules(mode))
                     } else {
                         SaveIO.load(savePath)
                     }
 
                     state.rules = state.map.applyRules(mode)
 
-                    Vars.logic.play()
+                    logic.play()
                     reloader.end()
                 } catch (t: Exception) {
                     t.printStackTrace()
@@ -535,7 +545,7 @@ object Event {
 
                 if (a.status.containsKey("tracking")) {
                     for (b in Groups.player) {
-                        Call.label(a.player.con(), b.name, Time.delta/2, b.mouseX, b.mouseY)
+                        Call.label(a.player.con(), b.name, Time.delta / 2, b.mouseX, b.mouseY)
                     }
                 }
 
@@ -553,19 +563,19 @@ object Event {
 
             if (destroyAll) {
                 Call.gameOver(Team.derelict)
-                for (a in 0..Vars.world.tiles.height) {
-                    for (b in 0..Vars.world.tiles.width) {
+                for (a in 0..world.tiles.height) {
+                    for (b in 0..world.tiles.width) {
                         Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
-                        if (Vars.world.tile(a, b) != null) {
+                        if (world.tile(a, b) != null) {
                             try {
-                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
                             } catch (e: Exception) {
-                                Call.setFloor(Vars.world.tile(a, b), Blocks.space, Blocks.space)
+                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
                             }
                             try {
-                                Call.removeTile(Vars.world.tile(a, b))
+                                Call.removeTile(world.tile(a, b))
                             } catch (e: Exception) {
-                                Call.removeTile(Vars.world.tile(a, b))
+                                Call.removeTile(world.tile(a, b))
                             }
                         }
                     }
@@ -597,7 +607,15 @@ object Event {
                         a.afkTime = 0
                     }
 
-                    a.exp = a.exp + random.nextInt(50)
+                    a.exp = a.exp + random.nextInt(7)
+                    Commands.Exp[a]
+
+                    if (Config.expDisplay) {
+                        val message = "${a.exp}/${floor(Commands.Exp.calculateFullTargetXp(a.level)).toInt()}"
+
+                        Call.infoPopup(a.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
+                    }
+
                 }
 
                 if (voting) {
@@ -613,9 +631,9 @@ object Event {
 
                         when (voteType) {
                             "kick" -> {
-                                val name = Vars.netServer.admins.getInfo(voteTargetUUID).lastName
+                                val name = netServer.admins.getInfo(voteTargetUUID).lastName
                                 if (voteTarget == null) {
-                                    Vars.netServer.admins.banPlayer(voteTargetUUID)
+                                    netServer.admins.banPlayer(voteTargetUUID)
                                     send("command.vote.kick.target.banned", name)
                                 } else {
                                     voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
@@ -632,7 +650,7 @@ object Event {
                             }
 
                             "skip" -> {
-                                for (a in 0..voteWave!!) Vars.logic.runWave()
+                                for (a in 0..voteWave!!) logic.runWave()
                                 send("command.vote.skip.done", voteWave!!.toString())
                             }
 
@@ -662,12 +680,12 @@ object Event {
                                                     }
                                                 }
                                                 send("command.vote.random.unit.wave")
-                                                Vars.logic.runWave()
+                                                logic.runWave()
                                             }
 
                                             1 -> {
                                                 send("command.vote.random.wave")
-                                                for (a in 0..5) Vars.logic.runWave()
+                                                for (a in 0..5) logic.runWave()
                                             }
 
                                             2 -> {
@@ -683,18 +701,18 @@ object Event {
                                                 }
                                                 for (a in Groups.player) {
                                                     Call.worldDataBegin(a.con)
-                                                    Vars.netServer.sendWorldData(a)
+                                                    netServer.sendWorldData(a)
                                                 }
                                             }
 
                                             3 -> {
                                                 send("command.vote.random.fill.core")
                                                 if (voteStarter != null) {
-                                                    for (item in Vars.content.items()) {
+                                                    for (item in content.items()) {
                                                         state.teams.cores(voteStarter!!.team()).first().items.add(item, Random(516).nextInt(500))
                                                     }
                                                 } else {
-                                                    for (item in Vars.content.items()) {
+                                                    for (item in content.items()) {
                                                         state.teams.cores(Team.sharded).first().items.add(item, Random(516).nextInt(500))
                                                     }
                                                 }
@@ -708,8 +726,8 @@ object Event {
 
                                             5 -> {
                                                 send("command.vote.random.fire")
-                                                for (x in 0 until Vars.world.width()) {
-                                                    for (y in 0 until Vars.world.height()) {
+                                                for (x in 0 until world.width()) {
+                                                    for (y in 0 until world.height()) {
                                                         Call.effect(Fx.fire, (x * 8).toFloat(), (y * 8).toFloat(), 0f, Color.red)
                                                     }
                                                 }
@@ -796,13 +814,13 @@ object Event {
                 for (a in data) {
                     if (a.status.containsKey("ban")) {
                         if (LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
-                            Vars.netServer.admins.unbanPlayerID(a.uuid)
+                            netServer.admins.unbanPlayerID(a.uuid)
                         }
                     }
                 }
 
                 if (rollbackCount == 0) {
-                    Core.app.post { SaveIO.save(Vars.saveDirectory.child("rollback.msav")) }
+                    Core.app.post { SaveIO.save(saveDirectory.child("rollback.msav")) }
                     rollbackCount = Config.rollbackTime
                 } else {
                     rollbackCount--
