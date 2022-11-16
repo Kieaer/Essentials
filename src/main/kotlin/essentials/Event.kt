@@ -203,7 +203,6 @@ object Event {
         }
 
         Events.on(GameOverEvent::class.java) {
-            // todo 공격 모드 승리시 시간에 따라 경험치 지급
             if (state.rules.pvp) {
                 var index = 5
                 for (a in 0..4) {
@@ -230,7 +229,7 @@ object Event {
                         if (it.winner == p.team()) {
                             val oldLevel = target.level
                             val oldExp = target.exp
-                            val exp = PluginData.playtime.toInt() * enemyCores
+                            val exp = (PluginData.playtime.toInt() * 2) * enemyCores
                             target.exp = target.exp + exp
                             target.attackclear++
 
