@@ -854,7 +854,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun login() {
             if (!Permission.check(player, "login")) return
             if (Config.authType == Config.AuthType.Password) {
-                // todo 비밀번호 틀려도 현재 접속 해 있는 유저에게 로그인 되는 문제가 있음
                 val result = database.search(arg[0], arg[1])
                 if (result != null) {
                     Trigger.loadPlayer(player, result)
