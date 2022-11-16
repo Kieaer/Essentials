@@ -209,7 +209,7 @@ class DB {
     }
 
     fun search(id: String, pw: String): PlayerData? {
-        transaction { Player.select { Player.accountid eq id and (Player.accountpw eq pw) }.firstOrNull() }.run {
+        transaction { Player.select { Player.accountid eq id }.firstOrNull() }.run {
             if (this != null) {
                 val data = PlayerData()
                 data.name = this[Player.name]

@@ -838,7 +838,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun lang() {
-            if (!Permission.check(player, "language")) return
+            if (!Permission.check(player, "lang")) return
             if (arg.isEmpty()) {
                 player.sendMessage("command.language.empty")
                 return
