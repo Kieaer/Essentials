@@ -46,6 +46,7 @@ import java.util.*
 import java.util.regex.Pattern
 import kotlin.experimental.and
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 
@@ -68,6 +69,9 @@ object Event {
     var lastVoted = LocalTime.now()
 
     var destroyAll = false
+
+    var enemyCores = 0
+    var enemyCoresCounted = false
 
     init {
         val aa = arrayOf("af","ar","bg","bn","cs","da","de","el","en","es","et","fa","fi","fr","gu","he","hi","hr","hu","id","it","ja","kn","ko","lt","lv","mk","ml","mr","ne","nl","no","pa","pl","pt","ro","ru","sk","sl","so","sq","sv","sw","ta","te","th","tl","tr","uk","ur","vi","zh-cn","zh-tw")
@@ -222,7 +226,21 @@ object Event {
             } else if (state.rules.attackMode) {
                 for (p in Groups.player) {
                     val target = findPlayerData(p.uuid())
-                    if (target != null) target.attackclear++
+                    if (target != null) {
+                        if (it.winner == p.team()) {
+                            val oldLevel = target.level
+                            val oldExp = target.exp
+                            val exp = PluginData.playtime.toInt() * enemyCores
+                            target.exp = target.exp + exp
+                            target.attackclear++
+
+                            val bundle = Bundle(target.languageTag)
+                            p.sendMessage(bundle["exp.earn", exp])
+                            p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
+                            database.update(p.uuid(), target)
+                            p.sendMessage(bundle["data.saved"])
+                        }
+                    }
                 }
             }
         }
@@ -308,6 +326,11 @@ object Event {
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
             it.player.admin(false)
 
+            if (!enemyCoresCounted && state.rules.attackMode) {
+                enemyCores = max(state.teams.present.sum { t -> if (t.team !== it.player.team()) t.cores.size else 0 }, 1)
+                enemyCoresCounted = true
+            }
+
             if (Config.authType == Config.AuthType.None) {
                 val data = database[it.player.uuid()]
                 if (data != null) {
@@ -341,6 +364,7 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
+            enemyCoresCounted = false
             if (state.rules.pvp && Config.pvpPeace) {
                 orignalBlockMultiplier = state.rules.blockDamageMultiplier
                 orignalUnitMultiplier = state.rules.unitDamageMultiplier
