@@ -45,6 +45,7 @@ import java.util.*
 import java.util.regex.Pattern
 import kotlin.experimental.and
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 
 object Event {
@@ -227,21 +228,22 @@ object Event {
                 val target = findPlayerData(player.uuid())
 
                 if (!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
-                    val name = it.tile.block().name
+                    val block = it.tile.block()
+                    val exp = block.buildCostMultiplier
+
                     if (!it.breaking) {
-                        log(LogType.Block, "${player.name} placed ${it.tile.block().name}")
-                        val exp = PluginData.expData.getInt(name, 1)
+                        log(LogType.Block, "${player.name} placed ${block.name}")
+
                         target.placecount + 1
-                        target.exp = target.exp + exp
+                        target.exp = target.exp + exp.roundToInt()
 
                         if (isDebug) {
                             Log.info("${player.name} placed ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
                         }
                     } else if (it.breaking) {
                         log(LogType.Block, "${player.name} break ${player.unit().buildPlan().block.name}")
-                        val exp = PluginData.expData.getInt(player.unit().buildPlan().block.name, 1)
                         target.breakcount + 1
-                        target.exp = target.exp + exp
+                        target.exp = target.exp - exp.roundToInt()
 
                         if (isDebug) {
                             Log.info("${player.name} break ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
@@ -546,6 +548,7 @@ object Event {
                                     Vars.netServer.admins.banPlayer(voteTargetUUID)
                                     send("command.vote.kick.target.banned", name)
                                 } else {
+                                    // todo 관리자 강퇴 안되게 하기 1
                                     voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
                                     send("command.vote.kick.target.kicked", name)
                                 }
