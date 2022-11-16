@@ -33,6 +33,9 @@ object Config {
     var destroyCore = false
     var chatlimit = false
     var chatlanguage = "ko,en"
+    var chatBlacklist = false
+    var chatBlacklistRegex = false
+    var minimalName = false
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -129,6 +132,8 @@ object Config {
             features.add("destroyCore", destroyCore, bundle["config.destroycore"])
             features.add("chatlimit", chatlimit, bundle["config.chatlimit"])
             features.add("chatlanguage", chatlanguage, bundle["config.chatlanguage"])
+            features.add("chatBlacklist", chatBlacklist, bundle["config.chatblacklist"])
+            features.add("chatBlacklistRegex", chatBlacklistRegex, bundle["config.chatblacklist.regex"])
 
             val ban = JsonObject()
             ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -138,6 +143,7 @@ object Config {
             val security = JsonObject()
             security.add("votekick", votekick, bundle["config.votekick"])
             security.add("antiGrief", antiGrief, bundle["config.antigrief"])
+            security.add("minimumName", minimalName, bundle["config.minimumName"])
 
             val discord = JsonObject()
             discord.add("botToken", botToken, bundle["config.discord.token"])
@@ -185,9 +191,12 @@ object Config {
         destroyCore = features.getBoolean("destroyCore", destroyCore)
         chatlimit = features.getBoolean("chatlimit", chatlimit)
         chatlanguage = features.getString("chatlanguage", chatlanguage)
+        chatBlacklist = features.getBoolean("chatBlacklist", chatBlacklist)
+        chatBlacklistRegex = features.getBoolean("chatBlacklistRegex", chatBlacklistRegex)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)
+        minimalName = security.getBoolean("minimalName", minimalName)
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)

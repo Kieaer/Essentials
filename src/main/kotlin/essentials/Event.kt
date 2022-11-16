@@ -102,11 +102,27 @@ object Event {
                                     it.player.sendMessage(Bundle(data.languageTag)["chat.language.not.allow"])
                                     return@on
                                 }
-                            } catch (_: LangDetectException) {
-
-                            }
+                            } catch (_: LangDetectException) {}
                         }
 
+                        if (Config.chatBlacklist) {
+                            val file = Main.root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
+                            if (file.isNotEmpty()) {
+                                for (a in file) {
+                                    if (Config.chatBlacklistRegex) {
+                                        if (it.message.contains(Regex(a))) {
+                                            it.player.sendMessage(Bundle(findPlayerData(it.player.uuid())!!.languageTag)["chat.blacklisted"])
+                                            return@on
+                                        }
+                                    } else {
+                                        if (it.message.contains(a)) {
+                                            it.player.sendMessage(Bundle(findPlayerData(it.player.uuid())!!.languageTag)["chat.blacklisted"])
+                                            return@on
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
                     }
                 } else {
@@ -183,6 +199,7 @@ object Event {
         }
 
         Events.on(GameOverEvent::class.java) {
+            // todo 공격 모드 승리시 시간에 따라 경험치 지급
             if (state.rules.pvp) {
                 var index = 5
                 for (a in 0..4) {
@@ -341,12 +358,15 @@ object Event {
             }
 
             if (Config.fixedName) {
-                if (e.player.name.length < 4) Call.kick(e.player.con(), "Nickname too short!")
                 if (e.player.name.length > 32) Call.kick(e.player.con(), "Nickname too long!")
                 if (e.player.name.matches(Regex(".*\\[.*].*"))) Call.kick(e.player.con(), "Color tags can't be used for nicknames on this Server.")
                 if (e.player.name.contains("　")) Call.kick(e.player.con(), "Don't use blank speical charactor nickname!")
                 if (e.player.name.contains(" ")) Call.kick(e.player.con(), "Nicknames can't be used on this server!")
                 if (Pattern.matches(".*\\[.*.].*", e.player.name)) Call.kick(e.player.con(), "Can't use only color tags nickname in this Server.")
+            }
+
+            if (Config.minimalName) {
+                if (e.player.name.length < 4) Call.kick(e.player.con(), "Nickname too short!")
             }
 
             if (Config.antiVPN) {

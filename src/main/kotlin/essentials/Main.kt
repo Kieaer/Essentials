@@ -104,16 +104,6 @@ class Main : Plugin() {
     }
 
     private fun createFile() {
-        if (!root.child("log").exists()) {
-            val names = arrayOf("block", "chat", "deposit", "error", "griefer", "non-block", "player", "tap", "web", "withdraw")
-            for (a in names) {
-                if (!root.child("log/$a.log").exists()) {
-                    root.child("log").mkdirs()
-                    root.child("log/$a.log").file().createNewFile()
-                }
-            }
-        }
-
         if (!root.child("motd").exists()) {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
@@ -140,6 +130,10 @@ class Main : Plugin() {
                     root.child("messages/${names[a]}.txt").writeString(texts[a])
                 }
             }
+        }
+
+        if(!root.child("chat_blacklist.txt").exists()) {
+            root.child("chat_blacklist.txt").writeString("않")
         }
     }
 }
