@@ -69,7 +69,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
             handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
             handler.register("info", "[player]", "Show your information") { a, p: Playerc -> Client(a, p).info() }
-            handler.register("js", "[code]", "Execute JavaScript codes") { a, p: Playerc -> Client(a, p).js() }
+            handler.register("js", "[code...]", "Execute JavaScript codes") { a, p: Playerc -> Client(a, p).js() }
             handler.register("kickall", "All users except yourself and the administrator will be kicked") { a, p: Playerc -> Client(a, p).kickall() }
             handler.register("kill", "[player]", "Kill player.") { a, p: Playerc -> Client(a, p).kill() }
             handler.register("killall", "[team]", "Kill all enemy units") { a, p: Playerc -> Client(a, p).killall() }
@@ -1283,7 +1283,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (other == null) {
                 player.sendMessage(bundle["player.not.found"])
             } else {
+                player.unit().set(other.x, other.y)
                 Call.setPosition(player.con(), other.x, other.y)
+                //Call.setCameraPosition(player.con(), other.x, other.y)
             }
         }
 
