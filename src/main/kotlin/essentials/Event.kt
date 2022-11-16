@@ -393,7 +393,7 @@ object Event {
             }
 
             if (Config.antiVPN) {
-                val br = BufferedReader(InputStreamReader(javaClass.getResourceAsStream("/ipv4.txt")))
+                val br = BufferedReader(InputStreamReader(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")!!))
                 br.use { _ ->
                     var line: String
                     while (br.readLine().also { line = it } != null) {
