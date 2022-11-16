@@ -94,6 +94,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p: Playerc -> Client(a, p).tempban() }
             handler.register("time", "Show server time") { a, p: Playerc -> Client(a, p).time() }
             handler.register("tp", "<player>", "Teleport to other players") { a, p: Playerc -> Client(a, p).tp() }
+            handler.register("tpp", "[player]", "Lock on camera the target player.") { a, p: Playerc -> Client(a, p).tpp() }
             handler.register("track", "Displays the mouse positions of players.") { a, p: Playerc -> Client(a, p).track() }
             handler.register("unmute", "<player>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
             handler.register("url", "<command>", "Opens a URL contained in a specific command.") { a, p: Playerc -> Client(a, p).url() }
@@ -1376,7 +1377,31 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else {
                 player.unit().set(other.x, other.y)
                 Call.setPosition(player.con(), other.x, other.y)
-                //Call.setCameraPosition(player.con(), other.x, other.y)
+            }
+        }
+
+        fun tpp() {
+            if (!Permission.check(player, "tp")) return
+
+            if (data != null) {
+                if (arg.isEmpty() && data.status.containsKey("tpp")) {
+                    data.status.remove("tpp")
+                    player.team(Team.get(data.status.get("tpp_team").toInt()))
+                    data.status.remove("tpp_team")
+                    player.sendMessage(bundle["command.tpp.unfollowing"])
+                    Call.setCameraPosition(player.con(), player.x, player.y)
+                } else {
+                    val other = findPlayers(arg[0])
+                    if (other == null) {
+                        player.sendMessage(bundle["player.not.found"])
+                    } else {
+                        data.status.put("tpp_team", player.team().id.toString())
+                        data.status.put("tpp", other.uuid())
+                        player.clearUnit()
+                        player.team(Team.derelict)
+                        player.sendMessage(bundle["command.tpp.following", other.name()])
+                    }
+                }
             }
         }
 

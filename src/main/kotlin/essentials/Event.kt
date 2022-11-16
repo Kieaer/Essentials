@@ -538,6 +538,17 @@ object Event {
                         Call.label(a.player.con(), b.name, Time.delta/2, b.mouseX, b.mouseY)
                     }
                 }
+
+                if (a.status.containsKey("tpp")) {
+                    val data = a.status.get("tpp")
+                    val target = Groups.player.find { p -> p.uuid() == data }
+                    if (target != null) {
+                        Call.setCameraPosition(a.player.con(), target.x, target.y)
+                    } else {
+                        a.status.remove("tpp")
+                        Call.setCameraPosition(a.player.con(), a.player.x, a.player.y)
+                    }
+                }
             }
 
             if (destroyAll) {
