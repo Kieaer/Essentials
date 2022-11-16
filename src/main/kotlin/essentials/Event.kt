@@ -11,6 +11,7 @@ import com.cybozu.labs.langdetect.DetectorFactory
 import com.cybozu.labs.langdetect.LangDetectException
 import essentials.Main.Companion.database
 import mindustry.Vars
+import mindustry.Vars.netServer
 import mindustry.Vars.state
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -338,7 +339,9 @@ object Event {
             for (s in PluginData.blacklist) {
                 if (e.player.name.matches(Regex(s))) Call.kick(e.player.con, "This name is blacklisted.")
             }
+
             if (Config.fixedName) {
+                if (e.player.name.length < 4) Call.kick(e.player.con(), "Nickname too short!")
                 if (e.player.name.length > 32) Call.kick(e.player.con(), "Nickname too long!")
                 if (e.player.name.matches(Regex(".*\\[.*].*"))) Call.kick(e.player.con(), "Color tags can't be used for nicknames on this Server.")
                 if (e.player.name.contains("　")) Call.kick(e.player.con(), "Don't use blank speical charactor nickname!")
@@ -355,6 +358,15 @@ object Event {
                         if (match.matches(e.player.con.address)) {
                             Call.kick(e.player.con(), Bundle()["anti-grief.vpn"])
                         }
+                    }
+                }
+            }
+
+            if (Config.antiGrief) {
+                val find = netServer.admins.findByName(e.player.name)
+                if (find != null) {
+                    if (find.first().lastIP != e.player.con.address) {
+                        Call.kick(e.player.con(), "There's a player with the same name on the server!")
                     }
                 }
             }
@@ -548,7 +560,6 @@ object Event {
                                     Vars.netServer.admins.banPlayer(voteTargetUUID)
                                     send("command.vote.kick.target.banned", name)
                                 } else {
-                                    // todo 관리자 강퇴 안되게 하기 1
                                     voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
                                     send("command.vote.kick.target.kicked", name)
                                 }
