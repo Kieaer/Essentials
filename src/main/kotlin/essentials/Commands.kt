@@ -1609,13 +1609,15 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun votekick() {
-            val f = Groups.player.find { p -> p.id() == arg[0].substring(1).toInt()}
+            if (arg[0].contains("#")) {
+                val f = Groups.player.find { p -> p.id() == arg[0].substring(1).toInt() }
 
-            if (Permission.check(f, "kick.admin")){
-                player.sendMessage(bundle["command.vote.kick.target.admin"])
-            } else {
-                val array = arrayOf("kick", f.name, "Kick")
-                vote(player, array)
+                if (Permission.check(f, "kick.admin")) {
+                    player.sendMessage(bundle["command.vote.kick.target.admin"])
+                } else {
+                    val array = arrayOf("kick", f.name, "Kick")
+                    vote(player, array)
+                }
             }
         }
     }
