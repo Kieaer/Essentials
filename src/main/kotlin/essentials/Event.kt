@@ -622,7 +622,7 @@ object Event {
                             }
 
                             "gg" -> {
-                                Call.gameOver(Team.crux)
+                                Events.fire(GameOverEvent(state.rules.waveTeam));
                             }
 
                             "skip" -> {

@@ -1,6 +1,7 @@
 package essentials
 
 import arc.Core
+import arc.Events
 import arc.graphics.Color
 import arc.math.Mathf
 import arc.struct.ObjectMap
@@ -21,6 +22,7 @@ import mindustry.content.Blocks
 import mindustry.content.Fx
 import mindustry.content.Weathers
 import mindustry.core.GameState
+import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.gen.Unit
@@ -621,7 +623,21 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun gg() {
             if (!Permission.check(player, "gg")) return
-            Call.gameOver(Team.crux)
+            if (arg.isEmpty()) {
+                Events.fire(EventType.GameOverEvent(state.rules.waveTeam))
+            } else {
+                val team = when (arg[0]) {
+                    "derelict" -> 0
+                    "sharded" -> 1
+                    "crux" -> 2
+                    "malis" -> 3
+                    "green" -> 4
+                    "blue" -> 5
+                    "neoplastic" -> 6
+                    else -> 1
+                }
+                Events.fire(EventType.GameOverEvent(Team.get(team)))
+            }
         }
 
         fun god() {
