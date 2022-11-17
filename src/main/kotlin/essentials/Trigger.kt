@@ -64,6 +64,14 @@ object Trigger {
         Event.players.add(ee)
         Event.order++
 
+        val motd = if (root.child("motd/${data.languageTag}.txt").exists()) {
+            root.child("motd/${data.languageTag}.txt").readString()
+        } else {
+            val file = root.child("motd/en.txt")
+            if (file.exists()) file.readString() else ""
+        }
+        val count = motd.split("\r\n|\r|\n").toTypedArray().size
+        if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
     }
 
     fun createPlayer(player: Playerc, id: String?, password: String?) {
