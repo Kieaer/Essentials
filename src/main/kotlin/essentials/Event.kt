@@ -65,6 +65,7 @@ object Event {
     var voteStarter: Playerc? = null
     var voted = Seq<String>()
     var lastVoted = LocalTime.now()
+    var isAdminVote = false
 
     var enemyCores = 0
     var enemyCoresCounted = false
@@ -93,7 +94,11 @@ object Event {
 
                     if (data != null && !data.mute) {
                         if (voting && it.message.equals("y", true) && !voted.contains(it.player.uuid())) {
-                            voted.add(it.player.uuid())
+                            if (Permission.check(it.player, "vote.pass")) {
+                                isAdminVote = true
+                            } else {
+                                voted.add(it.player.uuid())
+                            }
                             it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
                         }
 
@@ -602,7 +607,7 @@ object Event {
                         }
                     }
                     count--
-                    if ((count == 0 && check() <= voted.size) || check() <= voted.size) {
+                    if ((count == 0 && check() <= voted.size) || check() <= voted.size || isAdminVote) {
                         send("command.vote.success")
 
                         when (voteType) {
