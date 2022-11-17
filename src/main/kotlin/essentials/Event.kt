@@ -66,8 +66,6 @@ object Event {
     var voted = Seq<String>()
     var lastVoted = LocalTime.now()
 
-    var destroyAll = false
-
     var enemyCores = 0
     var enemyCoresCounted = false
 
@@ -561,28 +559,6 @@ object Event {
                 }
             }
 
-            if (destroyAll) {
-                Call.gameOver(Team.derelict)
-                for (a in 0..world.tiles.height) {
-                    for (b in 0..world.tiles.width) {
-                        Call.effect(Fx.pointHit, (a * 8).toFloat(), (b * 8).toFloat(), 0f, Color.red)
-                        if (world.tile(a, b) != null) {
-                            try {
-                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                            } catch (e: Exception) {
-                                Call.setFloor(world.tile(a, b), Blocks.space, Blocks.space)
-                            }
-                            try {
-                                Call.removeTile(world.tile(a, b))
-                            } catch (e: Exception) {
-                                Call.removeTile(world.tile(a, b))
-                            }
-                        }
-                    }
-                }
-                destroyAll = false
-            }
-
             if (secondCount == 60) {
                 PluginData.uptime++
                 PluginData.playtime++
@@ -646,7 +622,7 @@ object Event {
                             }
 
                             "gg" -> {
-                                destroyAll = true
+                                Call.gameOver(Team.crux)
                             }
 
                             "skip" -> {

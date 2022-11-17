@@ -78,6 +78,7 @@ object Permission {
             adminPerm.add("team")
             adminPerm.add("team.other")
             adminPerm.add("tempban")
+            adminPerm.add("tpp")
             adminPerm.add("unmute")
             adminPerm.add("weather")
 

@@ -621,7 +621,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun gg() {
             if (!Permission.check(player, "gg")) return
-            Event.destroyAll = true
+            Call.gameOver(Team.crux)
         }
 
         fun god() {
