@@ -87,8 +87,10 @@ object Event {
                 if (data != null) {
                     val test = String(it.message.toByteArray(Charset.forName("euc-kr")), Charset.forName("x-windows-949"))
                     if (test.contains("?")) {
-                        Call.kick(it.player.con, Bundle(data.languageTag)["detect.invalid.client"])
-                        return@on
+                        if (!it.message.contains("?")) {
+                            Call.kick(it.player.con, Bundle(data.languageTag)["detect.invalid.client"])
+                            return@on
+                        }
                     }
 
                     log(LogType.Chat, "${it.player.name}: ${it.message}")
@@ -279,7 +281,7 @@ object Event {
 
                             val score = (time + coreitem + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
-                            target.exp = score + blockexp
+                            target.exp = target.exp + score + blockexp
                             target.attackclear++
 
                             val bundle = Bundle(target.languageTag)
