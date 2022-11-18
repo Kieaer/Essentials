@@ -105,6 +105,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         } else {
             handler.register("debug", "[bool]", "Show plugin internal informations") { a -> Server(a).debug() }
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
+            handler.register("reload", "Reload permission and config files.") { a -> Server(a).reload()}
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
             serverCommands = handler
@@ -1646,6 +1647,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                 println("$tmp$server$result\n\n\n$time")
             }
+        }
+
+        fun reload() {
+            Permission.load()
+            Log.info(Bundle()["config.permission.updated"])
+            Config.load()
+            Log.info(Bundle()["config.reloaded"])
         }
 
         fun debug() {
