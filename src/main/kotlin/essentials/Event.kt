@@ -63,6 +63,7 @@ object Event {
     var voted = Seq<String>()
     var lastVoted = LocalTime.now()
     var isAdminVote = false
+    var isCanceled = false
 
     var enemyCores = 0
     var enemyCoresCounted = false
@@ -85,25 +86,20 @@ object Event {
             if (!it.message.startsWith("/")) {
                 val data = findPlayerData(it.player.uuid())
                 if (data != null) {
-                    val test = String(it.message.toByteArray(Charset.forName("euc-kr")), Charset.forName("x-windows-949"))
-                    if (test.contains("?")) {
-                        if (!it.message.contains("?")) {
-                            Call.kick(it.player.con, Bundle(data.languageTag)["detect.invalid.client"])
-                            return@on
-                        }
-                    }
-
                     log(LogType.Chat, "${it.player.name}: ${it.message}")
                     Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
 
                     if (!data.mute) {
+                        val isAdmin = Permission.check(it.player, "vote.pass")
                         if (voting && it.message.equals("y", true) && !voted.contains(it.player.uuid())) {
-                            if (Permission.check(it.player, "vote.pass")) {
+                            if (isAdmin) {
                                 isAdminVote = true
                             } else {
                                 voted.add(it.player.uuid())
                             }
                             it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                        } else if (voting && it.message.equals("n", true) && isAdmin) {
+                            isCanceled = true
                         }
 
                         if (Config.chatlimit) {
@@ -796,7 +792,7 @@ object Event {
                         voteStarter = null
                         voted = Seq<String>()
                         count = 60
-                    } else if (count == 0 && check() > voted.size) {
+                    } else if ((count == 0 && check() > voted.size) || isCanceled) {
                         send("command.vote.failed")
 
                         voting = false
