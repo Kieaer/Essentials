@@ -83,13 +83,18 @@ object Event {
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
             if (!it.message.startsWith("/")) {
-                if (findPlayerData(it.player.uuid()) != null) {
+                val data = findPlayerData(it.player.uuid())
+                if (data != null) {
+                    val test = String(it.message.toByteArray(Charset.forName("euc-kr")), Charset.forName("x-windows-949"))
+                    if (test.contains("?")) {
+                        Call.kick(it.player.con, Bundle(data.languageTag)["detect.invalid.client"])
+                        return@on
+                    }
+
                     log(LogType.Chat, "${it.player.name}: ${it.message}")
                     Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
 
-                    val data = database.players.find { e -> e.uuid == it.player.uuid() }
-
-                    if (data != null && !data.mute) {
+                    if (!data.mute) {
                         if (voting && it.message.equals("y", true) && !voted.contains(it.player.uuid())) {
                             if (Permission.check(it.player, "vote.pass")) {
                                 isAdminVote = true
