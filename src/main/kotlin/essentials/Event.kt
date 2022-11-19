@@ -790,6 +790,8 @@ object Event {
                         voteMap = null
                         voteWave = null
                         voteStarter = null
+                        isCanceled = false
+                        isAdminVote = false
                         voted = Seq<String>()
                         count = 60
                     } else if ((count == 0 && check() > voted.size) || isCanceled) {
@@ -803,6 +805,8 @@ object Event {
                         voteMap = null
                         voteWave = null
                         voteStarter = null
+                        isCanceled = false
+                        isAdminVote = false
                         voted = Seq<String>()
                         count = 60
                     }

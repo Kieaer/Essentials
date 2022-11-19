@@ -1663,15 +1663,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun debug() {
             if (System.getenv("DEBUG_KEY") != null) {
-                if (arg.isNotEmpty()) {
-                    if (arg[0].toBoolean()) {
-                        Core.settings.put("debugMode", true)
-                    } else {
-                        Core.settings.put("debugMode", false)
-                    }
-                }
-                println(
-                    """
+                when (arg[0]) {
+                    "info" -> {
+                        println(
+                            """
                     == PluginData class
                     uptime: ${PluginData.uptime}
                     playtime: ${PluginData.playtime}
@@ -1685,9 +1680,20 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     banned: ${PluginData.banned}
                     
                     == DB class
-                """.trimIndent()
-                )
-                database.players.forEach { println(it.toString()) }
+                    """.trimIndent()
+                        )
+                        database.players.forEach { println(it.toString()) }
+                    }
+                    "debug" -> {
+                        if (arg.isNotEmpty()) {
+                            if (arg[0].toBoolean()) {
+                                Core.settings.put("debugMode", true)
+                            } else {
+                                Core.settings.put("debugMode", false)
+                            }
+                        }
+                    }
+                }
             }
         }
 
