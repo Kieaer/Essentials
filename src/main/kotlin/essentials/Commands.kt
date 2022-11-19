@@ -1393,6 +1393,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else {
                 player.unit().set(other.x, other.y)
                 Call.setPosition(player.con(), other.x, other.y)
+                Call.setCameraPosition(player.con(), other.x, other.y)
             }
         }
 
