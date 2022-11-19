@@ -1570,11 +1570,15 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         if (arg.size == 1) {
                             player.sendMessage(bundle["command.vote.skip.wrong"])
                         } else if (arg[1].toIntOrNull() != null) {
-                            Event.voteType = "skip"
-                            Event.voteWave = arg[1].toInt()
-                            Event.voteStarter = player
-                            Event.voting = true
-                            sendStart("command.vote.skip.start", arg[1])
+                            if (arg[1].toInt() > 50) {
+                                player.sendMessage(bundle["command.vote.skip.toomany"])
+                            } else {
+                                Event.voteType = "skip"
+                                Event.voteWave = arg[1].toInt()
+                                Event.voteStarter = player
+                                Event.voting = true
+                                sendStart("command.vote.skip.start", arg[1])
+                            }
                         }
                     }
 
