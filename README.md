@@ -2,6 +2,10 @@
 Add more commands to the server.<br>
 **__Requires Java 16 or higher!__**
 
+This plugin was created because the creators were very angry with too many Griefers in Mindustry 4.0 Alpha version.<br>
+To create this plugin, I'm spent all night studying a programming language I hadn't looked at in my entire life. lol<br><br>
+Basically, this plugin focuses on finding cheats and griefers, but it adds additional features to make it useful on other servers as well.
+
 ## Installation
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
