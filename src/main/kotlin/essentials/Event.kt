@@ -469,10 +469,9 @@ object Event {
 
             if (Config.fixedName) {
                 if (e.player.name.length > 32) Call.kick(e.player.con(), "Nickname too long!")
-                if (e.player.name.matches(Regex(".*\\[.*].*"))) Call.kick(e.player.con(), "Color tags can't be used for nicknames on this Server.")
+                if (e.player.name.matches(Regex(".*\\[.*].*"))) Call.kick(e.player.con(), "Parentheses aren't allowed in nickname.")
                 if (e.player.name.contains("　")) Call.kick(e.player.con(), "Don't use blank speical charactor nickname!")
                 if (e.player.name.contains(" ")) Call.kick(e.player.con(), "Nicknames can't be used on this server!")
-                if (Pattern.matches(".*\\[.*.].*", e.player.name)) Call.kick(e.player.con(), "Can't use only color tags nickname in this Server.")
             }
 
             if (Config.minimalName) {
