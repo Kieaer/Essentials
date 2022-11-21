@@ -15,7 +15,7 @@ object Permission {
     private val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
     private val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
 
-    val bundle = Bundle(Locale(System.getProperty("user.language"), System.getProperty("user.country")).toLanguageTag())
+    val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
     val comment = """
         ${bundle["permission.sort"]}
