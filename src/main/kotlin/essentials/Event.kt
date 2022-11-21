@@ -1,5 +1,6 @@
 package essentials
 
+import arc.ApplicationListener
 import arc.Core
 import arc.Events
 import arc.files.Fi
