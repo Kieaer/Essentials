@@ -220,7 +220,6 @@ object Permission {
                 return true
             }
         }
-        player.sendMessage("[scarlet]Unknown command. Check [lightgray]/help[scarlet].")
         return false
     }
 
