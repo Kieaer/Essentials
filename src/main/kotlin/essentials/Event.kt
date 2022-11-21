@@ -35,6 +35,7 @@ import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -70,6 +71,7 @@ object Event {
     val worldHistory = Seq<TileLog>()
 
     var random = Random()
+    var dateformat = SimpleDateFormat("HH:mm:ss")
 
     var blockExp = ObjectMap<String, Int>()
 
@@ -244,6 +246,7 @@ object Event {
         }
 
         Events.on(GameOverEvent::class.java) {
+            worldHistory.clear()
             if (state.rules.pvp) {
                 var index = 5
                 for (a in 0..4) {
@@ -267,46 +270,56 @@ object Event {
                 for (p in Groups.player) {
                     val target = findPlayerData(p.uuid())
                     if (target != null) {
+                        val oldLevel = target.level
+                        val oldExp = target.exp
+
+                        // 시간 x 적 코어 개수
+                        val time = (PluginData.playtime.toInt() * 2) * enemyCores
+                        var coreitem = 0
+                        for (a in state.stats.coreItemCount) {
+                            coreitem += when (a.key) {
+                                Items.copper -> 1
+                                Items.lead -> 1
+                                Items.metaglass -> 2
+                                Items.graphite -> 4
+                                Items.titanium -> 5
+                                Items.thorium -> 10
+                                Items.silicon -> 7
+                                Items.plastanium -> 13
+                                Items.phaseFabric -> 20
+                                Items.surgeAlloy -> 18
+                                Items.beryllium -> 1
+                                Items.tungsten -> 2
+                                Items.oxide -> 5
+                                Items.carbide -> 10
+                                else -> 0
+                            }
+                        }
+
+                        var blockexp = 0
+                        // 건설한 블록 개수
+                        for (a in state.stats.placedBlockCount) {
+                            blockexp += blockExp[a.key.name]
+                        }
+
                         if (it.winner == p.team()) {
-                            val oldLevel = target.level
-                            val oldExp = target.exp
-
-                            // 시간 x 적 코어 개수
-                            val time = (PluginData.playtime.toInt() * 2) * enemyCores
-                            var coreitem = 0
-                            for (a in state.stats.coreItemCount) {
-                                coreitem += when (a.key) {
-                                    Items.copper -> 1
-                                    Items.lead -> 1
-                                    Items.metaglass -> 2
-                                    Items.graphite -> 4
-                                    Items.titanium -> 5
-                                    Items.thorium -> 10
-                                    Items.silicon -> 7
-                                    Items.plastanium -> 13
-                                    Items.phaseFabric -> 20
-                                    Items.surgeAlloy -> 18
-                                    Items.beryllium -> 1
-                                    Items.tungsten -> 2
-                                    Items.oxide -> 5
-                                    Items.carbide -> 10
-                                    else -> 0
-                                }
-                            }
-
-                            var blockexp = 0
-                            // 건설한 블록 개수
-                            for (a in state.stats.placedBlockCount) {
-                                blockexp += blockExp[a.key.name]
-                            }
-
                             val score = (time + coreitem + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             target.exp = target.exp + score + blockexp
                             target.attackclear++
 
                             val bundle = Bundle(target.languageTag)
-                            p.sendMessage(bundle["exp.earn", blockexp])
+                            p.sendMessage(bundle["exp.earn.victory", score + blockexp])
+                            p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
+                            database.update(p.uuid(), target)
+                            p.sendMessage(bundle["data.saved"])
+                        } else {
+                            val score = (coreitem + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+
+                            target.exp = target.exp + score + blockexp
+
+                            val bundle = Bundle(target.languageTag)
+                            p.sendMessage(bundle["exp.earn.defeat", score, target.exp + (time + coreitem + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed) + blockexp])
                             p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
                             database.update(p.uuid(), target)
                             p.sendMessage(bundle["data.saved"])
@@ -338,6 +351,7 @@ object Event {
                     val block = it.tile.block()
                     if (!it.breaking) {
                         log(LogType.Block, "${player.name} placed ${block.name}")
+                        addLog(TileLog(System.currentTimeMillis(), player.name, "place", it.tile.x, it.tile.y, it.tile.block().name))
                         target.placecount + 1
                         target.exp = target.exp + blockExp.get(block.name)
 
@@ -346,6 +360,7 @@ object Event {
                         }
                     } else if (it.breaking) {
                         log(LogType.Block, "${player.name} break ${player.unit().buildPlan().block.name}")
+                        addLog(TileLog(System.currentTimeMillis(), player.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name))
                         target.breakcount + 1
                         target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
 
