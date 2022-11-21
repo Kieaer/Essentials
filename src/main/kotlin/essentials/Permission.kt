@@ -181,7 +181,7 @@ object Permission {
                     database.update(b.get("uuid").asString(), data)
                 }
             } else {
-                c.permission = b.get("group").asString()
+                c.permission = b.getString("group", default)
                 c.name = b.getString("name", netServer.admins.findByIP(c.player.ip()).lastName)
                 c.player.admin(b.getBoolean("admin", false))
                 c.player.name(b.getString("name", netServer.admins.findByIP(c.player.ip()).lastName))
