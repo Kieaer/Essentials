@@ -5,7 +5,6 @@ import arc.files.Fi
 import arc.util.Log
 import org.hjson.ParseException
 import java.io.IOException
-import java.lang.Thread.sleep
 import java.nio.file.*
 
 object FileWatchService : Runnable {
@@ -22,6 +21,7 @@ object FileWatchService : Runnable {
         while (!Thread.currentThread().isInterrupted) {
             try {
                 watchKey = watchService.take()
+                Thread.sleep(100)
                 val events = watchKey.pollEvents()
                 for (event in events) {
                     val kind = event.kind()
@@ -29,7 +29,6 @@ object FileWatchService : Runnable {
                     if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         if (paths == "permission_user.txt" || paths == "permission.txt") {
                             try {
-                                sleep(100)
                                 Permission.load()
                                 Log.info(Bundle()["config.permission.updated"])
                             } catch (e: ParseException) {

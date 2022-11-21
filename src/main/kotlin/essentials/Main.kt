@@ -30,6 +30,7 @@ class Main : Plugin() {
 
         createFile()
         database.open()
+        Config.save()
         Config.load()
         Permission.load()
         PluginData.load()
