@@ -49,6 +49,8 @@ object Config {
     var channelToken = ""
     var discordURL = ""
 
+    var configVersion = 1
+
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
 
@@ -158,6 +160,7 @@ object Config {
         obj.add("discord", discord)
         obj.add("ban", ban)
         obj.add("security", security)
+        obj.add("configVersion", configVersion)
 
         root.writeString(obj.toString(Stringify.HJSON_COMMENTS))
     }
@@ -201,5 +204,12 @@ object Config {
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)
         discordURL = discord.getString("discordURL", discordURL)
+    }
+
+    fun update(){
+        val version = JsonObject.readHjson(root.readString("utf-8")).asObject().get("configVersion").asInt()
+        if (configVersion > version) {
+            save()
+        }
     }
 }

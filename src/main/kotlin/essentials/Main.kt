@@ -30,8 +30,9 @@ class Main : Plugin() {
 
         createFile()
         database.open()
-        Config.save()
+        if (!root.child("config.txt").exists()) Config.save()
         Config.load()
+        Config.update()
         Permission.load()
         PluginData.load()
 
