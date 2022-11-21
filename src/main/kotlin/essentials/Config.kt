@@ -47,6 +47,7 @@ object Config {
 
     var botToken = ""
     var channelToken = ""
+    var discordURL = ""
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -107,7 +108,7 @@ object Config {
     }
 
     fun save() {
-        if (System.getenv("DEBUG_KEY") == null) wizard()
+        if (System.getenv("DEBUG_KEY") == null && !root.exists()) wizard()
 
         val plugin = JsonObject()
         plugin.add("update", update, bundle["config.update"])
@@ -149,6 +150,7 @@ object Config {
         val discord = JsonObject()
         discord.add("botToken", botToken, bundle["config.discord.token"])
         discord.add("channelToken", channelToken, bundle["config.discord.channel"])
+        discord.add("discordURL", discordURL, bundle["config.discord.url"])
 
         obj.setComment(bundle["config.detail", "https://github.com/Kieaer/Essentials/wiki/Config-detail-information"])
         obj.add("plugin", plugin)
@@ -161,8 +163,6 @@ object Config {
     }
 
     fun load() {
-        if (!root.exists()) save()
-
         val config = JsonObject.readHjson(root.readString("utf-8")).asObject()
         val plugin = config.get("plugin").asObject()
         val features = config.get("features").asObject()
@@ -200,7 +200,6 @@ object Config {
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)
-
-        save()
+        discordURL = discord.getString("discordURL", discordURL)
     }
 }

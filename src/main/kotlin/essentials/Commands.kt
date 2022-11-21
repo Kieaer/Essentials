@@ -78,6 +78,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("kill", "[player]", "Kill player.") { a, p: Playerc -> Client(a, p).kill() }
             handler.register("killall", "[team]", "Kill all enemy units") { a, p: Playerc -> Client(a, p).killall() }
             handler.register("lang", "<language_tag>", "Set the language for your account.") { a, p: Playerc -> Client(a, p).lang() }
+            handler.register("log", "Enable block log") { a, p: Playerc -> Client(a, p).log() }
             handler.register("login", "<id> <password>", "Access your account") { a, p: Playerc -> Client(a, p).login() }
             handler.register("maps", "[page]", "Show server maps") { a, p: Playerc -> Client(a, p).maps() }
             handler.register("me", "<text...>", "broadcast * message") { a, p: Playerc -> Client(a, p).me() }
@@ -306,15 +307,18 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun discord() {
             if (!Permission.check(player, "discord")) return
             if (data != null) {
-                if (!data.status.containsKey("discord")) {
-                    val number = if (Discord.pin.containsKey(player.uuid())) {
-                        Discord.pin.get(player.uuid())
+                Call.openURI(player.con(), Config.discordURL)
+                if (Config.authType == Config.AuthType.Discord) {
+                    if (!data.status.containsKey("discord")) {
+                        val number = if (Discord.pin.containsKey(player.uuid())) {
+                            Discord.pin.get(player.uuid())
+                        } else {
+                            Discord.queue(player)
+                        }
+                        player.sendMessage(bundle["command.discord.pin", number])
                     } else {
-                        Discord.queue(player)
+                        player.sendMessage(bundle["command.discord.already"])
                     }
-                    player.sendMessage(bundle["command.discord.pin", number])
-                } else {
-                    player.sendMessage(bundle["command.discord.already"])
                 }
             }
         }
@@ -865,6 +869,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 database.update(player.uuid(), data)
                 player.sendMessage(bundle["command.language.set", Locale(arg[0]).language])
                 player.sendMessage(Bundle(arg[0])["command.language.preview", Locale(arg[0]).toLanguageTag()])
+            }
+        }
+
+        fun log(){
+            if (!Permission.check(player, "log")) return
+            if (data != null) {
+                if (data.status.containsKey("log")) {
+                    data.status.remove("log")
+                    player.sendMessage(bundle["command.log.disabled"])
+                } else {
+                    data.status.put("log", "true")
+                    player.sendMessage(bundle["command.log.enabled"])
+                }
             }
         }
 
@@ -1655,10 +1672,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun reload() {
-            Permission.load()
-            Log.info(Bundle()["config.permission.updated"])
-            Config.load()
-            Log.info(Bundle()["config.reloaded"])
+            try {
+                Permission.load()
+                Log.info(Bundle()["config.permission.updated"])
+                Config.load()
+                Log.info(Bundle()["config.reloaded"])
+            } catch (e: Exception){
+                e.printStackTrace()
+            }
         }
 
         fun debug() {

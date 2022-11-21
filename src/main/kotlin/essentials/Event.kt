@@ -67,6 +67,7 @@ object Event {
 
     var enemyCores = 0
     var enemyCoresCounted = false
+    val worldHistory = Seq<TileLog>()
 
     var random = Random()
 
@@ -178,24 +179,48 @@ object Event {
 
         Events.on(TapEvent::class.java) {
             log(LogType.Tap, "${it.player.name} clicks on ${it.tile.block().name}")
-            val playerData = findPlayerData(it.player.uuid())
-            if (playerData != null) {
-                for (data in PluginData.warpBlocks) {
-                    if (it.tile.x >= world.tile(data.pos).x && it.tile.x <= world.tile(data.pos).x && it.tile.y >= world.tile(data.pos).y && it.tile.y <= world.tile(data.pos).y) {
-                        if (data.online) {
-                            Log.info("${it.player.name} moves to server ${data.ip}:${data.port}")
-                            Call.connect(it.player.con(), data.ip, data.port)
+            addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name))
+            val data = findPlayerData(it.player.uuid())
+            if (data != null) {
+                for (a in PluginData.warpBlocks) {
+                    if (it.tile.x >= world.tile(a.pos).x && it.tile.x <= world.tile(a.pos).x && it.tile.y >= world.tile(a.pos).y && it.tile.y <= world.tile(a.pos).y) {
+                        if (a.online) {
+                            Log.info("${it.player.name} moves to server ${a.ip}:${a.port}")
+                            Call.connect(it.player.con(), a.ip, a.port)
                         }
                         break
                     }
                 }
 
-                for (data in PluginData.warpZones) {
-                    if (it.tile.x > data.startTile.x && it.tile.x < data.finishTile.x && it.tile.y > data.startTile.y && it.tile.y < data.finishTile.y) {
-                        Log.info("${it.player.name} moves to server ${data.ip}:${data.port}")
-                        Call.connect(it.player.con(), data.ip, data.port)
+                for (a in PluginData.warpZones) {
+                    if (it.tile.x > a.startTile.x && it.tile.x < a.finishTile.x && it.tile.y > a.startTile.y && it.tile.y < a.finishTile.y) {
+                        Log.info("${it.player.name} moves to server ${a.ip}:${a.port}")
+                        Call.connect(it.player.con(), a.ip, a.port)
                         break
                     }
+                }
+
+                if (data.status.containsKey("log")) {
+                    val buf = Seq<TileLog>()
+                    for (a in worldHistory){
+                        if (a.x == it.tile.x && a.y == it.tile.y) {
+                            buf.add(a)
+                        }
+                    }
+                    val str = StringBuilder()
+                    for (a in buf) {
+                        str.append("[${dateformat.format(a.time)}] ${a.player} ${a.action} ${a.tile}\n")
+                    }
+
+                    val str2 = StringBuilder()
+                    if (str.toString().lines().size > 10) {
+                        val lines: List<String> = str.toString().split("\n").reversed()
+                        for (i in 0 until 10) {
+                            str2.append(lines[i]).append("\n")
+                        }
+                    }
+
+                    it.player.sendMessage(str.toString())
                 }
             }
         }
@@ -975,4 +1000,10 @@ object Event {
             Groups.player.find { p -> p.name.contains(name, true) }
         }
     }
+
+    fun addLog(log:TileLog) {
+        worldHistory.add(log)
+    }
+
+    class TileLog(val time: Long, val player: String, val action: String, val x: Short, val y: Short, val tile: String)
 }
