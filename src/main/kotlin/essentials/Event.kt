@@ -136,10 +136,10 @@ object Event {
                                 }
                             }
                         }
-                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message))
+                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message), it.message, it.player)
                     }
                 } else {
-                    Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}")
+                    Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}", it.message, it.player)
                 }
             }
         }

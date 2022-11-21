@@ -207,7 +207,7 @@ object Config {
     }
 
     fun update(){
-        val version = JsonObject.readHjson(root.readString("utf-8")).asObject().get("configVersion").asInt()
+        val version = JsonObject.readHjson(root.readString("utf-8")).asObject().getInt("configVersion", 1)
         if (configVersion > version) {
             save()
         }
