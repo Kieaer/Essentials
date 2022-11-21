@@ -87,6 +87,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
+            handler.register("ranking", "<level/time/place/break/win>", "Show players ranking")  { a, p: Playerc -> Client(a, p).ranking() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
@@ -923,7 +924,26 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun me() {
             if (!Permission.check(player, "me")) return
-            Call.sendMessage("[brown]== [sky]${player.name()}[white] - [tan]${arg[0]}")
+
+            if (Config.chatBlacklist) {
+                val file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
+                if (file.isNotEmpty()) {
+                    for (a in file) {
+                        if (Config.chatBlacklistRegex) {
+                            if (arg[0].contains(Regex(a))) {
+                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["chat.blacklisted"])
+                                return
+                            }
+                        } else {
+                            if (arg[0].contains(a)) {
+                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["chat.blacklisted"])
+                                return
+                            }
+                        }
+                    }
+                    Call.sendMessage("[brown]== [sky]${player.name()}[white] - [tan]${arg[0]}")
+                }
+            }
         }
 
         fun meme() {
@@ -1130,6 +1150,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
                 player.sendMessage(message.toString().dropLast(1))
             }
+        }
+
+        fun ranking() {
+            // todo 랭킹 기능 만들기
         }
 
         fun register() {
