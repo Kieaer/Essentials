@@ -37,6 +37,7 @@ object Config {
     var chatBlacklistRegex = false
     var expDisplay = false
     var minimalName = false
+    var blockfooclient = true
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -148,6 +149,7 @@ object Config {
         security.add("votekick", votekick, bundle["config.votekick"])
         security.add("antiGrief", antiGrief, bundle["config.antigrief"])
         security.add("minimumName", minimalName, bundle["config.minimumName"])
+        security.add("blockfooclient", blockfooclient, bundle["config.blockfooclient"])
 
         val discord = JsonObject()
         discord.add("botToken", botToken, bundle["config.discord.token"])
@@ -200,6 +202,7 @@ object Config {
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)
         minimalName = security.getBoolean("minimalName", minimalName)
+        blockfooclient = security.getBoolean("blockfooclient", blockfooclient)
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)
