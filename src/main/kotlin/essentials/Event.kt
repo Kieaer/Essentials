@@ -244,6 +244,12 @@ object Event {
                         it.player.sendMessage(str.toString())
                     }
                 }
+
+                for (a in database.players) {
+                    if (a.status.containsKey("tracking")) {
+                        Call.effect(a.player.con(), Fx.bigShockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
+                    }
+                }
             }
         }
 
