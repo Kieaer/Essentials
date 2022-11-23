@@ -37,7 +37,7 @@ object Config {
     var chatBlacklistRegex = false
     var expDisplay = false
     var minimalName = false
-    var blockfooclient = true
+    var blockfooclient = false
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -50,7 +50,7 @@ object Config {
     var channelToken = ""
     var discordURL = ""
 
-    var configVersion = 1
+    var configVersion = 2
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
