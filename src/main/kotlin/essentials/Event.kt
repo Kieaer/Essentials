@@ -205,25 +205,44 @@ object Event {
 
                 if (data.status.containsKey("log")) {
                     val buf = Seq<TileLog>()
-                    for (a in worldHistory){
+                    for (a in worldHistory) {
                         if (a.x == it.tile.x && a.y == it.tile.y) {
                             buf.add(a)
                         }
                     }
                     val str = StringBuilder()
+                    val bundle = Bundle(data.languageTag)
+                    val coreBundle = ResourceBundle.getBundle("bundle_block", try {
+                        when (data.languageTag) {
+                            "ko" -> Locale.KOREA
+                            else -> Locale.ENGLISH
+                        }
+                    } catch (e: Exception) {
+                        Locale.ENGLISH
+                    })
+
                     for (a in buf) {
-                        str.append("[${dateformat.format(a.time)}] ${a.player} ${a.action} ${a.tile}\n")
+                        val action = when (a.action) {
+                            "tap" -> "[royal]${bundle["event.log.tap"]}[]"
+                            "break" -> "[scarlet]${bundle["event.log.break"]}[]"
+                            "place" -> "[sky]${bundle["event.log.place"]}[]"
+                            else -> ""
+                        }
+
+                        str.append(bundle["event.log.format", dateformat.format(a.time), a.player, coreBundle.getString("block.${a.tile}.name"), action])
                     }
 
+                    Call.effect(it.player.con(), Fx.shockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
                     val str2 = StringBuilder()
                     if (str.toString().lines().size > 10) {
                         val lines: List<String> = str.toString().split("\n").reversed()
                         for (i in 0 until 10) {
                             str2.append(lines[i]).append("\n")
                         }
+                        it.player.sendMessage(str2.toString())
+                    } else {
+                        it.player.sendMessage(str.toString())
                     }
-
-                    it.player.sendMessage(str.toString())
                 }
             }
         }
