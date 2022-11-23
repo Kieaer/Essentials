@@ -229,7 +229,7 @@ object Event {
                             else -> ""
                         }
 
-                        str.append(bundle["event.log.format", dateformat.format(a.time), a.player, coreBundle.getString("block.${a.tile}.name"), action])
+                        str.append(bundle["event.log.format", dateformat.format(a.time), a.player, coreBundle.getString("block.${a.tile}.name"), action]).append("\n")
                     }
 
                     Call.effect(it.player.con(), Fx.shockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
@@ -720,7 +720,7 @@ object Event {
                             }
 
                             "gg" -> {
-                                Events.fire(GameOverEvent(state.rules.waveTeam));
+                                Events.fire(GameOverEvent(state.rules.waveTeam))
                             }
 
                             "skip" -> {
