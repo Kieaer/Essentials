@@ -20,7 +20,7 @@ object Permission {
     val comment = """
         ${bundle["permission.sort"]}
         ${bundle["permission.notice"]}
-        Usage
+        ${bundle["permission.usage"]}
         {
             uuid: ${bundle["permission.usage.uuid"]}
             name: ${bundle["permission.usage.name"]}
