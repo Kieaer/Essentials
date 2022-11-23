@@ -18,6 +18,7 @@ object Permission {
     val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
     val comment = """
+        ${bundle["permission.wiki"]}
         ${bundle["permission.sort"]}
         ${bundle["permission.notice"]}
         ${bundle["permission.usage"]}
@@ -29,7 +30,7 @@ object Permission {
             admin: ${bundle["permission.usage.admin"]}
         }
         
-        Examples
+        ${bundle["permission.example"]}
         [
             {
                 uuid: uuids
