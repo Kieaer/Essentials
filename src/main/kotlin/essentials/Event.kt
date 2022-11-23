@@ -14,7 +14,10 @@ import com.cybozu.labs.langdetect.DetectorFactory
 import com.cybozu.labs.langdetect.LangDetectException
 import essentials.Main.Companion.database
 import mindustry.Vars.*
-import mindustry.content.*
+import mindustry.content.Blocks
+import mindustry.content.Fx
+import mindustry.content.UnitTypes
+import mindustry.content.Weathers
 import mindustry.entities.Damage
 import mindustry.game.EventType
 import mindustry.game.EventType.*
@@ -301,27 +304,6 @@ object Event {
 
                         // 시간 x 적 코어 개수
                         val time = (PluginData.playtime.toInt() * 2) * enemyCores
-                        var coreitem = 0
-                        for (a in state.stats.coreItemCount) {
-                            coreitem += when (a.key) {
-                                Items.copper -> 1
-                                Items.lead -> 1
-                                Items.metaglass -> 2
-                                Items.graphite -> 4
-                                Items.titanium -> 5
-                                Items.thorium -> 10
-                                Items.silicon -> 7
-                                Items.plastanium -> 13
-                                Items.phaseFabric -> 20
-                                Items.surgeAlloy -> 18
-                                Items.beryllium -> 1
-                                Items.tungsten -> 2
-                                Items.oxide -> 5
-                                Items.carbide -> 10
-                                else -> 0
-                            }
-                        }
-
                         var blockexp = 0
                         // 건설한 블록 개수
                         for (a in state.stats.placedBlockCount) {
@@ -329,7 +311,7 @@ object Event {
                         }
 
                         if (it.winner == p.team()) {
-                            val score = (time + coreitem + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            val score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             target.exp = target.exp + score + blockexp
                             target.attackclear++
@@ -340,12 +322,12 @@ object Event {
                             database.update(p.uuid(), target)
                             p.sendMessage(bundle["data.saved"])
                         } else {
-                            val score = (coreitem + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            val score = (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             target.exp = target.exp + score + blockexp
 
                             val bundle = Bundle(target.languageTag)
-                            p.sendMessage(bundle["exp.earn.defeat", score, target.exp + (time + coreitem + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed) + blockexp])
+                            p.sendMessage(bundle["exp.earn.defeat", score, target.exp + (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed) + blockexp])
                             p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
                             database.update(p.uuid(), target)
                             p.sendMessage(bundle["data.saved"])
