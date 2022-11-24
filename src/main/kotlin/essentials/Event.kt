@@ -473,7 +473,11 @@ object Event {
             if (Config.blockIP){
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
-                    val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s ${it.player.ip()} -j DROP")
+                    val cmd = if (it.player != null) {
+                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s ${it.player.ip()} -j DROP")
+                    } else {
+                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s ${netServer.admins.getInfo(it.uuid).lastIP} -j DROP")
+                    }
                     Runtime.getRuntime().exec(cmd)
                     Log.info(Bundle()["event.ban.iptables", it.player.ip()])
                 }
