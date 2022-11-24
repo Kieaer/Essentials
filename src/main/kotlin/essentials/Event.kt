@@ -161,6 +161,7 @@ object Event {
         }
 
         Events.on(ConfigEvent::class.java) {
+            // todo 전력 노드 오작동
             if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int && Config.antiGrief) {
                 val entity = it.tile
                 val other = world.tile(it.value as Int)
@@ -168,6 +169,10 @@ object Event {
                 if (valid) {
                     val oldGraph = entity.power.graph
                     val newGraph = other.build.power.graph
+                    println("old")
+                    println(oldGraph.toString())
+                    println("new")
+                    println(newGraph.toString())
                     val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
                     val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
                     if (abs(oldGraphCount - newGraphCount) > 10) {
@@ -272,6 +277,16 @@ object Event {
                 }
                 blockExp.put(it.name, buf)
             }
+
+            if (!Config.blockIP && PluginData.status.contains("iptablesFirst")){
+                for (a in netServer.admins.banned){
+                    for (b in a.ips){
+                        Runtime.getRuntime().exec("iptables -D INPUT -s $b -j DROP")
+                    }
+                }
+                PluginData.status.remove("iptablesFirst")
+                Log.info(Bundle()["event.ban.iptables.remove"])
+            }
         }
 
         Events.on(GameOverEvent::class.java) {
@@ -310,28 +325,23 @@ object Event {
                             blockexp += blockExp[a.key.name]
                         }
 
+                        val bundle = Bundle(target.languageTag)
+
                         if (it.winner == p.team()) {
                             val score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             target.exp = target.exp + score + blockexp
                             target.attackclear++
-
-                            val bundle = Bundle(target.languageTag)
                             p.sendMessage(bundle["exp.earn.victory", score + blockexp])
-                            p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
-                            database.update(p.uuid(), target)
-                            p.sendMessage(bundle["data.saved"])
                         } else {
                             val score = (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             target.exp = target.exp + score + blockexp
-
-                            val bundle = Bundle(target.languageTag)
                             p.sendMessage(bundle["exp.earn.defeat", score, target.exp + (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed) + blockexp])
-                            p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
-                            database.update(p.uuid(), target)
-                            p.sendMessage(bundle["data.saved"])
                         }
+                        p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
+                        database.update(p.uuid(), target)
+                        p.sendMessage(bundle["data.saved"])
                     }
                 }
             }
@@ -390,9 +400,6 @@ object Event {
             if (Config.destroyCore && state.rules.coreCapture) {
                 Fx.spawnShockwave.at(it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius)
                 Damage.damage(world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true)
-            }
-            if (state.rules.attackMode) {
-                if (it.tile.team() == state.rules.waveTeam) state.stats.placedBlockCount
             }
         }
 
@@ -453,7 +460,23 @@ object Event {
         }
 
         Events.on(PlayerBanEvent::class.java) {
-
+            if (Config.blockIP){
+                if (!PluginData.status.contains("iptablesFirst")){
+                    for (a in netServer.admins.banned) {
+                        for (b in a.ips){
+                            Runtime.getRuntime().exec("iptables -A INPUT -s $b -j DROP")
+                            Log.info(Bundle()["event.ban.iptables", a.lastName, b])
+                        }
+                    }
+                    PluginData.status.add("iptablesFirst")
+                }
+                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
+                if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
+                    Runtime.getRuntime().exec("iptables -A INPUT -s ${it.player.ip()} -j DROP")
+                    Log.info(Bundle()["event.ban.iptables", it.player.ip()])
+                }
+            }
+            log(LogType.Player, Bundle()["log.player.banned", it.player.name, it.player.ip()])
         }
 
         Events.on(WorldLoadEvent::class.java) {
@@ -482,9 +505,7 @@ object Event {
                 if (e.player.name.contains(" ")) Call.kick(e.player.con(), "Nicknames can't be used on this server!")
             }
 
-            if (Config.minimalName) {
-                if (e.player.name.length < 4) Call.kick(e.player.con(), "Nickname too short!")
-            }
+            if (Config.minimalName && e.player.name.length < 4) Call.kick(e.player.con(), "Nickname too short!")
 
             if (Config.antiVPN) {
                 val br = BufferedReader(InputStreamReader(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")!!))
@@ -501,22 +522,18 @@ object Event {
 
             if (Config.antiGrief) {
                 val find = netServer.admins.findByName(e.player.name)
-                if (find != null) {
-                    if (find.first().lastIP != e.player.con.address) {
-                        Call.kick(e.player.con(), "There's a player with the same name on the server!")
-                    }
+                if (find != null && find.first().lastIP != e.player.con.address) {
+                    Call.kick(e.player.con(), "There's a player with the same name on the server!")
                 }
             }
         }
 
         Events.on(MenuOptionChooseEvent::class.java) {
-            if (it.menuId == 0) {
-                if (it.option == 0) {
-                    val d = findPlayerData(it.player.uuid())
-                    if (d != null) {
-                        d.languageTag = "ko"
-                        it.player.sendMessage(Bundle(d.languageTag)["command.language.preview", Locale(d.languageTag).toLanguageTag()])
-                    }
+            if (it.menuId == 0 && it.option == 0) {
+                val d = findPlayerData(it.player.uuid())
+                if (d != null) {
+                    d.languageTag = "ko"
+                    it.player.sendMessage(Bundle(d.languageTag)["command.language.preview", Locale(d.languageTag).toLanguageTag()])
                 }
             }
         }
@@ -878,10 +895,8 @@ object Event {
                 val data = database.getAll()
 
                 for (a in data) {
-                    if (a.status.containsKey("ban")) {
-                        if (LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
-                            netServer.admins.unbanPlayerID(a.uuid)
-                        }
+                    if (a.status.containsKey("ban") && LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
+                        netServer.admins.unbanPlayerID(a.uuid)
                     }
                 }
 

@@ -1153,7 +1153,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun ranking() {
-            // todo 랭킹 기능 만들기
+            if (!Permission.check(player, "ranking")) return
+            // todo 랭킹 만들기
         }
 
         fun register() {

@@ -24,6 +24,7 @@ object PluginData {
     var warpTotals = Seq<WarpTotal>()
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
+    var status = Seq<String>()
 
     data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = Vars.world.tile(start)
@@ -71,6 +72,10 @@ object PluginData {
 
         banned.forEach { buffer.add(json.toJson(it)) }
         data.add("banned", buffer)
+        buffer = JsonArray()
+
+        status.forEach { buffer.add(json.toJson(it)) }
+        data.add("status", buffer)
 
         if (transaction { DB.Data.selectAll().firstOrNull() == null }) {
             transaction {
@@ -103,6 +108,7 @@ object PluginData {
                         data["warpTotals"].asArray().forEach { warpTotals.add(json.fromJson(WarpTotal::class.java, it.toString())) }
                         data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
                         data["banned"].asArray().forEach { banned.add(json.fromJson(Banned::class.java, it.toString())) }
+                        data["status"].asArray().forEach { status.add(json.fromJson(String::class.java, it.toString())) }
                     }
                 }
             }
