@@ -26,6 +26,8 @@ object PluginData {
     var banned = Seq<Banned>()
     var status = Seq<String>()
 
+    var sudoPassword = ""
+
     data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = Vars.world.tile(start)
         val finishTile: Tile get() = Vars.world.tile(finish)

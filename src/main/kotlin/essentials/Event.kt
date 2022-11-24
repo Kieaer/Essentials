@@ -281,7 +281,8 @@ object Event {
             if (!Config.blockIP && PluginData.status.contains("iptablesFirst")){
                 for (a in netServer.admins.banned){
                     for (b in a.ips){
-                        Runtime.getRuntime().exec("iptables -D INPUT -s $b -j DROP")
+                        val cmd = arrayOf("bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo iptables -D INPUT -s $b -j DROP")
+                        Runtime.getRuntime().exec(cmd)
                     }
                 }
                 PluginData.status.remove("iptablesFirst")
@@ -289,7 +290,8 @@ object Event {
             } else if (Config.blockIP && !PluginData.status.contains("iptablesFirst")) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
-                        Runtime.getRuntime().exec("iptables -A INPUT -s $b -j DROP")
+                        val cmd = arrayOf("bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo iptables -A INPUT -s $b -j DROP")
+                        Runtime.getRuntime().exec(cmd)
                         Log.info(Bundle()["event.ban.iptables", a.lastName, b])
                     }
                 }
@@ -471,7 +473,8 @@ object Event {
             if (Config.blockIP){
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
-                    Runtime.getRuntime().exec("iptables -A INPUT -s ${it.player.ip()} -j DROP")
+                    val cmd = arrayOf("bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo iptables -A INPUT -s ${it.player.ip()} -j DROP")
+                    Runtime.getRuntime().exec(cmd)
                     Log.info(Bundle()["event.ban.iptables", it.player.ip()])
                 }
             }
