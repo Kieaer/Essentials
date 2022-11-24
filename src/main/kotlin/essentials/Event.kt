@@ -286,6 +286,14 @@ object Event {
                 }
                 PluginData.status.remove("iptablesFirst")
                 Log.info(Bundle()["event.ban.iptables.remove"])
+            } else if (Config.blockIP && !PluginData.status.contains("iptablesFirst")) {
+                for (a in netServer.admins.banned) {
+                    for (b in a.ips) {
+                        Runtime.getRuntime().exec("iptables -A INPUT -s $b -j DROP")
+                        Log.info(Bundle()["event.ban.iptables", a.lastName, b])
+                    }
+                }
+                PluginData.status.add("iptablesFirst")
             }
         }
 
@@ -461,15 +469,6 @@ object Event {
 
         Events.on(PlayerBanEvent::class.java) {
             if (Config.blockIP){
-                if (!PluginData.status.contains("iptablesFirst")){
-                    for (a in netServer.admins.banned) {
-                        for (b in a.ips){
-                            Runtime.getRuntime().exec("iptables -A INPUT -s $b -j DROP")
-                            Log.info(Bundle()["event.ban.iptables", a.lastName, b])
-                        }
-                    }
-                    PluginData.status.add("iptablesFirst")
-                }
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
                     Runtime.getRuntime().exec("iptables -A INPUT -s ${it.player.ip()} -j DROP")
