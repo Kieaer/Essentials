@@ -108,12 +108,20 @@ object PluginData {
                         data["warpTotals"].asArray().forEach { warpTotals.add(json.fromJson(WarpTotal::class.java, it.toString())) }
                         data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
                         data["banned"].asArray().forEach { banned.add(json.fromJson(Banned::class.java, it.toString())) }
-                        data["status"].asArray().forEach { status.add(json.fromJson(String::class.java, it.toString())) }
+                        if (data["status"] == null){
+                            status = Seq<String>()
+                        } else {
+                            data["status"].asArray().forEach { status.add(json.fromJson(String::class.java, it.toString())) }
+                        }
                     }
                 }
             }
         } catch (e: IOException) {
             println(e)
         }
+    }
+
+    fun upgrade() {
+
     }
 }
