@@ -45,11 +45,11 @@ class Main : Plugin() {
             val co = System.console()
 
             // 시스템이 Console 를 지원 안할경우 (비밀번호 노출됨)
+            Log.info(bundle["config.sudopassword.password"])
             if (co == null) {
-                Log.info(bundle["config.sudopassword.password"])
                 PluginData.sudoPassword = sc.nextLine()
             } else {
-                PluginData.sudoPassword = String(co.readPassword(bundle["config.sudopassword.password"] + " "))
+                PluginData.sudoPassword = String(co.readPassword())
             }
             Log.info(bundle["config.sudopassword.no-check"])
         }

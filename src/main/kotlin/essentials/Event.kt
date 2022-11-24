@@ -281,7 +281,7 @@ object Event {
             if (!Config.blockIP && PluginData.status.contains("iptablesFirst")){
                 for (a in netServer.admins.banned){
                     for (b in a.ips){
-                        val cmd = arrayOf("bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo iptables -D INPUT -s $b -j DROP")
+                        val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $b -j DROP")
                         Runtime.getRuntime().exec(cmd)
                     }
                 }
@@ -290,9 +290,9 @@ object Event {
             } else if (Config.blockIP && !PluginData.status.contains("iptablesFirst")) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
-                        val cmd = arrayOf("bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo iptables -A INPUT -s $b -j DROP")
+                        val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $b -j DROP")
                         Runtime.getRuntime().exec(cmd)
-                        Log.info(Bundle()["event.ban.iptables", a.lastName, b])
+                        Log.info(Bundle()["event.ban.iptables", b])
                     }
                 }
                 PluginData.status.add("iptablesFirst")
@@ -473,7 +473,7 @@ object Event {
             if (Config.blockIP){
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
-                    val cmd = arrayOf("bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo iptables -A INPUT -s ${it.player.ip()} -j DROP")
+                    val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s ${it.player.ip()} -j DROP")
                     Runtime.getRuntime().exec(cmd)
                     Log.info(Bundle()["event.ban.iptables", it.player.ip()])
                 }
