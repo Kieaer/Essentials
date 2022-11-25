@@ -343,7 +343,7 @@ object Event {
                             val score = (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             target.exp = target.exp + score + blockexp
-                            p.sendMessage(bundle["exp.earn.defeat", score, target.exp + (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed) + blockexp])
+                            p.sendMessage(bundle["exp.earn.defeat", score, (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed) + blockexp])
                         }
                         p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
                         database.update(p.uuid(), target)
