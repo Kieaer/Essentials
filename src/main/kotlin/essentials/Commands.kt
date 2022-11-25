@@ -902,7 +902,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun maps() {
             if (!Permission.check(player, "maps")) return
-            val list = maps.all()
+            val list = maps.all().sort()
             val build = StringBuilder()
 
             val page = if (arg.isNotEmpty()) arg[0].toInt() else 0
@@ -916,7 +916,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             build.append("[green]==[white] ${bundle["command.page.server"]} $page/$pages [green]==[white]\n")
             for (a in 6 * page until (6 * (page + 1)).coerceAtMost(list.size)) {
-                build.append("[gray]$a[] ${list[a].name()}\n")
+                build.append("[gray]$a[] ${list[a].name()}[white]\n")
             }
 
             player.sendMessage(build.toString())
@@ -1583,7 +1583,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             try {
                                 var target = maps.all().find { e -> e.name().contains(arg[1]) }
                                 if (target == null) {
-                                    target = maps.all().get(arg[1].toInt())
+                                    target = maps.all().sort().get(arg[1].toInt())
                                 }
                                 Event.voteType = "map"
                                 Event.voteMap = target
@@ -1724,6 +1724,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     warpTotals: ${PluginData.warpTotals}
                     blacklist: ${PluginData.blacklist}
                     banned: ${PluginData.banned}
+                    status: ${PluginData.status}
                     
                     == DB class
                     """.trimIndent()
