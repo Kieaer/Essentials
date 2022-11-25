@@ -38,29 +38,36 @@ class Main : Plugin() {
         PluginData.load()
 
         if (Config.blockIP) {
-            Log.info(bundle["config.sudopassword"])
-            Log.info(bundle["config.sudopassword.repeat"])
+            val os = System.getProperty("os.name").lowercase(Locale.getDefault())
+            if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
+                Log.info(bundle["config.sudopassword"])
+                Log.info(bundle["config.sudopassword.repeat"])
 
-            val sc = Scanner(System.`in`)
-            val co = System.console()
+                val sc = Scanner(System.`in`)
+                val co = System.console()
 
-            // 시스템이 Console 를 지원 안할경우 (비밀번호 노출됨)
-            Log.info(bundle["config.sudopassword.password"])
-            if (co == null) {
-                PluginData.sudoPassword = sc.nextLine()
+                // 시스템이 Console 를 지원 안할경우 (비밀번호 노출됨)
+                print(bundle["config.sudopassword.password"] + " ")
+                if (co == null) {
+                    PluginData.sudoPassword = sc.nextLine()
+                } else {
+                    PluginData.sudoPassword = String(co.readPassword())
+                }
+                Log.info(bundle["config.sudopassword.no-check"])
             } else {
-                PluginData.sudoPassword = String(co.readPassword())
+                Config.blockIP = false
+                Log.warn(bundle["config.blockIP.unsupported"])
             }
-            Log.info(bundle["config.sudopassword.no-check"])
         }
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
-                database.close()
+                PluginData.save()
                 daemon.shutdownNow()
                 Commands.Discord.shutdownNow()
                 Permission.sort()
                 Config.save()
+                database.close()
             }
         })
 
