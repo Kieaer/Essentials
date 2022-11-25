@@ -165,7 +165,7 @@ object Event {
             if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int && Config.antiGrief) {
                 val entity = it.tile
                 val other = world.tile(it.value as Int)
-                val valid = other != null && entity.power != null && other.block().hasPower && other.block().acceptsPayload
+                val valid = other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload
                 if (valid) {
                     val oldGraph = entity.power.graph
                     val newGraph = other.build.power.graph
