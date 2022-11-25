@@ -87,7 +87,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
-            handler.register("ranking", "<level/time/place/break/win>", "Show players ranking")  { a, p: Playerc -> Client(a, p).ranking() }
+            handler.register("ranking", "<playtime/place/break/attackwin/exp>", "Show players ranking")  { a, p: Playerc -> Client(a, p).ranking() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
@@ -1154,7 +1154,66 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun ranking() {
             if (!Permission.check(player, "ranking")) return
-            // todo 랭킹 만들기
+
+            when (arg[0].lowercase()) {
+                "time" -> {
+                    player.sendMessage(bundle["command.ranking.time"])
+                }
+                "exp" -> {
+                    player.sendMessage(bundle["command.ranking.exp"])
+                }
+                "attack" -> {
+                    player.sendMessage(bundle["command.ranking.attack"])
+                }
+                "place" -> {
+                    player.sendMessage(bundle["command.ranking.place"])
+                }
+                "break" -> {
+                    player.sendMessage(bundle["command.ranking.break"])
+                }
+                else -> {
+                    player.sendMessage(bundle["command.ranking.wrong"])
+                    return
+                }
+            }
+
+            val all = database.getAll()
+            val time = mutableMapOf<String, Long>()
+            val exp = mutableMapOf<String, Int>()
+            val attack = mutableMapOf<String, Int>()
+            val placeBlock = mutableMapOf<String, Int>()
+            val breakBlock = mutableMapOf<String, Int>()
+
+            for (a in all){
+                time[a.name] = a.playtime
+                exp[a.name] = a.exp
+                attack[a.name] = a.attackclear
+                placeBlock[a.name] = a.placecount
+                breakBlock[a.name] = a.breakcount
+            }
+
+            val string = StringBuilder()
+
+            val d = when (arg[0].lowercase()) {
+                "time" -> time.toList().sortedWith(compareBy { -it.second })
+                "exp" -> exp.toList().sortedWith(compareBy { -it.second })
+                "attack" -> attack.toList().sortedWith(compareBy { -it.second })
+                "place" -> placeBlock.toList().sortedWith(compareBy { -it.second })
+                "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
+                else -> return
+            }
+
+            for (a in 0..4){
+                string.append("${if(a == 0) "[sky]" else "[green]"}${a+1}[] ${d[a].first}[white] [yellow]-[] ${d[a].second}\n")
+            }
+            string.append("[purple]=======================================[]\n")
+            for (a in d.indices){
+                if (d[a].first == player.name()) {
+                    string.append("${a+1}[] ${d[a].first}[white] [yellow]-[] ${d[a].second}")
+                }
+            }
+
+            player.sendMessage(string.toString())
         }
 
         fun register() {

@@ -100,6 +100,7 @@ object Permission {
             userPerm.add("me")
             userPerm.add("motd")
             userPerm.add("players")
+            userPerm.add("ranking")
             userPerm.add("report")
             userPerm.add("status")
             userPerm.add("time")
