@@ -165,14 +165,10 @@ object Event {
             if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int && Config.antiGrief) {
                 val entity = it.tile
                 val other = world.tile(it.value as Int)
-                val valid = other != null && entity.power != null && other.block().hasPower
+                val valid = other != null && entity.power != null && other.block().hasPower && other.block().acceptsPayload
                 if (valid) {
                     val oldGraph = entity.power.graph
                     val newGraph = other.build.power.graph
-                    println("old")
-                    println(oldGraph.toString())
-                    println("new")
-                    println(newGraph.toString())
                     val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
                     val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
                     if (abs(oldGraphCount - newGraphCount) > 10) {
@@ -473,13 +469,14 @@ object Event {
             if (Config.blockIP){
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
+                    val ip = if (it.player != null) it.player.ip() else netServer.admins.getInfo(it.uuid).lastIP
                     val cmd = if (it.player != null) {
-                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s ${it.player.ip()} -j DROP")
+                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $ip -j DROP")
                     } else {
-                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s ${netServer.admins.getInfo(it.uuid).lastIP} -j DROP")
+                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $ip -j DROP")
                     }
                     Runtime.getRuntime().exec(cmd)
-                    Log.info(Bundle()["event.ban.iptables", it.player.ip()])
+                    Log.info(Bundle()["event.ban.iptables", ip])
                 }
             }
             log(LogType.Player, Bundle()["log.player.banned", it.player.name, it.player.ip()])
