@@ -524,10 +524,10 @@ object Event {
             }
 
             if (Config.antiGrief) {
-                val find = netServer.admins.findByName(e.player.name)
+                /*val find = netServer.admins.findByName(e.player.name)
                 if (find != null && find.first().lastIP != e.player.con.address) {
                     Call.kick(e.player.con(), "There's a player with the same name on the server!")
-                }
+                }*/
             }
         }
 
