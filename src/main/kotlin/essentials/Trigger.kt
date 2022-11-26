@@ -72,6 +72,16 @@ object Trigger {
         }
         val count = motd.split("\r\n|\r|\n").toTypedArray().size
         if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
+
+        if (perm.isAlert) {
+            if (perm.alertMessage.isEmpty()){
+                for (a in database.players){
+                    a.player.sendMessage(Bundle(a.languageTag)["event.player.joined", player.name()])
+                }
+            } else {
+                Call.sendMessage(perm.alertMessage)
+            }
+        }
     }
 
     fun createPlayer(player: Playerc, id: String?, password: String?) {

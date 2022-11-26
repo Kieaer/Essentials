@@ -28,6 +28,8 @@ object Permission {
             group: ${bundle["permission.usage.group"]}
             chatFormat: ${bundle["permission.usage.chatformat"]}
             admin: ${bundle["permission.usage.admin"]}
+            isAlert: ${bundle["permission.usage.isAlert"]}
+            alertMessage: ${bundle["permission.usage.alertMessage"]}
         }
         
         ${bundle["permission.example"]}
@@ -46,6 +48,8 @@ object Permission {
                 group: admin
                 chatFormat: "[blue][ADMIN] []%1[orange] > [white] %2"
                 admin: true
+                isAlert: true
+                alertMessage: Player asdfg has entered the server!
             }
         ]""".trimIndent()
 
@@ -203,11 +207,15 @@ object Permission {
             result.group = u.asObject().getString("group", default)
             result.chatFormat = u.asObject().getString("chatFormat", Config.chatFormat)
             result.admin = u.asObject().getBoolean("admin", false)
+            result.isAlert = u.asObject().getBoolean("isAlert", false)
+            result.alertMessage = u.asObject().getString("alertMessage", "")
         } else {
             result.uuid = player.uuid()
             result.name = netServer.admins.findByIP(player.ip()).lastName
             result.group = p?.permission ?: default
             result.admin = false
+            result.isAlert = false
+            result.alertMessage = ""
         }
 
         return result
@@ -231,5 +239,7 @@ object Permission {
         var group = default
         var chatFormat = Config.chatFormat
         var admin = false
+        var isAlert = false
+        var alertMessage = ""
     }
 }
