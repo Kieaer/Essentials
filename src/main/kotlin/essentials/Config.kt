@@ -51,7 +51,7 @@ object Config {
     var channelToken = ""
     var discordURL = ""
 
-    var configVersion = 3
+    var configVersion = 4
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())

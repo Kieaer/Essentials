@@ -39,6 +39,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | mute      | &lt;player&gt;                                                           | Mute player                                                    |
 | pause     |                                                                          | Pause server                                                   |
 | players   | [page]                                                                   | Show players list                                              |
+| ranking   | &lt;time/place/break/attack/exp&gt;                                      | Show players ranking                                           |
 | reg       | &lt;id&gt; &lt;password&gt; &lt;password_repeat&gt;                      | Register account                                               |
 | report    | &lt;player&gt; &lt;reason...&gt;                                         | Report player                                                  |
 | search    | [value]                                                                  | Search player data                                             |
