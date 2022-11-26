@@ -87,7 +87,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
-            handler.register("ranking", "<playtime/place/break/attackwin/exp>", "Show players ranking")  { a, p: Playerc -> Client(a, p).ranking() }
+            handler.register("ranking", "<time/place/break/attack/exp>", "Show players ranking")  { a, p: Playerc -> Client(a, p).ranking() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
@@ -770,7 +770,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         ${bundle["level"]}: ${other.level}
                         ${bundle["exp"]}: ${Exp[other]}
                         ${bundle["joindate"]}: ${Timestamp(other.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                        ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (other.playtime / 60 / 60 / 24) % 365, (other.playtime / 60 / 24) % 24, (other.playtime / 60) % 60, (other.playtime) % 60)}
+                        ${bundle["playtime"]}: ${bundle["command.info.time", (other.playtime / 60 / 60 / 24) % 365, (other.playtime / 60 / 24) % 24, (other.playtime / 60) % 60, (other.playtime) % 60]}
                         ${bundle["attackclear"]}: ${other.attackclear}
                         ${bundle["pvpwincount"]}: ${other.pvpwincount}
                         ${bundle["pvplosecount"]}: ${other.pvplosecount}
@@ -791,7 +791,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     ${bundle["level"]}: ${data.level}
                     ${bundle["exp"]}: ${Exp[data]}
                     ${bundle["joindate"]}: ${Timestamp(data.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                    ${bundle["playtime"]}: ${String.format("%d:%02d:%02d:%02d", (data.playtime / 60 / 60 / 24) % 365, (data.playtime / 60 / 24) % 24, (data.playtime / 60) % 60, (data.playtime) % 60)}
+                    ${bundle["playtime"]}: ${bundle["command.info.time", (data.playtime / 60 / 60 / 24) % 365, (data.playtime / 60 / 24) % 24, (data.playtime / 60) % 60, (data.playtime) % 60]}
                     ${bundle["attackclear"]}: ${data.attackclear}
                     ${bundle["pvpwincount"]}: ${data.pvpwincount}
                     ${bundle["pvplosecount"]}: ${data.pvplosecount}
@@ -1209,7 +1209,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             string.append("[purple]=======================================[]\n")
             for (a in d.indices){
                 if (d[a].first == player.name()) {
-                    string.append("${a+1}[] ${d[a].first}[white] [yellow]-[] ${d[a].second}")
+                    string.append("${a+1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
                 }
             }
 
