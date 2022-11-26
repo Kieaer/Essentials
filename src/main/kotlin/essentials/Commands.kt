@@ -1204,7 +1204,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
 
             for (a in 0..4){
-                string.append("${if(a == 0) "[sky]" else "[green]"}${a+1}[] ${d[a].first}[white] [yellow]-[] ${d[a].second}\n")
+                string.append("${if(a == 0) "[sky]" else "[green]"}${a+1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
             }
             string.append("[purple]=======================================[]\n")
             for (a in d.indices){
