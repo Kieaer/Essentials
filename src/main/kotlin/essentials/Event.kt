@@ -479,7 +479,7 @@ object Event {
                     Log.info(Bundle()["event.ban.iptables", ip])
                 }
             }
-            log(LogType.Player, Bundle()["log.player.banned", it.player.name, it.player.ip()])
+            log(LogType.Player, Bundle()["log.player.banned", if (it.player == null) netServer.admins.getInfo(it.uuid).lastName else it.player.name, it.player.ip()])
         }
 
         Events.on(WorldLoadEvent::class.java) {
