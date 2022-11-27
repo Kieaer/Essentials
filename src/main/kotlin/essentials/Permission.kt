@@ -87,6 +87,7 @@ object Permission {
             adminPerm.add("unmute")
             adminPerm.add("weather")
             adminPerm.add("vote.pass")
+            adminPerm.add("rollback")
 
             admin.add("inheritance", "user")
             admin.add("admin", true)

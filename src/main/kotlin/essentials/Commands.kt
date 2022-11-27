@@ -14,6 +14,7 @@ import com.mewna.catnip.Catnip
 import com.mewna.catnip.shard.DiscordEvent
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
+import essentials.Event.playerHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
@@ -90,6 +91,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("ranking", "<time/place/break/attack/exp>", "Show players ranking") { a, p: Playerc -> Client(a, p).ranking() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
+            handler.register("rollback", "<player>", "Undo all actions taken by the player.") { a, p: Playerc -> Client(a, p).rollback() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p: Playerc -> Client(a, p).setperm() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p: Playerc -> Client(a, p).spawn() }
@@ -1270,6 +1272,35 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     player.sendMessage(bundle["player.not.found"])
                 }
             }
+        }
+
+        fun rollback() {
+            if (!Permission.check(player, "rollback")) return
+            val buffer = playerHistory
+
+            for (a in buffer){
+                if (a.player.contains(arg[0])) {
+                    when (a.action) {
+                        // todo 몇단계 뒤로 되돌리기
+                        "place" -> {
+                            Call.deconstructFinish(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, player.unit())
+                            Log.info("place deconstructFinish ${a.x},${a.y}")
+                        }
+
+                        "break" -> {
+                            Call.constructFinish(world.tile(a.x.toInt(), a.y.toInt()), a.block, player.unit(), a.rotate.toByte(), a.team, a.config)
+                            Log.info("break constructfinish ${a.x},${a.y}")
+                        }
+
+                        "config" -> {
+                            Call.tileConfig(player as Player, world.tile(a.x.toInt(), a.y.toInt()).build, a.config)
+                        }
+
+                        else -> {}
+                    }
+                }
+            }
+            playerHistory.removeAll { a -> a.player.contains(arg[0])}
         }
 
         fun search() {

@@ -4,6 +4,7 @@ import arc.ApplicationListener
 import arc.Core
 import arc.Events
 import arc.files.Fi
+import arc.func.Cons2
 import arc.graphics.Color
 import arc.struct.ObjectMap
 import arc.struct.Seq
@@ -75,7 +76,7 @@ object Event {
     var enemyCoresCounted = false
 
     private val worldHistory = Seq<TileLog>()
-    private var playerHistory = Seq<PlayerLog>()
+    var playerHistory = Seq<PlayerLog>()
 
     private var random = Random()
     private var dateformat = SimpleDateFormat("HH:mm:ss")
@@ -186,7 +187,8 @@ object Event {
                     }
                 }
 
-                addLog(TileLog(System.currentTimeMillis(), player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name))
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name))
+                addLog(PlayerLog(it.player.name, it.tile.block(), it.tile.tile.build.rotation, it.tile.tile.x, it.tile.tile.y, "config", it.player.team(), it.tile.tile.block().configurations))
             }
         }
 
@@ -383,6 +385,7 @@ object Event {
                     if (!it.breaking) {
                         log(LogType.Block, "${player.name} placed ${block.name}")
                         addLog(TileLog(System.currentTimeMillis(), player.name, "place", it.tile.x, it.tile.y, it.tile.block().name))
+                        addLog(PlayerLog(player.name, it.tile.block(), it.tile.build.rotation, it.tile.x, it.tile.y, "place", it.unit.team, null))
                         target.placecount + 1
                         target.exp = target.exp + blockExp.get(block.name)
 
@@ -392,6 +395,7 @@ object Event {
                     } else if (it.breaking) {
                         log(LogType.Block, "${player.name} break ${player.unit().buildPlan().block.name}")
                         addLog(TileLog(System.currentTimeMillis(), player.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name))
+                        addLog(PlayerLog(player.name, player.unit().buildPlan().block, if (player.unit().buildPlan().build() != null) player.unit().buildPlan().build().rotation else 0, it.tile.x, it.tile.y, "break", it.unit.team, null))
                         target.breakcount + 1
                         target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
 
@@ -1048,6 +1052,10 @@ object Event {
         worldHistory.add(log)
     }
 
+    fun addLog(log: PlayerLog) {
+        playerHistory.add(log)
+    }
+
     class TileLog(val time: Long, val player: String, val action: String, val x: Short, val y: Short, val tile: String)
-    class PlayerLog(val player: String, val block: Block, val rotate: Int, val x: Short, val y: Short)
+    class PlayerLog(val player: String, val block: Block, val rotate: Int, val x: Short, val y: Short, val action: String, val team: Team, val config: ObjectMap<Class<*>, Cons2<Any, Any>>?)
 }
