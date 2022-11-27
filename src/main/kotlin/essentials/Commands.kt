@@ -1351,36 +1351,26 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val unit = content.units().find { unitType: UnitType -> unitType.name == name }
                     if (unit != null) {
                         if (parameter != null) {
-                            if (name != "block" && name != "turret-unit-build-tower") {
+                            if (!unit.hidden) {
                                 for (a in 1..parameter) {
                                     unit.spawn(player.team(), player.x, player.y)
                                 }
                             } else {
-                                player.sendMessage(bundle["command.spawn.block"])
+                                player.sendMessage(bundle["command.spawn.unit.invalid"])
                             }
                         } else {
                             player.sendMessage(bundle["command.spawn.number"])
                         }
                     } else {
-                        val names = StringBuilder()
-                        content.units().each {
-                            names.append("${it.name}, ")
-                        }
-                        player.sendMessage("${bundle["command.spawn.units"]}: ${names.dropLast(2)}")
+                        player.sendMessage(bundle["command.spawn.invalid"])
                     }
                 }
 
                 type.equals("block", true) -> {
-                    if (content.blocks().find { a -> a.name == name && a.isVisibleOn(state.planet) } != null) {
+                    if (content.blocks().find { a -> a.name == name } != null) {
                         Call.constructFinish(player.tileOn(), content.blocks().find { a -> a.name.equals(name, true) }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
                     } else {
-                        val names = StringBuilder()
-                        content.blocks().each {
-                            if (it.isVisibleOn(state.planet)) {
-                                names.append("${it.name}, ")
-                            }
-                        }
-                        player.sendMessage("${bundle["command.spawn.blocks"]}: ${names.dropLast(2)}")
+                        player.sendMessage(bundle["command.spawn.invalid"])
                     }
                 }
 
