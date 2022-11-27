@@ -162,25 +162,29 @@ object Event {
 
         Events.on(ConfigEvent::class.java) {
             // todo 전력 노드 오작동
-            if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int && Config.antiGrief) {
-                val entity = it.tile
-                val other = world.tile(it.value as Int)
-                val valid = other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload
-                if (valid) {
-                    val oldGraph = entity.power.graph
-                    val newGraph = other.build.power.graph
-                    val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
-                    val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
-                    if (abs(oldGraphCount - newGraphCount) > 10) {
-                        Groups.player.forEach { a ->
-                            val data = findPlayerData(a.uuid())
-                            if (data != null) {
-                                val bundle = Bundle(data.languageTag)
-                                a.sendMessage(bundle["event.antigrief.node", it.player.name, oldGraphCount.coerceAtLeast(newGraphCount), oldGraphCount.coerceAtMost(newGraphCount), "${it.tile.x}, ${it.tile.y}"])
+            if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) {
+                if (Config.antiGrief) {
+                    val entity = it.tile
+                    val other = world.tile(it.value as Int)
+                    val valid = other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload
+                    if (valid) {
+                        val oldGraph = entity.power.graph
+                        val newGraph = other.build.power.graph
+                        val oldGraphCount = oldGraph.toString().substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                        val newGraphCount = newGraph.toString().substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], graph")).replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
+                        if (abs(oldGraphCount - newGraphCount) > 10) {
+                            Groups.player.forEach { a ->
+                                val data = findPlayerData(a.uuid())
+                                if (data != null) {
+                                    val bundle = Bundle(data.languageTag)
+                                    a.sendMessage(bundle["event.antigrief.node", it.player.name, oldGraphCount.coerceAtLeast(newGraphCount), oldGraphCount.coerceAtMost(newGraphCount), "${it.tile.x}, ${it.tile.y}"])
+                                }
                             }
                         }
                     }
                 }
+
+                addLog(TileLog(System.currentTimeMillis(), player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name))
             }
         }
 
@@ -230,6 +234,7 @@ object Event {
                             "tap" -> "[royal]${bundle["event.log.tap"]}[]"
                             "break" -> "[scarlet]${bundle["event.log.break"]}[]"
                             "place" -> "[sky]${bundle["event.log.place"]}[]"
+                            "config" -> "[cyan]${bundle["event.log.config"]}[]"
                             else -> ""
                         }
 
@@ -479,7 +484,7 @@ object Event {
                     Log.info(Bundle()["event.ban.iptables", ip])
                 }
             }
-            log(LogType.Player, Bundle()["log.player.banned", if (it.player == null) netServer.admins.getInfo(it.uuid).lastName else it.player.name, it.player.ip()])
+            log(LogType.Player, Bundle()["log.player.banned", if (it.player == null) netServer.admins.getInfo(it.uuid).lastName else it.player.name, if (it.player == null) netServer.admins.getInfo(it.uuid).lastIP else it.player.ip()])
         }
 
         Events.on(WorldLoadEvent::class.java) {
@@ -549,8 +554,10 @@ object Event {
             Groups.player.forEach {
                 val data = findPlayerData(it.uuid())
                 if (data != null) {
-                    val bundle = Bundle(data.languageTag)
-                    Core.app.post { it.sendMessage(bundle.get(message, *parameter)) }
+                    if (voteTargetUUID != data.uuid) {
+                        val bundle = Bundle(data.languageTag)
+                        Core.app.post { it.sendMessage(bundle.get(message, *parameter)) }
+                    }
                 }
             }
         }
@@ -703,8 +710,9 @@ object Event {
                 if (voting) {
                     if (count % 10 == 0) {
                         send("command.vote.count", count.toString(), check() - voted.size)
-                        if (voteType == "kick" && voteTarget == null) {
+                        if (voteType == "kick" && Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
                             send("command.vote.kick.target.leave")
+
                         }
                     }
                     count--
@@ -714,8 +722,8 @@ object Event {
                         when (voteType) {
                             "kick" -> {
                                 val name = netServer.admins.getInfo(voteTargetUUID).lastName
-                                if (voteTarget == null) {
-                                    netServer.admins.banPlayer(voteTargetUUID)
+                                if (Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
+                                    netServer.admins.banPlayerID(voteTargetUUID)
                                     send("command.vote.kick.target.banned", name)
                                 } else {
                                     voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
