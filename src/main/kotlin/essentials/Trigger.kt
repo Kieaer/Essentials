@@ -38,7 +38,7 @@ object Trigger {
     var pvpCount = Config.pvpPeaceTime
 
     init {
-        Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN").run {
+        Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")?.run {
             ip2location.Open(this.readBytes())
         }
     }
@@ -74,8 +74,8 @@ object Trigger {
         if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
 
         if (perm.isAlert) {
-            if (perm.alertMessage.isEmpty()){
-                for (a in database.players){
+            if (perm.alertMessage.isEmpty()) {
+                for (a in database.players) {
                     a.player.sendMessage(Bundle(a.languageTag)["event.player.joined", player.name()])
                 }
             } else {
@@ -183,7 +183,7 @@ object Trigger {
                             pingHostImpl(value.ip, value.port) { r: Host ->
                                 var margin = 0f
                                 var isDup = false
-                                var x = tile.build.getX()
+                                val x = tile.build.getX()
 
                                 when (value.size) {
                                     1 -> margin = 8f
@@ -197,11 +197,13 @@ object Trigger {
                                         margin = 24f
                                         isDup = true
                                     }
+
                                     5 -> margin = 24f
                                     6 -> {
                                         margin = 32f
                                         isDup = true
                                     }
+
                                     7 -> margin = 32f
                                 }
 
@@ -234,13 +236,14 @@ object Trigger {
                         if (state.map.name() == value.mapName) {
                             if (value.totalplayers != totalPlayers()) {
                                 when (totalPlayers()) {
-                                    0,1,2,3,4,5,6,7,8,9 -> {
+                                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9 -> {
                                         for (px in 0..2) {
                                             for (py in 0..4) {
                                                 Call.deconstructFinish(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, dummy.unit())
                                             }
                                         }
                                     }
+
                                     else -> {
                                         for (px in 0..5) {
                                             for (py in 0..4) {

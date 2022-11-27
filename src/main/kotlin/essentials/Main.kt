@@ -39,7 +39,7 @@ class Main : Plugin() {
 
         if (Config.blockIP) {
             val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-            if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
+            if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
                 Log.info(bundle["config.sudopassword"])
                 Log.info(bundle["config.sudopassword.repeat"])
 
@@ -135,8 +135,7 @@ class Main : Plugin() {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf(
-                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]",
-                "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
+                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
             )
             for (a in 0 until names.size) {
                 if (!root.child("motd/${names[a]}.txt").exists()) {
@@ -149,8 +148,7 @@ class Main : Plugin() {
             root.child("messages").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf(
-                "To edit this message, open [green]config/mods/Essentials/messages[] folder and edit [green]en.txt[]",
-                "이 메세지를 수정할려면 [green]config/mods/Essentials/messages[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
+                "To edit this message, open [green]config/mods/Essentials/messages[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/messages[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
             )
             for (a in 0 until names.size) {
                 if (!root.child("messages/${names[a]}.txt").exists()) {
@@ -159,7 +157,7 @@ class Main : Plugin() {
             }
         }
 
-        if(!root.child("chat_blacklist.txt").exists()) {
+        if (!root.child("chat_blacklist.txt").exists()) {
             root.child("chat_blacklist.txt").writeString("않")
         }
     }

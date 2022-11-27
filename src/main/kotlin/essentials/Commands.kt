@@ -68,7 +68,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("effect", "[effect] [x] [y] [rotate] [color]", "effects") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("fillitems", "<team>", "Fill the core with items.") { a, p: Playerc -> Client(a, p).fillitems() }
             handler.register("freeze", "<player>", "Stop player unit movement") { a, p: Playerc -> Client(a, p).freeze() }
-            handler.register("gg", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
+            handler.register("gg", "[team]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
             handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
             handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
@@ -87,7 +87,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
-            handler.register("ranking", "<time/place/break/attack/exp>", "Show players ranking")  { a, p: Playerc -> Client(a, p).ranking() }
+            handler.register("ranking", "<time/place/break/attack/exp>", "Show players ranking") { a, p: Playerc -> Client(a, p).ranking() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
@@ -107,7 +107,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         } else {
             handler.register("debug", "[bool]", "Show plugin internal informations") { a -> Server(a).debug() }
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
-            handler.register("reload", "Reload permission and config files.") { a -> Server(a).reload()}
+            handler.register("reload", "Reload permission and config files.") { a -> Server(a).reload() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
             serverCommands = handler
@@ -207,9 +207,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val pos = Seq<IntArray>()
                     if (!letters.containsKey(i.uppercaseChar().toString())) continue
                     val target = letters[i.uppercaseChar().toString()]
-                    var xv = 0 // 세로 크기
-                    var yv = 0 // 가로 크기
-                    // 배열 크기
+                    var xv = 0
+                    var yv = 0
                     when (target.size) {
                         25 -> {
                             xv = 5
@@ -602,9 +601,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             player.sendMessage(bundle["command.fillitems.core.filled"])
         }
 
-        fun freeze(){
+        fun freeze() {
             if (!Permission.check(player, "freeze")) return
-            if (arg.isEmpty()){
+            if (arg.isEmpty()) {
                 player.sendMessage(bundle["player.not.found"])
             } else {
                 val target = findPlayers(arg[0])
@@ -873,7 +872,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
-        fun log(){
+        fun log() {
             if (!Permission.check(player, "log")) return
             if (data != null) {
                 if (data.status.containsKey("log")) {
@@ -1131,7 +1130,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun players() {
-            // todo 중복 버그
             if (!Permission.check(player, "players")) return
             val message = StringBuilder()
             val page = if (arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0
@@ -1159,18 +1157,23 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 "time" -> {
                     player.sendMessage(bundle["command.ranking.time"])
                 }
+
                 "exp" -> {
                     player.sendMessage(bundle["command.ranking.exp"])
                 }
+
                 "attack" -> {
                     player.sendMessage(bundle["command.ranking.attack"])
                 }
+
                 "place" -> {
                     player.sendMessage(bundle["command.ranking.place"])
                 }
+
                 "break" -> {
                     player.sendMessage(bundle["command.ranking.break"])
                 }
+
                 else -> {
                     player.sendMessage(bundle["command.ranking.wrong"])
                     return
@@ -1184,7 +1187,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val placeBlock = mutableMapOf<String, Int>()
             val breakBlock = mutableMapOf<String, Int>()
 
-            for (a in all){
+            for (a in all) {
                 time[a.name] = a.playtime
                 exp[a.name] = a.exp
                 attack[a.name] = a.attackclear
@@ -1203,13 +1206,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 else -> return
             }
 
-            for (a in 0..4){
-                string.append("${if(a == 0) "[sky]" else "[green]"}${a+1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}\n")
+            for (a in 0..4) {
+                string.append("${if (a == 0) "[sky]" else "[green]"}${a + 1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}\n")
             }
             string.append("[purple]=======================================[]\n")
-            for (a in d.indices){
+            for (a in d.indices) {
                 if (d[a].first == player.name()) {
-                    string.append("${a+1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
+                    string.append("${a + 1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
                 }
             }
 
@@ -1236,7 +1239,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
-        fun report(){
+        fun report() {
             if (!Permission.check(player, "report")) return
             if (arg.isEmpty()) {
                 player.sendMessage(bundle["command.report.arg.empty"])
@@ -1246,8 +1249,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val target = findPlayers(arg[0])
                 if (target != null) {
                     val reason = arg[2]
-                    val infos = netServer.admins.findByIP(target.con().address)
-                    // TODO 보고서 번역
+                    val infos = netServer.admins.findByIP(target.con().address) // TODO 보고서 번역
                     val text = """
                         == ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
                         Target player: ${target.name()}
@@ -1751,7 +1753,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 Log.info(Bundle()["config.permission.updated"])
                 Config.load()
                 Log.info(Bundle()["config.reloaded"])
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

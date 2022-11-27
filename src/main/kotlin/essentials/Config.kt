@@ -212,7 +212,7 @@ object Config {
         discordURL = discord.getString("discordURL", discordURL)
     }
 
-    fun update(){
+    fun update() {
         val version = JsonObject.readHjson(root.readString("utf-8")).asObject().getInt("configVersion", 1)
         if (configVersion > version) {
             save()

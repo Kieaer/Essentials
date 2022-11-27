@@ -29,6 +29,7 @@ import mindustry.io.SaveIO
 import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
+import mindustry.world.Block
 import org.hjson.JsonArray
 import java.io.BufferedReader
 import java.io.IOException
@@ -72,12 +73,14 @@ object Event {
 
     var enemyCores = 0
     var enemyCoresCounted = false
-    val worldHistory = Seq<TileLog>()
 
-    var random = Random()
-    var dateformat = SimpleDateFormat("HH:mm:ss")
+    private val worldHistory = Seq<TileLog>()
+    private var playerHistory = Seq<PlayerLog>()
 
-    var blockExp = ObjectMap<String, Int>()
+    private var random = Random()
+    private var dateformat = SimpleDateFormat("HH:mm:ss")
+
+    private var blockExp = ObjectMap<String, Int>()
 
     init {
         val aa = arrayOf("af", "ar", "bg", "bn", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi", "fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "kn", "ko", "lt", "lv", "mk", "ml", "mr", "ne", "nl", "no", "pa", "pl", "pt", "ro", "ru", "sk", "sl", "so", "sq", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur", "vi", "zh-cn", "zh-tw")
@@ -160,8 +163,7 @@ object Event {
             }
         }
 
-        Events.on(ConfigEvent::class.java) {
-            // todo 전력 노드 오작동
+        Events.on(ConfigEvent::class.java) { // todo 전력 노드 오작동
             if (it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) {
                 if (Config.antiGrief) {
                     val entity = it.tile
@@ -220,14 +222,16 @@ object Event {
                     }
                     val str = StringBuilder()
                     val bundle = Bundle(data.languageTag)
-                    val coreBundle = ResourceBundle.getBundle("bundle_block", try {
-                        when (data.languageTag) {
-                            "ko" -> Locale.KOREA
-                            else -> Locale.ENGLISH
+                    val coreBundle = ResourceBundle.getBundle(
+                        "bundle_block", try {
+                            when (data.languageTag) {
+                                "ko" -> Locale.KOREA
+                                else -> Locale.ENGLISH
+                            }
+                        } catch (e: Exception) {
+                            Locale.ENGLISH
                         }
-                    } catch (e: Exception) {
-                        Locale.ENGLISH
-                    })
+                    )
 
                     for (a in buf) {
                         val action = when (a.action) {
@@ -279,9 +283,9 @@ object Event {
                 blockExp.put(it.name, buf)
             }
 
-            if (!Config.blockIP && PluginData.status.contains("iptablesFirst")){
-                for (a in netServer.admins.banned){
-                    for (b in a.ips){
+            if (!Config.blockIP && PluginData.status.contains("iptablesFirst")) {
+                for (a in netServer.admins.banned) {
+                    for (b in a.ips) {
                         val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $b -j DROP")
                         Runtime.getRuntime().exec(cmd)
                     }
@@ -327,11 +331,9 @@ object Event {
                     if (target != null) {
                         val oldLevel = target.level
                         val oldExp = target.exp
-
-                        // 시간 x 적 코어 개수
                         val time = (PluginData.playtime.toInt() * 2) * enemyCores
                         var blockexp = 0
-                        // 건설한 블록 개수
+
                         for (a in state.stats.placedBlockCount) {
                             blockexp += blockExp[a.key.name]
                         }
@@ -471,9 +473,9 @@ object Event {
         }
 
         Events.on(PlayerBanEvent::class.java) {
-            if (Config.blockIP){
+            if (Config.blockIP) {
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")){
+                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
                     val ip = if (it.player != null) it.player.ip() else netServer.admins.getInfo(it.uuid).lastIP
                     val cmd = if (it.player != null) {
                         arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $ip -j DROP")
@@ -526,13 +528,6 @@ object Event {
                         }
                     }
                 }
-            }
-
-            if (Config.antiGrief) {
-                /*val find = netServer.admins.findByName(e.player.name)
-                if (find != null && find.first().lastIP != e.player.con.address) {
-                    Call.kick(e.player.con(), "There's a player with the same name on the server!")
-                }*/
             }
         }
 
@@ -1049,9 +1044,10 @@ object Event {
         }
     }
 
-    fun addLog(log:TileLog) {
+    fun addLog(log: TileLog) {
         worldHistory.add(log)
     }
 
     class TileLog(val time: Long, val player: String, val action: String, val x: Short, val y: Short, val tile: String)
+    class PlayerLog(val player: String, val block: Block, val rotate: Int, val x: Short, val y: Short)
 }
