@@ -274,7 +274,6 @@ object Trigger {
                     }
                     TimeUnit.SECONDS.sleep(3)
                 } catch (e: Exception) {
-                    e.printStackTrace()
                     java.lang.Thread.currentThread().interrupt()
                 }
             }
