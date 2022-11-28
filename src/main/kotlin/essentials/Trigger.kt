@@ -15,7 +15,6 @@ import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.Call
-import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.net.Host
@@ -138,13 +137,14 @@ object Trigger {
 
     class Thread : Runnable {
         private var ping = 0.000
-        private val servers = ArrayMap<String, Int>()
+        private var servers = ArrayMap<String, Int>()
         private val dummy = Player.create()
 
         override fun run() {
             while (!java.lang.Thread.currentThread().isInterrupted) {
                 try {
                     if (state.isPlaying) {
+                        servers = ArrayMap<String, Int>()
                         for (i in 0 until PluginData.warpCounts.size) {
                             val value = PluginData.warpCounts[i]
                             pingHostImpl(value.ip, value.port) { r: Host ->
@@ -267,7 +267,7 @@ object Trigger {
                         }
 
                         if (Config.countAllServers) {
-                            Core.settings.put("totalPlayers", totalPlayers() + Groups.player.size())
+                            Core.settings.put("totalPlayers", totalPlayers())
                             Core.settings.saveValues()
                         }
                         ping = 0.000
