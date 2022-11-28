@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.6.10"
+    kotlin("jvm") version "1.8.0-Beta"
 }
 
 java {
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    val exposedVersion = "0.40.1"
+    val exposedVersion = "0.41.1"
     val mindustryVersion = "v140.4"
     val arcVersion = "v140.4"
 
@@ -25,7 +25,7 @@ dependencies {
     //implementation("com.github.gimlet2:kottpd:0.2.1")
     implementation("org.apache.maven:maven-artifact:3.8.5")
 
-    implementation("org.xerial:sqlite-jdbc:3.39.3.0")
+    implementation("org.xerial:sqlite-jdbc:3.40.0.0")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
@@ -33,7 +33,6 @@ dependencies {
     implementation(files("libs/ip2location.jar"))
     implementation(files("libs/langdetect.jar"))
     implementation(files("libs/jsonic-1.2.0.jar"))
-
 
     testImplementation("com.github.Anuken.arc:arc-core:$arcVersion")
     testImplementation("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")

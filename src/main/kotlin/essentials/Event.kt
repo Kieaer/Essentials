@@ -198,7 +198,7 @@ object Event {
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
                 for (a in PluginData.warpBlocks) {
-                    if (it.tile.x >= world.tile(a.pos).x && it.tile.x <= world.tile(a.pos).x && it.tile.y >= world.tile(a.pos).y && it.tile.y <= world.tile(a.pos).y) {
+                    if (it.tile.x >= a.x && it.tile.x <= a.x && it.tile.y >= a.y && it.tile.y <= a.y) {
                         if (a.online) {
                             Log.info("${it.player.name} moves to server ${a.ip}:${a.port}")
                             Call.connect(it.player.con(), a.ip, a.port)
@@ -895,6 +895,8 @@ object Event {
                         send("trigger.pvp.end")
                     }
                 }
+
+                PluginData.save()
 
                 secondCount = 0
             } else {

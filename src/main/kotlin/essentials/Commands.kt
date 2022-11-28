@@ -72,7 +72,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("gg", "[team]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
             handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
-            handler.register("hub", "<zone/block/count/total> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
+            handler.register("hub", "<set/zone/block/count/total> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
             handler.register("info", "[player]", "Show your information") { a, p: Playerc -> Client(a, p).info() }
             handler.register("js", "[code...]", "Execute JavaScript codes") { a, p: Playerc -> Client(a, p).js() }
             handler.register("kickall", "All users except yourself and the administrator will be kicked") { a, p: Playerc -> Client(a, p).kickall() }
@@ -709,18 +709,23 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     ip = arg[1]
                 }
             }
-            val parameters: Array<String> = if (arg.size == 3) {
-                arg[2].split(" ").toTypedArray()
-            } else {
-                arrayOf()
-            }
+
             when (type) {
-                "zone" -> if (parameters.size != 2) {
+                "set" -> {
+                    if (!PluginData.status.contains("hubMode")){
+                        PluginData.status.add("hubMode")
+                        player.sendMessage(bundle["command.hub.mode.on"])
+                    } else {
+                        PluginData.status.remove("hubMode")
+                        player.sendMessage(bundle["command.hub.mode.off"])
+                    }
+                }
+                "zone" -> if (arg.size != 4) {
                     player.sendMessage(bundle["command.hub.zone.help"])
                 } else {
                     try {
-                        size = parameters[0].toInt()
-                        clickable = java.lang.Boolean.parseBoolean(parameters[1])
+                        size = arg[2].toInt()
+                        clickable = java.lang.Boolean.parseBoolean(arg[3])
                     } catch (ignored: NumberFormatException) {
                         player.sendMessage(bundle["command.hub.size.invalid"])
                         return
@@ -730,16 +735,16 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (clickable) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
                 }
 
-                "block" -> if (parameters.isEmpty()) {
+                "block" -> if (arg.size < 3) {
                     player.sendMessage(bundle["command.hub.block.parameter"])
                 } else {
                     val t: Tile = player.tileOn()
-                    PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.pos(), t.block().name, t.block().size, ip, port, arg[2]))
+                    PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.build.tileX(), t.build.tileY(), t.block().name, t.block().size, ip, port, arg[2]))
                     player.sendMessage(bundle["command.hub.block.added", "$x:$y", ip])
                 }
 
                 "count" -> {
-                    if (parameters.isNotEmpty()) {
+                    if (arg.size < 2) {
                         player.sendMessage(bundle["command.hub.count.parameter"])
                     } else {
                         PluginData.warpCounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 1))
