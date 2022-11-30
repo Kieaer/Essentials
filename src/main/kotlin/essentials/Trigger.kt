@@ -45,7 +45,7 @@ object Trigger {
     }
 
     fun loadPlayer(player: Playerc, data: DB.PlayerData) {
-        player.name(data.name)
+        if (Config.fixedName) player.name(data.name)
         data.lastdate = System.currentTimeMillis()
         data.joincount = data.joincount++
         data.player = player
