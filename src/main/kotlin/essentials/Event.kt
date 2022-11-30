@@ -730,25 +730,28 @@ object Event {
                 }
             }
 
-            if (milsCount == 15) {
+            if (milsCount == 5) {
                 for (a in database.players) {
                     when (a.level) {
-                        in 0..99 -> {
-                            Call.effect(Fx.bubble, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
+                        in 30..49 -> {
+                            Call.effect(Fx.freezing, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
                         }
-                        in 100..249 -> {
+                        in 50..69 -> {
+                            Call.effect(Fx.overdriven, a.player.x, a.player.y, a.player.unit().rotation, Color.orange)
+                        }
+                        in 70..89 -> {
+                            Call.effect(Fx.burning, a.player.x, a.player.y, a.player.unit().rotation, Color.red)
+                            Call.effect(Fx.melting, a.player.x, a.player.y, a.player.unit().rotation, Color.red)
+                        }
+                        in 90..99 -> {
 
                         }
-                        in 250..499 -> {
+                        in 100..Int.MAX_VALUE -> {
 
                         }
-                        in 500..999 -> {
+                        else -> {
 
                         }
-                        in 1000..Int.MAX_VALUE -> {
-
-                        }
-                        else -> {}
                     }
                 }
                 milsCount = 0
