@@ -98,7 +98,7 @@ object Event {
                 val data = findPlayerData(it.player.uuid())
                 if (data != null) {
                     log(LogType.Chat, "${it.player.name}: ${it.message}")
-                    Log.info("<&y" + it.player.name + ": &lm" + it.message + "&lg>")
+                    Log.info("<&y" + data.name + ": &lm" + it.message + "&lg>")
 
                     if (!data.mute) {
                         val isAdmin = Permission.check(it.player, "vote.pass")
@@ -144,7 +144,7 @@ object Event {
                                 }
                             }
                         }
-                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", it.player.coloredName()).replace("%2", it.message), it.message, it.player)
+                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", data.name).replace("%2", it.message), it.message, it.player)
                     }
                 } else {
                     Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}", it.message, it.player)
@@ -633,6 +633,7 @@ object Event {
             player.name(stringBuilder.toString())
         }
 
+        var milsCount = 0
         var secondCount = 0
         var minuteCount = 0
         var count = 60
@@ -669,6 +670,32 @@ object Event {
                         Call.setCameraPosition(a.player.con(), a.player.x, a.player.y)
                     }
                 }
+            }
+
+            if (milsCount == 15) {
+                for (a in database.players) {
+                    when (a.level) {
+                        in 0..99 -> {
+                            Call.effect(Fx.bubble, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
+                        }
+                        in 100..249 -> {
+
+                        }
+                        in 250..499 -> {
+
+                        }
+                        in 500..999 -> {
+
+                        }
+                        in 1000..Int.MAX_VALUE -> {
+
+                        }
+                        else -> {}
+                    }
+                }
+                milsCount = 0
+            } else {
+                milsCount++
             }
 
             if (secondCount == 60) {
