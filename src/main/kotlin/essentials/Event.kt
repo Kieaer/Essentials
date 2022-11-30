@@ -155,7 +155,7 @@ object Event {
                                 }
                             }
                         }
-                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", data.name).replace("%2", it.message), it.message, it.player)
+                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", "[#${it.player.color}]${data.name}").replace("%2", it.message), it.message, it.player)
                     }
                 } else {
                     Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}", it.message, it.player)
