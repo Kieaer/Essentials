@@ -117,7 +117,7 @@ class Main : Plugin() {
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
-            return@addActionFilter data != null && !PluginData.status.contains("hubMode")
+            return@addActionFilter data != null && (!PluginData.status.contains("hubMode") || (PluginData.status.contains("hubMode") && Permission.check(e.player, "hub.build")))
         }
         Log.info("[Essentials] Loaded.")
     }
