@@ -94,6 +94,17 @@ object Event {
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
+            if (Config.blockfooclient) {
+                if (it.message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
+                    Call.kick(it.player.con(), "Custom client detected.")
+                    Log.info("${it.player.name} kicked by using foo's client")
+                    for (a in database.players) {
+                        a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
+                    }
+                    return@on
+                }
+            }
+
             if (!it.message.startsWith("/")) {
                 val data = findPlayerData(it.player.uuid())
                 if (data != null) {
@@ -440,6 +451,14 @@ object Event {
 
         }
 
+        fun checkHack(inp: Float, item: Byte): Boolean {
+            var bits = java.lang.Float.floatToIntBits(inp)
+            bits = bits shl 32 - 8
+            var addend: Int = item.toInt()
+            addend = addend shl 32 - 8
+            return bits == addend
+        }
+
         Events.on(PlayerJoin::class.java) {
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
             it.player.admin(false)
@@ -458,6 +477,45 @@ object Event {
                 } else if (Config.authType == Config.AuthType.None) {
                     Trigger.createPlayer(it.player, null, null)
                 }
+            }
+
+            if (Config.blockfooclient) {
+                Core.app.addListener(object : ApplicationListener {
+                    var hackCount = 0
+                    var timeout = 600
+
+                    override fun update() {
+                        if (it.player != null) {
+                            if (!it.player.con.mobile) {
+                                val x = it.player.mouseX()
+                                val y = it.player.mouseY()
+
+                                val fooUser = checkHack(x, 170.toByte()) && checkHack(y, 85.toByte()) || checkHack(y, 170.toByte())
+                                val assistUser = (checkHack(x, 170.toByte())) || checkHack(x, 85.toByte()) && checkHack(y, 170.toByte())
+
+                                if (fooUser || assistUser) {
+                                    hackCount++
+                                    if (hackCount > 150) {
+                                        Call.kick(it.player.con(), "Custom client detected.")
+                                        Log.info("${it.player.name()} kicked by using foo's client")
+                                        for (a in database.players) {
+                                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
+                                        }
+                                        Core.app.removeListener(this)
+                                    }
+                                }
+                            }
+                        } else {
+                            Core.app.removeListener(this)
+                        }
+
+                        if (timeout != 0) {
+                            timeout--
+                        } else {
+                            Core.app.removeListener(this)
+                        }
+                    }
+                })
             }
         }
 
