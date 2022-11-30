@@ -210,7 +210,7 @@ object PluginData {
                         if (data["status"] == null) {
                             status = Seq<String>()
                         } else {
-                            data["status"].asArray().forEach { status.add(it.toString()) }
+                            data["status"].asArray().forEach { status.add(it.asString()) }
                         }
                     }
                 }
