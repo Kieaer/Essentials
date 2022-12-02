@@ -420,7 +420,7 @@ object Event {
 
         Events.on(BuildSelectEvent::class.java) {
             if (it.builder is Playerc && it.builder.buildPlan() != null && !Pattern.matches(".*build.*", it.builder.buildPlan().block.name) && it.tile.block() !== Blocks.air && it.breaking) {
-                log(LogType.Block, "${(it.builder as Playerc).name()} remove ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
+                log(LogType.Block, "${(it.builder as Playerc).plainName()} remove ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
             }
         }
 
@@ -497,7 +497,7 @@ object Event {
                                     hackCount++
                                     if (hackCount > 150) {
                                         Call.kick(it.player.con(), "Custom client detected.")
-                                        Log.info("${it.player.name()} kicked by using foo's client")
+                                        Log.info("${it.player.plainName()} kicked by using foo's client")
                                         for (a in database.players) {
                                             a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
                                         }

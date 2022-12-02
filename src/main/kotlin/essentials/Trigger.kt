@@ -77,7 +77,7 @@ object Trigger {
         if (perm.isAlert) {
             if (perm.alertMessage.isEmpty()) {
                 for (a in database.players) {
-                    a.player.sendMessage(Bundle(a.languageTag)["event.player.joined", player.name()])
+                    a.player.sendMessage(Bundle(a.languageTag)["event.player.joined", player.plainName()])
                 }
             } else {
                 Call.sendMessage(perm.alertMessage)
@@ -88,11 +88,11 @@ object Trigger {
     fun createPlayer(player: Playerc, id: String?, password: String?) {
         val data = DB.PlayerData()
 
-        data.name = player.name()
+        data.name = player.plainName()
         data.uuid = player.uuid()
         data.joinDate = System.currentTimeMillis()
-        data.id = id ?: player.name()
-        data.pw = if (password == null) player.name() else BCrypt.hashpw(password, BCrypt.gensalt())
+        data.id = id ?: player.plainName()
+        data.pw = if (password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
         data.permission = "user"
 
         database.createData(data)

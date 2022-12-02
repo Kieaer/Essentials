@@ -948,7 +948,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             }
                         }
                     }
-                    Call.sendMessage("[brown]== [sky]${player.name()}[white] - [tan]${arg[0]}")
+                    Call.sendMessage("[brown]== [sky]${player.plainName()}[white] - [tan]${arg[0]}")
                 }
             }
         }
@@ -1112,7 +1112,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun mute() {
             if (!Permission.check(player, "mute")) return
-            val other = Groups.player.find { p: Playerc -> p.name().equals(arg[0], ignoreCase = true) }
+            val other = Groups.player.find { p: Playerc -> p.plainName().equals(arg[0], ignoreCase = true) }
             if (other == null) {
                 player.sendMessage(bundle["player.not.found"])
             } else {
@@ -1237,7 +1237,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             string.append("[purple]=======================================[]\n")
             for (a in d.indices) {
-                if (d[a].first == player.name()) {
+                if (d[a].first == player.plainName()) {
                     string.append("${a + 1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
                 }
             }
@@ -1255,7 +1255,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 } else {
                     if (transaction { DB.Player.select { DB.Player.accountid.eq(arg[0]) }.firstOrNull() } == null) {
                         Trigger.createPlayer(player, arg[0], arg[1])
-                        Log.info(Bundle()["log.data_created", player.name()])
+                        Log.info(Bundle()["log.data_created", player.plainName()])
                     } else {
                         player.sendMessage("command.reg.exists")
                     }
@@ -1278,8 +1278,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val infos = netServer.admins.findByIP(target.con().address) // TODO 보고서 번역
                     val text = """
                         == ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-                        Target player: ${target.name()}
-                        Reporter: ${player.name()}
+                        Target player: ${target.plainName()}
+                        Reporter: ${player.plainName()}
                         Reason: $reason
                         
                         == Target player information
@@ -1478,7 +1478,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val other = if (arg[1].toIntOrNull() != null) {
                     Groups.player.find { e -> e.id == arg[1].toInt() }
                 } else {
-                    Groups.player.find { e -> e.name().contains(arg[1]) }
+                    Groups.player.find { e -> e.plainName().contains(arg[1]) }
                 }
                 if (other != null) {
                     when (arg[0]) {
@@ -1565,7 +1565,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         data.status.put("tpp", other.uuid())
                         player.clearUnit()
                         player.team(Team.derelict)
-                        player.sendMessage(bundle["command.tpp.following", other.name()])
+                        player.sendMessage(bundle["command.tpp.following", other.plainName()])
                     }
                 }
             }
@@ -1639,7 +1639,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val data = findPlayerData(it.uuid())
                     if (data != null) {
                         val bundle = Bundle(data.languageTag)
-                        it.sendMessage(bundle["command.vote.starter", player.name()])
+                        it.sendMessage(bundle["command.vote.starter", player.plainName()])
                         it.sendMessage(bundle.get(message, *parameter))
                         it.sendMessage(bundle["command.vote.how"])
                     }
@@ -1669,7 +1669,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                 Event.voteType = "kick"
                                 Event.voteStarter = player
                                 Event.voting = true
-                                sendStart("command.vote.kick.start", target.name(), arg[2])
+                                sendStart("command.vote.kick.start", target.plainName(), arg[2])
                             }
                         } else {
                             player.sendMessage(bundle["player.not.found"])
@@ -1869,7 +1869,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val other = if (arg[0].toIntOrNull() != null) {
                 Groups.player.find { e -> e.id == arg[0].toInt() }
             } else {
-                Groups.player.find { e -> e.name().contains(arg[0]) }
+                Groups.player.find { e -> e.plainName().contains(arg[0]) }
             }
 
             if (other == null) {
