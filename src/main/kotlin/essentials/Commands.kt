@@ -88,6 +88,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
+            handler.register("pm", "<player> [message...]", "Send private messgae") { a, p: Playerc -> Client(a, p).pm() }
             handler.register("ranking", "<time/place/break/attack/exp>", "Show players ranking") { a, p: Playerc -> Client(a, p).ranking() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
@@ -1157,6 +1158,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
         }
 
+        fun pm() {
+            if (!Permission.check(player, "pm")) return
+            val target = findPlayers(arg[0])
+            if (target == null) {
+                player.sendMessage(bundle["player.not.found"])
+            } else if (arg.size > 1){
+                player.sendMessage("[green][PM] ${target.plainName()}[yellow] => [white] ${arg[1]}")
+                target.sendMessage("[blue][PM] ${player.plainName()}[yellow] => [white] ${arg[1]}")
+                for (a in database.players){
+                    if(Permission.check(a.player, "pm.other")) {
+                        a.player.sendMessage("[sky]${player.plainName()}[] [yellow]=> [pink]${target.plainName()} [white] : ${arg[1]}")
+                    }
+                }
+            } else {
+                player.sendMessage(bundle["command.pm.message"])
+            }
+        }
+
         fun ranking() {
             if (!Permission.check(player, "ranking")) return
 
@@ -1287,6 +1306,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 if (a.player.contains(arg[0])) {
                     when (a.action) {
                         // todo 몇단계 뒤로 되돌리기
+                        // todo oh no 버그 있음
                         "place" -> {
                             Call.deconstructFinish(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, player.unit())
                             Log.info("place deconstructFinish ${a.x},${a.y}")
