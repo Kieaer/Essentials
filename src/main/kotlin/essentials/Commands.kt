@@ -94,6 +94,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
             handler.register("rollback", "<player>", "Undo all actions taken by the player.") { a, p: Playerc -> Client(a, p).rollback() }
             handler.register("search", "[value]", "Search player data") { a, p: Playerc -> Client(a, p).search() }
+            handler.register("setitem", "<item> <amount> [team]", "Set team core item amount") { a, p: Playerc -> Client(a, p).setitem() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p: Playerc -> Client(a, p).setperm() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p: Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p: Playerc -> Client(a, p).status() }
@@ -1308,6 +1309,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         // todo 몇단계 뒤로 되돌리기
                         // todo oh no 버그 있음
                         "place" -> {
+                            Call.setTile(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, player.team(), a.rotate)
+                            for (b in playerHistory) {
+                                if (b.x == a.x && b.y == a.y) {
+
+                                }
+                            }
+
                             Call.deconstructFinish(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, player.unit())
                             Log.info("place deconstructFinish ${a.x},${a.y}")
                         }
@@ -1379,6 +1387,32 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     }
                 }
                 player.sendMessage(bundle["command.search.total", result.size])
+            }
+        }
+
+        fun setitem() {
+            // todo 코어별 자원 개수 설정
+            if (!Permission.check(player, "setitem")) return
+            // <item> <amount> [team]
+            val item = content.item(arg[0])
+            if (item != null) {
+                val amount = arg[1].toIntOrNull()
+                if (amount != null) {
+                    if (arg.size == 3) {
+                        val team = Team.all.find { a -> a.name.equals(arg[2]) }
+                        if (team != null) {
+                            state.teams.cores(team).first().items[item] = if (state.teams.cores(team).first().storageCapacity > arg[1].toInt()) state.teams.cores(team).first().storageCapacity else arg[1].toInt()
+                        } else {
+                            player.sendMessage(bundle["command.setitem.wrong.team"])
+                        }
+                    } else {
+                        state.teams.cores(player.team()).first().items[item] = if (state.teams.cores(player.team()).first().storageCapacity > arg[1].toInt()) state.teams.cores(player.team()).first().storageCapacity else arg[1].toInt()
+                    }
+                } else {
+                    player.sendMessage(bundle["command.setitem.wrong.amount"])
+                }
+            } else {
+                player.sendMessage(bundle["command.setitem.item.not.exists"])
             }
         }
 
@@ -1551,11 +1585,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             if (data != null) {
                 if (arg.isEmpty() && data.status.containsKey("tpp")) {
-                    data.status.remove("tpp")
                     player.team(Team.get(data.status.get("tpp_team").toInt()))
-                    data.status.remove("tpp_team")
                     player.sendMessage(bundle["command.tpp.unfollowing"])
                     Call.setCameraPosition(player.con(), player.x, player.y)
+
+                    // todo out of index 오류남
+                    data.status.remove("tpp")
+                    data.status.remove("tpp_team")
                 } else {
                     val other = findPlayers(arg[0])
                     if (other == null) {
