@@ -1277,21 +1277,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val target = findPlayers(arg[0])
                 if (target != null) {
                     val reason = arg[2]
-                    val infos = netServer.admins.findByIP(target.con().address) // TODO 보고서 번역
-                    val text = """
-                        == ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-                        Target player: ${target.plainName()}
-                        Reporter: ${player.plainName()}
-                        Reason: $reason
-                        
-                        == Target player information
-                        Last name: ${infos.lastName}
-                        Names: ${infos.names}
-                        uuid: ${infos.id}
-                        Last IP: ${infos.lastIP}
-                        IP: ${infos.ips}
-                    """.trimIndent()
-                    Event.log(Event.LogType.Report, text, target.plainName())
+                    val infos = netServer.admins.findByIP(target.con().address)
+                    val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    val text = Bundle()["command.report.texts", target.plainName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
+
+                    Event.log(Event.LogType.Report, date+text, target.plainName())
                     Log.info(Bundle()["command.report.received", player.plainName(), target.plainName(), reason])
                     player.sendMessage(bundle["command.report.done", target.plainName()])
                 } else {
@@ -1305,7 +1295,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             for (a in playerHistory){
                 if (a.player.contains(arg[0])) {
                     val buf = Seq<Event.TileLog>()
-                    for (b in Event.worldHistory) {
+                    for (b in worldHistory) {
                         if (b.x == a.x && b.y == a.y) {
                             buf.add(b)
                         }
