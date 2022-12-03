@@ -155,7 +155,7 @@ object Event {
                                 }
                             }
                         }
-                        Call.sendMessage(Permission[it.player].chatFormat.replace("%1", "[#${it.player.color}]${data.name}").replace("%2", it.message), it.message, it.player)
+                        if (!(voting && it.message.contains("y"))) Call.sendMessage(Permission[it.player].chatFormat.replace("%1", "[#${it.player.color}]${data.name}").replace("%2", it.message), it.message, it.player)
                     }
                 } else {
                     Call.sendMessage("[gray]${it.player.name} [orange] > [white]${it.message}", it.message, it.player)
@@ -774,7 +774,7 @@ object Event {
                     }
 
                     // 잠수 플레이어 카운트
-                    if (a.x == a.player.tileX() && a.y == a.player.tileY()) {
+                    if (a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining()) {
                         a.afkTime++
                         if (a.afkTime == Config.afkTime) {
                             a.player.kick("AFK")
