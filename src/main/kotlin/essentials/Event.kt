@@ -777,7 +777,7 @@ object Event {
                     if (a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining() && !Permission.check(a.player, "afk.admin")) {
                         a.afkTime++
                         if (a.afkTime == Config.afkTime) {
-                            a.player.kick("AFK")
+                            a.player.kick(Bundle(a.languageTag)["event.player.afk"])
                         }
                     } else {
                         a.afkTime = 0
