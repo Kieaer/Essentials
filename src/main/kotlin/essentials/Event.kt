@@ -75,7 +75,7 @@ object Event {
     var enemyCores = 0
     var enemyCoresCounted = false
 
-    private val worldHistory = Seq<TileLog>()
+    val worldHistory = Seq<TileLog>()
     var playerHistory = Seq<PlayerLog>()
 
     private var random = Random()
@@ -198,14 +198,14 @@ object Event {
                     }
                 }
 
-                addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name))
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team))
                 addLog(PlayerLog(it.player.name, it.tile.block(), it.tile.tile.build.rotation, it.tile.tile.x, it.tile.tile.y, "config", it.player.team(), it.tile.tile.block().configurations))
             }
         }
 
         Events.on(TapEvent::class.java) {
             log(LogType.Tap, "${it.player.name} clicks on ${it.tile.block().name}")
-            addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name))
+            addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
                 for (a in PluginData.warpBlocks) {
@@ -395,7 +395,7 @@ object Event {
                     val block = it.tile.block()
                     if (!it.breaking) {
                         log(LogType.Block, "${player.name} placed ${block.name}")
-                        addLog(TileLog(System.currentTimeMillis(), player.name, "place", it.tile.x, it.tile.y, it.tile.block().name))
+                        addLog(TileLog(System.currentTimeMillis(), player.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
                         addLog(PlayerLog(player.name, it.tile.block(), it.tile.build.rotation, it.tile.x, it.tile.y, "place", it.unit.team, null))
                         target.placecount + 1
                         target.exp = target.exp + blockExp.get(block.name)
@@ -405,7 +405,7 @@ object Event {
                         }
                     } else if (it.breaking) {
                         log(LogType.Block, "${player.name} break ${player.unit().buildPlan().block.name}")
-                        addLog(TileLog(System.currentTimeMillis(), player.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name))
+                        addLog(TileLog(System.currentTimeMillis(), player.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
                         addLog(PlayerLog(player.name, player.unit().buildPlan().block, if (player.unit().buildPlan().build() != null) player.unit().buildPlan().build().rotation else 0, it.tile.x, it.tile.y, "break", it.unit.team, null))
                         target.breakcount + 1
                         target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
@@ -1146,6 +1146,6 @@ object Event {
         playerHistory.add(log)
     }
 
-    class TileLog(val time: Long, val player: String, val action: String, val x: Short, val y: Short, val tile: String)
+    class TileLog(val time: Long, val player: String, val action: String, val x: Short, val y: Short, val tile: String, val rotate: Int, val team: Team)
     class PlayerLog(val player: String, val block: Block, val rotate: Int, val x: Short, val y: Short, val action: String, val team: Team, val config: ObjectMap<Class<*>, Cons2<Any, Any>>?)
 }

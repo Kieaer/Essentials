@@ -15,6 +15,7 @@ import com.mewna.catnip.shard.DiscordEvent
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.playerHistory
+import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
@@ -1301,38 +1302,35 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun rollback() {
             if (!Permission.check(player, "rollback")) return
-            val buffer = playerHistory
-
-            for (a in buffer){
+            for (a in playerHistory){
                 if (a.player.contains(arg[0])) {
-                    when (a.action) {
-                        // todo 몇단계 뒤로 되돌리기
-                        // todo oh no 버그 있음
-                        "place" -> {
-                            Call.setTile(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, player.team(), a.rotate)
-                            for (b in playerHistory) {
-                                if (b.x == a.x && b.y == a.y) {
-
-                                }
-                            }
-
-                            Call.deconstructFinish(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, player.unit())
-                            Log.info("place deconstructFinish ${a.x},${a.y}")
+                    val buf = Seq<Event.TileLog>()
+                    for (b in Event.worldHistory) {
+                        if (b.x == a.x && b.y == a.y) {
+                            buf.add(b)
                         }
-
-                        "break" -> {
-                            Call.constructFinish(world.tile(a.x.toInt(), a.y.toInt()), a.block, player.unit(), a.rotate.toByte(), a.team, a.config)
-                            Log.info("break constructfinish ${a.x},${a.y}")
-                        }
-
-                        "config" -> {
-                            Call.tileConfig(player as Player, world.tile(a.x.toInt(), a.y.toInt()).build, a.config)
-                        }
-
-                        else -> {}
                     }
+
+                    for (b in buf){
+                        if (b.player == a.player){
+                            buf.remove(b)
+                        }
+                    }
+
+                    if (buf.size == 0) {
+                        Call.setTile(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
+                    } else {
+                        val last = buf.last()
+                        if (last.action == "break"){
+                            Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
+                        } else if (last.action == "place"){
+                            Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)
+                        }
+                    }
+
                 }
             }
+            worldHistory.removeAll { a -> a.player.contains(arg[0])}
             playerHistory.removeAll { a -> a.player.contains(arg[0])}
         }
 
@@ -1391,7 +1389,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun setitem() {
-            // todo 코어별 자원 개수 설정
             if (!Permission.check(player, "setitem")) return
             // <item> <amount> [team]
             val item = content.item(arg[0])
