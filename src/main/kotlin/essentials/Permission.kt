@@ -64,6 +64,7 @@ object Permission {
 
             val admin = JsonObject()
             val adminPerm = JsonArray()
+            adminPerm.add("afk.admin")
             adminPerm.add("chars")
             adminPerm.add("color")
             adminPerm.add("effect")
