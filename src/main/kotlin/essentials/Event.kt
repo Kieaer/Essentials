@@ -778,6 +778,9 @@ object Event {
                         a.afkTime++
                         if (a.afkTime == Config.afkTime) {
                             a.player.kick(Bundle(a.languageTag)["event.player.afk"])
+                            for (b in database.players) {
+                                b.player.sendMessage(Bundle(b.languageTag)["event.player.afk.other"])
+                            }
                         }
                     } else {
                         a.afkTime = 0
