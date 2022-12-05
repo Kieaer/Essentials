@@ -1137,7 +1137,7 @@ object Event {
                 null
             }
         } else {
-            Groups.player.find { p -> p.name.contains(name, true) }
+            Groups.player.find { p -> p.plainName().contains(name, true) }
         }
     }
 
