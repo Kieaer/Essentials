@@ -699,14 +699,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val x = player.tileX()
             val y = player.tileY()
             val name = state.map.name()
-            val size: Int
-            val clickable: Boolean
+            val size: Int?
+            val clickable: Boolean?
             var ip = ""
             var port = 6567
             if (arg.size > 1) {
                 if (arg[1].contains(":")) {
                     val address = arg[1].split(":").toTypedArray()
                     ip = address[0]
+
+                    if (address[1].toIntOrNull() == null) {
+                        player.sendMessage(bundle["command.hub.address.port.invalid"])
+                        return
+                    }
                     port = address[1].toInt()
                 } else {
                     ip = arg[1]
@@ -726,16 +731,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 "zone" -> if (arg.size != 4) {
                     player.sendMessage(bundle["command.hub.zone.help"])
                 } else {
-                    try {
-                        size = arg[2].toInt()
-                        clickable = java.lang.Boolean.parseBoolean(arg[3])
-                    } catch (ignored: NumberFormatException) {
-                        player.sendMessage(bundle["command.hub.size.invalid"])
-                        return
-                    }
-                    PluginData.warpZones.add(PluginData.WarpZone(name, world.tile(x, y).pos(), world.tile(x + size, y + size).pos(), clickable, ip, port))
+                    size = arg[2].toIntOrNull()
+                    clickable = arg[3].toBooleanStrictOrNull()
 
-                    player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (clickable) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
+                    if (size == null) {
+                        player.sendMessage(bundle["command.hub.size.invalid"])
+                    } else if (clickable == null) {
+                        player.sendMessage(bundle["command.hub.clickable.invalid"])
+                    }
+
+                    if (size != null && clickable != null) {
+                        PluginData.warpZones.add(PluginData.WarpZone(name, world.tile(x, y).pos(), world.tile(x + size, y + size).pos(), clickable, ip, port))
+                        player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (clickable) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
+                    }
                 }
 
                 "block" -> if (arg.size < 3) {
