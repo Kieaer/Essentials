@@ -774,7 +774,7 @@ object Event {
                     }
 
                     // 잠수 플레이어 카운트
-                    if (a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining() && !Permission.check(a.player, "afk.admin")) {
+                    if (a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining() && !a.player.unit().isShooting && !Permission.check(a.player, "afk.admin")) {
                         a.afkTime++
                         if (a.afkTime == Config.afkTime) {
                             a.player.kick(Bundle(a.languageTag)["event.player.afk"])
