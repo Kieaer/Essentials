@@ -14,6 +14,7 @@ object Config {
     private var obj = JsonObject()
 
     var update = true
+    var database = Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
     var afk = false
     var afkTime = 300
     var border = false
@@ -51,7 +52,7 @@ object Config {
     var channelToken = ""
     var discordURL = ""
 
-    var configVersion = 4
+    var configVersion = 5
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -118,6 +119,7 @@ object Config {
         plugin.add("update", update, bundle["config.update"])
         plugin.add("report", report, bundle["config.report"])
         plugin.add("authType", authType.toString(), bundle["config.authtype"])
+        plugin.add("database", database, bundle["config.database"])
 
         val features = JsonObject()
         features.add("afk", afk, bundle["config.afk"])
@@ -179,6 +181,7 @@ object Config {
         update = plugin.getBoolean("update", update)
         report = plugin.getBoolean("report", report)
         authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
+        database = plugin.getString("database", database)
 
         afk = features.getBoolean("afk", afk)
         afkTime = features.getInt("afkTime", afkTime)

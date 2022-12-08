@@ -25,17 +25,22 @@ class Main : Plugin() {
 
     init {
         Log.info("[Essentials] Loading")
-        if (Core.settings.has("debugMode") && Core.settings.getBool("debugMode")) {
+        if ((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
             root.child("database.db").delete()
         }
 
         createFile()
-        database.open()
         if (!root.child("config.txt").exists()) Config.save()
         Config.load()
         Config.update()
+        database.open()
         Permission.load()
         PluginData.load()
+
+        if (Config.database != Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()) {
+            Log.info(Bundle()["event.database.remote"])
+            root.child("database.db").delete()
+        }
 
         if (Config.blockIP) {
             val os = System.getProperty("os.name").lowercase(Locale.getDefault())

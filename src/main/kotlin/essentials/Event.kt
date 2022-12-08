@@ -296,7 +296,15 @@ object Event {
                 blockExp.put(it.name, buf)
             }
 
-            if (!Config.blockIP && PluginData.status.contains("iptablesFirst")) {
+            if (!Config.blockIP && Config.database != Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath() && PluginData.status.contains("iptablesFirst")) {
+                Log.warn(Bundle()["event.database.blockip.conflict"])
+
+                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
+                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                    Config.blockIP = true
+                    Log.info(Bundle()["config.blockIP.enabled"])
+                }
+            } else if (!Config.blockIP && PluginData.status.contains("iptablesFirst")) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
                         val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $b -j DROP")
@@ -310,7 +318,7 @@ object Event {
                     for (b in a.ips) {
                         val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $b -j DROP")
                         Runtime.getRuntime().exec(cmd)
-                        Log.info(Bundle()["event.ban.iptables", b])
+                        Log.info(Bundle()["event.ban.iptables.exists", b, a.lastName])
                     }
                 }
                 PluginData.status.add("iptablesFirst")

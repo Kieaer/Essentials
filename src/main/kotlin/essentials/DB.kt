@@ -17,7 +17,7 @@ class DB {
 
     fun open() {
         try {
-            db = Database.connect("jdbc:sqlite:${Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()}")
+            db = Database.connect("jdbc:sqlite:${Config.database}")
             transaction {
                 SchemaUtils.create(Player)
                 SchemaUtils.create(Data)
