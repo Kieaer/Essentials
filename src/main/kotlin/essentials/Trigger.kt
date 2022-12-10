@@ -15,6 +15,7 @@ import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.net.Host
@@ -271,7 +272,7 @@ object Trigger {
                         }
 
                         if (Config.countAllServers) {
-                            Core.settings.put("totalPlayers", totalPlayers())
+                            Core.settings.put("totalPlayers", totalPlayers() + Groups.player.size())
                             Core.settings.saveValues()
                         }
                         ping = 0.000
