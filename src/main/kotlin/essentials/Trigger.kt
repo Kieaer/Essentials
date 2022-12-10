@@ -146,89 +146,93 @@ object Trigger {
                     if (state.isPlaying) {
                         servers = ArrayMap<String, Int>()
                         for (i in 0 until PluginData.warpCounts.size) {
-                            val value = PluginData.warpCounts[i]
-                            pingHostImpl(value.ip, value.port) { r: Host ->
-                                if (r.name != null) {
-                                    ping += ("0." + r.ping).toDouble()
-                                    val str = r.players.toString()
-                                    val digits = IntArray(str.length)
-                                    for (a in str.indices) digits[a] = str[a] - '0'
-                                    val tile = value.tile
-                                    if (value.players != r.players) {
-                                        for (px in 0..2) {
-                                            for (py in 0..4) {
-                                                Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
+                            if (state.map.name() == PluginData.warpCounts[i].mapName) {
+                                val value = PluginData.warpCounts[i]
+                                pingHostImpl(value.ip, value.port) { r: Host ->
+                                    if (r.name != null) {
+                                        ping += ("0." + r.ping).toDouble()
+                                        val str = r.players.toString()
+                                        val digits = IntArray(str.length)
+                                        for (a in str.indices) digits[a] = str[a] - '0'
+                                        val tile = value.tile
+                                        if (value.players != r.players) {
+                                            for (px in 0..2) {
+                                                for (py in 0..4) {
+                                                    Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
+                                                }
                                             }
                                         }
+                                        dummy.x = tile.getX()
+                                        dummy.y = tile.getY()
+
+                                        Commands.Client(arrayOf(str), dummy).chars(tile) // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                                        PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, r.players, digits.size)
+                                        addPlayers(value.ip, value.port, r.players)
+                                    } else {
+                                        ping += 1.000
+
+                                        dummy.x = value.tile.getX()
+                                        dummy.y = value.tile.getY()
+                                        Commands.Client(arrayOf("no"), dummy).chars(value.tile)
                                     }
-                                    dummy.x = tile.getX()
-                                    dummy.y = tile.getY()
-
-                                    Commands.Client(arrayOf(str), dummy).chars(tile) // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                    PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, r.players, digits.size)
-                                    addPlayers(value.ip, value.port, r.players)
-                                } else {
-                                    ping += 1.000
-
-                                    dummy.x = value.tile.getX()
-                                    dummy.y = value.tile.getY()
-                                    Commands.Client(arrayOf("no"), dummy).chars(value.tile)
                                 }
                             }
                         }
 
                         val memory = Seq<String>()
                         for (value in PluginData.warpBlocks) {
-                            val tile = world.tile(value.x, value.y)
-                            if (tile.block() == Blocks.air) {
-                                PluginData.warpBlocks.remove(value)
-                            } else {
-                                var margin = 0f
-                                var isDup = false
-                                val x = tile.build.getX()
+                            if (state.map.name() == value.mapName) {
+                                val tile = world.tile(value.x, value.y)
+                                if (tile.block() == Blocks.air) {
+                                    PluginData.warpBlocks.remove(value)
+                                } else {
+                                    var margin = 0f
+                                    var isDup = false
+                                    val x = tile.build.getX()
 
-                                when (value.size) {
-                                    1 -> margin = 8f
-                                    2 -> {
-                                        margin = 16f
-                                        isDup = true
+                                    when (value.size) {
+                                        1 -> margin = 8f
+                                        2 -> {
+                                            margin = 16f
+                                            isDup = true
+                                        }
+
+                                        3 -> margin = 16f
+                                        4 -> {
+                                            margin = 24f
+                                            isDup = true
+                                        }
+
+                                        5 -> margin = 24f
+                                        6 -> {
+                                            margin = 32f
+                                            isDup = true
+                                        }
+
+                                        7 -> margin = 32f
                                     }
 
-                                    3 -> margin = 16f
-                                    4 -> {
-                                        margin = 24f
-                                        isDup = true
+                                    var y = tile.build.getY() + if (isDup) margin - 8 else margin
+                                    var players = 0
+
+                                    try {
+                                        pingHostImpl(value.ip, value.port) { r: Host ->
+                                            ping += ("0." + r.ping).toDouble()
+                                            if (isDup) y += 4
+                                            memory.add("[yellow]" + r.players + "[] Players///" + x + "///" + y)
+                                            value.online = true
+                                            players = r.players
+                                        }
+                                    } catch (e: IOException) {
+                                        ping += 1.000
+                                        memory.add("[scarlet]Offline///$x///$y")
+                                        value.online = false
                                     }
 
-                                    5 -> margin = 24f
-                                    6 -> {
-                                        margin = 32f
-                                        isDup = true
-                                    }
-
-                                    7 -> margin = 32f
+                                    if (isDup) margin -= 4
+                                    memory.add(value.description + "///" + x + "///" + (tile.build.getY() - margin))
+                                    addPlayers(value.ip, value.port, players)
                                 }
-
-                                var y = tile.build.getY() + if (isDup) margin - 8 else margin
-                                var players = 0
-
-                                try {
-                                    pingHostImpl(value.ip, value.port) { r: Host ->
-                                        ping += ("0." + r.ping).toDouble()
-                                        if (isDup) y += 4
-                                        memory.add("[yellow]" + r.players + "[] Players///" + x + "///" + y)
-                                        value.online = true
-                                        players = r.players
-                                    }
-                                } catch (e: IOException) {
-                                    ping += 1.000
-                                    memory.add("[scarlet]Offline///$x///$y")
-                                    value.online = false
-                                }
-
-                                if (isDup) margin -= 4
-                                memory.add(value.description + "///" + x + "///" + (tile.build.getY() - margin))
-                                addPlayers(value.ip, value.port, players)
                             }
                         }
                         for (m in memory) {
