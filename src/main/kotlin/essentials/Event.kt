@@ -336,6 +336,12 @@ object Event {
                             a.pvplosecount++
                         }
                     }
+                } else if (state.rules.attackMode) {
+                    for (a in database.players) {
+                        if (a.player.team() == it.winner) {
+                            a.attackclear++
+                        }
+                    }
                 }
                 for (p in Groups.player) {
                     val target = findPlayerData(p.uuid())
@@ -355,7 +361,6 @@ object Event {
                             val score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             target.exp = target.exp + score + blockexp
-                            target.attackclear++
                             p.sendMessage(bundle["exp.earn.victory", score + blockexp])
                         } else {
                             val score = (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
