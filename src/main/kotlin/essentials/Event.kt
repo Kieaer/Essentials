@@ -327,26 +327,16 @@ object Event {
 
         Events.on(GameOverEvent::class.java) {
             worldHistory.clear()
-            if (state.rules.pvp) {
-                var index = 5
-                for (a in 0..4) {
-                    if (state.teams[Team.all[index]].cores.isEmpty) {
-                        index--
-                    }
-                }
-                if (index == 1) {
-                    for (player in Groups.player) {
-                        val target = findPlayerData(player.uuid())
-                        if (target != null) {
-                            if (player.team().name == it.winner.name) {
-                                target.pvpwincount++
-                            } else if (player.team().name != it.winner.name) {
-                                target.pvplosecount++
-                            }
+            if (!state.rules.infiniteResources) {
+                if (state.rules.pvp) {
+                    for (a in database.players) {
+                        if (a.player.team() == it.winner) {
+                            a.pvpwincount++
+                        } else {
+                            a.pvplosecount++
                         }
                     }
                 }
-            } else if (state.rules.attackMode) {
                 for (p in Groups.player) {
                     val target = findPlayerData(p.uuid())
                     if (target != null) {
