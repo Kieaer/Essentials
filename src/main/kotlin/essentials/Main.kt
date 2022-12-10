@@ -122,7 +122,13 @@ class Main : Plugin() {
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
-            return@addActionFilter data != null && (!PluginData.status.contains("hubMode") || (PluginData.status.contains("hubMode") && Permission.check(e.player, "hub.build")))
+            val isHub = PluginData.status.contains("hubMode") && Vars.state.map.name() == PluginData.status.find { a -> a.contains(Regex("hubMap"))}.replace("hubMap-", "")
+            for (a in PluginData.warpBlocks) {
+                if (a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {
+                    return@addActionFilter false
+                }
+            }
+            return@addActionFilter (data != null && !isHub) || (isHub && Permission.check(e.player, "hub.build"))
         }
         Log.info("[Essentials] Loaded.")
     }

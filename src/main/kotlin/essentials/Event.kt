@@ -74,7 +74,6 @@ object Event {
 
     var enemyCores = ObjectMap<String, Int>()
     var enemyCoresCounted = false
-    var enemyCoresPvP = false
 
     var worldHistory = Seq<TileLog>()
     var playerHistory = Seq<PlayerLog>()
@@ -444,13 +443,14 @@ object Event {
 
         }
 
-        Events.on(UnitCreateEvent::class.java) {
+        Events.on(UnitCreateEvent::class.java) {u ->
             if (Groups.unit.size() > Config.spawnLimit) {
                 Groups.player.forEach {
                     val data = findPlayerData(it.uuid())
                     if (data != null) {
                         val bundle = Bundle(data.languageTag)
                         it.sendMessage(bundle["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${Config.spawnLimit}"])
+                        u.unit.kill()
                     }
                 }
             }
