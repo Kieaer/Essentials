@@ -72,10 +72,11 @@ object Event {
     var isAdminVote = false
     var isCanceled = false
 
-    var enemyCores = 0
+    var enemyCores = ObjectMap<String, Int>()
     var enemyCoresCounted = false
+    var enemyCoresPvP = false
 
-    val worldHistory = Seq<TileLog>()
+    var worldHistory = Seq<TileLog>()
     var playerHistory = Seq<PlayerLog>()
 
     private var random = Random()
@@ -326,7 +327,6 @@ object Event {
         }
 
         Events.on(GameOverEvent::class.java) {
-            worldHistory.clear()
             if (!state.rules.infiniteResources) {
                 if (state.rules.pvp) {
                     for (a in database.players) {
@@ -348,7 +348,7 @@ object Event {
                     if (target != null) {
                         val oldLevel = target.level
                         val oldExp = target.exp
-                        val time = (PluginData.playtime.toInt() * 2) * enemyCores
+                        val time = (PluginData.playtime.toInt() * 2) * enemyCores.get(p.uuid())
                         var blockexp = 0
 
                         for (a in state.stats.placedBlockCount) {
@@ -374,6 +374,8 @@ object Event {
                     }
                 }
             }
+            enemyCores = ObjectMap<String, Int>()
+            worldHistory = Seq<TileLog>()
         }
 
         Events.on(BlockBuildBeginEvent::class.java) {
@@ -466,10 +468,7 @@ object Event {
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
             it.player.admin(false)
 
-            if (!enemyCoresCounted && state.rules.attackMode) {
-                enemyCores = max(state.teams.present.sum { t -> if (t.team !== it.player.team()) t.cores.size else 0 }, 1)
-                enemyCoresCounted = true
-            }
+            enemyCores.put(it.player.uuid(), max(state.teams.present.sum { t -> if (t.team !== it.player.team()) t.cores.size else 0 }, 1))
 
             if (Config.authType == Config.AuthType.None) {
                 val data = database[it.player.uuid()]
