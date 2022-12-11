@@ -347,7 +347,7 @@ object Event {
                     if (target != null) {
                         val oldLevel = target.level
                         val oldExp = target.exp
-                        val time = (PluginData.playtime.toInt() * 2) * if (state.rules.pvp || state.rules.attackMode) enemyCores.get(p.uuid()) else 1
+                        val time = (PluginData.playtime.toInt() * 2) * if (enemyCores.containsKey(p.uuid()) && (state.rules.pvp || state.rules.attackMode)) enemyCores.get(p.uuid()) else 1
                         var blockexp = 0
 
                         for (a in state.stats.placedBlockCount) {
