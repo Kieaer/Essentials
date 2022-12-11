@@ -73,6 +73,7 @@ class Main : Plugin() {
                 Permission.sort()
                 Config.save()
                 database.close()
+                if (!database.isRemote) database.dbServer.stop()
             }
         })
 

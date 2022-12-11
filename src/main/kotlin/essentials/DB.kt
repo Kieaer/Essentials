@@ -5,6 +5,7 @@ import arc.files.Fi
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import mindustry.gen.Playerc
+import org.h2.tools.Server
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -14,9 +15,12 @@ import java.util.*
 
 class DB {
     val players: Seq<PlayerData> = Seq()
+    var isRemote: Boolean = false
     lateinit var db: Database
+    lateinit var dbServer: Server
 
     fun open() {
+        isRemote = !Config.database.equals(Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath(), false)
         try {
             try {
                 if (Fi(Config.database).exists()) {
@@ -64,12 +68,20 @@ class DB {
                     }
 
                     TransactionManager.closeAndUnregister(db)
-                    db = Database.connect("jdbc:h2:file:${Config.database};AUTO_SERVER=TRUE", "org.h2.Driver", "sa", "")
+                    db = Database.connect("jdbc:h2:${if (isRemote) "tcp://" else "file:"}${Config.database}${if (isRemote) ":9092/db" else ""}", "org.h2.Driver", "sa", "")
                 } else {
-                    db = Database.connect("jdbc:h2:file:${Config.database};AUTO_SERVER=TRUE", "org.h2.Driver", "sa", "")
+                    db = Database.connect("jdbc:h2:${if (isRemote) "tcp://" else "file:"}${Config.database}${if (isRemote) ":9092/db" else ""}", "org.h2.Driver", "sa", "")
                 }
             } catch (e: Exception) {
-                db = Database.connect("jdbc:h2:file:${Config.database};AUTO_SERVER=TRUE", "org.h2.Driver", "sa", "")
+                e.printStackTrace()
+            }
+
+            if (!isRemote) {
+                dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-key", "db", Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath())
+                dbServer.start()
+                db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
+            } else {
+                db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
             }
 
             transaction {
