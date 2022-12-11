@@ -1,6 +1,7 @@
 package essentials
 
 import arc.Core
+import arc.files.Fi
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import mindustry.gen.Playerc
@@ -17,7 +18,60 @@ class DB {
 
     fun open() {
         try {
-            db = Database.connect("jdbc:sqlite:${Config.database}")
+            try {
+                if (Fi(Config.database).exists()) {
+                    // SQLite DB 열기
+                    db = Database.connect("jdbc:sqlite:${Config.database}", "org.sqlite.JDBC")
+                    val playerData = getAll()
+                    var oldcount = playerData.size
+                    PluginData.load()
+                    TransactionManager.closeAndUnregister(db)
+
+                    Fi(Config.database).copyTo(Core.settings.dataDirectory.child("mods/Essentials/database_backup.db"))
+                    Fi(Config.database).delete()
+
+                    // H2 DB 열기
+                    db = Database.connect("jdbc:h2:file:${Config.database}", "org.h2.Driver", "sa", "")
+                    transaction {
+                        SchemaUtils.create(Player)
+                        SchemaUtils.create(Data)
+                    }
+
+                    var count = 0
+                    try {
+
+                        for (a in playerData) {
+                            createData(a)
+                            count++
+                            print("DB is being upgraded! please wait for a moment... $count/$oldcount\r")
+                        }
+                        print("\n")
+                        PluginData.save()
+
+                        TransactionManager.closeAndUnregister(db)
+                        count = 0
+
+                        // H2 DB 검사
+                        db = Database.connect("jdbc:h2:file:${Config.database}", "org.h2.Driver", "sa", "")
+                        for (a in playerData) {
+                            get(a.uuid)
+                            count++
+                            print("Validating... $count/$oldcount\r")
+                        }
+                        print("\n")
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                    TransactionManager.closeAndUnregister(db)
+                    db = Database.connect("jdbc:h2:file:${Config.database};AUTO_SERVER=TRUE", "org.h2.Driver", "sa", "")
+                } else {
+                    db = Database.connect("jdbc:h2:file:${Config.database};AUTO_SERVER=TRUE", "org.h2.Driver", "sa", "")
+                }
+            } catch (e: Exception) {
+                db = Database.connect("jdbc:h2:file:${Config.database};AUTO_SERVER=TRUE", "org.h2.Driver", "sa", "")
+            }
+
             transaction {
                 SchemaUtils.create(Player)
                 SchemaUtils.create(Data)

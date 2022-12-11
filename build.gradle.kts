@@ -25,6 +25,7 @@ dependencies {
     //implementation("com.github.gimlet2:kottpd:0.2.1")
     implementation("org.apache.maven:maven-artifact:3.8.5")
 
+    implementation("com.h2database:h2:2.1.214")
     implementation("org.xerial:sqlite-jdbc:3.40.0.0")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
