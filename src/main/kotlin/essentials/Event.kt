@@ -357,16 +357,32 @@ object Event {
                         val bundle = Bundle(target.languageTag)
 
                         if (it.winner == p.team()) {
-                            val score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            val score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
-                            target.exp = target.exp + score + blockexp
-                            p.sendMessage(bundle["exp.earn.victory", score + blockexp])
+                            target.exp = target.exp + score
+                            p.sendMessage(bundle["exp.earn.victory", score])
                         } else {
-                            val score = (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            val score = if (state.rules.waves) {
+                                ((state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - state.stats.buildingsDeconstructed) * state.wave
+                            } else if (state.rules.attackMode) {
+                                (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            } else {
+                                (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            }
 
-                            target.exp = target.exp + score + blockexp
-                            p.sendMessage(bundle["exp.earn.defeat", score, (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed) + blockexp])
+                            val message = if (state.rules.waves) {
+                                bundle["exp.earn.wave", score, state.wave]
+                            } else if (state.rules.attackMode) {
+                                bundle["exp.earn.defeat", score, (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                            } else {
+                                bundle["exp.earn.defeat", score, (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                            }
+
+                            target.exp = target.exp + score
+                            p.sendMessage(message)
                         }
+
+                        Commands.Exp[target]
                         p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
                         database.update(p.uuid(), target)
                         p.sendMessage(bundle["data.saved"])
