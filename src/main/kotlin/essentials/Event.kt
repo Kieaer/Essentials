@@ -362,8 +362,8 @@ object Event {
                             target.exp = target.exp + score
                             p.sendMessage(bundle["exp.earn.victory", score])
                         } else {
-                            val score = if (state.rules.waves) {
-                                ((state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - state.stats.buildingsDeconstructed) * state.wave
+                            val score: Int = if (state.rules.waves) {
+                                ((state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - state.stats.buildingsDeconstructed) * (state.wave / 5)
                             } else if (state.rules.attackMode) {
                                 (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
                             } else {
