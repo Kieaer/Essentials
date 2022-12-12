@@ -123,7 +123,7 @@ class Main : Plugin() {
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
-            val isHub = Vars.state.map.name() == PluginData.status.find { a -> a.contains(Regex("hubMap")) }.replace("hubMap-", "")
+            val isHub = PluginData.status.contains("hubMode") && PluginData.status.contains(Vars.state.map.name())
             for (a in PluginData.warpBlocks) {
                 if (e.tile != null) {
                     if (a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {

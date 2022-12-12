@@ -720,13 +720,15 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             when (type) {
                 "set" -> {
-                    if (!PluginData.status.contains("hubMode")){
+                    if (PluginData.status.contains("hubMode") && !PluginData.status.contains(state.map.name())) {
+                        player.sendMessage(bundle["command.hub.mode.exists"])
+                    } else if (!PluginData.status.contains("hubMode") && !PluginData.status.contains(state.map.name())) {
                         PluginData.status.add("hubMode")
-                        PluginData.status.add("hubMap-${state.map.name()}")
+                        PluginData.status.add(state.map.name())
                         player.sendMessage(bundle["command.hub.mode.on"])
-                    } else {
+                    } else if (PluginData.status.contains("hubMode") && PluginData.status.contains(state.map.name())) {
                         PluginData.status.remove("hubMode")
-                        PluginData.status.remove { a -> a.matches(Regex("hubMap-")) }
+                        PluginData.status.remove(state.map.name())
                         player.sendMessage(bundle["command.hub.mode.off"])
                     }
                 }
