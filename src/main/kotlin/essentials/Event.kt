@@ -211,6 +211,7 @@ object Event {
                 for (a in PluginData.warpBlocks) {
                     if (it.tile.x >= a.x && it.tile.x <= a.x && it.tile.y >= a.y && it.tile.y <= a.y) {
                         if (a.online) {
+                            for (b in database.players) b.player.sendMessage(Bundle(b.languageTag)["event.tap.player", it.player.plainName(), a.description])
                             Log.info("${it.player.name} moves to server ${a.ip}:${a.port}")
                             Call.connect(it.player.con(), a.ip, a.port)
                         }
