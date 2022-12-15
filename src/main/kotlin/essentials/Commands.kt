@@ -915,15 +915,16 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun login() {
             if (!Permission.check(player, "login")) return
-            if (Config.authType == Config.AuthType.Password) {
-                val result = database.search(arg[0], arg[1])
-                if (result != null) {
-                    Trigger.loadPlayer(player, result)
-                } else {
-                    player.sendMessage(bundle["account-not-match"])
-                }
+            if (arg[0] == arg[1]) {
+                player.sendMessage("command.login.same.password")
+                return
+            }
+
+            val result = database.search(arg[0], arg[1])
+            if (result != null) {
+                Trigger.loadPlayer(player, result)
             } else {
-                player.sendMessage("[scarlet]This server doesn't use authentication.")
+                player.sendMessage(bundle["command.login.not.found"])
             }
         }
 
