@@ -556,6 +556,7 @@ object Event {
                 database.update(it.player.uuid(), data)
             }
             database.players.remove(data)
+            enemyCores.remove(it.player.uuid())
         }
 
         Events.on(PlayerBanEvent::class.java) {
