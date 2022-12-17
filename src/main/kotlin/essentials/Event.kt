@@ -358,18 +358,22 @@ object Event {
                         val bundle = Bundle(target.languageTag)
 
                         if (it.winner == p.team()) {
-                            val score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            var score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+
+                            if (score > 1000000) score += time
 
                             target.exp = target.exp + score
                             p.sendMessage(bundle["exp.earn.victory", score])
                         } else {
-                            val score: Int = if (state.rules.waves) {
+                            var score: Int = if (state.rules.waves) {
                                 ((state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - state.stats.buildingsDeconstructed) * (state.wave / 50)
                             } else if (state.rules.attackMode) {
                                 (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
                             } else {
                                 (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
                             }
+
+                            if (score > 1000000) score += time
 
                             val message = if (state.rules.waves) {
                                 bundle["exp.earn.wave", score, state.wave]
