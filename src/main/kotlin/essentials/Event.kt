@@ -358,7 +358,7 @@ object Event {
                         val bundle = Bundle(target.languageTag)
 
                         if (it.winner == p.team()) {
-                            var score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            var score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
 
                             if (score > 1000000) score += time
 
