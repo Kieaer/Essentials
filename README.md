@@ -14,9 +14,6 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 ## Client commands
 | Command   | Parameter                                                                | Description                                                    |
 |:----------|:-------------------------------------------------------------------------|:---------------------------------------------------------------|
-| t         | &lt;message...&gt;                                                       | Send a message only to your teammates.                         |
-| a         | &lt;message...&gt;                                                       | Send a message only to admins.                                 |
-| sync      |                                                                          | Re-synchronize world state.                                    |
 | vote      | &lt;kick/map/gg/skip/back/random&gt; [player/amount/world_name] [reason] | Start voting                                                   |
 | changepw  | &lt;new_password&gt; &lt;password_repeat&gt;                             | Change account password.                                       |
 | chars     | &lt;text...&gt;                                                          | Make pixel texts                                               |
