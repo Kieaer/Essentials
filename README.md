@@ -1,6 +1,6 @@
 # Essentials
 ![GitHub all releases](https://img.shields.io/github/downloads/kieaer/Essentials/total?style=flat-square)
-![GitHub release (by tag)](https://img.shields.io/github/downloads/kieaer/Essentials/v13.4/total?style=flat-square)<br>
+![GitHub release (by tag)](https://img.shields.io/github/downloads/kieaer/Essentials/v14/total?style=flat-square)<br>
 Add more commands to the server.<br>
 **__Requires Java 16 or higher!__**
 
@@ -14,6 +14,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 ## Client commands
 | Command   | Parameter                                                                | Description                                                    |
 |:----------|:-------------------------------------------------------------------------|:---------------------------------------------------------------|
+| t         | &lt;message...&gt;                                                       | Send a message only to your teammates.                         |
+| a         | &lt;message...&gt;                                                       | Send a message only to admins.                                 |
+| sync      |                                                                          | Re-synchronize world state.                                    |
 | vote      | &lt;kick/map/gg/skip/back/random&gt; [player/amount/world_name] [reason] | Start voting                                                   |
 | changepw  | &lt;new_password&gt; &lt;password_repeat&gt;                             | Change account password.                                       |
 | chars     | &lt;text...&gt;                                                          | Make pixel texts                                               |
@@ -22,16 +25,17 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | effect    | [effect] [x] [y] [rotate] [color]                                        | effects                                                        |
 | fillitems | &lt;team&gt;                                                             | Fill the core with items.                                      |
 | freeze    | &lt;player&gt;                                                           | Stop player unit movement                                      |
-| gg        |                                                                          | Force gameover                                                 |
+| gg        | [team]                                                                   | Force gameover                                                 |
 | god       | [name]                                                                   | Set max player health                                          |
 | help      | [page]                                                                   | Show command lists                                             |
-| hub       | &lt;zone/block/count/total&gt; [ip] [parameters...]                      | Create a server to server point.                               |
+| hub       | &lt;set/zone/block/count/total/remove&gt; [ip] [parameters...]           | Create a server to server point.                               |
 | info      | [player]                                                                 | Show your information                                          |
 | js        | [code...]                                                                | Execute JavaScript codes                                       |
 | kickall   |                                                                          | All users except yourself and the administrator will be kicked |
 | kill      | [player]                                                                 | Kill player.                                                   |
 | killall   | [team]                                                                   | Kill all enemy units                                           |
 | lang      | &lt;language_tag&gt;                                                     | Set the language for your account.                             |
+| log       |                                                                          | Enable block log                                               |
 | login     | &lt;id&gt; &lt;password&gt;                                              | Access your account                                            |
 | maps      | [page]                                                                   | Show server maps                                               |
 | me        | &lt;text...&gt;                                                          | broadcast * message                                            |
@@ -40,10 +44,13 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | mute      | &lt;player&gt;                                                           | Mute player                                                    |
 | pause     |                                                                          | Pause server                                                   |
 | players   | [page]                                                                   | Show players list                                              |
+| pm        | &lt;player&gt; [message...]                                              | Send private messgae                                           |
 | ranking   | &lt;time/place/break/attack/exp&gt;                                      | Show players ranking                                           |
 | reg       | &lt;id&gt; &lt;password&gt; &lt;password_repeat&gt;                      | Register account                                               |
 | report    | &lt;player&gt; &lt;reason...&gt;                                         | Report player                                                  |
+| rollback  | &lt;player&gt;                                                           | Undo all actions taken by the player.                          |
 | search    | [value]                                                                  | Search player data                                             |
+| setitem   | &lt;item&gt; &lt;amount&gt; [team]                                       | Set team core item amount                                      |
 | setperm   | &lt;player&gt; &lt;group&gt;                                             | Set the player's permission group.                             |
 | spawn     | &lt;unit/block&gt; &lt;name&gt; [amount/rotate]                          | Spawns units at the player's location.                         |
 | status    |                                                                          | Show server status                                             |
@@ -66,6 +73,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | reload  |                                      | Reload permission and config files.          |
 | setperm | &lt;player&gt; &lt;group&gt;         | Set the player's permission group.           |
 | tempban | &lt;player&gt; &lt;time&gt; [reason] | Ban the player for a certain period of time. |
+README.md Generated time: 2022-12-20 15:13:00
 
 ## Contribute guide
 ### File description
