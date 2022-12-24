@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.IOException
+import java.lang.Thread.sleep
 import java.util.*
 
 object PluginData {
@@ -18,7 +19,6 @@ object PluginData {
     var playtime = 0L
     var pluginVersion = ""
 
-    // 종료시 저장되는 플러그인 데이터
     var warpZones = Seq<WarpZone>()
     var warpBlocks = Seq<WarpBlock>()
     var warpCounts = Seq<WarpCount>()
@@ -28,6 +28,9 @@ object PluginData {
     var status = Seq<String>()
 
     var sudoPassword = ""
+
+    var lastMemory = ""
+    var uploading = false
 
     data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = Vars.world.tile(start)
@@ -123,16 +126,47 @@ object PluginData {
         data.add("status", buffer)
 
         val encode = Base64.getEncoder()
+        lastMemory = encode.encodeToString(data.toString().toByteArray())
+
+        var bufMemory = ""
+        if (lastMemory != transaction { DB.Data.selectAll().first()[DB.Data.data] }) {
+            data.add("requireUpdate", true)
+            bufMemory = encode.encodeToString(data.toString().toByteArray())
+        }
+
         if (transaction { DB.Data.selectAll().firstOrNull() == null }) {
             transaction {
                 DB.Data.insert {
-                    it[this.data] = encode.encodeToString(data.toString().toByteArray())
+                    it[this.data] = lastMemory
                 }
             }
         } else {
-            transaction {
-                DB.Data.update {
-                    it[this.data] = encode.encodeToString(data.toString().toByteArray())
+            val remote = transaction { DB.Data.selectAll().first()[DB.Data.data] }
+            if (lastMemory != remote) {
+                if (JsonObject.readHjson(String(Base64.getDecoder().decode(remote))).asObject().has("requireUpdate")) {
+                    load()
+                } else if (bufMemory.isEmpty()) {
+                    transaction {
+                        DB.Data.update {
+                            it[this.data] = lastMemory
+                        }
+                    }
+                } else if (bufMemory.isNotEmpty()) {
+                    transaction {
+                        DB.Data.update {
+                            it[this.data] = bufMemory
+                        }
+                    }
+                    Thread {
+                        sleep(5000)
+                        bufMemory = ""
+
+                        transaction {
+                            DB.Data.update {
+                                it[this.data] = lastMemory
+                            }
+                        }
+                    }.start()
                 }
             }
         }
@@ -143,74 +177,71 @@ object PluginData {
             if (transaction { DB.Data.selectAll().firstOrNull() == null }) {
                 save()
             } else {
+                warpZones = Seq<WarpZone>()
+                warpBlocks = Seq<WarpBlock>()
+                warpCounts = Seq<WarpCount>()
+                warpTotals = Seq<WarpTotal>()
+                blacklist = Seq<String>()
+                banned = Seq<Banned>()
+                status = Seq<String>()
+
                 transaction {
                     DB.Data.selectAll().first().apply {
-                        val data = JsonObject.readHjson(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
+                        if (lastMemory != this[DB.Data.data]) {
+                            val data = JsonObject.readHjson(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
 
-                        data["warpZones"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpZones.add(WarpZone(
-                                obj.get("mapName").asString(),
-                                obj.get("start").asInt(),
-                                obj.get("finish").asInt(),
-                                obj.get("touch").asBoolean(),
-                                obj.get("ip").asString(),
-                                obj.get("port").asInt()
-                            ))
-                        }
+                            data["warpZones"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpZones.add(
+                                    WarpZone(
+                                        obj.get("mapName").asString(), obj.get("start").asInt(), obj.get("finish").asInt(), obj.get("touch").asBoolean(), obj.get("ip").asString(), obj.get("port").asInt()
+                                    )
+                                )
+                            }
 
-                        data["warpBlocks"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpBlocks.add(WarpBlock(
-                                obj.get("mapName").asString(),
-                                obj.get("x").asInt(),
-                                obj.get("y").asInt(),
-                                obj.get("tileName").asString(),
-                                obj.get("size").asInt(),
-                                obj.get("ip").asString(),
-                                obj.get("port").asInt(),
-                                obj.get("description").asString()
-                            ))
-                        }
+                            data["warpBlocks"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpBlocks.add(
+                                    WarpBlock(
+                                        obj.get("mapName").asString(), obj.get("x").asInt(), obj.get("y").asInt(), obj.get("tileName").asString(), obj.get("size").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("description").asString()
+                                    )
+                                )
+                            }
 
-                        data["warpCounts"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpCounts.add(WarpCount(
-                                obj.get("mapName").asString(),
-                                obj.get("pos").asInt(),
-                                obj.get("ip").asString(),
-                                obj.get("port").asInt(),
-                                obj.get("players").asInt(),
-                                obj.get("numbersize").asInt()
-                            ))
-                        }
+                            data["warpCounts"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpCounts.add(
+                                    WarpCount(
+                                        obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("players").asInt(), obj.get("numbersize").asInt()
+                                    )
+                                )
+                            }
 
-                        data["warpTotals"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpTotals.add(WarpTotal(
-                                obj.get("mapName").asString(),
-                                obj.get("pos").asInt(),
-                                obj.get("totalplayers").asInt(),
-                                obj.get("numbersize").asInt()
-                            ))
-                        }
+                            data["warpTotals"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpTotals.add(
+                                    WarpTotal(
+                                        obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("totalplayers").asInt(), obj.get("numbersize").asInt()
+                                    )
+                                )
+                            }
 
-                        data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
+                            data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
 
-                        data["banned"].asArray().forEach {
-                            val obj = it.asObject()
-                            banned.add(Banned(
-                                obj.get("time").asLong(),
-                                obj.get("name").asString(),
-                                obj.get("uuid").asString(),
-                                obj.get("reason").asString()
-                            ))
-                        }
+                            data["banned"].asArray().forEach {
+                                val obj = it.asObject()
+                                banned.add(
+                                    Banned(
+                                        obj.get("time").asLong(), obj.get("name").asString(), obj.get("uuid").asString(), obj.get("reason").asString()
+                                    )
+                                )
+                            }
 
-                        if (data["status"] == null) {
-                            status = Seq<String>()
-                        } else {
-                            data["status"].asArray().forEach { status.add(it.asString()) }
+                            if (data["status"] == null) {
+                                status = Seq<String>()
+                            } else {
+                                data["status"].asArray().forEach { status.add(it.asString()) }
+                            }
                         }
                     }
                 }
