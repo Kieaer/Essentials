@@ -211,7 +211,7 @@ object Event {
                 for (a in PluginData.warpBlocks) {
                     if (it.tile.x >= a.x && it.tile.x <= a.x && it.tile.y >= a.y && it.tile.y <= a.y) {
                         if (a.online) {
-                            for (b in database.players) b.player.sendMessage(Bundle(b.languageTag)["event.tap.player", it.player.plainName(), a.description])
+                            for (b in database.players) b.player.sendMessage(Bundle(b.languageTag)["event.tap.server", it.player.plainName(), a.description])
                             Log.info("${it.player.name} moves to server ${a.ip}:${a.port}")
                             Call.connect(it.player.con(), a.ip, a.port)
                         }
@@ -389,8 +389,6 @@ object Event {
 
                         Commands.Exp[target]
                         p.sendMessage(bundle["exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
-                        database.update(p.uuid(), target)
-                        p.sendMessage(bundle["data.saved"])
                     }
                 }
             }
@@ -793,6 +791,8 @@ object Event {
                 PluginData.uptime++
                 PluginData.playtime++
 
+                if (!PluginData.uploading) PluginData.save()
+
                 for (a in database.players) {
                     a.playtime = a.playtime + 1
 
@@ -824,7 +824,7 @@ object Event {
 
                         Call.infoPopup(a.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                     }
-
+                    database.update(a.uuid, a)
                 }
 
                 if (voting) {
@@ -1016,8 +1016,6 @@ object Event {
                         send("trigger.pvp.end")
                     }
                 }
-
-                PluginData.save()
 
                 secondCount = 0
             } else {
