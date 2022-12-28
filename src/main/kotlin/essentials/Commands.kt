@@ -1407,12 +1407,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     if (arg.size == 3) {
                         val team = Team.all.find { a -> a.name.equals(arg[2]) }
                         if (team != null) {
-                            state.teams.cores(team).first().items[item] = if (state.teams.cores(team).first().storageCapacity > arg[1].toInt()) state.teams.cores(team).first().storageCapacity else arg[1].toInt()
+                            state.teams.cores(team).first().items.set(item, if (state.teams.cores(team).first().storageCapacity > arg[1].toInt()) state.teams.cores(team).first().storageCapacity else arg[1].toInt())
                         } else {
                             player.sendMessage(bundle["command.setitem.wrong.team"])
                         }
                     } else {
-                        state.teams.cores(player.team()).first().items[item] = if (state.teams.cores(player.team()).first().storageCapacity > arg[1].toInt()) state.teams.cores(player.team()).first().storageCapacity else arg[1].toInt()
+                        state.teams.cores(player.team()).first().items.set(item, if (state.teams.cores(player.team()).first().storageCapacity > arg[1].toInt()) state.teams.cores(player.team()).first().storageCapacity else arg[1].toInt())
                     }
                 } else {
                     player.sendMessage(bundle["command.setitem.wrong.amount"])
