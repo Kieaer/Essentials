@@ -50,7 +50,6 @@ import java.util.regex.Pattern
 import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.max
 
 
 object Event {
@@ -58,6 +57,7 @@ object Event {
     val players = JsonArray()
     var orignalBlockMultiplier = 1f
     var orignalUnitMultiplier = 1f
+    var enemyBuildingDestroyed = 0
 
     var voting = false
     var voteType: String? = null
@@ -71,9 +71,6 @@ object Event {
     var lastVoted = LocalTime.now()
     var isAdminVote = false
     var isCanceled = false
-
-    var enemyCores = ObjectMap<String, Int>()
-    var enemyCoresCounted = false
 
     var worldHistory = Seq<TileLog>()
     var playerHistory = Seq<PlayerLog>()
@@ -348,7 +345,7 @@ object Event {
                     if (target != null) {
                         val oldLevel = target.level
                         val oldExp = target.exp
-                        val time = (PluginData.playtime.toInt() * 2) * if (enemyCores.containsKey(p.uuid()) && (state.rules.pvp || state.rules.attackMode)) enemyCores.get(p.uuid()) else 1
+                        val time = PluginData.playtime.toInt()
                         var blockexp = 0
 
                         for (a in state.stats.placedBlockCount) {
@@ -358,29 +355,35 @@ object Event {
                         val bundle = Bundle(target.languageTag)
 
                         if (it.winner == p.team()) {
-                            var score = (time + state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
-
-                            if (score > 1000000) score += time
+                            val score: Int = if (state.rules.attackMode) {
+                                (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            } else if (state.rules.pvp) {
+                                time + 20000
+                            } else {
+                                0
+                            }
 
                             target.exp = target.exp + score
                             p.sendMessage(bundle["exp.earn.victory", score])
                         } else {
-                            var score: Int = if (state.rules.waves) {
-                                state.stats.enemyUnitsDestroyed - state.stats.buildingsDeconstructed
+                            val score: Int = if (state.rules.waves) {
+                                state.stats.wavesLasted * 100
                             } else if (state.rules.attackMode) {
-                                (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                                time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                            } else if (state.rules.pvp){
+                                time + 5000
                             } else {
-                                (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                                0
                             }
-
-                            if (score > 1000000) score += time
 
                             val message = if (state.rules.waves) {
                                 bundle["exp.earn.wave", score, state.wave]
                             } else if (state.rules.attackMode) {
-                                bundle["exp.earn.defeat", score, (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                                bundle["exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                            } else if (state.rules.pvp){
+                                bundle["exp.earn.defeat", score, (time + 20000)]
                             } else {
-                                bundle["exp.earn.defeat", score, (state.stats.enemyUnitsDestroyed + state.stats.unitsCreated + state.stats.buildingsBuilt + blockexp) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                                ""
                             }
 
                             target.exp = target.exp + score
@@ -392,7 +395,6 @@ object Event {
                     }
                 }
             }
-            enemyCores = ObjectMap<String, Int>()
             worldHistory = Seq<TileLog>()
         }
 
@@ -456,6 +458,10 @@ object Event {
                 Fx.spawnShockwave.at(it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius)
                 Damage.damage(world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true)
             }
+
+            if (state.rules.attackMode && it.tile.team() != state.rules.defaultTeam) {
+                enemyBuildingDestroyed++
+            }
         }
 
         Events.on(UnitDestroyEvent::class.java) {
@@ -492,8 +498,6 @@ object Event {
         Events.on(PlayerJoin::class.java) {
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
             it.player.admin(false)
-
-            enemyCores.put(it.player.uuid(), max(state.teams.present.sum { t -> if (t.team !== it.player.team()) t.cores.size else 0 }, 1))
 
             if (Config.authType == Config.AuthType.None) {
                 val data = database[it.player.uuid()]
@@ -559,7 +563,6 @@ object Event {
                 database.update(it.player.uuid(), data)
             }
             database.players.remove(data)
-            enemyCores.remove(it.player.uuid())
         }
 
         Events.on(PlayerBanEvent::class.java) {
@@ -581,7 +584,6 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
-            enemyCoresCounted = false
             if (state.rules.pvp && Config.pvpPeace) {
                 orignalBlockMultiplier = state.rules.blockDamageMultiplier
                 orignalUnitMultiplier = state.rules.unitDamageMultiplier
