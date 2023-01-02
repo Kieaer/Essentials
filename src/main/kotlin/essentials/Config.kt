@@ -17,6 +17,7 @@ object Config {
     var database = Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
     var afk = false
     var afkTime = 300
+    var afkServer = ""
     var border = false
     var report = true
     var spawnLimit = 3000
@@ -52,7 +53,7 @@ object Config {
     var channelToken = ""
     var discordURL = ""
 
-    var configVersion = 5
+    var configVersion = 6
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -124,6 +125,7 @@ object Config {
         val features = JsonObject()
         features.add("afk", afk, bundle["config.afk"])
         features.add("afkTime", afkTime, bundle["config.afk.time"])
+        features.add("afkServer", afkServer, bundle["config.afk.server"])
         features.add("border", border, bundle["config.border"])
         features.add("chatFormat", chatFormat, bundle["config.chatformat"])
         features.add("spawnLimit", spawnLimit, bundle["config.spawnlimit"])
@@ -185,6 +187,7 @@ object Config {
 
         afk = features.getBoolean("afk", afk)
         afkTime = features.getInt("afkTime", afkTime)
+        afkServer = features.getString("afkServer", afkServer)
         border = features.getBoolean("border", border)
         chatFormat = features.getString("chatFormat", chatFormat)
         spawnLimit = features.getInt("spawnLimit", spawnLimit)

@@ -806,12 +806,22 @@ object Event {
                     }
 
                     // 잠수 플레이어 카운트
-                    if (a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining() && !a.player.unit().isShooting && !Permission.check(a.player, "afk.admin") && (state.rules.pvp && Groups.player.size() != 1)) {
+                    if (Config.afk && a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining() && !a.player.unit().isShooting && !Permission.check(a.player, "afk.admin") && (state.rules.pvp && Groups.player.size() != 1)) {
                         a.afkTime++
                         if (a.afkTime == Config.afkTime) {
-                            a.player.kick(Bundle(a.languageTag)["event.player.afk"])
-                            for (b in database.players) {
-                                b.player.sendMessage(Bundle(b.languageTag)["event.player.afk.other", a.player.plainName()])
+                            if (Config.afkServer.isEmpty()) {
+                                a.player.kick(Bundle(a.languageTag)["event.player.afk"])
+                                for (b in database.players) {
+                                    b.player.sendMessage(Bundle(b.languageTag)["event.player.afk.other", a.player.plainName()])
+                                }
+                            } else {
+                                val server = Config.afkServer.split(":")
+                                val port = if (server.size == 1) {
+                                    6567
+                                } else {
+                                    server[1].toInt()
+                                }
+                                Call.connect(a.player.con(), server[0], port)
                             }
                         }
                     } else {
