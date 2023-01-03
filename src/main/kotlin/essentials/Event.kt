@@ -367,7 +367,7 @@ object Event {
                             p.sendMessage(bundle["exp.earn.victory", score])
                         } else {
                             val score: Int = if (state.rules.waves) {
-                                state.stats.wavesLasted * 100
+                                state.wave * 100
                             } else if (state.rules.attackMode) {
                                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
                             } else if (state.rules.pvp){
@@ -777,7 +777,7 @@ object Event {
 
                         }
                         in 100..Int.MAX_VALUE -> {
-
+                            // TODO 레벨별 효과 추가
                         }
                         else -> {
 
