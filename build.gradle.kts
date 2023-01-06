@@ -16,8 +16,8 @@ dependencies {
     val mindustryVersion = "v140.4"
     val arcVersion = "v140.4"
 
-    compileOnly("com.github.Anuken.Arc:arc-core:$arcVersion")
-    compileOnly("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
+    compileOnly("com.github.anuken.arc:arc-core:$arcVersion")
+    compileOnly("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
 
     implementation("com.github.PersonTheCat:hjson-java:3.0.0-C11")
     implementation("de.svenkubiak:jBCrypt:0.4.3")
@@ -35,10 +35,10 @@ dependencies {
     implementation(files("libs/langdetect.jar"))
     implementation(files("libs/jsonic-1.2.0.jar"))
 
-    testImplementation("com.github.Anuken.arc:arc-core:$arcVersion")
-    testImplementation("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
-    testImplementation("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
-    testImplementation("com.github.Anuken.arc:backend-headless:$arcVersion")
+    testImplementation("com.github.anuken.arc:arc-core:$arcVersion")
+    testImplementation("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
+    testImplementation("com.github.anuken.mindustryjitpack:server:$mindustryVersion")
+    testImplementation("com.github.anuken.arc:backend-headless:$arcVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("com.github.javafaker:javafaker:1.0.2")
 }

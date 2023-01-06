@@ -211,6 +211,16 @@ class PluginTest {
     }
 
     @Test
+    fun t(){
+        Events.fire(EventType.ServerLoadEvent())
+
+        Events.fire(EventType.PlayerConnect(player.self()))
+        Events.fire(EventType.PlayerJoin(player.self()))
+
+        Events.fire(EventType.PlayerChatEvent(player.self(), "/t hello"))
+    }
+
+    @Test
     fun test(){
         val random = Random()
         Events.fire(EventType.ServerLoadEvent())

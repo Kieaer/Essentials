@@ -129,18 +129,12 @@ object PluginData {
         lastMemory = encode.encodeToString(data.toString().toByteArray())
 
         var bufMemory = ""
-        if (lastMemory != transaction { DB.Data.selectAll().first()[DB.Data.data] }) {
-            data.add("requireUpdate", true)
-            bufMemory = encode.encodeToString(data.toString().toByteArray())
-        }
-
-        if (transaction { DB.Data.selectAll().firstOrNull() == null }) {
-            transaction {
-                DB.Data.insert {
-                    it[this.data] = lastMemory
-                }
+        if (transaction { DB.Data.selectAll().firstOrNull() != null }) {
+            if (lastMemory != transaction { DB.Data.selectAll().first()[DB.Data.data] }) {
+                data.add("requireUpdate", true)
+                bufMemory = encode.encodeToString(data.toString().toByteArray())
             }
-        } else {
+
             val remote = transaction { DB.Data.selectAll().first()[DB.Data.data] }
             if (lastMemory != remote) {
                 if (JsonObject.readHjson(String(Base64.getDecoder().decode(remote))).asObject().has("requireUpdate")) {
@@ -167,6 +161,12 @@ object PluginData {
                             }
                         }
                     }.start()
+                }
+            }
+        } else {
+            transaction {
+                DB.Data.insert {
+                    it[this.data] = lastMemory
                 }
             }
         }
@@ -249,6 +249,7 @@ object PluginData {
         } catch (e: IOException) {
             println(e)
         } catch (e: Exception) {
+            e.printStackTrace()
             transaction {
                 DB.Data.deleteAll()
             }
