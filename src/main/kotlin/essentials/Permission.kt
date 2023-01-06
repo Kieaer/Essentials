@@ -126,7 +126,6 @@ object Permission {
             visitorPerm.add("help")
             visitorPerm.add("login")
             visitorPerm.add("reg")
-            visitorPerm.add("t")
 
             visitor.add("chatFormat", "%1[scarlet] > [white]%2")
             visitor.add("default", true)

@@ -100,6 +100,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p: Playerc -> Client(a, p).setperm() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p: Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p: Playerc -> Client(a, p).status() }
+            handler.register("t", "<message...>", "Send a message only to your teammates.")  { a, p: Playerc -> Client(a, p).t() }
             handler.register("team", "<team_name> [name]", "Change team") { a, p: Playerc -> Client(a, p).team() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p: Playerc -> Client(a, p).tempban() }
             handler.register("time", "Show server time") { a, p: Playerc -> Client(a, p).time() }
@@ -1619,6 +1620,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 ${bundle["command.status.uptime"]}: ${longToTime(PluginData.uptime)}
             """.trimIndent()
             )
+        }
+
+        fun t() {
+            Groups.player.each({ p -> p.team() === player.team() }) { o -> o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")}
         }
 
         fun team() {
