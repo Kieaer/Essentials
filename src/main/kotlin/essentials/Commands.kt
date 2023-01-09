@@ -80,6 +80,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("kickall", "All users except yourself and the administrator will be kicked") { a, p: Playerc -> Client(a, p).kickall() }
             handler.register("kill", "[player]", "Kill player.") { a, p: Playerc -> Client(a, p).kill() }
             handler.register("killall", "[team]", "Kill all enemy units") { a, p: Playerc -> Client(a, p).killall() }
+            handler.register("killunit", "<name> [amount] [team]", "Destroys specific units only.") { a, p: Playerc -> Client(a, p).killunit() }
             handler.register("lang", "<language_tag>", "Set the language for your account.") { a, p: Playerc -> Client(a, p).lang() }
             handler.register("log", "Enable block log") { a, p: Playerc -> Client(a, p).log() }
             handler.register("login", "<id> <password>", "Access your account") { a, p: Playerc -> Client(a, p).login() }
@@ -1005,6 +1006,53 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
             }
 
+        }
+
+        fun killunit() {
+            if (!Permission.check(player, "killunit")) return
+            val unit = content.units().find { unitType: UnitType -> unitType.name == arg[0] }
+            if (unit != null) {
+                if (arg.size > 2) {
+                    if (arg[1].toIntOrNull() != null) {
+                        if (arg.size == 3) {
+                            val team = Team.all.find { a -> a.name.contains(arg[2], true) }
+                            if (team != null) {
+                                if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
+                                    Groups.unit.forEach { if (it == unit && it.team == team) it.kill()}
+                                } else {
+                                    var count = 0
+                                    Groups.unit.forEach {
+                                        if (it == unit && it.team == team && count != arg[1].toInt()) {
+                                            it.kill()
+                                            count++
+                                        }
+                                    }
+                                }
+                            } else {
+                                player.sendMessage(bundle["command.killunit.invalid.team"])
+                            }
+                        } else {
+                            if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
+                                Groups.unit.forEach { if (it == unit && it.team == player.team()) it.kill()}
+                            } else {
+                                var count = 0
+                                Groups.unit.forEach {
+                                    if (it == unit && it.team == player.team() && count != arg[1].toInt()) {
+                                        it.kill()
+                                        count++
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        player.sendMessage(bundle["command.killunit.invalid.number"])
+                    }
+                } else {
+                    Groups.unit.forEach { if (it == unit && it.team == player.team()) it.kill()}
+                }
+            } else {
+                player.sendMessage(bundle["command.killunit.not.found"])
+            }
         }
 
         fun lang() {
