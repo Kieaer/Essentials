@@ -45,20 +45,24 @@ class Main : Plugin() {
         if (Config.blockIP) {
             val os = System.getProperty("os.name").lowercase(Locale.getDefault())
             if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                Log.info(bundle["config.sudopassword"])
-                Log.info(bundle["config.sudopassword.repeat"])
+                if (System.getenv("sudopassword") == null) {
+                    Log.info(bundle["config.sudopassword"])
+                    Log.info(bundle["config.sudopassword.repeat"])
 
-                val sc = Scanner(System.`in`)
-                val co = System.console()
+                    val sc = Scanner(System.`in`)
+                    val co = System.console()
 
-                // 시스템이 Console 를 지원 안할경우 (비밀번호 노출됨)
-                print(bundle["config.sudopassword.password"] + " ")
-                if (co == null) {
-                    PluginData.sudoPassword = sc.nextLine()
+                    // 시스템이 Console 를 지원 안할경우 (비밀번호 노출됨)
+                    print(bundle["config.sudopassword.password"] + " ")
+                    if (co == null) {
+                        PluginData.sudoPassword = sc.nextLine()
+                    } else {
+                        PluginData.sudoPassword = String(co.readPassword())
+                    }
+                    Log.info(bundle["config.sudopassword.no-check"])
                 } else {
-                    PluginData.sudoPassword = String(co.readPassword())
+                    PluginData.sudoPassword = System.getenv("sudopassword")
                 }
-                Log.info(bundle["config.sudopassword.no-check"])
             } else {
                 Config.blockIP = false
                 Log.warn(bundle["config.blockIP.unsupported"])
