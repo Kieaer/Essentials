@@ -285,6 +285,16 @@ object Event {
 
         }
 
+        Events.on(WaveEvent::class.java) {
+            if (Config.waveskip > 1) {
+                var loop = 0
+                while (Config.waveskip != loop) {
+                    logic.runWave()
+                    loop++
+                }
+            }
+        }
+
         Events.on(ServerLoadEvent::class.java) {
             content.blocks().each {
                 var buf = 0

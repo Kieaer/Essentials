@@ -41,6 +41,7 @@ object Config {
     var minimalName = false
     var blockfooclient = false
     var blockIP = false
+    var waveskip = 1
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -53,7 +54,7 @@ object Config {
     var channelToken = ""
     var discordURL = ""
 
-    var configVersion = 6
+    private var configVersion = 7
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -145,6 +146,7 @@ object Config {
         features.add("chatBlacklistRegex", chatBlacklistRegex, bundle["config.chatblacklist.regex"])
         features.add("expDisplay", expDisplay, bundle["config.expDisplay"])
         features.add("blockIP", blockIP, bundle["config.blockIP"])
+        features.add("waveskip", waveskip, bundle["config.waveskip"])
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -207,6 +209,7 @@ object Config {
         chatBlacklistRegex = features.getBoolean("chatBlacklistRegex", chatBlacklistRegex)
         expDisplay = features.getBoolean("expDisplay", expDisplay)
         blockIP = features.getBoolean("blockIP", blockIP)
+        waveskip = features.getInt("waveskip", waveskip)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)
