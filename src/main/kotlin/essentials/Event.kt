@@ -162,13 +162,13 @@ object Event {
 
         Events.on(WithdrawEvent::class.java) {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
-                log(LogType.WithDraw, "${it.player.name} puts ${it.player.unit().item().name} ${it.amount} amount into ${it.tile.block().name}.")
+                log(LogType.WithDraw, "${it.player.name} puts ${it.player.unit().item().name} ${it.amount} amount into ${it.tile.block().name} [${it.tile.tileX()}, ${it.tile.tileY()}].")
             }
         }
 
         Events.on(DepositEvent::class.java) {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
-                log(LogType.Deposit, "${it.player.name} puts ${it.player.unit().item().name} ${it.amount} amount into ${it.tile.block().name}.")
+                log(LogType.Deposit, "${it.player.name} puts ${it.player.unit().item().name} ${it.amount} amount into ${it.tile.block().name} [${it.tile.tileX()}, ${it.tile.tileY()}].")
             }
         }
 
