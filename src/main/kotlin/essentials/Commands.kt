@@ -1344,8 +1344,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage("[green][PM] ${target.plainName()}[yellow] => [white] ${arg[1]}")
                 target.sendMessage("[blue][PM] ${player.plainName()}[yellow] => [white] ${arg[1]}")
                 for (a in database.players){
-                    if(Permission.check(a.player, "pm.other")) {
-                        a.player.sendMessage("[sky]${player.plainName()}[] [yellow]=> [pink]${target.plainName()} [white] : ${arg[1]}")
+                    if(Permission.check(a.player, "pm.other") && a.uuid != player.uuid()) {
+                        a.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${arg[1]}")
                     }
                 }
             } else {
