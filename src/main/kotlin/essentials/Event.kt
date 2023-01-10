@@ -769,31 +769,68 @@ object Event {
 
             if (milsCount == 5) {
                 for (a in database.players) {
-                    Call.effect(Fx.bubble, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
-                    /*when (a.level) {
+                    when (a.level) {
                         in 10..19 -> {
                             Call.effect(Fx.freezing, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
                         }
+
                         in 20..29 -> {
                             Call.effect(Fx.overdriven, a.player.x, a.player.y, a.player.unit().rotation, Color.orange)
                         }
+
                         in 30..39 -> {
                             Call.effect(Fx.burning, a.player.x, a.player.y, a.player.unit().rotation, Color.red)
                             Call.effect(Fx.melting, a.player.x, a.player.y, a.player.unit().rotation, Color.red)
                         }
+
                         in 40..49 -> {
-                            Call.effect(Fx.bubble, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
+                            Call.effect(Fx.steam, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
                         }
+
                         in 50..59 -> {
-                            Call.effect(Fx.trailFade, a.player.x, a.player.y, a.player.unit().rotation, Color.gray)
+                            Call.effect(Fx.shootSmallSmoke, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
                         }
+
+                        in 60..69 -> {
+                            Call.effect(Fx.mine, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
+                        }
+
+                        in 70..79 -> {
+                            Call.effect(Fx.explosion, a.player.x, a.player.y, a.player.unit().rotation, Color.orange)
+                        }
+
+                        in 80..89 -> {
+                            Call.effect(Fx.hitLaser, a.player.x, a.player.y, a.player.unit().rotation, Color.orange)
+                        }
+
+                        in 90..99 -> {
+                            Call.effect(Fx.crawlDust, a.player.x, a.player.y, a.player.unit().rotation, Color.orange)
+                        }
+
                         in 100..Int.MAX_VALUE -> {
-                            // TODO 레벨별 효과 추가
+                            Call.effect(Fx.mineImpact, a.player.x, a.player.y, a.player.unit().rotation, Color.orange)
                         }
+
+                        /*in 110..119 -> {
+
+                        }
+
+                        in 120..129 -> {
+
+                        }
+
+                        in 130..139 -> {
+
+                        }
+
+                        in 140..149 -> {
+
+                        }*/
+
                         else -> {
 
                         }
-                    }*/
+                    }
                 }
                 milsCount = 0
             } else {

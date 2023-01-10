@@ -1667,7 +1667,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun t() {
-            Groups.player.each({ p -> p.team() === player.team() }) { o -> o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")}
+            Groups.player.each({ p -> p.team() === player.team() }) {
+                    o -> o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")
+            }
         }
 
         fun team() {
