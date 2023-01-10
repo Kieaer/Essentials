@@ -14,12 +14,12 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 ## Client commands
 | Command   | Parameter                                                                | Description                                                    |
 |:----------|:-------------------------------------------------------------------------|:---------------------------------------------------------------|
-| vote      | &lt;kick/map/gg/skip/back/random&gt; [player/amount/world_name] [reason] | Start voting                                                   |
 | changepw  | &lt;new_password&gt; &lt;password_repeat&gt;                             | Change account password.                                       |
 | chars     | &lt;text...&gt;                                                          | Make pixel texts                                               |
 | color     |                                                                          | Enable color nickname                                          |
 | discord   |                                                                          | Authenticate your Discord account to the server.               |
 | effect    | [effect] [x] [y] [rotate] [color]                                        | effects                                                        |
+| exp       | &lt;set/hide/add/remove&gt; &lt;values&gt; [player]                      | Edit account EXP values                                        |
 | fillitems | &lt;team&gt;                                                             | Fill the core with items.                                      |
 | freeze    | &lt;player&gt;                                                           | Stop player unit movement                                      |
 | gg        | [team]                                                                   | Force gameover                                                 |
@@ -31,6 +31,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | kickall   |                                                                          | All users except yourself and the administrator will be kicked |
 | kill      | [player]                                                                 | Kill player.                                                   |
 | killall   | [team]                                                                   | Kill all enemy units                                           |
+| killunit  | &lt;name&gt; [amount] [team]                                             | Destroys specific units only.                                  |
 | lang      | &lt;language_tag&gt;                                                     | Set the language for your account.                             |
 | log       |                                                                          | Enable block log                                               |
 | login     | &lt;id&gt; &lt;password&gt;                                              | Access your account                                            |
@@ -59,6 +60,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | track     |                                                                          | Displays the mouse positions of players.                       |
 | unmute    | &lt;player&gt;                                                           | Unmute player                                                  |
 | url       | &lt;command&gt;                                                          | Opens a URL contained in a specific command.                   |
+| vote      | &lt;kick/map/gg/skip/back/random&gt; [player/amount/world_name] [reason] | Start voting                                                   |
 | weather   | &lt;rain/snow/sandstorm/sporestorm&gt; &lt;seconds&gt;                   | Adds a weather effect to the map.                              |
 
 
@@ -70,7 +72,9 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | reload  |                                      | Reload permission and config files.          |
 | setperm | &lt;player&gt; &lt;group&gt;         | Set the player's permission group.           |
 | tempban | &lt;player&gt; &lt;time&gt; [reason] | Ban the player for a certain period of time. |
-README.md Generated time: 2022-12-20 15:13:00
+
+
+README.md Generated time: 2023-01-10 11:21:42
 
 ## Contribute guide
 ### File description
