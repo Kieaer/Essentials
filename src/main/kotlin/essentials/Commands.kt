@@ -68,7 +68,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
             handler.register("effect", "[effect] [x] [y] [rotate] [color]", "effects") { a, p: Playerc -> Client(a, p).effect() }
-            handler.register("exp", "<set/hide/add/remove> <values> [player]", "Edit account EXP values") { a, p: Playerc -> Client(a, p).exp() }
+            handler.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p: Playerc -> Client(a, p).exp() }
             handler.register("fillitems", "<team>", "Fill the core with items.") { a, p: Playerc -> Client(a, p).fillitems() }
             handler.register("freeze", "<player>", "Stop player unit movement") { a, p: Playerc -> Client(a, p).freeze() }
             handler.register("gg", "[team]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
@@ -581,6 +581,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun exp() {
             if (!Permission.check(player, "exp")) return
+            // <set/hide/add/remove> [values/player] [player]
             when (arg[0]) {
                 "set" -> {
                     if (!Permission.check(player, "exp.admin")) return
@@ -606,24 +607,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
                 "hide" -> {
                     if (!Permission.check(player, "exp.admin")) return
-                    if (arg[1].toIntOrNull() != null) {
-                        if (arg.size == 3) {
-                            val target = findPlayers(arg[2])
-                            if (target != null) {
-                                val data = findPlayerData(target.uuid())
-                                if (data != null) {
-                                    if (data.status.containsKey("hideRanking")) {
-                                        data.status.put("hideRanking", "")
-                                        player.sendMessage(bundle["command.exp.ranking.unhide"])
-                                    } else {
-                                        data.status.remove("hideRanking")
-                                        player.sendMessage(bundle["command.exp.ranking.hide"])
-                                    }
-                                }
-                            } else {
-                                player.sendMessage(bundle["player.not.found"])
-                            }
-                        } else {
+                    if (arg.size == 2) {
+                        val target = findPlayers(arg[1])
+                        if (target != null) {
+                            val data = findPlayerData(target.uuid())
                             if (data != null) {
                                 if (data.status.containsKey("hideRanking")) {
                                     data.status.put("hideRanking", "")
@@ -633,18 +620,18 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                     player.sendMessage(bundle["command.exp.ranking.hide"])
                                 }
                             }
+                        } else {
+                            player.sendMessage(bundle["player.not.found"])
                         }
                     } else {
-                        player.sendMessage(bundle["command.exp.invalid"])
-                    }
-
-                    if (data != null) {
-                        if (data.status.containsKey("hideRanking")) {
-                            data.status.put("hideRanking", "")
-                            player.sendMessage(bundle["command.exp.ranking.unhide"])
-                        } else {
-                            data.status.remove("hideRanking")
-                            player.sendMessage(bundle["command.exp.ranking.hide"])
+                        if (data != null) {
+                            if (data.status.containsKey("hideRanking")) {
+                                data.status.put("hideRanking", "")
+                                player.sendMessage(bundle["command.exp.ranking.unhide"])
+                            } else {
+                                data.status.remove("hideRanking")
+                                player.sendMessage(bundle["command.exp.ranking.hide"])
+                            }
                         }
                     }
                 }
