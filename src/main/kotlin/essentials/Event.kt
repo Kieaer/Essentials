@@ -775,19 +775,23 @@ object Event {
 
             if (milsCount == 5) {
                 for (a in database.players) {
-                    when (a.level) {
-                        in 30..49 -> {
+                    Call.effect(Fx.bubble, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
+                    /*when (a.level) {
+                        in 10..19 -> {
                             Call.effect(Fx.freezing, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
                         }
-                        in 50..69 -> {
+                        in 20..29 -> {
                             Call.effect(Fx.overdriven, a.player.x, a.player.y, a.player.unit().rotation, Color.orange)
                         }
-                        in 70..89 -> {
+                        in 30..39 -> {
                             Call.effect(Fx.burning, a.player.x, a.player.y, a.player.unit().rotation, Color.red)
                             Call.effect(Fx.melting, a.player.x, a.player.y, a.player.unit().rotation, Color.red)
                         }
-                        in 90..99 -> {
-
+                        in 40..49 -> {
+                            Call.effect(Fx.bubble, a.player.x, a.player.y, a.player.unit().rotation, Color.sky)
+                        }
+                        in 50..59 -> {
+                            Call.effect(Fx.trailFade, a.player.x, a.player.y, a.player.unit().rotation, Color.gray)
                         }
                         in 100..Int.MAX_VALUE -> {
                             // TODO 레벨별 효과 추가
@@ -795,7 +799,7 @@ object Event {
                         else -> {
 
                         }
-                    }
+                    }*/
                 }
                 milsCount = 0
             } else {
@@ -1183,11 +1187,17 @@ object Event {
 
     fun findPlayers(name: String): Playerc? {
         return if (name.toIntOrNull() != null) {
-            val d = players.find { it.asObject().get("id").asInt() == name.toInt() }
-            if (d != null) {
-                Groups.player.find { p -> p.uuid() == d.asObject().get("uuid").asString() }
+            val target = Groups.player.find { p -> p.plainName().contains(name, true) }
+
+            if (target != null) {
+                val d = players.find { it.asObject().get("id").asInt() == name.toInt() }
+                if (d != null) {
+                    Groups.player.find { p -> p.uuid() == d.asObject().get("uuid").asString() }
+                } else {
+                    null
+                }
             } else {
-                null
+                target
             }
         } else {
             Groups.player.find { p -> p.plainName().contains(name, true) }
