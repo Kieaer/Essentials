@@ -31,7 +31,6 @@ import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.world.Block
-import org.hjson.JsonArray
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -54,7 +53,6 @@ import kotlin.math.floor
 
 object Event {
     var order = 0
-    val players = JsonArray()
     var orignalBlockMultiplier = 1f
     var orignalUnitMultiplier = 1f
     var enemyBuildingDestroyed = 0
@@ -561,12 +559,6 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
-            for (a in 0..players.size()) {
-                if (players.get(a).asObject().get("uuid").asString().equals(it.player.uuid())) {
-                    players.remove(a)
-                    break
-                }
-            }
             log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) disconnected.")
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
@@ -1187,18 +1179,12 @@ object Event {
 
     fun findPlayers(name: String): Playerc? {
         return if (name.toIntOrNull() != null) {
-            val target = Groups.player.find { p -> p.plainName().contains(name, true) }
-
-            if (target != null) {
-                val d = players.find { it.asObject().get("id").asInt() == name.toInt() }
-                if (d != null) {
-                    Groups.player.find { p -> p.uuid() == d.asObject().get("uuid").asString() }
-                } else {
-                    null
+            for (a in database.players) {
+                if (a.entityid == name.toInt()) {
+                    a.player
                 }
-            } else {
-                target
             }
+            Groups.player.find { p -> p.plainName().contains(name, true) }
         } else {
             Groups.player.find { p -> p.plainName().contains(name, true) }
         }

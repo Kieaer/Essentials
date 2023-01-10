@@ -1319,16 +1319,16 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val message = StringBuilder()
             val page = if (arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0
 
-            val buffer = Mathf.ceil(Event.players.size().toFloat() / 6)
+            val buffer = Mathf.ceil(database.players.size.toFloat() / 6)
             val pages = if (buffer > 1.0) buffer - 1 else 0
 
             if (pages < page) {
                 player.sendMessage(bundle["command.page.range", pages])
             } else {
                 message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
-                for (a in 6 * page until (6 * (page + 1)).coerceAtMost(Event.players.size())) {
-                    val name = Event.players.get(a).asObject().get("name").asString()
-                    val id = Event.players.get(a).asObject().get("id").asInt()
+                for (a in 6 * page until (6 * (page + 1)).coerceAtMost(database.players.size)) {
+                    val name = database.players.get(a).name
+                    val id = database.players.get(a).entityid
                     message.append("[gray]$id [white]$name\n")
                 }
                 player.sendMessage(message.toString().dropLast(1))
@@ -1342,7 +1342,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage(bundle["player.not.found"])
             } else if (arg.size > 1){
                 player.sendMessage("[green][PM] ${target.plainName()}[yellow] => [white] ${arg[1]}")
-                target.sendMessage("[blue][PM] ${player.plainName()}[yellow] => [white] ${arg[1]}")
+                target.sendMessage("[blue][PM] [gray][${data?.entityid}][]${player.plainName()}[yellow] => [white] ${arg[1]}")
                 for (a in database.players){
                     if(Permission.check(a.player, "pm.other") && a.uuid != player.uuid()) {
                         a.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${arg[1]}")

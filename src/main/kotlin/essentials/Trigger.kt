@@ -20,7 +20,6 @@ import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
-import org.hjson.JsonObject
 import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedReader
 import java.io.IOException
@@ -58,12 +57,7 @@ object Trigger {
 
         database.players.add(data)
 
-        val ee = JsonObject()
-        ee.add("id", Event.order)
-        ee.add("name", data.name)
-        ee.add("uuid", player.uuid())
-
-        Event.players.add(ee)
+        data.entityid = Event.order
         Event.order++
 
         val motd = if (root.child("motd/${data.languageTag}.txt").exists()) {
