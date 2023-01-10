@@ -1404,11 +1404,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val breakBlock = mutableMapOf<String, Int>()
 
             for (a in all) {
-                time[a.name] = a.playtime
-                exp[a.name] = a.exp
-                attack[a.name] = a.attackclear
-                placeBlock[a.name] = a.placecount
-                breakBlock[a.name] = a.breakcount
+                if (!a.status.containsKey("hideRanking")) {
+                    time[a.name] = a.playtime
+                    exp[a.name] = a.exp
+                    attack[a.name] = a.attackclear
+                    placeBlock[a.name] = a.placecount
+                    breakBlock[a.name] = a.breakcount
+                }
             }
 
             val string = StringBuilder()
