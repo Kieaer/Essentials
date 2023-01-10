@@ -743,12 +743,15 @@ object Event {
         Events.run(EventType.Trigger.update) {
             for (a in database.players) {
                 if (a.status.containsKey("freeze")) {
-                    val player = findPlayers(a.uuid)
-                    if (player != null) {
+                    val d = findPlayerData(a.uuid)
+                    if (d != null) {
+                        val player = d.player
                         val split = a.status.get("freeze").toString().split("/")
                         player.set(split[0].toFloat(), split[1].toFloat())
                         Call.setPosition(player.con(), split[0].toFloat(), split[1].toFloat())
                         Call.setCameraPosition(player.con(), split[0].toFloat(), split[1].toFloat())
+                        player.x(split[0].toFloat())
+                        player.y(split[1].toFloat())
                     }
                 }
 
