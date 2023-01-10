@@ -285,10 +285,12 @@ object Event {
 
         Events.on(WaveEvent::class.java) {
             if (Config.waveskip > 1) {
-                var loop = 0
+                var loop = 1
                 while (Config.waveskip != loop) {
-                    logic.runWave()
                     loop++
+                    spawner.spawnEnemies()
+                    state.wave++
+                    state.wavetime = state.rules.waveSpacing
                 }
             }
         }

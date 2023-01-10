@@ -28,6 +28,7 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.gen.Unit
+import mindustry.maps.Map
 import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.type.UnitType
@@ -1087,6 +1088,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun maps() {
             if (!Permission.check(player, "maps")) return
             val list = maps.all().sort()
+            val arr = ObjectMap<Map, Int>()
+            var order = 0
+            for (a in list) {
+                arr.put(a, order)
+                order++
+            }
             val build = StringBuilder()
 
             val page = if (arg.isNotEmpty()) arg[0].toInt() else 0
