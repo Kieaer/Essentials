@@ -11,6 +11,7 @@ import arc.util.Log
 import arc.util.Strings
 import arc.util.Threads.sleep
 import com.mewna.catnip.Catnip
+import com.mewna.catnip.entity.message.Message
 import com.mewna.catnip.shard.DiscordEvent
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
@@ -2145,7 +2146,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
     object Discord {
         val pin: ObjectMap<String, Int> = ObjectMap()
-        private lateinit var catnip: Catnip
+        lateinit var catnip: Catnip
 
         init {
             if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) {
@@ -2163,9 +2164,89 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             pin.remove(pin.findKey(it.content().toInt(), true))
                         }
                     } else {
-                        when (it.content()) {
-                            "help" -> {
+                        with (it.content()) {
+                            when {
+                                equals("help", true) -> {
+                                    val message = """
+                                    ``!help`` ${Bundle()["event.discord.help.help"]}
+                                    ``!ping`` ${Bundle()["event.discord.help.ping"]}
+                                """.trimIndent()
+                                    it.reply(message, true).subscribe { m: Message ->
+                                        sleep(7000)
+                                        m.delete()
+                                    }
+                                }
 
+                                equals("ping", true) -> {
+                                    val start = System.currentTimeMillis()
+                                    it.reply("pong!", true).subscribe { ping: Message ->
+                                        val end = System.currentTimeMillis()
+                                        ping.edit("pong! (" + (end - start) + "ms).")
+                                        sleep(5000)
+                                        ping.delete()
+                                    }
+                                }
+
+                                /*startsWith("!auth", true) -> {
+                                    if (Config.authType == Config.AuthType.Discord) {
+                                        val arg = it.content().replace("!auth ", "").split(" ")
+                                        if (arg.size == 1) {
+                                            try {
+                                                var isMatch = false
+
+                                                for (a in database.getAll()) {
+                                                    if (a.status.containsKey("discord")) {
+                                                        if (a.status.get("discord") != it.author().id()) {
+                                                            isMatch = true
+                                                        }
+                                                    }
+                                                }
+
+                                                if (!isMatch) {
+                                                    var data: DB.PlayerData? = null
+                                                    for (a in pin) {
+                                                        if (a.value == arg[0].toInt()) {
+                                                            data = database.getAll().find { b -> b.name == a.key }
+                                                        }
+                                                    }
+
+                                                    if (data != null) {
+                                                        data.status.put("discord", it.author().id())
+
+                                                        it.reply(Bundle()["event.discord.auth.success"], true).subscribe { m: Message ->
+                                                            sleep(5000)
+                                                            m.delete()
+                                                        }
+                                                        pin.removeAll { a -> a.value == arg[0].toInt() }
+                                                    } else {
+                                                        it.reply("등록되지 않은 계정입니다!", true).subscribe { m: Message ->
+                                                            sleep(5000)
+                                                            m.delete()
+                                                        }
+                                                    }
+                                                } else {
+                                                    it.reply("이미 등록된 계정입니다!", true).subscribe { m: Message ->
+                                                        sleep(5000)
+                                                        m.delete()
+                                                    }
+                                                }
+                                            } catch (e: Exception) {
+                                                it.reply("올바른 PIN 번호가 아닙니다! 사용법: ``!auth <PIN 번호>``", true).subscribe { m: Message ->
+                                                    sleep(5000)
+                                                    m.delete()
+                                                }
+                                            }
+                                        } else {
+                                            it.reply("사용법: ``!auth <PIN 번호>``", true).subscribe { m: Message ->
+                                                sleep(5000)
+                                                m.delete()
+                                            }
+                                        }
+                                    } else {
+                                        it.reply("현재 서버에 Discord 인증이 활성화 되어 있지 않습니다!", true)
+                                    }
+                                }*/
+                                else -> {}
                             }
                         }
                     }

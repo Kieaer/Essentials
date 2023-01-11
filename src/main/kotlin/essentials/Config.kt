@@ -53,6 +53,7 @@ object Config {
     var botToken = ""
     var channelToken = ""
     var discordURL = ""
+    var banChannelToken = ""
 
     private var configVersion = 7
 
@@ -163,6 +164,7 @@ object Config {
         discord.add("botToken", botToken, bundle["config.discord.token"])
         discord.add("channelToken", channelToken, bundle["config.discord.channel"])
         discord.add("discordURL", discordURL, bundle["config.discord.url"])
+        discord.add("banChannelToken", banChannelToken, bundle["config.discord.ban"])
 
         obj.setComment(bundle["config.detail", "https://github.com/Kieaer/Essentials/wiki/Config-detail-information"])
         obj.add("plugin", plugin)
@@ -219,6 +221,7 @@ object Config {
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)
         discordURL = discord.getString("discordURL", discordURL)
+        banChannelToken = discord.getString("banChannelToken", banChannelToken)
     }
 
     fun update() {

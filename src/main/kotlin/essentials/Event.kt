@@ -576,7 +576,27 @@ object Event {
                     Log.info(Bundle()["event.ban.iptables", ip])
                 }
             }
+
+            if(Config.banChannelToken.isNotEmpty() && it.player != null) {
+                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), netServer.admins.findByIP(it.player.con.address).names.toString(", ")]
+                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
+            }
+
             log(LogType.Player, Bundle()["log.player.banned", if (it.player == null) netServer.admins.getInfo(it.uuid).lastName else it.player.name, if (it.player == null) netServer.admins.getInfo(it.uuid).lastIP else it.player.ip()])
+        }
+
+        Events.on(PlayerIpBanEvent::class.java) {
+            if (Config.banChannelToken.isNotEmpty()) {
+                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), netServer.admins.findByIP(it.ip).names.toString(", ")]
+                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
+            }
+        }
+
+        Events.on(PlayerIpUnbanEvent::class.java) {
+            if (Config.banChannelToken.isNotEmpty()) {
+                val msg = Bundle()["event.discord.ip.unbanned", netServer.admins.findByIP(it.ip).lastName]
+                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
+            }
         }
 
         Events.on(WorldLoadEvent::class.java) {
@@ -617,6 +637,11 @@ object Event {
                         }
                     }
                 }
+            }
+
+            if (netServer.admins.isIDBanned(e.player.uuid())) {
+                val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByIP(e.player.con.address).lastName]
+                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
         }
 
