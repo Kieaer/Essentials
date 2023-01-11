@@ -81,6 +81,7 @@ object Trigger {
 
         if (state.rules.pvp && Permission.check(player, "pvp.spector")) {
             player.team(Team.derelict)
+            player.unit().health(0f)
         }
     }
 
