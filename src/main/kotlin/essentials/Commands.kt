@@ -22,7 +22,6 @@ import essentials.Main.Companion.root
 import essentials.Permission.bundle
 import mindustry.Vars.*
 import mindustry.content.Blocks
-import mindustry.content.Fx
 import mindustry.content.Weathers
 import mindustry.core.GameState
 import mindustry.game.EventType
@@ -69,7 +68,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
-            handler.register("effect", "[effect] [x] [y] [rotate] [color]", "effects") { a, p: Playerc -> Client(a, p).effect() }
+            handler.register("effect", "<level> [color]", "Set the effect and color for each level.") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p: Playerc -> Client(a, p).exp() }
             handler.register("fillitems", "<team>", "Fill the core with items.") { a, p: Playerc -> Client(a, p).fillitems() }
             handler.register("freeze", "<player>", "Stop player unit movement") { a, p: Playerc -> Client(a, p).freeze() }
@@ -335,249 +334,22 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun effect() {
             if (!Permission.check(player, "effect")) return
-            if (arg.isEmpty()) {
-                player.sendMessage(bundle["command.effect.arg.empty"])
-                return
-            } else if (arg.size != 5) {
-                player.sendMessage(bundle["command.effect.arg.need"])
-                return
-            }
-            val effect = when (arg[0]) {
-                "blockCrash" -> Fx.blockCrash
-                "trailFade" -> Fx.trailFade
-                "unitSpawn" -> Fx.unitSpawn
-                "unitCapKill" -> Fx.unitCapKill
-                "unitEnvKill" -> Fx.unitEnvKill
-                "unitControl" -> Fx.unitControl
-                "unitDespawn" -> Fx.unitDespawn
-                "unitSpirit" -> Fx.unitSpirit
-                "itemTransfer" -> Fx.itemTransfer
-                "pointBeam" -> Fx.pointBeam
-                "pointHit" -> Fx.pointHit
-                "lightning" -> Fx.lightning
-                "coreBuildShockwave" -> Fx.coreBuildShockwave
-                "coreBuildBlock" -> Fx.coreBuildBlock
-                "pointShockwave" -> Fx.pointShockwave
-                "moveCommand" -> Fx.moveCommand
-                "attackCommand" -> Fx.attackCommand
-                "commandSend" -> Fx.commandSend
-                "upgradeCore" -> Fx.upgradeCore
-                "upgradeCoreBloom" -> Fx.upgradeCoreBloom
-                "placeBlock" -> Fx.placeBlock
-                "coreLaunchConstruct" -> Fx.coreLaunchConstruct
-                "tapBlock" -> Fx.tapBlock
-                "breakBlock" -> Fx.breakBlock
-                "payloadDeposit" -> Fx.payloadDeposit
-                "select" -> Fx.select
-                "smoke" -> Fx.smoke
-                "fallSmoke" -> Fx.fallSmoke
-                "unitWreck" -> Fx.unitWreck
-                "rocketSmoke" -> Fx.rocketSmoke
-                "rocketSmokeLarge" -> Fx.rocketSmokeLarge
-                "magmasmoke" -> Fx.magmasmoke
-                "spawn" -> Fx.spawn
-                "unitAssemble" -> Fx.unitAssemble
-                "padlaunch" -> Fx.padlaunch
-                "breakProp" -> Fx.breakProp
-                "unitDrop" -> Fx.unitDrop
-                "unitLand" -> Fx.unitLand
-                "unitDust" -> Fx.unitDust
-                "unitLandSmall" -> Fx.unitLandSmall
-                "unitPickup" -> Fx.unitPickup
-                "crawlDust" -> Fx.crawlDust
-                "landShock" -> Fx.landShock
-                "pickup" -> Fx.pickup
-                "titanExplosion" -> Fx.titanExplosion
-                "titanSmoke" -> Fx.titanSmoke
-                "missileTrailSmoke" -> Fx.missileTrailSmoke
-                "neoplasmSplat" -> Fx.neoplasmSplat
-                "scatheExplosion" -> Fx.scatheExplosion
-                "scatheLight" -> Fx.scatheLight
-                "dynamicSpikes" -> Fx.dynamicSpikes
-                "greenBomb" -> Fx.greenBomb
-                "greenLaserCharge" -> Fx.greenLaserCharge
-                "greenLaserChargeSmall" -> Fx.greenLaserChargeSmall
-                "greenCloud" -> Fx.greenCloud
-                "healWaveDynamic" -> Fx.healWaveDynamic
-                "healWave" -> Fx.healWave
-                "heal" -> Fx.heal
-                "shieldWave" -> Fx.shieldWave
-                "shieldApply" -> Fx.shieldApply
-                "disperseTrail" -> Fx.disperseTrail
-                "hitBulletSmall" -> Fx.hitBulletSmall
-                "hitBulletColor" -> Fx.hitBulletColor
-                "hitSquaresColor" -> Fx.hitSquaresColor
-                "hitFuse" -> Fx.hitFuse
-                "hitBulletBig" -> Fx.hitBulletBig
-                "hitFlameSmall" -> Fx.hitFlameSmall
-                "hitFlamePlasma" -> Fx.hitFlamePlasma
-                "hitLiquid" -> Fx.hitLiquid
-                "hitLaserBlast" -> Fx.hitLaserBlast
-                "hitEmpSpark" -> Fx.hitEmpSpark
-                "hitLancer" -> Fx.hitLancer
-                "hitBeam" -> Fx.hitBeam
-                "hitFlameBeam" -> Fx.hitFlameBeam
-                "hitMeltdown" -> Fx.hitMeltdown
-                "hitMeltHeal" -> Fx.hitMeltHeal
-                "instBomb" -> Fx.instBomb
-                "instTrail" -> Fx.instTrail
-                "instShoot" -> Fx.instShoot
-                "instHit" -> Fx.instHit
-                "hitLaser" -> Fx.hitLaser
-                "hitLaserColor" -> Fx.hitLaserColor
-                "despawn" -> Fx.despawn
-                "airBubble" -> Fx.airBubble
-                "plasticExplosion" -> Fx.plasticExplosion
-                "plasticExplosionFlak" -> Fx.plasticExplosionFlak
-                "blastExplosion" -> Fx.blastExplosion
-                "sapExplosion" -> Fx.sapExplosion
-                "massiveExplosion" -> Fx.massiveExplosion
-                "artilleryTrail" -> Fx.artilleryTrail
-                "incendTrail" -> Fx.incendTrail
-                "missileTrail" -> Fx.missileTrail
-                "absorb" -> Fx.absorb
-                "forceShrink" -> Fx.forceShrink
-                "burning" -> Fx.burning
-                "fireRemove" -> Fx.fireRemove
-                "fire" -> Fx.fire
-                "fireHit" -> Fx.fireHit
-                "fireSmoke" -> Fx.fireSmoke
-                "neoplasmHeal" -> Fx.neoplasmHeal
-                "ventSteam" -> Fx.ventSteam
-                "vaporSmall" -> Fx.vaporSmall
-                "fireballsmoke" -> Fx.fireballsmoke
-                "ballfire" -> Fx.ballfire
-                "freezing" -> Fx.freezing
-                "melting" -> Fx.melting
-                "wet" -> Fx.wet
-                "muddy" -> Fx.muddy
-                "sapped" -> Fx.sapped
-                "electrified" -> Fx.electrified
-                "sporeSlowed" -> Fx.sporeSlowed
-                "oily" -> Fx.oily
-                "overdriven" -> Fx.overdriven
-                "overclocked" -> Fx.overclocked
-                "dropItem" -> Fx.dropItem
-                "shockwave" -> Fx.shockwave
-                "bigShockwave" -> Fx.bigShockwave
-                "spawnShockwave" -> Fx.spawnShockwave
-                "explosion" -> Fx.explosion
-                "dynamicExplosion" -> Fx.dynamicExplosion
-                "reactorExplosion" -> Fx.reactorExplosion
-                "impactReactorExplosion" -> Fx.impactReactorExplosion
-                "blockExplosionSmoke" -> Fx.blockExplosionSmoke
-                "shootSmall" -> Fx.shootSmall
-                "shootSmallColor" -> Fx.shootSmallColor
-                "shootHeal" -> Fx.shootHeal
-                "shootHealYellow" -> Fx.shootHealYellow
-                "shootSmallSmoke" -> Fx.shootSmallSmoke
-                "shootBig" -> Fx.shootBig
-                "shootBig2" -> Fx.shootBig2
-                "shootBigColor" -> Fx.shootBigColor
-                "shootTitan" -> Fx.shootTitan
-                "shootBigSmoke" -> Fx.shootBigSmoke
-                "shootBigSmoke2" -> Fx.shootBigSmoke2
-                "shootSmokeDisperse" -> Fx.shootSmokeDisperse
-                "shootSmokeSquare" -> Fx.shootSmokeSquare
-                "shootSmokeSquareSparse" -> Fx.shootSmokeSquareSparse
-                "shootSmokeSquareBig" -> Fx.shootSmokeSquareBig
-                "shootSmokeTitan" -> Fx.shootSmokeTitan
-                "shootSmokeSmite" -> Fx.shootSmokeSmite
-                "shootSmokeMissile" -> Fx.shootSmokeMissile
-                "regenParticle" -> Fx.regenParticle
-                "regenSuppressParticle" -> Fx.regenSuppressParticle
-                "regenSuppressSeek" -> Fx.regenSuppressSeek
-                "neoplasiaSmoke" -> Fx.neoplasiaSmoke
-                "heatReactorSmoke" -> Fx.heatReactorSmoke
-                "circleColorSpark" -> Fx.circleColorSpark
-                "colorSpark" -> Fx.colorSpark
-                "colorSparkBig" -> Fx.colorSparkBig
-                "randLifeSpark" -> Fx.randLifeSpark
-                "shootPayloadDriver" -> Fx.shootPayloadDriver
-                "shootSmallFlame" -> Fx.shootSmallFlame
-                "shootPyraFlame" -> Fx.shootPyraFlame
-                "shootLiquid" -> Fx.shootLiquid
-                "casing1" -> Fx.casing1
-                "railTrail" -> Fx.railTrail
-                "railHit" -> Fx.railHit
-                "lancerLaserShoot" -> Fx.lancerLaserShoot
-                "lancerLaserShootSmoke" -> Fx.lancerLaserShootSmoke
-                "lancerLaserCharge" -> Fx.lancerLaserCharge
-                "lancerLaserChargeBegin" -> Fx.lancerLaserChargeBegin
-                "lightningCharge" -> Fx.lightningCharge
-                "sparkShoot" -> Fx.sparkShoot
-                "lightningShoot" -> Fx.lightningShoot
-                "thoriumShoot" -> Fx.thoriumShoot
-                "reactorsmoke" -> Fx.reactorsmoke
-                "redgeneratespark" -> Fx.redgeneratespark
-                "fuelburn" -> Fx.fuelburn
-                "incinerateSlag" -> Fx.incinerateSlag
-                "coreBurn" -> Fx.coreBurn
-                "plasticburn" -> Fx.plasticburn
-                "conveyorPoof" -> Fx.conveyorPoof
-                "pulverize" -> Fx.pulverize
-                "pulverizeRed" -> Fx.pulverizeRed
-                "pulverizeSmall" -> Fx.pulverizeSmall
-                "pulverizeMedium" -> Fx.pulverizeMedium
-                "producesmoke" -> Fx.producesmoke
-                "artilleryTrailSmoke" -> Fx.artilleryTrailSmoke
-                "smokeCloud" -> Fx.smokeCloud
-                "smeltsmoke" -> Fx.smeltsmoke
-                "coalSmeltsmoke" -> Fx.coalSmeltsmoke
-                "formsmoke" -> Fx.formsmoke
-                "blastsmoke" -> Fx.blastsmoke
-                "lava" -> Fx.lava
-                "dooropen" -> Fx.dooropen
-                "doorclose" -> Fx.doorclose
-                "dooropenlarge" -> Fx.dooropenlarge
-                "doorcloselarge" -> Fx.doorcloselarge
-                "generate" -> Fx.generate
-                "mineWallSmall" -> Fx.mineWallSmall
-                "mineSmall" -> Fx.mineSmall
-                "mine" -> Fx.mine
-                "mineBig" -> Fx.mineBig
-                "mineHuge" -> Fx.mineHuge
-                "mineImpact" -> Fx.mineImpact
-                "mineImpactWave" -> Fx.mineImpactWave
-                "payloadReceive" -> Fx.payloadReceive
-                "teleportActivate" -> Fx.teleportActivate
-                "teleport" -> Fx.teleport
-                "teleportOut" -> Fx.teleportOut
-                "ripple" -> Fx.ripple
-                "launch" -> Fx.launch
-                "launchPod" -> Fx.launchPod
-                "healWaveMend" -> Fx.healWaveMend
-                "overdriveWave" -> Fx.overdriveWave
-                "healBlock" -> Fx.healBlock
-                "healBlockFull" -> Fx.healBlockFull
-                "rotateBlock" -> Fx.rotateBlock
-                "lightBlock" -> Fx.lightBlock
-                "overdriveBlockFull" -> Fx.overdriveBlockFull
-                "shieldBreak" -> Fx.shieldBreak
-                "chainLightning" -> Fx.chainLightning
-                "chainEmp" -> Fx.chainEmp
-                "legDestroy" -> Fx.legDestroy
-                else -> Fx.none
-            }
-
-            try {
-                val x = arg[1].toIntOrNull()
-                val y = arg[2].toIntOrNull()
-
-                if (x == null || y == null) {
-                    player.sendMessage(bundle["command.effect.int.invalid"])
-                } else {
-                    val rot = arg[3].toFloatOrNull()
-                    if (rot != null && rot > 360) {
-                        val color = Color.valueOf(arg[4])
-                        val tile = world.tile(x, y)
-                        Call.effect(effect, tile.getX(), tile.getY(), rot, color)
-                    } else {
-                        player.sendMessage(bundle["command.effect.rotate.invalid"])
+            if (arg[0].toIntOrNull() != null && data != null) {
+                if (arg[0].toInt() <= data.level) {
+                    data.status.put("effectLevel", arg[0])
+                    if (arg.size == 2) {
+                        try {
+                            Color.valueOf(arg[1])
+                            data.status.put("effectColor", arg[1])
+                        } catch (_: IllegalArgumentException) {
+                            player.sendMessage(bundle["command.effect.no.color"])
+                        }
                     }
+                } else {
+                    player.sendMessage(bundle["command.effect.level"])
                 }
-            } catch (e: IllegalArgumentException) {
-                player.sendMessage(bundle["command.effect.color.invalid"])
+            } else {
+                player.sendMessage(bundle["command.effect.invalid"])
             }
         }
 
