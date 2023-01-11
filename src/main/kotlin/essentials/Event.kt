@@ -7,6 +7,7 @@ import arc.files.Fi
 import arc.func.Cons2
 import arc.graphics.Color
 import arc.struct.ObjectMap
+import arc.struct.ObjectSet
 import arc.struct.Seq
 import arc.util.Align
 import arc.util.Log
@@ -76,10 +77,12 @@ object Event {
 
     private var random = Random()
     private var dateformat = SimpleDateFormat("HH:mm:ss")
-
     private var blockExp = ObjectMap<String, Int>()
+    private var dosBlacklist = ObjectSet<String>()
 
     fun register() {
+        dosBlacklist = netServer.admins.dosBlacklist
+
         Events.on(PlayerChatEvent::class.java) {
             if (Config.blockfooclient) {
                 if (it.message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
@@ -1092,6 +1095,22 @@ object Event {
                         state.rules.blockDamageMultiplier = orignalBlockMultiplier
                         state.rules.unitDamageMultiplier = orignalUnitMultiplier
                         send("trigger.pvp.end")
+                    }
+                }
+
+                if (Config.banChannelToken.isNotEmpty()) {
+                    if (dosBlacklist != netServer.admins.dosBlacklist) {
+                        val buffer = dosBlacklist
+                        for (a in dosBlacklist) {
+                            for (b in netServer.admins.dosBlacklist) {
+                                if (a == b) {
+                                    buffer.remove(a)
+                                }
+                            }
+                        }
+                        for (a in buffer) {
+                            Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.discord.dos"])
+                        }
                     }
                 }
 
