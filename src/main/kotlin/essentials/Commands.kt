@@ -1678,17 +1678,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun team() {
             if (!Permission.check(player, "team")) return
-            when (arg[0]) {
-                "derelict" -> player.team(Team.derelict)
-                "sharded" -> player.team(Team.sharded)
-                "crux" -> player.team(Team.crux)
-                "green" -> player.team(Team.green)
-                "malis" -> player.team(Team.malis)
-                "blue" -> player.team(Team.blue)
-                else -> {
-                    player.sendMessage(bundle["command.team.invalid"])
-                }
+            val team: Team = if ("derelict".contains(arg[0], true)) {
+                Team.derelict
+            } else if ("sharded".contains(arg[0], true)) {
+                Team.sharded
+            } else if ("crux".contains(arg[0], true)) {
+                Team.crux
+            } else if ("green".contains(arg[0], true)) {
+                Team.green
+            } else if ("malis".contains(arg[0], true)) {
+                Team.malis
+            } else if ("blue".contains(arg[0], true)) {
+                Team.blue
+            } else {
+                state.rules.defaultTeam
             }
+
+            player.team(team)
+
             if (!Permission.check(player, "team.other") && arg.size > 1) {
                 val other = if (arg[1].toIntOrNull() != null) {
                     Groups.player.find { e -> e.id == arg[1].toInt() }
@@ -1696,17 +1703,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     Groups.player.find { e -> e.plainName().contains(arg[1]) }
                 }
                 if (other != null) {
-                    when (arg[0]) {
-                        "derelict" -> other.team(Team.derelict)
-                        "sharded" -> other.team(Team.sharded)
-                        "crux" -> other.team(Team.crux)
-                        "green" -> other.team(Team.green)
-                        "malis" -> other.team(Team.malis)
-                        "blue" -> other.team(Team.blue)
-                        else -> {
-                            player.sendMessage(bundle["command.team.invalid"])
-                        }
-                    }
+                    other.team(team)
                 } else {
                     player.sendMessage(bundle["player.not.found"])
                 }

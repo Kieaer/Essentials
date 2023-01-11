@@ -55,7 +55,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 7
+    private var configVersion = 8
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
