@@ -80,6 +80,7 @@ object Permission {
             adminPerm.add("mute")
             adminPerm.add("pause")
             adminPerm.add("pm.other")
+            adminPerm.add("pvp.spector")
             adminPerm.add("search")
             adminPerm.add("spawn")
             adminPerm.add("team")

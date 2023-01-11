@@ -78,6 +78,10 @@ object Trigger {
                 Call.sendMessage(perm.alertMessage)
             }
         }
+
+        if (state.rules.pvp && Permission.check(player, "pvp.spector")) {
+            player.team(Team.derelict)
+        }
     }
 
     fun createPlayer(player: Playerc, id: String?, password: String?) {
