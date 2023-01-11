@@ -24,10 +24,9 @@ class DB {
         try {
             try {
                 if (Fi(Config.database).exists()) {
-                    // SQLite DB 열기
                     db = Database.connect("jdbc:sqlite:${Config.database}", "org.sqlite.JDBC")
                     val playerData = getAll()
-                    var oldcount = playerData.size
+                    val oldcount = playerData.size
                     PluginData.load()
                     TransactionManager.closeAndUnregister(db)
 

@@ -102,7 +102,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p: Playerc -> Client(a, p).setperm() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p: Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p: Playerc -> Client(a, p).status() }
-            handler.register("t", "<message...>", "Send a message only to your teammates.")  { a, p: Playerc -> Client(a, p).t() }
+            handler.register("t", "<message...>", "Send a message only to your teammates.") { a, p: Playerc -> Client(a, p).t() }
             handler.register("team", "<team_name> [name]", "Change team") { a, p: Playerc -> Client(a, p).team() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p: Playerc -> Client(a, p).tempban() }
             handler.register("time", "Show server time") { a, p: Playerc -> Client(a, p).time() }
@@ -582,7 +582,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun exp() {
             if (!Permission.check(player, "exp")) return
-            // <set/hide/add/remove> [values/player] [player]
             when (arg[0]) {
                 "set" -> {
                     if (!Permission.check(player, "exp.admin")) return
@@ -606,6 +605,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         player.sendMessage(bundle["command.exp.invalid"])
                     }
                 }
+
                 "hide" -> {
                     if (!Permission.check(player, "exp.admin")) return
                     if (arg.size == 2) {
@@ -636,6 +636,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                     }
                 }
+
                 "add" -> {
                     if (!Permission.check(player, "exp.admin")) return
                     if (arg[1].toIntOrNull() != null) {
@@ -658,6 +659,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         player.sendMessage(bundle["command.exp.invalid"])
                     }
                 }
+
                 "remove" -> {
                     if (!Permission.check(player, "exp.admin")) return
                     if (arg[1].toIntOrNull() != null) {
@@ -680,6 +682,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         player.sendMessage(bundle["command.exp.invalid"])
                     }
                 }
+
                 else -> {
                     player.sendMessage(bundle["command.exp.invalid.command"])
                 }
@@ -842,6 +845,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         player.sendMessage(bundle["command.hub.mode.off"])
                     }
                 }
+
                 "zone" -> if (arg.size != 4) {
                     player.sendMessage(bundle["command.hub.zone.help"])
                 } else {
@@ -1006,7 +1010,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             val team = Team.all.find { a -> a.name.contains(arg[2], true) }
                             if (team != null) {
                                 if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
-                                    Groups.unit.forEach { if (it == unit && it.team == team) it.kill()}
+                                    Groups.unit.forEach { if (it == unit && it.team == team) it.kill() }
                                 } else {
                                     var count = 0
                                     Groups.unit.forEach {
@@ -1021,7 +1025,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             }
                         } else {
                             if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
-                                Groups.unit.forEach { if (it == unit && it.team == player.team()) it.kill()}
+                                Groups.unit.forEach { if (it == unit && it.team == player.team()) it.kill() }
                             } else {
                                 var count = 0
                                 Groups.unit.forEach {
@@ -1036,7 +1040,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         player.sendMessage(bundle["command.killunit.invalid.number"])
                     }
                 } else {
-                    Groups.unit.forEach { if (it == unit && it.team == player.team()) it.kill()}
+                    Groups.unit.forEach { if (it == unit && it.team == player.team()) it.kill() }
                 }
             } else {
                 player.sendMessage(bundle["command.killunit.not.found"])
@@ -1347,11 +1351,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val target = findPlayers(arg[0])
             if (target == null) {
                 player.sendMessage(bundle["player.not.found"])
-            } else if (arg.size > 1){
+            } else if (arg.size > 1) {
                 player.sendMessage("[green][PM] ${target.plainName()}[yellow] => [white] ${arg[1]}")
                 target.sendMessage("[blue][PM] [gray][${data?.entityid}][]${player.plainName()}[yellow] => [white] ${arg[1]}")
-                for (a in database.players){
-                    if(Permission.check(a.player, "pm.other") && a.uuid != player.uuid()) {
+                for (a in database.players) {
+                    if (Permission.check(a.player, "pm.other") && a.uuid != player.uuid()) {
                         a.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${arg[1]}")
                     }
                 }
@@ -1465,7 +1469,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                     val text = Bundle()["command.report.texts", target.plainName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
 
-                    Event.log(Event.LogType.Report, date+text, target.plainName())
+                    Event.log(Event.LogType.Report, date + text, target.plainName())
                     Log.info(Bundle()["command.report.received", player.plainName(), target.plainName(), reason])
                     player.sendMessage(bundle["command.report.done", target.plainName()])
                 } else {
@@ -1476,7 +1480,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun rollback() {
             if (!Permission.check(player, "rollback")) return
-            for (a in playerHistory){
+            for (a in playerHistory) {
                 if (a.player.contains(arg[0])) {
                     val buf = Seq<Event.TileLog>()
                     for (b in worldHistory) {
@@ -1485,8 +1489,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                     }
 
-                    for (b in buf){
-                        if (b.player == a.player){
+                    for (b in buf) {
+                        if (b.player == a.player) {
                             buf.remove(b)
                         }
                     }
@@ -1495,17 +1499,17 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         Call.setTile(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
                     } else {
                         val last = buf.last()
-                        if (last.action == "break"){
+                        if (last.action == "break") {
                             Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
-                        } else if (last.action == "place"){
+                        } else if (last.action == "place") {
                             Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)
                         }
                     }
 
                 }
             }
-            worldHistory.removeAll { a -> a.player.contains(arg[0])}
-            playerHistory.removeAll { a -> a.player.contains(arg[0])}
+            worldHistory.removeAll { a -> a.player.contains(arg[0]) }
+            playerHistory.removeAll { a -> a.player.contains(arg[0]) }
         }
 
         fun search() {
@@ -1563,8 +1567,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun setitem() {
-            if (!Permission.check(player, "setitem")) return
-            // <item> <amount> [team]
+            if (!Permission.check(player, "setitem")) return // <item> <amount> [team]
             val item = content.item(arg[0])
             if (item != null) {
                 val amount = arg[1].toIntOrNull()
@@ -1667,8 +1670,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun t() {
-            Groups.player.each({ p -> p.team() === player.team() }) {
-                    o -> o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")
+            Groups.player.each({ p -> p.team() === player.team() }) { o ->
+                o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")
             }
         }
 
@@ -1864,8 +1867,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 return
             }
             if (!Event.voting) {
-                when (arg[0]) {
-                    // vote kick <player name> <reason>
+                when (arg[0]) { // vote kick <player name> <reason>
                     "kick" -> {
                         if (arg.size != 3) {
                             player.sendMessage(bundle["command.vote.no.reason"])
@@ -2051,6 +2053,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         )
                         database.players.forEach { println(it.toString()) }
                     }
+
                     "debug" -> {
                         if (arg.isNotEmpty()) {
                             if (arg[0].toBoolean()) {

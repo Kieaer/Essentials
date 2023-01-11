@@ -79,16 +79,6 @@ object Event {
 
     private var blockExp = ObjectMap<String, Int>()
 
-    init {
-        /*val aa = arrayOf("af", "ar", "bg", "bn", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi", "fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "kn", "ko", "lt", "lv", "mk", "ml", "mr", "ne", "nl", "no", "pa", "pl", "pt", "ro", "ru", "sk", "sl", "so", "sq", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur", "vi", "zh-cn", "zh-tw")
-        val bb = arrayListOf<String>()
-        for (a in aa) {
-            bb.add(Main::class.java.classLoader.getResource("profiles/$a")!!.readText(Charset.forName("UTF-8")))
-        }
-
-        DetectorFactory.loadProfile(bb)*/
-    }
-
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
             if (Config.blockfooclient) {
@@ -197,7 +187,7 @@ object Event {
                 }
 
                 addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team))
-                addLog(PlayerLog(it.player.name, it.tile.block(), it.tile.tile.build.rotation, it.tile.tile.x, it.tile.tile.y, "config", it.player.team(), it.tile.tile.block().configurations))
+                addLog(PlayerLog(it.player.name, it.tile.block(), it.tile.tile.x, it.tile.tile.y, it.tile.tile.block().configurations))
             }
         }
 
@@ -383,7 +373,7 @@ object Event {
                                 state.wave * 100
                             } else if (state.rules.attackMode) {
                                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
-                            } else if (state.rules.pvp){
+                            } else if (state.rules.pvp) {
                                 time + 5000
                             } else {
                                 0
@@ -393,7 +383,7 @@ object Event {
                                 bundle["exp.earn.wave", score, state.wave]
                             } else if (state.rules.attackMode) {
                                 bundle["exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
-                            } else if (state.rules.pvp){
+                            } else if (state.rules.pvp) {
                                 bundle["exp.earn.defeat", score, (time + 20000)]
                             } else {
                                 ""
@@ -435,7 +425,7 @@ object Event {
                         if (!state.rules.infiniteResources) {
                             log(LogType.Block, "${target.name} placed ${block.name}")
                             addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-                            addLog(PlayerLog(target.name, it.tile.block(), it.tile.build.rotation, it.tile.x, it.tile.y, "place", it.unit.team, null))
+                            addLog(PlayerLog(target.name, it.tile.block(), it.tile.x, it.tile.y, null))
                             target.placecount + 1
                             target.exp = target.exp + blockExp.get(block.name)
                         }
@@ -447,7 +437,7 @@ object Event {
                         if (!state.rules.infiniteResources) {
                             log(LogType.Block, "${target.name} break ${player.unit().buildPlan().block.name}")
                             addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-                            addLog(PlayerLog(target.name, player.unit().buildPlan().block, if (player.unit().buildPlan().build() != null) player.unit().buildPlan().build().rotation else 0, it.tile.x, it.tile.y, "break", it.unit.team, null))
+                            addLog(PlayerLog(target.name, player.unit().buildPlan().block, it.tile.x, it.tile.y, null))
                             target.breakcount + 1
                             target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
                         }
@@ -481,7 +471,7 @@ object Event {
 
         }
 
-        Events.on(UnitCreateEvent::class.java) {u ->
+        Events.on(UnitCreateEvent::class.java) { u ->
             if (Groups.unit.size() > Config.spawnLimit) {
                 u.unit.health(0f)
 
@@ -1241,5 +1231,5 @@ object Event {
     }
 
     class TileLog(val time: Long, val player: String, val action: String, val x: Short, val y: Short, val tile: String, val rotate: Int, val team: Team)
-    class PlayerLog(val player: String, val block: Block, val rotate: Int, val x: Short, val y: Short, val action: String, val team: Team, val config: ObjectMap<Class<*>, Cons2<Any, Any>>?)
+    class PlayerLog(val player: String, val block: Block, val x: Short, val y: Short, val config: ObjectMap<Class<*>, Cons2<Any, Any>>?)
 }
