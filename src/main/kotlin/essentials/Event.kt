@@ -795,6 +795,14 @@ object Event {
                 }
             }
 
+            if (Config.border) {
+                for (a in Groups.unit) {
+                    if (a.x > world.width() * 8 || a.x < 0 || a.y > world.height() * 8 || a.y < 0) {
+                        a.health(0f)
+                    }
+                }
+            }
+
             if (milsCount == 5) {
                 for (a in database.players) {
                     val color = if(a.status.containsKey("effectColor")) {
