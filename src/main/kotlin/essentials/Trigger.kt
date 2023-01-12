@@ -24,6 +24,7 @@ import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
+import java.io.OutputStream
 import java.net.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -329,7 +330,7 @@ object Trigger {
 
         class Handler(val client: Socket) {
             val reader = Scanner(client.getInputStream())
-            val writer = client.getOutputStream()
+            val writer: OutputStream = client.getOutputStream()
             var run = false
 
             fun run() {
@@ -406,7 +407,7 @@ object Trigger {
             }
 
             val reader = Scanner(socket.getInputStream())
-            val writer = socket.getOutputStream()
+            val writer: OutputStream = socket.getOutputStream()
 
             fun send(command: String, vararg parameter: String) {
                 if (connected) {

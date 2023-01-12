@@ -54,10 +54,9 @@ import kotlin.math.floor
 
 
 object Event {
-    var order = 0
-    var orignalBlockMultiplier = 1f
-    var orignalUnitMultiplier = 1f
-    var enemyBuildingDestroyed = 0
+    private var orignalBlockMultiplier = 1f
+    private var orignalUnitMultiplier = 1f
+    private var enemyBuildingDestroyed = 0
 
     var voting = false
     var voteType: String? = null
@@ -67,10 +66,10 @@ object Event {
     var voteMap: Map? = null
     var voteWave: Int? = null
     var voteStarter: Playerc? = null
-    var voted = Seq<String>()
-    var lastVoted = LocalTime.now()
-    var isAdminVote = false
-    var isCanceled = false
+    private var voted = Seq<String>()
+    private var lastVoted = LocalTime.now()
+    private var isAdminVote = false
+    private var isCanceled = false
 
     var worldHistory = Seq<TileLog>()
     var playerHistory = Seq<PlayerLog>()
@@ -82,8 +81,6 @@ object Event {
     private var pvpCount = Config.pvpPeaceTime
 
     fun register() {
-        dosBlacklist = netServer.admins.dosBlacklist
-
         Events.on(PlayerChatEvent::class.java) {
             if (Config.blockfooclient) {
                 if (it.message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
@@ -124,7 +121,7 @@ object Event {
                             val e: Language = d.detectLanguageOf(it.message)
 
                             if (e.name == "UNKNOWN" && !(voting && it.message.equals("y", true) && !voted.contains(it.player.uuid()))) {
-                                it.player.sendMessage(Bundle(data.languageTag)["chat.language.not.allow"])
+                                it.player.sendMessage(Bundle(data.languageTag)["event.chat.language.not.allow"])
                                 return@on
                             }
                         }
@@ -135,12 +132,12 @@ object Event {
                                 for (a in file) {
                                     if (Config.chatBlacklistRegex) {
                                         if (it.message.contains(Regex(a))) {
-                                            it.player.sendMessage(Bundle(findPlayerData(it.player.uuid())!!.languageTag)["chat.blacklisted"])
+                                            it.player.sendMessage(Bundle(findPlayerData(it.player.uuid())!!.languageTag)["event.chat.blacklisted"])
                                             return@on
                                         }
                                     } else {
                                         if (it.message.contains(a)) {
-                                            it.player.sendMessage(Bundle(findPlayerData(it.player.uuid())!!.languageTag)["chat.blacklisted"])
+                                            it.player.sendMessage(Bundle(findPlayerData(it.player.uuid())!!.languageTag)["event.chat.blacklisted"])
                                             return@on
                                         }
                                     }
@@ -300,6 +297,8 @@ object Event {
                 }
                 blockExp.put(it.name, buf)
             }
+
+            dosBlacklist = netServer.admins.dosBlacklist
 
             if (!Config.blockIP && Config.database != Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath() && PluginData.status.contains("iptablesFirst")) {
                 Log.warn(Bundle()["event.database.blockip.conflict"])
@@ -1082,12 +1081,12 @@ object Event {
                 }
 
                 if (Config.pvpPeace) {
-                    if (Trigger.pvpCount != 0) {
-                        Trigger.pvpCount--
+                    if (pvpCount != 0) {
+                        pvpCount--
                     } else {
                         state.rules.blockDamageMultiplier = orignalBlockMultiplier
                         state.rules.unitDamageMultiplier = orignalUnitMultiplier
-                        send("trigger.pvp.end")
+                        send("event.pvp.peace.end")
                     }
                 }
 
@@ -1259,11 +1258,11 @@ object Event {
         }
     }
 
-    fun addLog(log: TileLog) {
+    private fun addLog(log: TileLog) {
         worldHistory.add(log)
     }
 
-    fun addLog(log: PlayerLog) {
+    private fun addLog(log: PlayerLog) {
         playerHistory.add(log)
     }
 

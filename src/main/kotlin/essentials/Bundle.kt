@@ -4,7 +4,7 @@ import java.text.MessageFormat
 import java.util.*
 
 class Bundle {
-    val resource: ResourceBundle
+    private val resource: ResourceBundle
 
     init {
         Locale.setDefault(Locale.ENGLISH)

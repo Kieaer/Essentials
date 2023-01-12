@@ -14,7 +14,7 @@ object Config {
     private var obj = JsonObject()
 
     var update = true
-    var database = Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
+    var database: String = Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
     var afk = false
     var afkTime = 300
     var afkServer = ""

@@ -29,7 +29,7 @@ object PluginData {
 
     var sudoPassword = ""
 
-    var lastMemory = ""
+    private var lastMemory = ""
     var uploading = false
 
     data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {

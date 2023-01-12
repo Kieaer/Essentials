@@ -17,7 +17,7 @@ object Permission {
 
     val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
-    val comment = """
+    private val comment = """
         ${bundle["permission.wiki"]}
         ${bundle["permission.sort"]}
         ${bundle["permission.notice"]}
@@ -234,7 +234,7 @@ object Permission {
                 return true
             }
         }
-        return false
+        return if (database.players.find { e -> e.uuid == player.uuid() } == null) false else false
     }
 
     class PermissionData {
