@@ -610,6 +610,13 @@ object Event {
                 state.rules.blockDamageMultiplier = 0f
                 state.rules.unitDamageMultiplier = 0f
             }
+
+            for (a in database.players) {
+                if (state.rules.pvp && Permission.check(a.player, "pvp.spector")) {
+                    a.player.team(Team.derelict)
+                    a.player.unit().health(0f)
+                }
+            }
         }
 
         Events.on(PlayerConnect::class.java) { e ->
