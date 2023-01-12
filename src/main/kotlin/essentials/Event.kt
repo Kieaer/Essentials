@@ -120,7 +120,7 @@ object Event {
                             val d: LanguageDetector = LanguageDetectorBuilder.fromLanguages(*languages.toTypedArray()).build()
                             val e: Language = d.detectLanguageOf(it.message)
 
-                            if (e.name == "UNKNOWN" && !(voting && it.message.equals("y", true) && !voted.contains(it.player.uuid()))) {
+                            if (e.name == "UNKNOWN" && !it.message.substring(0, 1).matches(Regex("[!@#$%&*()_+=|<>?{}\\[\\]~-]")) && !(voting && it.message.equals("y", true) && !voted.contains(it.player.uuid()))) {
                                 it.player.sendMessage(Bundle(data.languageTag)["event.chat.language.not.allow"])
                                 return@on
                             }
