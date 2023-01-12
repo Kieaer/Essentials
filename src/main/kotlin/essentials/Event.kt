@@ -79,6 +79,7 @@ object Event {
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     private var blockExp = ObjectMap<String, Int>()
     private var dosBlacklist = ObjectSet<String>()
+    private var pvpCount = Config.pvpPeaceTime
 
     fun register() {
         dosBlacklist = netServer.admins.dosBlacklist
@@ -609,6 +610,7 @@ object Event {
                 orignalUnitMultiplier = state.rules.unitDamageMultiplier
                 state.rules.blockDamageMultiplier = 0f
                 state.rules.unitDamageMultiplier = 0f
+                pvpCount = Config.pvpPeaceTime
             }
 
             for (a in database.players) {

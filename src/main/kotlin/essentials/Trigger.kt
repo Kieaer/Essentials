@@ -36,7 +36,7 @@ import kotlin.concurrent.thread
 
 object Trigger {
     val ip2location = IP2Location()
-    var pvpCount = Config.pvpPeaceTime
+    var order = 0
 
     init {
         Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")?.run {
@@ -57,8 +57,8 @@ object Trigger {
 
         database.players.add(data)
 
-        data.entityid = Event.order
-        Event.order++
+        data.entityid = order
+        order++
 
         val motd = if (root.child("motd/${data.languageTag}.txt").exists()) {
             root.child("motd/${data.languageTag}.txt").readString()
