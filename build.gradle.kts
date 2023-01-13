@@ -1,9 +1,10 @@
 plugins {
-    kotlin("jvm") version "1.8.0-Beta"
+    kotlin("jvm") version "1.8.0"
 }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_16
+    targetCompatibility = JavaVersion.VERSION_16
 }
 
 repositories {
@@ -32,7 +33,7 @@ dependencies {
 
     implementation("com.neovisionaries:nv-i18n:1.29")
     implementation(files("libs/ip2location.jar"))
-    implementation("com.github.pemistahl:lingua:1.2.2")
+    implementation(files("libs/lingua.jar"))
 
     testImplementation("com.github.anuken.arc:arc-core:$arcVersion")
     testImplementation("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
