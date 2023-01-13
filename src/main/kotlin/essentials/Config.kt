@@ -222,6 +222,12 @@ object Config {
         channelToken = discord.getString("channelToken", channelToken)
         discordURL = discord.getString("discordURL", discordURL)
         banChannelToken = discord.getString("banChannelToken", banChannelToken)
+
+        if (chatlimit) {
+            if (!chatlanguage.matches(Regex("en|ja|ko|ru|uk|zh"))) {
+                chatlimit = false
+            }
+        }
     }
 
     fun update() {
