@@ -215,7 +215,7 @@ object Permission {
             result.alertMessage = u.asObject().getString("alertMessage", "")
         } else {
             result.uuid = player.uuid()
-            result.name = netServer.admins.findByIP(player.ip()).lastName
+            result.name = if (netServer.admins.findByIP(player.ip()) != null) netServer.admins.findByIP(player.ip()).lastName else ""
             result.group = p?.permission ?: default
             result.admin = false
             result.isAlert = false
