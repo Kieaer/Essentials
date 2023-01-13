@@ -77,7 +77,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("gg", "[team]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
             handler.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
-            handler.register("hub", "<set/zone/block/count/total/remove> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
+            handler.register("hub", "<set/zone/block/count/total/remove/reset> [ip] [parameters...]", "Create a server to server point.") { a, p: Playerc -> Client(a, p).hub() }
             handler.register("info", "[player]", "Show your information") { a, p: Playerc -> Client(a, p).info() }
             handler.register("js", "[code...]", "Execute JavaScript codes") { a, p: Playerc -> Client(a, p).js() }
             handler.register("kickall", "All users except yourself and the administrator will be kicked") { a, p: Playerc -> Client(a, p).kickall() }
@@ -657,6 +657,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     PluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
                     PluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
                     send("command.hub.removed", ip, port)
+                }
+
+                "reset" -> {
+                    PluginData.warpTotals.removeAll { true }
+                    PluginData.warpCounts.removeAll { true }
                 }
 
                 else -> send("command.hub.help")
