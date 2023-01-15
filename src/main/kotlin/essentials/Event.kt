@@ -821,43 +821,46 @@ object Event {
 
             if (milsCount == 5) {
                 for (a in database.players) {
-                    val color = if(a.status.containsKey("effectColor")) {
-                        Color.valueOf(a.status.get("effectColor"))
-                    } else {
-                        when (a.level) {
-                            in 10..19 -> Color.sky
-                            in 20..29 -> Color.orange
-                            in 30..39 -> Color.red
-                            in 40..49 -> Color.sky
-                            in 50..59 -> Color.sky
-                            in 60..69 -> Color.sky
-                            in 70..79 -> Color.orange
-                            in 80..89 -> Color.orange
-                            in 90..99 -> Color.orange
-                            in 100..Int.MAX_VALUE -> Color.orange
-                            else -> Color.orange
+                    if (a.player.unit() != null && a.player.unit().health > 0f) {
+                        val color = if (a.status.containsKey("effectColor")) {
+                            Color.valueOf(a.status.get("effectColor"))
+                        } else {
+                            when (a.level) {
+                                in 10..19 -> Color.sky
+                                in 20..29 -> Color.orange
+                                in 30..39 -> Color.red
+                                in 40..49 -> Color.sky
+                                in 50..59 -> Color.sky
+                                in 60..69 -> Color.sky
+                                in 70..79 -> Color.orange
+                                in 80..89 -> Color.orange
+                                in 90..99 -> Color.orange
+                                in 100..Int.MAX_VALUE -> Color.orange
+                                else -> Color.orange
+                            }
                         }
-                    }
 
-                    val x = a.player.x
-                    val y = a.player.y
-                    val rot = a.player.unit().rotation
+                        val x = a.player.x
+                        val y = a.player.y
+                        val rot = a.player.unit().rotation
 
-                    when (if (a.status.containsKey("effectLevel")) a.status.get("effectLevel").toInt() else a.level) {
-                        in 10..19 -> Call.effect(Fx.freezing, x, y, rot, color)
-                        in 20..29 -> Call.effect(Fx.overdriven, x, y, rot, color)
-                        in 30..39 -> {
-                            Call.effect(Fx.burning, x, y, rot, color)
-                            Call.effect(Fx.melting, x, y, rot, color)
+                        when (if (a.status.containsKey("effectLevel")) a.status.get("effectLevel").toInt() else a.level) {
+                            in 10..19 -> Call.effect(Fx.freezing, x, y, rot, color)
+                            in 20..29 -> Call.effect(Fx.overdriven, x, y, rot, color)
+                            in 30..39 -> {
+                                Call.effect(Fx.burning, x, y, rot, color)
+                                Call.effect(Fx.melting, x, y, rot, color)
+                            }
+
+                            in 40..49 -> Call.effect(Fx.steam, x, y, rot, color)
+                            in 50..59 -> Call.effect(Fx.shootSmallSmoke, x, y, rot, color)
+                            in 60..69 -> Call.effect(Fx.mine, x, y, rot, color)
+                            in 70..79 -> Call.effect(Fx.explosion, x, y, rot, color)
+                            in 80..89 -> Call.effect(Fx.hitLaser, x, y, rot, color)
+                            in 90..99 -> Call.effect(Fx.crawlDust, x, y, rot, color)
+                            in 100..Int.MAX_VALUE -> Call.effect(Fx.mineImpact, x, y, rot, color)
+                            else -> {}
                         }
-                        in 40..49 -> Call.effect(Fx.steam, x, y, rot, color)
-                        in 50..59 -> Call.effect(Fx.shootSmallSmoke, x, y, rot, color)
-                        in 60..69 -> Call.effect(Fx.mine, x, y, rot, color)
-                        in 70..79 -> Call.effect(Fx.explosion, x, y, rot, color)
-                        in 80..89 -> Call.effect(Fx.hitLaser, x, y, rot, color)
-                        in 90..99 -> Call.effect(Fx.crawlDust, x, y, rot, color)
-                        in 100..Int.MAX_VALUE -> Call.effect(Fx.mineImpact, x, y, rot, color)
-                        else -> {}
                     }
                 }
                 milsCount = 0
