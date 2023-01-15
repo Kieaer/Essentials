@@ -388,10 +388,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             val data = findPlayerData(target.uuid())
                             if (data != null) {
                                 if (data.status.containsKey("hideRanking")) {
-                                    data.status.put("hideRanking", "")
+                                    data.status.remove("hideRanking")
                                     send("command.exp.ranking.unhide")
                                 } else {
-                                    data.status.remove("hideRanking")
+                                    data.status.put("hideRanking", "")
                                     send("command.exp.ranking.hide")
                                 }
                             }
@@ -400,10 +400,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                     } else {
                         if (data.status.containsKey("hideRanking")) {
-                            data.status.put("hideRanking", "")
+                            data.status.remove("hideRanking")
                             send("command.exp.ranking.unhide")
                         } else {
-                            data.status.remove("hideRanking")
+                            data.status.put("hideRanking", "")
                             send("command.exp.ranking.hide")
                         }
                     }
@@ -533,6 +533,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
                 Events.fire(EventType.GameOverEvent(team))
             }
+
+            player.unit().buildSpeedMultiplier(100f)
         }
 
         fun god() {
