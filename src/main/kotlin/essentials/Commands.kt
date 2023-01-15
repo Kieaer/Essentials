@@ -516,17 +516,22 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (arg.isEmpty()) {
                 Events.fire(EventType.GameOverEvent(state.rules.waveTeam))
             } else {
-                val team = when (arg[0]) {
-                    "derelict" -> 0
-                    "sharded" -> 1
-                    "crux" -> 2
-                    "malis" -> 3
-                    "green" -> 4
-                    "blue" -> 5
-                    "neoplastic" -> 6
-                    else -> 1
+                val team: Team = if ("derelict".contains(arg[0], true)) {
+                    Team.derelict
+                } else if ("sharded".contains(arg[0], true)) {
+                    Team.sharded
+                } else if ("crux".contains(arg[0], true)) {
+                    Team.crux
+                } else if ("green".contains(arg[0], true)) {
+                    Team.green
+                } else if ("malis".contains(arg[0], true)) {
+                    Team.malis
+                } else if ("blue".contains(arg[0], true)) {
+                    Team.blue
+                } else {
+                    state.rules.waveTeam
                 }
-                Events.fire(EventType.GameOverEvent(Team.get(team)))
+                Events.fire(EventType.GameOverEvent(team))
             }
         }
 
