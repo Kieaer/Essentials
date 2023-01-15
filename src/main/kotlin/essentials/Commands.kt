@@ -1609,12 +1609,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun vote(player: Playerc, arg: Array<out String>) {
             fun sendStart(message: String, vararg parameter: Any) {
                 Groups.player.forEach {
-                    val data = findPlayerData(it.uuid())
-                    if (data != null) {
-                        val bundle = Bundle(data.languageTag)
-                        it.sendMessage(bundle["command.vote.starter", player.plainName()])
-                        it.sendMessage(bundle.get(message, *parameter))
-                        it.sendMessage(bundle["command.vote.how"])
+                    if (Event.isPvP) {
+                        if (Event.voteTeam == it.team()) {
+                            val data = findPlayerData(it.uuid())
+                            if (data != null) {
+                                val bundle = Bundle(data.languageTag)
+                                it.sendMessage(bundle["command.vote.starter", player.plainName()])
+                                it.sendMessage(bundle.get(message, *parameter))
+                                it.sendMessage(bundle["command.vote.how"])
+                            }
+                        }
+                    } else {
+                        val data = findPlayerData(it.uuid())
+                        if (data != null) {
+                            val bundle = Bundle(data.languageTag)
+                            it.sendMessage(bundle["command.vote.starter", player.plainName()])
+                            it.sendMessage(bundle.get(message, *parameter))
+                            it.sendMessage(bundle["command.vote.how"])
+                        }
                     }
                 }
             }
@@ -1624,7 +1636,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 return
             }
             if (!Event.voting) {
-                when (arg[0]) { // vote kick <player name> <reason>
+                when (arg[0]) {
                     "kick" -> {
                         if (arg.size != 3) {
                             send("command.vote.no.reason")
@@ -1683,7 +1695,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         Event.voteType = "gg"
                         Event.voteStarter = player
                         Event.voting = true
-                        sendStart("command.vote.gg.start")
+                        if (state.rules.pvp) {
+                            Event.voteTeam = player.team()
+                            Event.isPvP = true
+                            sendStart("command.vote.gg.pvp.team")
+                        } else {
+                            sendStart("command.vote.gg.start")
+                        }
                     }
 
                     // vote skip <count>

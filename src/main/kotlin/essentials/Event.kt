@@ -66,6 +66,8 @@ object Event {
     var voteMap: Map? = null
     var voteWave: Int? = null
     var voteStarter: Playerc? = null
+    var isPvP: Boolean = false
+    var voteTeam: Team = state.rules.defaultTeam
     private var voted = Seq<String>()
     private var lastVoted = LocalTime.now()
     private var isAdminVote = false
@@ -683,15 +685,28 @@ object Event {
         }
 
         fun check(): Int {
-            return when (database.players.size) {
-                1 -> 1
-                in 2..4 -> 2
-                in 5..6 -> 3
-                7 -> 4
-                in 8..9 -> 5
-                in 10..11 -> 6
-                12 -> 7
-                else -> 8
+            return if (!isPvP) {
+                when (database.players.size) {
+                    1 -> 1
+                    in 2..4 -> 2
+                    in 5..6 -> 3
+                    7 -> 4
+                    in 8..9 -> 5
+                    in 10..11 -> 6
+                    12 -> 7
+                    else -> 8
+                }
+            } else {
+                when (Groups.player.count { a -> a.team() == voteTeam }) {
+                    1 -> 1
+                    in 2..4 -> 2
+                    in 5..6 -> 3
+                    7 -> 4
+                    in 8..9 -> 5
+                    in 10..11 -> 6
+                    12 -> 7
+                    else -> 8
+                }
             }
         }
 
@@ -902,10 +917,24 @@ object Event {
 
                 if (voting) {
                     if (count % 10 == 0) {
-                        send("command.vote.count", count.toString(), check() - voted.size)
-                        if (voteType == "kick" && Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
-                            send("command.vote.kick.target.leave")
+                        if (isPvP) {
+                            for (a in Groups.player) {
+                                if (a.team() == voteTeam) {
+                                    val data = findPlayerData(a.uuid())
+                                    if (data != null) {
+                                        if (voteTargetUUID != data.uuid) {
+                                            val bundle = Bundle(data.languageTag)
+                                            a.sendMessage(bundle["command.vote.count", count.toString(), check() - voted.size])
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            send("command.vote.count", count.toString(), check() - voted.size)
+                            if (voteType == "kick" && Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
+                                send("command.vote.kick.target.leave")
 
+                            }
                         }
                     }
                     count--
@@ -929,7 +958,13 @@ object Event {
                             }
 
                             "gg" -> {
-                                Events.fire(GameOverEvent(state.rules.waveTeam))
+                                if (isPvP) {
+                                    state.teams.cores(voteTeam).forEach {
+                                        it.health(0f)
+                                    }
+                                } else {
+                                    Events.fire(GameOverEvent(state.rules.waveTeam))
+                                }
                             }
 
                             "skip" -> {
@@ -1060,6 +1095,8 @@ object Event {
                         voteStarter = null
                         isCanceled = false
                         isAdminVote = false
+                        isPvP = false
+                        voteTeam = state.rules.defaultTeam
                         voted = Seq<String>()
                         count = 60
                     } else if ((count == 0 && check() > voted.size) || isCanceled) {
@@ -1075,6 +1112,8 @@ object Event {
                         voteStarter = null
                         isCanceled = false
                         isAdminVote = false
+                        isPvP = false
+                        voteTeam = state.rules.defaultTeam
                         voted = Seq<String>()
                         count = 60
                     }
