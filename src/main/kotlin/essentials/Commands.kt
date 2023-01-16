@@ -4,6 +4,7 @@ import arc.Core
 import arc.Events
 import arc.graphics.Color
 import arc.math.Mathf
+import arc.struct.ArrayMap
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.CommandHandler
@@ -1166,19 +1167,22 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
 
             val all = database.getAll()
-            val time = mutableMapOf<String, Long>()
-            val exp = mutableMapOf<String, Int>()
-            val attack = mutableMapOf<String, Int>()
-            val placeBlock = mutableMapOf<String, Int>()
-            val breakBlock = mutableMapOf<String, Int>()
+            val time = mutableMapOf<ArrayMap<String, String>, Long>()
+            val exp = mutableMapOf<ArrayMap<String, String>, Int>()
+            val attack = mutableMapOf<ArrayMap<String, String>, Int>()
+            val placeBlock = mutableMapOf<ArrayMap<String, String>, Int>()
+            val breakBlock = mutableMapOf<ArrayMap<String, String>, Int>()
 
             for (a in all) {
                 if (!a.status.containsKey("hideRanking")) {
-                    time[a.name] = a.playtime
-                    exp[a.name] = a.exp
-                    attack[a.name] = a.attackclear
-                    placeBlock[a.name] = a.placecount
-                    breakBlock[a.name] = a.breakcount
+                    val info = ArrayMap<String, String>()
+                    info.put(a.name, a.uuid)
+
+                    time[info] = a.playtime
+                    exp[info] = a.exp
+                    attack[info] = a.attackclear
+                    placeBlock[info] = a.placecount
+                    breakBlock[info] = a.breakcount
                 }
             }
 
@@ -1194,12 +1198,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
 
             for (a in 0..4) {
-                string.append("${if (a == 0) "[sky]" else "[green]"}${a + 1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}\n")
+                string.append("${if (a == 0) "[sky]" else "[green]"}${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}\n")
             }
             string.append("[purple]=======================================[]\n")
             for (a in d.indices) {
-                if (d[a].first == player.plainName()) {
-                    string.append("${a + 1}[] ${d[a].first}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
+                if (d[a].first.firstValue() == player.uuid()) {
+                    string.append("${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
                 }
             }
 
@@ -1346,12 +1350,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     if (arg.size == 3) {
                         val team = Team.all.find { a -> a.name.equals(arg[2]) }
                         if (team != null) {
-                            state.teams.cores(team).first().items[item] = if (state.teams.cores(team).first().storageCapacity > arg[1].toInt()) state.teams.cores(team).first().storageCapacity else arg[1].toInt()
+                            team.core().items.set(item, if (team.core().storageCapacity < arg[1].toInt()) team.core().storageCapacity else arg[1].toInt())
                         } else {
                             send("command.setitem.wrong.team")
                         }
                     } else {
-                        state.teams.cores(player.team()).first().items[item] = if (state.teams.cores(player.team()).first().storageCapacity > arg[1].toInt()) state.teams.cores(player.team()).first().storageCapacity else arg[1].toInt()
+                        player.core().items.set(item, if (player.core().storageCapacity < arg[1].toInt()) player.core().storageCapacity else arg[1].toInt())
                     }
                 } else {
                     send("command.setitem.wrong.amount")
