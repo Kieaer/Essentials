@@ -1642,6 +1642,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 return
             }
             if (!Event.voting) {
+                if (database.players.size <= 3) {
+                    send("command.vote.enough")
+                    return
+                }
                 when (arg[0]) {
                     "kick" -> {
                         if (arg.size != 3) {
