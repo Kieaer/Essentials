@@ -208,7 +208,7 @@ object Permission {
         if (u != null) {
             result.uuid = u.asObject().getString("uuid", player.uuid())
             result.name = u.asObject().getString("name", netServer.admins.findByIP(player.ip()).lastName)
-            result.group = u.asObject().getString("group", p.permission)
+            result.group = u.asObject().getString("group", p?.permission ?: default)
             result.chatFormat = u.asObject().getString("chatFormat", Config.chatFormat)
             result.admin = u.asObject().getBoolean("admin", false)
             result.isAlert = u.asObject().getBoolean("isAlert", false)
