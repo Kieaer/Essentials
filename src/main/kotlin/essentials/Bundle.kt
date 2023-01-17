@@ -11,7 +11,7 @@ class Bundle {
     }
 
     constructor() {
-        resource = ResourceBundle.getBundle("bundle")
+        resource = ResourceBundle.getBundle("bundle", Locale.getDefault())
     }
 
     constructor(languageTag: String) {
