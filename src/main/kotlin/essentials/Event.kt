@@ -26,6 +26,7 @@ import mindustry.entities.Damage
 import mindustry.game.EventType
 import mindustry.game.EventType.*
 import mindustry.game.Team
+import mindustry.gen.AdminRequestCallPacket
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
@@ -599,8 +600,14 @@ object Event {
                 }
             }
 
-            if(Config.banChannelToken.isNotEmpty() && it.player != null) {
-                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), netServer.admins.findByIP(it.player.con.address).names.toString(", ")]
+            if (Config.banChannelToken.isNotEmpty()) {
+                val name = if (it.player != null) {
+                    netServer.admins.findByIP(it.player.con.address).names.toString(", ")
+                } else {
+                    netServer.admins.banned.find { a -> a.id.equals(it.uuid) }.names.toString(", ")
+                }
+
+                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), name]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
 
@@ -617,6 +624,13 @@ object Event {
         Events.on(PlayerIpUnbanEvent::class.java) {
             if (Config.banChannelToken.isNotEmpty()) {
                 val msg = Bundle()["event.discord.ip.unbanned", netServer.admins.findByIP(it.ip).lastName]
+                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
+            }
+        }
+
+        Events.on(AdminRequestCallPacket::class.java) {
+            if (Config.banChannelToken.isNotEmpty() && it.action == Packets.AdminAction.ban) {
+                val msg = Bundle()["event.discord.banned.admin", it.other.plainName()]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
         }
