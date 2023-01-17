@@ -81,6 +81,7 @@ object Event {
     private var blockExp = ObjectMap<String, Int>()
     private var dosBlacklist = ObjectSet<String>()
     private var pvpCount = Config.pvpPeaceTime
+    private var count = 60
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
@@ -402,6 +403,22 @@ object Event {
                         p.sendMessage(bundle["exp.current", target.exp, (if (target.exp > oldExp) "+" else "-") + (target.exp - oldExp), target.level, (if (target.level > oldLevel) "+" else "-") + (target.level - oldLevel)])
                     }
                 }
+            }
+            if (voting && voteType == "gg") {
+                voting = false
+                voteType = null
+                voteTarget = null
+                voteTargetUUID = null
+                voteReason = null
+                voteMap = null
+                voteWave = null
+                voteStarter = null
+                isCanceled = false
+                isAdminVote = false
+                isPvP = false
+                voteTeam = state.rules.defaultTeam
+                voted = Seq<String>()
+                count = 60
             }
             worldHistory = Seq<TileLog>()
         }
@@ -772,7 +789,6 @@ object Event {
         var milsCount = 0
         var secondCount = 0
         var minuteCount = 0
-        var count = 60
 
         var rollbackCount = Config.rollbackTime
         var messageCount = Config.messageTime
