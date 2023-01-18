@@ -401,7 +401,7 @@ object Event {
                         }
 
                         Commands.Exp[target]
-                        p.sendMessage(bundle["exp.current", target.exp, (if (target.exp > oldExp) "+" else "-") + (target.exp - oldExp), target.level, (if (target.level > oldLevel) "+" else "-") + (target.level - oldLevel)])
+                        p.sendMessage(bundle["exp.current", target.exp, (if (target.exp > oldExp) "+" else "-") + (target.exp - oldExp), target.level, (if (target.level > oldLevel) "+" else if (target.level == oldLevel) "" else "-") + (target.level - oldLevel)])
                     }
                 }
             }
