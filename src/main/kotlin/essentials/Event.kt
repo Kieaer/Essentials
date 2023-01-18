@@ -993,7 +993,7 @@ object Event {
                             "gg" -> {
                                 if (isPvP) {
                                     state.teams.cores(voteTeam).forEach {
-                                        it.health(0f)
+                                        Call.setTile(it.tile, Blocks.air, Team.sharded, 0)
                                     }
                                 } else {
                                     Events.fire(GameOverEvent(state.rules.waveTeam))
