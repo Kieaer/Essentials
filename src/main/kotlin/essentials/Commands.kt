@@ -1642,7 +1642,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 return
             }
             if (!Event.voting) {
-                if (database.players.size <= 3) {
+                if (database.players.size <= 2) {
                     send("command.vote.enough")
                     return
                 }
