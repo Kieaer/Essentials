@@ -653,22 +653,26 @@ object Event {
             }
         }
 
-        Events.on(PlayerConnect::class.java) { e ->
-            log(LogType.Player, "${e.player.plainName()} (${e.player.uuid()}, ${e.player.con.address}) connected.")
+        Events.on(ConnectPacketEvent::class.java) { e ->
+            log(LogType.Player, "${e.packet.name} (${e.packet.uuid}, ${e.connection.address}) connected.")
+
+            if (!Config.allowMobile && e.connection.mobile) {
+                e.connection.kick("This server doesn't accept mobile devices!")
+            }
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (s in PluginData.blacklist) {
-                if (e.player.name.matches(Regex(s))) Call.kick(e.player.con, "This name is blacklisted.")
+                if (e.packet.name.matches(Regex(s))) e.connection.kick("This name is blacklisted.")
             }
 
             if (Config.fixedName) {
-                if (e.player.name.length > 32) Call.kick(e.player.con(), "Nickname too long!")
-                if (e.player.name.matches(Regex(".*\\[.*].*"))) Call.kick(e.player.con(), "Parentheses aren't allowed in nickname.")
-                if (e.player.name.contains("　")) Call.kick(e.player.con(), "Don't use blank speical charactor nickname!")
-                if (e.player.name.contains(" ")) Call.kick(e.player.con(), "Nicknames can't be used on this server!")
+                if (e.packet.name.length > 32) e.connection.kick("Nickname too long!")
+                if (e.packet.name.matches(Regex(".*\\[.*].*"))) e.connection.kick("Parentheses aren't allowed in nickname.")
+                if (e.packet.name.contains("　")) e.connection.kick("Don't use blank speical charactor nickname!")
+                if (e.packet.name.contains(" ")) e.connection.kick("Nicknames can't be used on this server!")
             }
 
-            if (Config.minimalName && e.player.name.length < 4) Call.kick(e.player.con(), "Nickname too short!")
+            if (Config.minimalName && e.packet.name.length < 4) e.connection.kick("Nickname too short!")
 
             if (Config.antiVPN) {
                 val br = BufferedReader(InputStreamReader(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")!!))
@@ -676,15 +680,15 @@ object Event {
                     var line: String
                     while (br.readLine().also { line = it } != null) {
                         val match = IpAddressMatcher(line)
-                        if (match.matches(e.player.con.address)) {
-                            Call.kick(e.player.con(), Bundle()["anti-grief.vpn"])
+                        if (match.matches(e.connection.address)) {
+                            e.connection.kick(Bundle()["anti-grief.vpn"])
                         }
                     }
                 }
             }
 
-            if (netServer.admins.isIDBanned(e.player.uuid())) {
-                val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByIP(e.player.con.address).lastName]
+            if (netServer.admins.isIDBanned(e.packet.uuid)) {
+                val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByIP(e.connection.address).lastName]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
         }

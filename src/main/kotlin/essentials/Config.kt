@@ -50,6 +50,7 @@ object Config {
     var antiGrief = false
     var minimalName = false
     var blockfooclient = false
+    var allowMobile = true
 
     // server
     var shareBanList = false
@@ -62,7 +63,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 10
+    private var configVersion = 11
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -168,6 +169,7 @@ object Config {
         security.add("antiGrief", antiGrief, bundle["config.antigrief"])
         security.add("minimumName", minimalName, bundle["config.minimumName"])
         security.add("blockfooclient", blockfooclient, bundle["config.blockfooclient"])
+        security.add("allowMobile", allowMobile, bundle["config.allow.mobile"])
 
         val discord = JsonObject()
         discord.add("botToken", botToken, bundle["config.discord.token"])
@@ -228,6 +230,7 @@ object Config {
         antiGrief = security.getBoolean("antiGrief", antiGrief)
         minimalName = security.getBoolean("minimalName", minimalName)
         blockfooclient = security.getBoolean("blockfooclient", blockfooclient)
+        allowMobile = security.getBoolean("allowMobile", allowMobile)
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)
