@@ -1208,7 +1208,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                     } else {
                         val t = d[a].second.toString().toLong()
-                        val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
+                        val timeMessage = bundle["command.info.time", (t / 60 / 60) / 24, (t / 60 / 60) % 24, (t / 60) % 60, t % 60]
                         string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}\n")
                     }
                 }
@@ -1222,7 +1222,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                         } else {
                             val t = d[a].second.toString().toLong()
-                            val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
+                            val timeMessage = bundle["command.info.time", (t / 60 / 60) / 24, (t / 60 / 60) % 24, (t / 60) % 60, t % 60]
                             string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}")
                         }
                     }
