@@ -7,6 +7,12 @@ java {
     targetCompatibility = JavaVersion.VERSION_16
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_16.toString()
+    }
+}
+
 repositories {
     mavenCentral()
     maven(url = "https://www.jitpack.io")
