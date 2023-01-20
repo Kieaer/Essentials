@@ -1139,7 +1139,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun ranking() {
             if (!Permission.check(player, "ranking")) return
-            Thread {
+            Main.daemon.submit(Thread {
                 val firstMessage = when (arg[0].lowercase()) {
                     "time" -> "command.ranking.time"
                     "exp" -> "command.ranking.exp"
@@ -1229,7 +1229,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
 
                 Core.app.post { player.sendMessage(string.toString()) }
-            }
+            })
         }
 
         fun register() {
