@@ -6,8 +6,6 @@ import arc.struct.ArrayMap
 import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
-import com.ip2location.IP2Location
-import com.neovisionaries.i18n.CountryCode
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import mindustry.Vars.state
@@ -21,9 +19,7 @@ import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
 import org.mindrot.jbcrypt.BCrypt
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.*
 import java.nio.ByteBuffer
@@ -36,14 +32,7 @@ import kotlin.concurrent.thread
 
 
 object Trigger {
-    val ip2location = IP2Location()
     var order = 0
-
-    init {
-        Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")?.run {
-            ip2location.Open(this.readBytes())
-        }
-    }
 
     fun loadPlayer(player: Playerc, data: DB.PlayerData) {
         if (Config.fixedName) player.name(data.name)
@@ -95,43 +84,13 @@ object Trigger {
         data.id = id ?: player.plainName()
         data.pw = if (password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
         data.permission = "user"
+        data.languageTag = player.locale()
 
         database.createData(data)
         Permission.apply()
 
         player.sendMessage("Player data registered!")
         loadPlayer(player, data)
-
-        Thread {
-            val ip = player.ip()
-            val isLocal = try {
-                val address = InetAddress.getByName(ip)
-                if (address.isAnyLocalAddress || address.isLoopbackAddress) {
-                    true
-                } else {
-                    NetworkInterface.getByInetAddress(address) != null
-                }
-            } catch (e: SocketException) {
-                false
-            } catch (e: UnknownHostException) {
-                false
-            }
-
-            val res = if (isLocal) {
-                val add = BufferedReader(InputStreamReader(URL("http://checkip.amazonaws.com").openStream())).readLine()
-                ip2location.IPQuery(add).countryShort
-            } else {
-                ip2location.IPQuery(player.ip()).countryShort
-            }
-
-            val locale = if (CountryCode.getByCode(res) == null) {
-                Locale.ENGLISH
-            } else {
-                CountryCode.getByCode(res).toLocale()
-            }
-
-            data.languageTag = locale.toLanguageTag()
-        }.start()
 
         Call.menu(player.con(), 0, "Select your language", "Select plugin language\n플러그인 언어를 선택하세요.", arrayOf(arrayOf("한국어", "English")))
     }

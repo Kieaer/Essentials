@@ -38,7 +38,6 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
     implementation("com.neovisionaries:nv-i18n:1.29")
-    implementation(files("libs/ip2location.jar"))
     implementation(files("libs/lingua.jar"))
 
     testImplementation("com.github.anuken.arc:arc-core:$arcVersion")
