@@ -40,6 +40,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import java.sql.Timestamp
+import java.text.MessageFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -135,9 +136,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (d != null) data = d else DB.PlayerData()
             bundle = Bundle(data.languageTag)
         }
-        
-        private fun send(msg: String, vararg parameter: Any) {
-            player.sendMessage(bundle[msg, parameter])
+
+        fun send(msg: String, vararg parameters: Any) {
+            player.sendMessage(MessageFormat.format(bundle.resource.getString(msg), *parameters))
         }
 
 
