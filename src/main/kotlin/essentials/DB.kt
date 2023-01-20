@@ -214,6 +214,7 @@ class DB {
 
     fun getAll(): Seq<PlayerData> {
         val d = Seq<PlayerData>()
+
         transaction {
             Player.selectAll().map {
                 val data = PlayerData()

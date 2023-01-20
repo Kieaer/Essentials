@@ -129,47 +129,50 @@ object PluginData {
         lastMemory = encode.encodeToString(data.toString().toByteArray())
 
         var bufMemory = ""
-        if (transaction { DB.Data.selectAll().firstOrNull() != null }) {
-            if (lastMemory != transaction { DB.Data.selectAll().first()[DB.Data.data] }) {
-                data.add("requireUpdate", true)
-                bufMemory = encode.encodeToString(data.toString().toByteArray())
-            }
 
-            val remote = transaction { DB.Data.selectAll().first()[DB.Data.data] }
-            if (lastMemory != remote) {
-                if (JsonObject.readHjson(String(Base64.getDecoder().decode(remote))).asObject().has("requireUpdate")) {
-                    load()
-                } else if (bufMemory.isEmpty()) {
-                    transaction {
-                        DB.Data.update {
-                            it[this.data] = lastMemory
-                        }
-                    }
-                } else if (bufMemory.isNotEmpty()) {
-                    transaction {
-                        DB.Data.update {
-                            it[this.data] = bufMemory
-                        }
-                    }
-                    Thread {
-                        sleep(5000)
-                        bufMemory = ""
+        Main.daemon.submit(Thread {
+            if (transaction { DB.Data.selectAll().firstOrNull() != null }) {
+                if (lastMemory != transaction { DB.Data.selectAll().first()[DB.Data.data] }) {
+                    data.add("requireUpdate", true)
+                    bufMemory = encode.encodeToString(data.toString().toByteArray())
+                }
 
+                val remote = transaction { DB.Data.selectAll().first()[DB.Data.data] }
+                if (lastMemory != remote) {
+                    if (JsonObject.readHjson(String(Base64.getDecoder().decode(remote))).asObject().has("requireUpdate")) {
+                        load()
+                    } else if (bufMemory.isEmpty()) {
                         transaction {
                             DB.Data.update {
                                 it[this.data] = lastMemory
                             }
                         }
-                    }.start()
+                    } else if (bufMemory.isNotEmpty()) {
+                        transaction {
+                            DB.Data.update {
+                                it[this.data] = bufMemory
+                            }
+                        }
+                        Thread {
+                            sleep(5000)
+                            bufMemory = ""
+
+                            transaction {
+                                DB.Data.update {
+                                    it[this.data] = lastMemory
+                                }
+                            }
+                        }.start()
+                    }
+                }
+            } else {
+                transaction {
+                    DB.Data.insert {
+                        it[this.data] = lastMemory
+                    }
                 }
             }
-        } else {
-            transaction {
-                DB.Data.insert {
-                    it[this.data] = lastMemory
-                }
-            }
-        }
+        })
     }
 
     fun load() {

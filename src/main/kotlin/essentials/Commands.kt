@@ -1139,97 +1139,97 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun ranking() {
             if (!Permission.check(player, "ranking")) return
-            val firstMessage = when(arg[0].lowercase()) {
-                "time" -> "command.ranking.time"
-                "exp" -> "command.ranking.exp"
-                "attack" -> "command.ranking.attack"
-                "place" -> "command.ranking.place"
-                "break" -> "command.ranking.break"
-                "pvp" ->"command.ranking.pvp"
-                else -> null
-            }
-
-            if (firstMessage == null ) {
-                send("command.ranking.wrong")
-                return
-            }
-
-            val all = database.getAll()
-            val time = mutableMapOf<ArrayMap<String, String>, Long>()
-            val exp = mutableMapOf<ArrayMap<String, String>, Int>()
-            val attack = mutableMapOf<ArrayMap<String, String>, Int>()
-            val placeBlock = mutableMapOf<ArrayMap<String, String>, Int>()
-            val breakBlock = mutableMapOf<ArrayMap<String, String>, Int>()
-            val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
-
-            for (a in all) {
-                if (!a.status.containsKey("hideRanking")) {
-                    val info = ArrayMap<String, String>()
-                    val pvpcount = ArrayMap<Int, Int>()
-                    info.put(a.name, a.uuid)
-                    pvpcount.put(a.pvpwincount, a.pvplosecount)
-
-                    time[info] = a.playtime
-                    exp[info] = a.exp
-                    attack[info] = a.attackclear
-                    placeBlock[info] = a.placecount
-                    breakBlock[info] = a.breakcount
-                    pvp[info] = pvpcount
+            Thread {
+                val firstMessage = when (arg[0].lowercase()) {
+                    "time" -> "command.ranking.time"
+                    "exp" -> "command.ranking.exp"
+                    "attack" -> "command.ranking.attack"
+                    "place" -> "command.ranking.place"
+                    "break" -> "command.ranking.break"
+                    "pvp" -> "command.ranking.pvp"
+                    else -> null
                 }
-            }
 
-            val d = when (arg[0].lowercase()) {
-                "time" -> time.toList().sortedWith(compareBy { -it.second })
-                "exp" -> exp.toList().sortedWith(compareBy { -it.second })
-                "attack" -> attack.toList().sortedWith(compareBy { -it.second })
-                "place" -> placeBlock.toList().sortedWith(compareBy { -it.second })
-                "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
-                "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.firstKey() })
-                else -> return
-            }
-
-            val string = StringBuilder()
-            val per = 8
-            var page = if (arg.size == 2) abs(Strings.parseInt(arg[1])) else 1
-            val pages = Mathf.ceil(d.size.toFloat() / per)
-            page--
-
-            if (page >= pages || page < 0) {
-                send("command.page.range", pages)
-                return
-            }
-
-            send(firstMessage, page + 1, pages)
-
-
-            for (a in per * page until (per * (page + 1)).coerceAtMost(d.size)) {
-                if (d[a].second is ArrayMap<*, *>) {
-                    val rank = d[a].second as ArrayMap<*, *>
-                    val rate = round((rank.firstKey().toString().toFloat()/(rank.firstKey().toString().toFloat()+rank.firstValue().toString().toFloat()))*100)
-                    string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
-                } else {
-                    val t = d[a].second.toString().toLong()
-                    val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
-                    string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}\n")
+                if (firstMessage == null) {
+                    send("command.ranking.wrong")
+                    return@Thread
                 }
-            }
-            string.substring(0, string.length - 1)
-            string.append("[purple]=======================================[]\n")
-            for (a in d.indices) {
-                if (d[a].first.firstValue() == player.uuid()) {
+
+                val all = database.getAll()
+                val time = mutableMapOf<ArrayMap<String, String>, Long>()
+                val exp = mutableMapOf<ArrayMap<String, String>, Int>()
+                val attack = mutableMapOf<ArrayMap<String, String>, Int>()
+                val placeBlock = mutableMapOf<ArrayMap<String, String>, Int>()
+                val breakBlock = mutableMapOf<ArrayMap<String, String>, Int>()
+                val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
+
+                for (a in all) {
+                    if (!a.status.containsKey("hideRanking")) {
+                        val info = ArrayMap<String, String>()
+                        val pvpcount = ArrayMap<Int, Int>()
+                        info.put(a.name, a.uuid)
+                        pvpcount.put(a.pvpwincount, a.pvplosecount)
+
+                        time[info] = a.playtime
+                        exp[info] = a.exp
+                        attack[info] = a.attackclear
+                        placeBlock[info] = a.placecount
+                        breakBlock[info] = a.breakcount
+                        pvp[info] = pvpcount
+                    }
+                }
+
+                val d = when (arg[0].lowercase()) {
+                    "time" -> time.toList().sortedWith(compareBy { -it.second })
+                    "exp" -> exp.toList().sortedWith(compareBy { -it.second })
+                    "attack" -> attack.toList().sortedWith(compareBy { -it.second })
+                    "place" -> placeBlock.toList().sortedWith(compareBy { -it.second })
+                    "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
+                    "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.firstKey() })
+                    else -> return@Thread
+                }
+
+                val string = StringBuilder()
+                val per = 8
+                var page = if (arg.size == 2) abs(Strings.parseInt(arg[1])) else 1
+                val pages = Mathf.ceil(d.size.toFloat() / per)
+                page--
+
+                if (page >= pages || page < 0) {
+                    send("command.page.range", pages)
+                    return@Thread
+                }
+                string.append(bundle[firstMessage, page + 1, pages] + "\n")
+
+                for (a in per * page until (per * (page + 1)).coerceAtMost(d.size)) {
                     if (d[a].second is ArrayMap<*, *>) {
                         val rank = d[a].second as ArrayMap<*, *>
-                        val rate = round((rank.firstKey().toString().toFloat()/(rank.firstKey().toString().toFloat()+rank.firstValue().toString().toFloat()))*100)
-                        string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
+                        val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
+                        string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                     } else {
                         val t = d[a].second.toString().toLong()
                         val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
-                        string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}")
+                        string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}\n")
                     }
                 }
-            }
+                string.substring(0, string.length - 1)
+                string.append("[purple]=======================================[]\n")
+                for (a in d.indices) {
+                    if (d[a].first.firstValue() == player.uuid()) {
+                        if (d[a].second is ArrayMap<*, *>) {
+                            val rank = d[a].second as ArrayMap<*, *>
+                            val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
+                            string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
+                        } else {
+                            val t = d[a].second.toString().toLong()
+                            val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
+                            string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}")
+                        }
+                    }
+                }
 
-            player.sendMessage(string.toString())
+                Core.app.post { player.sendMessage(string.toString()) }
+            }
         }
 
         fun register() {

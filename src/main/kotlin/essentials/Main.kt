@@ -12,15 +12,15 @@ import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 class Main : Plugin() {
-    val daemon: ExecutorService = Executors.newFixedThreadPool(2)
-
     companion object {
         val database = DB()
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+        val daemon = ThreadPoolExecutor(2,8,1L,TimeUnit.SECONDS,SynchronousQueue())
     }
 
     init {

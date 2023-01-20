@@ -945,7 +945,7 @@ object Event {
 
                         Call.infoPopup(a.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                     }
-                    database.update(a.uuid, a)
+                    Main.daemon.submit(Thread {database.update(a.uuid, a)})
                 }
 
                 if (voting) {
@@ -1184,16 +1184,18 @@ object Event {
             }
 
             if (minuteCount == 3600) {
-                val data = database.getAll()
+                Main.daemon.submit(Thread {
+                    val data = database.getAll()
 
-                for (a in data) {
-                    if (a.status.containsKey("ban") && LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
-                        netServer.admins.unbanPlayerID(a.uuid)
+                    for (a in data) {
+                        if (a.status.containsKey("ban") && LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
+                            Core.app.post { netServer.admins.unbanPlayerID(a.uuid) }
+                        }
                     }
-                }
+                })
 
                 if (rollbackCount == 0) {
-                    Core.app.post { SaveIO.save(saveDirectory.child("rollback.msav")) }
+                    SaveIO.save(saveDirectory.child("rollback.msav"))
                     rollbackCount = Config.rollbackTime
                 } else {
                     rollbackCount--
