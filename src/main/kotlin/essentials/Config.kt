@@ -14,44 +14,49 @@ object Config {
     private var obj = JsonObject()
 
     var update = true
-    var database: String = Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
-    var afk = false
-    var afkTime = 300
-    var afkServer = ""
-    var border = false
     var report = true
-    var spawnLimit = 3000
-    var vote = true
-    var votekick = false
-    var fixedName = true
+    var authType = AuthType.None
+    var database: String = Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()
+
+    var afk = false
+    var afkServer = ""
+    var afkTime = 300
     var antiVPN = false
+    var blockIP = false
+    var border = false
+    var chatBlacklist = false
+    var chatBlacklistRegex = false
+    var chatlanguage = "ko,en"
+    var chatlimit = false
+    var countAllServers = false
+    var destroyCore = false
+    var expDisplay = false
+    var fixedName = true
+    var message = false
+    var messageTime = 10
+    var moveEffects = true
     var pvpPeace = false
     var pvpPeaceTime = 300
     var rollbackTime = 10
-    var message = false
-    var messageTime = 10
-    var antiGrief = false
-    var countAllServers = false
-    var destroyCore = false
-    var chatlimit = false
-    var chatlanguage = "ko,en"
-    var chatBlacklist = false
-    var chatBlacklistRegex = false
-    var expDisplay = false
-    var minimalName = false
-    var blockfooclient = false
-    var blockIP = false
-    var waveskip = 1
+    var spawnLimit = 3000
     var unbreakableCore = false
-    var moveEffects = true
+    var vote = true
+    var waveskip = 1
 
-    var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
 
+    // security
+    var votekick = false
+    var antiGrief = false
+    var minimalName = false
+    var blockfooclient = false
+
+    // server
     var shareBanList = false
     var shareBanListType = BanType.Server
     var shareBanListServer = "mindustry.kr"
 
+    // discord
     var botToken = ""
     var channelToken = ""
     var discordURL = ""
@@ -128,30 +133,30 @@ object Config {
 
         val features = JsonObject()
         features.add("afk", afk, bundle["config.afk"])
-        features.add("afkTime", afkTime, bundle["config.afk.time"])
         features.add("afkServer", afkServer, bundle["config.afk.server"])
-        features.add("border", border, bundle["config.border"])
-        features.add("chatFormat", chatFormat, bundle["config.chatformat"])
-        features.add("spawnLimit", spawnLimit, bundle["config.spawnlimit"])
-        features.add("vote", vote, bundle["config.vote"])
-        features.add("fixedName", fixedName, bundle["config.fixedname"])
+        features.add("afkTime", afkTime, bundle["config.afk.time"])
         features.add("antiVPN", antiVPN, bundle["config.antivpn"])
+        features.add("blockIP", blockIP, bundle["config.blockIP"])
+        features.add("border", border, bundle["config.border"])
+        features.add("chatBlacklist", chatBlacklist, bundle["config.chatblacklist"])
+        features.add("chatBlacklistRegex", chatBlacklistRegex, bundle["config.chatblacklist.regex"])
+        features.add("chatFormat", chatFormat, bundle["config.chatformat"])
+        features.add("chatlanguage", chatlanguage, bundle["config.chatlanguage"])
+        features.add("chatlimit", chatlimit, bundle["config.chatlimit"])
+        features.add("countAllServers", countAllServers, bundle["config.countallservers"])
+        features.add("destroyCore", destroyCore, bundle["config.destroycore"])
+        features.add("expDisplay", expDisplay, bundle["config.expDisplay"])
+        features.add("fixedName", fixedName, bundle["config.fixedname"])
+        features.add("message", message, bundle["config.message"])
+        features.add("messageTime", messageTime, bundle["config.message.time"])
+        features.add("moveEffects", moveEffects, bundle["config.moveeffects"])
         features.add("pvpPeace", pvpPeace, bundle["config.pvp"])
         features.add("pvpPeaceTime", pvpPeaceTime, bundle["config.pvp.time"])
         features.add("rollbackTime", rollbackTime, bundle["config.rollback.time"])
-        features.add("message", message, bundle["config.message"])
-        features.add("messageTime", messageTime, bundle["config.message.time"])
-        features.add("countAllServers", countAllServers, bundle["config.countallservers"])
-        features.add("destroyCore", destroyCore, bundle["config.destroycore"])
-        features.add("chatlimit", chatlimit, bundle["config.chatlimit"])
-        features.add("chatlanguage", chatlanguage, bundle["config.chatlanguage"])
-        features.add("chatBlacklist", chatBlacklist, bundle["config.chatblacklist"])
-        features.add("chatBlacklistRegex", chatBlacklistRegex, bundle["config.chatblacklist.regex"])
-        features.add("expDisplay", expDisplay, bundle["config.expDisplay"])
-        features.add("blockIP", blockIP, bundle["config.blockIP"])
-        features.add("waveskip", waveskip, bundle["config.waveskip"])
+        features.add("spawnLimit", spawnLimit, bundle["config.spawnlimit"])
         features.add("unbreakableCore", unbreakableCore, bundle["config.unbreakablecore"])
-        features.add("moveEffects", moveEffects, bundle["config.moveeffects"])
+        features.add("vote", vote, bundle["config.vote"])
+        features.add("waveskip", waveskip, bundle["config.waveskip"])
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -194,30 +199,30 @@ object Config {
         database = plugin.getString("database", database)
 
         afk = features.getBoolean("afk", afk)
-        afkTime = features.getInt("afkTime", afkTime)
         afkServer = features.getString("afkServer", afkServer)
-        border = features.getBoolean("border", border)
-        chatFormat = features.getString("chatFormat", chatFormat)
-        spawnLimit = features.getInt("spawnLimit", spawnLimit)
-        vote = features.getBoolean("vote", vote)
-        fixedName = features.getBoolean("fixedName", fixedName)
+        afkTime = features.getInt("afkTime", afkTime)
         antiVPN = features.getBoolean("antiVPN", antiVPN)
+        blockIP = features.getBoolean("blockIP", blockIP)
+        border = features.getBoolean("border", border)
+        chatBlacklist = features.getBoolean("chatBlacklist", chatBlacklist)
+        chatBlacklistRegex = features.getBoolean("chatBlacklistRegex", chatBlacklistRegex)
+        chatFormat = features.getString("chatFormat", chatFormat)
+        chatlanguage = features.getString("chatlanguage", chatlanguage)
+        chatlimit = features.getBoolean("chatlimit", chatlimit)
+        countAllServers = features.getBoolean("countAllServers", countAllServers)
+        destroyCore = features.getBoolean("destroyCore", destroyCore)
+        expDisplay = features.getBoolean("expDisplay", expDisplay)
+        fixedName = features.getBoolean("fixedName", fixedName)
+        message = features.getBoolean("message", message)
+        messageTime = features.getInt("messageTime", messageTime)
+        moveEffects = features.getBoolean("moveEffects", moveEffects)
         pvpPeace = features.getBoolean("pvpPeace", pvpPeace)
         pvpPeaceTime = features.getInt("pvpPeaceTime", pvpPeaceTime)
         rollbackTime = features.getInt("rollbackTime", rollbackTime)
-        message = features.getBoolean("message", message)
-        messageTime = features.getInt("messageTime", messageTime)
-        countAllServers = features.getBoolean("countAllServers", countAllServers)
-        destroyCore = features.getBoolean("destroyCore", destroyCore)
-        chatlimit = features.getBoolean("chatlimit", chatlimit)
-        chatlanguage = features.getString("chatlanguage", chatlanguage)
-        chatBlacklist = features.getBoolean("chatBlacklist", chatBlacklist)
-        chatBlacklistRegex = features.getBoolean("chatBlacklistRegex", chatBlacklistRegex)
-        expDisplay = features.getBoolean("expDisplay", expDisplay)
-        blockIP = features.getBoolean("blockIP", blockIP)
-        waveskip = features.getInt("waveskip", waveskip)
+        spawnLimit = features.getInt("spawnLimit", spawnLimit)
         unbreakableCore = features.getBoolean("unbreakableCore", unbreakableCore)
-        moveEffects = features.getBoolean("moveEffects", moveEffects)
+        vote = features.getBoolean("vote", vote)
+        waveskip = features.getInt("waveskip", waveskip)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)
