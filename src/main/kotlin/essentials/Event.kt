@@ -83,6 +83,7 @@ object Event {
     private var dosBlacklist = ObjectSet<String>()
     private var pvpCount = Config.pvpPeaceTime
     private var count = 60
+    var pvpSpectors = Seq<String>()
 
     fun register() {
         Events.on(PlayerChatEvent::class.java) {
@@ -643,12 +644,12 @@ object Event {
                 state.rules.blockDamageMultiplier = 0f
                 state.rules.unitDamageMultiplier = 0f
                 pvpCount = Config.pvpPeaceTime
+                pvpSpectors = Seq<String>()
             }
 
             for (a in database.players) {
                 if (state.rules.pvp && Permission.check(a.player, "pvp.spector")) {
                     a.player.team(Team.derelict)
-                    a.player.unit().health(0f)
                 }
             }
         }
@@ -818,6 +819,21 @@ object Event {
                     when (a.block) {
                         Blocks.coreAcropolis, Blocks.coreBastion, Blocks.coreCitadel, Blocks.coreFoundation, Blocks.coreNucleus, Blocks.coreShard -> {
                             a.health(1.0E8f)
+                        }
+                    }
+                }
+            }
+
+            if (state.rules.pvp) {
+                for (a in Groups.player) {
+                    if (a.core() == null && a.team() != Team.derelict) {
+                        if (!Permission.check(a, "pvp.spector")) {
+                            val data = findPlayerData(a.uuid())
+                            if (data != null) {
+                                data.pvplosecount++
+                            }
+                            a.team(Team.derelict)
+                            pvpSpectors.add(a.uuid())
                         }
                     }
                 }

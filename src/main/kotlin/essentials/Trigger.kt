@@ -69,9 +69,12 @@ object Trigger {
             }
         }
 
-        if (state.rules.pvp && Permission.check(player, "pvp.spector")) {
-            player.team(Team.derelict)
-            player.unit().health(0f)
+        if (state.rules.pvp) {
+            if (Permission.check(player, "pvp.spector")) {
+                player.team(Team.derelict)
+            } else if (Event.pvpSpectors.contains(player.uuid())) {
+                player.team(Team.derelict)
+            }
         }
     }
 

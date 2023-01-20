@@ -37,6 +37,7 @@ object Config {
     var moveEffects = true
     var pvpPeace = false
     var pvpPeaceTime = 300
+    var pvpSpector = true
     var rollbackTime = 10
     var spawnLimit = 3000
     var unbreakableCore = false
@@ -63,7 +64,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 11
+    private var configVersion = 12
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -153,6 +154,7 @@ object Config {
         features.add("moveEffects", moveEffects, bundle["config.moveeffects"])
         features.add("pvpPeace", pvpPeace, bundle["config.pvp"])
         features.add("pvpPeaceTime", pvpPeaceTime, bundle["config.pvp.time"])
+        features.add("pvpSpector", pvpSpector, bundle["config.pvp.spector"])
         features.add("rollbackTime", rollbackTime, bundle["config.rollback.time"])
         features.add("spawnLimit", spawnLimit, bundle["config.spawnlimit"])
         features.add("unbreakableCore", unbreakableCore, bundle["config.unbreakablecore"])
@@ -220,6 +222,7 @@ object Config {
         moveEffects = features.getBoolean("moveEffects", moveEffects)
         pvpPeace = features.getBoolean("pvpPeace", pvpPeace)
         pvpPeaceTime = features.getInt("pvpPeaceTime", pvpPeaceTime)
+        pvpSpector = features.getBoolean("pvpSpector", pvpSpector)
         rollbackTime = features.getInt("rollbackTime", rollbackTime)
         spawnLimit = features.getInt("spawnLimit", spawnLimit)
         unbreakableCore = features.getBoolean("unbreakableCore", unbreakableCore)
