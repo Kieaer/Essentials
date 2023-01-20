@@ -42,6 +42,7 @@ object Config {
     var blockfooclient = false
     var blockIP = false
     var waveskip = 1
+    var unbreakableCore = false
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -55,7 +56,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 8
+    private var configVersion = 9
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -148,6 +149,7 @@ object Config {
         features.add("expDisplay", expDisplay, bundle["config.expDisplay"])
         features.add("blockIP", blockIP, bundle["config.blockIP"])
         features.add("waveskip", waveskip, bundle["config.waveskip"])
+        features.add("unbreakableCore", unbreakableCore, bundle["config.unbreakableCore"])
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -212,6 +214,7 @@ object Config {
         expDisplay = features.getBoolean("expDisplay", expDisplay)
         blockIP = features.getBoolean("blockIP", blockIP)
         waveskip = features.getInt("waveskip", waveskip)
+        unbreakableCore = features.getBoolean("unbreakableCore", unbreakableCore)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)

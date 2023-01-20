@@ -809,6 +809,16 @@ object Event {
         var messageOrder = 0
 
         Events.run(EventType.Trigger.update) {
+            if (Config.unbreakableCore) {
+                for (a in Groups.build) {
+                    when (a.block) {
+                        Blocks.coreAcropolis, Blocks.coreBastion, Blocks.coreCitadel, Blocks.coreFoundation, Blocks.coreNucleus, Blocks.coreShard -> {
+                            a.health(1.0E8f)
+                        }
+                    }
+                }
+            }
+
             for (a in database.players) {
                 if (a.status.containsKey("freeze")) {
                     val d = findPlayerData(a.uuid)
