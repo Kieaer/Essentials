@@ -47,6 +47,7 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
+import kotlin.math.round
 
 
 class Commands(handler: CommandHandler, isClient: Boolean) {
@@ -97,7 +98,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
             handler.register("players", "[page]", "Show players list") { a, p: Playerc -> Client(a, p).players() }
             handler.register("pm", "<player> [message...]", "Send private messgae") { a, p: Playerc -> Client(a, p).pm() }
-            handler.register("ranking", "<time/place/break/attack/exp>", "Show players ranking") { a, p: Playerc -> Client(a, p).ranking() }
+            handler.register("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show players ranking") { a, p: Playerc -> Client(a, p).ranking() }
             handler.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p: Playerc -> Client(a, p).register() }
             handler.register("report", "<player> <reason...>", "Report player") { a, p: Playerc -> Client(a, p).report() }
             handler.register("rollback", "<player>", "Undo all actions taken by the player.") { a, p: Playerc -> Client(a, p).rollback() }
@@ -140,7 +141,6 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun send(msg: String, vararg parameters: Any) {
             player.sendMessage(MessageFormat.format(bundle.resource.getString(msg), *parameters))
         }
-
 
         fun changepw() {
             if (!Permission.check(player, "changepw")) return
@@ -1139,32 +1139,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun ranking() {
             if (!Permission.check(player, "ranking")) return
+            val firstMessage = when(arg[0].lowercase()) {
+                "time" -> "command.ranking.time"
+                "exp" -> "command.ranking.exp"
+                "attack" -> "command.ranking.attack"
+                "place" -> "command.ranking.place"
+                "break" -> "command.ranking.break"
+                "pvp" ->"command.ranking.pvp"
+                else -> null
+            }
 
-            when (arg[0].lowercase()) {
-                "time" -> {
-                    send("command.ranking.time")
-                }
-
-                "exp" -> {
-                    send("command.ranking.exp")
-                }
-
-                "attack" -> {
-                    send("command.ranking.attack")
-                }
-
-                "place" -> {
-                    send("command.ranking.place")
-                }
-
-                "break" -> {
-                    send("command.ranking.break")
-                }
-
-                else -> {
-                    send("command.ranking.wrong")
-                    return
-                }
+            if (firstMessage == null ) {
+                send("command.ranking.wrong")
+                return
             }
 
             val all = database.getAll()
@@ -1173,21 +1160,23 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             val attack = mutableMapOf<ArrayMap<String, String>, Int>()
             val placeBlock = mutableMapOf<ArrayMap<String, String>, Int>()
             val breakBlock = mutableMapOf<ArrayMap<String, String>, Int>()
+            val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
 
             for (a in all) {
                 if (!a.status.containsKey("hideRanking")) {
                     val info = ArrayMap<String, String>()
+                    val pvpcount = ArrayMap<Int, Int>()
                     info.put(a.name, a.uuid)
+                    pvpcount.put(a.pvpwincount, a.pvplosecount)
 
                     time[info] = a.playtime
                     exp[info] = a.exp
                     attack[info] = a.attackclear
                     placeBlock[info] = a.placecount
                     breakBlock[info] = a.breakcount
+                    pvp[info] = pvpcount
                 }
             }
-
-            val string = StringBuilder()
 
             val d = when (arg[0].lowercase()) {
                 "time" -> time.toList().sortedWith(compareBy { -it.second })
@@ -1195,16 +1184,48 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 "attack" -> attack.toList().sortedWith(compareBy { -it.second })
                 "place" -> placeBlock.toList().sortedWith(compareBy { -it.second })
                 "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
+                "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.firstKey() })
                 else -> return
             }
 
-            for (a in 0..4) {
-                string.append("${if (a == 0) "[sky]" else "[green]"}${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}\n")
+            val string = StringBuilder()
+            val per = 8
+            var page = if (arg.size == 2) abs(Strings.parseInt(arg[1])) else 1
+            val pages = Mathf.ceil(d.size.toFloat() / per)
+            page--
+
+            if (page >= pages || page < 0) {
+                send("command.page.range", pages)
+                return
             }
+
+            send(firstMessage, page + 1, pages)
+
+
+            for (a in per * page until (per * (page + 1)).coerceAtMost(d.size)) {
+                if (d[a].second is ArrayMap<*, *>) {
+                    val rank = d[a].second as ArrayMap<*, *>
+                    val rate = round((rank.firstKey().toString().toFloat()/(rank.firstKey().toString().toFloat()+rank.firstValue().toString().toFloat()))*100)
+                    string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
+                } else {
+                    val t = d[a].second.toString().toLong()
+                    val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
+                    string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}\n")
+                }
+            }
+            string.substring(0, string.length - 1)
             string.append("[purple]=======================================[]\n")
             for (a in d.indices) {
                 if (d[a].first.firstValue() == player.uuid()) {
-                    string.append("${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") bundle["command.info.time", (d[a].second.toLong() / 60 / 60 / 24) % 365, (d[a].second.toLong() / 60 / 24) % 24, (d[a].second.toLong() / 60) % 60, (d[a].second.toLong()) % 60] else d[a].second}")
+                    if (d[a].second is ArrayMap<*, *>) {
+                        val rank = d[a].second as ArrayMap<*, *>
+                        val rate = round((rank.firstKey().toString().toFloat()/(rank.firstKey().toString().toFloat()+rank.firstValue().toString().toFloat()))*100)
+                        string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
+                    } else {
+                        val t = d[a].second.toString().toLong()
+                        val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
+                        string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}")
+                    }
                 }
             }
 
