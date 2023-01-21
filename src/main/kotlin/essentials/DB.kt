@@ -79,13 +79,11 @@ class DB {
                 }
 
                 // Check duplicate names and random names
-                for (a in getAll()){
-                    if (a.status.containsKey("duplicateName")) {
-                        val b = getAll().find { c -> c.name == a.name }
-                        if (b != null) {
-                            a.status.put("duplicateName", a.name)
-                            update(a.uuid, a)
-                        }
+                for (a in getAll()) {
+                    val b = getAll().find { c -> c.name == a.name }
+                    if (b != null && !a.status.containsKey("duplicateName")) {
+                        a.status.put("duplicateName", a.name)
+                        update(a.uuid, a)
                     }
                 }
             } catch (e: Exception) {
