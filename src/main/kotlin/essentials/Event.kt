@@ -111,7 +111,11 @@ object Event {
                             if (isAdmin) {
                                 isAdminVote = true
                             } else {
-                                voted.add(it.player.uuid())
+                                if (state.rules.pvp && voteTeam == it.player.team()) {
+                                    voted.add(it.player.uuid())
+                                } else if (!state.rules.pvp) {
+                                    voted.add(it.player.uuid())
+                                }
                             }
                             it.player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
                         } else if (voting && it.message.equals("n", true) && isAdmin) {
