@@ -85,25 +85,28 @@ class DB {
                 SchemaUtils.create(Player)
                 SchemaUtils.create(Data)
 
-                val sql = """
+                if (!isRemote) {
+                    val sql = """
                     SELECT * FROM player cc INNER JOIN (SELECT
                     "NAME", COUNT(*) AS CountOf
                     FROM player
                     GROUP BY "NAME"
                     HAVING COUNT(*)>1
                     ) dt ON cc.name=dt.name
-                """.trimIndent()
+                    """.trimIndent()
 
-                exec(sql) { rs ->
-                    var duplicateCount = 0
-                    while (rs.next()) {
-                        print("Working on duplicate nicknames... (Duplicate account: $duplicateCount)\r")
-                        val data = get(rs.getString("uuid"))
-                        data?.status?.put("duplicateName", data.name)
-                        data?.let { update(it.uuid, data) }
-                        duplicateCount++
+                    exec(sql) { rs ->
+                        while (rs.next()) {
+                            val data = get(rs.getString("uuid"))
+                            if (data != null) {
+                                if (!data.status.containsKey("duplicateName")) {
+                                    data.status.put("duplicateName", data.name)
+                                    update(data.uuid, data)
+                                }
+                            }
+                        }
+                        print("\n")
                     }
-                    print("\n")
                 }
             }
         } catch (e: Exception) {
