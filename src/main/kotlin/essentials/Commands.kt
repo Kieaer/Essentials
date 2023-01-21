@@ -1667,6 +1667,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 player.sendMessage("command.vote.arg.empty")
                 return
             }
+            if (Event.voterCooltime.containsKey(player.plainName())) {
+                send("command.vote.cooltime")
+                return
+            }
             if (!Event.voting) {
                 if (database.players.size <= 2) {
                     send("command.vote.enough")

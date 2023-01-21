@@ -77,6 +77,7 @@ object Event {
 
     var worldHistory = Seq<TileLog>()
     var playerHistory = Seq<PlayerLog>()
+    var voterCooltime = ObjectMap<String, Int>()
 
     private var random = Random()
     private var dateformat = SimpleDateFormat("HH:mm:ss")
@@ -934,7 +935,12 @@ object Event {
             if (secondCount == 60) {
                 PluginData.uptime++
                 PluginData.playtime++
+
                 if (voteCooltime > 0) voteCooltime--
+                for (a in voterCooltime) {
+                    voterCooltime.put(a.key, a.value--)
+                    if (a.value == 0) voterCooltime.remove(a.key)
+                }
 
                 if (!PluginData.uploading) PluginData.save()
 
@@ -1025,6 +1031,7 @@ object Event {
                             }
 
                             "gg" -> {
+                                if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
                                 if (isPvP) {
                                     state.teams.cores(voteTeam).forEach {
                                         Call.deconstructFinish(it.tile, Blocks.air, player.unit())
@@ -1035,6 +1042,7 @@ object Event {
                             }
 
                             "skip" -> {
+                                if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 180)
                                 for (a in 0..voteWave!!) {
                                     spawner.spawnEnemies()
                                     state.wave++
@@ -1051,6 +1059,7 @@ object Event {
                                 if (lastVoted.plusMinutes(10).isBefore(LocalTime.now())) {
                                     send("command.vote.random.cool")
                                 } else {
+                                    if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 420)
                                     lastVoted = LocalTime.now()
                                     send("command.vote.random.done")
                                     Thread {
