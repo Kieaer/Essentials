@@ -642,12 +642,14 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
-            if (state.rules.pvp && Config.pvpPeace) {
-                orignalBlockMultiplier = state.rules.blockDamageMultiplier
-                orignalUnitMultiplier = state.rules.unitDamageMultiplier
-                state.rules.blockDamageMultiplier = 0f
-                state.rules.unitDamageMultiplier = 0f
-                pvpCount = Config.pvpPeaceTime
+            if (state.rules.pvp) {
+                if (Config.pvpPeace) {
+                    orignalBlockMultiplier = state.rules.blockDamageMultiplier
+                    orignalUnitMultiplier = state.rules.unitDamageMultiplier
+                    state.rules.blockDamageMultiplier = 0f
+                    state.rules.unitDamageMultiplier = 0f
+                    pvpCount = Config.pvpPeaceTime
+                }
                 pvpSpectors = Seq<String>()
             }
 
@@ -799,6 +801,21 @@ object Event {
             player.name(stringBuilder.toString())
         }
 
+        Events.on(BuildDamageEvent::class.java) {
+            if (state.rules.pvp) {
+                for (a in Groups.player) {
+                    if (a.core() == null && a.team() != Team.derelict && !Permission.check(a, "pvp.spector")) {
+                        val data = findPlayerData(a.uuid())
+                        if (data != null) {
+                            data.pvplosecount++
+                        }
+                        a.team(Team.derelict)
+                        pvpSpectors.add(a.uuid())
+                    }
+                }
+            }
+        }
+
         var milsCount = 0
         var secondCount = 0
         var minuteCount = 0
@@ -813,21 +830,6 @@ object Event {
                     when (a.block) {
                         Blocks.coreAcropolis, Blocks.coreBastion, Blocks.coreCitadel, Blocks.coreFoundation, Blocks.coreNucleus, Blocks.coreShard -> {
                             a.health(1.0E8f)
-                        }
-                    }
-                }
-            }
-
-            if (state.rules.pvp) {
-                for (a in Groups.player) {
-                    if (a.core() == null && a.team() != Team.derelict) {
-                        if (!Permission.check(a, "pvp.spector")) {
-                            val data = findPlayerData(a.uuid())
-                            if (data != null) {
-                                data.pvplosecount++
-                            }
-                            a.team(Team.derelict)
-                            pvpSpectors.add(a.uuid())
                         }
                     }
                 }
