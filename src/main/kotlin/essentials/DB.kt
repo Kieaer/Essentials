@@ -77,15 +77,6 @@ class DB {
                         db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
                     }
                 }
-
-                // Check duplicate names and random names
-                for (a in getAll()) {
-                    val b = getAll().find { c -> c.name == a.name }
-                    if (b != null && !a.status.containsKey("duplicateName")) {
-                        a.status.put("duplicateName", a.name)
-                        update(a.uuid, a)
-                    }
-                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -93,6 +84,27 @@ class DB {
             transaction {
                 SchemaUtils.create(Player)
                 SchemaUtils.create(Data)
+
+                val sql = """
+                    SELECT * FROM player cc INNER JOIN (SELECT
+                    "NAME", COUNT(*) AS CountOf
+                    FROM player
+                    GROUP BY "NAME"
+                    HAVING COUNT(*)>1
+                    ) dt ON cc.name=dt.name
+                """.trimIndent()
+
+                exec(sql) { rs ->
+                    var duplicateCount = 0
+                    while (rs.next()) {
+                        print("Working on duplicate nicknames... (Duplicate account: $duplicateCount)\r")
+                        val data = get(rs.getString("uuid"))
+                        data?.status?.put("duplicateName", data.name)
+                        data?.let { update(it.uuid, data) }
+                        duplicateCount++
+                    }
+                    print("\n")
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
