@@ -340,8 +340,6 @@ object Event {
                     for (a in database.players) {
                         if (a.player.team() == it.winner) {
                             a.pvpwincount++
-                        } else {
-                            a.pvplosecount++
                         }
                     }
                 } else if (state.rules.attackMode) {
