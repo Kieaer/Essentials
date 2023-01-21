@@ -20,7 +20,7 @@ class Main : Plugin() {
     companion object {
         val database = DB()
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-        val daemon = ThreadPoolExecutor(2,8,1L,TimeUnit.SECONDS,SynchronousQueue())
+        val daemon = ThreadPoolExecutor(2,Runtime.getRuntime().availableProcessors(),60L,TimeUnit.SECONDS,SynchronousQueue())
     }
 
     init {
