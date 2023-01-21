@@ -45,7 +45,7 @@ dependencies {
     testImplementation("com.github.anuken.mindustryjitpack:server:$mindustryVersion")
     testImplementation("com.github.anuken.arc:backend-headless:$arcVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
-    testImplementation("com.github.javafaker:javafaker:1.0.2")
+    testImplementation("net.datafaker:datafaker:1.7.0")
 }
 
 tasks.jar {
