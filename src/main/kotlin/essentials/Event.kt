@@ -69,6 +69,7 @@ object Event {
     var voteStarter: Playerc? = null
     var isPvP: Boolean = false
     var voteTeam: Team = state.rules.defaultTeam
+    var voteCooltime: Int = 0
     private var voted = Seq<String>()
     private var lastVoted = LocalTime.now()
     private var isAdminVote = false
@@ -651,11 +652,11 @@ object Event {
                     pvpCount = Config.pvpPeaceTime
                 }
                 pvpSpectors = Seq<String>()
-            }
 
-            for (a in database.players) {
-                if (state.rules.pvp && Permission.check(a.player, "pvp.spector")) {
-                    a.player.team(Team.derelict)
+                for (a in database.players) {
+                    if (Permission.check(a.player, "pvp.spector")) {
+                        a.player.team(Team.derelict)
+                    }
                 }
             }
         }
@@ -929,6 +930,7 @@ object Event {
             if (secondCount == 60) {
                 PluginData.uptime++
                 PluginData.playtime++
+                if (voteCooltime > 0) voteCooltime--
 
                 if (!PluginData.uploading) PluginData.save()
 
@@ -1029,7 +1031,11 @@ object Event {
                             }
 
                             "skip" -> {
-                                for (a in 0..voteWave!!) logic.runWave()
+                                for (a in 0..voteWave!!) {
+                                    spawner.spawnEnemies()
+                                    state.wave++
+                                    state.wavetime = state.rules.waveSpacing
+                                }
                                 send("command.vote.skip.done", voteWave!!.toString())
                             }
 

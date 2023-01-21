@@ -1728,15 +1728,20 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote gg
                     "gg" -> {
-                        Event.voteType = "gg"
-                        Event.voteStarter = player
-                        Event.voting = true
-                        if (state.rules.pvp) {
-                            Event.voteTeam = player.team()
-                            Event.isPvP = true
-                            sendStart("command.vote.gg.pvp.team")
+                        if (Event.voteCooltime == 0) {
+                            Event.voteType = "gg"
+                            Event.voteStarter = player
+                            Event.voting = true
+                            if (state.rules.pvp) {
+                                Event.voteTeam = player.team()
+                                Event.isPvP = true
+                                Event.voteCooltime = 120
+                                sendStart("command.vote.gg.pvp.team")
+                            } else {
+                                sendStart("command.vote.gg.start")
+                            }
                         } else {
-                            sendStart("command.vote.gg.start")
+                            send("command.vote.cooltime")
                         }
                     }
 
@@ -1745,14 +1750,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         if (arg.size == 1) {
                             send("command.vote.skip.wrong")
                         } else if (arg[1].toIntOrNull() != null) {
-                            if (arg[1].toInt() > 50) {
+                            if (arg[1].toInt() > 3) {
                                 send("command.vote.skip.toomany")
                             } else {
-                                Event.voteType = "skip"
-                                Event.voteWave = arg[1].toInt()
-                                Event.voteStarter = player
-                                Event.voting = true
-                                sendStart("command.vote.skip.start", arg[1])
+                                if (Event.voteCooltime == 0) {
+                                    Event.voteType = "skip"
+                                    Event.voteWave = arg[1].toInt()
+                                    Event.voteStarter = player
+                                    Event.voting = true
+                                    Event.voteCooltime = 120
+                                    sendStart("command.vote.skip.start", arg[1])
+                                } else {
+                                    send("command.vote.cooltime")
+                                }
                             }
                         }
                     }
@@ -1776,10 +1786,15 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote random
                     "random" -> {
-                        Event.voteType = "random"
-                        Event.voteStarter = player
-                        Event.voting = true
-                        sendStart("command.vote.random.start")
+                        if (Event.voteCooltime == 0) {
+                            Event.voteType = "random"
+                            Event.voteStarter = player
+                            Event.voting = true
+                            Event.voteCooltime = 360
+                            sendStart("command.vote.random.start")
+                        } else {
+                            send("command.vote.cooltime")
+                        }
                     }
 
                     else -> {
