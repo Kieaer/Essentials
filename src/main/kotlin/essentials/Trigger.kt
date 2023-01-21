@@ -35,53 +35,60 @@ object Trigger {
     var order = 0
 
     fun loadPlayer(player: Playerc, data: DB.PlayerData) {
-        if (Config.fixedName) player.name(data.name)
-        data.lastdate = System.currentTimeMillis()
-        data.joincount = data.joincount++
-        data.player = player
-
-        val perm = Permission[player]
-        if (perm.name.isNotEmpty()) player.name(Permission[player].name)
-        player.admin(Permission[player].admin)
-        player.sendMessage(Bundle(data.languageTag)["event.player.loaded"])
-
-        database.players.add(data)
-
-        data.entityid = order
-        order++
-
-        val motd = if (root.child("motd/${data.languageTag}.txt").exists()) {
-            root.child("motd/${data.languageTag}.txt").readString()
+        if (data.status.containsKey("duplicateName") && data.status.get("duplicateName") == player.name()) {
+            player.kick(Bundle(player.locale())["event.player.duplicate.name"])
         } else {
-            val file = root.child("motd/en.txt")
-            if (file.exists()) file.readString() else ""
-        }
-        val count = motd.split("\r\n|\r|\n").toTypedArray().size
-        if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
-
-        if (perm.isAlert) {
-            if (perm.alertMessage.isEmpty()) {
-                for (a in database.players) {
-                    a.player.sendMessage(Bundle(a.languageTag)["event.player.joined", player.plainName()])
-                }
-            } else {
-                Call.sendMessage(perm.alertMessage)
+            if (data.status.containsKey("duplicateName") && data.status.get("duplicateName") != player.name()) {
+                data.name = player.name()
+                data.status.remove("duplicateName")
             }
-        }
+            if (Config.fixedName) player.name(data.name)
+            data.lastdate = System.currentTimeMillis()
+            data.joincount = data.joincount++
+            data.player = player
 
-        if (state.rules.pvp) {
-            if (Permission.check(player, "pvp.spector")) {
-                player.team(Team.derelict)
-            } else if (Event.pvpSpectors.contains(player.uuid())) {
-                player.team(Team.derelict)
+            val perm = Permission[player]
+            if (perm.name.isNotEmpty()) player.name(Permission[player].name)
+            player.admin(Permission[player].admin)
+            player.sendMessage(Bundle(data.languageTag)["event.player.loaded"])
+
+            database.players.add(data)
+
+            data.entityid = order
+            order++
+
+            val motd = if (root.child("motd/${data.languageTag}.txt").exists()) {
+                root.child("motd/${data.languageTag}.txt").readString()
+            } else {
+                val file = root.child("motd/en.txt")
+                if (file.exists()) file.readString() else ""
+            }
+            val count = motd.split("\r\n|\r|\n").toTypedArray().size
+            if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
+
+            if (perm.isAlert) {
+                if (perm.alertMessage.isEmpty()) {
+                    for (a in database.players) {
+                        a.player.sendMessage(Bundle(a.languageTag)["event.player.joined", player.plainName()])
+                    }
+                } else {
+                    Call.sendMessage(perm.alertMessage)
+                }
+            }
+
+            if (state.rules.pvp) {
+                if (Permission.check(player, "pvp.spector")) {
+                    player.team(Team.derelict)
+                } else if (Event.pvpSpectors.contains(player.uuid())) {
+                    player.team(Team.derelict)
+                }
             }
         }
     }
 
     fun createPlayer(player: Playerc, id: String?, password: String?) {
         val data = DB.PlayerData()
-
-        data.name = player.plainName()
+        data.name = player.name()
         data.uuid = player.uuid()
         data.joinDate = System.currentTimeMillis()
         data.id = id ?: player.plainName()
@@ -94,8 +101,6 @@ object Trigger {
 
         player.sendMessage("Player data registered!")
         loadPlayer(player, data)
-
-        Call.menu(player.con(), 0, "Select your language", "Select plugin language\n플러그인 언어를 선택하세요.", arrayOf(arrayOf("한국어", "English")))
     }
 
     class Thread : Runnable {

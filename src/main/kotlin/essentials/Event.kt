@@ -532,7 +532,7 @@ object Event {
                     it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
                 } else if (Config.authType == Config.AuthType.None) {
                     Main.daemon.submit(Thread{
-                        if (database.getAll().contains { a -> a.name == it.player.plainName() }) {
+                        if (database.getAll().contains { a -> a.name == it.player.name() }) {
                             Core.app.post { it.player.kick(Bundle(it.player.locale)["event.player.name.duplicate"]) }
                         } else {
                             Core.app.post { Trigger.createPlayer(it.player, null, null) }

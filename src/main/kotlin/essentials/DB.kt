@@ -77,11 +77,20 @@ class DB {
                         db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
                     }
                 }
+
+                // Check duplicate names and random names
+                for (a in getAll()){
+                    if (a.status.containsKey("duplicateName")) {
+                        val b = getAll().find { c -> c.name == a.name }
+                        if (b != null) {
+                            a.status.put("duplicateName", a.name)
+                            update(a.uuid, a)
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
-
 
             transaction {
                 SchemaUtils.create(Player)
