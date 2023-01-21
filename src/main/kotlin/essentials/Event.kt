@@ -531,7 +531,13 @@ object Event {
                 } else if (Config.authType != Config.AuthType.None) {
                     it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
                 } else if (Config.authType == Config.AuthType.None) {
-                    Trigger.createPlayer(it.player, null, null)
+                    Main.daemon.submit(Thread{
+                        if (database.getAll().contains { a -> a.name == it.player.plainName() }) {
+                            Core.app.post { it.player.kick(Bundle(it.player.locale)["event.player.name.duplicate"]) }
+                        } else {
+                            Core.app.post { Trigger.createPlayer(it.player, null, null) }
+                        }
+                    })
                 }
             }
 
@@ -689,16 +695,6 @@ object Event {
             if (netServer.admins.isIDBanned(e.packet.uuid)) {
                 val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByIP(e.connection.address).lastName]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
-            }
-        }
-
-        Events.on(MenuOptionChooseEvent::class.java) {
-            if (it.menuId == 0 && it.option == 0) {
-                val d = findPlayerData(it.player.uuid())
-                if (d != null) {
-                    d.languageTag = "ko"
-                    it.player.sendMessage(Bundle(d.languageTag)["command.language.preview", Locale(d.languageTag).toLanguageTag()])
-                }
             }
         }
 
