@@ -858,7 +858,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             val result = database.search(arg[0], arg[1])
             if (result != null) {
-                Trigger.loadPlayer(player, result)
+                if (result.id == result.pw) {
+                    Bundle(player.locale())["command.login.default.password"]
+                } else {
+                    Trigger.loadPlayer(player, result)
+                }
             } else {
                 send("command.login.not.found")
             }
