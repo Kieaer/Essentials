@@ -14,18 +14,19 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 ## Client commands
 | Command   | Parameter                                                                | Description                                                    |
 |:----------|:-------------------------------------------------------------------------|:---------------------------------------------------------------|
+| vote      | &lt;kick/map/gg/skip/back/random&gt; [player/amount/world_name] [reason] | Start voting                                                   |
 | changepw  | &lt;new_password&gt; &lt;password_repeat&gt;                             | Change account password.                                       |
 | chars     | &lt;text...&gt;                                                          | Make pixel texts                                               |
 | color     |                                                                          | Enable color nickname                                          |
 | discord   |                                                                          | Authenticate your Discord account to the server.               |
-| effect    | [effect] [x] [y] [rotate] [color]                                        | effects                                                        |
-| exp       | &lt;set/hide/add/remove&gt; &lt;values&gt; [player]                      | Edit account EXP values                                        |
+| effect    | &lt;level&gt; [color]                                                    | Set the effect and color for each level.                       |
+| exp       | &lt;set/hide/add/remove&gt; [values/player] [player]                     | Edit account EXP values                                        |
 | fillitems | &lt;team&gt;                                                             | Fill the core with items.                                      |
 | freeze    | &lt;player&gt;                                                           | Stop player unit movement                                      |
 | gg        | [team]                                                                   | Force gameover                                                 |
 | god       | [name]                                                                   | Set max player health                                          |
 | help      | [page]                                                                   | Show command lists                                             |
-| hub       | &lt;set/zone/block/count/total/remove&gt; [ip] [parameters...]           | Create a server to server point.                               |
+| hub       | &lt;set/zone/block/count/total/remove/reset&gt; [ip] [parameters...]     | Create a server to server point.                               |
 | info      | [player]                                                                 | Show your information                                          |
 | js        | [code...]                                                                | Execute JavaScript codes                                       |
 | kickall   |                                                                          | All users except yourself and the administrator will be kicked |
@@ -43,7 +44,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | pause     |                                                                          | Pause server                                                   |
 | players   | [page]                                                                   | Show players list                                              |
 | pm        | &lt;player&gt; [message...]                                              | Send private messgae                                           |
-| ranking   | &lt;time/place/break/attack/exp&gt;                                      | Show players ranking                                           |
+| ranking   | &lt;time/exp/attack/place/break/pvp&gt; [page]                           | Show players ranking                                           |
 | reg       | &lt;id&gt; &lt;password&gt; &lt;password_repeat&gt;                      | Register account                                               |
 | report    | &lt;player&gt; &lt;reason...&gt;                                         | Report player                                                  |
 | rollback  | &lt;player&gt;                                                           | Undo all actions taken by the player.                          |
@@ -60,9 +61,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | track     |                                                                          | Displays the mouse positions of players.                       |
 | unmute    | &lt;player&gt;                                                           | Unmute player                                                  |
 | url       | &lt;command&gt;                                                          | Opens a URL contained in a specific command.                   |
-| vote      | &lt;kick/map/gg/skip/back/random&gt; [player/amount/world_name] [reason] | Start voting                                                   |
 | weather   | &lt;rain/snow/sandstorm/sporestorm&gt; &lt;seconds&gt;                   | Adds a weather effect to the map.                              |
-
 
 ## Server commands
 | Command | Parameter                            | Description                                  |
@@ -73,8 +72,7 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | setperm | &lt;player&gt; &lt;group&gt;         | Set the player's permission group.           |
 | tempban | &lt;player&gt; &lt;time&gt; [reason] | Ban the player for a certain period of time. |
 
-
-README.md Generated time: 2023-01-10 11:21:42
+README.md Generated time: 2023-01-22 22:51:37
 
 ## Contribute guide
 ### File description

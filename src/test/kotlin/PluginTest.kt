@@ -8,7 +8,6 @@ import arc.files.Fi
 import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Log
-import com.github.javafaker.Faker
 import essentials.Config
 import essentials.Main
 import essentials.Main.Companion.root
@@ -30,6 +29,7 @@ import mindustry.maps.Map
 import mindustry.net.Net
 import mindustry.net.NetConnection
 import mindustry.world.Tile
+import net.datafaker.Faker
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.BeforeClass
