@@ -1033,8 +1033,10 @@ object Event {
                             "gg" -> {
                                 if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
                                 if (isPvP) {
-                                    state.teams.cores(voteTeam).forEach {
-                                        Call.deconstructFinish(it.tile, Blocks.air, player.unit())
+                                    if (voteStarter != null) {
+                                        state.teams.cores(voteTeam).forEach {
+                                            Call.deconstructFinish(it.tile, Blocks.air, voteStarter!!.unit())
+                                        }
                                     }
                                 } else {
                                     Events.fire(GameOverEvent(state.rules.waveTeam))
