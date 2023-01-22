@@ -5,7 +5,6 @@ import mindustry.Vars
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -253,9 +252,6 @@ object PluginData {
             println(e)
         } catch (e: Exception) {
             e.printStackTrace()
-            transaction {
-                DB.Data.deleteAll()
-            }
         }
     }
 }
