@@ -83,7 +83,7 @@ class Main : Plugin() {
     }
 
     override fun init() {
-        Log.info("[Essentials] Starting")
+        Log.info(Bundle()["event.plugin.starting"])
         daemon.submit(FileWatchService)
         daemon.submit(Trigger.Thread())
         if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
@@ -142,7 +142,7 @@ class Main : Plugin() {
             }
             return@addActionFilter false
         }
-        Log.info("[Essentials] Loaded.")
+        Log.info(Bundle()["event.plugin.loaded"])
     }
 
     override fun registerClientCommands(handler: CommandHandler) {

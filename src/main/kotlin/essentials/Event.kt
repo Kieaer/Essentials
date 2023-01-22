@@ -11,6 +11,7 @@ import arc.struct.ObjectSet
 import arc.struct.Seq
 import arc.util.Align
 import arc.util.Log
+import arc.util.Strings
 import arc.util.Time
 import com.github.pemistahl.lingua.api.IsoCode639_1
 import com.github.pemistahl.lingua.api.Language
@@ -91,8 +92,8 @@ object Event {
         Events.on(PlayerChatEvent::class.java) {
             if (Config.blockfooclient) {
                 if (it.message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
-                    Call.kick(it.player.con(), "Custom client detected.")
-                    Log.info("${it.player.name} kicked by using foo's client")
+                    Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
+                    Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName()])
                     for (a in database.players) {
                         a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
                     }
@@ -165,13 +166,13 @@ object Event {
 
         Events.on(WithdrawEvent::class.java) {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
-                log(LogType.WithDraw, "${it.player.name} puts ${it.player.unit().item().name} ${it.amount} amount into ${it.tile.block().name} [${it.tile.tileX()}, ${it.tile.tileY()}].")
+                log(LogType.WithDraw, Bundle()["log.withdraw", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
             }
         }
 
         Events.on(DepositEvent::class.java) {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
-                log(LogType.Deposit, "${it.player.name} puts ${it.player.unit().item().name} ${it.amount} amount into ${it.tile.block().name} [${it.tile.tileX()}, ${it.tile.tileY()}].")
+                log(LogType.Deposit, Bundle()["log.deposit", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
             }
         }
 
@@ -204,7 +205,7 @@ object Event {
         }
 
         Events.on(TapEvent::class.java) {
-            log(LogType.Tap, "${it.player.name} clicks on ${it.tile.block().name}")
+            log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), it.tile.block().name])
             addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
@@ -212,7 +213,7 @@ object Event {
                     if (it.tile.block().name == a.tileName) {
                         if (a.online) {
                             for (b in database.players) b.player.sendMessage(Bundle(b.languageTag)["event.tap.server", it.player.plainName(), a.description])
-                            Log.info("${it.player.name} moves to server ${a.ip}:${a.port}")
+                            Log.info(Bundle()["log.warp.move.block", it.player.plainName(), Strings.stripColors(a.description), a.ip, a.port])
                             Call.connect(it.player.con(), a.ip, a.port)
                         }
                         break
@@ -221,7 +222,7 @@ object Event {
 
                 for (a in PluginData.warpZones) {
                     if (it.tile.x > a.startTile.x && it.tile.x < a.finishTile.x && it.tile.y > a.startTile.y && it.tile.y < a.finishTile.y) {
-                        Log.info("${it.player.name} moves to server ${a.ip}:${a.port}")
+                        Log.info(Bundle()["log.warp.move", it.player.plainName(), a.ip, a.port])
                         Call.connect(it.player.con(), a.ip, a.port)
                         break
                     }
@@ -451,7 +452,7 @@ object Event {
                     val block = it.tile.block()
                     if (!it.breaking) {
                         if (!state.rules.infiniteResources) {
-                            log(LogType.Block, "${target.name} placed ${block.name}")
+                            log(LogType.Block, Bundle()["log.block.place", target.name, block.name, it.tile.x, it.tile.y])
                             addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
                             addLog(PlayerLog(target.name, it.tile.block(), it.tile.x, it.tile.y, null))
                             target.placecount + 1
@@ -463,15 +464,11 @@ object Event {
                         }
                     } else if (it.breaking) {
                         if (!state.rules.infiniteResources) {
-                            log(LogType.Block, "${target.name} break ${player.unit().buildPlan().block.name}")
+                            log(LogType.Block, Bundle()["log.block.break", target.name, block.name, it.tile.x, it.tile.y])
                             addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
                             addLog(PlayerLog(target.name, player.unit().buildPlan().block, it.tile.x, it.tile.y, null))
                             target.breakcount + 1
                             target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
-                        }
-
-                        if (isDebug) {
-                            Log.info("${target.name} break ${player.unit().buildPlan().block.name} to ${it.tile.x},${it.tile.y}")
                         }
                     }
                 }
@@ -480,7 +477,7 @@ object Event {
 
         Events.on(BuildSelectEvent::class.java) {
             if (it.builder is Playerc && it.builder.buildPlan() != null && !Pattern.matches(".*build.*", it.builder.buildPlan().block.name) && it.tile.block() !== Blocks.air && it.breaking) {
-                log(LogType.Block, "${(it.builder as Playerc).plainName()} remove ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
+                log(LogType.Block, Bundle()["log.block.remove", (it.builder as Playerc).plainName(), it.tile.block().name, it.tile.x, it.tile.y])
             }
         }
 
@@ -527,7 +524,7 @@ object Event {
         }
 
         Events.on(PlayerJoin::class.java) {
-            log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) joined.")
+            log(LogType.Player, Bundle()["log.joined", it.player.plainName(), it.player.uuid(), it.player.con.address])
             it.player.admin(false)
 
             if (Config.authType == Config.AuthType.None) {
@@ -535,7 +532,7 @@ object Event {
                 if (data != null) {
                     Trigger.loadPlayer(it.player, data)
                 } else if (Config.authType != Config.AuthType.None) {
-                    it.player.sendMessage("[green]To play the server, use the [scarlet]/reg[] command to register account.")
+                    it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
                 } else if (Config.authType == Config.AuthType.None) {
                     Main.daemon.submit(Thread{
                         if (database.getAll().contains { a -> a.name == it.player.name() }) {
@@ -564,8 +561,8 @@ object Event {
                                 if (fooUser || assistUser) {
                                     hackCount++
                                     if (hackCount > 150) {
-                                        Call.kick(it.player.con(), "Custom client detected.")
-                                        Log.info("${it.player.plainName()} kicked by using foo's client")
+                                        Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
+                                        Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName()])
                                         for (a in database.players) {
                                             a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
                                         }
@@ -588,7 +585,7 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
-            log(LogType.Player, "${it.player.plainName()} (${it.player.uuid()}, ${it.player.con.address}) disconnected.")
+            log(LogType.Player, Bundle()["log.player.disconnected", it.player.plainName(), it.player.uuid(), it.player.con.address])
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
                 database.update(it.player.uuid(), data)
@@ -670,22 +667,22 @@ object Event {
             log(LogType.Player, "${e.packet.name} (${e.packet.uuid}, ${e.connection.address}) connected.")
 
             if (!Config.allowMobile && e.connection.mobile) {
-                e.connection.kick("This server doesn't accept mobile devices!")
+                e.connection.kick(Bundle(e.packet.locale)["event.player.not.allow.mobile"])
             }
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (s in PluginData.blacklist) {
-                if (e.packet.name.matches(Regex(s))) e.connection.kick("This name is blacklisted.")
+                if (e.packet.name.matches(Regex(s))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.blacklisted"])
             }
 
             if (Config.fixedName) {
-                if (e.packet.name.length > 32) e.connection.kick("Nickname too long!")
-                if (e.packet.name.matches(Regex(".*\\[.*].*"))) e.connection.kick("Parentheses aren't allowed in nickname.")
-                if (e.packet.name.contains("　")) e.connection.kick("Don't use blank speical charactor nickname!")
-                if (e.packet.name.contains(" ")) e.connection.kick("Nicknames can't be used on this server!")
+                if (e.packet.name.length > 32) e.connection.kick(Bundle(e.packet.locale)["event.player.name.long"])
+                if (e.packet.name.matches(Regex(".*\\[.*].*"))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.parenthese"])
+                if (e.packet.name.contains("　")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.special"])
+                if (e.packet.name.contains(" ")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.not.allow"])
             }
 
-            if (Config.minimalName && e.packet.name.length < 4) e.connection.kick("Nickname too short!")
+            if (Config.minimalName && e.packet.name.length < 4) e.connection.kick(Bundle(e.packet.locale)["event.player.name.short"])
 
             if (Config.antiVPN) {
                 val br = BufferedReader(InputStreamReader(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")!!))

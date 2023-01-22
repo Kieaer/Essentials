@@ -42,11 +42,11 @@ class DB {
 
                     var count = 0
                     try {
-
+                        val upgradeMessage = Bundle()["event.plugin.db.upgrade.being"]
                         for (a in playerData) {
                             createData(a)
                             count++
-                            print("DB is being upgraded! please wait for a moment... $count/$oldcount\r")
+                            print("$upgradeMessage $count/$oldcount\r")
                         }
                         print("\n")
                         PluginData.save()
@@ -56,10 +56,11 @@ class DB {
 
                         // H2 DB 검사
                         db = Database.connect("jdbc:h2:file:${Config.database}", "org.h2.Driver", "sa", "")
+                        val validateMessage = Bundle()["event.plugin.db.upgrade.validate"]
                         for (a in playerData) {
                             get(a.uuid)
                             count++
-                            print("Validating... $count/$oldcount\r")
+                            print("$validateMessage $count/$oldcount\r")
                         }
                         print("\n")
                     } catch (e: Exception) {

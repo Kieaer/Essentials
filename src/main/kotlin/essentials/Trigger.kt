@@ -3,7 +3,7 @@ package essentials
 import arc.Core
 import arc.func.Prov
 import arc.struct.ArrayMap
-import arc.struct.Seq
+import arc.struct.ObjectMap
 import arc.util.Log
 import arc.util.Time
 import essentials.Main.Companion.database
@@ -99,7 +99,7 @@ object Trigger {
         database.createData(data)
         Permission.apply()
 
-        player.sendMessage("Player data registered!")
+        player.sendMessage(Bundle(player.locale())["event.player.data.registered"])
         loadPlayer(player, data)
     }
 
@@ -133,7 +133,7 @@ object Trigger {
                                         dummy.x = tile.getX()
                                         dummy.y = tile.getY()
 
-                                        Commands.Client(arrayOf(str), dummy).chars(tile) // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
+                                        Commands.Client(arrayOf(str), dummy).chars(tile)
                                         PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, r.players, digits.size)
                                         addPlayers(value.ip, value.port, r.players)
                                     } else {
@@ -147,7 +147,7 @@ object Trigger {
                             }
                         }
 
-                        val memory = Seq<String>()
+                        val memory = ObjectMap<DB.PlayerData, String>()
                         for (value in PluginData.warpBlocks) {
                             if (state.map.name() == value.mapName) {
                                 val tile = world.tile(value.x, value.y)
@@ -183,36 +183,37 @@ object Trigger {
                                     var y = tile.build.getY() + if (isDup) margin - 8 else margin
                                     var players = 0
 
-                                    try {
-                                        pingHostImpl(value.ip, value.port) { r: Host ->
-                                            ping += ("0." + r.ping).toDouble()
-                                            if (isDup) y += 4
-                                            memory.add("[yellow]" + r.players + "[] Players///" + x + "///" + y)
-                                            value.online = true
-                                            players = r.players
+                                    for (a in database.players) {
+                                        try {
+                                            pingHostImpl(value.ip, value.port) { r: Host ->
+                                                ping += ("0." + r.ping).toDouble()
+                                                if (isDup) y += 4
+                                                memory.put(a, "[yellow]${r.players}[] ${Bundle(a.languageTag)["event.server.warp.players"]}///$x///$y")
+                                                value.online = true
+                                                players = r.players
+                                            }
+                                        } catch (e: IOException) {
+                                            ping += 1.000
+                                            memory.put(a, "${Bundle(a.languageTag)["event.server.warp.offline"]}///$x///$y")
+                                            value.online = false
                                         }
-                                    } catch (e: IOException) {
-                                        ping += 1.000
-                                        memory.add("[scarlet]Offline///$x///$y")
-                                        value.online = false
-                                    }
 
-                                    if (isDup) margin -= 4
-                                    memory.add(value.description + "///" + x + "///" + (tile.build.getY() - margin))
+                                        if (isDup) margin -= 4
+                                        memory.put(a, "${value.description}///$x///${tile.build.getY() - margin}")
+                                    }
                                     addPlayers(value.ip, value.port, players)
                                 }
                             }
                         }
                         for (m in memory) {
-                            val a = m.split("///").toTypedArray()
-                            Call.label(a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
+                            val a = m.value.split("///").toTypedArray()
+                            Call.label(m.key.player.con(), a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
                         }
 
                         for (i in 0 until PluginData.warpTotals.size) {
                             val value = PluginData.warpTotals[i]
                             if (state.map.name() == value.mapName) {
                                 if (value.totalplayers != totalPlayers()) {
-                                    // todo 버그 수정
                                     when (totalPlayers()) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9 -> {
                                             for (px in 0..2) {
