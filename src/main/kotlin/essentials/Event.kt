@@ -342,6 +342,20 @@ object Event {
         }
 
         Events.on(GameOverEvent::class.java) {
+            if (voting) {
+                Groups.player.forEach { a ->
+                    val data = findPlayerData(a.uuid())
+                    if (data != null) {
+                        if (voteTargetUUID != data.uuid) {
+                            val bundle = Bundle(data.languageTag)
+                            a.sendMessage(bundle["command.vote.canceled"])
+                        }
+                    }
+                }
+
+                resetVote()
+            }
+
             if (!state.rules.infiniteResources) {
                 if (state.rules.pvp) {
                     for (a in database.players) {
@@ -411,22 +425,7 @@ object Event {
                     }
                 }
             }
-            if (voting && voteType == "gg") {
-                voting = false
-                voteType = null
-                voteTarget = null
-                voteTargetUUID = null
-                voteReason = null
-                voteMap = null
-                voteWave = null
-                voteStarter = null
-                isCanceled = false
-                isAdminVote = false
-                isPvP = false
-                voteTeam = state.rules.defaultTeam
-                voted = Seq<String>()
-                count = 60
-            }
+            if (voting && voteType == "gg") resetVote()
             worldHistory = Seq<TileLog>()
         }
 
@@ -1011,6 +1010,8 @@ object Event {
                     if ((count == 0 && check() <= voted.size) || check() <= voted.size || isAdminVote) {
                         send("command.vote.success")
 
+                        voting = false
+
                         when (voteType) {
                             "kick" -> {
                                 val name = netServer.admins.getInfo(voteTargetUUID).lastName
@@ -1164,37 +1165,11 @@ object Event {
                             }
                         }
 
-                        voting = false
-                        voteType = null
-                        voteTarget = null
-                        voteTargetUUID = null
-                        voteReason = null
-                        voteMap = null
-                        voteWave = null
-                        voteStarter = null
-                        isCanceled = false
-                        isAdminVote = false
-                        isPvP = false
-                        voteTeam = state.rules.defaultTeam
-                        voted = Seq<String>()
-                        count = 60
+                        resetVote()
                     } else if ((count == 0 && check() > voted.size) || isCanceled) {
                         send("command.vote.failed")
 
-                        voting = false
-                        voteType = null
-                        voteTarget = null
-                        voteTargetUUID = null
-                        voteReason = null
-                        voteMap = null
-                        voteWave = null
-                        voteStarter = null
-                        isCanceled = false
-                        isAdminVote = false
-                        isPvP = false
-                        voteTeam = state.rules.defaultTeam
-                        voted = Seq<String>()
-                        count = 60
+                        resetVote()
                     }
                 }
 
@@ -1376,6 +1351,23 @@ object Event {
         } else {
             Groups.player.find { p -> p.plainName().contains(name, true) }
         }
+    }
+
+    private fun resetVote() {
+        voting = false
+        voteType = null
+        voteTarget = null
+        voteTargetUUID = null
+        voteReason = null
+        voteMap = null
+        voteWave = null
+        voteStarter = null
+        isCanceled = false
+        isAdminVote = false
+        isPvP = false
+        voteTeam = state.rules.defaultTeam
+        voted = Seq<String>()
+        count = 60
     }
 
     private fun addLog(log: TileLog) {
