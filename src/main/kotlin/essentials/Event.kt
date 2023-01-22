@@ -210,7 +210,7 @@ object Event {
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
                 for (a in PluginData.warpBlocks) {
-                    if (it.tile.block().name == a.tileName) {
+                    if (it.tile.block().name == a.tileName && it.tile.build.tileX() == a.x && it.tile.build.tileY() == a.y) {
                         if (a.online) {
                             for (b in database.players) b.player.sendMessage(Bundle(b.languageTag)["event.tap.server", it.player.plainName(), a.description])
                             Log.info(Bundle()["log.warp.move.block", it.player.plainName(), Strings.stripColors(a.description), a.ip, a.port])

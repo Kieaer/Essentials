@@ -3,7 +3,6 @@ package essentials
 import arc.Core
 import arc.func.Prov
 import arc.struct.ArrayMap
-import arc.struct.ObjectMap
 import arc.util.Log
 import arc.util.Time
 import essentials.Main.Companion.database
@@ -147,7 +146,7 @@ object Trigger {
                             }
                         }
 
-                        val memory = ObjectMap<DB.PlayerData, String>()
+                        val memory = mutableListOf<Pair<Playerc, String>>()
                         for (value in PluginData.warpBlocks) {
                             if (state.map.name() == value.mapName) {
                                 val tile = world.tile(value.x, value.y)
@@ -183,31 +182,35 @@ object Trigger {
                                     var y = tile.build.getY() + if (isDup) margin - 8 else margin
                                     var players = 0
 
-                                    for (a in database.players) {
-                                        try {
-                                            pingHostImpl(value.ip, value.port) { r: Host ->
-                                                ping += ("0." + r.ping).toDouble()
-                                                if (isDup) y += 4
-                                                memory.put(a, "[yellow]${r.players}[] ${Bundle(a.languageTag)["event.server.warp.players"]}///$x///$y")
-                                                value.online = true
-                                                players = r.players
+                                    try {
+                                        pingHostImpl(value.ip, value.port) { r: Host ->
+                                            ping += ("0." + r.ping).toDouble()
+                                            if (isDup) y += 4
+                                            for (a in Groups.player) {
+                                                memory.add(a to "[yellow]${r.players}[] ${Bundle(a.locale)["event.server.warp.players"]}///$x///$y")
                                             }
-                                        } catch (e: IOException) {
-                                            ping += 1.000
-                                            memory.put(a, "${Bundle(a.languageTag)["event.server.warp.offline"]}///$x///$y")
-                                            value.online = false
+                                            value.online = true
+                                            players = r.players
                                         }
+                                    } catch (e: IOException) {
+                                        ping += 1.000
+                                        for (a in Groups.player) {
+                                            memory.add(a to "${Bundle(a.locale)["event.server.warp.offline"]}///$x///$y")
+                                        }
+                                        value.online = false
+                                    }
 
-                                        if (isDup) margin -= 4
-                                        memory.put(a, "${value.description}///$x///${tile.build.getY() - margin}")
+                                    if (isDup) margin -= 4
+                                    for (a in Groups.player) {
+                                        memory.add(a to "${value.description}///$x///${tile.build.getY() - margin}")
                                     }
                                     addPlayers(value.ip, value.port, players)
                                 }
                             }
                         }
                         for (m in memory) {
-                            val a = m.value.split("///").toTypedArray()
-                            Call.label(m.key.player.con(), a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
+                            val a = m.second.split("///").toTypedArray()
+                            Call.label(m.first.con(), a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
                         }
 
                         for (i in 0 until PluginData.warpTotals.size) {
