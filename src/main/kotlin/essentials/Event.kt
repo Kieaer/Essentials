@@ -584,7 +584,7 @@ object Event {
         }
 
         Events.on(PlayerLeave::class.java) {
-            log(LogType.Player, Bundle()["log.player.disconnected", it.player.plainName(), it.player.uuid(), it.player.con.address])
+            log(LogType.Player, Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address])
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
                 database.update(it.player.uuid(), data)
