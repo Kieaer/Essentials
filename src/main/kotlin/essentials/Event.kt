@@ -12,6 +12,7 @@ import arc.struct.Seq
 import arc.util.Align
 import arc.util.Log
 import arc.util.Strings
+import arc.util.Threads.sleep
 import arc.util.Time
 import com.github.pemistahl.lingua.api.IsoCode639_1
 import com.github.pemistahl.lingua.api.Language
@@ -807,12 +808,19 @@ object Event {
             if (state.rules.pvp) {
                 for (a in Groups.player) {
                     if (a.core() == null && a.team() != Team.derelict && !Permission.check(a, "pvp.spector")) {
-                        val data = findPlayerData(a.uuid())
-                        if (data != null) {
-                            data.pvplosecount++
-                        }
-                        a.team(Team.derelict)
-                        pvpSpectors.add(a.uuid())
+                        Main.daemon.submit{Thread {
+                            sleep(3000)
+                            if (a != null && a.core() == null && a.team() != Team.derelict && !Permission.check(a, "pvp.spector")) {
+                                Core.app.post {
+                                    val data = findPlayerData(a.uuid())
+                                    if (data != null) {
+                                        data.pvplosecount++
+                                    }
+                                    a.team(Team.derelict)
+                                    pvpSpectors.add(a.uuid())
+                                }
+                            }
+                        }}
                     }
                 }
             }
@@ -1032,8 +1040,12 @@ object Event {
                                 if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
                                 if (isPvP) {
                                     if (voteStarter != null) {
-                                        state.teams.cores(voteTeam).forEach {
-                                            Call.deconstructFinish(it.tile, Blocks.air, voteStarter!!.unit())
+                                        for (x in 0..world.width()) {
+                                            for (y in 0..world.height()) {
+                                                if (world.tile(x, y).build != null && world.tile(x, y).build.team == voteTeam) {
+                                                    Call.setTile(world.tile(x, y), Blocks.air, voteTeam, 0)
+                                                }
+                                            }
                                         }
                                     }
                                 } else {
