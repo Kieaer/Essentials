@@ -517,10 +517,12 @@ object Event {
 
         fun checkHack(inp: Float, item: Byte): Boolean {
             var bits = java.lang.Float.floatToIntBits(inp)
+            val itembits = java.lang.Byte.toUnsignedInt(item)
             bits = bits shl 32 - 8
             var addend: Int = item.toInt()
             addend = addend shl 32 - 8
-            return bits == addend
+
+            return bits == addend || bits and itembits == itembits
         }
 
         Events.on(PlayerJoin::class.java) {
@@ -568,6 +570,24 @@ object Event {
                                         }
                                         Core.app.removeListener(this)
                                     }
+                                }
+                            }
+
+                            val x = it.player.unit().aimX
+                            val y = it.player.unit().aimY
+
+                            val fooUser = checkHack(x, 170.toByte()) && checkHack(y, 85.toByte()) || checkHack(y, 170.toByte())
+                            val assistUser = (checkHack(x, 170.toByte())) || checkHack(x, 85.toByte()) && checkHack(y, 170.toByte())
+
+                            if (fooUser || assistUser) {
+                                hackCount++
+                                if (hackCount > 150) {
+                                    Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
+                                    Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName()])
+                                    for (a in database.players) {
+                                        a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
+                                    }
+                                    Core.app.removeListener(this)
                                 }
                             }
                         } else {
