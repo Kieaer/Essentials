@@ -82,6 +82,21 @@ object Trigger {
                     player.team(Team.derelict)
                 }
             }
+
+            if (Event.voting) {
+                val bundle = Bundle(data.languageTag)
+                player.sendMessage(bundle["command.vote.starter", player.plainName()])
+                player.sendMessage(when (Event.voteType) {
+                    "kick" -> bundle["command.vote.kick.start", Event.voteTarget!!.plainName(), Event.voteReason!!]
+                    "map" -> bundle["command.vote.map.start", Event.voteMap!!.name(), Event.voteReason!!]
+                    "gg" -> bundle["command.vote.gg.start"]
+                    "skip" -> bundle["command.vote.skip.start", Event.voteWave!!]
+                    "back" -> bundle["command.vote.back.start", Event.voteReason!!]
+                    "random" -> bundle["command.vote.random.start"]
+                    else -> ""
+                })
+                player.sendMessage(bundle["command.vote.how"])
+            }
         }
     }
 
