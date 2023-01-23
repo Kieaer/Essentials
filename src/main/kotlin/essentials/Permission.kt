@@ -117,6 +117,12 @@ object Permission {
             userPerm.add("track")
             userPerm.add("url")
             userPerm.add("vote")
+            userPerm.add("vote.back")
+            userPerm.add("vote.gg")
+            userPerm.add("vote.kick")
+            userPerm.add("vote.map")
+            userPerm.add("vote.random")
+            userPerm.add("vote.skip")
 
             user.add("inheritance", "visitor")
             user.add("chatFormat", "%1[orange] > [white]%2")

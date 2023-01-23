@@ -1678,6 +1678,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
                 when (arg[0]) {
                     "kick" -> {
+                        if (!Permission.check(player, "vote.kick")) return
                         if (arg.size != 3) {
                             send("command.vote.no.reason")
                             return
@@ -1702,6 +1703,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote map <map name> <reason>
                     "map" -> {
+                        if (!Permission.check(player, "vote.map")) return
                         if (arg.size == 1) {
                             send("command.vote.no.map")
                             return
@@ -1732,6 +1734,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote gg
                     "gg" -> {
+                        if (!Permission.check(player, "vote.gg")) return
                         if (Event.voteCooltime == 0) {
                             Event.voteType = "gg"
                             Event.voteStarter = player
@@ -1751,6 +1754,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote skip <count>
                     "skip" -> {
+                        if (!Permission.check(player, "vote.skip")) return
                         if (arg.size == 1) {
                             send("command.vote.skip.wrong")
                         } else if (arg[1].toIntOrNull() != null) {
@@ -1773,6 +1777,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote back <reason>
                     "back" -> {
+                        if (!Permission.check(player, "vote.back")) return
                         if (!saveDirectory.child("rollback.msav").exists()) {
                             player.sendMessage("command.vote.back.no.file")
                             return
@@ -1790,6 +1795,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                     // vote random
                     "random" -> {
+                        if (!Permission.check(player, "vote.random")) return
                         if (Event.voteCooltime == 0) {
                             Event.voteType = "random"
                             Event.voteStarter = player
