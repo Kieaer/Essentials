@@ -1059,13 +1059,9 @@ object Event {
                             "gg" -> {
                                 if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
                                 if (isPvP) {
-                                    if (voteStarter != null) {
-                                        for (x in 0..world.width()) {
-                                            for (y in 0..world.height()) {
-                                                if (world.tile(x, y).build != null && world.tile(x, y).build.team == voteTeam) {
-                                                    Call.setTile(world.tile(x, y), Blocks.air, voteTeam, 0)
-                                                }
-                                            }
+                                    for (a in world.tiles) {
+                                        if (a.build != null && a.build.team != null && a.build.team == voteTeam) {
+                                            Call.setTile(a, Blocks.air, voteTeam, 0)
                                         }
                                     }
                                 } else {

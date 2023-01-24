@@ -40,6 +40,7 @@ object Trigger {
             if (data.status.containsKey("duplicateName") && data.status.get("duplicateName") != player.name()) {
                 data.name = player.name()
                 data.status.remove("duplicateName")
+                database.update(player.uuid(), data)
             }
             if (Config.fixedName) player.name(data.name)
             data.lastdate = System.currentTimeMillis()
