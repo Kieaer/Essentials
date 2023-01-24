@@ -1910,10 +1910,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 if (data != null) {
                     data.permission = arg[2]
                 } else {
-                    Log.info(bundle["player.not.registered"])
+                    Log.info(Strings.stripColors(bundle["player.not.registered"]))
                 }
             } else {
-                Log.info(bundle["player.not.found"])
+                Log.info(Strings.stripColors(bundle["player.not.found"]))
             }
         }
 
