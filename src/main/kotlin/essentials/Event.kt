@@ -458,10 +458,11 @@ object Event {
                 if (!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
                     val block = it.tile.block()
                     if (!it.breaking) {
+                        log(LogType.Block, Bundle()["log.block.place", target.name, block.name, it.tile.x, it.tile.y])
+                        addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
+                        addLog(PlayerLog(target.name, it.tile.block(), it.tile.x, it.tile.y, null))
+
                         if (!state.rules.infiniteResources) {
-                            log(LogType.Block, Bundle()["log.block.place", target.name, block.name, it.tile.x, it.tile.y])
-                            addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-                            addLog(PlayerLog(target.name, it.tile.block(), it.tile.x, it.tile.y, null))
                             target.placecount + 1
                             target.exp = target.exp + blockExp.get(block.name)
                         }
@@ -470,10 +471,11 @@ object Event {
                             Log.info("${player.name} placed ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
                         }
                     } else if (it.breaking) {
+                        log(LogType.Block, Bundle()["log.block.break", target.name, block.name, it.tile.x, it.tile.y])
+                        addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
+                        addLog(PlayerLog(target.name, player.unit().buildPlan().block, it.tile.x, it.tile.y, null))
+
                         if (!state.rules.infiniteResources) {
-                            log(LogType.Block, Bundle()["log.block.break", target.name, block.name, it.tile.x, it.tile.y])
-                            addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-                            addLog(PlayerLog(target.name, player.unit().buildPlan().block, it.tile.x, it.tile.y, null))
                             target.breakcount + 1
                             target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
                         }
