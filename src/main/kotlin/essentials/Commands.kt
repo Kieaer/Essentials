@@ -1908,7 +1908,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (target != null) {
                 val data = findPlayerData(target.uuid())
                 if (data != null) {
-                    data.permission = arg[2]
+                    data.permission = arg[1]
                 } else {
                     Log.info(Strings.stripColors(bundle["player.not.registered"]))
                 }
