@@ -34,6 +34,7 @@ import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.io.SaveIO
 import mindustry.maps.Map
+import mindustry.net.Administration.PlayerInfo
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.world.Block
@@ -1382,6 +1383,10 @@ object Event {
         } else {
             Groups.player.find { p -> p.plainName().contains(name, true) }
         }
+    }
+
+    fun findPlayersByName(uuid: String): PlayerInfo? {
+        return netServer.admins.findByName(uuid)?.first()
     }
 
     private fun resetVote() {
