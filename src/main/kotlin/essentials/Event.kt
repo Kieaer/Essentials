@@ -667,6 +667,7 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
+            if (saveDirectory.child("rollback.msav").exists()) saveDirectory.child("rollback.msav").delete()
             if (state.rules.pvp) {
                 if (Config.pvpPeace) {
                     orignalBlockMultiplier = state.rules.blockDamageMultiplier
