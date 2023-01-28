@@ -1052,7 +1052,7 @@ object Event {
                                     send("command.vote.kick.target.banned", name)
                                     if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, database.players.toString()])
                                 } else {
-                                    voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
+                                    voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                     send("command.vote.kick.target.kicked", name)
                                     if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, database.players.toString()])
                                 }
