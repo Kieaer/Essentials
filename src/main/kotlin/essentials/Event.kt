@@ -641,18 +641,17 @@ object Event {
                     netServer.admins.banned.find { a -> a.id.equals(it.uuid) }.names.toString(", ")
                 }
 
-                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), name]
+                val id = if (it.player != null) {
+                    netServer.admins.findByIP(it.player.con.address).id
+                } else {
+                    netServer.admins.banned.find { a -> a.id.equals(it.uuid) }.id
+                }
+
+                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), name, id]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
 
             log(LogType.Player, Bundle()["log.player.banned", if (it.player == null) netServer.admins.getInfo(it.uuid).lastName else it.player.name, if (it.player == null) netServer.admins.getInfo(it.uuid).lastIP else it.player.ip()])
-        }
-
-        Events.on(PlayerIpBanEvent::class.java) {
-            if (Config.banChannelToken.isNotEmpty()) {
-                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), netServer.admins.findByIP(it.ip).names.toString(", ")]
-                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
-            }
         }
 
         Events.on(PlayerIpUnbanEvent::class.java) {
@@ -728,10 +727,6 @@ object Event {
                 val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByIP(e.connection.address).lastName]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
-        }
-
-        Events.run(EventType.Trigger.impactPower) {
-
         }
 
         fun send(message: String, vararg parameter: Any) {
@@ -1053,9 +1048,11 @@ object Event {
                                 if (Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
                                     netServer.admins.banPlayerID(voteTargetUUID)
                                     send("command.vote.kick.target.banned", name)
+                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, database.players.toString()])
                                 } else {
                                     voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 1000)
                                     send("command.vote.kick.target.kicked", name)
+                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, database.players.toString()])
                                 }
                             }
 
