@@ -120,8 +120,6 @@ class Main : Plugin() {
             }
         }
 
-        Vars.netServer.admins.addChatFilter { _, _ -> null }
-
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }

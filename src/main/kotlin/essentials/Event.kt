@@ -24,7 +24,7 @@ import mindustry.content.Blocks
 import mindustry.content.Fx
 import mindustry.content.UnitTypes
 import mindustry.content.Weathers
-import mindustry.core.NetServer.ChatFormatter
+import mindustry.core.NetServer
 import mindustry.entities.Damage
 import mindustry.game.EventType
 import mindustry.game.EventType.*
@@ -89,86 +89,6 @@ object Event {
     var pvpSpectors = Seq<String>()
 
     fun register() {
-        netServer.chatFormatter = ChatFormatter { player: Player, message: String ->
-            var isMute = false
-            if (Config.blockfooclient) {
-                if (message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
-                    Call.kick(player.con(), Bundle(if (findPlayers(player.plainName()) != null) findPlayers(player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
-                    Log.info(Bundle()["event.antigrief.foo.detected.log", player.plainName()])
-                    for (a in database.players) {
-                        a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", player.name])
-                    }
-                    isMute = true
-                }
-            }
-
-            if (!message.startsWith("/")) {
-                val data = findPlayerData(player.uuid())
-                if (data != null) {
-                    log(LogType.Chat, "${data.name}: ${message}")
-                    Log.info("<&y" + data.name + ": &lm" + message + "&lg>")
-
-                    if (!data.mute) {
-                        val isAdmin = Permission.check(player, "vote.pass")
-                        if (voting && message.equals("y", true) && !voted.contains(player.uuid())) {
-                            if (isAdmin) {
-                                isAdminVote = true
-                            } else {
-                                if (state.rules.pvp && voteTeam == player.team()) {
-                                    voted.add(player.uuid())
-                                } else if (!state.rules.pvp) {
-                                    voted.add(player.uuid())
-                                }
-                            }
-                            player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
-                        } else if (voting && message.equals("n", true) && isAdmin) {
-                            isCanceled = true
-                        }
-
-                        if (Config.chatlimit) {
-                            val configs = Config.chatlanguage.split(",")
-                            val languages = ArrayList<Language>()
-                            configs.forEach { a -> languages.add(Language.getByIsoCode639_1(IsoCode639_1.valueOf(a.uppercase()))) }
-
-                            val d: LanguageDetector = LanguageDetectorBuilder.fromLanguages(*languages.toTypedArray()).build()
-                            val e: Language = d.detectLanguageOf(message)
-
-                            if (e.name == "UNKNOWN" && !message.substring(0, 1).matches(Regex("[!@#$%&*()_+=|<>?{}\\[\\]~-]")) && !(voting && message.equals("y", true) && !voted.contains(player.uuid()))) {
-                                player.sendMessage(Bundle(data.languageTag)["event.chat.language.not.allow"])
-                                isMute = true
-                            }
-                        }
-
-                        if (Config.chatBlacklist) {
-                            val file = Main.root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
-                            if (file.isNotEmpty()) {
-                                for (a in file) {
-                                    if (Config.chatBlacklistRegex) {
-                                        if (message.contains(Regex(a))) {
-                                            player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
-                                            isMute = true
-                                        }
-                                    } else {
-                                        if (message.contains(a)) {
-                                            player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
-                                            isMute = true
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        return@ChatFormatter if (!(voting && message.contains("y") && !isMute)) Permission[player].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message) else null
-                    } else {
-                        return@ChatFormatter null
-                    }
-                } else {
-                    return@ChatFormatter "[gray]${player.name} [orange] > [white]${message}"
-                }
-            } else {
-                return@ChatFormatter null
-            }
-        }
-
         Events.on(WithdrawEvent::class.java) {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(LogType.WithDraw, Bundle()["log.withdraw", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
@@ -343,6 +263,86 @@ object Event {
                     }
                 }
                 PluginData.status.add("iptablesFirst")
+            }
+
+            netServer.chatFormatter = NetServer.ChatFormatter { player: Player, message: String ->
+                var isMute = false
+                if (Config.blockfooclient) {
+                    if (message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
+                        Call.kick(player.con(), Bundle(if (findPlayers(player.plainName()) != null) findPlayers(player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
+                        Log.info(Bundle()["event.antigrief.foo.detected.log", player.plainName()])
+                        for (a in database.players) {
+                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", player.name])
+                        }
+                        isMute = true
+                    }
+                }
+
+                if (!message.startsWith("/")) {
+                    val data = findPlayerData(player.uuid())
+                    if (data != null) {
+                        log(LogType.Chat, "${data.name}: ${message}")
+                        Log.info("<&y" + data.name + ": &lm" + message + "&lg>")
+
+                        if (!data.mute) {
+                            val isAdmin = Permission.check(player, "vote.pass")
+                            if (voting && message.equals("y", true) && !voted.contains(player.uuid())) {
+                                if (isAdmin) {
+                                    isAdminVote = true
+                                } else {
+                                    if (state.rules.pvp && voteTeam == player.team()) {
+                                        voted.add(player.uuid())
+                                    } else if (!state.rules.pvp) {
+                                        voted.add(player.uuid())
+                                    }
+                                }
+                                player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                            } else if (voting && message.equals("n", true) && isAdmin) {
+                                isCanceled = true
+                            }
+
+                            if (Config.chatlimit) {
+                                val configs = Config.chatlanguage.split(",")
+                                val languages = ArrayList<Language>()
+                                configs.forEach { a -> languages.add(Language.getByIsoCode639_1(IsoCode639_1.valueOf(a.uppercase()))) }
+
+                                val d: LanguageDetector = LanguageDetectorBuilder.fromLanguages(*languages.toTypedArray()).build()
+                                val e: Language = d.detectLanguageOf(message)
+
+                                if (e.name == "UNKNOWN" && !message.substring(0, 1).matches(Regex("[!@#$%&*()_+=|<>?{}\\[\\]~-]")) && !(voting && message.equals("y", true) && !voted.contains(player.uuid()))) {
+                                    player.sendMessage(Bundle(data.languageTag)["event.chat.language.not.allow"])
+                                    isMute = true
+                                }
+                            }
+
+                            if (Config.chatBlacklist) {
+                                val file = Main.root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
+                                if (file.isNotEmpty()) {
+                                    for (a in file) {
+                                        if (Config.chatBlacklistRegex) {
+                                            if (message.contains(Regex(a))) {
+                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
+                                                isMute = true
+                                            }
+                                        } else {
+                                            if (message.contains(a)) {
+                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
+                                                isMute = true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            return@ChatFormatter if (!(voting && message.contains("y") && !isMute)) Permission[player].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message) else null
+                        } else {
+                            return@ChatFormatter null
+                        }
+                    } else {
+                        return@ChatFormatter "[gray]${player.name} [orange] > [white]${message}"
+                    }
+                } else {
+                    return@ChatFormatter null
+                }
             }
         }
 
