@@ -1386,7 +1386,11 @@ object Event {
     }
 
     fun findPlayersByName(name: String): PlayerInfo? {
-        return netServer.admins.findByName(name)?.first()
+        return if (netServer.admins.findByName(name) != null) {
+            netServer.admins.findByName(name).first()
+        } else {
+            null
+        }
     }
 
     private fun resetVote() {
