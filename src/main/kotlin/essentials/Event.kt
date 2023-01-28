@@ -282,7 +282,6 @@ object Event {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
                         log(LogType.Chat, "${data.name}: ${message}")
-                        Log.info("<&y" + data.name + ": &lm" + message + "&lg>")
 
                         if (!data.mute) {
                             val isAdmin = Permission.check(player, "vote.pass")
