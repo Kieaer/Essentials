@@ -1375,20 +1375,20 @@ object Event {
     }
 
     fun findPlayers(name: String): Playerc? {
-        return if (name.toIntOrNull() != null) {
+        if (name.toIntOrNull() != null) {
             for (a in database.players) {
                 if (a.entityid == name.toInt()) {
-                    a.player
+                    return a.player
                 }
             }
-            Groups.player.find { p -> p.plainName().contains(name, true) }
+            return Groups.player.find { p -> p.plainName().contains(name, true) }
         } else {
-            Groups.player.find { p -> p.plainName().contains(name, true) }
+            return Groups.player.find { p -> p.plainName().contains(name, true) }
         }
     }
 
     fun findPlayersByName(name: String): PlayerInfo? {
-        return if (netServer.admins.findByName(name) != null) {
+        return if (!netServer.admins.findByName(name).isEmpty) {
             netServer.admins.findByName(name).first()
         } else {
             null
