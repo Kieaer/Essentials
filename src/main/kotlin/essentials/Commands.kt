@@ -1159,6 +1159,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val target = findPlayerData(other.uuid())
                 if (target != null) {
                     target.mute = true
+                    database.update(target.uuid, target)
                     send("command.mute", target.name)
                 } else {
                     send("player.not.found")
@@ -1700,6 +1701,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val target = findPlayerData(other.uuid())
                 if (target != null) {
                     target.mute = false
+                    database.update(target.uuid, target)
                     send("command.unmute", target.name)
                 } else {
                     send("player.not.found")
@@ -2025,6 +2027,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val data = findPlayerData(target.uuid())
                 if (data != null) {
                     data.permission = arg[1]
+                    database.update(data.uuid, data)
                 } else {
                     Log.info(Strings.stripColors(bundle["player.not.registered"]))
                 }
