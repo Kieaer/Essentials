@@ -970,7 +970,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun me() {
-            if (!Permission.check(player, "me")) return
+            if (!Permission.check(player, "me") || data.mute) return
 
             if (Config.chatBlacklist) {
                 val file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
@@ -1211,7 +1211,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun pm() {
-            if (!Permission.check(player, "pm")) return
+            if (!Permission.check(player, "pm") || data.mute) return
             val target = findPlayers(arg[0])
             if (target == null) {
                 send("player.not.found")
@@ -1571,8 +1571,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun t() {
-            Groups.player.each({ p -> p.team() === player.team() }) { o ->
-                o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")
+            if (!data.mute) {
+                Groups.player.each({ p -> p.team() === player.team() }) { o ->
+                    o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")
+                }
             }
         }
 
