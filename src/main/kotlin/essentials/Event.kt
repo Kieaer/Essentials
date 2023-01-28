@@ -29,7 +29,10 @@ import mindustry.entities.Damage
 import mindustry.game.EventType
 import mindustry.game.EventType.*
 import mindustry.game.Team
-import mindustry.gen.*
+import mindustry.gen.Call
+import mindustry.gen.Groups
+import mindustry.gen.Player
+import mindustry.gen.Playerc
 import mindustry.io.SaveIO
 import mindustry.maps.Map
 import mindustry.net.Administration.PlayerInfo
@@ -660,7 +663,7 @@ object Event {
             }
         }
 
-        Events.on(AdminRequestCallPacket::class.java) {
+        Events.on(AdminRequestEvent::class.java) {
             if (Config.banChannelToken.isNotEmpty() && it.action == Packets.AdminAction.ban) {
                 val msg = Bundle()["event.discord.banned.admin", it.other.plainName()]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
