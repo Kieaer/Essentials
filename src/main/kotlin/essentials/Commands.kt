@@ -350,6 +350,8 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             data.status.put("effectColor", arg[1])
                         } catch (_: IllegalArgumentException) {
                             send("command.effect.no.color")
+                        } catch (_: StringIndexOutOfBoundsException) {
+                            send("command.effect.no.color")
                         }
                     }
                 } else {
