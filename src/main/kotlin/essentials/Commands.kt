@@ -371,15 +371,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             if (target != null) {
                                 val data = findPlayerData(target.uuid())
                                 if (data != null) {
+                                    val previous = data.exp
                                     data.exp = arg[1].toInt()
+                                    send("command.exp.result", previous, data.exp)
                                 }
                             } else {
                                 val p = findPlayersByName(arg[2])
                                 if (p != null) {
                                     val a = database[p.id]
                                     if (a != null) {
+                                        val previous = a.exp
                                         a.exp = arg[1].toInt()
                                         database.update(p.id, a)
+                                        send("command.exp.result", previous, a.exp)
                                     } else {
                                         send("player.not.registered")
                                     }
@@ -388,7 +392,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                 }
                             }
                         } else {
+                            val previous = data.exp
                             data.exp = arg[1].toInt()
+                            send("command.exp.result", previous, data.exp)
                         }
                     } else {
                         send("command.exp.invalid")
@@ -432,15 +438,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             if (target != null) {
                                 val data = findPlayerData(target.uuid())
                                 if (data != null) {
+                                    val previous = data.exp
                                     data.exp += arg[1].toInt()
+                                    send("command.exp.result", previous, data.exp)
                                 }
                             } else {
                                 val p = findPlayersByName(arg[2])
                                 if (p != null) {
                                     val a = database[p.id]
                                     if (a != null) {
+                                        val previous = a.exp
                                         a.exp += arg[1].toInt()
                                         database.update(p.id, a)
+                                        send("command.exp.result", previous, a.exp)
                                     } else {
                                         send("player.not.registered")
                                     }
@@ -449,7 +459,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                 }
                             }
                         } else {
+                            val previous = data.exp
                             data.exp += arg[1].toInt()
+                            send("command.exp.result", previous, data.exp)
                         }
                     } else {
                         send("command.exp.invalid")
@@ -464,15 +476,19 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             if (target != null) {
                                 val data = findPlayerData(target.uuid())
                                 if (data != null) {
+                                    val previous = data.exp
                                     data.exp -= arg[1].toInt()
+                                    send("command.exp.result", previous, data.exp)
                                 }
                             } else {
                                 val p = findPlayersByName(arg[2])
                                 if (p != null) {
                                     val a = database[p.id]
                                     if (a != null) {
-                                        a.exp += arg[1].toInt()
+                                        val previous = a.exp
+                                        a.exp -= arg[1].toInt()
                                         database.update(p.id, a)
+                                        send("command.exp.result", previous, a.exp)
                                     } else {
                                         send("player.not.registered")
                                     }
@@ -481,7 +497,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                 }
                             }
                         } else {
+                            val previous = data.exp
                             data.exp -= arg[1].toInt()
+                            send("command.exp.result", previous, data.exp)
                         }
                     } else {
                         send("command.exp.invalid")
@@ -734,11 +752,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         """.trimIndent()
                         Call.infoMessage(player.con(), texts)
                     } else {
-                        val p = findPlayersByName(arg[0])
-                        if (p != null) {
-                            val a = database[p.id]
-                            if (a != null) {
-                                val texts = """
+                        send("player.not.found")
+                    }
+                } else {
+                    val p = findPlayersByName(arg[0])
+                    if (p != null) {
+                        val a = database[p.id]
+                        if (a != null) {
+                            val texts = """
                                     ${bundle["info.name"]}: ${a.name}
                                     ${bundle["info.placecount"]}: ${a.placecount}
                                     ${bundle["info.breakcount"]}: ${a.breakcount}
@@ -750,16 +771,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                     ${bundle["info.pvpwincount"]}: ${a.pvpwincount}
                                     ${bundle["info.pvplosecount"]}: ${a.pvplosecount}
                                     """.trimIndent()
-                                Call.infoMessage(player.con(), texts)
-                            } else {
-                                send("player.not.registered")
-                            }
+                            Call.infoMessage(player.con(), texts)
                         } else {
-                            send("player.not.found")
+                            send("player.not.registered")
                         }
+                    } else {
+                        send("player.not.found")
                     }
-                } else {
-                    send("player.not.found")
                 }
             } else {
                 val texts = """
@@ -1135,26 +1153,27 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun mute() {
             if (!Permission.check(player, "mute")) return
             val other = findPlayers(arg[0])
-            if (other == null) {
-                send("player.not.found")
-            } else {
+            if (other != null) {
                 val target = findPlayerData(other.uuid())
                 if (target != null) {
                     target.mute = true
                     send("command.mute", target.name)
                 } else {
-                    val p = findPlayersByName(arg[0])
-                    if (p != null) {
-                        val a = database[p.id]
-                        if (a != null) {
-                            a.mute = true
-                            database.update(p.id, a)
-                        } else {
-                            send("player.not.registered")
-                        }
+                    send("player.not.found")
+                }
+            } else {
+                val p = findPlayersByName(arg[0])
+                if (p != null) {
+                    val a = database[p.id]
+                    if (a != null) {
+                        a.mute = true
+                        database.update(p.id, a)
+                        send("command.mute", a.name)
                     } else {
-                        send("player.not.found")
+                        send("player.not.registered")
                     }
+                } else {
+                    send("player.not.found")
                 }
             }
         }
@@ -1468,22 +1487,22 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     data.permission = arg[1]
                     send("command.setperm.success", data.name, arg[1])
                 } else {
-                    val p = findPlayersByName(arg[1])
-                    if (p != null) {
-                        val a = database[p.id]
-                        if (a != null) {
-                            a.permission = arg[1]
-                            database.update(p.id, a)
-                            send("command.setperm.success", a.name, arg[1])
-                        } else {
-                            send("player.not.registered")
-                        }
-                    } else {
-                        send("player.not.found")
-                    }
+                    send("player.not.registered")
                 }
             } else {
-                send("player.not.found")
+                val p = findPlayersByName(arg[1])
+                if (p != null) {
+                    val a = database[p.id]
+                    if (a != null) {
+                        a.permission = arg[1]
+                        database.update(p.id, a)
+                        send("command.setperm.success", a.name, arg[1])
+                    } else {
+                        send("player.not.registered")
+                    }
+                } else {
+                    send("player.not.found")
+                }
             }
         }
 
@@ -1673,26 +1692,27 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun unmute() {
             if (!Permission.check(player, "unmute")) return
             val other = findPlayers(arg[0])
-            if (other == null) {
-                send("player.not.found")
-            } else {
-                val target = database[other.uuid()]
+            if (other != null) {
+                val target = findPlayerData(other.uuid())
                 if (target != null) {
                     target.mute = false
                     send("command.unmute", target.name)
                 } else {
-                    val p = findPlayersByName(arg[0])
-                    if (p != null) {
-                        val a = database[p.id]
-                        if (a != null) {
-                            a.mute = false
-                            database.update(p.id, a)
-                        } else {
-                            send("player.not.registered")
-                        }
+                    send("player.not.found")
+                }
+            } else {
+                val p = findPlayersByName(arg[0])
+                if (p != null) {
+                    val a = database[p.id]
+                    if (a != null) {
+                        a.mute = false
+                        database.update(p.id, a)
+                        send("command.unmute", a.name)
                     } else {
-                        send("player.not.found")
+                        send("player.not.registered")
                     }
+                } else {
+                    send("player.not.found")
                 }
             }
         }

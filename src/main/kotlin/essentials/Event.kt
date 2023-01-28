@@ -1385,8 +1385,8 @@ object Event {
         }
     }
 
-    fun findPlayersByName(uuid: String): PlayerInfo? {
-        return netServer.admins.findByName(uuid)?.first()
+    fun findPlayersByName(name: String): PlayerInfo? {
+        return netServer.admins.findByName(name)?.first()
     }
 
     private fun resetVote() {
