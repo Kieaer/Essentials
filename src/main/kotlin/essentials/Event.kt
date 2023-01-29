@@ -402,10 +402,10 @@ object Event {
                             }
 
                             target.exp = target.exp + score
-                            p.sendMessage(bundle["exp.earn.victory", score])
+                            p.sendMessage(bundle["event.exp.earn.victory", score])
                         } else {
                             val score: Int = if (state.rules.waves) {
-                                state.wave * 100
+                                state.wave * 150
                             } else if (state.rules.attackMode) {
                                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
                             } else if (state.rules.pvp) {
@@ -415,21 +415,26 @@ object Event {
                             }
 
                             val message = if (state.rules.waves) {
-                                bundle["exp.earn.wave", score, state.wave]
+                                bundle["event.exp.earn.wave", score, state.wave]
                             } else if (state.rules.attackMode) {
-                                bundle["exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
                             } else if (state.rules.pvp) {
-                                bundle["exp.earn.defeat", score, (time + 20000)]
+                                bundle["event.exp.earn.defeat", score, (time + 20000)]
                             } else {
                                 ""
                             }
 
                             target.exp = target.exp + score
                             p.sendMessage(message)
+
+                            if (score < 0) {
+                                p.sendMessage(bundle["event.exp.lost.reason"])
+                                p.sendMessage(bundle["event.exp.lost.result", time, blockexp, enemyBuildingDestroyed, (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)])
+                            }
                         }
 
                         Commands.Exp[target]
-                        p.sendMessage(bundle["exp.current", target.exp, (if (target.exp > oldExp) "+" else "-") + (target.exp - oldExp), target.level, (if (target.level > oldLevel) "+" else if (target.level == oldLevel) "" else "-") + (target.level - oldLevel)])
+                        p.sendMessage(bundle["event.exp.current", target.exp, (if (target.exp > oldExp) "+" else "-") + (target.exp - oldExp), target.level, (if (target.level > oldLevel) "+" else if (target.level == oldLevel) "" else "-") + (target.level - oldLevel)])
                     }
                 }
             }
