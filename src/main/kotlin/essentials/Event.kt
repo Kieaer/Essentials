@@ -1048,6 +1048,10 @@ object Event {
                     if ((count == 0 && check() <= voted.size) || check() <= voted.size || isAdminVote) {
                         send("command.vote.success")
 
+                        val onlinePlayers = StringBuilder()
+                        for (a in database.players) onlinePlayers.append("${a.name}, ")
+                        onlinePlayers.substring(0, onlinePlayers.length - 1)
+
                         voting = false
 
                         when (voteType) {
@@ -1056,11 +1060,11 @@ object Event {
                                 if (Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
                                     netServer.admins.banPlayerID(voteTargetUUID)
                                     send("command.vote.kick.target.banned", name)
-                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, database.players.toString()])
+                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, onlinePlayers.toString()])
                                 } else {
                                     voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                     send("command.vote.kick.target.kicked", name)
-                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, database.players.toString()])
+                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, onlinePlayers.toString()])
                                 }
                             }
 
