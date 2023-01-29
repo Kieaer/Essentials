@@ -285,7 +285,7 @@ object Event {
                 if (!message.startsWith("/")) {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
-                        log(LogType.Chat, "${data.name}: ${message}")
+                        log(LogType.Chat, "${data.name}: $message")
 
                         if (!data.mute) {
                             val isAdmin = Permission.check(player, "vote.pass")
@@ -666,7 +666,7 @@ object Event {
 
         Events.on(AdminRequestEvent::class.java) {
             if (Config.banChannelToken.isNotEmpty() && it.action == Packets.AdminAction.ban) {
-                val msg = Bundle()["event.discord.banned.admin", it.other.plainName()]
+                val msg = Bundle()["event.discord.banned.admin", it.player.plainName()]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
         }
@@ -676,7 +676,7 @@ object Event {
             if (saveDirectory.child("rollback.msav").exists()) saveDirectory.child("rollback.msav").delete()
 
             if(!state.isPaused && Core.settings.getBool("autoPause") && Groups.player.isEmpty){
-                state.set(GameState.State.paused);
+                state.set(GameState.State.paused)
             }
 
             if (state.rules.pvp) {
