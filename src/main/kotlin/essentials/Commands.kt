@@ -1790,7 +1790,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 return
             }
             if (!Event.voting) {
-                if (database.players.size <= 2) {
+                if (database.players.size <= 3 && !Permission.check(player, "vote.admin")) {
                     send("command.vote.enough")
                     return
                 }
