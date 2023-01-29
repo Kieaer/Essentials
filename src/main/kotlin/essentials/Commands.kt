@@ -947,7 +947,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun maps() {
             if (!Permission.check(player, "maps")) return
-            val list = maps.all().sort()
+            val list = maps.all().sortedBy { a -> a.name() }
             val arr = ObjectMap<Map, Int>()
             for ((order, a) in list.withIndex()) {
                 arr.put(a, order)
@@ -1834,7 +1834,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             try {
                                 var target = maps.all().find { e -> e.name().contains(arg[1]) }
                                 if (target == null) {
-                                    target = maps.all().sort().get(arg[1].toInt())
+                                    target = maps.all().sortedBy { a -> a.name() }[arg[1].toInt()]
                                 }
                                 Event.voteType = "map"
                                 Event.voteMap = target
