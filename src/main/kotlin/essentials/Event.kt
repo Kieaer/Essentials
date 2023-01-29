@@ -989,7 +989,7 @@ object Event {
                     }
 
                     // 잠수 플레이어 카운트
-                    if (Config.afk && a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining() && !a.player.unit().isShooting && !Permission.check(a.player, "afk.admin") && (state.rules.pvp && Groups.player.size() != 1)) {
+                    if (Config.afk && a.player.unit() != null && !a.player.unit().moving() && !a.player.unit().mining() && !a.player.unit().isShooting && !Permission.check(a.player, "afk.admin")) {
                         a.afkTime++
                         if (a.afkTime == Config.afkTime) {
                             if (Config.afkServer.isEmpty()) {
