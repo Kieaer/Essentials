@@ -22,64 +22,17 @@ class DB {
     fun open() {
         isRemote = !Config.database.equals(Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath(), false)
         try {
-            try {
-                if (Fi(Config.database).exists()) {
-                    db = Database.connect("jdbc:sqlite:${Config.database}", "org.sqlite.JDBC")
-                    val playerData = getAll()
-                    val oldcount = playerData.size
-                    PluginData.load()
-                    TransactionManager.closeAndUnregister(db)
-
-                    Fi(Config.database).copyTo(Core.settings.dataDirectory.child("mods/Essentials/database_backup.db"))
-                    Fi(Config.database).delete()
-
-                    // H2 DB 열기
-                    db = Database.connect("jdbc:h2:file:${Config.database}", "org.h2.Driver", "sa", "")
-                    transaction {
-                        SchemaUtils.create(Player)
-                        SchemaUtils.create(Data)
-                    }
-
-                    var count = 0
-                    try {
-                        val upgradeMessage = Bundle()["event.plugin.db.upgrade.being"]
-                        for (a in playerData) {
-                            createData(a)
-                            count++
-                            print("$upgradeMessage $count/$oldcount\r")
-                        }
-                        print("\n")
-                        PluginData.save()
-
-                        TransactionManager.closeAndUnregister(db)
-                        count = 0
-
-                        // H2 DB 검사
-                        db = Database.connect("jdbc:h2:file:${Config.database}", "org.h2.Driver", "sa", "")
-                        val validateMessage = Bundle()["event.plugin.db.upgrade.validate"]
-                        for (a in playerData) {
-                            get(a.uuid)
-                            count++
-                            print("$validateMessage $count/$oldcount\r")
-                        }
-                        print("\n")
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-
-                    TransactionManager.closeAndUnregister(db)
-                    db = Database.connect("jdbc:h2:${if (isRemote) "tcp://" else "file:"}${Config.database}${if (isRemote) ":9092/db" else ""}", "org.h2.Driver", "sa", "")
+            if (Fi(Config.database).exists()) {
+                TransactionManager.closeAndUnregister(db)
+                db = Database.connect("jdbc:h2:${if (isRemote) "tcp://" else "file:"}${Config.database}${if (isRemote) ":9092/db" else ""}", "org.h2.Driver", "sa", "")
+            } else {
+                if (!isRemote) {
+                    dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath())
+                    dbServer.start()
+                    db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
                 } else {
-                    if (!isRemote) {
-                        dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath())
-                        dbServer.start()
-                        db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
-                    } else {
-                        db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
-                    }
+                    db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
 
             transaction {
