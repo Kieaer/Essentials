@@ -741,7 +741,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val other = findPlayerData(target.uuid())
                     if (other != null) {
                         val texts = """
-                        ${bundle["info.name"]}: ${other.name}
+                        ${bundle["info.name"]}: ${other.name}[white]
                         ${bundle["info.placecount"]}: ${other.placecount}
                         ${bundle["info.breakcount"]}: ${other.breakcount}
                         ${bundle["info.level"]}: ${other.level}
@@ -762,7 +762,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         val a = database[p.id]
                         if (a != null) {
                             val texts = """
-                                    ${bundle["info.name"]}: ${a.name}
+                                    ${bundle["info.name"]}: ${a.name}[white]
                                     ${bundle["info.placecount"]}: ${a.placecount}
                                     ${bundle["info.breakcount"]}: ${a.breakcount}
                                     ${bundle["info.level"]}: ${a.level}
@@ -783,7 +783,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
             } else {
                 val texts = """
-                ${bundle["info.name"]}: ${data.name}
+                ${bundle["info.name"]}: ${data.name}[white]
                 ${bundle["info.placecount"]}: ${data.placecount}
                 ${bundle["info.breakcount"]}: ${data.breakcount}
                 ${bundle["info.level"]}: ${data.level}
