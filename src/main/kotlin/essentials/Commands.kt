@@ -2029,10 +2029,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     data.permission = arg[1]
                     database.update(data.uuid, data)
                 } else {
-                    Log.info(Strings.stripColors(bundle["player.not.registered"]))
+                    Log.info(stripColors(bundle["player.not.registered"]))
                 }
             } else {
-                Log.info(Strings.stripColors(bundle["player.not.found"]))
+                Log.info(stripColors(bundle["player.not.found"]))
             }
         }
 
@@ -2044,7 +2044,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             } else {
                 val d = findPlayerData(other.uuid())
                 if (d == null) {
-                    Log.info(bundle["command.tempban.not.registered"])
+                    Log.info(stripColors(bundle["command.tempban.not.registered"]))
                     netServer.admins.banPlayer(other.uuid())
                     Call.kick(other.con(), Packets.KickReason.banned)
                 } else {
@@ -2056,10 +2056,14 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         d.status.put("ban", time.plusMinutes(minute.toLong()).toString())
                         Call.kick(other.con(), reason)
                     } else {
-                        Log.info(bundle["command.tempban.not.number"])
+                        Log.info(stripColors(bundle["command.tempban.not.number"]))
                     }
                 }
             }
+        }
+
+        fun stripColors(string: String): String {
+            return string.replace(" *\\(.+?\\)".toRegex(), "")
         }
     }
 
