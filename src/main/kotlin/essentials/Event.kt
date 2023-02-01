@@ -396,7 +396,7 @@ object Event {
                             val score: Int = if (state.rules.attackMode) {
                                 (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
                             } else if (state.rules.pvp) {
-                                time + 20000
+                                time + 5000
                             } else {
                                 0
                             }
@@ -419,7 +419,7 @@ object Event {
                             } else if (state.rules.attackMode) {
                                 bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
                             } else if (state.rules.pvp) {
-                                bundle["event.exp.earn.defeat", score, (time + 20000)]
+                                bundle["event.exp.earn.defeat", score, (time + 5000)]
                             } else {
                                 ""
                             }
