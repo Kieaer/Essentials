@@ -1599,9 +1599,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 state.rules.defaultTeam
             }
 
-            player.team(team)
-
-            if (!Permission.check(player, "team.other") && arg.size > 1) {
+            if (arg.size == 1) {
+                player.team(team)
+            } else if (Permission.check(player, "team.other")) {
                 val other = findPlayers(arg[1])
                 if (other != null) {
                     other.team(team)
