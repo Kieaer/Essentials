@@ -274,9 +274,9 @@ object Event {
                 if (Config.blockfooclient) {
                     if (message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
                         Call.kick(player.con(), Bundle(if (findPlayers(player.plainName()) != null) findPlayers(player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
-                        Log.info(Bundle()["event.antigrief.foo.detected.log", player.plainName()])
+                        Log.info(Bundle()["event.antigrief.foo.detected.log", player.plainName(), "2"])
                         for (a in database.players) {
-                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", player.name])
+                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", player.name, "2"])
                         }
                         isMute = true
                     }
