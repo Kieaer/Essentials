@@ -578,9 +578,9 @@ object Event {
                                     hackCount++
                                     if (hackCount > 150) {
                                         Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
-                                        Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName()])
+                                        Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "0"])
                                         for (a in database.players) {
-                                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
+                                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "0"])
                                         }
                                         Core.app.removeListener(this)
                                     }
@@ -597,9 +597,9 @@ object Event {
                                 hackCount++
                                 if (hackCount > 150) {
                                     Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
-                                    Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName()])
+                                    Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "1"])
                                     for (a in database.players) {
-                                        a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name])
+                                        a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "1"])
                                     }
                                     Core.app.removeListener(this)
                                 }
