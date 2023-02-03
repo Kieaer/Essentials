@@ -23,7 +23,6 @@ class DB {
         isRemote = !Config.database.equals(Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath(), false)
         try {
             if (Fi(Config.database).exists()) {
-                TransactionManager.closeAndUnregister(db)
                 db = Database.connect("jdbc:h2:${if (isRemote) "tcp://" else "file:"}${Config.database}${if (isRemote) ":9092/db" else ""}", "org.h2.Driver", "sa", "")
             } else {
                 if (!isRemote) {
