@@ -6,10 +6,6 @@ import java.util.*
 class Bundle {
     val resource: ResourceBundle
 
-    init {
-        Locale.setDefault(Locale.ENGLISH)
-    }
-
     constructor() {
         resource = ResourceBundle.getBundle("bundle", Locale.getDefault())
     }
