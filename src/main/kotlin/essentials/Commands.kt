@@ -1984,11 +1984,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         }
 
         fun debug() {
-            if (System.getenv("DEBUG_KEY") != null) {
-                when (arg[0]) {
-                    "info" -> {
-                        println(
-                            """
+
+            when (arg[0]) {
+                "info" -> {
+                    println(
+                        """
                     == PluginData class
                     uptime: ${PluginData.uptime}
                     playtime: ${PluginData.playtime}
@@ -2004,17 +2004,25 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     
                     == DB class
                     """.trimIndent()
-                        )
-                        database.players.forEach { println(it.toString()) }
-                    }
+                    )
+                    database.players.forEach { println(it.toString()) }
+                }
 
-                    "debug" -> {
-                        if (arg.isNotEmpty()) {
-                            if (arg[0].toBoolean()) {
-                                Core.settings.put("debugMode", true)
-                            } else {
-                                Core.settings.put("debugMode", false)
-                            }
+                "debug" -> {
+                    if (arg.isNotEmpty()) {
+                        if (arg[0].toBoolean()) {
+                            Core.settings.put("debugMode", true)
+                        } else {
+                            Core.settings.put("debugMode", false)
+                        }
+                    }
+                }
+
+                "sync" -> {
+                    for (a in netServer.admins.banned) {
+                        for (b in a.ips) {
+                            Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $b -j DROP"))
+                            Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $b -j DROP"))
                         }
                     }
                 }

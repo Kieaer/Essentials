@@ -24,7 +24,6 @@ import mindustry.content.Blocks
 import mindustry.content.Fx
 import mindustry.content.UnitTypes
 import mindustry.content.Weathers
-import mindustry.core.GameState
 import mindustry.core.NetServer
 import mindustry.entities.Damage
 import mindustry.game.EventType
@@ -632,12 +631,8 @@ object Event {
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
                     val ip = if (it.player != null) it.player.ip() else netServer.admins.getInfo(it.uuid).lastIP
-                    val cmd = if (it.player != null) {
-                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $ip -j DROP")
-                    } else {
-                        arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $ip -j DROP")
-                    }
-                    Runtime.getRuntime().exec(cmd)
+                    Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $ip -j DROP"))
+                    Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $ip -j DROP"))
                     Log.info(Bundle()["event.ban.iptables", ip])
                 }
             }
@@ -679,10 +674,6 @@ object Event {
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
             if (saveDirectory.child("rollback.msav").exists()) saveDirectory.child("rollback.msav").delete()
-
-            if(!state.isPaused && Core.settings.getBool("autoPause") && Groups.player.isEmpty){
-                state.set(GameState.State.paused)
-            }
 
             if (state.rules.pvp) {
                 if (Config.pvpPeace) {
