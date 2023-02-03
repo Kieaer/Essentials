@@ -2063,6 +2063,9 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     if (minute != null) {
                         d.status.put("ban", time.plusMinutes(minute.toLong()).toString())
                         Call.kick(other.con(), reason)
+                        if (Config.banChannelToken.isNotEmpty()) {
+                            Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["command.tempban.banned", d.name, player.plainName(), time.plusMinutes(minute.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))])
+                        }
                     } else {
                         Log.info(stripColors(bundle["command.tempban.not.number"]))
                     }
