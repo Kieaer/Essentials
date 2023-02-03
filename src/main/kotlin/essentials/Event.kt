@@ -272,7 +272,7 @@ object Event {
                 var isMute = false
                 if (Config.blockfooclient) {
                     if (message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
-                        Call.kick(player.con(), Bundle(if (findPlayers(player.plainName()) != null) findPlayers(player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
+                        Call.kick(player.con(), Bundle(if (findPlayers(player.plainName()) != null) findPlayers(player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "2"])
                         Log.info(Bundle()["event.antigrief.foo.detected.log", player.plainName(), "2"])
                         for (a in database.players) {
                             a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", player.name, "2"])
@@ -576,7 +576,7 @@ object Event {
                                 if (fooUser || assistUser) {
                                     hackCount++
                                     if (hackCount > 150) {
-                                        Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
+                                        Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "0"])
                                         Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "0"])
                                         for (a in database.players) {
                                             a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "0"])
@@ -595,7 +595,7 @@ object Event {
                             if (fooUser || assistUser) {
                                 hackCount++
                                 if (hackCount > 150) {
-                                    Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected"])
+                                    Call.kick(it.player.con(), Bundle(if (findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "1"])
                                     Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "1"])
                                     for (a in database.players) {
                                         a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "1"])
