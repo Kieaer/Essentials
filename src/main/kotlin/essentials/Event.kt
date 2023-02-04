@@ -1019,197 +1019,202 @@ object Event {
                 }
 
                 if (voting) {
-                    if (count % 10 == 0) {
-                        if (isPvP) {
-                            for (a in Groups.player) {
-                                if (a.team() == voteTeam) {
-                                    val data = findPlayerData(a.uuid())
-                                    if (data != null) {
-                                        if (voteTargetUUID != data.uuid) {
-                                            val bundle = Bundle(data.languageTag)
-                                            a.sendMessage(bundle["command.vote.count", count.toString(), check() - voted.size])
+                    if (Groups.player.find { a -> a.uuid() == voteStarter!!.uuid() } == null) {
+                        send("command.vote.canceled.leave")
+                        resetVote()
+                    } else {
+                        if (count % 10 == 0) {
+                            if (isPvP) {
+                                for (a in Groups.player) {
+                                    if (a.team() == voteTeam) {
+                                        val data = findPlayerData(a.uuid())
+                                        if (data != null) {
+                                            if (voteTargetUUID != data.uuid) {
+                                                val bundle = Bundle(data.languageTag)
+                                                a.sendMessage(bundle["command.vote.count", count.toString(), check() - voted.size])
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        } else {
-                            send("command.vote.count", count.toString(), check() - voted.size)
-                            if (voteType == "kick" && Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
-                                send("command.vote.kick.target.leave")
+                            } else {
+                                send("command.vote.count", count.toString(), check() - voted.size)
+                                if (voteType == "kick" && Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
+                                    send("command.vote.kick.target.leave")
 
+                                }
                             }
                         }
-                    }
-                    count--
-                    if ((count == 0 && check() <= voted.size) || check() <= voted.size || isAdminVote) {
-                        send("command.vote.success")
+                        count--
+                        if ((count == 0 && check() <= voted.size) || check() <= voted.size || isAdminVote) {
+                            send("command.vote.success")
 
-                        val onlinePlayers = StringBuilder()
-                        for (a in database.players) onlinePlayers.append("${a.name}, ")
-                        onlinePlayers.substring(0, onlinePlayers.length - 1)
+                            val onlinePlayers = StringBuilder()
+                            for (a in database.players) onlinePlayers.append("${a.name}, ")
+                            onlinePlayers.substring(0, onlinePlayers.length - 1)
 
-                        voting = false
+                            voting = false
 
-                        when (voteType) {
-                            "kick" -> {
-                                val name = netServer.admins.getInfo(voteTargetUUID).lastName
-                                if (Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
-                                    netServer.admins.banPlayerID(voteTargetUUID)
-                                    send("command.vote.kick.target.banned", name)
-                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, onlinePlayers.toString()])
-                                } else {
-                                    voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
-                                    send("command.vote.kick.target.kicked", name)
-                                    if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, onlinePlayers.toString()])
-                                }
-                            }
-
-                            "map" -> {
-                                back(voteMap)
-                            }
-
-                            "gg" -> {
-                                if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
-                                if (isPvP) {
-                                    for (a in world.tiles) {
-                                        if (a.build != null && a.build.team != null && a.build.team == voteTeam) {
-                                            Call.setTile(a, Blocks.air, voteTeam, 0)
-                                        }
+                            when (voteType) {
+                                "kick" -> {
+                                    val name = netServer.admins.getInfo(voteTargetUUID).lastName
+                                    if (Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
+                                        netServer.admins.banPlayerID(voteTargetUUID)
+                                        send("command.vote.kick.target.banned", name)
+                                        if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, onlinePlayers.toString()])
+                                    } else {
+                                        voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
+                                        send("command.vote.kick.target.kicked", name)
+                                        if (Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, onlinePlayers.toString()])
                                     }
-                                } else {
-                                    Events.fire(GameOverEvent(state.rules.waveTeam))
                                 }
-                            }
 
-                            "skip" -> {
-                                if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 180)
-                                for (a in 0..voteWave!!) {
-                                    spawner.spawnEnemies()
-                                    state.wave++
-                                    state.wavetime = state.rules.waveSpacing
+                                "map" -> {
+                                    back(voteMap)
                                 }
-                                send("command.vote.skip.done", voteWave!!.toString())
-                            }
 
-                            "back" -> {
-                                back(null)
-                            }
+                                "gg" -> {
+                                    if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
+                                    if (isPvP) {
+                                        for (a in world.tiles) {
+                                            if (a.build != null && a.build.team != null && a.build.team == voteTeam) {
+                                                Call.setTile(a, Blocks.air, voteTeam, 0)
+                                            }
+                                        }
+                                    } else {
+                                        Events.fire(GameOverEvent(state.rules.waveTeam))
+                                    }
+                                }
 
-                            "random" -> {
-                                if (lastVoted.plusMinutes(10).isBefore(LocalTime.now())) {
-                                    send("command.vote.random.cool")
-                                } else {
-                                    if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 420)
-                                    lastVoted = LocalTime.now()
-                                    send("command.vote.random.done")
-                                    Thread {
-                                        val map: Map
-                                        val random = Random()
-                                        send("command.vote.random.is")
-                                        Thread.sleep(3000)
-                                        when (random.nextInt(7)) {
-                                            0 -> {
-                                                send("command.vote.random.unit")
-                                                Groups.unit.each {
-                                                    if (voteStarter != null) {
-                                                        if (it.team == voteStarter!!.team()) it.kill()
-                                                    } else {
-                                                        it.kill()
+                                "skip" -> {
+                                    if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 180)
+                                    for (a in 0..voteWave!!) {
+                                        spawner.spawnEnemies()
+                                        state.wave++
+                                        state.wavetime = state.rules.waveSpacing
+                                    }
+                                    send("command.vote.skip.done", voteWave!!.toString())
+                                }
+
+                                "back" -> {
+                                    back(null)
+                                }
+
+                                "random" -> {
+                                    if (lastVoted.plusMinutes(10).isBefore(LocalTime.now())) {
+                                        send("command.vote.random.cool")
+                                    } else {
+                                        if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 420)
+                                        lastVoted = LocalTime.now()
+                                        send("command.vote.random.done")
+                                        Thread {
+                                            val map: Map
+                                            val random = Random()
+                                            send("command.vote.random.is")
+                                            Thread.sleep(3000)
+                                            when (random.nextInt(7)) {
+                                                0 -> {
+                                                    send("command.vote.random.unit")
+                                                    Groups.unit.each {
+                                                        if (voteStarter != null) {
+                                                            if (it.team == voteStarter!!.team()) it.kill()
+                                                        } else {
+                                                            it.kill()
+                                                        }
                                                     }
+                                                    send("command.vote.random.unit.wave")
+                                                    logic.runWave()
                                                 }
-                                                send("command.vote.random.unit.wave")
-                                                logic.runWave()
-                                            }
 
-                                            1 -> {
-                                                send("command.vote.random.wave")
-                                                for (a in 0..5) logic.runWave()
-                                            }
+                                                1 -> {
+                                                    send("command.vote.random.wave")
+                                                    for (a in 0..5) logic.runWave()
+                                                }
 
-                                            2 -> {
-                                                send("command.vote.random.health")
-                                                Groups.build.each {
-                                                    if (voteStarter != null) {
-                                                        if (it.team == voteStarter!!.team()) {
+                                                2 -> {
+                                                    send("command.vote.random.health")
+                                                    Groups.build.each {
+                                                        if (voteStarter != null) {
+                                                            if (it.team == voteStarter!!.team()) {
+                                                                it.block.health = it.block.health / 2
+                                                            }
+                                                        } else {
                                                             it.block.health = it.block.health / 2
                                                         }
+                                                    }
+                                                    for (a in Groups.player) {
+                                                        Call.worldDataBegin(a.con)
+                                                        netServer.sendWorldData(a)
+                                                    }
+                                                }
+
+                                                3 -> {
+                                                    send("command.vote.random.fill.core")
+                                                    if (voteStarter != null) {
+                                                        for (item in content.items()) {
+                                                            state.teams.cores(voteStarter!!.team()).first().items.add(item, Random(516).nextInt(500))
+                                                        }
                                                     } else {
-                                                        it.block.health = it.block.health / 2
+                                                        for (item in content.items()) {
+                                                            state.teams.cores(Team.sharded).first().items.add(item, Random(516).nextInt(500))
+                                                        }
                                                     }
                                                 }
-                                                for (a in Groups.player) {
-                                                    Call.worldDataBegin(a.con)
-                                                    netServer.sendWorldData(a)
-                                                }
-                                            }
 
-                                            3 -> {
-                                                send("command.vote.random.fill.core")
-                                                if (voteStarter != null) {
-                                                    for (item in content.items()) {
-                                                        state.teams.cores(voteStarter!!.team()).first().items.add(item, Random(516).nextInt(500))
-                                                    }
-                                                } else {
-                                                    for (item in content.items()) {
-                                                        state.teams.cores(Team.sharded).first().items.add(item, Random(516).nextInt(500))
-                                                    }
-                                                }
-                                            }
-
-                                            4 -> {
-                                                send("command.vote.random.storm")
-                                                Thread.sleep(1000)
-                                                Call.createWeather(Weathers.rain, 10f, 60 * 60f, 50f, 10f)
-                                            }
-
-                                            5 -> {
-                                                send("command.vote.random.fire")
-                                                for (x in 0 until world.width()) {
-                                                    for (y in 0 until world.height()) {
-                                                        Call.effect(Fx.fire, (x * 8).toFloat(), (y * 8).toFloat(), 0f, Color.red)
-                                                    }
-                                                }
-                                                var tick = 600
-                                                map = state.map
-
-                                                while (tick != 0 && map == state.map) {
+                                                4 -> {
+                                                    send("command.vote.random.storm")
                                                     Thread.sleep(1000)
-                                                    tick--
-                                                    Core.app.post {
-                                                        Groups.unit.each {
-                                                            it.health(it.health() - 10f)
-                                                        }
-                                                        Groups.build.each {
-                                                            it.block.health = it.block.health / 30
+                                                    Call.createWeather(Weathers.rain, 10f, 60 * 60f, 50f, 10f)
+                                                }
+
+                                                5 -> {
+                                                    send("command.vote.random.fire")
+                                                    for (x in 0 until world.width()) {
+                                                        for (y in 0 until world.height()) {
+                                                            Call.effect(Fx.fire, (x * 8).toFloat(), (y * 8).toFloat(), 0f, Color.red)
                                                         }
                                                     }
-                                                    if (tick == 300) {
-                                                        send("command.vote.random.supply")
-                                                        repeat(2) {
-                                                            if (voteStarter != null) {
-                                                                UnitTypes.oct.spawn(voteStarter!!.team(), voteStarter!!.x, voteStarter!!.y)
-                                                            } else {
-                                                                UnitTypes.oct.spawn(Team.sharded, state.teams.cores(Team.sharded).first().x, state.teams.cores(Team.sharded).first().y)
+                                                    var tick = 600
+                                                    map = state.map
+
+                                                    while (tick != 0 && map == state.map) {
+                                                        Thread.sleep(1000)
+                                                        tick--
+                                                        Core.app.post {
+                                                            Groups.unit.each {
+                                                                it.health(it.health() - 10f)
+                                                            }
+                                                            Groups.build.each {
+                                                                it.block.health = it.block.health / 30
+                                                            }
+                                                        }
+                                                        if (tick == 300) {
+                                                            send("command.vote.random.supply")
+                                                            repeat(2) {
+                                                                if (voteStarter != null) {
+                                                                    UnitTypes.oct.spawn(voteStarter!!.team(), voteStarter!!.x, voteStarter!!.y)
+                                                                } else {
+                                                                    UnitTypes.oct.spawn(Team.sharded, state.teams.cores(Team.sharded).first().x, state.teams.cores(Team.sharded).first().y)
+                                                                }
                                                             }
                                                         }
                                                     }
                                                 }
-                                            }
 
-                                            else -> {
-                                                send("command.vote.random.nothing")
+                                                else -> {
+                                                    send("command.vote.random.nothing")
+                                                }
                                             }
-                                        }
-                                    }.start()
+                                        }.start()
+                                    }
                                 }
                             }
+
+                            resetVote()
+                        } else if ((count == 0 && check() > voted.size) || isCanceled) {
+                            send("command.vote.failed")
+
+                            resetVote()
                         }
-
-                        resetVote()
-                    } else if ((count == 0 && check() > voted.size) || isCanceled) {
-                        send("command.vote.failed")
-
-                        resetVote()
                     }
                 }
 
