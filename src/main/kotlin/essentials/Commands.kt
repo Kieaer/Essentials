@@ -1258,7 +1258,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
 
                 for (a in all) {
-                    if (!a.status.containsKey("hideRanking")) {
+                    if (!a.status.containsKey("hideRanking") && !netServer.admins.banned.contains { b -> b.id == a.uuid }) {
                         val info = ArrayMap<String, String>()
                         val pvpcount = ArrayMap<Int, Int>()
                         info.put(a.name, a.uuid)
