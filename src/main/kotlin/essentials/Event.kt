@@ -12,7 +12,6 @@ import arc.struct.Seq
 import arc.util.Align
 import arc.util.Log
 import arc.util.Strings
-import arc.util.Threads.sleep
 import arc.util.Time
 import com.github.pemistahl.lingua.api.IsoCode639_1
 import com.github.pemistahl.lingua.api.Language
@@ -90,6 +89,7 @@ object Event {
     private var pvpCount = Config.pvpPeaceTime
     private var count = 60
     var pvpSpectors = Seq<String>()
+    var pvpPlayer = Seq<String>()
 
     fun register() {
         Events.on(WithdrawEvent::class.java) {
@@ -384,6 +384,8 @@ object Event {
             }
             if (voting && voteType == "gg") resetVote()
             worldHistory = Seq<TileLog>()
+            pvpSpectors = Seq<String>()
+            pvpPlayer = Seq<String>()
         }
 
         Events.on(BlockBuildBeginEvent::class.java) {
@@ -785,28 +787,6 @@ object Event {
             player.name(stringBuilder.toString())
         }
 
-        Events.on(BuildDamageEvent::class.java) {
-            if (state.rules.pvp) {
-                for (a in Groups.player) {
-                    if (a.core() == null && a.team() != Team.derelict && !Permission.check(a, "pvp.spector")) {
-                        Main.daemon.submit{Thread {
-                            sleep(3000)
-                            if (a != null && a.core() == null && a.team() != Team.derelict && !Permission.check(a, "pvp.spector")) {
-                                Core.app.post {
-                                    val data = findPlayerData(a.uuid())
-                                    if (data != null) {
-                                        data.pvplosecount++
-                                    }
-                                    a.team(Team.derelict)
-                                    pvpSpectors.add(a.uuid())
-                                }
-                            }
-                        }}
-                    }
-                }
-            }
-        }
-
         var milsCount = 0
         var secondCount = 0
         var minuteCount = 0
@@ -827,6 +807,17 @@ object Event {
             }
 
             for (a in database.players) {
+                if (state.rules.pvp) {
+                    if (a.player.team().cores().isEmpty && a.player.team() != Team.derelict && pvpPlayer.contains { b -> b == a.uuid } && !Permission.check(a.player, "pvp.spector")) {
+                        val data = findPlayerData(a.uuid)
+                        if (data != null) {
+                            data.pvplosecount++
+                        }
+                        a.player.team(Team.derelict)
+                        pvpSpectors.add(a.uuid)
+                    }
+                }
+
                 if (a.status.containsKey("freeze")) {
                     val d = findPlayerData(a.uuid)
                     if (d != null) {
@@ -1206,6 +1197,14 @@ object Event {
             }
 
             if (minuteCount == 3600) {
+                if (state.rules.pvp) {
+                    for (a in database.players) {
+                        if (!pvpPlayer.contains { b -> b == a.uuid }) {
+                            pvpPlayer.add(a.uuid)
+                        }
+                    }
+                }
+
                 Main.daemon.submit(Thread {
                     val data = database.getAll()
 
