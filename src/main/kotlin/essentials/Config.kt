@@ -46,6 +46,7 @@ object Config {
     var waveskip = 1
     var unbreakableCore = false
     var moveEffects = true
+    var blockNewUser = false
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -167,6 +168,7 @@ object Config {
         security.add("minimumName", minimalName, bundle["config.minimumName"])
         security.add("blockfooclient", blockfooclient, bundle["config.blockfooclient"])
         security.add("allowMobile", allowMobile, bundle["config.allow.mobile"])
+        security.add("blockNewUser", blockNewUser, bundle["config.blocknewuser"])
 
         val discord = JsonObject()
         discord.add("botToken", botToken, bundle["config.discord.token"])
@@ -229,6 +231,7 @@ object Config {
         minimalName = security.getBoolean("minimalName", minimalName)
         blockfooclient = security.getBoolean("blockfooclient", blockfooclient)
         allowMobile = security.getBoolean("allowMobile", allowMobile)
+        blockNewUser = security.getBoolean("blockNewUser", blockNewUser)
 
         botToken = discord.getString("botToken", botToken)
         channelToken = discord.getString("channelToken", channelToken)

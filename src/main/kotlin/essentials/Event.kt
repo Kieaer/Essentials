@@ -542,8 +542,13 @@ object Event {
             log(LogType.Player, Bundle()["log.joined", it.player.plainName(), it.player.uuid(), it.player.con.address])
             it.player.admin(false)
 
+            val data = database[it.player.uuid()]
+            if (Config.blockNewUser && data == null) {
+                it.player.kick(Bundle(it.player.locale)["event.player.new.blocked"])
+                return@on
+            }
+
             if (Config.authType == Config.AuthType.None) {
-                val data = database[it.player.uuid()]
                 if (data != null) {
                     Trigger.loadPlayer(it.player, data)
                 } else if (Config.authType != Config.AuthType.None) {
