@@ -226,7 +226,7 @@ object Trigger {
                         }
                         for (m in memory) {
                             val a = m.second.split("///").toTypedArray()
-                            Call.label(m.first.con(), a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat())
+                            Core.app.post { Call.label(m.first.con(), a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat()) }
                         }
 
                         for (i in 0 until PluginData.warpTotals.size) {
@@ -237,7 +237,9 @@ object Trigger {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9 -> {
                                             for (px in 0..2) {
                                                 for (py in 0..4) {
-                                                    Call.setTile(world.tile(value.tile.x + px, value.tile.y + py), Blocks.air, Team.sharded, 0)
+                                                    Core.app.post {
+                                                        Call.setTile(world.tile(value.tile.x + px, value.tile.y + py), Blocks.air, Team.sharded, 0)
+                                                    }
                                                 }
                                             }
                                         }
@@ -245,7 +247,9 @@ object Trigger {
                                         else -> {
                                             for (px in 0..5) {
                                                 for (py in 0..4) {
-                                                    Call.setTile(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, Team.sharded, 0)
+                                                    Core.app.post {
+                                                        Call.setTile(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, Team.sharded, 0)
+                                                    }
                                                 }
                                             }
                                         }

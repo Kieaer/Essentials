@@ -1290,7 +1290,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 page--
 
                 if (page >= pages || page < 0) {
-                    send("command.page.range", pages)
+                    Core.app.post { send("command.page.range", pages) }
                     return@Thread
                 }
                 string.append(bundle[firstMessage, page + 1, pages] + "\n")
@@ -1758,24 +1758,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun vote(player: Playerc, arg: Array<out String>) {
             fun sendStart(message: String, vararg parameter: Any) {
-                Groups.player.forEach {
+                database.players.forEach {
                     if (Event.isPvP) {
-                        if (Event.voteTeam == it.team()) {
-                            val data = findPlayerData(it.uuid())
+                        if (Event.voteTeam == it.player.team()) {
+                            val data = findPlayerData(it.uuid)
                             if (data != null) {
                                 val bundle = Bundle(data.languageTag)
-                                it.sendMessage(bundle["command.vote.starter", player.plainName()])
-                                it.sendMessage(bundle.get(message, *parameter))
-                                it.sendMessage(bundle["command.vote.how"])
+                                it.player.sendMessage(bundle["command.vote.starter", player.plainName()])
+                                it.player.sendMessage(bundle.get(message, *parameter))
+                                it.player.sendMessage(bundle["command.vote.how"])
                             }
                         }
                     } else {
-                        val data = findPlayerData(it.uuid())
+                        val data = findPlayerData(it.uuid)
                         if (data != null) {
                             val bundle = Bundle(data.languageTag)
-                            it.sendMessage(bundle["command.vote.starter", player.plainName()])
-                            it.sendMessage(bundle.get(message, *parameter))
-                            it.sendMessage(bundle["command.vote.how"])
+                            it.player.sendMessage(bundle["command.vote.starter", player.plainName()])
+                            it.player.sendMessage(bundle.get(message, *parameter))
+                            it.player.sendMessage(bundle["command.vote.how"])
                         }
                     }
                 }
