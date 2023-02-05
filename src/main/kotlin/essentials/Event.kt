@@ -240,6 +240,11 @@ object Event {
 
             dosBlacklist = netServer.admins.dosBlacklist
 
+            if (Config.countAllServers) {
+                Core.settings.put("totalPlayers", 0)
+                Core.settings.saveValues()
+            }
+
             if (!Config.blockIP && Config.database != Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath() && PluginData.status.contains("iptablesFirst")) {
                 Log.warn(Bundle()["event.database.blockip.conflict"])
 
