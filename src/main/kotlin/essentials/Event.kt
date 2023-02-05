@@ -393,13 +393,6 @@ object Event {
         }
 
         Events.on(BlockBuildEndEvent::class.java) {
-            if (it.unit.isPlayer) {
-                val player = findPlayerData(it.unit.player.uuid())
-                if (player != null) {
-                    if (!it.breaking) player.placecount++ else player.breakcount++
-                }
-            }
-
             val isDebug = Core.settings.getBool("debugMode")
 
             if (it.unit.isPlayer) {
