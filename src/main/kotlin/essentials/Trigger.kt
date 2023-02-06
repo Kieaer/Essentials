@@ -3,12 +3,12 @@ package essentials
 import arc.Core
 import arc.func.Prov
 import arc.struct.ArrayMap
+import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
-import mindustry.Vars.state
-import mindustry.Vars.world
+import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -17,9 +17,11 @@ import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
+import org.hjson.JsonArray
 import org.mindrot.jbcrypt.BCrypt
 import java.io.IOException
 import java.io.OutputStream
+import java.lang.Thread.sleep
 import java.net.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -329,15 +331,25 @@ object Trigger {
 
                 while (run) {
                     try {
-                        when (reader.nextLine()) { // Client 에게 데이터 전달 준비
+                        when (reader.nextLine()) {
+                            // Client 에게 데이터 전달 준비
                             "send" -> {
                                 write("ok")
                                 val data = reader.nextLine()
-                                println("[SERVER] data received: message is $data")
-                            } // Client 에게서 오는 데이터 수신
-                            "receive" -> { //val data = netServer.admins.banned.toString("&&")
-                                write("send dummy data")
-                                println("[SERVER] dummy data send.")
+                                // println("[SERVER] data received: message is $data")
+                                val json = JsonArray.readJSON(data).asArray()
+                                for (a in json) {
+                                    netServer.admins.banPlayerID(a.asString())
+                                }
+                                write("done")
+                            }
+                            // Client 에게서 오는 데이터 수신
+                            "receive" -> {
+                                val json = JsonArray()
+                                for (a in netServer.admins.banned) json.add("uuid", a.id)
+                                write(json.toString())
+                                //write("send dummy data")
+                                //println("[SERVER] dummy data send.")
                             }
 
                             "crash" -> {
@@ -406,14 +418,23 @@ object Trigger {
                         "send" -> {
                             write("send")
                             reader.nextLine()
-                            write("client sent data to server")
-                            println("[CLIENT] send data to server")
+                            // write("client sent data to server")
+                            // println("[CLIENT] send data to server")
+
+                            val json = JsonArray()
+                            for (a in netServer.admins.banned) json.add("uuid", a.id)
+                            write(json.toString())
+                            write(reader.nextLine())
                         }
 
                         "receive" -> {
                             write("receive")
                             val data = reader.nextLine()
-                            println("[CLIENT] $data")
+                            val json = JsonArray.readJSON(data).asArray()
+                            for (a in json) {
+                                netServer.admins.banPlayerID(a.asString())
+                            }
+                            //println("[CLIENT] $data")
                         }
 
                         "crash" -> {
