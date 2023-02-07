@@ -136,7 +136,7 @@ object Event {
                     if (it.tile.block().name == a.tileName && it.tile.build.tileX() == a.x && it.tile.build.tileY() == a.y) {
                         if (a.online) {
                             for (b in database.players) b.player.sendMessage(Bundle(b.languageTag)["event.tap.server", it.player.plainName(), a.description])
-                            Log.info(Bundle()["log.warp.move.block", it.player.plainName(), Strings.stripColors(a.description), a.ip, a.port])
+                            Log.info(Bundle()["log.warp.move.block", it.player.plainName(), Strings.stripColors(a.description), a.ip, a.port.toString()])
                             Call.connect(it.player.con(), a.ip, a.port)
                         }
                         break
@@ -145,7 +145,7 @@ object Event {
 
                 for (a in PluginData.warpZones) {
                     if (it.tile.x > a.startTile.x && it.tile.x < a.finishTile.x && it.tile.y > a.startTile.y && it.tile.y < a.finishTile.y) {
-                        Log.info(Bundle()["log.warp.move", it.player.plainName(), a.ip, a.port])
+                        Log.info(Bundle()["log.warp.move", it.player.plainName(), a.ip, a.port.toString()])
                         Call.connect(it.player.con(), a.ip, a.port)
                         break
                     }
@@ -667,7 +667,7 @@ object Event {
             }
 
             if (netServer.admins.isIDBanned(e.packet.uuid)) {
-                val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByIP(e.connection.address).lastName]
+                val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByName(e.packet.uuid).first().lastName]
                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
         }
