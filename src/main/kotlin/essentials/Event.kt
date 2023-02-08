@@ -401,7 +401,7 @@ object Event {
                         addLog(PlayerLog(target.name, it.tile.block(), it.tile.x, it.tile.y, null))
 
                         if (!state.rules.infiniteResources) {
-                            target.placecount + 1
+                            target.placecount++
                             target.exp = target.exp + blockExp.get(block.name)
                         }
 
@@ -414,7 +414,7 @@ object Event {
                         addLog(PlayerLog(target.name, player.unit().buildPlan().block, it.tile.x, it.tile.y, null))
 
                         if (!state.rules.infiniteResources) {
-                            target.breakcount + 1
+                            target.breakcount++
                             target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
                         }
                     }
