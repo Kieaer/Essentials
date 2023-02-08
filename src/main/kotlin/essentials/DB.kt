@@ -1,11 +1,13 @@
 package essentials
 
 import arc.Core
-import arc.files.Fi
 import arc.struct.ObjectMap
 import arc.struct.Seq
+import arc.util.Log
 import mindustry.gen.Playerc
 import org.h2.tools.Server
+import org.hjson.JsonObject
+import org.hjson.ParseException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -179,7 +181,12 @@ class DB {
                 data.mute = this[Player.mute]
                 data.id = this[Player.accountid]
                 data.pw = this[Player.accountpw]
-                data.status = ObjectMap.of(this[Player.status])
+
+                val obj = ObjectMap<String, String>()
+                for (a in JsonObject.readHjson(this[Player.status]).asObject()) {
+                    obj.put(a.name, a.value.asString())
+                }
+                data.status = obj
                 return data
             } else {
                 return null
@@ -213,7 +220,12 @@ class DB {
                 data.mute = it[Player.mute]
                 data.id = it[Player.accountid]
                 data.pw = it[Player.accountpw]
-                data.status = ObjectMap.of(it[Player.status])
+
+                val obj = ObjectMap<String, String>()
+                for (a in JsonObject.readHjson(it[Player.status]).asObject()) {
+                    obj.put(a.name, a.value.asString())
+                }
+                data.status = obj
                 d.add(data)
             }
         }
@@ -243,7 +255,10 @@ class DB {
                 it[mute] = data.mute
                 it[accountid] = data.id
                 it[accountpw] = data.pw
-                it[status] = data.status.toString()
+
+                val json = JsonObject()
+                for (a in data.status) json.add(a.key, a.value)
+                it[status] = json.toString()
             }
         }
     }
@@ -272,7 +287,12 @@ class DB {
                 data.mute = this[Player.mute]
                 data.id = this[Player.accountid]
                 data.pw = this[Player.accountpw]
-                data.status = ObjectMap.of(this[Player.status])
+
+                val obj = ObjectMap<String, String>()
+                for (a in JsonObject.readHjson(this[Player.status]).asObject()) {
+                    obj.put(a.name, a.value.asString())
+                }
+                data.status = obj
 
                 return if (data.id == data.pw) data else if (BCrypt.checkpw(pw, data.pw)) data else null
             } else {

@@ -348,6 +348,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         try {
                             Color.valueOf(arg[1])
                             data.status.put("effectColor", arg[1])
+                            database.queue(data)
                         } catch (_: IllegalArgumentException) {
                             send("command.effect.no.color")
                         } catch (_: StringIndexOutOfBoundsException) {
