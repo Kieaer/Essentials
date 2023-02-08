@@ -90,7 +90,7 @@ class Main : Plugin() {
 
         if (Config.update) {
             Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest")
-                .timeout(3)
+                .timeout(1000)
                 .error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }
                 .submit {
                 if (it.status == Http.HttpStatus.OK) {

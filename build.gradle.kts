@@ -32,7 +32,7 @@ dependencies {
     //implementation("com.github.gimlet2:kottpd:0.2.1")
     implementation("org.apache.maven:maven-artifact:4.0.0-alpha-3")
 
-    implementation("com.h2database:h2:2.1.214")
+    implementation("com.h2database:h2:1.4.200")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
