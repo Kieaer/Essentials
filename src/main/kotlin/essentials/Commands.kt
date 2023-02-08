@@ -1356,7 +1356,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val target = findPlayers(arg[0])
                 if (target != null) {
                     val reason = arg[2]
-                    val infos = netServer.admins.findByIP(target.con().address)
+                    val infos = netServer.admins.findByName(target.uuid()).first()
                     val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                     val text = Bundle()["command.report.texts", target.plainName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
 

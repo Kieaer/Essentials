@@ -198,7 +198,7 @@ object Permission {
                 }
             } else {
                 c.permission = b.getString("group", default)
-                c.name = b.getString("name", netServer.admins.findByIP(c.player.ip()).lastName)
+                c.name = b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName)
                 c.player.admin(b.getBoolean("admin", false))
                 c.player.name(b.getString("name", netServer.admins.findByIP(c.player.ip()).lastName))
                 database.update(b.get("uuid").asString(), c)
@@ -213,7 +213,7 @@ object Permission {
         val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString().equals(player.uuid()) }
         if (u != null) {
             result.uuid = u.asObject().getString("uuid", player.uuid())
-            result.name = u.asObject().getString("name", netServer.admins.findByIP(player.ip()).lastName)
+            result.name = u.asObject().getString("name", netServer.admins.findByName(player.uuid()).first().lastName)
             result.group = u.asObject().getString("group", p?.permission ?: default)
             result.chatFormat = u.asObject().getString("chatFormat", Config.chatFormat)
             result.admin = u.asObject().getBoolean("admin", false)
@@ -221,7 +221,7 @@ object Permission {
             result.alertMessage = u.asObject().getString("alertMessage", "")
         } else {
             result.uuid = player.uuid()
-            result.name = if (netServer.admins.findByIP(player.ip()) != null) netServer.admins.findByIP(player.ip()).lastName else ""
+            result.name = if (netServer.admins.findByName(player.uuid()) != null) netServer.admins.findByName(player.uuid()).first().lastName else ""
             result.group = p?.permission ?: default
             result.admin = false
             result.isAlert = false

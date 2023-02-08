@@ -578,13 +578,13 @@ object Event {
 
             if (Config.banChannelToken.isNotEmpty()) {
                 val name = if (it.player != null) {
-                    netServer.admins.findByIP(it.player.con.address).names.toString(", ")
+                    netServer.admins.findByName(it.player.uuid()).first().names.toString(", ")
                 } else {
                     netServer.admins.banned.find { a -> a.id.equals(it.uuid) }.names.toString(", ")
                 }
 
                 val id = if (it.player != null) {
-                    netServer.admins.findByIP(it.player.con.address).id
+                    netServer.admins.findByName(it.player.uuid()).first().id
                 } else {
                     netServer.admins.banned.find { a -> a.id.equals(it.uuid) }.id
                 }
