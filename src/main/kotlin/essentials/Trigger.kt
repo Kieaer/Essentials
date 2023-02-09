@@ -42,7 +42,7 @@ object Trigger {
             if (data.status.containsKey("duplicateName") && data.status.get("duplicateName") != player.name()) {
                 data.name = player.name()
                 data.status.remove("duplicateName")
-                database.update(player.uuid(), data)
+                database.queue(data)
             }
             if (Config.fixedName) player.name(data.name)
             data.lastdate = System.currentTimeMillis()
@@ -308,6 +308,20 @@ object Trigger {
                 total += v.value
             }
             return total
+        }
+    }
+
+    object UpdateThread: Runnable {
+        val queue = Seq<DB.PlayerData>()
+
+        override fun run() {
+            while (!java.lang.Thread.currentThread().isInterrupted) {
+                for (a in queue) {
+                    database.update(a.uuid, a)
+                    queue.removeAll { b -> b.uuid == a.uuid}
+                }
+                sleep(100)
+            }
         }
     }
 

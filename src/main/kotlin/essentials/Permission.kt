@@ -194,14 +194,14 @@ object Permission {
                 if (data != null && b.has("group")) {
                     data.permission = b.get("group").asString()
                     data.name = b.getString("name", data.name)
-                    database.update(b.get("uuid").asString(), data)
+                    database.queue(data)
                 }
             } else {
                 c.permission = b.getString("group", default)
                 c.name = b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName)
                 c.player.admin(b.getBoolean("admin", false))
-                c.player.name(b.getString("name", netServer.admins.findByIP(c.player.ip()).lastName))
-                database.update(b.get("uuid").asString(), c)
+                c.player.name(b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName))
+                database.queue(c)
             }
         }
     }

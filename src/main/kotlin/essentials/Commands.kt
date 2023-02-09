@@ -158,7 +158,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
             data.pw = password
-            database.update(player.uuid(), data)
+            database.queue(data)
             send("command.changepw.apply")
         }
 
@@ -385,7 +385,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                     if (a != null) {
                                         val previous = a.exp
                                         a.exp = arg[1].toInt()
-                                        database.update(p.id, a)
+                                        database.queue(a)
                                         send("command.exp.result", previous, a.exp)
                                     } else {
                                         send("player.not.registered")
@@ -452,7 +452,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                     if (a != null) {
                                         val previous = a.exp
                                         a.exp += arg[1].toInt()
-                                        database.update(p.id, a)
+                                        database.queue(a)
                                         send("command.exp.result", previous, a.exp)
                                     } else {
                                         send("player.not.registered")
@@ -490,7 +490,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                                     if (a != null) {
                                         val previous = a.exp
                                         a.exp -= arg[1].toInt()
-                                        database.update(p.id, a)
+                                        database.queue(a)
                                         send("command.exp.result", previous, a.exp)
                                     } else {
                                         send("player.not.registered")
@@ -911,7 +911,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 return
             }
             data.languageTag = arg[0]
-            database.update(player.uuid(), data)
+            database.queue(data)
             send("command.language.set", Locale(arg[0]).language)
             player.sendMessage(Bundle(arg[0])["command.language.preview", Locale(arg[0]).toLanguageTag()])
         }
@@ -1160,7 +1160,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val target = findPlayerData(other.uuid())
                 if (target != null) {
                     target.mute = true
-                    database.update(target.uuid, target)
+                    database.queue(target)
                     send("command.mute", target.name)
                 } else {
                     send("player.not.found")
@@ -1171,7 +1171,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val a = database[p.id]
                     if (a != null) {
                         a.mute = true
-                        database.update(p.id, a)
+                        database.queue(a)
                         send("command.mute", a.name)
                     } else {
                         send("player.not.registered")
@@ -1499,7 +1499,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val a = database[p.id]
                     if (a != null) {
                         a.permission = arg[1]
-                        database.update(p.id, a)
+                        database.queue(a)
                         send("command.setperm.success", a.name, arg[1])
                     } else {
                         send("player.not.registered")
@@ -1702,7 +1702,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val target = findPlayerData(other.uuid())
                 if (target != null) {
                     target.mute = false
-                    database.update(target.uuid, target)
+                    database.queue(target)
                     send("command.unmute", target.name)
                 } else {
                     send("player.not.found")
@@ -1713,7 +1713,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val a = database[p.id]
                     if (a != null) {
                         a.mute = false
-                        database.update(p.id, a)
+                        database.queue(a)
                         send("command.unmute", a.name)
                     } else {
                         send("player.not.registered")
@@ -2036,7 +2036,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 val data = findPlayerData(target.uuid())
                 if (data != null) {
                     data.permission = arg[1]
-                    database.update(data.uuid, data)
+                    database.queue(data)
                 } else {
                     Log.info(stripColors(bundle["player.not.registered"]))
                 }

@@ -152,16 +152,14 @@ object PluginData {
                                 it[this.data] = bufMemory
                             }
                         }
-                        Thread {
-                            sleep(5000)
-                            bufMemory = ""
+                        sleep(2000)
+                        bufMemory = ""
 
-                            transaction {
-                                DB.Data.update {
-                                    it[this.data] = lastMemory
-                                }
+                        transaction {
+                            DB.Data.update {
+                                it[this.data] = lastMemory
                             }
-                        }.start()
+                        }
                     }
                 }
             } else {

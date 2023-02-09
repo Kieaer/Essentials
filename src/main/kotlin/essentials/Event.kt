@@ -472,11 +472,6 @@ object Event {
             it.player.admin(false)
 
             val data = database[it.player.uuid()]
-            if (Config.blockNewUser && data == null) {
-                it.player.kick(Bundle(it.player.locale)["event.player.new.blocked"])
-                return@on
-            }
-
             if (Config.authType == Config.AuthType.None) {
                 if (data != null) {
                     Trigger.loadPlayer(it.player, data)
@@ -485,7 +480,7 @@ object Event {
                 } else if (Config.authType == Config.AuthType.None) {
                     Main.daemon.submit(Thread{
                         if (database.getAll().contains { a -> a.name == it.player.name() }) {
-                            Core.app.post { it.player.kick(Bundle(it.player.locale)["event.player.name.duplicate"]) }
+                            Core.app.post { it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L) }
                         } else {
                             Core.app.post { Trigger.createPlayer(it.player, null, null) }
                         }
@@ -560,7 +555,7 @@ object Event {
             log(LogType.Player, Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address])
             val data = database.players.find { data -> data.uuid == it.player.uuid() }
             if (data != null) {
-                database.update(it.player.uuid(), data)
+                database.queue(data)
             }
             database.players.remove(data)
         }
@@ -635,23 +630,28 @@ object Event {
         Events.on(ConnectPacketEvent::class.java) { e ->
             log(LogType.Player, "${e.packet.name} (${e.packet.uuid}, ${e.connection.address}) connected.")
 
+            if (Config.blockNewUser && netServer.admins.getInfo(e.packet.uuid) == null) {
+                e.connection.kick(Bundle(e.packet.locale)["event.player.new.blocked"], 0L)
+                return@on
+            }
+
             if (!Config.allowMobile && e.connection.mobile) {
-                e.connection.kick(Bundle(e.packet.locale)["event.player.not.allow.mobile"])
+                e.connection.kick(Bundle(e.packet.locale)["event.player.not.allow.mobile"], 0L)
             }
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (s in PluginData.blacklist) {
-                if (e.packet.name.matches(Regex(s))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.blacklisted"])
+                if (e.packet.name.matches(Regex(s))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.blacklisted"], 0L)
             }
 
             if (Config.fixedName) {
-                if (e.packet.name.length > 32) e.connection.kick(Bundle(e.packet.locale)["event.player.name.long"])
-                if (e.packet.name.matches(Regex(".*\\[.*].*"))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.parenthese"])
-                if (e.packet.name.contains("　")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.special"])
-                if (e.packet.name.contains(" ")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.not.allow"])
+                if (e.packet.name.length > 32) e.connection.kick(Bundle(e.packet.locale)["event.player.name.long"], 0L)
+                if (e.packet.name.matches(Regex(".*\\[.*].*"))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.parenthese"], 0L)
+                if (e.packet.name.contains("　")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.special"], 0L)
+                if (e.packet.name.contains(" ")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.not.allow"], 0L)
             }
 
-            if (Config.minimalName && e.packet.name.length < 4) e.connection.kick(Bundle(e.packet.locale)["event.player.name.short"])
+            if (Config.minimalName && e.packet.name.length < 4) e.connection.kick(Bundle(e.packet.locale)["event.player.name.short"], 0L)
 
             if (Config.antiVPN) {
                 val br = BufferedReader(InputStreamReader(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")!!))
@@ -940,7 +940,7 @@ object Event {
 
                             Call.infoPopup(a.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                         }
-                        Main.daemon.submit(Thread { database.update(a.uuid, a) })
+                        database.queue(a)
                     }
 
                     if (voting) {

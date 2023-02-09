@@ -19,49 +19,68 @@ class DB {
     val players: Seq<PlayerData> = Seq()
     var isRemote: Boolean = false
     lateinit var db: Database
-    lateinit var dbServer: Server
+    var dbServer: Server? = null
 
     fun open() {
         isRemote = !Config.database.equals(Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath(), false)
         try {
-            if (Fi(Config.database).exists()) {
-                db = Database.connect("jdbc:h2:${if (isRemote) "tcp://" else "file:"}${Config.database}${if (isRemote) ":9092/db" else ""}", "org.h2.Driver", "sa", "")
+            if (!isRemote) {
+                dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()).start()
+                db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
             } else {
-                if (!isRemote) {
-                    dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath())
-                    dbServer.start()
-                    db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
-                } else {
-                    db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
-                }
+                db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
             }
 
             transaction {
-                SchemaUtils.create(Player)
-                SchemaUtils.create(Data)
+                if (try { !connection.isClosed } catch (e: Exception) { false }) {
+                    SchemaUtils.create(Player)
+                    SchemaUtils.create(Data)
 
-                if (!isRemote) {
-                    val sql = """
-                    SELECT * FROM player cc INNER JOIN (SELECT
-                    "NAME", COUNT(*) AS CountOf
-                    FROM player
-                    GROUP BY "NAME"
-                    HAVING COUNT(*)>1
-                    ) dt ON cc.name=dt.name
-                    """.trimIndent()
-
-                    exec(sql) { rs ->
-                        while (rs.next()) {
-                            val data = get(rs.getString("uuid"))
-                            if (data != null) {
-                                if (!data.status.containsKey("duplicateName")) {
-                                    data.status.put("duplicateName", data.name)
-                                    update(data.uuid, data)
+                    if (!isRemote) {
+                        try {
+                            getAll()
+                        } catch (e: ParseException) {
+                            transaction {
+                                Player.update {
+                                    it[status] = "{}"
                                 }
                             }
                         }
-                        print("\n")
+
+                        val sql = """
+                        SELECT * FROM player cc INNER JOIN (SELECT
+                        "NAME", COUNT(*) AS CountOf
+                        FROM player
+                        GROUP BY "NAME"
+                        HAVING COUNT(*)>1
+                        ) dt ON cc.name=dt.name
+                        """.trimIndent()
+
+                        exec(sql) { rs ->
+                            while (rs.next()) {
+                                val data = get(rs.getString("uuid"))
+                                if (data != null) {
+                                    try {
+                                        val json = JsonObject.readHjson(rs.getString("status")).asObject()
+                                        if (json.get("duplicateName") != null) {
+                                            json.add("duplicateName", data.name)
+                                        }
+                                    } catch (e: ParseException) {
+                                        if (!data.status.containsKey("duplicateName")) {
+                                            data.status.put("duplicateName", data.name)
+                                        }
+                                    }
+                                    update(data.uuid, data)
+                                }
+                            }
+                            print("\n")
+                        }
                     }
+
+                } else {
+                    Log.err(Bundle()["event.plugin.db.wrong"])
+                    dbServer?.stop()
+                    Core.app.exit()
                 }
             }
         } catch (e: Exception) {
@@ -230,6 +249,10 @@ class DB {
             }
         }
         return d
+    }
+
+    fun queue(data: PlayerData) {
+        Trigger.UpdateThread.queue.add(data)
     }
 
     fun update(id: String, data: PlayerData) {

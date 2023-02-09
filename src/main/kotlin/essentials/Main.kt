@@ -75,7 +75,7 @@ class Main : Plugin() {
                 Permission.sort()
                 Config.save()
                 database.close()
-                if (!database.isRemote) database.dbServer.stop()
+                if (database.dbServer != null) database.dbServer!!.stop()
             }
         })
 
@@ -86,6 +86,7 @@ class Main : Plugin() {
         Log.info(Bundle()["event.plugin.starting"])
         daemon.submit(FileWatchService)
         daemon.submit(Trigger.Thread())
+        daemon.submit(Trigger.UpdateThread)
         if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
         if (Config.update) {
