@@ -30,6 +30,7 @@ object PluginData {
 
     private var lastMemory = ""
     var uploading = false
+    var vpnList = Seq<String>()
 
     data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = Vars.world.tile(start)

@@ -654,14 +654,10 @@ object Event {
             if (Config.minimalName && e.packet.name.length < 4) e.connection.kick(Bundle(e.packet.locale)["event.player.name.short"], 0L)
 
             if (Config.antiVPN) {
-                val br = BufferedReader(InputStreamReader(Main::class.java.classLoader.getResourceAsStream("IP2LOCATION-LITE-DB1.BIN")!!))
-                br.use { _ ->
-                    var line: String
-                    while (br.readLine().also { line = it } != null) {
-                        val match = IpAddressMatcher(line)
-                        if (match.matches(e.connection.address)) {
-                            e.connection.kick(Bundle()["anti-grief.vpn"])
-                        }
+                for (a in PluginData.vpnList) {
+                    val match = IpAddressMatcher(a)
+                    if (match.matches(e.connection.address)) {
+                        e.connection.kick(Bundle(e.packet.locale)["anti-grief.vpn"])
                     }
                 }
             }

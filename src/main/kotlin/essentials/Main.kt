@@ -67,6 +67,39 @@ class Main : Plugin() {
             }
         }
 
+        if (Config.antiVPN) {
+            if (!root.child("data/ipv4.txt").exists()){
+                root.child("data").mkdirs()
+                var isUpdate = false
+
+                if (!PluginData.status.containsKey("vpnListDate")) {
+                    PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
+                    isUpdate = true
+                } else if ((PluginData.status.get("vpnListDate").toLong() + 8.64e+7) < System.currentTimeMillis()){
+                    PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
+                    isUpdate = true
+                }
+
+                if (isUpdate) {
+                    URL("https://github.com/X4BNet/lists_vpn/blob/main/output/datacenter/ipv4.txt").openStream().use { b ->
+                        BufferedInputStream(b).use { bis ->
+                            FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
+                                val data = ByteArray(1024)
+                                var count: Int
+                                while (bis.read(data, 0, 1024).also { count = it } != -1) {
+                                    fos.write(data, 0, count)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                root.child("data/ipv4.txt").file().forEachLine {
+                    PluginData.vpnList.add(it)
+                }
+            }
+        }
+
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 PluginData.save()
