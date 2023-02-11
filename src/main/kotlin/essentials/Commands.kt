@@ -665,13 +665,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             when (type) {
                 "set" -> {
-                    if (PluginData.status.contains("hubMode") && !PluginData.status.contains(state.map.name())) {
+                    if (PluginData.status.containsKey("hubMode")) {
                         send("command.hub.mode.exists")
-                    } else if (!PluginData.status.contains("hubMode") && !PluginData.status.contains(state.map.name())) {
-                        PluginData.status.add("hubMode")
-                        PluginData.status.add(state.map.name())
+                    } else if (!PluginData.status.containsKey("hubMode")) {
+                        PluginData.status.put("hubMode", state.map.name())
                         send("command.hub.mode.on")
-                    } else if (PluginData.status.contains("hubMode") && PluginData.status.contains(state.map.name())) {
+                    } else if (PluginData.status.containsKey("hubMode")) {
                         PluginData.status.remove("hubMode")
                         PluginData.status.remove(state.map.name())
                         send("command.hub.mode.off")

@@ -5,6 +5,7 @@ import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import mindustry.gen.Playerc
+import org.h2.tools.RunScript
 import org.h2.tools.Server
 import org.hjson.JsonObject
 import org.hjson.ParseException
@@ -12,6 +13,10 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
+import java.io.BufferedInputStream
+import java.io.FileOutputStream
+import java.net.URL
+import java.sql.DriverManager
 import java.util.*
 
 
@@ -22,17 +27,49 @@ class DB {
     var dbServer: Server? = null
 
     fun open() {
-        isRemote = !Config.database.equals(Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath(), false)
         try {
+            if (Main.root.child("database.db.mv.db").exists()) {
+                if (!Main.root.child("data/h2-1.4.200.jar").exists()) {
+                    Main.root.child("data").mkdirs()
+                    URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar").openStream().use { b ->
+                        BufferedInputStream(b).use { bis ->
+                            FileOutputStream(Main.root.child("data/h2-1.4.200.jar").absolutePath()).use { fos ->
+                                val data = ByteArray(1024)
+                                var count: Int
+                                while (bis.read(data, 0, 1024).also { count = it } != -1) {
+                                    fos.write(data, 0, count)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
+                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                    val cmd = arrayOf("/bin/bash", "-c", "cd ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql")
+                    Runtime.getRuntime().exec(cmd).waitFor()
+                } else {
+                    Runtime.getRuntime().exec("cmd /c cd /D ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql").waitFor()
+                }
+
+                val d = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
+                val conn = DriverManager.getConnection("jdbc:h2:${Config.database}", "sa", "")
+                RunScript.execute(conn, Main.root.child("data/script.sql").reader())
+                conn.close()
+                TransactionManager.closeAndUnregister(d)
+                Main.root.child("database.db.mv.db").moveTo(Main.root.child("database.db.mv-backup.db"))
+            }
+
+            isRemote = !Config.database.equals(Main.root.child("database").absolutePath(), false)
             if (!isRemote) {
-                dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()).start()
+                dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Config.database).start()
                 db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
             } else {
                 db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
             }
 
             transaction {
-                if (try { !connection.isClosed } catch (e: Exception) { false }) {
+                if (!connection.isClosed) {
                     SchemaUtils.create(Player)
                     SchemaUtils.create(Data)
 
@@ -76,7 +113,6 @@ class DB {
                             print("\n")
                         }
                     }
-
                 } else {
                     Log.err(Bundle()["event.plugin.db.wrong"])
                     dbServer?.stop()
@@ -177,39 +213,38 @@ class DB {
     }
 
     operator fun get(uuid: String): PlayerData? {
-        transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }.run {
-            if (this != null) {
-                val data = PlayerData()
-                data.name = this[Player.name]
-                data.uuid = this[Player.uuid]
-                data.languageTag = this[Player.languageTag]
-                data.placecount = this[Player.placecount]
-                data.breakcount = this[Player.breakcount]
-                data.joincount = this[Player.joincount]
-                data.kickcount = this[Player.kickcount]
-                data.level = this[Player.level]
-                data.exp = this[Player.exp]
-                data.joinDate = this[Player.joinDate]
-                data.lastdate = this[Player.lastdate]
-                data.playtime = this[Player.playtime]
-                data.attackclear = this[Player.attackclear]
-                data.pvpwincount = this[Player.pvpwincount]
-                data.pvplosecount = this[Player.pvplosecount]
-                data.colornick = this[Player.colornick]
-                data.permission = this[Player.permission]
-                data.mute = this[Player.mute]
-                data.id = this[Player.accountid]
-                data.pw = this[Player.accountpw]
+        val d = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
+        if (d != null) {
+            val data = PlayerData()
+            data.name = d[Player.name]
+            data.uuid = d[Player.uuid]
+            data.languageTag = d[Player.languageTag]
+            data.placecount = d[Player.placecount]
+            data.breakcount = d[Player.breakcount]
+            data.joincount = d[Player.joincount]
+            data.kickcount = d[Player.kickcount]
+            data.level = d[Player.level]
+            data.exp = d[Player.exp]
+            data.joinDate = d[Player.joinDate]
+            data.lastdate = d[Player.lastdate]
+            data.playtime = d[Player.playtime]
+            data.attackclear = d[Player.attackclear]
+            data.pvpwincount = d[Player.pvpwincount]
+            data.pvplosecount = d[Player.pvplosecount]
+            data.colornick = d[Player.colornick]
+            data.permission = d[Player.permission]
+            data.mute = d[Player.mute]
+            data.id = d[Player.accountid]
+            data.pw = d[Player.accountpw]
 
-                val obj = ObjectMap<String, String>()
-                for (a in JsonObject.readHjson(this[Player.status]).asObject()) {
-                    obj.put(a.name, a.value.asString())
-                }
-                data.status = obj
-                return data
-            } else {
-                return null
+            val obj = ObjectMap<String, String>()
+            for (a in JsonObject.readHjson(d[Player.status]).asObject()) {
+                obj.put(a.name, a.value.asString())
             }
+            data.status = obj
+            return data
+        } else {
+            return null
         }
     }
 

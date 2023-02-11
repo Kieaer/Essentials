@@ -1,16 +1,16 @@
 package essentials
 
+import arc.struct.ObjectMap
 import arc.struct.Seq
+import arc.util.Log
 import mindustry.Vars
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.jetbrains.exposed.sql.insert
+import org.hjson.ParseException
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import java.io.IOException
-import java.lang.Thread.sleep
 import java.util.*
 
 object PluginData {
@@ -24,7 +24,7 @@ object PluginData {
     var warpTotals = Seq<WarpTotal>()
     var blacklist = Seq<String>()
     var banned = Seq<Banned>()
-    var status = Seq<String>()
+    var status = ObjectMap<String, String>()
 
     var sudoPassword = ""
 
@@ -120,57 +120,17 @@ object PluginData {
             buffer.add(obj)
         }
         data.add("banned", buffer)
-        buffer = JsonArray()
 
-        for (it in status) buffer.add(it)
-        data.add("status", buffer)
+        val json = JsonObject()
+        for (it in status) {
+            json.add(it.key, it.value)
+        }
+        data.add("status", json.toString())
 
         val encode = Base64.getEncoder()
         lastMemory = encode.encodeToString(data.toString().toByteArray())
 
-        var bufMemory = ""
 
-        Main.daemon.submit(Thread {
-            if (transaction { DB.Data.selectAll().firstOrNull() != null }) {
-                if (lastMemory != transaction { DB.Data.selectAll().first()[DB.Data.data] }) {
-                    data.add("requireUpdate", true)
-                    bufMemory = encode.encodeToString(data.toString().toByteArray())
-                }
-
-                val remote = transaction { DB.Data.selectAll().first()[DB.Data.data] }
-                if (lastMemory != remote) {
-                    if (JsonObject.readHjson(String(Base64.getDecoder().decode(remote))).asObject().has("requireUpdate")) {
-                        load()
-                    } else if (bufMemory.isEmpty()) {
-                        transaction {
-                            DB.Data.update {
-                                it[this.data] = lastMemory
-                            }
-                        }
-                    } else if (bufMemory.isNotEmpty()) {
-                        transaction {
-                            DB.Data.update {
-                                it[this.data] = bufMemory
-                            }
-                        }
-                        sleep(2000)
-                        bufMemory = ""
-
-                        transaction {
-                            DB.Data.update {
-                                it[this.data] = lastMemory
-                            }
-                        }
-                    }
-                }
-            } else {
-                transaction {
-                    DB.Data.insert {
-                        it[this.data] = lastMemory
-                    }
-                }
-            }
-        })
     }
 
     fun load() {
@@ -184,7 +144,7 @@ object PluginData {
                 warpTotals = Seq<WarpTotal>()
                 blacklist = Seq<String>()
                 banned = Seq<Banned>()
-                status = Seq<String>()
+                status = ObjectMap<String, String>()
 
                 transaction {
                     DB.Data.selectAll().first().apply {
@@ -239,9 +199,18 @@ object PluginData {
                             }
 
                             if (data["status"] == null) {
-                                status = Seq<String>()
+                                status = ObjectMap<String, String>()
                             } else {
-                                data["status"].asArray().forEach { status.add(it.asString()) }
+                                try {
+                                    data["status"].asObject().forEach {
+                                        status.put(it.name, it.value.asString())
+                                    }
+                                } catch (_: ParseException) {
+                                    data["status"].asArray().forEach {
+                                        if (!it.asString().equals("hubMode")) status.put(it.asString(), "none")
+                                        if (it.asString().equals("hubMode")) Log.warn(Bundle()["event.plugin.hubmode.reset"])
+                                    }
+                                }
                             }
                         }
                     }

@@ -37,9 +37,7 @@ import mindustry.net.Administration.PlayerInfo
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.world.Block
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.nio.file.Files
@@ -240,7 +238,7 @@ object Event {
                 Core.settings.saveValues()
             }
 
-            if (!Config.blockIP && Config.database != Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath() && PluginData.status.contains("iptablesFirst")) {
+            if (!Config.blockIP && Config.database != Main.root.child("database").absolutePath() && PluginData.status.containsKey("iptablesFirst")) {
                 Log.warn(Bundle()["event.database.blockip.conflict"])
 
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
@@ -248,7 +246,7 @@ object Event {
                     Config.blockIP = true
                     Log.info(Bundle()["config.blockIP.enabled"])
                 }
-            } else if (!Config.blockIP && PluginData.status.contains("iptablesFirst")) {
+            } else if (!Config.blockIP && PluginData.status.containsKey("iptablesFirst")) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
                         val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $b -j DROP")
@@ -257,7 +255,7 @@ object Event {
                 }
                 PluginData.status.remove("iptablesFirst")
                 Log.info(Bundle()["event.ban.iptables.remove"])
-            } else if (Config.blockIP && !PluginData.status.contains("iptablesFirst")) {
+            } else if (Config.blockIP && !PluginData.status.containsKey("iptablesFirst")) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
                         val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $b -j DROP")
@@ -265,7 +263,7 @@ object Event {
                         Log.info(Bundle()["event.ban.iptables.exists", b, a.lastName])
                     }
                 }
-                PluginData.status.add("iptablesFirst")
+                PluginData.status.put("iptablesFirst", "none")
             }
 
             netServer.chatFormatter = NetServer.ChatFormatter { player: Player, message: String ->

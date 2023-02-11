@@ -11,6 +11,9 @@ import mindustry.Vars
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
+import java.io.BufferedInputStream
+import java.io.FileOutputStream
+import java.net.URL
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -24,7 +27,7 @@ class Main : Plugin() {
     init {
         Log.info("[Essentials] Loading")
         if ((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
-            root.child("database.db").delete()
+            root.child("database.mv.db").delete()
         }
 
         createFile()
@@ -35,9 +38,9 @@ class Main : Plugin() {
         Permission.load()
         PluginData.load()
 
-        if (Config.database != Core.settings.dataDirectory.child("mods/Essentials/database.db").absolutePath()) {
+        if (Config.database != root.child("database").absolutePath()) {
             Log.info(Bundle()["event.database.remote"])
-            root.child("database.db").delete()
+            root.child("database.mv.db").delete()
         }
 
         if (Config.blockIP) {
@@ -156,7 +159,7 @@ class Main : Plugin() {
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
-            val isHub = PluginData.status.contains("hubMode") && PluginData.status.contains(Vars.state.map.name())
+            val isHub = PluginData.status.containsKey("hubMode")
             for (a in PluginData.warpBlocks) {
                 if (e.tile != null) {
                     if (a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {
