@@ -665,14 +665,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             when (type) {
                 "set" -> {
-                    if (PluginData.status.containsKey("hubMode")) {
-                        send("command.hub.mode.exists")
-                    } else if (!PluginData.status.containsKey("hubMode")) {
+                    if (!PluginData.status.containsKey("hubMode")) {
                         PluginData.status.put("hubMode", state.map.name())
                         send("command.hub.mode.on")
                     } else if (PluginData.status.containsKey("hubMode")) {
                         PluginData.status.remove("hubMode")
-                        PluginData.status.remove(state.map.name())
                         send("command.hub.mode.off")
                     }
                 }
@@ -730,6 +727,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
                 else -> send("command.hub.help")
             }
+            PluginData.changed = true
         }
 
         fun info() {

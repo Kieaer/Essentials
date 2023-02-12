@@ -255,6 +255,7 @@ object Event {
                 }
                 PluginData.status.remove("iptablesFirst")
                 Log.info(Bundle()["event.ban.iptables.remove"])
+                PluginData.changed = true
             } else if (Config.blockIP && !PluginData.status.containsKey("iptablesFirst")) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
@@ -264,6 +265,7 @@ object Event {
                     }
                 }
                 PluginData.status.put("iptablesFirst", "none")
+                PluginData.changed = true
             }
 
             netServer.chatFormatter = NetServer.ChatFormatter { player: Player, message: String ->
@@ -891,7 +893,7 @@ object Event {
                         if (a.value == 0) voterCooltime.remove(a.key)
                     }
 
-                    if (!PluginData.uploading) PluginData.save()
+                    PluginData.save()
 
                     for (a in database.players) {
                         a.playtime = a.playtime + 1

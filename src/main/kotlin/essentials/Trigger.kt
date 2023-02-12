@@ -18,6 +18,8 @@ import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
 import org.hjson.JsonArray
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import org.mindrot.jbcrypt.BCrypt
 import java.io.IOException
 import java.io.OutputStream
@@ -128,6 +130,21 @@ object Trigger {
         override fun run() {
             while (!java.lang.Thread.currentThread().isInterrupted) {
                 try {
+                    try {
+                        transaction {
+                            if (PluginData.changed) {
+                                DB.Data.update {
+                                    it[this.data] = PluginData.lastMemory
+                                    PluginData.changed = false
+                                }
+                            } else {
+                                PluginData.load()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
                     if (state.isPlaying) {
                         servers = ArrayMap<String, Int>()
                         for (i in 0 until PluginData.warpCounts.size) {
@@ -364,6 +381,10 @@ object Trigger {
                                 write(json.toString())
                                 //write("send dummy data")
                                 //println("[SERVER] dummy data send.")
+                            }
+
+                            "message" -> {
+
                             }
 
                             "crash" -> {

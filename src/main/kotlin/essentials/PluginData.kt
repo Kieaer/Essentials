@@ -7,7 +7,7 @@ import mindustry.Vars
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.hjson.ParseException
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.IOException
@@ -28,9 +28,9 @@ object PluginData {
 
     var sudoPassword = ""
 
-    private var lastMemory = ""
-    var uploading = false
+    var lastMemory = ""
     var vpnList = Seq<String>()
+    var changed = false
 
     data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
         val startTile: Tile get() = Vars.world.tile(start)
@@ -129,8 +129,6 @@ object PluginData {
 
         val encode = Base64.getEncoder()
         lastMemory = encode.encodeToString(data.toString().toByteArray())
-
-
     }
 
     fun load() {
@@ -147,9 +145,9 @@ object PluginData {
                 status = ObjectMap<String, String>()
 
                 transaction {
-                    DB.Data.selectAll().first().apply {
-                        if (lastMemory != this[DB.Data.data]) {
-                            val data = JsonObject.readHjson(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
+                    if (!DB.Data.selectAll().empty()) {
+                        DB.Data.selectAll().first().run {
+                            val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
 
                             data["warpZones"].asArray().forEach {
                                 val obj = it.asObject()
@@ -198,20 +196,21 @@ object PluginData {
                                 )
                             }
 
-                            if (data["status"] == null) {
-                                status = ObjectMap<String, String>()
-                            } else {
-                                try {
-                                    data["status"].asObject().forEach {
-                                        status.put(it.name, it.value.asString())
-                                    }
-                                } catch (_: ParseException) {
-                                    data["status"].asArray().forEach {
-                                        if (!it.asString().equals("hubMode")) status.put(it.asString(), "none")
-                                        if (it.asString().equals("hubMode")) Log.warn(Bundle()["event.plugin.hubmode.reset"])
-                                    }
+                            try {
+                                JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {
+                                    status.put(it.name, it.value.asString())
                                 }
+                            } catch (e: Exception) {
+                                data["status"].asArray().forEach {
+                                    if (!it.asString().equals("hubMode")) status.put(it.asString(), "none")
+                                    if (it.asString().equals("hubMode")) Log.warn(Bundle()["event.plugin.hubmode.reset"])
+                                }
+                                changed = true
                             }
+                        }
+                    } else {
+                        DB.Data.insert {
+                            it[data] = lastMemory
                         }
                     }
                 }

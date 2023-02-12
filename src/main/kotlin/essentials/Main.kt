@@ -82,6 +82,7 @@ class Main : Plugin() {
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
                 }
+                PluginData.changed = true
 
                 if (isUpdate) {
                     URL("https://github.com/X4BNet/lists_vpn/blob/main/output/datacenter/ipv4.txt").openStream().use { b ->
@@ -167,6 +168,7 @@ class Main : Plugin() {
                     }
                 }
             }
+
             if (data != null) {
                 if (isHub) {
                     return@addActionFilter Permission.check(e.player, "hub.build")
