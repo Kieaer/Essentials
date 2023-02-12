@@ -160,7 +160,7 @@ class Main : Plugin() {
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
-            val isHub = PluginData.status.containsKey("hubMode")
+            val isHub = PluginData.status.containsKey("hubmode") && (PluginData.status.get("hubMode").equals(Vars.state.map.name()))
             for (a in PluginData.warpBlocks) {
                 if (e.tile != null) {
                     if (a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {
