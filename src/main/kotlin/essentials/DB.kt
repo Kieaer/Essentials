@@ -5,7 +5,6 @@ import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import mindustry.gen.Playerc
-import org.h2.tools.RunScript
 import org.h2.tools.Server
 import org.hjson.JsonObject
 import org.hjson.ParseException
@@ -16,7 +15,6 @@ import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedInputStream
 import java.io.FileOutputStream
 import java.net.URL
-import java.sql.DriverManager
 import java.util.*
 
 
@@ -52,12 +50,9 @@ class DB {
                     Runtime.getRuntime().exec("cmd /c cd /D ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql").waitFor()
                 }
 
-                val d = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
-                val conn = DriverManager.getConnection("jdbc:h2:${Config.database}", "sa", "")
-                RunScript.execute(conn, Main.root.child("data/script.sql").reader())
-                conn.close()
-                TransactionManager.closeAndUnregister(d)
-                Main.root.child("database.db.mv.db").moveTo(Main.root.child("database.db.mv-backup.db"))
+                Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.db"))
+                Config.database = Main.root.child("database").absolutePath()
+                Config.save()
             }
 
             isRemote = !Config.database.equals(Main.root.child("database").absolutePath(), false)
@@ -66,6 +61,13 @@ class DB {
                 db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
             } else {
                 db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
+            }
+
+            if (Main.root.child("data/script.sql").exists()) {
+                transaction {
+                    exec(Main.root.child("data/script.sql").readString())
+                }
+                Main.root.child("data/script.sql").moveTo(Main.root.child("data/script_backup.sql"))
             }
 
             transaction {
