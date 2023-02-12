@@ -213,7 +213,7 @@ object Permission {
         val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString().equals(player.uuid()) }
         if (u != null) {
             result.uuid = u.asObject().getString("uuid", player.uuid())
-            result.name = u.asObject().getString("name", netServer.admins.findByName(player.uuid()).first().lastName)
+            result.name = u.asObject().getString("name", player.name())
             result.group = u.asObject().getString("group", p?.permission ?: default)
             result.chatFormat = u.asObject().getString("chatFormat", Config.chatFormat)
             result.admin = u.asObject().getBoolean("admin", false)
