@@ -3,6 +3,7 @@ package essentials
 import arc.Core
 import arc.Events
 import arc.graphics.Color
+import arc.graphics.Colors
 import arc.math.Mathf
 import arc.struct.ArrayMap
 import arc.struct.ObjectMap
@@ -348,7 +349,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     data.status.put("effectLevel", arg[0])
                     if (arg.size == 2) {
                         try {
-                            Color.valueOf(arg[1])
+                            if (Colors.get(arg[1]) == null) {
+                                Color.valueOf(arg[1])
+                            }
+
                             data.status.put("effectColor", arg[1])
                             database.queue(data)
                         } catch (_: IllegalArgumentException) {

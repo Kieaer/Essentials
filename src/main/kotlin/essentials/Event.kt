@@ -6,6 +6,7 @@ import arc.Events
 import arc.files.Fi
 import arc.func.Cons2
 import arc.graphics.Color
+import arc.graphics.Colors
 import arc.struct.ObjectMap
 import arc.struct.ObjectSet
 import arc.struct.Seq
@@ -837,7 +838,7 @@ object Event {
                         for (a in database.players) {
                             if (a.player.unit() != null && a.player.unit().health > 0f) {
                                 val color = if (a.status.containsKey("effectColor")) {
-                                    Color.valueOf(a.status.get("effectColor"))
+                                    if (Colors.get(a.status.get("effectColor")) != null) Colors.get(a.status.get("effectColor")) else Color.valueOf(a.status.get("effectColor"))
                                 } else {
                                     when (a.level) {
                                         in 10..19 -> Color.sky
