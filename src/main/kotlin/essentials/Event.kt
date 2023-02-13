@@ -238,7 +238,7 @@ object Event {
                 Core.settings.saveValues()
             }
 
-            if (!Config.blockIP && Config.database != Main.root.child("database").absolutePath() && PluginData.status.containsKey("iptablesFirst")) {
+            if (!Config.blockIP && Config.database != Main.root.child("database").absolutePath() && PluginData["iptablesFirst"] != null) {
                 Log.warn(Bundle()["event.database.blockip.conflict"])
 
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
@@ -246,7 +246,7 @@ object Event {
                     Config.blockIP = true
                     Log.info(Bundle()["config.blockIP.enabled"])
                 }
-            } else if (!Config.blockIP && PluginData.status.containsKey("iptablesFirst")) {
+            } else if (!Config.blockIP && PluginData["iptablesFirst"] != null) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
                         val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $b -j DROP")
@@ -256,7 +256,7 @@ object Event {
                 PluginData.status.remove("iptablesFirst")
                 Log.info(Bundle()["event.ban.iptables.remove"])
                 PluginData.changed = true
-            } else if (Config.blockIP && !PluginData.status.containsKey("iptablesFirst")) {
+            } else if (Config.blockIP && PluginData["iptablesFirst"] == null) {
                 for (a in netServer.admins.banned) {
                     for (b in a.ips) {
                         val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $b -j DROP")

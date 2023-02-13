@@ -51,6 +51,10 @@ object PluginData {
 
     data class Banned(val time: Long, val name: String, val uuid: String, val reason: String)
 
+    operator fun get(key: String) : String? {
+        return if (status.find { a -> a.key == key } == null) null else status.find { a -> a.key == key }!!.value
+    }
+
     fun save() {
         val data = JsonObject()
         var buffer = JsonArray()

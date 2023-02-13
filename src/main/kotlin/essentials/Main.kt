@@ -75,10 +75,10 @@ class Main : Plugin() {
                 root.child("data").mkdirs()
                 var isUpdate = false
 
-                if (!PluginData.status.containsKey("vpnListDate")) {
+                if (PluginData["vpnListDate"] == null) {
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
-                } else if ((PluginData.status.get("vpnListDate").toLong() + 8.64e+7) < System.currentTimeMillis()){
+                } else if ((PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()){
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
                 }
@@ -160,7 +160,7 @@ class Main : Plugin() {
         Vars.netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
-            val isHub = PluginData.status.containsKey("hubmode") && (PluginData.status.get("hubMode").equals(Vars.state.map.name()))
+            val isHub = PluginData["hubMode"]
             for (a in PluginData.warpBlocks) {
                 if (e.tile != null) {
                     if (a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {
@@ -170,7 +170,7 @@ class Main : Plugin() {
             }
 
             if (data != null) {
-                if (isHub) {
+                if (isHub != null && isHub == Vars.state.map.name()) {
                     return@addActionFilter Permission.check(e.player, "hub.build")
                 } else {
                     return@addActionFilter true

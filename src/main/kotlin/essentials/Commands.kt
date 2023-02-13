@@ -284,11 +284,13 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                         }
                     }
                     for (a in 0 until pos.size) {
-                        val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
-                        if (target[a] == 1) {
-                            Call.setTile(tar, Blocks.scrapWall, Team.sharded, 0)
-                        } else if (tar != null) {
-                            Call.setTile(tar, tar.block(), Team.sharded, 0)
+                        if (t != null) {
+                            val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
+                            if (target[a] == 1) {
+                                Call.setTile(tar, Blocks.scrapWall, Team.sharded, 0)
+                            } else if (tar != null) {
+                                Call.setTile(tar, tar.block(), Team.sharded, 0)
+                            }
                         }
                     }
                     val left: Int = when (target.size) {
@@ -665,10 +667,10 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
             when (type) {
                 "set" -> {
-                    if (!PluginData.status.containsKey("hubMode")) {
+                    if (PluginData["hubMode"] != null) {
                         PluginData.status.put("hubMode", state.map.name())
                         send("command.hub.mode.on")
-                    } else if (PluginData.status.containsKey("hubMode")) {
+                    } else {
                         PluginData.status.remove("hubMode")
                         send("command.hub.mode.off")
                     }
@@ -952,7 +954,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             }
             val build = StringBuilder()
 
-            val page = if (arg.isNotEmpty()) arg[0].toInt() else 0
+            val page = if (arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0
 
             val buffer = Mathf.ceil(list.size.toFloat() / 6)
             val pages = if (buffer > 1.0) buffer - 1 else 0
