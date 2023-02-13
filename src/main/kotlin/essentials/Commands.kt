@@ -1237,7 +1237,12 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun ranking() {
             if (!Permission.check(player, "ranking")) return
+            if (PluginData.isRankingWorking) {
+                player.sendMessage(bundle["command.ranking.working"])
+                return
+            }
             Main.daemon.submit(Thread {
+                PluginData.isRankingWorking = true
                 val firstMessage = when (arg[0].lowercase()) {
                     "time" -> "command.ranking.time"
                     "exp" -> "command.ranking.exp"
@@ -1327,6 +1332,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
 
                 Core.app.post { player.sendMessage(string.toString()) }
+                PluginData.isRankingWorking = false
             })
         }
 
