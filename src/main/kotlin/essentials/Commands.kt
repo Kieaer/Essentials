@@ -523,21 +523,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun fillitems() {
             if (!Permission.check(player, "fillitems")) return
-            val team: Team = if ("derelict".contains(arg[0], true)) {
-                Team.derelict
-            } else if ("sharded".contains(arg[0], true)) {
-                Team.sharded
-            } else if ("crux".contains(arg[0], true)) {
-                Team.crux
-            } else if ("green".contains(arg[0], true)) {
-                Team.green
-            } else if ("malis".contains(arg[0], true)) {
-                Team.malis
-            } else if ("blue".contains(arg[0], true)) {
-                Team.blue
-            } else {
-                state.rules.defaultTeam
-            }
+            val team = selectTeam(arg[0])
 
             if (state.teams.cores(team).isEmpty) {
                 send("command.fillitems.core.empty")
@@ -580,22 +566,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             if (arg.isEmpty()) {
                 Events.fire(EventType.GameOverEvent(state.rules.waveTeam))
             } else {
-                val team: Team = if ("derelict".contains(arg[0], true)) {
-                    Team.derelict
-                } else if ("sharded".contains(arg[0], true)) {
-                    Team.sharded
-                } else if ("crux".contains(arg[0], true)) {
-                    Team.crux
-                } else if ("green".contains(arg[0], true)) {
-                    Team.green
-                } else if ("malis".contains(arg[0], true)) {
-                    Team.malis
-                } else if ("blue".contains(arg[0], true)) {
-                    Team.blue
-                } else {
-                    state.rules.waveTeam
-                }
-                Events.fire(EventType.GameOverEvent(team))
+                Events.fire(EventType.GameOverEvent(selectTeam(arg[0])))
             }
 
             player.unit().buildSpeedMultiplier(100f)
@@ -867,21 +838,17 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 if (arg.size > 2) {
                     if (arg[1].toIntOrNull() != null) {
                         if (arg.size == 3) {
-                            val team = Team.all.find { a -> a.name.contains(arg[2], true) }
-                            if (team != null) {
-                                if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
-                                    Groups.unit.forEach { if (it == unit && it.team == team) it.kill() }
-                                } else {
-                                    var count = 0
-                                    Groups.unit.forEach {
-                                        if (it == unit && it.team == team && count != arg[1].toInt()) {
-                                            it.kill()
-                                            count++
-                                        }
+                            val team = selectTeam(arg[2])
+                            if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
+                                Groups.unit.forEach { if (it == unit && it.team == team) it.kill() }
+                            } else {
+                                var count = 0
+                                Groups.unit.forEach {
+                                    if (it == unit && it.team == team && count != arg[1].toInt()) {
+                                        it.kill()
+                                        count++
                                     }
                                 }
-                            } else {
-                                send("command.killunit.invalid.team")
                             }
                         } else {
                             if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
@@ -1593,21 +1560,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
 
         fun team() {
             if (!Permission.check(player, "team")) return
-            val team: Team = if ("derelict".contains(arg[0], true)) {
-                Team.derelict
-            } else if ("sharded".contains(arg[0], true)) {
-                Team.sharded
-            } else if ("crux".contains(arg[0], true)) {
-                Team.crux
-            } else if ("green".contains(arg[0], true)) {
-                Team.green
-            } else if ("malis".contains(arg[0], true)) {
-                Team.malis
-            } else if ("blue".contains(arg[0], true)) {
-                Team.blue
-            } else {
-                state.rules.defaultTeam
-            }
+            val team = selectTeam(arg[0])
 
             if (arg.size == 1) {
                 player.team(team)
@@ -1952,6 +1905,36 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                     val array = arrayOf("kick", f.name, "Kick")
                     vote(player, array)
                 }
+            }
+        }
+
+        fun selectTeam(arg: String): Team {
+            return if ("derelict".first() == arg.first()) {
+                Team.derelict
+            } else if ("sharded".first() == arg.first()) {
+                Team.sharded
+            } else if ("crux".first() == arg.first()) {
+                Team.crux
+            } else if ("green".first() == arg.first()) {
+                Team.green
+            } else if ("malis".first() == arg.first()) {
+                Team.malis
+            } else if ("blue".first() == arg.first()) {
+                Team.blue
+            } else if ("derelict".contains(arg[0], true)) {
+                Team.derelict
+            } else if ("sharded".contains(arg[0], true)) {
+                Team.sharded
+            } else if ("crux".contains(arg[0], true)) {
+                Team.crux
+            } else if ("green".contains(arg[0], true)) {
+                Team.green
+            } else if ("malis".contains(arg[0], true)) {
+                Team.malis
+            } else if ("blue".contains(arg[0], true)) {
+                Team.blue
+            } else {
+                state.rules.defaultTeam
             }
         }
     }
