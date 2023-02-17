@@ -20,10 +20,7 @@ import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.Main.Companion.database
 import mindustry.Vars.*
-import mindustry.content.Blocks
-import mindustry.content.Fx
-import mindustry.content.UnitTypes
-import mindustry.content.Weathers
+import mindustry.content.*
 import mindustry.core.NetServer
 import mindustry.entities.Damage
 import mindustry.game.EventType.*
@@ -1316,7 +1313,6 @@ object Event {
     }
 
     fun earnEXP(winner: Team, p: Playerc, target: DB.PlayerData) {
-
         val oldLevel = target.level
         val oldExp = target.exp
         val time = PluginData.playtime.toInt()
@@ -1327,12 +1323,14 @@ object Event {
         }
 
         val bundle = Bundle(target.languageTag)
+        var coreitem = 0
+        for (a in state.stats.coreItemCount) coreitem += a.value
 
         if (winner == p.team()) {
             val score: Int = if (state.rules.attackMode) {
-                (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                (time + blockexp + enemyBuildingDestroyed + if(state.planet == Planets.erekir) coreitem else 0) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
             } else if (state.rules.pvp) {
-                time + 5000
+                time + if(state.planet == Planets.erekir) coreitem else 0 + 5000
             } else {
                 0
             }
@@ -1340,22 +1338,22 @@ object Event {
             target.exp = target.exp + score
             p.sendMessage(bundle["event.exp.earn.victory", score])
         } else {
-            val score: Int = if (state.rules.waves) {
-                state.wave * 150
-            } else if (state.rules.attackMode) {
+            val score: Int = if (state.rules.attackMode) {
                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+            } else if (state.rules.waves) {
+                state.wave * 150
             } else if (state.rules.pvp) {
                 time + 5000
             } else {
                 0
             }
 
-            val message = if (state.rules.waves) {
+            val message = if (state.rules.attackMode) {
+                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed + if(state.planet == Planets.erekir) coreitem else 0) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+            } else if (state.rules.waves) {
                 bundle["event.exp.earn.wave", score, state.wave]
-            } else if (state.rules.attackMode) {
-                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
             } else if (state.rules.pvp) {
-                bundle["event.exp.earn.defeat", score, (time + 5000)]
+                bundle["event.exp.earn.defeat", score, (time + if(state.planet == Planets.erekir) coreitem else 0 + 5000)]
             } else {
                 ""
             }
