@@ -52,15 +52,14 @@ object Config {
     var chatFormat = "%1[orange] >[white] %2"
 
     var shareBanList = false
-    var shareBanListType = BanType.Server
-    var shareBanListServer = "mindustry.kr"
+    var shareBanListServer = "127.0.0.1"
 
     var botToken = ""
     var channelToken = ""
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 14
+    private var configVersion = 15
 
     private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -98,24 +97,6 @@ object Config {
         Discord {
             override fun toString(): String {
                 return "discord"
-            }
-        }
-    }
-
-    enum class BanType {
-        Server {
-            override fun toString(): String {
-                return "server"
-            }
-        },
-        Client {
-            override fun toString(): String {
-                return "client"
-            }
-        },
-        Global {
-            override fun toString(): String {
-                return "global"
             }
         }
     }
@@ -159,7 +140,6 @@ object Config {
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
-        ban.add("shareBanListType", shareBanListType.toString(), bundle["config.share.list.type"])
         ban.add("shareBanListServer", shareBanListServer, bundle["config.share.server"])
 
         val security = JsonObject()

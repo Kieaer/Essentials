@@ -13,6 +13,8 @@ import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
 import java.io.BufferedInputStream
 import java.io.FileOutputStream
+import java.io.IOException
+import java.net.ServerSocket
 import java.net.URL
 import java.util.*
 import java.util.concurrent.Executors
@@ -22,6 +24,7 @@ class Main : Plugin() {
         val database = DB()
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val daemon = Executors.newCachedThreadPool()
+        var connectType = false
     }
 
     init {
@@ -107,6 +110,12 @@ class Main : Plugin() {
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 PluginData.save()
+                if (connectType) {
+                    Trigger.servers.forEach { a -> a.shutdown() }
+                    Trigger.Server.shutdown()
+                } else {
+                    Trigger.Client.send("exit")
+                }
                 daemon.shutdownNow()
                 Commands.Discord.shutdownNow()
                 Permission.sort()
@@ -121,9 +130,17 @@ class Main : Plugin() {
 
     override fun init() {
         Log.info(Bundle()["event.plugin.starting"])
+        val isPortOpen = try {
+            ServerSocket(6000).use { _ -> true }
+        } catch (e: IOException){
+            false
+        }
+
         daemon.submit(FileWatchService)
         daemon.submit(Trigger.Thread())
         daemon.submit(Trigger.UpdateThread)
+        daemon.submit(if(isPortOpen) Trigger.Server else Trigger.Client)
+        connectType = isPortOpen
         if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
         if (Config.update) {

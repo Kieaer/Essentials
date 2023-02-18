@@ -74,6 +74,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p: Playerc -> Client(a, p).changepw() }
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
+            handler.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p: Playerc -> Client(a, p).broadcast()}
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
             handler.register("effect", "<level> [color]", "Set the effect and color for each level.") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p: Playerc -> Client(a, p).exp() }
@@ -126,6 +127,7 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
             handler.register("reload", "Reload permission and config files.") { a -> Server(a).reload() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
+            handler.register("sync", "Match ban list with all connected servers.") { a -> Server(a).sync()}
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
             serverCommands = handler
         }
@@ -323,6 +325,17 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
         fun color() {
             if (!Permission.check(player, "color")) return
             data.colornick = !data.colornick
+        }
+
+        fun broadcast() {
+            if (!Permission.check(player, "broadcast")) return
+            if (Main.connectType) {
+                for (a in Trigger.servers) {
+                    a.message(arg[0])
+                }
+            } else {
+                Trigger.Client.message(arg[0])
+            }
         }
 
         fun discord() {
@@ -1371,6 +1384,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                             Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
                         } else if (last.action == "place") {
                             Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)
+                            /*println(content.block(last.tile).name)
+                            if (world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.message || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.reinforcedMessage || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.worldMessage) {
+                                val t = world.tile(last.x.toInt(), last.y.toInt()).block() as MessageBlock
+                                t.MessageBuild().message = StringBuilder().append(last.other)
+                            }*/
                         }
                     }
 
@@ -2034,6 +2052,18 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
             } else {
                 Log.info(stripColors(bundle["player.not.found"]))
+            }
+        }
+
+        fun sync(){
+            if (Main.connectType) {
+                for (a in Trigger.servers) {
+                    a.requestList()
+                }
+                Log.info(bundle["success"])
+            } else {
+                Trigger.Client.send("send")
+                Log.info(bundle["success"])
             }
         }
 

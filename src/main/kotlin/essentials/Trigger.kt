@@ -21,12 +21,11 @@ import org.hjson.JsonArray
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.mindrot.jbcrypt.BCrypt
-import java.io.IOException
-import java.io.OutputStream
+import java.io.*
+import java.lang.Thread.currentThread
 import java.lang.Thread.sleep
 import java.net.*
 import java.nio.ByteBuffer
-import java.nio.charset.Charset
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -36,6 +35,7 @@ import kotlin.concurrent.thread
 
 object Trigger {
     var order = 0
+    val servers = Seq<Server.Handler>()
 
     fun loadPlayer(player: Playerc, data: DB.PlayerData) {
         if (data.status.containsKey("duplicateName") && data.status.get("duplicateName") == player.name()) {
@@ -128,7 +128,7 @@ object Trigger {
         private val dummy = Player.create()
 
         override fun run() {
-            while (!java.lang.Thread.currentThread().isInterrupted) {
+            while (!currentThread().isInterrupted) {
                 try {
                     try {
                         transaction {
@@ -289,7 +289,7 @@ object Trigger {
                     }
                     TimeUnit.SECONDS.sleep(3)
                 } catch (e: Exception) {
-                    java.lang.Thread.currentThread().interrupt()
+                    currentThread().interrupt()
                 }
             }
         }
@@ -332,7 +332,7 @@ object Trigger {
         val queue = Seq<DB.PlayerData>()
 
         override fun run() {
-            while (!java.lang.Thread.currentThread().isInterrupted) {
+            while (!currentThread().isInterrupted) {
                 for (a in queue) {
                     database.update(a.uuid, a)
                     queue.removeAll { b -> b.uuid == a.uuid}
@@ -342,166 +342,225 @@ object Trigger {
         }
     }
 
-    class Server {
-        val server = ServerSocket(6000)
+    object Server : Runnable {
+        lateinit var server: ServerSocket
 
-        init {
-            while (true) {
+        override fun run() {
+            server = ServerSocket(6000)
+            while (!currentThread().isInterrupted) {
                 val client = server.accept()
+                Log.info(Bundle()["network.server.connected", client.inetAddress.hostAddress])
+                val handler = Handler(client)
+                servers.add(handler)
                 thread { Handler(client).run() }
             }
         }
 
+        fun shutdown(){
+            currentThread().interrupt()
+            server.close()
+        }
+
         class Handler(val client: Socket) {
-            val reader = Scanner(client.getInputStream())
-            val writer: OutputStream = client.getOutputStream()
+            val reader = BufferedReader(InputStreamReader(client.getInputStream()))
+            val writer = BufferedWriter(OutputStreamWriter(client.getOutputStream()))
             var run = false
+
+            fun message(message: String) {
+                write("message")
+                write(message)
+            }
+
+            fun requestList() {
+                write("sendServer")
+            }
 
             fun run() {
                 run = true
 
                 while (run) {
                     try {
-                        when (reader.nextLine()) {
-                            // Client 에게 데이터 전달 준비
+                        when (reader.readLine()) {
                             "send" -> {
-                                write("ok")
-                                val data = reader.nextLine()
-                                // println("[SERVER] data received: message is $data")
+                                write("send")
+                                val data = reader.readLine()
                                 val json = JsonArray.readJSON(data).asArray()
                                 for (a in json) {
                                     netServer.admins.banPlayerID(a.asString())
                                 }
                                 write("done")
                             }
-                            // Client 에게서 오는 데이터 수신
+
                             "receive" -> {
                                 val json = JsonArray()
-                                for (a in netServer.admins.banned) json.add("uuid", a.id)
+                                for (a in netServer.admins.banned) json.add(a.id)
                                 write(json.toString())
-                                //write("send dummy data")
-                                //println("[SERVER] dummy data send.")
                             }
 
-                            "message" -> {
-
+                            "messageRequest" -> {
+                                val message = reader.readLine()
+                                Call.sendMessage(message)
+                                for (a in servers){
+                                    a.message(message)
+                                }
                             }
 
                             "crash" -> {
-                                if (System.getenv("DEBUG_KEY") != null) {
-                                    write("ok")
-                                    val stacktrace = StringBuffer()
-                                    while (reader.hasNextLine()) {
-                                        stacktrace.append(reader.nextLine() + "\n")
-                                    }
-                                    root.child("report/${LocalDateTime.now().withNano(0)}.txt")
-                                    write("done")
-                                    Log.info("Crash log received from ${client.inetAddress.hostAddress}")
+                                write("ok")
+                                val stacktrace = StringBuffer()
+                                while (reader.readLine() != "null") {
+                                    stacktrace.append(reader.readLine() + "\n")
                                 }
+                                root.child("report/${LocalDateTime.now().withNano(0)}.txt")
+                                write("done")
+                                Log.info("Crash log received from ${client.inetAddress.hostAddress}")
                             }
 
                             "exit" -> {
                                 shutdown()
+                                Log.info(Bundle()["network.server.disconnected", client.inetAddress.hostAddress])
                             }
                         }
-                    } catch (e: NoSuchElementException) {
-                        shutdown()
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        run = false
                         shutdown()
                     }
                 }
             }
 
             private fun write(msg: String) {
-                writer.write((msg + '\n').toByteArray(Charset.forName("UTF-8")))
+                try {
+                    writer.write(msg)
+                    writer.newLine()
+                    writer.flush()
+                } catch (e: SocketException) {
+                    run = false
+                    currentThread().interrupt()
+                    client.close()
+                    servers.removeAll{ a -> a == this}
+                }
             }
 
-            private fun shutdown() {
-                run = false
-                client.close()
+            fun shutdown() {
+                try {
+                    write("exit")
+                    run = false
+                    writer.close()
+                    reader.close()
+                    client.close()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                servers.removeAll{ a -> a == this}
             }
         }
     }
 
-    class Client {
+    object Client : Runnable {
         val address = Config.shareBanListServer
         val port = 6000
+        val socket = Socket()
+        lateinit var reader: BufferedReader
+        lateinit var writer: BufferedWriter
 
-        val client = Handler(address, port)
-
-        class Handler(address: String, port: Int) {
-            val socket = Socket()
-            var connected = false
-
-            init {
-                try {
-                    socket.connect(InetSocketAddress(address, port), 5000)
-                    connected = true
-                    Log.info("You're connected to server.")
-                } catch (e: SocketTimeoutException) {
-                    Log.info("Connection timed out.")
-                }
+        override fun run() {
+            try {
+                socket.connect(InetSocketAddress(address, port), 5000)
+                Log.info(Bundle()["network.client.connected", "$address:$port"])
+            } catch (e: SocketTimeoutException) {
+                Log.info(Bundle()["network.client.timeout"])
+                return
             }
 
-            val reader = Scanner(socket.getInputStream())
-            val writer: OutputStream = socket.getOutputStream()
+            reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+            writer = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
 
-            fun send(command: String, vararg parameter: String) {
-                if (connected) {
-                    when (command) {
+            while (!currentThread().isInterrupted) {
+                try {
+                    when (reader.readLine()) {
                         "send" -> {
-                            write("send")
-                            reader.nextLine()
-                            // write("client sent data to server")
-                            // println("[CLIENT] send data to server")
-
                             val json = JsonArray()
-                            for (a in netServer.admins.banned) json.add("uuid", a.id)
+                            for (a in netServer.admins.banned) json.add(a.id)
                             write(json.toString())
-                            write(reader.nextLine())
-                        }
-
-                        "receive" -> {
+                            reader.readLine()
                             write("receive")
-                            val data = reader.nextLine()
-                            val json = JsonArray.readJSON(data).asArray()
-                            for (a in json) {
+                            for (a in JsonArray.readJSON(reader.readLine()).asArray()) {
                                 netServer.admins.banPlayerID(a.asString())
                             }
-                            //println("[CLIENT] $data")
                         }
 
-                        "crash" -> {
-                            try {
-                                Socket("mindustry.kr", 6000).use {
-                                    it.soTimeout = 5000
-                                    socket.getOutputStream().use { out ->
-                                        out.write("crash\n".toByteArray(Charset.forName("UTF-8")))
-                                        Scanner(socket.getInputStream()).use { sc ->
-                                            sc.nextLine() // ok
-                                            out.write("${parameter[0]}\n".toByteArray(Charset.forName("UTF-8")))
-                                            sc.nextLine()
-                                            Log.info("Crash log reported!")
-                                        }
-                                    }
-                                }
-                            } catch (e: SocketTimeoutException) {
-                                Log.info("Connection timed out. crash report server may be closed.")
-                            }
+                        "sendServer" -> {
+                            write("send")
+                        }
+
+                        "message" -> {
+                            Call.sendMessage(reader.readLine())
                         }
 
                         "exit" -> {
-                            write("exit")
-                            reader.close()
-                            socket.close()
+                            currentThread().interrupt()
                         }
                     }
+                } catch (e: Exception) {
+                    currentThread().interrupt()
                 }
             }
+        }
 
-            private fun write(msg: String) {
-                writer.write((msg + '\n').toByteArray(Charset.forName("UTF-8")))
+        fun write(msg: String) {
+            writer.write(msg)
+            writer.newLine()
+            writer.flush()
+        }
+
+        fun message(message: String) {
+            write("messageRequest")
+            write(message)
+        }
+
+        fun send(command: String, vararg parameter: String) {
+            when (command) {
+                "send" -> {
+                    write("send")
+                }
+
+                "receive" -> {
+                    write("receive")
+                    val data = reader.readLine()
+                    val json = JsonArray.readJSON(data).asArray()
+                    for (a in json) {
+                        netServer.admins.banPlayerID(a.asString())
+                    }
+                }
+
+                "crash" -> {
+                    try {
+                        Socket("mindustry.kr", 6000).use {
+                            it.soTimeout = 5000
+                            BufferedWriter(OutputStreamWriter(socket.getOutputStream())).use { out ->
+                                out.write("crash\n")
+                                Scanner(socket.getInputStream()).use { sc ->
+                                    sc.nextLine() // ok
+                                    out.write("${parameter[0]}\n")
+                                    out.write("null")
+                                    sc.nextLine()
+                                    Log.info("Crash log reported!")
+                                }
+                            }
+                        }
+                    } catch (e: SocketTimeoutException) {
+                        Log.info("Connection timed out. crash report server may be closed.")
+                    }
+                }
+
+                "exit" -> {
+                    if (::reader.isInitialized) {
+                        write("exit")
+                        writer.close()
+                        reader.close()
+                        socket.close()
+                    }
+                }
             }
         }
     }
