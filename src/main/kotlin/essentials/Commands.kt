@@ -71,10 +71,11 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
                 }
             }
 
+            handler.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p: Playerc -> Client(a, p).broadcast()}
             handler.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p: Playerc -> Client(a, p).changepw() }
+            handler.register("changename", "<new_name> <name_repeat>", "Change player name.") { a, p: Playerc -> Client(a, p).changename() }
             handler.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
-            handler.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p: Playerc -> Client(a, p).broadcast()}
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p: Playerc -> Client(a, p).discord() }
             handler.register("effect", "<level> [color]", "Set the effect and color for each level.") { a, p: Playerc -> Client(a, p).effect() }
             handler.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p: Playerc -> Client(a, p).exp() }
@@ -163,6 +164,24 @@ class Commands(handler: CommandHandler, isClient: Boolean) {
             data.pw = password
             database.queue(data)
             send("command.changepw.apply")
+        }
+
+        fun changename() {
+            if (!Permission.check(player, "changename")) return
+            if (arg.size != 2) {
+                send("command.changename.empty")
+                return
+            }
+
+            if (arg[0] != arg[1]) {
+                send("command.changename.same")
+                return
+            }
+
+            data.name = arg[0]
+            player.name(arg[0])
+            database.queue(data)
+            send("command.changename.apply")
         }
 
         fun chars(tile: Tile?) {
