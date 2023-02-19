@@ -978,11 +978,11 @@ object Event {
                                         if(Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
                                             netServer.admins.banPlayerID(voteTargetUUID)
                                             send("command.vote.kick.target.banned", name)
-                                            if(Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, onlinePlayers.toString()])
+                                            if(Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, voteReason!!, onlinePlayers.toString()])
                                         } else {
                                             voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                             send("command.vote.kick.target.kicked", name)
-                                            if(Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, onlinePlayers.toString()])
+                                            if(Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, voteReason!!, onlinePlayers.toString()])
                                         }
                                     }
 
