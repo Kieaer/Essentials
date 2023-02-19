@@ -58,11 +58,11 @@ class DB {
             isRemote = !Config.database.equals(Main.root.child("database").absolutePath(), false)
             if(!isRemote) {
                 try {
-                    db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
-                    Log.info(Bundle()["event.database.remote"])
-                } catch(e : Exception) {
                     dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Config.database).start()
                     db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
+                } catch(e : Exception) {
+                    db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
+                    Log.info(Bundle()["event.database.remote"])
                 }
             } else {
                 db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
