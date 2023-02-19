@@ -120,6 +120,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("tp", "<player>", "Teleport to other players") { a, p : Playerc -> Client(a, p).tp() }
             handler.register("tpp", "[player]", "Lock on camera the target player.") { a, p : Playerc -> Client(a, p).tpp() }
             handler.register("track", "Displays the mouse positions of players.") { a, p : Playerc -> Client(a, p).track() }
+            handler.register("unban", "<uuid>", "Unban player") { a, p : Playerc -> Client(a, p).unban() }
             handler.register("unmute", "<player>", "Unmute player") { a, p : Playerc -> Client(a, p).unmute() }
             handler.register("url", "<command>", "Opens a URL contained in a specific command.") { a, p : Playerc -> Client(a, p).url() }
             handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Adds a weather effect to the map.") { a, p : Playerc -> Client(a, p).weather() }
@@ -1707,6 +1708,26 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             } else {
                 data.status.put("tracking", "enabled")
                 send("command.track.toggle")
+            }
+        }
+
+        fun unban() {
+            if(!Permission.check(player, "unban")) return
+            val target = netServer.admins.findByName(arg[0])
+            if(target != null) {
+                netServer.admins.unbanPlayerID(arg[0])
+                Main.daemon.submit {
+                    if(Config.banChannelToken.isNotEmpty()) {
+                        Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["command.unban", player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))])
+                    }
+                    if(Config.blockIP) {
+                        for(a in target.first().ips) {
+                            Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $a -j DROP"))
+                        }
+                    }
+                }
+            } else {
+                send("player.not.found")
             }
         }
 
