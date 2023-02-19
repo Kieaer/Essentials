@@ -19,22 +19,22 @@ import java.util.*
 
 
 class DB {
-    val players: Seq<PlayerData> = Seq()
-    var isRemote: Boolean = false
-    lateinit var db: Database
-    var dbServer: Server? = null
+    val players : Seq<PlayerData> = Seq()
+    var isRemote : Boolean = false
+    lateinit var db : Database
+    var dbServer : Server? = null
 
     fun open() {
         try {
-            if (Main.root.child("database.db.mv.db").exists()) {
-                if (!Main.root.child("data/h2-1.4.200.jar").exists()) {
+            if(Main.root.child("database.db.mv.db").exists()) {
+                if(!Main.root.child("data/h2-1.4.200.jar").exists()) {
                     Main.root.child("data").mkdirs()
                     URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar").openStream().use { b ->
                         BufferedInputStream(b).use { bis ->
                             FileOutputStream(Main.root.child("data/h2-1.4.200.jar").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
-                                var count: Int
-                                while (bis.read(data, 0, 1024).also { count = it } != -1) {
+                                var count : Int
+                                while(bis.read(data, 0, 1024).also { count = it } != -1) {
                                     fos.write(data, 0, count)
                                 }
                             }
@@ -43,7 +43,7 @@ class DB {
                 }
 
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
                     val cmd = arrayOf("/bin/bash", "-c", "cd ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql")
                     Runtime.getRuntime().exec(cmd).waitFor()
                 } else {
@@ -56,11 +56,11 @@ class DB {
             }
 
             isRemote = !Config.database.equals(Main.root.child("database").absolutePath(), false)
-            if (!isRemote) {
+            if(!isRemote) {
                 try {
                     db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
                     Log.info(Bundle()["event.database.remote"])
-                } catch (e: Exception) {
+                } catch(e : Exception) {
                     dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Config.database).start()
                     db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
                 }
@@ -68,7 +68,7 @@ class DB {
                 db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
             }
 
-            if (Main.root.child("data/script.sql").exists()) {
+            if(Main.root.child("data/script.sql").exists()) {
                 transaction {
                     exec(Main.root.child("data/script.sql").readString())
                 }
@@ -76,14 +76,14 @@ class DB {
             }
 
             transaction {
-                if (!connection.isClosed) {
+                if(!connection.isClosed) {
                     SchemaUtils.create(Player)
                     SchemaUtils.create(Data)
 
-                    if (!isRemote) {
+                    if(!isRemote) {
                         try {
                             getAll()
-                        } catch (e: ParseException) {
+                        } catch(e : ParseException) {
                             transaction {
                                 Player.update {
                                     it[status] = "{}"
@@ -101,16 +101,16 @@ class DB {
                         """.trimIndent()
 
                         exec(sql) { rs ->
-                            while (rs.next()) {
+                            while(rs.next()) {
                                 val data = get(rs.getString("uuid"))
-                                if (data != null) {
+                                if(data != null) {
                                     try {
                                         val json = JsonObject.readHjson(rs.getString("status")).asObject()
-                                        if (json.get("duplicateName") != null) {
+                                        if(json.get("duplicateName") != null) {
                                             json.add("duplicateName", data.name)
                                         }
-                                    } catch (e: ParseException) {
-                                        if (!data.status.containsKey("duplicateName")) {
+                                    } catch(e : ParseException) {
+                                        if(!data.status.containsKey("duplicateName")) {
                                             data.status.put("duplicateName", data.name)
                                         }
                                     }
@@ -126,17 +126,17 @@ class DB {
                     Core.app.exit()
                 }
             }
-        } catch (e: Exception) {
+        } catch(e : Exception) {
             e.printStackTrace()
             Core.app.exit()
         }
     }
 
-    object Data : Table() {
+    object Data: Table() {
         val data = text("data")
     }
 
-    object Player : Table() {
+    object Player: Table() {
         val name = text("name").index()
         val uuid = text("uuid")
         val languageTag = text("languageTag")
@@ -161,37 +161,37 @@ class DB {
     }
 
     class PlayerData {
-        var name: String = "none"
-        var uuid: String = "none"
-        var languageTag: String = Locale.getDefault().toLanguageTag()
-        var placecount: Int = 0
-        var breakcount: Int = 0
-        var joincount: Int = 0
-        var kickcount: Int = 0
-        var level: Int = 0
-        var exp: Int = 0
-        var joinDate: Long = 0
-        var lastdate: Long = 0
-        var playtime: Long = 0
-        var attackclear: Int = 0
-        var pvpwincount: Int = 0
-        var pvplosecount: Int = 0
-        var colornick: Boolean = false
-        var permission: String = "visitor"
-        var mute: Boolean = false
-        var id: String = name
-        var pw: String = "none"
-        var status: ObjectMap<String, String> = ObjectMap()
-        var afkTime: Int = 0
-        var player: Playerc = mindustry.gen.Player.create()
-        var entityid: Int = 0
+        var name : String = "none"
+        var uuid : String = "none"
+        var languageTag : String = Locale.getDefault().toLanguageTag()
+        var placecount : Int = 0
+        var breakcount : Int = 0
+        var joincount : Int = 0
+        var kickcount : Int = 0
+        var level : Int = 0
+        var exp : Int = 0
+        var joinDate : Long = 0
+        var lastdate : Long = 0
+        var playtime : Long = 0
+        var attackclear : Int = 0
+        var pvpwincount : Int = 0
+        var pvplosecount : Int = 0
+        var colornick : Boolean = false
+        var permission : String = "visitor"
+        var mute : Boolean = false
+        var id : String = name
+        var pw : String = "none"
+        var status : ObjectMap<String, String> = ObjectMap()
+        var afkTime : Int = 0
+        var player : Playerc = mindustry.gen.Player.create()
+        var entityid : Int = 0
 
-        override fun toString(): String {
+        override fun toString() : String {
             return "name: $name, uuid: $uuid, languageTag: $languageTag, placecount: $placecount, breakcount: $breakcount, joincount: $joincount, kickcount: $kickcount, level: $level, exp: $exp, joinDate: $joinDate, lastdate: $lastdate, playtime: $playtime, attackclear: $attackclear, pvpwincount: $pvpwincount, pvplosecount: $pvplosecount, colornick: $colornick, permission: $permission, mute: $mute, id: $id, pw: $pw, status: $status, afkTime: $afkTime, entityid: $entityid"
         }
     }
 
-    fun createData(data: PlayerData) {
+    fun createData(data : PlayerData) {
         transaction {
             Player.insert {
                 it[name] = data.name
@@ -219,9 +219,9 @@ class DB {
         }
     }
 
-    operator fun get(uuid: String): PlayerData? {
+    operator fun get(uuid : String) : PlayerData? {
         val d = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
-        if (d != null) {
+        if(d != null) {
             val data = PlayerData()
             data.name = d[Player.name]
             data.uuid = d[Player.uuid]
@@ -245,7 +245,7 @@ class DB {
             data.pw = d[Player.accountpw]
 
             val obj = ObjectMap<String, String>()
-            for (a in JsonObject.readHjson(d[Player.status]).asObject()) {
+            for(a in JsonObject.readHjson(d[Player.status]).asObject()) {
                 obj.put(a.name, a.value.asString())
             }
             data.status = obj
@@ -255,7 +255,7 @@ class DB {
         }
     }
 
-    fun getAll(): Seq<PlayerData> {
+    fun getAll() : Seq<PlayerData> {
         val d = Seq<PlayerData>()
 
         transaction {
@@ -283,7 +283,7 @@ class DB {
                 data.pw = it[Player.accountpw]
 
                 val obj = ObjectMap<String, String>()
-                for (a in JsonObject.readHjson(it[Player.status]).asObject()) {
+                for(a in JsonObject.readHjson(it[Player.status]).asObject()) {
                     obj.put(a.name, a.value.asString())
                 }
                 data.status = obj
@@ -293,11 +293,11 @@ class DB {
         return d
     }
 
-    fun queue(data: PlayerData) {
+    fun queue(data : PlayerData) {
         Trigger.UpdateThread.queue.add(data)
     }
 
-    fun update(id: String, data: PlayerData) {
+    fun update(id : String, data : PlayerData) {
         transaction {
             Player.update({ Player.uuid eq id }) {
                 it[name] = data.name
@@ -322,15 +322,15 @@ class DB {
                 it[accountpw] = data.pw
 
                 val json = JsonObject()
-                for (a in data.status) json.add(a.key, a.value)
+                for(a in data.status) json.add(a.key, a.value)
                 it[status] = json.toString()
             }
         }
     }
 
-    fun search(id: String, pw: String): PlayerData? {
+    fun search(id : String, pw : String) : PlayerData? {
         transaction { Player.select { Player.accountid eq id }.firstOrNull() }.run {
-            if (this != null) {
+            if(this != null) {
                 val data = PlayerData()
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
@@ -354,12 +354,12 @@ class DB {
                 data.pw = this[Player.accountpw]
 
                 val obj = ObjectMap<String, String>()
-                for (a in JsonObject.readHjson(this[Player.status]).asObject()) {
+                for(a in JsonObject.readHjson(this[Player.status]).asObject()) {
                     obj.put(a.name, a.value.asString())
                 }
                 data.status = obj
 
-                return if (data.id == data.pw) data else if (BCrypt.checkpw(pw, data.pw)) data else null
+                return if(data.id == data.pw) data else if(BCrypt.checkpw(pw, data.pw)) data else null
             } else {
                 return null
             }

@@ -14,7 +14,7 @@ object Config {
     private var obj = JsonObject()
 
     var update = true
-    var database: String = Main.root.child("database").absolutePath()
+    var database : String = Main.root.child("database").absolutePath()
     var afk = false
     var afkTime = 300
     var afkServer = ""
@@ -61,22 +61,22 @@ object Config {
 
     private var configVersion = 15
 
-    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
-    private var bundle: Bundle = Bundle(Locale.getDefault().toLanguageTag())
+    private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
+    private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
 
     private fun wizard() {
         Log.info(bundle["config.wiki"])
         val sc = Scanner(System.`in`)
 
-        if (sc.hasNextLine()) {
-            when (sc.nextLine()) {
+        if(sc.hasNextLine()) {
+            when(sc.nextLine()) {
                 "y", "Y" -> {
-                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                    if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
                         Desktop.getDesktop().browse(URI("https://github.com/Kieaer/Essentials/wiki"))
                     }
                 }
 
-                else -> {
+                else     -> {
 
                 }
             }
@@ -85,24 +85,24 @@ object Config {
 
     enum class AuthType {
         None {
-            override fun toString(): String {
+            override fun toString() : String {
                 return "none"
             }
         },
         Password {
-            override fun toString(): String {
+            override fun toString() : String {
                 return "password"
             }
         },
         Discord {
-            override fun toString(): String {
+            override fun toString() : String {
                 return "discord"
             }
         }
     }
 
     fun save() {
-        if (System.getenv("DEBUG_KEY") == null && !root.exists()) wizard()
+        if(System.getenv("DEBUG_KEY") == null && !root.exists()) wizard()
 
         val plugin = JsonObject()
         plugin.add("update", update, bundle["config.update"])
@@ -218,8 +218,8 @@ object Config {
         discordURL = discord.getString("discordURL", discordURL)
         banChannelToken = discord.getString("banChannelToken", banChannelToken)
 
-        if (chatlimit) {
-            if (!chatlanguage.matches(Regex("en|ja|ko|ru|uk|zh"))) {
+        if(chatlimit) {
+            if(!chatlanguage.matches(Regex("en|ja|ko|ru|uk|zh"))) {
                 chatlimit = false
             }
         }
@@ -227,7 +227,7 @@ object Config {
 
     fun update() {
         val version = JsonObject.readHjson(root.readString("utf-8")).asObject().getInt("configVersion", 1)
-        if (configVersion > version) {
+        if(configVersion > version) {
             save()
         }
     }

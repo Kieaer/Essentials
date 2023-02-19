@@ -19,37 +19,37 @@ import java.net.URL
 import java.util.*
 import java.util.concurrent.Executors
 
-class Main : Plugin() {
+class Main: Plugin() {
     companion object {
         val database = DB()
-        val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+        val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val daemon = Executors.newCachedThreadPool()
         var connectType = false
     }
 
     init {
         Log.info("[Essentials] Loading")
-        if ((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
+        if((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
             root.child("database.mv.db").delete()
         }
 
         createFile()
-        if (!root.child("config.txt").exists()) Config.save()
+        if(!root.child("config.txt").exists()) Config.save()
         Config.load()
         Config.update()
         database.open()
         Permission.load()
         PluginData.load()
 
-        if (Config.database != root.child("database").absolutePath()) {
+        if(Config.database != root.child("database").absolutePath()) {
             Log.info(Bundle()["event.database.remote"])
             root.child("database.mv.db").delete()
         }
 
-        if (Config.blockIP) {
+        if(Config.blockIP) {
             val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-            if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                if (System.getenv("sudopassword") == null) {
+            if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                if(System.getenv("sudopassword") == null) {
                     Log.info(bundle["config.sudopassword"])
                     Log.info(bundle["config.sudopassword.repeat"])
 
@@ -58,7 +58,7 @@ class Main : Plugin() {
 
                     // 시스템이 Console 를 지원 안할경우 (비밀번호 노출됨)
                     print(bundle["config.sudopassword.password"] + " ")
-                    if (co == null) {
+                    if(co == null) {
                         PluginData.sudoPassword = sc.nextLine()
                     } else {
                         PluginData.sudoPassword = String(co.readPassword())
@@ -73,27 +73,27 @@ class Main : Plugin() {
             }
         }
 
-        if (Config.antiVPN) {
-            if (!root.child("data/ipv4.txt").exists()){
+        if(Config.antiVPN) {
+            if(!root.child("data/ipv4.txt").exists()) {
                 root.child("data").mkdirs()
                 var isUpdate = false
 
-                if (PluginData["vpnListDate"] == null) {
+                if(PluginData["vpnListDate"] == null) {
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
-                } else if ((PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()){
+                } else if((PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()) {
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
                 }
                 PluginData.changed = true
 
-                if (isUpdate) {
+                if(isUpdate) {
                     URL("https://github.com/X4BNet/lists_vpn/blob/main/output/datacenter/ipv4.txt").openStream().use { b ->
                         BufferedInputStream(b).use { bis ->
                             FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
-                                var count: Int
-                                while (bis.read(data, 0, 1024).also { count = it } != -1) {
+                                var count : Int
+                                while(bis.read(data, 0, 1024).also { count = it } != -1) {
                                     fos.write(data, 0, count)
                                 }
                             }
@@ -107,10 +107,10 @@ class Main : Plugin() {
             }
         }
 
-        Core.app.addListener(object : ApplicationListener {
+        Core.app.addListener(object: ApplicationListener {
             override fun dispose() {
                 PluginData.save()
-                if (connectType) {
+                if(connectType) {
                     Trigger.servers.forEach { a -> a.shutdown() }
                     Trigger.Server.shutdown()
                 } else {
@@ -121,7 +121,7 @@ class Main : Plugin() {
                 Permission.sort()
                 Config.save()
                 database.close()
-                if (database.dbServer != null) database.dbServer!!.stop()
+                if(database.dbServer != null) database.dbServer!!.stop()
             }
         })
 
@@ -132,7 +132,7 @@ class Main : Plugin() {
         Log.info(Bundle()["event.plugin.starting"])
         val isPortOpen = try {
             ServerSocket(6000).use { _ -> true }
-        } catch (e: IOException){
+        } catch(e : IOException) {
             false
         }
 
@@ -141,33 +141,33 @@ class Main : Plugin() {
         daemon.submit(Trigger.UpdateThread)
         daemon.submit(if(isPortOpen) Trigger.Server else Trigger.Client)
         connectType = isPortOpen
-        if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
+        if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
-        if (Config.update) {
+        if(Config.update) {
             Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest")
                 .timeout(1000)
                 .error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }
                 .submit {
-                if (it.status == Http.HttpStatus.OK) {
-                    val json = JsonValue.readJSON(it.resultAsString).asObject()
-                    for (a in 0 until Vars.mods.list().size) {
-                        if (Vars.mods.list()[a].meta.name == "Essentials") {
-                            PluginData.pluginVersion = Vars.mods.list()[a].meta.version
+                    if(it.status == Http.HttpStatus.OK) {
+                        val json = JsonValue.readJSON(it.resultAsString).asObject()
+                        for(a in 0 until Vars.mods.list().size) {
+                            if(Vars.mods.list()[a].meta.name == "Essentials") {
+                                PluginData.pluginVersion = Vars.mods.list()[a].meta.version
+                            }
+                        }
+                        val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
+                        val current = DefaultArtifactVersion(PluginData.pluginVersion)
+
+                        when {
+                            latest > current               -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject().get("browser_download_url").asString(), json.get("body").asString()])
+                            latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
+                            latest < current               -> Log.info(bundle["config.update.devel"])
                         }
                     }
-                    val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
-                    val current = DefaultArtifactVersion(PluginData.pluginVersion)
-
-                    when {
-                        latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject().get("browser_download_url").asString(), json.get("body").asString()])
-                        latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
-                        latest < current -> Log.info(bundle["config.update.devel"])
-                    }
                 }
-            }
         } else {
-            for (a in 0 until Vars.mods.list().size) {
-                if (Vars.mods.list()[a].meta.name == "Essentials") {
+            for(a in 0 until Vars.mods.list().size) {
+                if(Vars.mods.list()[a].meta.name == "Essentials") {
                     PluginData.pluginVersion = Vars.mods.list()[a].meta.version
                     break
                 }
@@ -175,19 +175,19 @@ class Main : Plugin() {
         }
 
         Vars.netServer.admins.addActionFilter { e ->
-            if (e.player == null) return@addActionFilter true
+            if(e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
             val isHub = PluginData["hubMode"]
-            for (a in PluginData.warpBlocks) {
-                if (e.tile != null) {
-                    if (a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {
+            for(a in PluginData.warpBlocks) {
+                if(e.tile != null) {
+                    if(a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {
                         return@addActionFilter false
                     }
                 }
             }
 
-            if (data != null) {
-                if (isHub != null && isHub == Vars.state.map.name()) {
+            if(data != null) {
+                if(isHub != null && isHub == Vars.state.map.name()) {
                     return@addActionFilter Permission.check(e.player, "hub.build")
                 } else {
                     return@addActionFilter true
@@ -198,42 +198,42 @@ class Main : Plugin() {
         Log.info(Bundle()["event.plugin.loaded"])
     }
 
-    override fun registerClientCommands(handler: CommandHandler) {
+    override fun registerClientCommands(handler : CommandHandler) {
         Commands(handler, true)
     }
 
-    override fun registerServerCommands(handler: CommandHandler) {
+    override fun registerServerCommands(handler : CommandHandler) {
         Commands(handler, false)
     }
 
     private fun createFile() {
-        if (!root.child("motd").exists()) {
+        if(!root.child("motd").exists()) {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf(
                 "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
             )
-            for (a in 0 until names.size) {
-                if (!root.child("motd/${names[a]}.txt").exists()) {
+            for(a in 0 until names.size) {
+                if(!root.child("motd/${names[a]}.txt").exists()) {
                     root.child("motd/${names[a]}.txt").writeString(texts[a])
                 }
             }
         }
 
-        if (!root.child("messages").exists()) {
+        if(!root.child("messages").exists()) {
             root.child("messages").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf(
                 "To edit this message, open [green]config/mods/Essentials/messages[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/messages[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
             )
-            for (a in 0 until names.size) {
-                if (!root.child("messages/${names[a]}.txt").exists()) {
+            for(a in 0 until names.size) {
+                if(!root.child("messages/${names[a]}.txt").exists()) {
                     root.child("messages/${names[a]}.txt").writeString(texts[a])
                 }
             }
         }
 
-        if (!root.child("chat_blacklist.txt").exists()) {
+        if(!root.child("chat_blacklist.txt").exists()) {
             root.child("chat_blacklist.txt").writeString("않")
         }
     }

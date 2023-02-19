@@ -7,48 +7,48 @@ import org.hjson.ParseException
 import java.io.IOException
 import java.nio.file.*
 
-object FileWatchService : Runnable {
-    private val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-    private var watchService: WatchService = FileSystems.getDefault().newWatchService()
+object FileWatchService: Runnable {
+    private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+    private var watchService : WatchService = FileSystems.getDefault().newWatchService()
 
     override fun run() {
-        var watchKey: WatchKey
+        var watchKey : WatchKey
         val path = Paths.get(root.absolutePath())
         path.register(
             watchService, StandardWatchEventKinds.ENTRY_MODIFY
         )
 
-        while (!Thread.currentThread().isInterrupted) {
+        while(!Thread.currentThread().isInterrupted) {
             try {
                 watchKey = watchService.take()
                 Thread.sleep(100)
                 val events = watchKey.pollEvents()
-                for (event in events) {
+                for(event in events) {
                     val kind = event.kind()
                     val paths = (event.context() as Path).fileName.toString()
-                    if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        if (paths == "permission_user.txt" || paths == "permission.txt") {
+                    if(kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                        if(paths == "permission_user.txt" || paths == "permission.txt") {
                             try {
                                 Permission.load()
                                 Log.info(Bundle()["config.permission.updated"])
-                            } catch (e: ParseException) {
+                            } catch(e : ParseException) {
                                 Log.err(e)
                             }
-                        } else if (paths == "config.txt") {
+                        } else if(paths == "config.txt") {
                             Config.load()
                             Log.info(Bundle()["config.reloaded"])
                         }
                     }
                 }
-                if (!watchKey.reset()) {
+                if(!watchKey.reset()) {
                     try {
                         watchService.close()
                         break
-                    } catch (e: IOException) {
+                    } catch(e : IOException) {
                         println(e)
                     }
                 }
-            } catch (e: InterruptedException) {
+            } catch(e : InterruptedException) {
                 watchService.close()
                 Thread.currentThread().interrupt()
             }

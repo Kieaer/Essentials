@@ -33,34 +33,34 @@ object PluginData {
     var changed = false
     var isRankingWorking = false
 
-    data class WarpZone(val mapName: String, val start: Int, val finish: Int, val touch: Boolean, val ip: String, val port: Int) {
-        val startTile: Tile get() = Vars.world.tile(start)
-        val finishTile: Tile get() = Vars.world.tile(finish)
+    data class WarpZone(val mapName : String, val start : Int, val finish : Int, val touch : Boolean, val ip : String, val port : Int) {
+        val startTile : Tile get() = Vars.world.tile(start)
+        val finishTile : Tile get() = Vars.world.tile(finish)
     }
 
-    data class WarpBlock(val mapName: String, val x: Int, val y: Int, val tileName: String, val size: Int, val ip: String, val port: Int, val description: String) {
+    data class WarpBlock(val mapName : String, val x : Int, val y : Int, val tileName : String, val size : Int, val ip : String, val port : Int, val description : String) {
         var online = false
     }
 
-    data class WarpCount(val mapName: String, val pos: Int, val ip: String, val port: Int, var players: Int, var numbersize: Int) {
-        val tile: Tile get() = Vars.world.tile(pos)
+    data class WarpCount(val mapName : String, val pos : Int, val ip : String, val port : Int, var players : Int, var numbersize : Int) {
+        val tile : Tile get() = Vars.world.tile(pos)
     }
 
-    data class WarpTotal(val mapName: String, val pos: Int, var totalplayers: Int, var numbersize: Int) {
-        val tile: Tile get() = Vars.world.tile(pos)
+    data class WarpTotal(val mapName : String, val pos : Int, var totalplayers : Int, var numbersize : Int) {
+        val tile : Tile get() = Vars.world.tile(pos)
     }
 
-    data class Banned(val time: Long, val name: String, val uuid: String, val reason: String)
+    data class Banned(val time : Long, val name : String, val uuid : String, val reason : String)
 
-    operator fun get(key: String) : String? {
-        return if (status.find { a -> a.key == key } == null) null else status.find { a -> a.key == key }!!.value
+    operator fun get(key : String) : String? {
+        return if(status.find { a -> a.key == key } == null) null else status.find { a -> a.key == key }!!.value
     }
 
     fun save() {
         val data = JsonObject()
         var buffer = JsonArray()
 
-        for (it in warpZones) {
+        for(it in warpZones) {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("start", it.start)
@@ -73,7 +73,7 @@ object PluginData {
         data.add("warpZones", buffer)
         buffer = JsonArray()
 
-        for (it in warpBlocks) {
+        for(it in warpBlocks) {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("x", it.x)
@@ -88,7 +88,7 @@ object PluginData {
         data.add("warpBlocks", buffer)
         buffer = JsonArray()
 
-        for (it in warpCounts) {
+        for(it in warpCounts) {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("pos", it.pos)
@@ -101,7 +101,7 @@ object PluginData {
         data.add("warpCounts", buffer)
         buffer = JsonArray()
 
-        for (it in warpTotals) {
+        for(it in warpTotals) {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("pos", it.pos)
@@ -112,11 +112,11 @@ object PluginData {
         data.add("warpTotals", buffer)
         buffer = JsonArray()
 
-        for (it in blacklist) buffer.add(it)
+        for(it in blacklist) buffer.add(it)
         data.add("blacklist", buffer)
         buffer = JsonArray()
 
-        for (it in banned) {
+        for(it in banned) {
             val obj = JsonObject()
             obj.add("time", it.time)
             obj.add("name", it.name)
@@ -127,7 +127,7 @@ object PluginData {
         data.add("banned", buffer)
 
         val json = JsonObject()
-        for (it in status) {
+        for(it in status) {
             json.add(it.key, it.value)
         }
         data.add("status", json.toString())
@@ -138,7 +138,7 @@ object PluginData {
 
     fun load() {
         try {
-            if (transaction { DB.Data.selectAll().firstOrNull() == null }) {
+            if(transaction { DB.Data.selectAll().firstOrNull() == null }) {
                 save()
             } else {
                 warpZones = Seq<WarpZone>()
@@ -150,7 +150,7 @@ object PluginData {
                 status = ObjectMap<String, String>()
 
                 transaction {
-                    if (!DB.Data.selectAll().empty()) {
+                    if(!DB.Data.selectAll().empty()) {
                         DB.Data.selectAll().first().run {
                             val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
 
@@ -205,10 +205,10 @@ object PluginData {
                                 JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {
                                     status.put(it.name, it.value.asString())
                                 }
-                            } catch (e: Exception) {
+                            } catch(e : Exception) {
                                 data["status"].asArray().forEach {
-                                    if (!it.asString().equals("hubMode")) status.put(it.asString(), "none")
-                                    if (it.asString().equals("hubMode")) Log.warn(Bundle()["event.plugin.hubmode.reset"])
+                                    if(!it.asString().equals("hubMode")) status.put(it.asString(), "none")
+                                    if(it.asString().equals("hubMode")) Log.warn(Bundle()["event.plugin.hubmode.reset"])
                                 }
                                 changed = true
                             }
@@ -220,9 +220,9 @@ object PluginData {
                     }
                 }
             }
-        } catch (e: IOException) {
+        } catch(e : IOException) {
             println(e)
-        } catch (e: Exception) {
+        } catch(e : Exception) {
             e.printStackTrace()
         }
     }
