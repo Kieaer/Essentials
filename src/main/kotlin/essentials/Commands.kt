@@ -72,7 +72,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             handler.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p : Playerc -> Client(a, p).broadcast() }
-            handler.register("changename", "<new_name> <name_repeat>", "Change player name.") { a, p : Playerc -> Client(a, p).changename() }
+            handler.register("changename", "<new_name> [player]", "Change player name.") { a, p : Playerc -> Client(a, p).changename() }
             handler.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p : Playerc -> Client(a, p).changepw() }
             handler.register("chat", "<on/off>", "Mute all players without admins.") { a, p : Playerc -> Client(a, p).chat() }
             handler.register("chars", "<text...>", "Make pixel texts") { a, p : Playerc -> Client(a, p).chars(null) }
@@ -86,6 +86,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("god", "[name]", "Set max player health") { a, p : Playerc -> Client(a, p).god() }
             handler.register("help", "[page]", "Show command lists") { a, p : Playerc -> Client(a, p).help() }
             handler.register("hub", "<set/zone/block/count/total/remove/reset> [ip] [parameters...]", "Create a server to server point.") { a, p : Playerc -> Client(a, p).hub() }
+            handler.register("hud", "<health>", "Enable unit information.") { a, p : Playerc -> Client(a, p).hud() }
             handler.register("info", "[player]", "Show your information") { a, p : Playerc -> Client(a, p).info() }
             handler.register("js", "[code...]", "Execute JavaScript codes") { a, p : Playerc -> Client(a, p).js() }
             handler.register("kickall", "All users except yourself and the administrator will be kicked") { a, p : Playerc -> Client(a, p).kickall() }
@@ -152,19 +153,25 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun changename() {
             if(!Permission.check(player, "changename")) return
-            if(arg.size != 2) {
-                send("command.changename.empty")
-                return
+            if(arg.size != 1) {
+                val target = findPlayers(arg[1])
+                if (target != null) {
+                    val data = findPlayerData(target.uuid())
+                    if (data != null) {
+                        data.name = arg[0]
+                        target.name(arg[0])
+                        database.queue(data)
+                    } else {
+                        send("player.not.registered")
+                    }
+                } else {
+                    send("player.not.found")
+                }
+            } else {
+                data.name = arg[0]
+                player.name(arg[0])
+                database.queue(data)
             }
-
-            if(arg[0] != arg[1]) {
-                send("command.changename.same")
-                return
-            }
-
-            data.name = arg[0]
-            player.name(arg[0])
-            database.queue(data)
             send("command.changename.apply")
         }
 
@@ -749,6 +756,18 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 else     -> send("command.hub.help")
             }
             PluginData.changed = true
+        }
+
+        fun hud() {
+            if(!Permission.check(player, "hud")) return
+            when(arg[0]){
+                "health" -> {
+                    data.status.put("hud", "health")
+                }
+                else -> {
+                    send("command.hud.not.found")
+                }
+            }
         }
 
         fun info() {
