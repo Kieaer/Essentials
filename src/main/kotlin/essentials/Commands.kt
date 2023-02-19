@@ -72,8 +72,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             handler.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p : Playerc -> Client(a, p).broadcast() }
-            handler.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p : Playerc -> Client(a, p).changepw() }
             handler.register("changename", "<new_name> <name_repeat>", "Change player name.") { a, p : Playerc -> Client(a, p).changename() }
+            handler.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p : Playerc -> Client(a, p).changepw() }
+            handler.register("chat", "<on/off>", "Mute all players without admins.") { a, p : Playerc -> Client(a, p).chat() }
             handler.register("chars", "<text...>", "Make pixel texts") { a, p : Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p : Playerc -> Client(a, p).color() }
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p : Playerc -> Client(a, p).discord() }
@@ -148,6 +149,24 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             player.sendMessage(MessageFormat.format(bundle.resource.getString(msg), *parameters))
         }
 
+        fun changename() {
+            if(!Permission.check(player, "changename")) return
+            if(arg.size != 2) {
+                send("command.changename.empty")
+                return
+            }
+
+            if(arg[0] != arg[1]) {
+                send("command.changename.same")
+                return
+            }
+
+            data.name = arg[0]
+            player.name(arg[0])
+            database.queue(data)
+            send("command.changename.apply")
+        }
+
         fun changepw() {
             if(!Permission.check(player, "changepw")) return
             if(arg.size != 2) {
@@ -166,22 +185,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             send("command.changepw.apply")
         }
 
-        fun changename() {
-            if(!Permission.check(player, "changename")) return
-            if(arg.size != 2) {
-                send("command.changename.empty")
-                return
+        fun chat(){
+            if(!Permission.check(player, "chat")) return
+            Event.isGlobalMute = arg[0].equals("on", true)
+            if(Event.isGlobalMute) {
+                send("command.chat.off")
+            } else {
+                send("command.chat.on")
             }
-
-            if(arg[0] != arg[1]) {
-                send("command.changename.same")
-                return
-            }
-
-            data.name = arg[0]
-            player.name(arg[0])
-            database.queue(data)
-            send("command.changename.apply")
         }
 
         fun chars(tile : Tile?) {

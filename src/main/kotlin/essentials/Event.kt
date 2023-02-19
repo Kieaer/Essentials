@@ -85,6 +85,7 @@ object Event {
     private var count = 60
     var pvpSpectors = Seq<String>()
     var pvpPlayer = Seq<String>()
+    var isGlobalMute = false
 
     fun register() {
         Events.on(WithdrawEvent::class.java) {
@@ -333,7 +334,14 @@ object Event {
                                     }
                                 }
                             }
-                            return@ChatFormatter if(!(voting && message.contains("y") && !isMute)) Permission[player].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message) else null
+                            val format = Permission[player].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message)
+                            return@ChatFormatter if(isGlobalMute && Permission.check(player, "chat.admin")) {
+                                format
+                            } else if(!isGlobalMute && !(voting && message.contains("y") && !isMute)) {
+                                format
+                            } else {
+                                null
+                            }
                         } else {
                             return@ChatFormatter null
                         }
