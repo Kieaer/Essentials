@@ -41,6 +41,9 @@ import mindustry.world.Tile
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
+import java.io.BufferedWriter
+import java.io.OutputStreamWriter
+import java.net.SocketException
 import java.sql.Timestamp
 import java.text.MessageFormat
 import java.time.LocalDateTime
@@ -50,7 +53,6 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.round
-
 
 class Commands(handler : CommandHandler, isClient : Boolean) {
     companion object {
@@ -155,9 +157,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "changename")) return
             if(arg.size != 1) {
                 val target = findPlayers(arg[1])
-                if (target != null) {
+                if(target != null) {
                     val data = findPlayerData(target.uuid())
-                    if (data != null) {
+                    if(data != null) {
                         data.name = arg[0]
                         target.name(arg[0])
                         database.queue(data)
@@ -193,7 +195,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             send("command.changepw.apply")
         }
 
-        fun chat(){
+        fun chat() {
             if(!Permission.check(player, "chat")) return
             Event.isGlobalMute = arg[0].equals("on", true)
             if(Event.isGlobalMute) {
@@ -294,27 +296,27 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             yv = 2
                         }
 
-                        9  -> {
+                        9 -> {
                             xv = 3
                             yv = 3
                         }
 
-                        6  -> {
+                        6 -> {
                             xv = 2
                             yv = 3
                         }
 
-                        4  -> {
+                        4 -> {
                             xv = 4
                             yv = 1
                         }
 
-                        5  -> {
+                        5 -> {
                             xv = 5
                             yv = 1
                         }
 
-                        2  -> {
+                        2 -> {
                             xv = 2
                             yv = 1
                         }
@@ -335,7 +337,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                     }
                     val left : Int = when(target.size) {
-                        20     -> {
+                        20 -> {
                             xv + 1
                         }
 
@@ -343,15 +345,15 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             xv
                         }
 
-                        5      -> {
+                        5 -> {
                             xv - 2
                         }
 
-                        25     -> {
+                        25 -> {
                             xv + 2
                         }
 
-                        else   -> {
+                        else -> {
                             xv - 1
                         }
                     }
@@ -368,8 +370,19 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun broadcast() {
             if(!Permission.check(player, "broadcast")) return
             if(Main.connectType) {
-                for(a in Trigger.servers) {
-                    a.message(arg[0])
+                for(a in Trigger.clients) {
+                    val b = BufferedWriter(OutputStreamWriter(a.getOutputStream()))
+                    try {
+                        b.write("message")
+                        b.newLine()
+                        b.flush()
+                        b.write(arg[0])
+                        b.newLine()
+                        b.flush()
+                    } catch(e : SocketException) {
+                        a.close()
+                        Trigger.clients.remove(a)
+                    }
                 }
             } else {
                 Trigger.Client.message(arg[0])
@@ -423,7 +436,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun exp() {
             if(!Permission.check(player, "exp")) return
             when(arg[0]) {
-                "set"    -> {
+                "set" -> {
                     if(!Permission.check(player, "exp.admin")) return
                     if(arg[1].toIntOrNull() != null) {
                         if(arg.size == 3) {
@@ -461,7 +474,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "hide"   -> {
+                "hide" -> {
                     if(!Permission.check(player, "exp.admin")) return
                     if(arg.size == 2) {
                         val target = findPlayers(arg[1])
@@ -490,7 +503,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "add"    -> {
+                "add" -> {
                     if(!Permission.check(player, "exp.admin")) return
                     if(arg[1].toIntOrNull() != null) {
                         if(arg.size == 3) {
@@ -566,7 +579,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                else     -> {
+                else -> {
                     send("command.exp.invalid.command")
                 }
             }
@@ -692,7 +705,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             when(type) {
-                "set"    -> {
+                "set" -> {
                     if(PluginData["hubMode"] != null) {
                         PluginData.status.put("hubMode", state.map.name())
                         send("command.hub.mode.on")
@@ -702,7 +715,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "zone"   -> if(arg.size != 4) {
+                "zone" -> if(arg.size != 4) {
                     send("command.hub.zone.help")
                 } else {
                     size = arg[2].toIntOrNull()
@@ -720,7 +733,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "block"  -> if(arg.size < 3) {
+                "block" -> if(arg.size < 3) {
                     send("command.hub.block.parameter")
                 } else {
                     val t : Tile = player.tileOn()
@@ -728,7 +741,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     send("command.hub.block.added", "$x:$y", ip)
                 }
 
-                "count"  -> {
+                "count" -> {
                     if(arg.size < 2) {
                         send("command.hub.count.parameter")
                     } else {
@@ -737,7 +750,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "total"  -> {
+                "total" -> {
                     PluginData.warpTotals.add(PluginData.WarpTotal(name, world.tile(x, y).pos(), 0, 1))
                     send("command.hub.total", "$x:$y")
                 }
@@ -748,22 +761,23 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     send("command.hub.removed", ip, port)
                 }
 
-                "reset"  -> {
+                "reset" -> {
                     PluginData.warpTotals.removeAll { true }
                     PluginData.warpCounts.removeAll { true }
                 }
 
-                else     -> send("command.hub.help")
+                else -> send("command.hub.help")
             }
             PluginData.changed = true
         }
 
         fun hud() {
             if(!Permission.check(player, "hud")) return
-            when(arg[0]){
+            when(arg[0]) {
                 "health" -> {
                     data.status.put("hud", "health")
                 }
+
                 else -> {
                     send("command.hud.not.found")
                 }
@@ -881,12 +895,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             } else {
                 when(arg[0].lowercase()) {
                     "derelict" -> Groups.unit.each { u : Unit -> if(Team.derelict == u.team) u.kill() }
-                    "sharded"  -> Groups.unit.each { u : Unit -> if(Team.sharded == u.team) u.kill() }
-                    "crux"     -> Groups.unit.each { u : Unit -> if(Team.crux == u.team) u.kill() }
-                    "green"    -> Groups.unit.each { u : Unit -> if(Team.green == u.team) u.kill() }
-                    "malis"    -> Groups.unit.each { u : Unit -> if(Team.malis == u.team) u.kill() }
-                    "blue"     -> Groups.unit.each { u : Unit -> if(Team.blue == u.team) u.kill() }
-                    else       -> {
+                    "sharded" -> Groups.unit.each { u : Unit -> if(Team.sharded == u.team) u.kill() }
+                    "crux" -> Groups.unit.each { u : Unit -> if(Team.crux == u.team) u.kill() }
+                    "green" -> Groups.unit.each { u : Unit -> if(Team.green == u.team) u.kill() }
+                    "malis" -> Groups.unit.each { u : Unit -> if(Team.malis == u.team) u.kill() }
+                    "blue" -> Groups.unit.each { u : Unit -> if(Team.blue == u.team) u.kill() }
+                    else -> {
                         send("command.team.invalid")
                     }
                 }
@@ -1033,8 +1047,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "meme")) return
             when(arg[0]) {
                 "router" -> {
-                    val zero = arrayOf(
-                        """
+                    val zero = arrayOf("""
                             [stat][#404040][]
                             [stat][#404040][]
                             [stat][#404040]
@@ -1079,10 +1092,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             [#404040][stat]
                             [stat][#404040][]
                             [stat][#404040][]
-                            """
-                    )
-                    val loop = arrayOf(
-                        """
+                            """)
+                    val loop = arrayOf("""
                             [#6B6B6B][stat][#6B6B6B]
                             [stat][#404040][]
                             [stat][#404040]
@@ -1145,8 +1156,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             [#585858][#6B6B6B][#828282][#585858]
                             [#6B6B6B][#828282][#6B6B6B]
                             [#6B6B6B][#585858][#6B6B6B]
-                            """
-                    )
+                            """)
                     if(data.status.containsKey("router")) {
                         data.status.remove("router")
                     } else {
@@ -1275,13 +1285,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 PluginData.isRankingWorking = true
                 try {
                     val firstMessage = when(arg[0].lowercase()) {
-                        "time"   -> "command.ranking.time"
-                        "exp"    -> "command.ranking.exp"
+                        "time" -> "command.ranking.time"
+                        "exp" -> "command.ranking.exp"
                         "attack" -> "command.ranking.attack"
-                        "place"  -> "command.ranking.place"
-                        "break"  -> "command.ranking.break"
-                        "pvp"    -> "command.ranking.pvp"
-                        else     -> null
+                        "place" -> "command.ranking.place"
+                        "break" -> "command.ranking.break"
+                        "pvp" -> "command.ranking.pvp"
+                        else -> null
                     }
 
                     if(firstMessage == null) {
@@ -1314,13 +1324,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     val d = when(arg[0].lowercase()) {
-                        "time"   -> time.toList().sortedWith(compareBy { -it.second })
-                        "exp"    -> exp.toList().sortedWith(compareBy { -it.second })
+                        "time" -> time.toList().sortedWith(compareBy { -it.second })
+                        "exp" -> exp.toList().sortedWith(compareBy { -it.second })
                         "attack" -> attack.toList().sortedWith(compareBy { -it.second })
-                        "place"  -> placeBlock.toList().sortedWith(compareBy { -it.second })
-                        "break"  -> breakBlock.toList().sortedWith(compareBy { -it.second })
-                        "pvp"    -> pvp.toList().sortedWith(compareBy { -it.second.firstKey() })
-                        else     -> return@Thread
+                        "place" -> placeBlock.toList().sortedWith(compareBy { -it.second })
+                        "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
+                        "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.firstKey() })
+                        else -> return@Thread
                     }
 
                     val string = StringBuilder()
@@ -1438,8 +1448,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if(last.action == "break") {
                             Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
                         } else if(last.action == "place") {
-                            Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)
-                            /*println(content.block(last.tile).name)
+                            Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)/*println(content.block(last.tile).name)
                             if (world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.message || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.reinforcedMessage || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.worldMessage) {
                                 val t = world.tile(last.x.toInt(), last.y.toInt()).block() as MessageBlock
                                 t.MessageBuild().message = StringBuilder().append(last.other)
@@ -1567,7 +1576,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             // todo 유닛이 8마리까지 밖에 스폰이 안됨
             when {
-                type.equals("unit", true)  -> {
+                type.equals("unit", true) -> {
                     val unit = content.units().find { unitType : UnitType -> unitType.name == name }
                     if(unit != null) {
                         if(parameter != null) {
@@ -1594,7 +1603,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                else                       -> {
+                else -> {
                     return
                 }
             }
@@ -1611,16 +1620,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "status")) return
             val bans = netServer.admins.banned.size
 
-            player.sendMessage(
-                """
+            player.sendMessage("""
                 [#DEA82A]${bundle["command.status.info"]}[]
                 [#2B60DE]========================================[]
                 TPS: ${Core.graphics.framesPerSecond}/60
                 ${bundle["command.status.banned", bans]}
                 ${bundle["command.status.playtime"]}: ${longToTime(PluginData.playtime)}
                 ${bundle["command.status.uptime"]}: ${longToTime(PluginData.uptime)}
-            """.trimIndent()
-            )
+            """.trimIndent())
         }
 
         fun t() {
@@ -1790,19 +1797,19 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                else     -> {}
+                else -> {}
             }
         }
 
         fun weather() {
             if(!Permission.check(player, "weather")) return
             val weather = when(arg[0]) {
-                "snow"             -> Weathers.snow
-                "sandstorm"        -> Weathers.sandstorm
-                "sporestorm"       -> Weathers.sporestorm
-                "fog"              -> Weathers.fog
+                "snow" -> Weathers.snow
+                "sandstorm" -> Weathers.sandstorm
+                "sporestorm" -> Weathers.sporestorm
+                "fog" -> Weathers.fog
                 "suspendParticles" -> Weathers.suspendParticles
-                else               -> Weathers.rain
+                else -> Weathers.rain
             }
             try {
                 val duration = arg[1].toInt()
@@ -1851,7 +1858,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     return
                 }
                 when(arg[0]) {
-                    "kick"   -> {
+                    "kick" -> {
                         if(!Permission.check(player, "vote.kick")) return
                         if(arg.size != 3) {
                             send("command.vote.no.reason")
@@ -1876,7 +1883,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     // vote map <map name> <reason>
-                    "map"    -> {
+                    "map" -> {
                         if(!Permission.check(player, "vote.map")) return
                         if(arg.size == 1) {
                             send("command.vote.no.map")
@@ -1907,7 +1914,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     // vote gg
-                    "gg"     -> {
+                    "gg" -> {
                         if(!Permission.check(player, "vote.gg")) return
                         if(Event.voteCooltime == 0) {
                             Event.voteType = "gg"
@@ -1927,7 +1934,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     // vote skip <count>
-                    "skip"   -> {
+                    "skip" -> {
                         if(!Permission.check(player, "vote.skip")) return
                         if(arg.size == 1) {
                             send("command.vote.skip.wrong")
@@ -1950,7 +1957,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     // vote back <reason>
-                    "back"   -> {
+                    "back" -> {
                         if(!Permission.check(player, "vote.back")) return
                         if(!saveDirectory.child("rollback.msav").exists()) {
                             player.sendMessage("command.vote.back.no.file")
@@ -1981,7 +1988,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                     }
 
-                    else     -> {
+                    else -> {
                         send("command.vote.wrong")
                     }
                 }
@@ -2072,9 +2079,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun debug() {
 
             when(arg[0]) {
-                "info"  -> {
-                    println(
-                        """
+                "info" -> {
+                    println("""
                     == PluginData class
                     uptime: ${PluginData.uptime}
                     playtime: ${PluginData.playtime}
@@ -2089,8 +2095,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     status: ${PluginData.status}
                     
                     == DB class
-                    """.trimIndent()
-                    )
+                    """.trimIndent())
                     database.players.forEach { println(it.toString()) }
                 }
 
@@ -2104,7 +2109,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "sync"  -> {
+                "sync" -> {
                     for(a in netServer.admins.banned) {
                         for(b in a.ips) {
                             Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $b -j DROP"))
@@ -2132,12 +2137,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun sync() {
             if(Main.connectType) {
-                for(a in Trigger.servers) {
-                    a.requestList()
-                }
-                Log.info(bundle["success"])
+                Log.info(bundle["command.sync.client.only"])
             } else {
-                Trigger.Client.send("send")
+                Trigger.Client.send("sync")
                 Log.info(bundle["success"])
             }
         }
@@ -2309,7 +2311,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                         it.reply("현재 서버에 Discord 인증이 활성화 되어 있지 않습니다!", true)
                                     }
                                 }*/
-                                else                 -> {}
+                                else -> {}
                             }
                         }
                     }

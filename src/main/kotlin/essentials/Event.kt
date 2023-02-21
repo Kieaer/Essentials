@@ -51,7 +51,6 @@ import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.floor
 
-
 object Event {
     private var orignalBlockMultiplier = 1f
     private var orignalUnitMultiplier = 1f
@@ -157,24 +156,22 @@ object Event {
                     }
                     val str = StringBuilder()
                     val bundle = Bundle(data.languageTag)
-                    val coreBundle = ResourceBundle.getBundle(
-                        "bundle_block", try {
-                            when(data.languageTag) {
-                                "ko" -> Locale.KOREA
-                                else -> Locale.ENGLISH
-                            }
-                        } catch(e : Exception) {
-                            Locale.ENGLISH
+                    val coreBundle = ResourceBundle.getBundle("bundle_block", try {
+                        when(data.languageTag) {
+                            "ko" -> Locale.KOREA
+                            else -> Locale.ENGLISH
                         }
-                    )
+                    } catch(e : Exception) {
+                        Locale.ENGLISH
+                    })
 
                     for(a in buf) {
                         val action = when(a.action) {
-                            "tap"    -> "[royal]${bundle["event.log.tap"]}[]"
-                            "break"  -> "[scarlet]${bundle["event.log.break"]}[]"
-                            "place"  -> "[sky]${bundle["event.log.place"]}[]"
+                            "tap" -> "[royal]${bundle["event.log.tap"]}[]"
+                            "break" -> "[scarlet]${bundle["event.log.break"]}[]"
+                            "place" -> "[sky]${bundle["event.log.place"]}[]"
                             "config" -> "[cyan]${bundle["event.log.config"]}[]"
-                            else     -> ""
+                            else -> ""
                         }
 
                         str.append(bundle["event.log.format", dateformat.format(a.time), a.player, coreBundle.getString("block.${a.tile}.name"), action]).append("\n")
@@ -685,25 +682,25 @@ object Event {
         fun check() : Int {
             return if(!isPvP) {
                 when(database.players.size) {
-                    1         -> 1
-                    in 2..4   -> 2
-                    in 5..6   -> 3
-                    7         -> 4
-                    in 8..9   -> 5
+                    1 -> 1
+                    in 2..4 -> 2
+                    in 5..6 -> 3
+                    7 -> 4
+                    in 8..9 -> 5
                     in 10..11 -> 6
-                    12        -> 7
-                    else      -> 8
+                    12 -> 7
+                    else -> 8
                 }
             } else {
                 when(database.players.count { a -> a.player.team() == voteTeam }) {
-                    1         -> 1
-                    in 2..4   -> 2
-                    in 5..6   -> 3
-                    7         -> 4
-                    in 8..9   -> 5
+                    1 -> 1
+                    in 2..4 -> 2
+                    in 5..6 -> 3
+                    7 -> 4
+                    in 8..9 -> 5
                     in 10..11 -> 6
-                    12        -> 7
-                    else      -> 8
+                    12 -> 7
+                    else -> 8
                 }
             }
         }
@@ -846,17 +843,17 @@ object Event {
                                     if(Colors.get(a.status.get("effectColor")) != null) Colors.get(a.status.get("effectColor")) else Color.valueOf(a.status.get("effectColor"))
                                 } else {
                                     when(a.level) {
-                                        in 10..19             -> Color.sky
-                                        in 20..29             -> Color.orange
-                                        in 30..39             -> Color.red
-                                        in 40..49             -> Color.sky
-                                        in 50..59             -> Color.sky
-                                        in 60..69             -> Color.sky
-                                        in 70..79             -> Color.orange
-                                        in 80..89             -> Color.orange
-                                        in 90..99             -> Color.orange
+                                        in 10..19 -> Color.sky
+                                        in 20..29 -> Color.orange
+                                        in 30..39 -> Color.red
+                                        in 40..49 -> Color.sky
+                                        in 50..59 -> Color.sky
+                                        in 60..69 -> Color.sky
+                                        in 70..79 -> Color.orange
+                                        in 80..89 -> Color.orange
+                                        in 90..99 -> Color.orange
                                         in 100..Int.MAX_VALUE -> Color.orange
-                                        else                  -> Color.orange
+                                        else -> Color.orange
                                     }
                                 }
 
@@ -865,21 +862,21 @@ object Event {
                                 val rot = a.player.unit().rotation
 
                                 when(if(a.status.containsKey("effectLevel")) a.status.get("effectLevel").toInt() else a.level) {
-                                    in 10..19             -> Call.effect(Fx.freezing, x, y, rot, color)
-                                    in 20..29             -> Call.effect(Fx.overdriven, x, y, rot, color)
-                                    in 30..39             -> {
+                                    in 10..19 -> Call.effect(Fx.freezing, x, y, rot, color)
+                                    in 20..29 -> Call.effect(Fx.overdriven, x, y, rot, color)
+                                    in 30..39 -> {
                                         Call.effect(Fx.burning, x, y, rot, color)
                                         Call.effect(Fx.melting, x, y, rot, color)
                                     }
 
-                                    in 40..49             -> Call.effect(Fx.steam, x, y, rot, color)
-                                    in 50..59             -> Call.effect(Fx.shootSmallSmoke, x, y, rot, color)
-                                    in 60..69             -> Call.effect(Fx.mine, x, y, rot, color)
-                                    in 70..79             -> Call.effect(Fx.explosion, x, y, rot, color)
-                                    in 80..89             -> Call.effect(Fx.hitLaser, x, y, rot, color)
-                                    in 90..99             -> Call.effect(Fx.crawlDust, x, y, rot, color)
+                                    in 40..49 -> Call.effect(Fx.steam, x, y, rot, color)
+                                    in 50..59 -> Call.effect(Fx.shootSmallSmoke, x, y, rot, color)
+                                    in 60..69 -> Call.effect(Fx.mine, x, y, rot, color)
+                                    in 70..79 -> Call.effect(Fx.explosion, x, y, rot, color)
+                                    in 80..89 -> Call.effect(Fx.hitLaser, x, y, rot, color)
+                                    in 90..99 -> Call.effect(Fx.crawlDust, x, y, rot, color)
                                     in 100..Int.MAX_VALUE -> Call.effect(Fx.mineImpact, x, y, rot, color)
-                                    else                  -> {}
+                                    else -> {}
                                 }
                             }
                         }
@@ -899,7 +896,7 @@ object Event {
                         if(a.value == 0) voterCooltime.remove(a.key)
                     }
 
-                    PluginData.save()
+                    if (state.isPlaying) PluginData.save()
 
                     for(a in database.players) {
                         a.playtime = a.playtime + 1
@@ -981,7 +978,7 @@ object Event {
                                 voting = false
 
                                 when(voteType) {
-                                    "kick"   -> {
+                                    "kick" -> {
                                         val name = netServer.admins.getInfo(voteTargetUUID).lastName
                                         if(Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
                                             netServer.admins.banPlayerID(voteTargetUUID)
@@ -994,12 +991,12 @@ object Event {
                                         }
                                     }
 
-                                    "map"    -> {
+                                    "map" -> {
                                         for(a in database.players) earnEXP(state.rules.waveTeam, a.player, a)
                                         back(voteMap)
                                     }
 
-                                    "gg"     -> {
+                                    "gg" -> {
                                         if(voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
                                         if(isPvP) {
                                             for(a in world.tiles) {
@@ -1012,7 +1009,7 @@ object Event {
                                         }
                                     }
 
-                                    "skip"   -> {
+                                    "skip" -> {
                                         if(voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 180)
                                         for(a in 0..voteWave!!) {
                                             spawner.spawnEnemies()
@@ -1022,7 +1019,7 @@ object Event {
                                         send("command.vote.skip.done", voteWave!!.toString())
                                     }
 
-                                    "back"   -> {
+                                    "back" -> {
                                         back(null)
                                     }
 
@@ -1039,7 +1036,7 @@ object Event {
                                                 send("command.vote.random.is")
                                                 Thread.sleep(3000)
                                                 when(random.nextInt(7)) {
-                                                    0    -> {
+                                                    0 -> {
                                                         send("command.vote.random.unit")
                                                         Groups.unit.each {
                                                             if(voteStarter != null) {
@@ -1052,12 +1049,12 @@ object Event {
                                                         logic.runWave()
                                                     }
 
-                                                    1    -> {
+                                                    1 -> {
                                                         send("command.vote.random.wave")
                                                         for(a in 0..5) logic.runWave()
                                                     }
 
-                                                    2    -> {
+                                                    2 -> {
                                                         send("command.vote.random.health")
                                                         Groups.build.each {
                                                             if(voteStarter != null) {
@@ -1074,7 +1071,7 @@ object Event {
                                                         }
                                                     }
 
-                                                    3    -> {
+                                                    3 -> {
                                                         send("command.vote.random.fill.core")
                                                         if(voteStarter != null) {
                                                             for(item in content.items()) {
@@ -1087,13 +1084,13 @@ object Event {
                                                         }
                                                     }
 
-                                                    4    -> {
+                                                    4 -> {
                                                         send("command.vote.random.storm")
                                                         Thread.sleep(1000)
                                                         Call.createWeather(Weathers.rain, 10f, 60 * 60f, 50f, 10f)
                                                     }
 
-                                                    5    -> {
+                                                    5 -> {
                                                         send("command.vote.random.fire")
                                                         for(x in 0 until world.width()) {
                                                             for(y in 0 until world.height()) {

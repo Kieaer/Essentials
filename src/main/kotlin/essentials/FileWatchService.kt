@@ -14,9 +14,7 @@ object FileWatchService: Runnable {
     override fun run() {
         var watchKey : WatchKey
         val path = Paths.get(root.absolutePath())
-        path.register(
-            watchService, StandardWatchEventKinds.ENTRY_MODIFY
-        )
+        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
 
         while(!Thread.currentThread().isInterrupted) {
             try {

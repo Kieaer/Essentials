@@ -11,10 +11,9 @@ import mindustry.Vars
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
-import java.io.BufferedInputStream
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.*
 import java.net.ServerSocket
+import java.net.SocketException
 import java.net.URL
 import java.util.*
 import java.util.concurrent.Executors
@@ -109,9 +108,19 @@ class Main: Plugin() {
 
         Core.app.addListener(object: ApplicationListener {
             override fun dispose() {
-                PluginData.save()
                 if(connectType) {
-                    Trigger.servers.forEach { a -> a.shutdown() }
+                    Trigger.clients.forEach {
+                        val writer = BufferedWriter(OutputStreamWriter(it.getOutputStream()))
+                        try {
+                            writer.write("exit")
+                            writer.newLine()
+                            writer.flush()
+                            it.close()
+                        } catch(e : SocketException) {
+                            it.close()
+                            Trigger.clients.remove(it)
+                        }
+                    }
                     Trigger.Server.shutdown()
                 } else {
                     Trigger.Client.send("exit")
@@ -144,10 +153,7 @@ class Main: Plugin() {
         if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
         if(Config.update) {
-            Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest")
-                .timeout(1000)
-                .error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }
-                .submit {
+            Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000).error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }.submit {
                     if(it.status == Http.HttpStatus.OK) {
                         val json = JsonValue.readJSON(it.resultAsString).asObject()
                         for(a in 0 until Vars.mods.list().size) {
@@ -159,9 +165,9 @@ class Main: Plugin() {
                         val current = DefaultArtifactVersion(PluginData.pluginVersion)
 
                         when {
-                            latest > current               -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject().get("browser_download_url").asString(), json.get("body").asString()])
+                            latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject().get("browser_download_url").asString(), json.get("body").asString()])
                             latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
-                            latest < current               -> Log.info(bundle["config.update.devel"])
+                            latest < current -> Log.info(bundle["config.update.devel"])
                         }
                     }
                 }
@@ -210,9 +216,7 @@ class Main: Plugin() {
         if(!root.child("motd").exists()) {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
-            val texts = arrayListOf(
-                "To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
-            )
+            val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요.")
             for(a in 0 until names.size) {
                 if(!root.child("motd/${names[a]}.txt").exists()) {
                     root.child("motd/${names[a]}.txt").writeString(texts[a])
@@ -223,9 +227,7 @@ class Main: Plugin() {
         if(!root.child("messages").exists()) {
             root.child("messages").mkdirs()
             val names = arrayListOf("en", "ko")
-            val texts = arrayListOf(
-                "To edit this message, open [green]config/mods/Essentials/messages[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/messages[] 폴더에서 [green]ko.txt[] 파일을 수정하세요."
-            )
+            val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/messages[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/messages[] 폴더에서 [green]ko.txt[] 파일을 수정하세요.")
             for(a in 0 until names.size) {
                 if(!root.child("messages/${names[a]}.txt").exists()) {
                     root.child("messages/${names[a]}.txt").writeString(texts[a])

@@ -17,7 +17,6 @@ import java.io.FileOutputStream
 import java.net.URL
 import java.util.*
 
-
 class DB {
     val players : Seq<PlayerData> = Seq()
     var isRemote : Boolean = false

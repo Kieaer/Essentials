@@ -9,7 +9,6 @@ import java.awt.Desktop
 import java.net.URI
 import java.util.*
 
-
 object Config {
     private var obj = JsonObject()
 
@@ -76,7 +75,7 @@ object Config {
                     }
                 }
 
-                else     -> {
+                else -> {
 
                 }
             }
