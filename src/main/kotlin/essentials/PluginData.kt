@@ -53,7 +53,7 @@ object PluginData {
     data class Banned(val time : Long, val name : String, val uuid : String, val reason : String)
 
     operator fun get(key : String) : String? {
-        return if(status.find { a -> a.key == key } == null) null else status.find { a -> a.key == key }!!.value
+        return if(status.findKey(key, false) == null) null else status.get(key)
     }
 
     fun save() {
