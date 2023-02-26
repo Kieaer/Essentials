@@ -45,9 +45,17 @@ dependencies {
     testImplementation("com.github.anuken.arc:backend-headless:$arcVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("net.datafaker:datafaker:1.7.0")
+
+    implementation("io.ktor:ktor-server-core:2.2.3")
+    implementation("io.ktor:ktor-server-netty:2.2.3")
 }
 
 tasks.jar {
+    exec {
+        workingDir("./src/www")
+        commandLine("npm", "run", "build")
+    }
+
     archiveFileName.set("Essentials.jar")
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }){
         exclude("**/META-INF/*.SF")
