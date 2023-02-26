@@ -38,6 +38,8 @@ dependencies {
 
     implementation(files("libs/lingua.jar"))
 
+    implementation("org.slf4j:slf4j-simple:2.0.6")
+
     testImplementation("com.github.anuken.arc:arc-core:$arcVersion")
     testImplementation("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
     testImplementation("com.github.anuken.mindustryjitpack:server:$mindustryVersion")
