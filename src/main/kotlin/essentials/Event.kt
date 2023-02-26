@@ -786,7 +786,7 @@ object Event {
 
             for(a in database.players) {
                 if(state.rules.pvp) {
-                    if(a.player.team().cores().isEmpty && a.player.team() != Team.derelict && pvpPlayer.contains { b -> b == a.uuid } && !Permission.check(a.player, "pvp.spector")) {
+                    if(a.player.unit() != null && a.player.team().cores().isEmpty && a.player.team() != Team.derelict && pvpPlayer.contains { b -> b == a.uuid } && !Permission.check(a.player, "pvp.spector")) {
                         val data = findPlayerData(a.uuid)
                         if(data != null) {
                             data.pvplosecount++
