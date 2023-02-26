@@ -1330,9 +1330,12 @@ object Event {
         var coreitem = 0
         for(a in state.stats.coreItemCount) coreitem += a.value
 
+        val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed + coreitem else 0
+        val erekirPvP = if (state.planet == Planets.erekir) coreitem else 0
+
         if(winner == p.team()) {
             val score : Int = if(state.rules.attackMode) {
-                (time + blockexp + enemyBuildingDestroyed + if(state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed + coreitem else 0) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                (time + blockexp + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
             } else if(state.rules.pvp) {
                 time + if(state.planet == Planets.erekir) coreitem else 0 + 5000
             } else {
@@ -1353,11 +1356,11 @@ object Event {
             }
 
             val message = if(state.rules.attackMode) {
-                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed + if(state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed + coreitem else 0) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
             } else if(state.rules.waves) {
                 bundle["event.exp.earn.wave", score, state.wave]
             } else if(state.rules.pvp) {
-                bundle["event.exp.earn.defeat", score, (time + if(state.planet == Planets.erekir) coreitem else 0 + 5000)]
+                bundle["event.exp.earn.defeat", score, (time + erekirPvP + 5000)]
             } else {
                 ""
             }
