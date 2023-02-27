@@ -729,7 +729,7 @@ object Event {
                 } catch(t : Exception) {
                     t.printStackTrace()
                 }
-                send("command.vote.back.done")
+                if(map == null) send("command.vote.back.done")
             }
         }
 
