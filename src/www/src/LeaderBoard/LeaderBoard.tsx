@@ -1,10 +1,17 @@
 import React from "react";
 
-import "./LeaderBoard.scss";
+import "./LeaderBoard.scss"
+
+import LeaderBoardTable from "./LeaderBoardTable";
 
 function LeaderBoard() { 
 	return (
-        <div>leaderboard</div>
+		<div className="LeaderBoard">
+			<div className="Caption">
+				Leaderboard
+			</div>
+			<LeaderBoardTable/>
+		</div>
 	);
 }
 
