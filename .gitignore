@@ -148,6 +148,3 @@ out/
 .DS_Store
 Thumbs.db
 android/libs/
-
-## WWW Stuff
-src/main/resources/www
