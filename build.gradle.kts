@@ -74,12 +74,18 @@ tasks.register("web") {
         exec {
             workingDir("./src/www")
             commandLine("npm.cmd", "i")
+        }
+        exec {
+            workingDir("./src/www")
             commandLine("npm.cmd", "run", "build")
         }
     } else { /* if os is unix-like */
         exec {
             workingDir("./src/www")
             commandLine("npm", "i")
+        }
+        exec {
+            workingDir("./src/www")
             commandLine("npm", "run", "build")
         }
     }
