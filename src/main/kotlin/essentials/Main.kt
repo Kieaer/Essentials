@@ -11,7 +11,6 @@ import mindustry.Vars
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
-import www.WebServer
 import java.io.*
 import java.net.ServerSocket
 import java.net.SocketException

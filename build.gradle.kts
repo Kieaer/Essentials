@@ -1,3 +1,5 @@
+import org.gradle.internal.os.OperatingSystem
+
 plugins {
     kotlin("jvm") version "1.8.0"
 }
@@ -54,9 +56,8 @@ dependencies {
 }
 
 tasks.jar {
-    exec {
-        workingDir("./src/www")
-        commandLine("npm", "run", "build")
+    if (!file("./src/main/resources/www").exists()) {
+        dependsOn("web")
     }
 
     archiveFileName.set("Essentials.jar")
@@ -66,6 +67,27 @@ tasks.jar {
         exclude("**/META-INF/*.RSA")
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.register("web") {
+    if (OperatingSystem.current() == OperatingSystem.WINDOWS) {
+        exec {
+            workingDir("./src/www")
+            commandLine("npm.cmd", "run", "build")
+        }
+    } else { /* if os is unix-like */
+        exec {
+            workingDir("./src/www")
+            commandLine("npm", "run", "build")
+        }
+    }
+    project.delete(
+        files("./src/main/resources/www")
+    )
+    copy {
+        from("src/www/dist")
+        into("src/main/resources/www")
+    }
 }
 
 tasks.compileKotlin {

@@ -5,6 +5,8 @@ import "./LeaderBoard.scss"
 import LeaderBoardTable from "./LeaderBoardTable";
 
 function LeaderBoard() { 
+	document.title = "LeaderBoard";
+	
 	return (
 		<div className="LeaderBoard">
 			<div className="Caption">

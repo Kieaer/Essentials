@@ -1,8 +1,8 @@
 {
-  "name": "Essentials-Web",
+  "name": "essentials-web",
   "scripts": {
     "dev": "webpack-dev-server --config config/webpack.dev.js",
-    "build": "webpack --config config/webpack.prod.js && mkdir -p ../main/resources/www/ && rm -rf ../main/resources/www/* && cp -r ./dist/* ../main/resources/www/"
+    "build": "webpack --config config/webpack.prod.js"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",
