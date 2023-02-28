@@ -73,11 +73,13 @@ tasks.register("web") {
     if (OperatingSystem.current() == OperatingSystem.WINDOWS) {
         exec {
             workingDir("./src/www")
+            commandLine("npm.cmd", "i")
             commandLine("npm.cmd", "run", "build")
         }
     } else { /* if os is unix-like */
         exec {
             workingDir("./src/www")
+            commandLine("npm", "i")
             commandLine("npm", "run", "build")
         }
     }
