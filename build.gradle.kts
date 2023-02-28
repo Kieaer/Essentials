@@ -1,3 +1,5 @@
+import org.gradle.internal.os.OperatingSystem
+
 plugins {
     kotlin("jvm") version "1.8.0"
 }
@@ -45,9 +47,19 @@ dependencies {
     testImplementation("com.github.anuken.arc:backend-headless:$arcVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("net.datafaker:datafaker:1.7.0")
+
+    val ktor_version = "2.2.3"
+    implementation("io.ktor:ktor-server-core:$ktor_version")
+    implementation("io.ktor:ktor-server-netty:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
 }
 
 tasks.jar {
+    if (!file("./src/main/resources/www").exists()) {
+        dependsOn("web")
+    }
+
     archiveFileName.set("Essentials.jar")
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }){
         exclude("**/META-INF/*.SF")
@@ -55,6 +67,35 @@ tasks.jar {
         exclude("**/META-INF/*.RSA")
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.register("web") {
+    if (OperatingSystem.current() == OperatingSystem.WINDOWS) {
+        exec {
+            workingDir("./src/www")
+            commandLine("npm.cmd", "i")
+        }
+        exec {
+            workingDir("./src/www")
+            commandLine("npm.cmd", "run", "build")
+        }
+    } else { /* if os is unix-like */
+        exec {
+            workingDir("./src/www")
+            commandLine("npm", "i")
+        }
+        exec {
+            workingDir("./src/www")
+            commandLine("npm", "run", "build")
+        }
+    }
+    project.delete(
+        files("./src/main/resources/www")
+    )
+    copy {
+        from("src/www/dist")
+        into("src/main/resources/www")
+    }
 }
 
 tasks.compileKotlin {

@@ -292,6 +292,45 @@ class DB {
         return d
     }
 
+    fun getAllByExp() : Seq<PlayerData> {
+        val d = Seq<PlayerData>()
+
+        transaction {
+            Player.selectAll().orderBy(Player.exp).map {
+                val data = PlayerData()
+                data.name = it[Player.name]
+                data.uuid = it[Player.uuid]
+                data.languageTag = it[Player.languageTag]
+                data.placecount = it[Player.placecount]
+                data.breakcount = it[Player.breakcount]
+                data.joincount = it[Player.joincount]
+                data.kickcount = it[Player.kickcount]
+                data.level = it[Player.level]
+                data.exp = it[Player.exp]
+                data.joinDate = it[Player.joinDate]
+                data.lastdate = it[Player.lastdate]
+                data.playtime = it[Player.playtime]
+                data.attackclear = it[Player.attackclear]
+                data.pvpwincount = it[Player.pvpwincount]
+                data.pvplosecount = it[Player.pvplosecount]
+                data.colornick = it[Player.colornick]
+                data.permission = it[Player.permission]
+                data.mute = it[Player.mute]
+                data.id = it[Player.accountid]
+                data.pw = it[Player.accountpw]
+
+                val obj = ObjectMap<String, String>()
+                for(a in JsonObject.readHjson(it[Player.status]).asObject()) {
+                    obj.put(a.name, a.value.asString())
+                }
+                data.status = obj
+                d.add(data)
+            }
+        }
+
+        return d
+    }
+
     fun queue(data : PlayerData) {
         Trigger.UpdateThread.queue.add(data)
     }

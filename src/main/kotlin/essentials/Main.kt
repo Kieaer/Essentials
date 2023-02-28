@@ -135,6 +135,8 @@ class Main: Plugin() {
         })
 
         Event.register()
+
+        WebServer.start()
     }
 
     override fun init() {
