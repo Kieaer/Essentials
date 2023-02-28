@@ -43,10 +43,10 @@ class DB {
 
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    val cmd = arrayOf("/bin/bash", "-c", "cd ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql")
+                    val cmd = arrayOf("/bin/bash", "-c", "cd ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db;AUTO_SERVER=TRUE -user sa -script script.sql")
                     Runtime.getRuntime().exec(cmd).waitFor()
                 } else {
-                    Runtime.getRuntime().exec("cmd /c cd /D ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql").waitFor()
+                    Runtime.getRuntime().exec("cmd /c cd /D ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db;AUTO_SERVER=TRUE -user sa -script script.sql").waitFor()
                 }
 
                 Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.db"))
