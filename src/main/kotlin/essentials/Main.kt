@@ -135,8 +135,6 @@ class Main: Plugin() {
         })
 
         Event.register()
-
-        WebServer.start()
     }
 
     override fun init() {
@@ -203,6 +201,8 @@ class Main: Plugin() {
             }
             return@addActionFilter false
         }
+
+        if (Config.webServer) WebServer.start()
         Log.info(Bundle()["event.plugin.loaded"])
     }
 
