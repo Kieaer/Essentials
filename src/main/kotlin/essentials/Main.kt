@@ -107,6 +107,7 @@ class Main: Plugin() {
         }
 
         Core.app.addListener(object: ApplicationListener {
+            // todo 서버가 꺼지질 않음
             override fun dispose() {
                 if(connectType) {
                     Trigger.clients.forEach {

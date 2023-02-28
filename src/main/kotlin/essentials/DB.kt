@@ -76,6 +76,7 @@ class DB {
 
             transaction {
                 if(!connection.isClosed) {
+                    // todo 데이터가 손상된 경우를 위해 백업하는 테이블이나 기능 만들기
                     SchemaUtils.create(Player)
                     SchemaUtils.create(Data)
 
@@ -219,6 +220,7 @@ class DB {
     }
 
     operator fun get(uuid : String) : PlayerData? {
+        // todo 메인 서버가 사망할 경우 하위 서버도 사망하는 문제
         val d = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
         if(d != null) {
             val data = PlayerData()

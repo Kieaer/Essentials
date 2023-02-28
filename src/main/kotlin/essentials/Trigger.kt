@@ -125,6 +125,7 @@ object Trigger {
         private var servers = ArrayMap<String, Int>()
         private val dummy = Player.create()
 
+        // todo 어떠한 이유로 인해 동기화 문제가 발생하고 있음
         override fun run() {
             while(!currentThread().isInterrupted) {
                 try {
@@ -361,6 +362,7 @@ object Trigger {
 
         fun shutdown() {
             currentThread().interrupt()
+            // todo 초기화 되지 않는 문제
             server.close()
         }
 

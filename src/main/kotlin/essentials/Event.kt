@@ -285,6 +285,7 @@ object Event {
 
                         if(!data.mute) {
                             val isAdmin = Permission.check(player, "vote.pass")
+                            // todo 자신이 시작한 투표에 자기 자신이 y 를 쳐서 투표에 참여하면 무조건 투표 통과가 되는 문제 (확인 필요)
                             if(voting && message.equals("y", true) && !voted.contains(player.uuid())) {
                                 if(isAdmin) {
                                     isAdminVote = true
@@ -1317,6 +1318,7 @@ object Event {
     }
 
     fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData) {
+        // todo 경험치를 지나치게 낮게 획득하는 문제
         val oldLevel = target.level
         val oldExp = target.exp
         val time = PluginData.playtime.toInt()
