@@ -46,6 +46,8 @@ object Config {
     var unbreakableCore = false
     var moveEffects = true
     var blockNewUser = false
+    var webServer = false
+    var webServerPort = 8123
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -58,7 +60,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 15
+    private var configVersion = 16
 
     private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -136,6 +138,8 @@ object Config {
         features.add("waveskip", waveskip, bundle["config.waveskip"])
         features.add("unbreakableCore", unbreakableCore, bundle["config.unbreakablecore"])
         features.add("moveEffects", moveEffects, bundle["config.moveeffects"])
+        features.add("webServer", webServer, bundle["config.webserver"])
+        features.add("webServerPort", webServerPort, bundle["config.webserver.port"])
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -204,6 +208,8 @@ object Config {
         waveskip = features.getInt("waveskip", waveskip)
         unbreakableCore = features.getBoolean("unbreakableCore", unbreakableCore)
         moveEffects = features.getBoolean("moveEffects", moveEffects)
+        webServer = features.getBoolean("webServer", webServer)
+        webServerPort = features.getInt("webServerPort", webServerPort)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)

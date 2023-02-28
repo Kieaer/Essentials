@@ -149,6 +149,7 @@ object PluginData {
                 banned = Seq<Banned>()
                 status = ObjectMap<String, String>()
 
+                // todo 서버간 데이터 충돌로 인해 데이터가 증발해버릴 경우 일단 결과값이 있기 때문에 154줄을 건너뛰고 156줄에서 무한히 오류가 발생하는 문제
                 transaction {
                     if(!DB.Data.selectAll().empty()) {
                         DB.Data.selectAll().first().run {

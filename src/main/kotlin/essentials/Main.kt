@@ -107,6 +107,7 @@ class Main: Plugin() {
         }
 
         Core.app.addListener(object: ApplicationListener {
+            // todo 서버가 꺼지질 않음
             override fun dispose() {
                 if(connectType) {
                     Trigger.clients.forEach {
@@ -135,8 +136,6 @@ class Main: Plugin() {
         })
 
         Event.register()
-
-        WebServer.start()
     }
 
     override fun init() {
@@ -203,6 +202,8 @@ class Main: Plugin() {
             }
             return@addActionFilter false
         }
+
+        if (Config.webServer) WebServer.start()
         Log.info(Bundle()["event.plugin.loaded"])
     }
 
