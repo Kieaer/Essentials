@@ -105,36 +105,6 @@ class Main: Plugin() {
                 }
             }
         }
-
-        Core.app.addListener(object: ApplicationListener {
-            // todo 서버가 꺼지질 않음
-            override fun dispose() {
-                if(connectType) {
-                    Trigger.clients.forEach {
-                        val writer = BufferedWriter(OutputStreamWriter(it.getOutputStream()))
-                        try {
-                            writer.write("exit")
-                            writer.newLine()
-                            writer.flush()
-                            it.close()
-                        } catch(e : SocketException) {
-                            it.close()
-                            Trigger.clients.remove(it)
-                        }
-                    }
-                    Trigger.Server.shutdown()
-                } else {
-                    Trigger.Client.send("exit")
-                }
-                daemon.shutdownNow()
-                Commands.Discord.shutdownNow()
-                Permission.sort()
-                Config.save()
-                database.close()
-                if(database.dbServer != null) database.dbServer!!.stop()
-            }
-        })
-
         Event.register()
     }
 
@@ -204,6 +174,35 @@ class Main: Plugin() {
         }
 
         if (Config.webServer) WebServer.start()
+
+        Core.app.addListener(object: ApplicationListener {
+            override fun dispose() {
+                if(connectType) {
+                    Trigger.clients.forEach {
+                        val writer = BufferedWriter(OutputStreamWriter(it.getOutputStream()))
+                        try {
+                            writer.write("exit")
+                            writer.newLine()
+                            writer.flush()
+                            it.close()
+                        } catch(e : SocketException) {
+                            it.close()
+                            Trigger.clients.remove(it)
+                        }
+                    }
+                } else {
+                    Trigger.Client.send("exit")
+                }
+                daemon.shutdownNow()
+                Commands.Discord.shutdownNow()
+                Permission.sort()
+                Config.save()
+                database.close()
+                if(database.dbServer != null) database.dbServer!!.stop()
+                if(isPortOpen) Trigger.Server.shutdown() else Trigger.Client.send("exit")
+            }
+        })
+
         Log.info(Bundle()["event.plugin.loaded"])
     }
 

@@ -345,9 +345,9 @@ object Trigger {
 
         override fun run() {
             try {
-                ServerSocket(6000).use { s ->
+                server = ServerSocket(6000)
+                server.use { s ->
                     while(!currentThread().isInterrupted) {
-                        println("while run")
                         val socket = s.accept()
                         Log.info(Bundle()["network.server.connected", socket.inetAddress.hostAddress])
                         clients.add(socket)
@@ -355,14 +355,14 @@ object Trigger {
                         handler.start()
                     }
                 }
+            } catch(_ : SocketException) {
             } catch(e : Exception) {
-                println(e.stackTrace)
+                e.printStackTrace()
             }
         }
 
         fun shutdown() {
             currentThread().interrupt()
-            // todo 초기화 되지 않는 문제
             server.close()
         }
 
