@@ -769,6 +769,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                 else -> send("command.hub.help")
             }
+            PluginData.save()
             PluginData.changed = true
         }
 

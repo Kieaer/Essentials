@@ -131,7 +131,7 @@ object Trigger {
                 try {
                     try {
                         transaction {
-                            if(PluginData.changed) {
+                            if(PluginData.changed && PluginData.lastMemory.isNotEmpty()) {
                                 DB.Data.update {
                                     it[this.data] = PluginData.lastMemory
                                     PluginData.changed = false

@@ -194,7 +194,7 @@ object PluginData {
                                 changed = true
                             }
                         }
-                    } else {
+                    } else if(lastMemory.isNotEmpty()){
                         DB.Data.insert {
                             it[data] = lastMemory
                         }
