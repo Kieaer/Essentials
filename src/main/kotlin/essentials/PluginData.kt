@@ -53,10 +53,10 @@ object PluginData {
     data class Banned(val time : Long, val name : String, val uuid : String, val reason : String)
 
     operator fun get(key : String) : String? {
-        return if(status.findKey(key, false) == null) null else status.get(key)
+        return status.get(key)
     }
 
-    fun save() {
+    fun save(first: Boolean) {
         val data = JsonObject()
         var buffer = JsonArray()
 
@@ -134,12 +134,20 @@ object PluginData {
 
         val encode = Base64.getEncoder()
         lastMemory = encode.encodeToString(data.toString().toByteArray())
+
+        if (first) {
+            transaction {
+                DB.Data.insert {
+                    it[DB.Data.data] = lastMemory
+                }
+            }
+        }
     }
 
     fun load() {
         try {
-            if(transaction { DB.Data.selectAll().firstOrNull() == null }) {
-                save()
+            if(transaction { DB.Data.selectAll().empty() }) {
+                save(true)
             } else {
                 warpZones = Seq<WarpZone>()
                 warpBlocks = Seq<WarpBlock>()
@@ -149,7 +157,6 @@ object PluginData {
                 banned = Seq<Banned>()
                 status = ObjectMap<String, String>()
 
-                // todo 서버간 데이터 충돌로 인해 데이터가 증발해버릴 경우 일단 결과값이 있기 때문에 154줄을 건너뛰고 156줄에서 무한히 오류가 발생하는 문제
                 transaction {
                     if(!DB.Data.selectAll().empty()) {
                         DB.Data.selectAll().first().run {
@@ -194,7 +201,7 @@ object PluginData {
                                 changed = true
                             }
                         }
-                    } else if(lastMemory.isNotEmpty()){
+                    } else if(DB.Data.selectAll().empty()) {
                         DB.Data.insert {
                             it[data] = lastMemory
                         }
@@ -202,7 +209,7 @@ object PluginData {
                 }
             }
         } catch(e : IOException) {
-            println(e)
+            e.printStackTrace()
         } catch(e : Exception) {
             e.printStackTrace()
         }

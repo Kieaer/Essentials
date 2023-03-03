@@ -252,7 +252,7 @@ object Event {
                 }
                 PluginData.status.remove("iptablesFirst")
                 Log.info(Bundle()["event.ban.iptables.remove"])
-                PluginData.save()
+                PluginData.save(false)
                 PluginData.changed = true
             } else if(Config.blockIP && PluginData["iptablesFirst"] == null) {
                 for(a in netServer.admins.banned) {
@@ -263,7 +263,7 @@ object Event {
                     }
                 }
                 PluginData.status.put("iptablesFirst", "none")
-                PluginData.save()
+                PluginData.save(false)
                 PluginData.changed = true
             }
 

@@ -84,7 +84,7 @@ class Main: Plugin() {
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
                 }
-                PluginData.save()
+                PluginData.save(false)
                 PluginData.changed = true
 
                 if(isUpdate) {

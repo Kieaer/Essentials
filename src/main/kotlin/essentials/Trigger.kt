@@ -18,6 +18,7 @@ import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO.readServerData
 import org.hjson.JsonArray
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.mindrot.jbcrypt.BCrypt
@@ -130,15 +131,20 @@ object Trigger {
             while(!currentThread().isInterrupted) {
                 try {
                     try {
-                        transaction {
-                            if(PluginData.changed && PluginData.lastMemory.isNotEmpty()) {
+                        if(PluginData.changed && PluginData.lastMemory.isNotEmpty()) {
+                            transaction {
                                 DB.Data.update {
                                     it[this.data] = PluginData.lastMemory
-                                    PluginData.changed = false
                                 }
-                            } else {
-                                PluginData.load()
+                                DB.Data.selectAll().first().run {
+                                    if (this[DB.Data.data] != PluginData.lastMemory) {
+                                        println("validateError")
+                                    }
+                                }
                             }
+                            PluginData.changed = false
+                        } else if(!PluginData.changed) {
+                            PluginData.load()
                         }
                     } catch(e : Exception) {
                         e.printStackTrace()
@@ -386,10 +392,8 @@ object Trigger {
                     }
 
                     while(!currentThread().isInterrupted) {
-                        println("while")
                         val d = reader.readLine()
                         if (d == null) interrupt()
-                        println(d)
                         when(d) {
                             "exit" -> interrupt()
                             "sync" -> {
