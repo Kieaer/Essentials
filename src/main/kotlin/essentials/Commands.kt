@@ -707,7 +707,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             when(type) {
                 "set" -> {
-                    if(PluginData["hubMode"] != null) {
+                    if(PluginData["hubMode"] == null) {
                         PluginData.status.put("hubMode", state.map.name())
                         send("command.hub.mode.on")
                     } else {
