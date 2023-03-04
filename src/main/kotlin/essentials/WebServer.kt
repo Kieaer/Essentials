@@ -9,9 +9,11 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-object WebServer {
-    fun start() {
-        embeddedServer(Netty, Config.webServerPort) {
+class WebServer: Runnable {
+    lateinit var server : NettyApplicationEngine
+
+    override fun run() {
+        server = embeddedServer(Netty, Config.webServerPort) {
             install(ContentNegotiation) {
                 jackson { }
             }
@@ -48,6 +50,11 @@ object WebServer {
                     defaultPage = "index.html"
                 }
             }
-        }.start(wait = false)
+        }
+        server.start(true)
+    }
+
+    fun stop() {
+        if(::server.isInitialized) server.stop()
     }
 }

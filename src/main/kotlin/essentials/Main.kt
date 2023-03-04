@@ -26,6 +26,8 @@ class Main: Plugin() {
         var connectType = false
     }
 
+    var webServer = WebServer()
+
     init {
         Log.info("[Essentials] Loading")
         if((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
@@ -121,6 +123,7 @@ class Main: Plugin() {
         daemon.submit(Trigger.Thread())
         daemon.submit(Trigger.UpdateThread)
         daemon.submit(if(isPortOpen) Trigger.Server else Trigger.Client)
+        if(Config.webServer) daemon.submit(webServer)
         connectType = isPortOpen
         if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
@@ -174,8 +177,6 @@ class Main: Plugin() {
             return@addActionFilter false
         }
 
-        if (Config.webServer) WebServer.start()
-
         Core.app.addListener(object: ApplicationListener {
             override fun dispose() {
                 if(connectType) {
@@ -199,8 +200,10 @@ class Main: Plugin() {
                 Permission.sort()
                 Config.save()
                 database.close()
+                webServer.stop()
                 if(database.dbServer != null) database.dbServer!!.stop()
                 if(isPortOpen) Trigger.Server.shutdown() else Trigger.Client.send("exit")
+                if(Config.webServer) webServer.stop()
             }
         })
 
