@@ -144,6 +144,8 @@ object Config {
         features.add("moveEffects", moveEffects, bundle["config.moveeffects"])
         features.add("webServer", webServer, bundle["config.webserver"])
         features.add("webServerPort", webServerPort, bundle["config.webserver.port"])
+        features.add("restAPIRequestsLimit", restAPIRequestsLimit, bundle["config.webserver.limit"])
+        features.add("restAPILimitRefillPeriod", restAPILimitRefillPeriod, bundle["config.webserver.limit.reset"])
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -214,6 +216,8 @@ object Config {
         moveEffects = features.getBoolean("moveEffects", moveEffects)
         webServer = features.getBoolean("webServer", webServer)
         webServerPort = features.getInt("webServerPort", webServerPort)
+        restAPIRequestsLimit = features.getInt("restAPIRequestsLimit", restAPIRequestsLimit)
+        restAPILimitRefillPeriod = features.getInt("restAPILimitRefillPeriod", restAPILimitRefillPeriod)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)
