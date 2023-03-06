@@ -1192,7 +1192,8 @@ object Event {
                     for(a in data) {
                         if(a.status.containsKey("ban") && LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
                             Core.app.post { netServer.admins.unbanPlayerID(a.uuid) }
-                            a.status.removeAll { b -> b.key == "ban" }
+                            a.status.remove("ban")
+                            database.update(a.uuid, a)
                             if(Config.banChannelToken.isNotEmpty()) {
                                 Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.tempban.unbanned", a.name])
                             }
