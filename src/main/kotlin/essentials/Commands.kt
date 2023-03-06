@@ -365,7 +365,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             data.colornick = !data.colornick
         }
 
-        // todo 아예 작동하지 않음
         fun broadcast() {
             if(!Permission.check(player, "broadcast")) return
             if(Main.connectType) {

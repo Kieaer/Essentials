@@ -435,11 +435,11 @@ object Trigger {
                         }
                     }
                 } catch(_: SocketException){
-                    Log.info(Bundle()["network.server.disconnected", socket.inetAddress.hostAddress])
-                    clients.remove(socket)
                 } catch(e: Exception) {
                     e.printStackTrace()
                 }
+                clients.remove(socket)
+                Log.info(Bundle()["network.server.disconnected", socket.inetAddress.hostAddress])
             }
         }
     }
@@ -463,7 +463,8 @@ object Trigger {
                     try {
                         when(val d = reader.readLine()) {
                             "message" -> {
-                                Call.sendMessage(reader.readLine())
+                                val aa = reader.readLine()
+                                Call.sendMessage(aa)
                             }
 
                             "exit" -> {
