@@ -298,7 +298,7 @@ class DB {
         val d = Seq<PlayerData>()
 
         transaction {
-            Player.selectAll().orderBy(Player.exp).map {
+            Player.selectAll().orderBy(Player.exp, SortOrder.DESC).map {
                 val data = PlayerData()
                 data.name = it[Player.name]
                 data.uuid = it[Player.uuid]
