@@ -203,7 +203,7 @@ export default function LeaderBoardTable() {
 	}, []);
 
 	if (loading) return <div>loading...</div>;
-	if (error429) return <div>too many requests! please try after 30 seconds. (5 requests allowed per half minute)</div>;
+	if (error429) return <div>too many requests! please try after few seconds.</div>;
 	if (unknownerror) return <div>unknown error occured. please tell the error code poped up on developer console to administarator</div>
 
 	return (
