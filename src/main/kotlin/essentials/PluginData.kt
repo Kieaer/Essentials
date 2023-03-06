@@ -12,6 +12,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.IOException
 import java.util.*
+import java.util.regex.Pattern
 
 object PluginData {
     var uptime = 0L
@@ -22,7 +23,7 @@ object PluginData {
     var warpBlocks = Seq<WarpBlock>()
     var warpCounts = Seq<WarpCount>()
     var warpTotals = Seq<WarpTotal>()
-    var blacklist = Seq<String>()
+    var blacklist = Seq<Pattern>()
     var banned = Seq<Banned>()
     var status = ObjectMap<String, String>()
 
@@ -112,7 +113,7 @@ object PluginData {
         data.add("warpTotals", buffer)
         buffer = JsonArray()
 
-        for(it in blacklist) buffer.add(it)
+        for(it in blacklist) buffer.add(it.pattern())
         data.add("blacklist", buffer)
         buffer = JsonArray()
 
@@ -153,7 +154,7 @@ object PluginData {
                 warpBlocks = Seq<WarpBlock>()
                 warpCounts = Seq<WarpCount>()
                 warpTotals = Seq<WarpTotal>()
-                blacklist = Seq<String>()
+                blacklist = Seq<Pattern>()
                 banned = Seq<Banned>()
                 status = ObjectMap<String, String>()
 
@@ -182,7 +183,7 @@ object PluginData {
                                 warpTotals.add(WarpTotal(obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("totalplayers").asInt(), obj.get("numbersize").asInt()))
                             }
 
-                            data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
+                            data["blacklist"].asArray().forEach { blacklist.add(Pattern.compile(it.asString())) }
 
                             data["banned"].asArray().forEach {
                                 val obj = it.asObject()

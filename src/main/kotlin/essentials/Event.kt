@@ -84,6 +84,10 @@ object Event {
     var pvpPlayer = Seq<String>()
     var isGlobalMute = false
 
+    val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
+    val blockSelectRegex : Pattern = Pattern.compile(".*build.*")
+    val nameRegex : Pattern = Pattern.compile("(.*\\[.*].*)|　|^(.*\\s+.*)+\$")
+
     fun register() {
         Events.on(WithdrawEvent::class.java) {
             if(it.tile != null && it.player.unit().item() != null && it.player.name != null) {
@@ -307,7 +311,7 @@ object Event {
                                 val d : LanguageDetector = LanguageDetectorBuilder.fromLanguages(*languages.toTypedArray()).build()
                                 val e : Language = d.detectLanguageOf(message)
 
-                                if(e.name == "UNKNOWN" && !message.substring(0, 1).matches(Regex("[!@#$%&*()_+=|<>?{}\\[\\]~-]")) && !(voting && message.equals("y", true) && !voted.contains(player.uuid()))) {
+                                if(e.name == "UNKNOWN" && !specificTextRegex.matcher(message.substring(0, 1)).matches() && !(voting && message.equals("y", true) && !voted.contains(player.uuid()))) {
                                     player.sendMessage(Bundle(data.languageTag)["event.chat.language.not.allow"])
                                     isMute = true
                                 }
@@ -424,7 +428,7 @@ object Event {
         }
 
         Events.on(BuildSelectEvent::class.java) {
-            if(it.builder is Playerc && it.builder.buildPlan() != null && !Pattern.matches(".*build.*", it.builder.buildPlan().block.name) && it.tile.block() !== Blocks.air && it.breaking) {
+            if(it.builder is Playerc && it.builder.buildPlan() != null && !blockSelectRegex.matcher(it.builder.buildPlan().block.name).matches() && it.tile.block() !== Blocks.air && it.breaking) {
                 log(LogType.Block, Bundle()["log.block.remove", (it.builder as Playerc).plainName(), it.tile.block().name, it.tile.x, it.tile.y])
             }
         }
@@ -652,14 +656,12 @@ object Event {
 
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for(s in PluginData.blacklist) {
-                if(e.packet.name.matches(Regex(s))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.blacklisted"], 0L)
+                if(s.matcher(e.packet.name).matches()) e.connection.kick(Bundle(e.packet.locale)["event.player.name.blacklisted"], 0L)
             }
 
             if(Config.fixedName) {
                 if(e.packet.name.length > 32) e.connection.kick(Bundle(e.packet.locale)["event.player.name.long"], 0L)
-                if(e.packet.name.matches(Regex(".*\\[.*].*"))) e.connection.kick(Bundle(e.packet.locale)["event.player.name.parenthese"], 0L)
-                if(e.packet.name.contains("　")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.special"], 0L)
-                if(e.packet.name.contains(" ")) e.connection.kick(Bundle(e.packet.locale)["event.player.name.not.allow"], 0L)
+                if(nameRegex.matcher(e.packet.name).matches()) e.connection.kick(Bundle(e.packet.locale)["event.player.name.not.allow"], 0L)
             }
 
             if(Config.minimalName && e.packet.name.length < 4) e.connection.kick(Bundle(e.packet.locale)["event.player.name.short"], 0L)
@@ -1336,8 +1338,8 @@ object Event {
         var coreitem = 0
         for(a in state.stats.coreItemCount) coreitem += a.value
 
-        val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
-        val erekirPvP = if (state.planet == Planets.erekir) 5000 else 0
+        val erekirAttack = if (state.planet === Planets.erekir) state.stats.enemyUnitsDestroyed else 0
+        val erekirPvP = if (state.planet === Planets.erekir) 5000 else 0
 
         if(winner == p.team()) {
             val score : Int = if(state.rules.attackMode) {

@@ -2315,16 +2315,16 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         private fun encode(source : String?) : String? {
             if(null == source) return null
-            var encode : StringBuffer? = null
+            var encode : StringBuilder? = null
             val encodeArray = source.toCharArray()
             var match = -1
             var difference : Int
             for(i in encodeArray.indices) {
                 val charEncode = encodeArray[i]
                 if(htmlEncodeChars.containsKey(charEncode)) {
-                    if(null == encode) encode = StringBuffer(source.length)
+                    if(null == encode) encode = StringBuilder(source.length)
                     difference = i - (match + 1)
-                    if(difference > 0) encode.append(encodeArray, match + 1, difference)
+                    if(difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
                     encode.append(htmlEncodeChars[charEncode])
                     match = i
                 }
@@ -2333,7 +2333,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 source
             } else {
                 difference = encodeArray.size - (match + 1)
-                if(difference > 0) encode.append(encodeArray, match + 1, difference)
+                if(difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
                 encode.toString()
             }
         }

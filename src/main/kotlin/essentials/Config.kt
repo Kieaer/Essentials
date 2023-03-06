@@ -8,6 +8,7 @@ import org.hjson.Stringify
 import java.awt.Desktop
 import java.net.URI
 import java.util.*
+import java.util.regex.Pattern
 
 object Config {
     private var obj = JsonObject()
@@ -64,6 +65,7 @@ object Config {
 
     private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
+    private val allowLanguageRegex : Pattern = Pattern.compile("en|ja|ko|ru|uk|zh")
 
     private fun wizard() {
         Log.info(bundle["config.wiki"])
@@ -224,7 +226,7 @@ object Config {
         banChannelToken = discord.getString("banChannelToken", banChannelToken)
 
         if(chatlimit) {
-            if(!chatlanguage.matches(Regex("en|ja|ko|ru|uk|zh"))) {
+            if(!allowLanguageRegex.matcher(chatlanguage).matches()) {
                 chatlimit = false
             }
         }
