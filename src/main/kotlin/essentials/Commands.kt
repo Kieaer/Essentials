@@ -894,17 +894,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     Groups.unit.each { u : Unit -> if(player.team() == u.team) u.kill() }
                 }
             } else {
-                when(arg[0].lowercase()) {
-                    "derelict" -> Groups.unit.each { u : Unit -> if(Team.derelict == u.team) u.kill() }
-                    "sharded" -> Groups.unit.each { u : Unit -> if(Team.sharded == u.team) u.kill() }
-                    "crux" -> Groups.unit.each { u : Unit -> if(Team.crux == u.team) u.kill() }
-                    "green" -> Groups.unit.each { u : Unit -> if(Team.green == u.team) u.kill() }
-                    "malis" -> Groups.unit.each { u : Unit -> if(Team.malis == u.team) u.kill() }
-                    "blue" -> Groups.unit.each { u : Unit -> if(Team.blue == u.team) u.kill() }
-                    else -> {
-                        send("command.team.invalid")
-                    }
-                }
+                val team = selectTeam(arg[0])
+                Groups.unit.each { u -> if(u.team == team) u.kill() }
             }
 
         }
