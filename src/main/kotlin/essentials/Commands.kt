@@ -18,7 +18,6 @@ import com.mewna.catnip.shard.DiscordEvent
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
-import essentials.Event.playerHistory
 import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
@@ -1414,40 +1413,29 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             // todo 메세지 내용이 되돌려지지 않음
             // todo 일부 기록이 복구되지 않음
             if(!Permission.check(player, "rollback")) return
-            for(a in playerHistory) {
+
+            for(a in worldHistory) {
+                val buf = Seq<Event.TileLog>()
                 if(a.player.contains(arg[0])) {
-                    val buf = Seq<Event.TileLog>()
                     for(b in worldHistory) {
                         if(b.x == a.x && b.y == a.y) {
                             buf.add(b)
                         }
                     }
 
-                    for(b in buf) {
-                        if(b.player == a.player) {
-                            buf.remove(b)
-                        }
+                    val last = buf.last()
+                    if(last.action == "place") {
+                        Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
+                    } else if(last.action == "break") {
+                        Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)/*println(content.block(last.tile).name)
+                        if (world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.message || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.reinforcedMessage || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.worldMessage) {
+                            val t = world.tile(last.x.toInt(), last.y.toInt()).block() as MessageBlock
+                            t.MessageBuild().message = StringBuilder().append(last.other)
+                        }*/
                     }
-
-                    if(buf.size == 0) {
-                        Call.setTile(world.tile(a.x.toInt(), a.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
-                    } else {
-                        val last = buf.last()
-                        if(last.action == "break") {
-                            Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
-                        } else if(last.action == "place") {
-                            Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)/*println(content.block(last.tile).name)
-                            if (world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.message || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.reinforcedMessage || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.worldMessage) {
-                                val t = world.tile(last.x.toInt(), last.y.toInt()).block() as MessageBlock
-                                t.MessageBuild().message = StringBuilder().append(last.other)
-                            }*/
-                        }
-                    }
-
                 }
             }
             worldHistory.removeAll { a -> a.player.contains(arg[0]) }
-            playerHistory.removeAll { a -> a.player.contains(arg[0]) }
         }
 
         fun search() {

@@ -4,7 +4,6 @@ import arc.ApplicationListener
 import arc.Core
 import arc.Events
 import arc.files.Fi
-import arc.func.Cons2
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.struct.ObjectMap
@@ -35,7 +34,6 @@ import mindustry.maps.Map
 import mindustry.net.Administration.PlayerInfo
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
-import mindustry.world.Block
 import java.io.IOException
 import java.net.InetAddress
 import java.net.UnknownHostException
@@ -74,7 +72,6 @@ object Event {
     private var isCanceled = false
 
     var worldHistory = Seq<TileLog>()
-    var playerHistory = Seq<PlayerLog>()
     var voterCooltime = ObjectMap<String, Int>()
 
     private var random = Random()
@@ -120,7 +117,6 @@ object Event {
                 }
 
                 addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team))
-                addLog(PlayerLog(it.player.name, it.tile.block(), it.tile.tile.x, it.tile.tile.y, it.tile.tile.block().configurations))
             }
         }
 
@@ -405,7 +401,6 @@ object Event {
                     if(!it.breaking) {
                         log(LogType.Block, Bundle()["log.block.place", target.name, block.name, it.tile.x, it.tile.y])
                         addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-                        addLog(PlayerLog(target.name, it.tile.block(), it.tile.x, it.tile.y, null))
 
                         if(!state.rules.infiniteResources) {
                             target.placecount++
@@ -418,7 +413,6 @@ object Event {
                     } else if(it.breaking) {
                         log(LogType.Block, Bundle()["log.block.break", target.name, block.name, it.tile.x, it.tile.y])
                         addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-                        addLog(PlayerLog(target.name, player.unit().buildPlan().block, it.tile.x, it.tile.y, null))
 
                         if(!state.rules.infiniteResources) {
                             target.breakcount++
@@ -1425,10 +1419,5 @@ object Event {
         worldHistory.add(log)
     }
 
-    private fun addLog(log : PlayerLog) {
-        playerHistory.add(log)
-    }
-
     class TileLog(val time : Long, val player : String, val action : String, val x : Short, val y : Short, val tile : String, val rotate : Int, val team : Team)
-    class PlayerLog(val player : String, val block : Block, val x : Short, val y : Short, val config : ObjectMap<Class<*>, Cons2<Any, Any>>?)
 }
