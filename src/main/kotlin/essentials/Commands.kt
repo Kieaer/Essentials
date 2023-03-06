@@ -1395,24 +1395,18 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun report() {
             if(!Permission.check(player, "report")) return
-            if(arg.isEmpty()) {
-                send("command.report.arg.empty")
-            } else if(arg.size == 1) {
-                send("command.report.no.reason")
-            } else if(arg.size > 2) {
-                val target = findPlayers(arg[0])
-                if(target != null) {
-                    val reason = arg[2]
-                    val infos = netServer.admins.findByName(target.uuid()).first()
-                    val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    val text = Bundle()["command.report.texts", target.plainName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
+            val target = findPlayers(arg[0])
+            if(target != null) {
+                val reason = arg[1]
+                val infos = netServer.admins.findByName(target.uuid()).first()
+                val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                val text = Bundle()["command.report.texts", target.plainName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
 
-                    Event.log(Event.LogType.Report, date + text, target.plainName())
-                    Log.info(Bundle()["command.report.received", player.plainName(), target.plainName(), reason])
-                    send("command.report.done", target.plainName())
-                } else {
-                    send("player.not.found")
-                }
+                Event.log(Event.LogType.Report, date + text, target.plainName())
+                Log.info(Bundle()["command.report.received", player.plainName(), target.plainName(), reason])
+                send("command.report.done", target.plainName())
+            } else {
+                send("player.not.found")
             }
         }
 

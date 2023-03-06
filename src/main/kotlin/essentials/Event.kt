@@ -1235,17 +1235,16 @@ object Event {
 
     fun log(type : LogType, text : String, vararg name : String) {
         val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-        val time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        val time = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
 
         if(type != LogType.Report) {
-            val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
             val new = Paths.get(root.child("log/$type.log").path())
-            val old = Paths.get(root.child("log/old/$type/$date.log").path())
+            val old = Paths.get(root.child("log/old/$type/$time.log").path())
             var main = root.child("log/$type.log")
             val folder = root.child("log")
 
             if(main != null && main.length() > 2048 * 256) {
-                main.writeString("end of file. $date", true)
+                main.writeString("end of file. $time", true)
                 try {
                     if(!root.child("log/old/$type").exists()) {
                         root.child("log/old/$type").mkdirs()
@@ -1259,7 +1258,7 @@ object Event {
             if(main == null) main = folder.child("$type.log")
             main!!.writeString("[$time] $text\n", true)
         } else {
-            val main = root.child("log/report/$time $name.txt")
+            val main = root.child("log/report/$time-${name[0]}.txt")
             main.writeString(text)
         }
     }
