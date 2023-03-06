@@ -8,6 +8,8 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.plugins.ratelimit.*
+import kotlin.time.Duration.Companion.seconds
 
 class WebServer {
     lateinit var server : NettyApplicationEngine
@@ -15,32 +17,39 @@ class WebServer {
     fun start() {
         server = embeddedServer(Netty, Config.webServerPort) {
             install(ContentNegotiation) {
-                jackson { }
+                jackson()
+            }
+            install(RateLimit) {
+                register {
+                    rateLimiter(limit = Config.restAPIRequestsLimit, refillPeriod = Config.restAPILimitRefillPeriod.seconds)
+                }
             }
 
             routing {
-                route("/api/ranking") {
-                    get {
-                        val set = HashSet<HashMap<String, Any>>()
+                rateLimit {
+                    route("/api/ranking") {
+                        get {
+                            val set = HashSet<HashMap<String, Any>>()
 
-                        val playerData = Main.database.getAllByExp().take(30)
-                        for (i in playerData.indices) {
-                            val map = HashMap<String, Any>()
-                            map["rank"] = i + 1
-                            map["username"] = playerData[i].name
-                            map["level"] = playerData[i].level
-                            map["exp"] = playerData[i].exp
-                            map["playtime"] = playerData[i].playtime
-                            val stat = HashMap<String, Any>()
-                            stat["attackclear"] = playerData[i].attackclear
-                            stat["pvpwin"] = playerData[i].pvpwincount
-                            stat["pvplose"] = playerData[i].pvplosecount
-                            map["stat"] = stat
+                            val playerData = Main.database.getAllByExp().take(50)
+                            for (i in playerData.indices) {
+                                val map = HashMap<String, Any>()
+                                map["rank"] = i + 1
+                                map["username"] = playerData[i].name
+                                map["level"] = playerData[i].level
+                                map["exp"] = playerData[i].exp
+                                map["playtime"] = playerData[i].playtime
+                                val stat = HashMap<String, Any>()
+                                stat["attackclear"] = playerData[i].attackclear
+                                stat["pvpwin"] = playerData[i].pvpwincount
+                                stat["pvplose"] = playerData[i].pvplosecount
+                                map["stat"] = stat
 
-                            set.add(map)
+                                set.add(map)
+                            }
+
+                            call.respond(mapOf("data" to set))
                         }
-
-                        call.respond(mapOf("data" to set))
                     }
                 }
 

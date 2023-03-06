@@ -49,6 +49,8 @@ object Config {
     var blockNewUser = false
     var webServer = false
     var webServerPort = 8123
+    var restAPIRequestsLimit = 5
+    var restAPILimitRefillPeriod = 30
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -61,7 +63,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 16
+    private var configVersion = 17
 
     private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
