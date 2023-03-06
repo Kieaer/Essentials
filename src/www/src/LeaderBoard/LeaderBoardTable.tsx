@@ -15,7 +15,7 @@ import TableRow from '@mui/material/TableRow';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 import "./LeaderBoardTable.scss"
 
