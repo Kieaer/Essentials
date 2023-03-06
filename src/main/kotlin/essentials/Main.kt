@@ -192,6 +192,7 @@ class Main: Plugin() {
                             Trigger.clients.remove(it)
                         }
                     }
+                    Trigger.Server.shutdown()
                 } else {
                     Trigger.Client.send("exit")
                 }
@@ -202,7 +203,6 @@ class Main: Plugin() {
                 database.close()
                 webServer.stop()
                 if(database.dbServer != null) database.dbServer!!.stop()
-                if(isPortOpen) Trigger.Server.shutdown() else Trigger.Client.send("exit")
                 if(Config.webServer) webServer.stop()
             }
         })
