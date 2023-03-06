@@ -9,10 +9,10 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-class WebServer: Runnable {
+class WebServer {
     lateinit var server : NettyApplicationEngine
 
-    override fun run() {
+    fun start() {
         server = embeddedServer(Netty, Config.webServerPort) {
             install(ContentNegotiation) {
                 jackson { }

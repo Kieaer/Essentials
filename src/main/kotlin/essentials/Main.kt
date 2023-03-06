@@ -123,7 +123,7 @@ class Main: Plugin() {
         daemon.submit(Trigger.Thread())
         daemon.submit(Trigger.UpdateThread)
         daemon.submit(if(isPortOpen) Trigger.Server else Trigger.Client)
-        if(Config.webServer) daemon.submit(webServer)
+        if(Config.webServer) webServer.start()
         connectType = isPortOpen
         if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
