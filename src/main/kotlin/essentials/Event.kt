@@ -599,6 +599,16 @@ object Event {
             }
         }
 
+        Events.on(PlayerUnbanEvent::class.java) {
+            if(Config.blockIP) {
+                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
+                if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                    val ip = if(it.player != null) it.player.ip() else netServer.admins.getInfo(it.uuid).lastIP
+                    Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $ip -j DROP"))
+                }
+            }
+        }
+
         Events.on(AdminRequestEvent::class.java) {
             if(Config.banChannelToken.isNotEmpty() && it.action == Packets.AdminAction.ban) {
                 val msg = Bundle()["event.discord.banned.admin", it.player.plainName()]
