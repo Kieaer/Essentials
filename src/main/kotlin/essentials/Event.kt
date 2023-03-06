@@ -960,7 +960,6 @@ object Event {
                         }
 
                         for (b in array) {
-                            println(b.asString())
                             when (b.asString()) {
                                 "health" -> {
                                     for (c in Groups.unit){
@@ -1372,8 +1371,8 @@ object Event {
         var coreitem = 0
         for(a in state.stats.coreItemCount) coreitem += a.value
 
-        val erekirAttack = if (state.planet === Planets.erekir) state.stats.enemyUnitsDestroyed else 0
-        val erekirPvP = if (state.planet === Planets.erekir) 5000 else 0
+        val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
+        val erekirPvP = if (state.planet == Planets.erekir) 5000 else 0
 
         if(winner == p.team()) {
             val score : Int = if(state.rules.attackMode) {

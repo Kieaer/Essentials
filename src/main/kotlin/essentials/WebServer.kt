@@ -51,7 +51,7 @@ class WebServer {
                 }
             }
         }
-        server.start(true)
+        server.start(false)
     }
 
     fun stop() {

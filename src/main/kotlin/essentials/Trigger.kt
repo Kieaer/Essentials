@@ -37,10 +37,10 @@ object Trigger {
     val clients = Seq<Socket>()
 
     fun loadPlayer(player : Playerc, data : DB.PlayerData) {
-        if(data.status.containsKey("duplicateName") && data.status.get("duplicateName") === player.name()) {
+        if(data.status.containsKey("duplicateName") && data.status.get("duplicateName") == player.name()) {
             player.kick(Bundle(player.locale())["event.player.duplicate.name"])
         } else {
-            if(data.status.containsKey("duplicateName") && data.status.get("duplicateName") !== player.name()) {
+            if(data.status.containsKey("duplicateName") && data.status.get("duplicateName") != player.name()) {
                 data.name = player.name()
                 data.status.remove("duplicateName")
                 database.queue(data)
@@ -110,7 +110,7 @@ object Trigger {
         data.uuid = player.uuid()
         data.joinDate = System.currentTimeMillis()
         data.id = id ?: player.plainName()
-        data.pw = if(password === null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
+        data.pw = if(password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
         data.permission = "user"
         data.languageTag = player.locale()
 
@@ -132,7 +132,6 @@ object Trigger {
                 try {
                     try {
                         if(PluginData.changed && PluginData.lastMemory.isNotEmpty()) {
-                            println("data updated")
                             transaction {
                                 DB.Data.update {
                                     it[this.data] = PluginData.lastMemory
@@ -154,7 +153,7 @@ object Trigger {
                     if(state.isPlaying) {
                         servers = ArrayMap<String, Int>()
                         for(i in 0 until PluginData.warpCounts.size) {
-                            if(state.map.name() === PluginData.warpCounts[i].mapName) {
+                            if(state.map.name() == PluginData.warpCounts[i].mapName) {
                                 val value = PluginData.warpCounts[i]
                                 pingHostImpl(value.ip, value.port) { r : Host ->
                                     if(r.name !== null) {
@@ -189,9 +188,9 @@ object Trigger {
 
                         val memory = mutableListOf<Pair<Playerc, String>>()
                         for(value in PluginData.warpBlocks) {
-                            if(state.map.name() === value.mapName) {
+                            if(state.map.name() == value.mapName) {
                                 val tile = world.tile(value.x, value.y)
-                                if(tile.block() === Blocks.air) {
+                                if(tile.block() == Blocks.air) {
                                     PluginData.warpBlocks.remove(value)
                                 } else {
                                     var margin = 0f
@@ -256,7 +255,7 @@ object Trigger {
 
                         for(i in 0 until PluginData.warpTotals.size) {
                             val value = PluginData.warpTotals[i]
-                            if(state.map.name() === value.mapName) {
+                            if(state.map.name() == value.mapName) {
                                 if(value.totalplayers != totalPlayers()) {
                                     when(totalPlayers()) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9 -> {
@@ -340,7 +339,7 @@ object Trigger {
             while(!currentThread().isInterrupted) {
                 for(a in queue) {
                     database.update(a.uuid, a)
-                    queue.removeAll { b -> b.uuid === a.uuid }
+                    queue.removeAll { b -> b.uuid == a.uuid }
                 }
                 sleep(100)
             }
@@ -394,7 +393,7 @@ object Trigger {
 
                     while(!currentThread().isInterrupted) {
                         val d = reader.readLine()
-                        if (d === null) interrupt()
+                        if (d == null) interrupt()
                         when(d) {
                             "exit" -> interrupt()
                             "sync" -> {

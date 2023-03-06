@@ -762,8 +762,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
 
                 "reset" -> {
-                    PluginData.warpTotals.removeAll { true }
-                    PluginData.warpCounts.removeAll { true }
+                    PluginData.warpTotals.clear()
+                    PluginData.warpCounts.clear()
                 }
 
                 else -> send("command.hub.help")
@@ -777,7 +777,18 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val status = if(data.status.containsKey("hud")) JsonObject.readJSON(data.status.get("hud")).asArray() else JsonArray()
             when(arg[0]) {
                 "health" -> {
-                    if(status.contains("health")) status.forEachIndexed { i, a -> if(a.asString() == "health") status.remove(i) } else status.add("health")
+                    if(status.contains("health")) {
+                        var i = 0
+                        while (i < status.size()) {
+                            if (status.get(i).asString() == "health") {
+                                status.remove(i)
+                            } else {
+                                i++
+                            }
+                        }
+                    } else {
+                        status.add("health")
+                    }
                 }
 
                 else -> {
