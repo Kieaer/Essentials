@@ -23,7 +23,7 @@ class WebServer {
                     get {
                         val set = HashSet<HashMap<String, Any>>()
 
-                        val playerData = Main.database.getAllByExp().take(30)
+                        val playerData = Main.database.getAllByExp().take(50)
                         for (i in playerData.indices) {
                             val map = HashMap<String, Any>()
                             map["rank"] = i + 1
