@@ -21,7 +21,7 @@ class WebServer {
             }
             install(RateLimit) {
                 register {
-                    rateLimiter(limit = 5, refillPeriod = 30.seconds)
+                    rateLimiter(limit = Config.restAPIRequestsLimit, refillPeriod = Config.restAPILimitRefillPeriod.seconds)
                 }
             }
 
