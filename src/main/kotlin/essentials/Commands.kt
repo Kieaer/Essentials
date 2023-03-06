@@ -37,6 +37,8 @@ import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.type.UnitType
 import mindustry.world.Tile
+import org.hjson.JsonArray
+import org.hjson.JsonObject
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -772,15 +774,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun hud() {
             if(!Permission.check(player, "hud")) return
+            val status = if(data.status.containsKey("hud")) JsonObject.readJSON(data.status.get("hud")).asArray() else JsonArray()
             when(arg[0]) {
                 "health" -> {
-                    data.status.put("hud", "health")
+                    if(status.contains("health")) status.forEachIndexed { i, a -> if(a.asString() == "health") status.remove(i) } else status.add("health")
                 }
 
                 else -> {
                     send("command.hud.not.found")
                 }
             }
+            data.status.put("hud", status.toString())
         }
 
         fun info() {
@@ -2052,7 +2056,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun debug() {
-
             when(arg[0]) {
                 "info" -> {
                     println("""

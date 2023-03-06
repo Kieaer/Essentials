@@ -34,6 +34,7 @@ import mindustry.maps.Map
 import mindustry.net.Administration.PlayerInfo
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
+import org.hjson.JsonArray
 import java.io.IOException
 import java.net.InetAddress
 import java.net.UnknownHostException
@@ -795,7 +796,7 @@ object Event {
 
             for(a in database.players) {
                 if(state.rules.pvp) {
-                    if(a.player.unit() != null && a.player.team().cores().isEmpty && a.player.team() != Team.derelict && pvpPlayer.contains { b -> b == a.uuid } && !Permission.check(a.player, "pvp.spector")) {
+                    if(a.player.unit() != null && a.player.team().cores().isEmpty && a.player.team() != Team.derelict && pvpPlayer.contains(a.uuid) && !Permission.check(a.player, "pvp.spector")) {
                         val data = findPlayerData(a.uuid)
                         if(data != null) {
                             data.pvplosecount++
@@ -945,6 +946,39 @@ object Event {
                         val message = "${a.exp}/${floor(Commands.Exp.calculateFullTargetXp(a.level)).toInt()}"
                         Call.infoPopup(a.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                     }
+
+                    if(a.status.containsKey("hud")){
+                        val array = JsonArray.readJSON(a.status.get("hud")).asArray()
+
+                        fun color(current: Float, max: Float): String {
+                            val result = current / max * 100.0
+                            return when (result) {
+                                in 50.0 .. 100.0 -> "[green]"
+                                in 20.0 .. 49.9 -> "[yellow]"
+                                else -> "[scarlet]"
+                            }
+                        }
+
+                        for (b in array) {
+                            println(b.asString())
+                            when (b.asString()) {
+                                "health" -> {
+                                    for (c in Groups.unit){
+                                        if (c.team != a.player.team() && Permission.check(a.player, "hud.enemy")) {
+                                            val color = color(c.health, c.maxHealth)
+                                            val msg = "$color${floor(c.health.toDouble())}"
+                                            Call.label(a.player.con(), msg, Time.delta, c.getX(), c.getY())
+                                        } else if (c.team == a.player.team()){
+                                            val color = color(c.health, c.maxHealth)
+                                            val msg = "$color${floor(c.health.toDouble())}"
+                                            Call.label(a.player.con(), msg, Time.delta, c.getX(), c.getY())
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     database.queue(a)
                 }
 
