@@ -172,7 +172,10 @@ export default function LeaderBoardTable() {
 
 	const fetchData = async () => {
 		setLoading(true);
-		setRows((await axios.get("/api/ranking")).data["data"]);
+		setRows(
+			(await axios.get("/api/ranking")).data["data"]
+			.sort((a: any, b: any) => a.exp - b.exp)
+		);
 		setLoading(false);
 	};
 
