@@ -15,7 +15,7 @@ import TableRow from '@mui/material/TableRow';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 import "./LeaderBoardTable.scss"
 
@@ -164,6 +164,9 @@ export default function LeaderBoardTable() {
 	};
 
 	const [ loading, setLoading ] = React.useState(true);
+	const [ error429, setError429 ] = React.useState(false);
+	const [ unknownerror, setUnknownError ] = React.useState(false);
+
 	const [ rows, setRows ] = React.useState([{ rank: 1, username: "", level: 0, exp: 0, playtime: 0, stat: {
 		attackclear: 0,
 		pvpwin: 0,
@@ -172,10 +175,26 @@ export default function LeaderBoardTable() {
 
 	const fetchData = async () => {
 		setLoading(true);
-		setRows(
-			(await axios.get("/api/ranking")).data["data"]
-			.sort((a: any, b: any) => a.exp - b.exp)
-		);
+		try {
+			setRows((await axios.get("/api/ranking")).data["data"]
+				.sort((a: any, b: any) => a.exp - b.exp));
+		} catch (e: any) {
+			if (axios.isAxiosError(e)) {
+				if (e.response) {
+					if (e.response.status == 429) {
+						setLoading(false);
+						setError429(true);
+					} else {
+						setLoading(false);
+						setUnknownError(true);
+					}
+				} else {
+					console.log(e.message);
+				}
+			} else {
+				console.log(e.message);
+			}
+		}
 		setLoading(false);
 	};
 
@@ -184,6 +203,8 @@ export default function LeaderBoardTable() {
 	}, []);
 
 	if (loading) return <div>loading...</div>;
+	if (error429) return <div>too many requests! please try after 30 seconds. (5 requests allowed per half minute)</div>;
+	if (unknownerror) return <div>unknown error occured. please tell the error code poped up on developer console to administarator</div>
 
 	return (
 		<div className="LeaderBoardTable">
