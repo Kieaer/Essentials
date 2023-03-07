@@ -1357,7 +1357,7 @@ object Event {
     }
 
     fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData) {
-        // todo 경험치를 지나치게 낮게 획득하는 문제
+        // todo 경험치를 지나치게 낮게 획득하는 문제 (확인 필요)
         val oldLevel = target.level
         val oldExp = target.exp
         val time = PluginData.playtime.toInt()

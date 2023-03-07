@@ -1426,7 +1426,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun rollback() {
             // todo 메세지 내용이 되돌려지지 않음
-            // todo 일부 기록이 복구되지 않음
             if(!Permission.check(player, "rollback")) return
 
             for(a in worldHistory) {

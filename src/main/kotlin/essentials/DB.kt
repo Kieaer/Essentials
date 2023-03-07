@@ -76,7 +76,6 @@ class DB {
 
             transaction {
                 if(!connection.isClosed) {
-                    // todo 데이터가 손상된 경우를 위해 백업하는 테이블이나 기능 만들기
                     SchemaUtils.create(Player)
                     SchemaUtils.create(Data)
 
