@@ -12,6 +12,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.Strings
 import arc.util.Threads.sleep
+import arc.util.Tmp
 import com.mewna.catnip.Catnip
 import com.mewna.catnip.entity.message.Message
 import com.mewna.catnip.shard.DiscordEvent
@@ -1563,16 +1564,18 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val type = arg[0]
             val name = arg[1]
             val parameter = if(arg.size == 3) arg[2].toIntOrNull() else 1
+            val spread = (tilesize * 1.5).toFloat()
 
-            // todo 유닛이 8마리까지 밖에 스폰이 안됨
             when {
                 type.equals("unit", true) -> {
                     val unit = content.units().find { unitType : UnitType -> unitType.name == name }
                     if(unit != null) {
                         if(parameter != null) {
                             if(!unit.hidden) {
+                                unit.useUnitCap = false
                                 for(a in 1..parameter) {
-                                    unit.spawn(player.team(), player.x, player.y)
+                                    Tmp.v1.rnd(spread)
+                                    unit.spawn(player.team(), player.x + Tmp.v1.x, player.y + Tmp.v1.y)
                                 }
                             } else {
                                 send("command.spawn.unit.invalid")
