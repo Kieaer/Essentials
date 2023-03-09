@@ -5,6 +5,7 @@ import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import mindustry.gen.Playerc
+import org.h2.tools.RunScript
 import org.h2.tools.Server
 import org.hjson.JsonObject
 import org.hjson.ParseException
@@ -49,7 +50,7 @@ class DB {
                     Runtime.getRuntime().exec("cmd /c cd /D ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql").waitFor()
                 }
 
-                Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.db"))
+                Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.mv.db"))
                 Config.database = Main.root.child("database").absolutePath()
                 Config.save()
             }
@@ -68,9 +69,7 @@ class DB {
             }
 
             if(Main.root.child("data/script.sql").exists()) {
-                transaction {
-                    exec(Main.root.child("data/script.sql").readString())
-                }
+                RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath(), "-options", "FROM_1X")
                 Main.root.child("data/script.sql").moveTo(Main.root.child("data/script_backup.sql"))
             }
 
