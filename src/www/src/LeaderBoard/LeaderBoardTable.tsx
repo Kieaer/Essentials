@@ -50,9 +50,7 @@ const columns: readonly Column[] = [
   	  	minWidth: 20,
   	  	align: 'right',
   	  	format: (value: number) => {
-			const date = new Date(0);
-			date.setSeconds(value);
-			return date.toISOString().substring(11, 19);
+			return (value / 3600).toFixed(2) + " hours";
 		},
   	},
 ];
