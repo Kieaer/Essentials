@@ -177,7 +177,7 @@ export default function LeaderBoardTable() {
 		setLoading(true);
 		try {
 			setRows((await axios.get("/api/ranking")).data["data"]
-				.sort((a: any, b: any) => a.exp - b.exp));
+				.sort((a: any, b: any) => b.exp - a.exp));
 		} catch (e: any) {
 			if (axios.isAxiosError(e)) {
 				if (e.response) {
