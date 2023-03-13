@@ -158,21 +158,24 @@ object Trigger {
                                 pingHostImpl(value.ip, value.port) { r : Host ->
                                     if(r.name !== null) {
                                         ping += ("0." + r.ping).toDouble()
+
                                         val str = r.players.toString()
                                         val digits = IntArray(str.length)
                                         for(a in str.indices) digits[a] = str[a] - '0'
                                         val tile = value.tile
                                         if(value.players != r.players) {
-                                            for(px in 0..2) {
-                                                for(py in 0..4) {
-                                                    Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
+                                            Core.app.post {
+                                                for(px in 0..2) {
+                                                    for(py in 0..4) {
+                                                        Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
+                                                    }
                                                 }
                                             }
                                         }
                                         dummy.x = tile.getX()
                                         dummy.y = tile.getY()
 
-                                        Commands.Client(arrayOf(str), dummy).chars(tile)
+                                        Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
                                         PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, r.players, digits.size)
                                         addPlayers(value.ip, value.port, r.players)
                                     } else {
@@ -180,7 +183,9 @@ object Trigger {
 
                                         dummy.x = value.tile.getX()
                                         dummy.y = value.tile.getY()
-                                        Commands.Client(arrayOf("no"), dummy).chars(value.tile)
+                                        Core.app.post {
+                                            Commands.Client(arrayOf("no"), dummy).chars(value.tile)
+                                        }
                                     }
                                 }
                             }
@@ -282,7 +287,9 @@ object Trigger {
 
                                 dummy.x = value.tile.getX()
                                 dummy.y = value.tile.getY()
-                                Commands.Client(arrayOf(totalPlayers().toString()), dummy).chars(value.tile)
+                                Core.app.post {
+                                    Commands.Client(arrayOf(totalPlayers().toString()), dummy).chars(value.tile)
+                                }
                             }
                         }
 
