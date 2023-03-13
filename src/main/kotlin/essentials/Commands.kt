@@ -1889,8 +1889,19 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             try {
                                 var target = maps.all().find { e -> e.name().contains(arg[1]) }
                                 if(target == null) {
-                                    target = maps.all().sortedBy { a -> a.name() }[arg[1].toInt()]
+                                    val list = maps.all().sortedBy { a -> a.name() }
+                                    val arr = ObjectMap<Map, Int>()
+                                    for((order, a) in list.withIndex()) {
+                                        arr.put(a, order)
+                                    }
+                                    for(a in arr){
+                                        if (a.value == arg[1].toInt()) {
+                                            target = a.key
+                                            break
+                                        }
+                                    }
                                 }
+
                                 Event.voteType = "map"
                                 Event.voteMap = target
                                 Event.voteReason = arg[2]
