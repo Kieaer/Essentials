@@ -1398,11 +1398,11 @@ object Event {
             }
 
             val message = if(state.rules.attackMode) {
-                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)]
+                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed + erekirAttack) - state.stats.buildingsDeconstructed]
             } else if(state.rules.waves) {
                 bundle["event.exp.earn.wave", score, state.wave]
             } else if(state.rules.pvp) {
-                bundle["event.exp.earn.defeat", score, (time + erekirPvP + 5000)]
+                bundle["event.exp.earn.defeat", score, (time + 5000)]
             } else {
                 ""
             }
@@ -1412,7 +1412,7 @@ object Event {
 
             if(score < 0) {
                 p.sendMessage(bundle["event.exp.lost.reason"])
-                p.sendMessage(bundle["event.exp.lost.result", time, blockexp, enemyBuildingDestroyed, (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)])
+                p.sendMessage(bundle["event.exp.lost.result", time, blockexp, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
             }
         }
 
