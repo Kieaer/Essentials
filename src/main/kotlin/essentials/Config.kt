@@ -51,6 +51,7 @@ object Config {
     var webServerPort = 8123
     var restAPIRequestsLimit = 5
     var restAPILimitRefillPeriod = 30
+    var skiplimit = 10
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -63,7 +64,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 17
+    private var configVersion = 18
 
     private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
     private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
@@ -146,6 +147,7 @@ object Config {
         features.add("webServerPort", webServerPort, bundle["config.webserver.port"])
         features.add("restAPIRequestsLimit", restAPIRequestsLimit, bundle["config.webserver.limit"])
         features.add("restAPILimitRefillPeriod", restAPILimitRefillPeriod, bundle["config.webserver.limit.reset"])
+        features.add("skiplimit", skiplimit, bundle["config.skiplimit"])
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -218,6 +220,7 @@ object Config {
         webServerPort = features.getInt("webServerPort", webServerPort)
         restAPIRequestsLimit = features.getInt("restAPIRequestsLimit", restAPIRequestsLimit)
         restAPILimitRefillPeriod = features.getInt("restAPILimitRefillPeriod", restAPILimitRefillPeriod)
+        skiplimit = features.getInt("skiplimit", skiplimit)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)

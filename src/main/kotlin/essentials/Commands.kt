@@ -115,6 +115,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("search", "[value]", "Search player data") { a, p : Playerc -> Client(a, p).search() }
             handler.register("setitem", "<item> <amount> [team]", "Set team core item amount") { a, p : Playerc -> Client(a, p).setitem() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p : Playerc -> Client(a, p).setperm() }
+            handler.register("skip", "Start n wave immediately.") { a, p : Playerc -> Client(a, p).skip() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p : Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p : Playerc -> Client(a, p).status() }
             handler.register("t", "<message...>", "Send a message only to your teammates.") { a, p : Playerc -> Client(a, p).t() }
@@ -1555,6 +1556,28 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     send("player.not.found")
                 }
+            }
+        }
+
+        fun skip() {
+            if(!Permission.check(player, "skip")) return
+            val wave = arg[0].toIntOrNull()
+            if(wave != null) {
+                if(wave < 0) {
+                    val previousWave = state.wave
+                    var loop = 0
+                    while(arg[0].toInt() != loop) {
+                        loop++
+                        spawner.spawnEnemies()
+                        state.wave++
+                        state.wavetime = state.rules.waveSpacing
+                    }
+                    player.sendMessage(bundle["command.skip.process", previousWave, state.wave])
+                } else {
+                    player.sendMessage(bundle["command.skip.number.low"])
+                }
+            } else {
+                player.sendMessage(bundle["command.skip.number.invalid"])
             }
         }
 
