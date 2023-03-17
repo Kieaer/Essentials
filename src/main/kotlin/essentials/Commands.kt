@@ -1615,6 +1615,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             player.sendMessage("""
                 [#DEA82A]${bundle["command.status.info"]}[]
                 [#2B60DE]========================================[]
+                ${bundle["command.status.name"]}: ${state.map.name()}[white]
                 TPS: ${Core.graphics.framesPerSecond}/60
                 ${bundle["command.status.banned", bans]}
                 ${bundle["command.status.playtime"]}: ${longToTime(PluginData.playtime)}
