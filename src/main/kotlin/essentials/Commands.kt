@@ -28,6 +28,7 @@ import mindustry.content.Blocks
 import mindustry.content.Weathers
 import mindustry.core.GameState
 import mindustry.game.EventType
+import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
@@ -36,6 +37,7 @@ import mindustry.gen.Unit
 import mindustry.maps.Map
 import mindustry.net.Administration
 import mindustry.net.Packets
+import mindustry.net.WorldReloader
 import mindustry.type.UnitType
 import mindustry.world.Tile
 import org.hjson.JsonArray
@@ -76,6 +78,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             handler.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p : Playerc -> Client(a, p).broadcast() }
+            handler.register("changemap", "<world name> [gamemode]", "Change the world or gamemode immediately.") { a, p : Playerc -> Client(a, p).changemap() }
             handler.register("changename", "<new_name> [player]", "Change player name.") { a, p : Playerc -> Client(a, p).changename() }
             handler.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p : Playerc -> Client(a, p).changepw() }
             handler.register("chat", "<on/off>", "Mute all players without admins.") { a, p : Playerc -> Client(a, p).chat() }
@@ -153,6 +156,45 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun send(msg : String, vararg parameters : Any) {
             player.sendMessage(MessageFormat.format(bundle.resource.getString(msg), *parameters))
+        }
+
+        fun changemap() {
+            if(!Permission.check(player, "changemap")) return
+            var map = maps.all().find { e -> e.name().contains(arg[0]) }
+            if(map == null) {
+                val list = maps.all().sortedBy { a -> a.name() }
+                val arr = ObjectMap<Map, Int>()
+                for((order, a) in list.withIndex()) {
+                    arr.put(a, order)
+                }
+                for(a in arr){
+                    if (a.value == arg[0].toInt()) {
+                        map = a.key
+                        break
+                    }
+                }
+            }
+
+            if (map != null) {
+                try {
+                    val mode = if(arg.size != 1) {
+                        Gamemode.valueOf(arg[1])
+                    } else {
+                        state.rules.mode()
+                    }
+
+                    val reloader = WorldReloader()
+                    reloader.begin()
+                    world.loadMap(map, map.applyRules(mode))
+                    state.rules = state.map.applyRules(mode)
+                    logic.play()
+                    reloader.end()
+                } catch(_ : IllegalArgumentException) {
+                    player.sendMessage(bundle["command.changemap.mode.not.found"])
+                }
+            } else {
+                player.sendMessage(bundle["command.changemap.map.not.found"])
+            }
         }
 
         fun changename() {
