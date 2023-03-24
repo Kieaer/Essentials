@@ -8,6 +8,7 @@ import arc.util.Http
 import arc.util.Log
 import essentials.Permission.bundle
 import mindustry.Vars
+import mindustry.gen.Call
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
@@ -175,6 +176,17 @@ class Main: Plugin() {
                 }
             }
             return@addActionFilter false
+        }
+
+        if (Config.blockfooclient) {
+            val fooArray = arrayOf("fooCheck", "fooTransmission", "fooTransmissionEnabled")
+
+            for(a in fooArray) {
+                Vars.netServer.addPacketHandler(a) { b, _ ->
+                    b.kick("Custom client detected")
+                    Call.sendMessage("${b.name()}[white] kicked method 3")
+                }
+            }
         }
 
         Core.app.addListener(object: ApplicationListener {
