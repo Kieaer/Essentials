@@ -33,6 +33,7 @@ import mindustry.maps.Map
 import mindustry.net.Administration.PlayerInfo
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
+import mindustry.world.Tile
 import org.hjson.JsonArray
 import java.io.IOException
 import java.net.InetAddress
@@ -87,6 +88,9 @@ object Event {
     val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
     val blockSelectRegex : Pattern = Pattern.compile(".*build.*")
     val nameRegex : Pattern = Pattern.compile("(.*\\[.*].*)|　|^(.*\\s+.*)+\$")
+
+    var dpsBlocks = 0f
+    var dpsTile : Tile? = null
 
     fun register() {
         Events.on(WithdrawEvent::class.java) {
@@ -887,6 +891,15 @@ object Event {
                     }
                 }
 
+                if (dpsTile != null) {
+                    if (dpsTile!!.block() != null) {
+                        dpsBlocks += (9999999f - dpsTile!!.build.health)
+                        dpsTile!!.build.health(9999999f)
+                    } else {
+                        dpsTile = null
+                    }
+                }
+
                 if(secondCount == 60) {
                     PluginData.uptime++
                     PluginData.playtime++
@@ -896,6 +909,11 @@ object Event {
                         voterCooltime.put(a.key, a.value--)
                         if(a.value == 0) voterCooltime.remove(a.key)
                     }
+
+                    if(dpsTile != null){
+                        Call.label("DPS: ${dpsBlocks}/s", 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
+                    }
+                    dpsBlocks = 0f
 
                     for(a in database.players) {
                         a.playtime = a.playtime + 1

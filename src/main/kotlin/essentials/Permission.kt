@@ -68,6 +68,7 @@ object Permission {
             adminPerm.add("changemap")
             adminPerm.add("chars")
             adminPerm.add("color")
+            adminPerm.add("dps")
             adminPerm.add("fillitems")
             adminPerm.add("freeze")
             adminPerm.add("gg")

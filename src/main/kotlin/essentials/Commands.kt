@@ -85,6 +85,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("chars", "<text...>", "Make pixel texts") { a, p : Playerc -> Client(a, p).chars(null) }
             handler.register("color", "Enable color nickname") { a, p : Playerc -> Client(a, p).color() }
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p : Playerc -> Client(a, p).discord() }
+            handler.register("dps", "Create damage per seconds meter block") { a, p : Playerc -> Client(a, p).dps() }
             handler.register("effect", "<level> [color]", "Set the effect and color for each level.") { a, p : Playerc -> Client(a, p).effect() }
             handler.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p : Playerc -> Client(a, p).exp() }
             handler.register("fillitems", "<team>", "Fill the core with items.") { a, p : Playerc -> Client(a, p).fillitems() }
@@ -447,6 +448,22 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     send("command.discord.already")
                 }
+            }
+        }
+
+        fun dps(){
+            if(!Permission.check(player, "dps")) return
+            if (Event.dpsTile == null){
+                Call.constructFinish(player.tileOn(), Blocks.thoriumWallLarge, player.unit(), 0, state.rules.waveTeam, null)
+                Event.dpsTile = player.tileOn()
+                player.sendMessage(bundle["command.dps.created"])
+                try {
+                    assert(Event.dpsTile != null)
+                } catch(e: Exception) {
+                    e.printStackTrace()
+                }
+            } else {
+                player.sendMessage(bundle["command.dps.exists"])
             }
         }
 
