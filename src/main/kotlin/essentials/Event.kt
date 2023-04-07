@@ -463,13 +463,9 @@ object Event {
         }
 
         fun checkHack(inp : Float, item : Byte) : Boolean {
-            var bits = java.lang.Float.floatToIntBits(inp)
+            val bits = java.lang.Float.floatToIntBits(inp)
             val itembits = java.lang.Byte.toUnsignedInt(item)
-            bits = bits shl 32 - 8
-            var addend : Int = item.toInt()
-            addend = addend shl 32 - 8
-
-            return bits == addend || bits and itembits == itembits
+            return bits and itembits == itembits
         }
 
         Events.on(PlayerJoin::class.java) {
@@ -507,12 +503,9 @@ object Event {
                                 var fooUser = checkHack(x, 170.toByte()) && checkHack(y, 85.toByte()) || checkHack(y, 170.toByte())
                                 var assistUser = (checkHack(x, 170.toByte())) || checkHack(x, 85.toByte()) && checkHack(y, 170.toByte())
 
-                                var kicked = false
-
                                 if(fooUser || assistUser) {
                                     hackCount++
                                     if(hackCount > 150) {
-                                        kicked = true
                                         Call.kick(it.player.con(), Bundle(if(findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "0"])
                                         Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "0"])
                                         for(a in database.players) {
@@ -522,23 +515,21 @@ object Event {
                                     }
                                 }
 
-                                if(!kicked) {
-                                    val aimx = it.player.unit().aimX
-                                    val aimy = it.player.unit().aimY
+                                val aimx = it.player.unit().aimX
+                                val aimy = it.player.unit().aimY
 
-                                    fooUser = checkHack(aimx, 170.toByte()) && checkHack(aimy, 85.toByte()) || checkHack(aimy, 170.toByte())
-                                    assistUser = (checkHack(aimx, 170.toByte())) || checkHack(aimx, 85.toByte()) && checkHack(aimy, 170.toByte())
+                                fooUser = checkHack(aimx, 170.toByte()) && checkHack(aimy, 85.toByte()) || checkHack(aimy, 170.toByte())
+                                assistUser = (checkHack(aimx, 170.toByte())) || checkHack(aimx, 85.toByte()) && checkHack(aimy, 170.toByte())
 
-                                    if(fooUser || assistUser) {
-                                        hackCount++
-                                        if(hackCount > 150) {
-                                            Call.kick(it.player.con(), Bundle(if(findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "1"])
-                                            Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "1"])
-                                            for(a in database.players) {
-                                                a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "1"])
-                                            }
-                                            Core.app.removeListener(this)
+                                if(fooUser || assistUser) {
+                                    hackCount++
+                                    if(hackCount > 150) {
+                                        Call.kick(it.player.con(), Bundle(if(findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "1"])
+                                        Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "1"])
+                                        for(a in database.players) {
+                                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "1"])
                                         }
+                                        Core.app.removeListener(this)
                                     }
                                 }
                             }
