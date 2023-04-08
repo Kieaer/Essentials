@@ -1243,6 +1243,8 @@ object Event {
                                 }
                             }
                         }
+
+                        if(!Main.connectType) Trigger.Client.send("sync")
                     })
 
                     if(rollbackCount == 0) {
