@@ -457,13 +457,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 Call.constructFinish(player.tileOn(), Blocks.thoriumWallLarge, player.unit(), 0, state.rules.waveTeam, null)
                 Event.dpsTile = player.tileOn()
                 player.sendMessage(bundle["command.dps.created"])
-                try {
-                    assert(Event.dpsTile != null)
-                } catch(e: Exception) {
-                    e.printStackTrace()
-                }
             } else {
-                player.sendMessage(bundle["command.dps.exists"])
+                Call.deconstructFinish(Event.dpsTile, Blocks.air, player.unit())
+                Event.dpsTile = null
+                player.sendMessage(bundle["command.dps.deleted"])
             }
         }
 
