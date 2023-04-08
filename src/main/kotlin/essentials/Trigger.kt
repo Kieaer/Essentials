@@ -24,7 +24,6 @@ import org.jetbrains.exposed.sql.update
 import org.mindrot.jbcrypt.BCrypt
 import java.io.*
 import java.lang.Thread.currentThread
-import java.lang.Thread.sleep
 import java.net.*
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
@@ -348,7 +347,6 @@ object Trigger {
                     database.update(a.uuid, a)
                     queue.removeAll { b -> b.uuid == a.uuid }
                 }
-                sleep(100)
             }
         }
     }
