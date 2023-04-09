@@ -273,16 +273,6 @@ object Event {
 
             netServer.chatFormatter = NetServer.ChatFormatter { player : Player, message : String ->
                 var isMute = false
-                if(Config.blockfooclient) {
-                    if(message.takeLast(2).all { a -> (0xF80 until 0x107F).contains(a.code) }) {
-                        Call.kick(player.con(), Bundle(if(findPlayers(player.plainName()) != null) findPlayers(player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "2"])
-                        Log.info(Bundle()["event.antigrief.foo.detected.log", player.plainName(), "2"])
-                        for(a in database.players) {
-                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", player.name, "2"])
-                        }
-                        isMute = true
-                    }
-                }
 
                 if(!message.startsWith("/")) {
                     val data = findPlayerData(player.uuid())
@@ -466,12 +456,6 @@ object Event {
 
         }
 
-        fun checkHack(inp : Float, item : Byte) : Boolean {
-            val bits = java.lang.Float.floatToIntBits(inp)
-            val itembits = java.lang.Byte.toUnsignedInt(item)
-            return bits and itembits == itembits
-        }
-
         Events.on(PlayerJoin::class.java) {
             log(LogType.Player, Bundle()["log.joined", it.player.plainName(), it.player.uuid(), it.player.con.address])
             it.player.admin(false)
@@ -491,63 +475,6 @@ object Event {
                         }
                     })
                 }
-            }
-
-            if(Config.blockfooclient) {
-                Core.app.addListener(object: ApplicationListener {
-                    var hackCount = 0
-                    var timeout = 600
-
-                    override fun update() {
-                        if(it.player != null) {
-                            if(!it.player.con.mobile) {
-                                val x = it.player.mouseX()
-                                val y = it.player.mouseY()
-
-                                var fooUser = checkHack(x, 170.toByte()) && checkHack(y, 85.toByte()) || checkHack(y, 170.toByte())
-                                var assistUser = (checkHack(x, 170.toByte())) || checkHack(x, 85.toByte()) && checkHack(y, 170.toByte())
-
-                                if(fooUser || assistUser) {
-                                    hackCount++
-                                    if(hackCount > 150) {
-                                        Call.kick(it.player.con(), Bundle(if(findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "0"])
-                                        Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "0"])
-                                        for(a in database.players) {
-                                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "0"])
-                                        }
-                                        Core.app.removeListener(this)
-                                    }
-                                }
-
-                                val aimx = it.player.unit().aimX
-                                val aimy = it.player.unit().aimY
-
-                                fooUser = checkHack(aimx, 170.toByte()) && checkHack(aimy, 85.toByte()) || checkHack(aimy, 170.toByte())
-                                assistUser = (checkHack(aimx, 170.toByte())) || checkHack(aimx, 85.toByte()) && checkHack(aimy, 170.toByte())
-
-                                if(fooUser || assistUser) {
-                                    hackCount++
-                                    if(hackCount > 150) {
-                                        Call.kick(it.player.con(), Bundle(if(findPlayers(it.player.plainName()) != null) findPlayers(it.player.plainName())!!.locale() else "")["event.antigrief.foo.detected", "1"])
-                                        Log.info(Bundle()["event.antigrief.foo.detected.log", it.player.plainName(), "1"])
-                                        for(a in database.players) {
-                                            a.player.sendMessage(Bundle(a.languageTag)["event.antigrief.foo", it.player.name, "1"])
-                                        }
-                                        Core.app.removeListener(this)
-                                    }
-                                }
-                            }
-                        } else {
-                            Core.app.removeListener(this)
-                        }
-
-                        if(timeout != 0) {
-                            timeout--
-                        } else {
-                            Core.app.removeListener(this)
-                        }
-                    }
-                })
             }
         }
 
