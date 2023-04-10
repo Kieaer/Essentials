@@ -91,6 +91,7 @@ object Event {
 
     var dpsBlocks = 0f
     var dpsTile : Tile? = null
+    var maxdps = 0f
 
     fun register() {
         Events.on(WithdrawEvent::class.java) {
@@ -513,6 +514,7 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
+            dpsTile = null
             if(saveDirectory.child("rollback.msav").exists()) saveDirectory.child("rollback.msav").delete()
 
             if(state.rules.pvp) {
@@ -802,7 +804,11 @@ object Event {
                     }
 
                     if(dpsTile != null){
-                        Call.label("DPS: ${dpsBlocks}/s", 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
+                        if (dpsBlocks > maxdps) maxdps = dpsBlocks
+                        val message = "Max DPS: $maxdps\nDPS: ${dpsBlocks}/s"
+                        Call.label(message, 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
+                    } else {
+                        maxdps = 0f
                     }
                     dpsBlocks = 0f
 
