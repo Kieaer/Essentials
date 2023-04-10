@@ -975,7 +975,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "killunit")) return
             val unit = content.units().find { unitType : UnitType -> unitType.name == arg[0] }
             if(unit != null) {
-                if(arg.size > 2) {
+                if(arg.size > 1) {
                     if(arg[1].toIntOrNull() != null) {
                         if(arg.size == 3) {
                             val team = selectTeam(arg[2])
