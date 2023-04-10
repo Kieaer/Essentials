@@ -38,6 +38,7 @@ import mindustry.maps.Map
 import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
+import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.world.Tile
 import org.hjson.JsonArray
@@ -1564,9 +1565,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun setitem() {
-            if(!Permission.check(player, "setitem")) return // <item> <amount> [team]
-            val item = content.item(arg[0])
-            if(item != null) {
+            if(!Permission.check(player, "setitem")) return
+
+            fun set(item: Item){
                 val amount = arg[1].toIntOrNull()
                 if(amount != null) {
                     if(arg.size == 3) {
@@ -1582,6 +1583,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     send("command.setitem.wrong.amount")
                 }
+            }
+
+            val item = content.item(arg[0])
+            if(item != null) {
+                set(item)
+            } else if(!arg[0].equals("all", true)) {
+                for (a in content.items()) set(a)
             } else {
                 send("command.setitem.item.not.exists")
             }
