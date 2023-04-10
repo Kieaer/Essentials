@@ -859,25 +859,29 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun info() {
             if(!Permission.check(player, "info")) return
+
+            fun show(target: DB.PlayerData) : String {
+                return """
+                        ${bundle["info.name"]}: ${target.name}[white]
+                        ${bundle["info.placecount"]}: ${target.placecount}
+                        ${bundle["info.breakcount"]}: ${target.breakcount}
+                        ${bundle["info.level"]}: ${target.level}
+                        ${bundle["info.exp"]}: ${Exp[target]}
+                        ${bundle["info.joindate"]}: ${Timestamp(target.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
+                        ${bundle["info.playtime"]}: ${bundle["command.info.time", (target.playtime / 60 / 60 / 24) % 365, (target.playtime / 60 / 24) % 24, (target.playtime / 60) % 60, (target.playtime) % 60]}
+                        ${bundle["info.attackclear"]}: ${target.attackclear}
+                        ${bundle["info.pvpwincount"]}: ${target.pvpwincount}
+                        ${bundle["info.pvplosecount"]}: ${target.pvplosecount}
+                        """.trimIndent()
+            }
+
             if(arg.isNotEmpty()) {
                 if(!Permission.check(player, "info.other")) return
                 val target = findPlayers(arg[0])
                 if(target != null) {
                     val other = findPlayerData(target.uuid())
                     if(other != null) {
-                        val texts = """
-                        ${bundle["info.name"]}: ${other.name}[white]
-                        ${bundle["info.placecount"]}: ${other.placecount}
-                        ${bundle["info.breakcount"]}: ${other.breakcount}
-                        ${bundle["info.level"]}: ${other.level}
-                        ${bundle["info.exp"]}: ${Exp[other]}
-                        ${bundle["info.joindate"]}: ${Timestamp(other.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                        ${bundle["info.playtime"]}: ${bundle["command.info.time", (other.playtime / 60 / 60 / 24) % 365, (other.playtime / 60 / 24) % 24, (other.playtime / 60) % 60, (other.playtime) % 60]}
-                        ${bundle["info.attackclear"]}: ${other.attackclear}
-                        ${bundle["info.pvpwincount"]}: ${other.pvpwincount}
-                        ${bundle["info.pvplosecount"]}: ${other.pvplosecount}
-                        """.trimIndent()
-                        Call.infoMessage(player.con(), texts)
+                        Call.infoMessage(player.con(), show(other))
                     } else {
                         send("player.not.found")
                     }
@@ -886,19 +890,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if(p != null) {
                         val a = database[p.id]
                         if(a != null) {
-                            val texts = """
-                                    ${bundle["info.name"]}: ${a.name}[white]
-                                    ${bundle["info.placecount"]}: ${a.placecount}
-                                    ${bundle["info.breakcount"]}: ${a.breakcount}
-                                    ${bundle["info.level"]}: ${a.level}
-                                    ${bundle["info.exp"]}: ${Exp[a]}
-                                    ${bundle["info.joindate"]}: ${Timestamp(a.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                                    ${bundle["info.playtime"]}: ${bundle["command.info.time", (a.playtime / 60 / 60 / 24) % 365, (a.playtime / 60 / 24) % 24, (a.playtime / 60) % 60, (a.playtime) % 60]}
-                                    ${bundle["info.attackclear"]}: ${a.attackclear}
-                                    ${bundle["info.pvpwincount"]}: ${a.pvpwincount}
-                                    ${bundle["info.pvplosecount"]}: ${a.pvplosecount}
-                                    """.trimIndent()
-                            Call.infoMessage(player.con(), texts)
+                            Call.infoMessage(player.con(), show(a))
                         } else {
                             send("player.not.registered")
                         }
@@ -907,19 +899,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
             } else {
-                val texts = """
-                ${bundle["info.name"]}: ${data.name}[white]
-                ${bundle["info.placecount"]}: ${data.placecount}
-                ${bundle["info.breakcount"]}: ${data.breakcount}
-                ${bundle["info.level"]}: ${data.level}
-                ${bundle["info.exp"]}: ${Exp[data]}
-                ${bundle["info.joindate"]}: ${Timestamp(data.joinDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                ${bundle["info.playtime"]}: ${bundle["command.info.time", (data.playtime / 60 / 60 / 24) % 365, (data.playtime / 60 / 24) % 24, (data.playtime / 60) % 60, (data.playtime) % 60]}
-                ${bundle["info.attackclear"]}: ${data.attackclear}
-                ${bundle["info.pvpwincount"]}: ${data.pvpwincount}
-                ${bundle["info.pvplosecount"]}: ${data.pvplosecount}
-            """.trimIndent()
-                Call.infoMessage(player.con(), texts)
+                Call.infoMessage(player.con(), show(data))
             }
         }
 
@@ -1823,9 +1803,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(target != null) {
                 netServer.admins.unbanPlayerID(arg[0])
                 Main.daemon.submit {
-                    if(Config.banChannelToken.isNotEmpty()) {
-                        Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["command.unban", player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))])
-                    }
+                    Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
                     if(Config.blockIP) {
                         for(a in target.first().ips) {
                             Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $a -j DROP"))
@@ -2253,9 +2231,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if(minute != null) {
                         d.status.put("ban", time.plusMinutes(minute.toLong()).toString())
                         Call.kick(other.con(), reason)
-                        if(Config.banChannelToken.isNotEmpty()) {
-                            Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["command.tempban.banned", d.name, player.plainName(), time.plusMinutes(minute.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))])
-                        }
+                        Events.fire(PlayerTempBanned(d.name, player.plainName(), time.plusMinutes(minute.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
                     } else {
                         Log.info(stripColors(bundle["command.tempban.not.number"]))
                     }

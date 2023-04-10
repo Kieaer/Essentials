@@ -78,7 +78,7 @@ object Event {
     private var random = Random()
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     private var blockExp = ObjectMap<String, Int>()
-    private var dosBlacklist = ObjectSet<String>()
+    var dosBlacklist = ObjectSet<String>()
     private var pvpCount = Config.pvpPeaceTime
     private var count = 60
     var pvpSpectors = Seq<String>()
@@ -498,31 +498,7 @@ object Event {
                 }
             }
 
-            if(Config.banChannelToken.isNotEmpty()) {
-                val name = if(it.player != null) {
-                    netServer.admins.findByName(it.player.uuid()).first().names.toString(", ")
-                } else {
-                    netServer.admins.banned.find { a -> a.id.equals(it.uuid) }.names.toString(", ")
-                }
-
-                val id = if(it.player != null) {
-                    netServer.admins.findByName(it.player.uuid()).first().id
-                } else {
-                    netServer.admins.banned.find { a -> a.id.equals(it.uuid) }.id
-                }
-
-                val msg = Bundle()["event.discord.banned", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), name, id]
-                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
-            }
-
             log(LogType.Player, Bundle()["log.player.banned", if(it.player == null) netServer.admins.getInfo(it.uuid).lastName else it.player.name, if(it.player == null) netServer.admins.getInfo(it.uuid).lastIP else it.player.ip()])
-        }
-
-        Events.on(PlayerIpUnbanEvent::class.java) {
-            if(Config.banChannelToken.isNotEmpty()) {
-                val msg = Bundle()["event.discord.ip.unbanned", netServer.admins.findByIP(it.ip).lastName]
-                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
-            }
         }
 
         Events.on(PlayerUnbanEvent::class.java) {
@@ -532,13 +508,6 @@ object Event {
                     val ip = if(it.player != null) it.player.ip() else netServer.admins.getInfo(it.uuid).lastIP
                     Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $ip -j DROP"))
                 }
-            }
-        }
-
-        Events.on(AdminRequestEvent::class.java) {
-            if(Config.banChannelToken.isNotEmpty() && it.action == Packets.AdminAction.ban) {
-                val msg = Bundle()["event.discord.banned.admin", it.player.plainName()]
-                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
         }
 
@@ -595,11 +564,6 @@ object Event {
                         e.connection.kick(Bundle(e.packet.locale)["anti-grief.vpn"])
                     }
                 }
-            }
-
-            if(netServer.admins.isIDBanned(e.packet.uuid)) {
-                val msg = Bundle()["event.discord.connect.blocked", netServer.admins.findByName(e.packet.uuid).first().lastName]
-                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, msg)
             }
         }
 
@@ -958,11 +922,11 @@ object Event {
                                         if(Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
                                             netServer.admins.banPlayerID(voteTargetUUID)
                                             send("command.vote.kick.target.banned", name)
-                                            if(Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.banned", name, voteReason!!, onlinePlayers.toString()])
+                                            Events.fire(PlayerVoteBanned(name, voteReason!!, onlinePlayers.toString()))
                                         } else {
                                             voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                             send("command.vote.kick.target.kicked", name)
-                                            if(Config.banChannelToken.isNotEmpty()) Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.vote.kicked", name, voteReason!!, onlinePlayers.toString()])
+                                            Events.fire(PlayerVoteKicked(name, voteReason!!, onlinePlayers.toString()))
                                         }
                                     }
 
@@ -1127,22 +1091,6 @@ object Event {
                         }
                     }
 
-                    if(Config.banChannelToken.isNotEmpty()) {
-                        if(dosBlacklist != netServer.admins.dosBlacklist) {
-                            val buffer = dosBlacklist
-                            for(a in dosBlacklist) {
-                                for(b in netServer.admins.dosBlacklist) {
-                                    if(a == b) {
-                                        buffer.remove(a)
-                                    }
-                                }
-                            }
-                            for(a in buffer) {
-                                Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.discord.dos"])
-                            }
-                        }
-                    }
-
                     secondCount = 0
                 } else {
                     secondCount++
@@ -1165,9 +1113,7 @@ object Event {
                                 Core.app.post { netServer.admins.unbanPlayerID(a.uuid) }
                                 a.status.remove("ban")
                                 database.update(a.uuid, a)
-                                if(Config.banChannelToken.isNotEmpty()) {
-                                    Commands.Discord.catnip.rest().channel().createMessage(Config.banChannelToken, Bundle()["event.tempban.unbanned", a.name])
-                                }
+                                Events.fire(PlayerTempUnbanned(a.name))
                             }
                         }
 
