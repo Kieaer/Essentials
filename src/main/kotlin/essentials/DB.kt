@@ -144,7 +144,7 @@ class DB {
         val kickcount = integer("kickcount")
         val level = integer("level")
         val exp = integer("exp")
-        val joinDate = long("joinDate")
+        val joindate = long("joinDate")
         val lastdate = long("lastdate")
         val playtime = long("playtime")
         val attackclear = integer("attackclear")
@@ -168,7 +168,7 @@ class DB {
         var kickcount : Int = 0
         var level : Int = 0
         var exp : Int = 0
-        var joinDate : Long = 0
+        var joindate : Long = 0
         var lastdate : Long = 0
         var playtime : Long = 0
         var attackclear : Int = 0
@@ -185,7 +185,7 @@ class DB {
         var entityid : Int = 0
 
         override fun toString() : String {
-            return "name: $name, uuid: $uuid, languageTag: $languageTag, placecount: $placecount, breakcount: $breakcount, joincount: $joincount, kickcount: $kickcount, level: $level, exp: $exp, joinDate: $joinDate, lastdate: $lastdate, playtime: $playtime, attackclear: $attackclear, pvpwincount: $pvpwincount, pvplosecount: $pvplosecount, colornick: $colornick, permission: $permission, mute: $mute, id: $id, pw: $pw, status: $status, afkTime: $afkTime, entityid: $entityid"
+            return "name: $name, uuid: $uuid, languageTag: $languageTag, placecount: $placecount, breakcount: $breakcount, joincount: $joincount, kickcount: $kickcount, level: $level, exp: $exp, joinDate: $joindate, lastdate: $lastdate, playtime: $playtime, attackclear: $attackclear, pvpwincount: $pvpwincount, pvplosecount: $pvplosecount, colornick: $colornick, permission: $permission, mute: $mute, id: $id, pw: $pw, status: $status, afkTime: $afkTime, entityid: $entityid"
         }
     }
 
@@ -201,7 +201,7 @@ class DB {
                 it[kickcount] = data.kickcount
                 it[level] = data.level
                 it[exp] = data.exp
-                it[joinDate] = data.joinDate
+                it[joindate] = data.joindate
                 it[lastdate] = data.lastdate
                 it[playtime] = data.playtime
                 it[attackclear] = data.attackclear
@@ -217,8 +217,7 @@ class DB {
         }
     }
 
-    operator fun get(uuid : String) : PlayerData? {
-        // todo 메인 서버가 사망할 경우 하위 서버도 사망하는 문제
+    operator fun get(uuid : String) : PlayerData? { // todo 메인 서버가 사망할 경우 하위 서버도 사망하는 문제
         val d = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
         if(d != null) {
             val data = PlayerData()
@@ -231,7 +230,7 @@ class DB {
             data.kickcount = d[Player.kickcount]
             data.level = d[Player.level]
             data.exp = d[Player.exp]
-            data.joinDate = d[Player.joinDate]
+            data.joindate = d[Player.joindate]
             data.lastdate = d[Player.lastdate]
             data.playtime = d[Player.playtime]
             data.attackclear = d[Player.attackclear]
@@ -269,7 +268,7 @@ class DB {
                 data.kickcount = it[Player.kickcount]
                 data.level = it[Player.level]
                 data.exp = it[Player.exp]
-                data.joinDate = it[Player.joinDate]
+                data.joindate = it[Player.joindate]
                 data.lastdate = it[Player.lastdate]
                 data.playtime = it[Player.playtime]
                 data.attackclear = it[Player.attackclear]
@@ -307,7 +306,7 @@ class DB {
                 data.kickcount = it[Player.kickcount]
                 data.level = it[Player.level]
                 data.exp = it[Player.exp]
-                data.joinDate = it[Player.joinDate]
+                data.joindate = it[Player.joindate]
                 data.lastdate = it[Player.lastdate]
                 data.playtime = it[Player.playtime]
                 data.attackclear = it[Player.attackclear]
@@ -347,7 +346,7 @@ class DB {
                 it[kickcount] = data.kickcount
                 it[level] = data.level
                 it[exp] = data.exp
-                it[joinDate] = data.joinDate
+                it[joindate] = data.joindate
                 it[lastdate] = data.lastdate
                 it[playtime] = data.playtime
                 it[attackclear] = data.attackclear
@@ -379,7 +378,7 @@ class DB {
                 data.kickcount = this[Player.kickcount]
                 data.level = this[Player.level]
                 data.exp = this[Player.exp]
-                data.joinDate = this[Player.joinDate]
+                data.joindate = this[Player.joindate]
                 data.lastdate = this[Player.lastdate]
                 data.playtime = this[Player.playtime]
                 data.attackclear = this[Player.attackclear]

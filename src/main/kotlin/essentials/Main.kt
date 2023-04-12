@@ -129,23 +129,23 @@ class Main: Plugin() {
 
         if(Config.update) {
             Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000).error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }.submit {
-                    if(it.status == Http.HttpStatus.OK) {
-                        val json = JsonValue.readJSON(it.resultAsString).asObject()
-                        for(a in 0 until Vars.mods.list().size) {
-                            if(Vars.mods.list()[a].meta.name == "Essentials") {
-                                PluginData.pluginVersion = Vars.mods.list()[a].meta.version
-                            }
-                        }
-                        val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
-                        val current = DefaultArtifactVersion(PluginData.pluginVersion)
-
-                        when {
-                            latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject().get("browser_download_url").asString(), json.get("body").asString()])
-                            latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
-                            latest < current -> Log.info(bundle["config.update.devel"])
+                if(it.status == Http.HttpStatus.OK) {
+                    val json = JsonValue.readJSON(it.resultAsString).asObject()
+                    for(a in 0 until Vars.mods.list().size) {
+                        if(Vars.mods.list()[a].meta.name == "Essentials") {
+                            PluginData.pluginVersion = Vars.mods.list()[a].meta.version
                         }
                     }
+                    val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
+                    val current = DefaultArtifactVersion(PluginData.pluginVersion)
+
+                    when {
+                        latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject().get("browser_download_url").asString(), json.get("body").asString()])
+                        latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
+                        latest < current -> Log.info(bundle["config.update.devel"])
+                    }
                 }
+            }
         } else {
             for(a in 0 until Vars.mods.list().size) {
                 if(Vars.mods.list()[a].meta.name == "Essentials") {
@@ -177,7 +177,7 @@ class Main: Plugin() {
             return@addActionFilter false
         }
 
-        if (Config.blockfooclient) {
+        if(Config.blockfooclient) {
             val fooArray = arrayOf("fooCheck", "fooTransmission", "fooTransmissionEnabled")
             for(a in fooArray) {
                 Vars.netServer.addPacketHandler(a) { b, _ ->

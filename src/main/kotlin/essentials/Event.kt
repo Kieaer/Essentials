@@ -281,8 +281,7 @@ object Event {
                         log(LogType.Chat, "${data.name}: $message")
 
                         if(!data.mute) {
-                            val isAdmin = Permission.check(player, "vote.pass")
-                            // todo 자신이 시작한 투표에 자기 자신이 y 를 쳐서 투표에 참여하면 무조건 투표 통과가 되는 문제 (확인 필요)
+                            val isAdmin = Permission.check(player, "vote.pass") // todo 자신이 시작한 투표에 자기 자신이 y 를 쳐서 투표에 참여하면 무조건 투표 통과가 되는 문제 (확인 필요)
                             if(voting && message.equals("y", true) && !voted.contains(player.uuid())) {
                                 if(isAdmin) {
                                     isAdminVote = true
@@ -670,7 +669,7 @@ object Event {
         var messageCount = Config.messageTime
         var messageOrder = 0
 
-        Core.app.addListener(object : ApplicationListener {
+        Core.app.addListener(object: ApplicationListener {
             override fun update() {
                 if(Config.unbreakableCore) {
                     for(a in Groups.build) {
@@ -784,8 +783,8 @@ object Event {
                     }
                 }
 
-                if (dpsTile != null) {
-                    if (dpsTile!!.block() != null) {
+                if(dpsTile != null) {
+                    if(dpsTile!!.block() != null) {
                         dpsBlocks += (9999999f - dpsTile!!.build.health)
                         dpsTile!!.build.health(9999999f)
                     } else {
@@ -803,8 +802,8 @@ object Event {
                         if(a.value == 0) voterCooltime.remove(a.key)
                     }
 
-                    if(dpsTile != null){
-                        if (dpsBlocks > maxdps) maxdps = dpsBlocks
+                    if(dpsTile != null) {
+                        if(dpsBlocks > maxdps) maxdps = dpsBlocks
                         val message = "Max DPS: $maxdps\nDPS: ${dpsBlocks}/s"
                         Call.label(message, 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
                     } else {
@@ -1247,8 +1246,7 @@ object Event {
         }
     }
 
-    fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData) {
-        // todo 경험치를 지나치게 낮게 획득하는 문제 (확인 필요)
+    fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData) { // todo 경험치를 지나치게 낮게 획득하는 문제 (확인 필요)
         val oldLevel = target.level
         val oldExp = target.exp
         val time = PluginData.playtime.toInt()
@@ -1262,8 +1260,8 @@ object Event {
         var coreitem = 0
         for(a in state.stats.coreItemCount) coreitem += a.value
 
-        val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
-        val erekirPvP = if (state.planet == Planets.erekir) 5000 else 0
+        val erekirAttack = if(state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
+        val erekirPvP = if(state.planet == Planets.erekir) 5000 else 0
 
         if(winner == p.team()) {
             val score : Int = if(state.rules.attackMode) {

@@ -108,7 +108,7 @@ object Trigger {
         val data = DB.PlayerData()
         data.name = player.name()
         data.uuid = player.uuid()
-        data.joinDate = System.currentTimeMillis()
+        data.joindate = System.currentTimeMillis()
         data.id = id ?: player.plainName()
         data.pw = if(password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
         data.permission = "user"
@@ -137,7 +137,7 @@ object Trigger {
                                     it[this.data] = PluginData.lastMemory
                                 }
                                 DB.Data.selectAll().first().run {
-                                    if (this[DB.Data.data] !== PluginData.lastMemory) {
+                                    if(this[DB.Data.data] !== PluginData.lastMemory) {
                                         println("validateError")
                                     }
                                 }
@@ -400,7 +400,7 @@ object Trigger {
 
                     while(!currentThread().isInterrupted) {
                         val d = reader.readLine()
-                        if (d == null) interrupt()
+                        if(d == null) interrupt()
                         when(d) {
                             "exit" -> interrupt()
                             "sync" -> {
@@ -441,8 +441,8 @@ object Trigger {
                             }
                         }
                     }
-                } catch(_: SocketException){
-                } catch(e: Exception) {
+                } catch(_ : SocketException) {
+                } catch(e : Exception) {
                     e.printStackTrace()
                 }
                 clients.remove(socket)
@@ -490,7 +490,7 @@ object Trigger {
                                     val json = JsonArray()
                                     for(a in netServer.admins.banned) json.add(a.id)
                                     write(json.toString())
-                                } catch(_: Exception){
+                                } catch(_ : Exception) {
 
                                 }
                             }
@@ -499,12 +499,13 @@ object Trigger {
                         currentThread().interrupt()
                     }
                 }
-            } catch(_: SocketTimeoutException){
+            } catch(_ : SocketTimeoutException) {
                 Log.info(Bundle()["network.client.timeout"])
             } catch(e : java.lang.Exception) {
                 e.printStackTrace()
             }
         }
+
         fun write(msg : String) {
             writer.write(msg)
             writer.newLine()

@@ -6,9 +6,9 @@ import io.ktor.server.engine.*
 import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.plugins.ratelimit.*
 import kotlin.time.Duration.Companion.seconds
 
 class WebServer {
@@ -32,7 +32,7 @@ class WebServer {
                             val set = HashSet<HashMap<String, Any>>()
 
                             val playerData = Main.database.getAllByExp().take(50)
-                            for (i in playerData.indices) {
+                            for(i in playerData.indices) {
                                 val map = HashMap<String, Any>()
                                 map["rank"] = i + 1
                                 map["username"] = playerData[i].name

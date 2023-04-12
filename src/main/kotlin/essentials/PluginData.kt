@@ -57,7 +57,7 @@ object PluginData {
         return status.get(key)
     }
 
-    fun save(first: Boolean) {
+    fun save(first : Boolean) {
         val data = JsonObject()
         var buffer = JsonArray()
 
@@ -136,7 +136,7 @@ object PluginData {
         val encode = Base64.getEncoder()
         lastMemory = encode.encodeToString(data.toString().toByteArray())
 
-        if (first) {
+        if(first) {
             transaction {
                 DB.Data.insert {
                     it[DB.Data.data] = lastMemory
