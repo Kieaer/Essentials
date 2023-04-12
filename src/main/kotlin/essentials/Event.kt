@@ -35,6 +35,9 @@ import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.world.Tile
 import org.hjson.JsonArray
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.InetAddress
 import java.net.UnknownHostException
@@ -47,6 +50,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.regex.Pattern
+import java.util.zip.GZIPOutputStream
 import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.floor
@@ -1164,6 +1168,7 @@ object Event {
     }
 
     fun log(type : LogType, text : String, vararg name : String) {
+        val maxLogFile = 20
         val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val time = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
 
@@ -1180,6 +1185,34 @@ object Event {
                         root.child("log/old/$type").mkdirs()
                     }
                     Files.move(new, old, StandardCopyOption.REPLACE_EXISTING)
+                    val logFiles = root.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
+
+                    if(logFiles != null) {
+                        if (logFiles.size >= maxLogFile) {
+                            fun compressFile(inputFile: File, outputFile: File) {
+                                val fis = FileInputStream(inputFile)
+                                val fos = FileOutputStream(outputFile)
+                                val gzis = GZIPOutputStream(fos)
+                                val buffer = ByteArray(1024)
+                                var len: Int
+                                while (fis.read(buffer).also { len = it } > 0) {
+                                    gzis.write(buffer, 0, len)
+                                }
+                                fis.close()
+                                gzis.finish()
+                                gzis.close()
+                            }
+
+                            val sortedLogFiles = logFiles.sortedBy { file -> file.lastModified() }
+
+                            for (i in 0 until logFiles.size - maxLogFile) {
+                                val fileToCompress = sortedLogFiles[i]
+                                val compressedFile = File("${fileToCompress.path}.gz")
+                                compressFile(fileToCompress, compressedFile)
+                                fileToCompress.delete()
+                            }
+                        }
+                    }
                 } catch(e : IOException) {
                     e.printStackTrace()
                 }
