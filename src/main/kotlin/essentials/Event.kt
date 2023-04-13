@@ -788,9 +788,9 @@ object Event {
                 }
 
                 if(dpsTile != null) {
-                    if(dpsTile!!.block() != null) {
-                        dpsBlocks += (9999999f - dpsTile!!.build.health)
-                        dpsTile!!.build.health(9999999f)
+                    if(dpsTile!!.build != null && dpsTile!!.block() != null) {
+                        dpsBlocks += (100000000f - dpsTile!!.build.health)
+                        dpsTile!!.build.health(100000000f)
                     } else {
                         dpsTile = null
                     }
