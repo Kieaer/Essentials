@@ -506,6 +506,12 @@ object Event {
         }
 
         Events.on(PlayerUnbanEvent::class.java) {
+            if(Main.connectType) {
+                Trigger.Server.sendAll("unban", it.uuid)
+            } else {
+                Trigger.Client.unban(it.uuid)
+            }
+
             if(Config.blockIP) {
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {

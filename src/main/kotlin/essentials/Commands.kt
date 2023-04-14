@@ -46,9 +46,6 @@ import org.hjson.JsonObject
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
-import java.io.BufferedWriter
-import java.io.OutputStreamWriter
-import java.net.SocketException
 import java.sql.Timestamp
 import java.text.MessageFormat
 import java.time.LocalDateTime
@@ -420,20 +417,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun broadcast() {
             if(!Permission.check(player, "broadcast")) return
             if(Main.connectType) {
-                for(a in Trigger.clients) {
-                    val b = BufferedWriter(OutputStreamWriter(a.getOutputStream()))
-                    try {
-                        b.write("message")
-                        b.newLine()
-                        b.flush()
-                        b.write(arg[0])
-                        b.newLine()
-                        b.flush()
-                    } catch(e : SocketException) {
-                        a.close()
-                        Trigger.clients.remove(a)
-                    }
-                }
+                Trigger.Server.sendAll("message", arg[0])
             } else {
                 Trigger.Client.message(arg[0])
             }
@@ -1721,15 +1705,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "unban")) return
             val target = netServer.admins.findByName(arg[0])
             if(target != null) {
-                netServer.admins.unbanPlayerID(arg[0])
-                Main.daemon.submit {
-                    Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
-                    if(Config.blockIP) {
-                        for(a in target.first().ips) {
-                            Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $a -j DROP"))
-                        }
-                    }
-                }
+                netServer.admins.unbanPlayerID(target.first().id)
+                Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
             } else {
                 err("player.not.found")
             }
@@ -2089,15 +2066,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             Core.settings.put("debugMode", true)
                         } else {
                             Core.settings.put("debugMode", false)
-                        }
-                    }
-                }
-
-                "sync" -> {
-                    for(a in netServer.admins.banned) {
-                        for(b in a.ips) {
-                            Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $b -j DROP"))
-                            Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $b -j DROP"))
                         }
                     }
                 }

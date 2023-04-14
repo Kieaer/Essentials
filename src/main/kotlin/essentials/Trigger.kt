@@ -379,6 +379,23 @@ object Trigger {
             server.close()
         }
 
+        fun sendAll(type: String, msg: String) {
+            for(a in Trigger.clients) {
+                val b = BufferedWriter(OutputStreamWriter(a.getOutputStream()))
+                try {
+                    b.write(type)
+                    b.newLine()
+                    b.flush()
+                    b.write(msg)
+                    b.newLine()
+                    b.flush()
+                } catch(e : SocketException) {
+                    a.close()
+                    Trigger.clients.remove(a)
+                }
+            }
+        }
+
         class Handler(val socket : Socket): java.lang.Thread() {
             override fun run() {
                 try {
@@ -413,22 +430,14 @@ object Trigger {
                                 }
                             }
 
+                            "unban" -> {
+                                val msg = reader.readLine()
+                                sendAll("unban", msg)
+                            }
+
                             "message" -> {
                                 val msg = reader.readLine()
-                                for(a in clients) {
-                                    val b = BufferedWriter(OutputStreamWriter(a.getOutputStream()))
-                                    try {
-                                        b.write("message")
-                                        b.newLine()
-                                        b.flush()
-                                        b.write(msg)
-                                        b.newLine()
-                                        b.flush()
-                                    } catch(e : SocketException) {
-                                        a.close()
-                                        clients.remove(a)
-                                    }
-                                }
+                                sendAll("message", msg)
                             }
 
                             "crash" -> {
@@ -469,6 +478,12 @@ object Trigger {
                 while(!currentThread().isInterrupted) {
                     try {
                         when(val d = reader.readLine()) {
+                            "unban" -> {
+                                val uuid = reader.readLine()
+                                netServer.admins.getInfo(uuid).banned = false
+                                netServer.admins.save()
+                            }
+
                             "message" -> {
                                 val aa = reader.readLine()
                                 Call.sendMessage(aa)
@@ -517,6 +532,11 @@ object Trigger {
             write(message)
         }
 
+        fun unban(uuid: String) {
+            write("unban")
+            write(uuid)
+        }
+
         fun send(command : String, vararg parameter : String) {
             when(command) {
                 "sync" -> write("sync")
@@ -539,6 +559,8 @@ object Trigger {
                         Log.info("Connection timed out. crash report server may be closed.")
                     }
                 }
+
+                "unban" -> write("unban")
 
                 "exit" -> {
                     if(::reader.isInitialized) {
