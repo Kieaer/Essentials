@@ -1,18 +1,18 @@
 import org.gradle.internal.os.OperatingSystem
 
 plugins {
-    kotlin("jvm") version "1.8.0"
+    kotlin("jvm") version "1.8.20"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_16
-    targetCompatibility = JavaVersion.VERSION_16
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_16.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 }
 
@@ -47,7 +47,7 @@ dependencies {
     testImplementation("com.github.anuken.mindustryjitpack:server:$mindustryVersion")
     testImplementation("com.github.anuken.arc:backend-headless:$arcVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
-    testImplementation("net.datafaker:datafaker:1.7.0")
+    testImplementation("net.datafaker:datafaker:1.8.1")
 
     val ktor_version = "2.2.3"
     implementation("io.ktor:ktor-server-core:$ktor_version")
@@ -79,7 +79,7 @@ tasks.jar {
 }
 
 tasks.register("web") {
-    if (OperatingSystem.current() == OperatingSystem.WINDOWS) {
+    if (OperatingSystem.current() == OperatingSystem.forName("windows")) {
         exec {
             workingDir("./src/www")
             commandLine("npm.cmd", "i")
@@ -117,6 +117,7 @@ tasks.shadowJar {
    minimize {
        exclude(dependency("org.jetbrains.exposed:.*:.*"))
        exclude(dependency("org.slf4j:slf4j-nop:.*"))
+       exclude(dependency(files("libs/lingua.jar")))
    }
 }
 

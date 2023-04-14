@@ -2,7 +2,7 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/kieaer/Essentials/total?style=flat-square)
 ![GitHub release (latest by date)](https://img.shields.io/github/downloads/kieaer/essentials/latest/total?style=flat-square)<br>
 Add more commands to the server.<br>
-**__Requires Java 16 or higher!__**
+**__Requires Java 17 or higher!__**
 
 This plugin was created because the creators were very angry with too many Griefers in Mindustry 4.0 Alpha version.<br>
 To create this plugin, I'm spent all night studying a programming language I hadn't looked at in my entire life. lol<br><br>
