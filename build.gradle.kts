@@ -2,6 +2,7 @@ import org.gradle.internal.os.OperatingSystem
 
 plugins {
     kotlin("jvm") version "1.8.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 java {
@@ -57,6 +58,10 @@ dependencies {
 }
 
 tasks.jar {
+    enabled = false
+
+
+
     if (!file("./src/main/resources/www").exists()) {
         dependsOn("web")
     }
@@ -67,7 +72,10 @@ tasks.jar {
         exclude("**/META-INF/*.DSA")
         exclude("**/META-INF/*.RSA")
     }
+
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    dependsOn(tasks.shadowJar)
 }
 
 tasks.register("web") {
@@ -101,6 +109,15 @@ tasks.register("web") {
 
 tasks.compileKotlin {
     kotlinOptions.allWarningsAsErrors = false
+}
+
+tasks.shadowJar {
+    archiveFileName.set("Essentials.jar")
+
+   minimize {
+       exclude(dependency("org.jetbrains.exposed:.*:.*"))
+       exclude(dependency("org.slf4j:slf4j-nop:.*"))
+   }
 }
 
 sourceSets{

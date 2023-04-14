@@ -188,7 +188,7 @@ object Config {
         update = plugin.getBoolean("update", update)
         report = plugin.getBoolean("report", report)
         authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
-        database = plugin.getString("database", database)
+        database = if(plugin.getString("database", database) == "default") database else plugin.getString("database", database)
 
         afk = features.getBoolean("afk", afk)
         afkTime = features.getInt("afkTime", afkTime)
