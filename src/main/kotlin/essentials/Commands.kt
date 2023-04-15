@@ -786,7 +786,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["info.breakcount"]}: ${target.breakcount}
                         ${bundle["info.level"]}: ${target.level}
                         ${bundle["info.exp"]}: ${Exp[target]}
-                        ${bundle["info.joinDate"]}: ${Timestamp(target.joindate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
+                        ${bundle["info.joindate"]}: ${Timestamp(target.joindate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
                         ${bundle["info.playtime"]}: ${bundle["command.info.time", (target.playtime / 60 / 60 / 24) % 365, (target.playtime / 60 / 24) % 24, (target.playtime / 60) % 60, (target.playtime) % 60]}
                         ${bundle["info.attackclear"]}: ${target.attackclear}
                         ${bundle["info.pvpwincount"]}: ${target.pvpwincount}
