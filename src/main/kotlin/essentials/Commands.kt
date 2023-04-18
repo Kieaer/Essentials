@@ -158,7 +158,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun err(key : String, vararg parameters : Any) {
-            player.sendMessage("[scarlet] " + MessageFormat.format(bundle.resource.getString(key), *parameters))
+            player.sendMessage("[scarlet]" + MessageFormat.format(bundle.resource.getString(key), *parameters))
         }
 
         fun changemap() {
