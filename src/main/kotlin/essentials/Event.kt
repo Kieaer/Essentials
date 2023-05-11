@@ -136,7 +136,7 @@ object Event {
         Events.on(TapEvent::class.java) {
             log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), it.tile.block().name])
             addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-            val data = findPlayerData(it.player.uuid())
+            val data = findPlayerDataByName(it.player.name)
             if(data != null) {
                 for(a in PluginData.warpBlocks) {
                     if(it.tile.block().name == a.tileName && it.tile.build.tileX() == a.x && it.tile.build.tileY() == a.y) {
@@ -244,43 +244,47 @@ object Event {
                 Core.settings.saveValues()
             }
 
+            val os = System.getProperty("os.name").lowercase(Locale.getDefault())
             if(!Config.blockIP && Config.database != Main.root.child("database").absolutePath() && PluginData["iptablesFirst"] != null) {
                 Log.warn(Bundle()["event.database.blockip.conflict"])
 
-                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
                     Config.blockIP = true
                     Log.info(Bundle()["config.blockIP.enabled"])
                 }
             } else if(!Config.blockIP && PluginData["iptablesFirst"] != null) {
-                for(a in netServer.admins.banned) {
-                    for(b in a.ips) {
-                        val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $b -j DROP")
-                        Runtime.getRuntime().exec(cmd)
+                if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                    for(a in netServer.admins.banned) {
+                        for(b in a.ips) {
+                            val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $b -j DROP")
+                            Runtime.getRuntime().exec(cmd)
+                        }
                     }
+                    PluginData.status.remove("iptablesFirst")
+                    Log.info(Bundle()["event.ban.iptables.remove"])
+                    PluginData.save(false)
+                    PluginData.changed = true
                 }
-                PluginData.status.remove("iptablesFirst")
-                Log.info(Bundle()["event.ban.iptables.remove"])
-                PluginData.save(false)
-                PluginData.changed = true
             } else if(Config.blockIP && PluginData["iptablesFirst"] == null) {
-                for(a in netServer.admins.banned) {
-                    for(b in a.ips) {
-                        val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $b -j DROP")
-                        Runtime.getRuntime().exec(cmd)
-                        Log.info(Bundle()["event.ban.iptables.exists", b, a.lastName])
+                if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                    for(a in netServer.admins.banned) {
+                        for(b in a.ips) {
+                            val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $b -j DROP")
+                            Runtime.getRuntime().exec(cmd)
+                            Log.info(Bundle()["event.ban.iptables.exists", b, a.lastName])
+                        }
                     }
+                    PluginData.status.put("iptablesFirst", "none")
+                    PluginData.save(false)
+                    PluginData.changed = true
                 }
-                PluginData.status.put("iptablesFirst", "none")
-                PluginData.save(false)
-                PluginData.changed = true
             }
 
             netServer.chatFormatter = NetServer.ChatFormatter { player : Player, message : String ->
                 var isMute = false
 
                 if(!message.startsWith("/")) {
-                    val data = findPlayerData(player.uuid())
+                    val data = findPlayerDataByName(player.name)
                     if(data != null) {
                         log(LogType.Chat, "${data.name}: $message")
 
@@ -321,12 +325,12 @@ object Event {
                                     for(a in file) {
                                         if(Config.chatBlacklistRegex) {
                                             if(message.contains(Regex(a))) {
-                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
+                                                player.sendMessage(Bundle(findPlayerDataByName(player.name)!!.languageTag)["event.chat.blacklisted"])
                                                 isMute = true
                                             }
                                         } else {
                                             if(message.contains(a)) {
-                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
+                                                player.sendMessage(Bundle(findPlayerDataByName(player.name)!!.languageTag)["event.chat.blacklisted"])
                                                 isMute = true
                                             }
                                         }
@@ -377,7 +381,7 @@ object Event {
                     }
                 }
                 for(p in Groups.player) {
-                    val target = findPlayerData(p.uuid())
+                    val target = findPlayerDataByName(p.name)
                     if(target != null) earnEXP(it.winner, p, target)
                 }
             }
@@ -396,7 +400,7 @@ object Event {
 
             if(it.unit.isPlayer) {
                 val player = it.unit.player
-                val target = findPlayerData(player.uuid())
+                val target = findPlayerDataByName(player.name)
 
                 if(!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
                     val block = it.tile.block()
@@ -467,7 +471,7 @@ object Event {
             val data = database[it.player.uuid()]
             if(Config.authType == Config.AuthType.None) {
                 if(data != null) {
-                    Trigger.loadPlayer(it.player, data)
+                    Trigger.loadPlayer(it.player, data, false)
                 } else if(Config.authType != Config.AuthType.None) {
                     it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
                 } else if(Config.authType == Config.AuthType.None) {
@@ -484,8 +488,12 @@ object Event {
 
         Events.on(PlayerLeave::class.java) {
             log(LogType.Player, Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address])
-            val data = database.players.find { data -> data.uuid == it.player.uuid() }
+            val data = database.players.find { data -> data.name == it.player.name }
             if(data != null) {
+                if(data.status.containsKey("uuid")) {
+                    data.uuid = data.status.get("uuid")
+                    data.status.remove("uuid")
+                }
                 database.queue(data)
             }
             database.players.remove(data)
@@ -694,7 +702,7 @@ object Event {
                 for(a in database.players) {
                     if(state.rules.pvp) {
                         if(a.player.unit() != null && a.player.team().cores().isEmpty && a.player.team() != Team.derelict && pvpPlayer.contains(a.uuid) && !Permission.check(a.player, "pvp.spector")) {
-                            val data = findPlayerData(a.uuid)
+                            val data = findPlayerDataByName(a.name)
                             if(data != null) {
                                 data.pvplosecount++
                             }
@@ -704,7 +712,7 @@ object Event {
                     }
 
                     if(a.status.containsKey("freeze")) {
-                        val d = findPlayerData(a.uuid)
+                        val d = findPlayerDataByName(a.name)
                         if(d != null) {
                             val player = d.player
                             val split = a.status.get("freeze").toString().split("/")
@@ -905,7 +913,7 @@ object Event {
                                 if(isPvP) {
                                     for(a in Groups.player) {
                                         if(a.team() == voteTeam) {
-                                            val data = findPlayerData(a.uuid())
+                                            val data = findPlayerDataByName(a.name)
                                             if(data != null) {
                                                 if(voteTargetUUID != data.uuid) {
                                                     val bundle = Bundle(data.languageTag)
@@ -1349,6 +1357,10 @@ object Event {
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {
         return database.players.find { e -> e.uuid == uuid }
+    }
+
+    fun findPlayerDataByName(name : String) : DB.PlayerData? {
+        return database.players.find { e -> e.name == name }
     }
 
     fun findPlayers(name : String) : Playerc? {

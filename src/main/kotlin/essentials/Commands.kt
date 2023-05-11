@@ -17,6 +17,7 @@ import com.mewna.catnip.Catnip
 import com.mewna.catnip.entity.message.Message
 import com.mewna.catnip.shard.DiscordEvent
 import essentials.Event.findPlayerData
+import essentials.Event.findPlayerDataByName
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
 import essentials.Event.worldHistory
@@ -149,7 +150,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         init {
             val d = findPlayerData(player.uuid())
-            if(d != null) data = d else DB.PlayerData()
+            if(d != null) {
+                data = d
+            } else if (findPlayerDataByName(player.name()) != null) {
+                data = findPlayerDataByName(player.name())!!
+            } else {
+                DB.PlayerData()
+            }
             bundle = Bundle(data.languageTag)
         }
 
@@ -943,7 +950,16 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 if(result.id == result.pw) {
                     Bundle(player.locale())["command.login.default.password"]
                 } else {
-                    Trigger.loadPlayer(player, result)
+                    if (findPlayersByName(result.name) == null) {
+                        database.players.remove { a -> a.uuid == player.uuid() }
+                        if(!result.status.containsKey("uuid")) {
+                            result.status.put("uuid", result.uuid)
+                        }
+                        result.uuid = player.uuid()
+                        Trigger.loadPlayer(player, result, true)
+                    } else {
+                        Bundle(player.locale())["command.login.already"]
+                    }
                 }
             } else {
                 err("command.login.not.found")

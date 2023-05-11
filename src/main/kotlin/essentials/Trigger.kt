@@ -36,7 +36,7 @@ object Trigger {
     var order = 0
     val clients = Seq<Socket>()
 
-    fun loadPlayer(player : Playerc, data : DB.PlayerData) {
+    fun loadPlayer(player : Playerc, data : DB.PlayerData, login: Boolean) {
         if(data.status.containsKey("duplicateName") && data.status.get("duplicateName") == player.name()) {
             player.kick(Bundle(player.locale())["event.player.duplicate.name"])
         } else {
@@ -53,21 +53,23 @@ object Trigger {
             val perm = Permission[player]
             if(perm.name.isNotEmpty()) player.name(Permission[player].name)
             player.admin(Permission[player].admin)
-            player.sendMessage(Bundle(data.languageTag)["event.player.loaded"])
+            player.sendMessage(Bundle(data.languageTag)[if (login) "event.player.logged" else "event.player.loaded"])
 
             database.players.add(data)
 
             data.entityid = order
             order++
 
-            val motd = if(root.child("motd/${data.languageTag}.txt").exists()) {
-                root.child("motd/${data.languageTag}.txt").readString()
-            } else {
-                val file = root.child("motd/en.txt")
-                if(file.exists()) file.readString() else ""
+            if (!login) {
+                val motd = if(root.child("motd/${data.languageTag}.txt").exists()) {
+                    root.child("motd/${data.languageTag}.txt").readString()
+                } else {
+                    val file = root.child("motd/en.txt")
+                    if(file.exists()) file.readString() else ""
+                }
+                val count = motd.split("\r\n|\r|\n").toTypedArray().size
+                if(count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
             }
-            val count = motd.split("\r\n|\r|\n").toTypedArray().size
-            if(count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
 
             if(perm.isAlert) {
                 if(perm.alertMessage.isEmpty()) {
@@ -118,7 +120,7 @@ object Trigger {
         Permission.apply()
 
         player.sendMessage(Bundle(player.locale())["event.player.data.registered"])
-        loadPlayer(player, data)
+        loadPlayer(player, data, false)
     }
 
     class Thread: Runnable {

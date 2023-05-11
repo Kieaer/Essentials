@@ -217,7 +217,7 @@ class DB {
         }
     }
 
-    operator fun get(uuid : String) : PlayerData? { // todo 메인 서버가 사망할 경우 하위 서버도 사망하는 문제
+    operator fun get(uuid : String) : PlayerData? {
         val d = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
         if(d != null) {
             val data = PlayerData()
