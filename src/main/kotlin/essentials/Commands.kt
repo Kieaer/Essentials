@@ -152,8 +152,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val d = findPlayerData(player.uuid())
             if(d != null) {
                 data = d
-            } else if (findPlayerDataByName(player.name()) != null) {
-                data = findPlayerDataByName(player.name())!!
+            } else if (findPlayerDataByName(player.plainName()) != null) {
+                data = findPlayerDataByName(player.plainName())!!
             } else {
                 DB.PlayerData()
             }

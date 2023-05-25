@@ -136,7 +136,7 @@ object Event {
         Events.on(TapEvent::class.java) {
             log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), it.tile.block().name])
             addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-            val data = findPlayerDataByName(it.player.name)
+            val data = findPlayerDataByName(it.player.plainName())
             if(data != null) {
                 for(a in PluginData.warpBlocks) {
                     if(it.tile.block().name == a.tileName && it.tile.build.tileX() == a.x && it.tile.build.tileY() == a.y) {
