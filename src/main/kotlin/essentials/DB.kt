@@ -16,6 +16,7 @@ import org.mindrot.jbcrypt.BCrypt
 import java.io.BufferedInputStream
 import java.io.FileOutputStream
 import java.net.URL
+import java.sql.SQLException
 import java.util.*
 
 class DB {
@@ -23,6 +24,7 @@ class DB {
     var isRemote : Boolean = false
     lateinit var db : Database
     var dbServer : Server? = null
+    var dbVersion : Int = 2
 
     fun open() {
         try {
@@ -77,15 +79,59 @@ class DB {
                 if(!connection.isClosed) {
                     SchemaUtils.create(Player)
                     SchemaUtils.create(Data)
+                    SchemaUtils.create(DB)
 
                     if(!isRemote) {
+                        if(DB.selectAll().empty()) {
+                            try {
+                                exec("SELECT hud FROM Players")
+                            } catch(e: SQLException) {
+                                val s = listOf(
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS placecount RENAME TO \"blockPlaceCount\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS breakcount RENAME TO \"blockBreakCount\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS joincount RENAME TO \"totalJoinCount\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS kickcount RENAME TO \"totalKickCount\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS lastdate RENAME TO \"lastLoginDate\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS \"joinDate\" RENAME TO \"firstPlayDate\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS playtime RENAME TO \"totalPlayTime\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS attackclear RENAME TO \"attackModeClear\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS pvpwincount RENAME TO \"pvpVictoriesCount\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS pvplosecount RENAME TO \"pvpDefeatCount\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS id RENAME TO \"accountID\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS pw RENAME TO \"accountPW\"",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS discord CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"effectLevel\" INTEGER",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"effectColor\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"hideRanking\" BOOLEAN",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS freeze BOOLEAN",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS hud CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tpp CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"tppTeam\" INTEGER",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS log BOOLEAN",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"oldUUID\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"banTime\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"duplicateName\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tracking BOOLEAN",
+                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false",
+                                )
+                                Log.info(Bundle()["event.plugin.db.version", 2])
+                                Log.warn(Bundle()["event.plugin.db.warning"])
+                                execInBatch(s)
+                            }
+                            exec("INSERT INTO DB VALUES 2")
+                        } else {
+                            when(DB.selectAll().first()[DB.version]) {
+                                2 -> {
+                                    // TODO DB 업데이트 명령줄
+                                }
+                            }
+                        }
+
                         try {
                             getAll()
                         } catch(e : ParseException) {
-                            transaction {
-                                Player.update {
-                                    it[status] = "{}"
-                                }
+                            Player.update {
+                                it[status] = "{}"
                             }
                         }
 
@@ -103,13 +149,12 @@ class DB {
                                 val data = get(rs.getString("uuid"))
                                 if(data != null) {
                                     try {
-                                        val json = JsonObject.readHjson(rs.getString("status")).asObject()
-                                        if(json.get("duplicateName") != null) {
-                                            json.add("duplicateName", data.name)
+                                        if(rs.getString("duplicateName") == "null") {
+                                            data.duplicateName = data.name
                                         }
                                     } catch(e : ParseException) {
-                                        if(!data.status.containsKey("duplicateName")) {
-                                            data.status.put("duplicateName", data.name)
+                                        if(data.duplicateName == null) {
+                                            data.duplicateName = data.name
                                         }
                                     }
                                     update(data.uuid, data)
@@ -134,58 +179,126 @@ class DB {
         val data = text("data")
     }
 
+    object DB: Table() {
+        val version = integer("version")
+    }
+
     object Player: Table() {
         val name = text("name").index()
         val uuid = text("uuid")
         val languageTag = text("languageTag")
-        val placecount = integer("placecount")
-        val breakcount = integer("breakcount")
-        val joincount = integer("joincount")
-        val kickcount = integer("kickcount")
+        val blockPlaceCount = integer("blockPlaceCount")
+        val blockBreakCount = integer("blockBreakCount")
+        val totalJoinCount = integer("totalJoinCount")
+        val totalKickCount = integer("totalKickCount")
         val level = integer("level")
         val exp = integer("exp")
-        val joindate = long("joinDate")
-        val lastdate = long("lastdate")
-        val playtime = long("playtime")
-        val attackclear = integer("attackclear")
-        val pvpwincount = integer("pvpwincount")
-        val pvplosecount = integer("pvplosecount")
+        val firstPlayDate = long("firstPlayDate")
+        val lastLoginDate = long("lastLoginDate")
+        val totalPlayTime = long("totalPlayTime")
+        val attackModeClear = integer("attackModeClear")
+        val pvpVictoriesCount = integer("pvpVictoriesCount")
+        val pvpDefeatCount = integer("pvpDefeatCount")
         val colornick = bool("colornick")
         val permission = text("permission")
         val mute = bool("mute")
-        val accountid = text("id")
-        val accountpw = text("pw")
+        val accountID = text("accountID")
+        val accountPW = text("accountPW")
         val status = text("status")
+        val discord = text("discord").nullable()
+        val effectLevel = integer("effectLevel").nullable()
+        val effectColor = text("effectColor").nullable()
+        val hideRanking = bool("hideRanking")
+        val freeze = bool("freeze")
+        val hud = text("hud").nullable()
+        val tpp = text("tpp").nullable()
+        val tppTeam = integer("tppTeam").nullable()
+        val log = bool("log")
+        val oldUUID = text("oldUUID").nullable()
+        val banTime = text("banTime").nullable()
+        val duplicateName = text("duplicateName").nullable()
+        val tracking = bool("tracking")
     }
 
     class PlayerData {
         var name : String = "none"
         var uuid : String = "none"
         var languageTag : String = Locale.getDefault().toLanguageTag()
-        var placecount : Int = 0
-        var breakcount : Int = 0
-        var joincount : Int = 0
-        var kickcount : Int = 0
+        var blockPlaceCount : Int = 0
+        var blockBreakCount : Int = 0
+        var totalJoinCount : Int = 0
+        var totalKickCount : Int = 0
         var level : Int = 0
         var exp : Int = 0
-        var joindate : Long = 0
-        var lastdate : Long = 0
-        var playtime : Long = 0
-        var attackclear : Int = 0
-        var pvpwincount : Int = 0
-        var pvplosecount : Int = 0
+        var firstPlayDate : Long = 0
+        var lastLoginDate : Long = 0
+        var totalPlayTime : Long = 0
+        var attackModeClear : Int = 0
+        var pvpVictoriesCount : Int = 0
+        var pvpDefeatCount : Int = 0
         var colornick : Boolean = false
         var permission : String = "visitor"
         var mute : Boolean = false
-        var id : String = name
-        var pw : String = "none"
+        var accountID : String = "none"
+        var accountPW : String = "none"
         var status : ObjectMap<String, String> = ObjectMap()
+        var discord : String? = null
+        var effectLevel : Int? = null
+        var effectColor : String? = null
+        var hideRanking : Boolean = false
+        var freeze : Boolean = false
+        var hud : String? = null
+        var tpp : String? = null
+        var tppTeam : Int? = null
+        var log : Boolean = false
+        var oldUUID : String? = null
+        var banTime : String? = null
+        var duplicateName : String? = null
+        var tracking : Boolean = false
+
         var afkTime : Int = 0
         var player : Playerc = mindustry.gen.Player.create()
         var entityid : Int = 0
 
         override fun toString() : String {
-            return "name: $name, uuid: $uuid, languageTag: $languageTag, placecount: $placecount, breakcount: $breakcount, joincount: $joincount, kickcount: $kickcount, level: $level, exp: $exp, joinDate: $joindate, lastdate: $lastdate, playtime: $playtime, attackclear: $attackclear, pvpwincount: $pvpwincount, pvplosecount: $pvplosecount, colornick: $colornick, permission: $permission, mute: $mute, id: $id, pw: $pw, status: $status, afkTime: $afkTime, entityid: $entityid"
+            return """
+                name: $name
+                uuid: $uuid
+                languageTag: $languageTag
+                blockPlaceCount: $blockPlaceCount
+                blockBreakCount: $blockBreakCount
+                totalJoinCount: $totalJoinCount
+                totalKickCount: $totalKickCount
+                level: $level
+                exp: $exp
+                firstPlayDate: $firstPlayDate
+                lastLoginDate: $lastLoginDate
+                totalPlayTime: $totalPlayTime
+                attackModeClear: $attackModeClear
+                pvpVictoriesCount: $pvpVictoriesCount
+                pvpDefeatCount: $pvpDefeatCount
+                colornick: $colornick
+                permission: $permission
+                mute: $mute
+                accountID: $accountID
+                accountPW: $accountPW
+                status: $status
+                discord: $discord
+                effectLevel: $effectLevel
+                effectColor: $effectColor
+                hideRanking: $hideRanking
+                freeze: $freeze
+                hud: $hud
+                tpp: $tpp
+                tppTeam: $tppTeam
+                log: $log
+                oldUUID: $oldUUID
+                banTime: $banTime
+                duplicateName: $duplicateName
+                tracking: $tracking
+                afkTime: $afkTime
+                entityid: $entityid
+            """.trimIndent()
         }
     }
 
@@ -195,24 +308,37 @@ class DB {
                 it[name] = data.name
                 it[uuid] = data.uuid
                 it[languageTag] = data.languageTag
-                it[placecount] = data.placecount
-                it[breakcount] = data.breakcount
-                it[joincount] = data.joincount
-                it[kickcount] = data.kickcount
+                it[blockPlaceCount] = data.blockPlaceCount
+                it[blockBreakCount] = data.blockBreakCount
+                it[totalJoinCount] = data.totalJoinCount
+                it[totalKickCount] = data.totalKickCount
                 it[level] = data.level
                 it[exp] = data.exp
-                it[joindate] = data.joindate
-                it[lastdate] = data.lastdate
-                it[playtime] = data.playtime
-                it[attackclear] = data.attackclear
-                it[pvpwincount] = data.pvpwincount
-                it[pvplosecount] = data.pvplosecount
+                it[firstPlayDate] = data.firstPlayDate
+                it[lastLoginDate] = data.lastLoginDate
+                it[totalPlayTime] = data.totalPlayTime
+                it[attackModeClear] = data.attackModeClear
+                it[pvpVictoriesCount] = data.pvpVictoriesCount
+                it[pvpDefeatCount] = data.pvpDefeatCount
                 it[colornick] = data.colornick
                 it[permission] = data.permission
                 it[mute] = data.mute
-                it[accountid] = data.id
-                it[accountpw] = data.pw
+                it[accountID] = data.accountID
+                it[accountPW] = data.accountPW
                 it[status] = data.status.toString()
+                it[discord] = null
+                it[effectLevel] = -1
+                it[effectColor] = null
+                it[hideRanking] = data.hideRanking
+                it[freeze] = data.freeze
+                it[hud] = null
+                it[tpp] = null
+                it[tppTeam] = data.tppTeam
+                it[log] = data.log
+                it[oldUUID] = null
+                it[banTime] = null
+                it[duplicateName] = null
+                it[tracking] = data.tracking
             }
         }
     }
@@ -224,23 +350,36 @@ class DB {
             data.name = d[Player.name]
             data.uuid = d[Player.uuid]
             data.languageTag = d[Player.languageTag]
-            data.placecount = d[Player.placecount]
-            data.breakcount = d[Player.breakcount]
-            data.joincount = d[Player.joincount]
-            data.kickcount = d[Player.kickcount]
+            data.blockPlaceCount = d[Player.blockPlaceCount]
+            data.blockBreakCount = d[Player.blockBreakCount]
+            data.totalJoinCount = d[Player.totalJoinCount]
+            data.totalKickCount = d[Player.totalKickCount]
             data.level = d[Player.level]
             data.exp = d[Player.exp]
-            data.joindate = d[Player.joindate]
-            data.lastdate = d[Player.lastdate]
-            data.playtime = d[Player.playtime]
-            data.attackclear = d[Player.attackclear]
-            data.pvpwincount = d[Player.pvpwincount]
-            data.pvplosecount = d[Player.pvplosecount]
+            data.firstPlayDate = d[Player.firstPlayDate]
+            data.lastLoginDate = d[Player.lastLoginDate]
+            data.totalPlayTime = d[Player.totalPlayTime]
+            data.attackModeClear = d[Player.attackModeClear]
+            data.pvpVictoriesCount = d[Player.pvpVictoriesCount]
+            data.pvpDefeatCount = d[Player.pvpDefeatCount]
             data.colornick = d[Player.colornick]
             data.permission = d[Player.permission]
             data.mute = d[Player.mute]
-            data.id = d[Player.accountid]
-            data.pw = d[Player.accountpw]
+            data.accountID = d[Player.accountID]
+            data.accountPW = d[Player.accountPW]
+            data.discord = d[Player.discord]
+            data.effectLevel = d[Player.effectLevel]
+            data.effectColor = d[Player.effectColor]
+            data.hideRanking = d[Player.hideRanking]
+            data.freeze = d[Player.freeze]
+            data.hud = d[Player.hud]
+            data.tpp = d[Player.tpp]
+            data.tppTeam = d[Player.tppTeam]
+            data.log = d[Player.log]
+            data.oldUUID = d[Player.oldUUID]
+            data.banTime = d[Player.banTime]
+            data.duplicateName = d[Player.duplicateName]
+            data.tracking = d[Player.tracking]
 
             val obj = ObjectMap<String, String>()
             for(a in JsonObject.readHjson(d[Player.status]).asObject()) {
@@ -262,23 +401,36 @@ class DB {
                 data.name = it[Player.name]
                 data.uuid = it[Player.uuid]
                 data.languageTag = it[Player.languageTag]
-                data.placecount = it[Player.placecount]
-                data.breakcount = it[Player.breakcount]
-                data.joincount = it[Player.joincount]
-                data.kickcount = it[Player.kickcount]
+                data.blockPlaceCount = it[Player.blockPlaceCount]
+                data.blockBreakCount = it[Player.blockBreakCount]
+                data.totalJoinCount = it[Player.totalJoinCount]
+                data.totalKickCount = it[Player.totalKickCount]
                 data.level = it[Player.level]
                 data.exp = it[Player.exp]
-                data.joindate = it[Player.joindate]
-                data.lastdate = it[Player.lastdate]
-                data.playtime = it[Player.playtime]
-                data.attackclear = it[Player.attackclear]
-                data.pvpwincount = it[Player.pvpwincount]
-                data.pvplosecount = it[Player.pvplosecount]
+                data.firstPlayDate = it[Player.firstPlayDate]
+                data.lastLoginDate = it[Player.lastLoginDate]
+                data.totalPlayTime = it[Player.totalPlayTime]
+                data.attackModeClear = it[Player.attackModeClear]
+                data.pvpVictoriesCount = it[Player.pvpVictoriesCount]
+                data.pvpDefeatCount = it[Player.pvpDefeatCount]
                 data.colornick = it[Player.colornick]
                 data.permission = it[Player.permission]
                 data.mute = it[Player.mute]
-                data.id = it[Player.accountid]
-                data.pw = it[Player.accountpw]
+                data.accountID = it[Player.accountID]
+                data.accountPW = it[Player.accountPW]
+                data.discord = it[Player.discord]
+                data.effectLevel = it[Player.effectLevel]
+                data.effectColor = it[Player.effectColor]
+                data.hideRanking = it[Player.hideRanking]
+                data.freeze = it[Player.freeze]
+                data.hud = it[Player.hud]
+                data.tpp = it[Player.tpp]
+                data.tppTeam = it[Player.tppTeam]
+                data.log = it[Player.log]
+                data.oldUUID = it[Player.oldUUID]
+                data.banTime = it[Player.banTime]
+                data.duplicateName = it[Player.duplicateName]
+                data.tracking = it[Player.tracking]
 
                 val obj = ObjectMap<String, String>()
                 for(a in JsonObject.readHjson(it[Player.status]).asObject()) {
@@ -298,31 +450,13 @@ class DB {
             Player.selectAll().orderBy(Player.exp, SortOrder.DESC).map {
                 val data = PlayerData()
                 data.name = it[Player.name]
-                data.uuid = it[Player.uuid]
-                data.languageTag = it[Player.languageTag]
-                data.placecount = it[Player.placecount]
-                data.breakcount = it[Player.breakcount]
-                data.joincount = it[Player.joincount]
-                data.kickcount = it[Player.kickcount]
                 data.level = it[Player.level]
                 data.exp = it[Player.exp]
-                data.joindate = it[Player.joindate]
-                data.lastdate = it[Player.lastdate]
-                data.playtime = it[Player.playtime]
-                data.attackclear = it[Player.attackclear]
-                data.pvpwincount = it[Player.pvpwincount]
-                data.pvplosecount = it[Player.pvplosecount]
-                data.colornick = it[Player.colornick]
-                data.permission = it[Player.permission]
-                data.mute = it[Player.mute]
-                data.id = it[Player.accountid]
-                data.pw = it[Player.accountpw]
+                data.totalPlayTime = it[Player.totalPlayTime]
+                data.attackModeClear = it[Player.attackModeClear]
+                data.pvpVictoriesCount = it[Player.pvpVictoriesCount]
+                data.pvpDefeatCount = it[Player.pvpDefeatCount]
 
-                val obj = ObjectMap<String, String>()
-                for(a in JsonObject.readHjson(it[Player.status]).asObject()) {
-                    obj.put(a.name, a.value.asString())
-                }
-                data.status = obj
                 d.add(data)
             }
         }
@@ -340,23 +474,36 @@ class DB {
                 it[name] = data.name
                 it[uuid] = data.uuid
                 it[languageTag] = data.languageTag
-                it[placecount] = data.placecount
-                it[breakcount] = data.breakcount
-                it[joincount] = data.joincount
-                it[kickcount] = data.kickcount
+                it[blockPlaceCount] = data.blockPlaceCount
+                it[blockBreakCount] = data.blockBreakCount
+                it[totalJoinCount] = data.totalJoinCount
+                it[totalKickCount] = data.totalKickCount
                 it[level] = data.level
                 it[exp] = data.exp
-                it[joindate] = data.joindate
-                it[lastdate] = data.lastdate
-                it[playtime] = data.playtime
-                it[attackclear] = data.attackclear
-                it[pvpwincount] = data.pvpwincount
-                it[pvplosecount] = data.pvplosecount
+                it[firstPlayDate] = data.firstPlayDate
+                it[lastLoginDate] = data.lastLoginDate
+                it[totalPlayTime] = data.totalPlayTime
+                it[attackModeClear] = data.attackModeClear
+                it[pvpVictoriesCount] = data.pvpVictoriesCount
+                it[pvpDefeatCount] = data.pvpDefeatCount
                 it[colornick] = data.colornick
                 it[permission] = data.permission
                 it[mute] = data.mute
-                it[accountid] = data.id
-                it[accountpw] = data.pw
+                it[accountID] = data.accountID
+                it[accountPW] = data.accountPW
+                it[discord] = data.discord!!
+                it[effectLevel] = data.effectLevel!!
+                it[effectColor] = data.effectColor!!
+                it[hideRanking] = data.hideRanking
+                it[freeze] = data.freeze
+                it[hud] = data.hud!!
+                it[tpp] = data.tpp!!
+                it[tppTeam] = data.tppTeam
+                it[log] = data.log
+                it[oldUUID] = data.oldUUID!!
+                it[banTime] = data.banTime!!
+                it[duplicateName] = data.duplicateName!!
+                it[tracking] = data.tracking
 
                 val json = JsonObject()
                 for(a in data.status) json.add(a.key, a.value)
@@ -366,29 +513,42 @@ class DB {
     }
 
     fun search(id : String, pw : String) : PlayerData? {
-        transaction { Player.select { Player.accountid eq id }.firstOrNull() }.run {
+        transaction { Player.select { Player.accountID eq id }.firstOrNull() }.run {
             if(this != null) {
                 val data = PlayerData()
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
                 data.languageTag = this[Player.languageTag]
-                data.placecount = this[Player.placecount]
-                data.breakcount = this[Player.breakcount]
-                data.joincount = this[Player.joincount]
-                data.kickcount = this[Player.kickcount]
+                data.blockPlaceCount = this[Player.blockPlaceCount]
+                data.blockBreakCount = this[Player.blockBreakCount]
+                data.totalJoinCount = this[Player.totalJoinCount]
+                data.totalKickCount = this[Player.totalKickCount]
                 data.level = this[Player.level]
                 data.exp = this[Player.exp]
-                data.joindate = this[Player.joindate]
-                data.lastdate = this[Player.lastdate]
-                data.playtime = this[Player.playtime]
-                data.attackclear = this[Player.attackclear]
-                data.pvpwincount = this[Player.pvpwincount]
-                data.pvplosecount = this[Player.pvplosecount]
+                data.firstPlayDate = this[Player.firstPlayDate]
+                data.lastLoginDate = this[Player.lastLoginDate]
+                data.totalPlayTime = this[Player.totalPlayTime]
+                data.attackModeClear = this[Player.attackModeClear]
+                data.pvpVictoriesCount = this[Player.pvpVictoriesCount]
+                data.pvpDefeatCount = this[Player.pvpDefeatCount]
                 data.colornick = this[Player.colornick]
                 data.permission = this[Player.permission]
                 data.mute = this[Player.mute]
-                data.id = this[Player.accountid]
-                data.pw = this[Player.accountpw]
+                data.accountID = this[Player.accountID]
+                data.accountPW = this[Player.accountPW]
+                data.discord = this[Player.discord]
+                data.effectLevel = this[Player.effectLevel]
+                data.effectColor = this[Player.effectColor]
+                data.hideRanking = this[Player.hideRanking]
+                data.freeze = this[Player.freeze]
+                data.hud = this[Player.hud]
+                data.tpp = this[Player.tpp]
+                data.tppTeam = this[Player.tppTeam]
+                data.log = this[Player.log]
+                data.oldUUID = this[Player.oldUUID]
+                data.banTime = this[Player.banTime]
+                data.duplicateName = this[Player.duplicateName]
+                data.tracking = this[Player.tracking]
 
                 val obj = ObjectMap<String, String>()
                 for(a in JsonObject.readHjson(this[Player.status]).asObject()) {
@@ -396,7 +556,7 @@ class DB {
                 }
                 data.status = obj
 
-                return if(data.id == data.pw) data else if(BCrypt.checkpw(pw, data.pw)) data else null
+                return if(data.accountID == data.accountPW) data else if(BCrypt.checkpw(pw, data.accountPW)) data else null
             } else {
                 return null
             }
@@ -405,5 +565,9 @@ class DB {
 
     fun close() {
         TransactionManager.closeAndUnregister(db)
+    }
+
+    fun upgrade() {
+
     }
 }

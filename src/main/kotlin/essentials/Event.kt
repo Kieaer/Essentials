@@ -157,7 +157,7 @@ object Event {
                     }
                 }
 
-                if(data.status.containsKey("log")) {
+                if(data.log) {
                     val buf = Seq<TileLog>()
                     for(a in worldHistory) {
                         if(a.x == it.tile.x && a.y == it.tile.y) {
@@ -201,7 +201,7 @@ object Event {
                 }
 
                 for(a in database.players) {
-                    if(a.status.containsKey("tracking")) {
+                    if(a.tracking) {
                         Call.effect(a.player.con(), Fx.bigShockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
                     }
                 }
@@ -370,13 +370,13 @@ object Event {
                 if(state.rules.pvp) {
                     for(a in database.players) {
                         if(a.player.team() == it.winner) {
-                            a.pvpwincount++
+                            a.pvpVictoriesCount++
                         }
                     }
                 } else if(state.rules.attackMode) {
                     for(a in database.players) {
                         if(a.player.team() == it.winner) {
-                            a.attackclear++
+                            a.attackModeClear++
                         }
                     }
                 }
@@ -409,7 +409,7 @@ object Event {
                         addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
 
                         if(!state.rules.infiniteResources) {
-                            target.placecount++
+                            target.blockPlaceCount++
                             target.exp = target.exp + blockExp.get(block.name)
                         }
 
@@ -421,7 +421,7 @@ object Event {
                         addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
 
                         if(!state.rules.infiniteResources) {
-                            target.breakcount++
+                            target.blockBreakCount++
                             target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
                         }
                     }
@@ -489,11 +489,9 @@ object Event {
         Events.on(PlayerLeave::class.java) {
             log(LogType.Player, Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address])
             val data = database.players.find { data -> data.name == it.player.name }
-            if(data != null) {
-                if(data.status.containsKey("uuid")) {
-                    data.uuid = data.status.get("uuid")
-                    data.status.remove("uuid")
-                }
+            if(data?.oldUUID != null) {
+                data.uuid = data.oldUUID!!
+                data.oldUUID = null
                 database.queue(data)
             }
             database.players.remove(data)
@@ -704,7 +702,7 @@ object Event {
                         if(a.player.unit() != null && a.player.team().cores().isEmpty && a.player.team() != Team.derelict && pvpPlayer.contains(a.uuid) && !Permission.check(a.player, "pvp.spector")) {
                             val data = findPlayerDataByName(a.name)
                             if(data != null) {
-                                data.pvplosecount++
+                                data.pvpDefeatCount++
                             }
                             a.player.team(Team.derelict)
                             pvpSpectors.add(a.uuid)
@@ -724,19 +722,18 @@ object Event {
                         }
                     }
 
-                    if(a.status.containsKey("tracking")) {
+                    if(a.tracking) {
                         for(b in Groups.player) {
                             Call.label(a.player.con(), b.name, Time.delta / 2, b.mouseX, b.mouseY)
                         }
                     }
 
-                    if(a.status.containsKey("tpp")) {
-                        val data = a.status.get("tpp")
-                        val target = Groups.player.find { p -> p.uuid() == data }
+                    if(a.tpp != null) {
+                        val target = Groups.player.find { p -> p.uuid() == a.tpp }
                         if(target != null) {
                             Call.setCameraPosition(a.player.con(), target.x, target.y)
                         } else {
-                            a.status.remove("tpp")
+                            a.tpp = null
                             Call.setCameraPosition(a.player.con(), a.player.x, a.player.y)
                         }
                     }
@@ -754,8 +751,8 @@ object Event {
                     if(milsCount == 5) {
                         for(a in database.players) {
                             if(a.player.unit() != null && a.player.unit().health > 0f) {
-                                val color = if(a.status.containsKey("effectColor")) {
-                                    if(Colors.get(a.status.get("effectColor")) != null) Colors.get(a.status.get("effectColor")) else Color.valueOf(a.status.get("effectColor"))
+                                val color = if(a.effectColor != null) {
+                                    if(Colors.get(a.effectColor) != null) Colors.get(a.effectColor) else Color.valueOf(a.effectColor)
                                 } else {
                                     when(a.level) {
                                         in 10..19 -> Color.sky
@@ -776,7 +773,7 @@ object Event {
                                 val y = a.player.y
                                 val rot = a.player.unit().rotation
 
-                                when(if(a.status.containsKey("effectLevel")) a.status.get("effectLevel").toInt() else a.level) {
+                                when(if(a.effectLevel != null) a.effectLevel else a.level) {
                                     in 10..19 -> Call.effect(Fx.freezing, x, y, rot, color)
                                     in 20..29 -> Call.effect(Fx.overdriven, x, y, rot, color)
                                     in 30..39 -> {
@@ -830,7 +827,7 @@ object Event {
                     dpsBlocks = 0f
 
                     for(a in database.players) {
-                        a.playtime = a.playtime + 1
+                        a.totalPlayTime = a.totalPlayTime + 1
 
                         if(a.colornick) {
                             val name = a.name.replace("\\[(.*?)]".toRegex(), "")
@@ -870,8 +867,8 @@ object Event {
                             Call.infoPopup(a.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                         }
 
-                        if(a.status.containsKey("hud")) {
-                            val array = JsonArray.readJSON(a.status.get("hud")).asArray()
+                        if(a.hud != null) {
+                            val array = JsonArray.readJSON(a.hud).asArray()
 
                             fun color(current : Float, max : Float) : String {
                                 val result = current / max * 100.0
@@ -1132,9 +1129,9 @@ object Event {
                         val data = database.getAll()
 
                         for(a in data) {
-                            if(a.status.containsKey("ban") && LocalDateTime.now().isAfter(LocalDateTime.parse(a.status.get("ban")))) {
+                            if(a.banTime != null && LocalDateTime.now().isAfter(LocalDateTime.parse(a.banTime))) {
                                 Core.app.post { netServer.admins.unbanPlayerID(a.uuid) }
-                                a.status.remove("ban")
+                                a.banTime = null
                                 database.update(a.uuid, a)
                                 Events.fire(PlayerTempUnbanned(a.name))
                             }
@@ -1202,14 +1199,14 @@ object Event {
                     val logFiles = root.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
 
                     if(logFiles != null) {
-                        if (logFiles.size >= maxLogFile) {
-                            fun compressFile(inputFile: File, outputFile: File) {
+                        if(logFiles.size >= maxLogFile) {
+                            fun compressFile(inputFile : File, outputFile : File) {
                                 val fis = FileInputStream(inputFile)
                                 val fos = FileOutputStream(outputFile)
                                 val gzis = GZIPOutputStream(fos)
                                 val buffer = ByteArray(1024)
-                                var len: Int
-                                while (fis.read(buffer).also { len = it } > 0) {
+                                var len : Int
+                                while(fis.read(buffer).also { len = it } > 0) {
                                     gzis.write(buffer, 0, len)
                                 }
                                 fis.close()
@@ -1219,7 +1216,7 @@ object Event {
 
                             val sortedLogFiles = logFiles.sortedBy { file -> file.lastModified() }
 
-                            for (i in 0 until logFiles.size - maxLogFile) {
+                            for(i in 0 until logFiles.size - maxLogFile) {
                                 val fileToCompress = sortedLogFiles[i]
                                 val compressedFile = File("${fileToCompress.path}.gz")
                                 compressFile(fileToCompress, compressedFile)

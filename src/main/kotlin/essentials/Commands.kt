@@ -152,7 +152,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val d = findPlayerData(player.uuid())
             if(d != null) {
                 data = d
-            } else if (findPlayerDataByName(player.plainName()) != null) {
+            } else if(findPlayerDataByName(player.plainName()) != null) {
                 data = findPlayerDataByName(player.plainName())!!
             } else {
                 DB.PlayerData()
@@ -244,7 +244,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
-            data.pw = password
+            data.accountPW = password
             database.queue(data)
             send("command.changepw.apply")
         }
@@ -434,7 +434,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "discord")) return
             Call.openURI(player.con(), Config.discordURL)
             if(Config.authType == Config.AuthType.Discord) {
-                if(!data.status.containsKey("discord")) {
+                if(data.discord == null) {
                     val number = if(Discord.pin.containsKey(player.uuid())) {
                         Discord.pin.get(player.uuid())
                     } else {
@@ -464,14 +464,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "effect")) return
             if(arg[0].toIntOrNull() != null) {
                 if(arg[0].toInt() <= data.level) {
-                    data.status.put("effectLevel", arg[0])
+                    data.effectLevel = arg[0].toInt()
                     if(arg.size == 2) {
                         try {
                             if(Colors.get(arg[1]) == null) {
                                 Color.valueOf(arg[1])
                             }
 
-                            data.status.put("effectColor", arg[1])
+                            data.effectColor = arg[1]
                             database.queue(data)
                         } catch(_ : IllegalArgumentException) {
                             err("command.effect.no.color")
@@ -545,13 +545,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                     }
 
-                    if(b.status.containsKey("hideRanking")) {
-                        b.status.remove("hideRanking")
-                        send("command.exp.ranking.unhide")
-                    } else {
-                        b.status.put("hideRanking", "")
-                        send("command.exp.ranking.hide")
-                    }
+                    b.hideRanking = !b.hideRanking
+                    val msg = if(b.hideRanking) "unhide" else "hide"
+                    send("command.exp.ranking.$msg")
                 }
 
                 "add" -> {
@@ -594,13 +590,15 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 if(target != null) {
                     val data = findPlayerData(target.uuid())
                     if(data != null) {
-                        if(data.status.containsKey("freeze")) {
-                            data.status.remove("freeze")
-                            send("command.freeze.undo", target.plainName())
-                        } else {
+                        data.freeze = !data.freeze
+                        val msg = if(data.freeze) {
                             data.status.put("freeze", "${target.x}/${target.y}")
-                            send("command.freeze.done", target.plainName())
+                            "done"
+                        } else {
+                            data.status.remove("freeze")
+                            "undo"
                         }
+                        send("command.freeze.$msg", target.plainName())
                     } else {
                         err("player.not.registered")
                     }
@@ -759,7 +757,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun hud() {
             if(!Permission.check(player, "hud")) return
-            val status = if(data.status.containsKey("hud")) JsonObject.readJSON(data.status.get("hud")).asArray() else JsonArray()
+            val status = if(data.hud != null) JsonObject.readJSON(data.hud).asArray() else JsonArray()
             when(arg[0]) {
                 "health" -> {
                     if(status.contains("health")) {
@@ -780,7 +778,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     err("command.hud.not.found")
                 }
             }
-            data.status.put("hud", status.toString())
+
+            data.hud = if(status.size() != 0) status.toString() else null
         }
 
         fun info() {
@@ -789,15 +788,15 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             fun show(target : DB.PlayerData) : String {
                 return """
                         ${bundle["info.name"]}: ${target.name}[white]
-                        ${bundle["info.placecount"]}: ${target.placecount}
-                        ${bundle["info.breakcount"]}: ${target.breakcount}
+                        ${bundle["info.placecount"]}: ${target.blockPlaceCount}
+                        ${bundle["info.breakcount"]}: ${target.blockBreakCount}
                         ${bundle["info.level"]}: ${target.level}
                         ${bundle["info.exp"]}: ${Exp[target]}
-                        ${bundle["info.joindate"]}: ${Timestamp(target.joindate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                        ${bundle["info.playtime"]}: ${bundle["command.info.time", (target.playtime / 60 / 60 / 24) % 365, (target.playtime / 60 / 24) % 24, (target.playtime / 60) % 60, (target.playtime) % 60]}
-                        ${bundle["info.attackclear"]}: ${target.attackclear}
-                        ${bundle["info.pvpwincount"]}: ${target.pvpwincount}
-                        ${bundle["info.pvplosecount"]}: ${target.pvplosecount}
+                        ${bundle["info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
+                        ${bundle["info.playtime"]}: ${bundle["command.info.time", (target.totalPlayTime / 60 / 60 / 24) % 365, (target.totalPlayTime / 60 / 24) % 24, (target.totalPlayTime / 60) % 60, (target.totalPlayTime) % 60]}
+                        ${bundle["info.attackclear"]}: ${target.attackModeClear}
+                        ${bundle["info.pvpwincount"]}: ${target.pvpVictoriesCount}
+                        ${bundle["info.pvplosecount"]}: ${target.pvpDefeatCount}
                         """.trimIndent()
             }
 
@@ -929,13 +928,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun log() {
             if(!Permission.check(player, "log")) return
-            if(data.status.containsKey("log")) {
-                data.status.remove("log")
-                send("command.log.disabled")
+            data.log = !data.log
+            val msg = if(data.log) {
+                "enabled"
             } else {
-                data.status.put("log", "true")
-                send("command.log.enabled")
+                "disabled"
             }
+            send("command.log.$msg")
         }
 
         fun login() {
@@ -947,13 +946,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             val result = database.search(arg[0], arg[1])
             if(result != null) {
-                if(result.id == result.pw) {
+                if(result.accountID == result.accountPW) {
                     Bundle(player.locale())["command.login.default.password"]
                 } else {
-                    if (findPlayersByName(result.name) == null) {
+                    if(findPlayersByName(result.name) == null) {
                         database.players.remove { a -> a.uuid == player.uuid() }
-                        if(!result.status.containsKey("uuid")) {
-                            result.status.put("uuid", result.uuid)
+                        if(result.oldUUID != null) {
+                            result.oldUUID = result.oldUUID
                         }
                         result.uuid = player.uuid()
                         Trigger.loadPlayer(player, result, true)
@@ -1273,17 +1272,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
 
                     for(a in all) {
-                        if(!a.status.containsKey("hideRanking") && !netServer.admins.banned.contains { b -> b.id == a.uuid }) {
+                        if(a.hideRanking && !netServer.admins.banned.contains { b -> b.id == a.uuid }) {
                             val info = ArrayMap<String, String>()
                             val pvpcount = ArrayMap<Int, Int>()
                             info.put(a.name, a.uuid)
-                            pvpcount.put(a.pvpwincount, a.pvplosecount)
+                            pvpcount.put(a.pvpVictoriesCount, a.pvpDefeatCount)
 
-                            time[info] = a.playtime
+                            time[info] = a.totalPlayTime
                             exp[info] = a.exp
-                            attack[info] = a.attackclear
-                            placeBlock[info] = a.placecount
-                            breakBlock[info] = a.breakcount
+                            attack[info] = a.attackModeClear
+                            placeBlock[info] = a.blockPlaceCount
+                            breakBlock[info] = a.blockBreakCount
                             pvp[info] = pvpcount
                         }
                     }
@@ -1354,7 +1353,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else if(arg[1] != arg[2]) {
                     err("command.reg.incorrect")
                 } else {
-                    if(transaction { DB.Player.select { DB.Player.accountid.eq(arg[0]) }.firstOrNull() } == null) {
+                    if(transaction { DB.Player.select { DB.Player.accountID.eq(arg[0]) }.firstOrNull() } == null) {
                         Trigger.createPlayer(player, arg[0], arg[1])
                         Log.info(Bundle()["log.data_created", player.plainName()])
                     } else {
@@ -1440,18 +1439,18 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["info.name"]}: ${a.name}
                         ${bundle["info.uuid"]}: ${a.uuid}
                         ${bundle["info.languageTag"]}: ${a.languageTag}
-                        ${bundle["info.placecount"]}: ${a.placecount}
-                        ${bundle["info.breakcount"]}: ${a.breakcount}
-                        ${bundle["info.joincount"]}: ${a.joincount}
-                        ${bundle["info.kickcount"]}: ${a.kickcount}
+                        ${bundle["info.placecount"]}: ${a.blockPlaceCount}
+                        ${bundle["info.breakcount"]}: ${a.blockBreakCount}
+                        ${bundle["info.joincount"]}: ${a.totalJoinCount}
+                        ${bundle["info.kickcount"]}: ${a.totalKickCount}
                         ${bundle["info.level"]}: ${a.level}
                         ${bundle["info.exp"]}: ${a.exp}
-                        ${bundle["info.joindate"]}: ${a.joindate}
-                        ${bundle["info.lastdate"]}: ${a.lastdate}
-                        ${bundle["info.playtime"]}: ${a.playtime}
-                        ${bundle["info.attackclear"]}: ${a.attackclear}
-                        ${bundle["info.pvpwincount"]}: ${a.pvpwincount}
-                        ${bundle["info.pvplosecount"]}: ${a.pvplosecount}
+                        ${bundle["info.joindate"]}: ${a.firstPlayDate}
+                        ${bundle["info.lastdate"]}: ${a.lastLoginDate}
+                        ${bundle["info.playtime"]}: ${a.totalPlayTime}
+                        ${bundle["info.attackclear"]}: ${a.attackModeClear}
+                        ${bundle["info.pvpwincount"]}: ${a.pvpVictoriesCount}
+                        ${bundle["info.pvplosecount"]}: ${a.pvpDefeatCount}
                         ${bundle["info.colornick"]}: ${a.colornick}
                         ${bundle["info.permission"]}: ${a.permission}
                         ${bundle["info.mute"]}: ${a.mute}
@@ -1652,7 +1651,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val reason = arg[2]
 
                     if(minute != null) { // todo d h m s 날짜 형식 지원
-                        d.status.put("ban", time.plusMinutes(minute.toLong()).toString())
+                        d.banTime = time.plusMinutes(minute.toLong()).toString()
                         netServer.admins.banPlayer(other.uuid())
                         Call.kick(other.con(), reason)
                     } else {
@@ -1685,36 +1684,38 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun tpp() {
             if(!Permission.check(player, "tp")) return
 
-            if(arg.isEmpty() && data.status.containsKey("tpp")) {
-                player.team(Team.get(data.status.get("tpp_team").toInt()))
+            if(arg.isEmpty() && data.tpp != null && data.tppTeam != null) {
+                player.team(Team.get(data.tppTeam!!))
+
                 send("command.tpp.unfollowing")
                 Call.setCameraPosition(player.con(), player.x, player.y)
 
-                data.status.remove("tpp")
-                data.status.remove("tpp_team")
+                data.tppTeam = null
+                data.tpp = null
             } else {
                 val other = findPlayers(arg[0])
                 if(other == null) {
                     err("player.not.found")
                 } else {
-                    data.status.put("tpp_team", player.team().id.toString())
-                    data.status.put("tpp", other.uuid())
+                    data.tppTeam = player.team().id
+                    data.tpp = other.uuid()
                     player.clearUnit()
                     player.team(Team.derelict)
                     send("command.tpp.following", other.plainName())
                 }
             }
+
+            if(arg.isEmpty() && data.tpp != null) {
+                data.tpp = null
+                data.tppTeam = 0
+            }
         }
 
         fun track() {
             if(!Permission.check(player, "tp")) return
-            if(data.status.containsKey("tracking")) {
-                data.status.remove("tracking")
-                send("command.track.toggle.disabled")
-            } else {
-                data.status.put("tracking", "enabled")
-                send("command.track.toggle")
-            }
+            data.tracking = !data.tracking
+            val msg = if(data.tracking) "disabled" else ""
+            send("command.track.toggle.$msg")
         }
 
         fun unban() {
@@ -2129,7 +2130,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val reason = arg[2]
 
                     if(minute != null) {
-                        d.status.put("ban", time.plusMinutes(minute.toLong()).toString())
+                        d.banTime = time.plusMinutes(minute.toLong()).toString()
                         Call.kick(other.con(), reason)
                         Events.fire(PlayerTempBanned(d.name, player.plainName(), time.plusMinutes(minute.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
                     } else {
@@ -2191,7 +2192,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if(it.content().toIntOrNull() != null) {
                         if(pin.findKey(it.content(), true) != null) {
                             val data = database[pin.findKey(it.content().toInt(), true)]
-                            data?.status?.put("discord", it.author().id())
+                            data?.discord = it.author().id()
                             pin.remove(pin.findKey(it.content().toInt(), true))
                         }
                     } else {

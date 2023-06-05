@@ -36,31 +36,31 @@ object Trigger {
     var order = 0
     val clients = Seq<Socket>()
 
-    fun loadPlayer(player : Playerc, data : DB.PlayerData, login: Boolean) {
-        if(data.status.containsKey("duplicateName") && data.status.get("duplicateName") == player.name()) {
+    fun loadPlayer(player : Playerc, data : DB.PlayerData, login : Boolean) {
+        if(data.duplicateName != "null" && data.duplicateName == player.name()) {
             player.kick(Bundle(player.locale())["event.player.duplicate.name"])
         } else {
-            if(data.status.containsKey("duplicateName") && data.status.get("duplicateName") != player.name()) {
+            if(data.duplicateName != "null" && data.duplicateName != player.name()) {
                 data.name = player.name()
-                data.status.remove("duplicateName")
+                data.duplicateName = "null"
                 database.queue(data)
             }
             if(Config.fixedName) player.name(data.name)
-            data.lastdate = System.currentTimeMillis()
-            data.joincount = data.joincount++
+            data.lastLoginDate = System.currentTimeMillis()
+            data.totalJoinCount = data.totalJoinCount++
             data.player = player
 
             val perm = Permission[player]
             if(perm.name.isNotEmpty()) player.name(Permission[player].name)
             player.admin(Permission[player].admin)
-            player.sendMessage(Bundle(data.languageTag)[if (login) "event.player.logged" else "event.player.loaded"])
+            player.sendMessage(Bundle(data.languageTag)[if(login) "event.player.logged" else "event.player.loaded"])
 
             database.players.add(data)
 
             data.entityid = order
             order++
 
-            if (!login) {
+            if(!login) {
                 val motd = if(root.child("motd/${data.languageTag}.txt").exists()) {
                     root.child("motd/${data.languageTag}.txt").readString()
                 } else {
@@ -110,9 +110,9 @@ object Trigger {
         val data = DB.PlayerData()
         data.name = player.name()
         data.uuid = player.uuid()
-        data.joindate = System.currentTimeMillis()
-        data.id = id ?: player.plainName()
-        data.pw = if(password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
+        data.firstPlayDate = System.currentTimeMillis()
+        data.accountID = id ?: player.plainName()
+        data.accountPW = if(password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
         data.permission = "user"
         data.languageTag = player.locale()
 
@@ -381,8 +381,8 @@ object Trigger {
             server.close()
         }
 
-        fun sendAll(type: String, msg: String) {
-            for(a in Trigger.clients) {
+        fun sendAll(type : String, msg : String) {
+            for(a in clients) {
                 val b = BufferedWriter(OutputStreamWriter(a.getOutputStream()))
                 try {
                     b.write(type)
@@ -393,7 +393,7 @@ object Trigger {
                     b.flush()
                 } catch(e : SocketException) {
                     a.close()
-                    Trigger.clients.remove(a)
+                    clients.remove(a)
                 }
             }
         }
@@ -534,7 +534,7 @@ object Trigger {
             write(message)
         }
 
-        fun unban(uuid: String) {
+        fun unban(uuid : String) {
             write("unban")
             write(uuid)
         }

@@ -38,11 +38,11 @@ class WebServer {
                                 map["username"] = playerData[i].name
                                 map["level"] = playerData[i].level
                                 map["exp"] = playerData[i].exp
-                                map["playtime"] = playerData[i].playtime
+                                map["playtime"] = playerData[i].totalPlayTime
                                 val stat = HashMap<String, Any>()
-                                stat["attackclear"] = playerData[i].attackclear
-                                stat["pvpwin"] = playerData[i].pvpwincount
-                                stat["pvplose"] = playerData[i].pvplosecount
+                                stat["attackclear"] = playerData[i].attackModeClear
+                                stat["pvpwin"] = playerData[i].pvpVictoriesCount
+                                stat["pvplose"] = playerData[i].pvpDefeatCount
                                 map["stat"] = stat
 
                                 set.add(map)
