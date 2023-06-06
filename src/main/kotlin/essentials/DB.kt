@@ -85,7 +85,7 @@ class DB {
                         if(DB.selectAll().empty()) {
                             try {
                                 exec("SELECT hud FROM Players")
-                            } catch(e: SQLException) {
+                            } catch(e : SQLException) {
                                 val s = listOf(
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS placecount RENAME TO \"blockPlaceCount\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS breakcount RENAME TO \"blockBreakCount\"",
@@ -382,8 +382,8 @@ class DB {
             data.tracking = d[Player.tracking]
 
             val obj = ObjectMap<String, String>()
-            for(a in JsonObject.readHjson(d[Player.status]).asObject()) {
-                obj.put(a.name, a.value.asString())
+            JsonObject.readHjson(d[Player.status]).asObject().forEach {
+                obj.put(it.name, it.value.asString())
             }
             data.status = obj
             return data
@@ -433,8 +433,8 @@ class DB {
                 data.tracking = it[Player.tracking]
 
                 val obj = ObjectMap<String, String>()
-                for(a in JsonObject.readHjson(it[Player.status]).asObject()) {
-                    obj.put(a.name, a.value.asString())
+                JsonObject.readHjson(it[Player.status]).asObject().forEach {
+                    obj.put(it.name, it.value.asString())
                 }
                 data.status = obj
                 d.add(data)
@@ -470,7 +470,7 @@ class DB {
 
     fun update(id : String, data : PlayerData) {
         transaction {
-            Player.update({ Player.uuid eq id }) {
+            Player.update({ Player.uuid eq id }) { it ->
                 it[name] = data.name
                 it[uuid] = data.uuid
                 it[languageTag] = data.languageTag
@@ -506,7 +506,9 @@ class DB {
                 it[tracking] = data.tracking
 
                 val json = JsonObject()
-                for(a in data.status) json.add(a.key, a.value)
+                data.status.forEach {
+                    json.add(it.key, it.value)
+                }
                 it[status] = json.toString()
             }
         }
@@ -551,8 +553,8 @@ class DB {
                 data.tracking = this[Player.tracking]
 
                 val obj = ObjectMap<String, String>()
-                for(a in JsonObject.readHjson(this[Player.status]).asObject()) {
-                    obj.put(a.name, a.value.asString())
+                JsonObject.readHjson(this[Player.status]).asObject().forEach {
+                    obj.put(it.name, it.value.asString())
                 }
                 data.status = obj
 

@@ -222,7 +222,6 @@ object Trigger {
                                     }
 
                                     var y = tile.build.getY() + if(isDup) margin - 8 else margin
-                                    var players = 0
 
                                     val info = serverInfos.find { a -> a.address == value.ip && a.port == value.port }
                                     if(info != null) {
@@ -231,7 +230,6 @@ object Trigger {
                                             memory.add(a to Triple("[yellow]${info.players}[] ${Bundle(a.locale)["event.server.warp.players"]}", x, y))
                                         }
                                         value.online = true
-                                        players = info.players
                                     } else {
                                         for(a in Groups.player) {
                                             memory.add(a to Triple(Bundle(a.locale)["event.server.warp.offline"], x, y))
@@ -397,19 +395,6 @@ object Trigger {
                 try {
                     val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
                     val writer = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
-
-                    fun write(msg : String) {
-                        try {
-                            writer.write(msg)
-                            writer.newLine()
-                            writer.flush()
-                        } catch(e : SocketException) {
-                            e.printStackTrace()
-                            currentThread().interrupt()
-                            socket.close()
-                            clients.remove(socket)
-                        }
-                    }
 
                     while(!currentThread().isInterrupted) {
                         val d = reader.readLine()

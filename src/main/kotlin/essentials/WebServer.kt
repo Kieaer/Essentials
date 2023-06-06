@@ -32,17 +32,17 @@ class WebServer {
                             val set = HashSet<HashMap<String, Any>>()
 
                             val playerData = Main.database.getAllByExp().take(50)
-                            for(i in playerData.indices) {
+                            playerData.indices.forEach {
                                 val map = HashMap<String, Any>()
-                                map["rank"] = i + 1
-                                map["username"] = playerData[i].name
-                                map["level"] = playerData[i].level
-                                map["exp"] = playerData[i].exp
-                                map["playtime"] = playerData[i].totalPlayTime
+                                map["rank"] = it + 1
+                                map["username"] = playerData[it].name
+                                map["level"] = playerData[it].level
+                                map["exp"] = playerData[it].exp
+                                map["playtime"] = playerData[it].totalPlayTime
                                 val stat = HashMap<String, Any>()
-                                stat["attackclear"] = playerData[i].attackModeClear
-                                stat["pvpwin"] = playerData[i].pvpVictoriesCount
-                                stat["pvplose"] = playerData[i].pvpDefeatCount
+                                stat["attackclear"] = playerData[it].attackModeClear
+                                stat["pvpwin"] = playerData[it].pvpVictoriesCount
+                                stat["pvplose"] = playerData[it].pvpDefeatCount
                                 map["stat"] = stat
 
                                 set.add(map)

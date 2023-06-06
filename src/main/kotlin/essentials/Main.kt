@@ -133,9 +133,10 @@ class Main: Plugin() {
             Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000).error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }.submit {
                 if(it.status == Http.HttpStatus.OK) {
                     val json = JsonValue.readJSON(it.resultAsString).asObject()
-                    for(a in 0 until Vars.mods.list().size) {
-                        if(Vars.mods.list()[a].meta.name == "Essentials") {
-                            PluginData.pluginVersion = Vars.mods.list()[a].meta.version
+                    Vars.mods.list().forEach { mod ->
+                        if(mod.meta.name == "Essentials") {
+                            PluginData.pluginVersion = mod.meta.version
+                            return@forEach
                         }
                     }
                     val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
@@ -149,10 +150,10 @@ class Main: Plugin() {
                 }
             }
         } else {
-            for(a in 0 until Vars.mods.list().size) {
-                if(Vars.mods.list()[a].meta.name == "Essentials") {
-                    PluginData.pluginVersion = Vars.mods.list()[a].meta.version
-                    break
+            Vars.mods.list().forEach { mod ->
+                if(mod.meta.name == "Essentials") {
+                    PluginData.pluginVersion = mod.meta.version
+                    return@forEach
                 }
             }
         }
@@ -161,9 +162,9 @@ class Main: Plugin() {
             if(e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
             val isHub = PluginData["hubMode"]
-            for(a in PluginData.warpBlocks) {
+            PluginData.warpBlocks.forEach {
                 if(e.tile != null) {
-                    if(a.mapName == Vars.state.map.name() && a.x.toShort() == e.tile.x && a.y.toShort() == e.tile.y && a.tileName == e.tile.block().name) {
+                    if(it.mapName == Vars.state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                         return@addActionFilter false
                     }
                 }
@@ -181,9 +182,9 @@ class Main: Plugin() {
 
         if(Config.blockfooclient) {
             val fooArray = arrayOf("fooCheck", "fooTransmission", "fooTransmissionEnabled")
-            for(a in fooArray) {
-                Vars.netServer.addPacketHandler(a) { b, _ ->
-                    b.kick(Bundle(b.locale)["event.antigrief.foo"])
+            fooArray.forEach {
+                Vars.netServer.addPacketHandler(it) { packet, _ ->
+                    packet.kick(Bundle(packet.locale)["event.antigrief.foo"])
                     Log.info(Bundle()["event.antigrief.foo.log"])
                 }
             }
@@ -219,20 +220,20 @@ class Main: Plugin() {
             }
         })
 
-        if(!Config.ipBanList.exists()){
+        if(!Config.ipBanList.exists()) {
             val data = JsonArray()
-            for(a in Vars.netServer.admins.banned){
-                for(b in a.ips){
-                    data.add(b)
+            Vars.netServer.admins.banned.forEach {
+                it.ips.forEach { ip ->
+                    data.add(ip)
                 }
             }
             Config.ipBanList.writeString(data.toString(Stringify.HJSON))
         }
 
-        if(!Config.idBanList.exists()){
+        if(!Config.idBanList.exists()) {
             val data = JsonArray()
-            for(a in Vars.netServer.admins.banned){
-                data.add(a.id)
+            Vars.netServer.admins.banned.forEach {
+                data.add(it.id)
             }
             Config.idBanList.writeString(data.toString(Stringify.HJSON))
         }
@@ -253,9 +254,9 @@ class Main: Plugin() {
             root.child("motd").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/motd[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/motd[] 폴더에서 [green]ko.txt[] 파일을 수정하세요.")
-            for(a in 0 until names.size) {
-                if(!root.child("motd/${names[a]}.txt").exists()) {
-                    root.child("motd/${names[a]}.txt").writeString(texts[a])
+            names.forEachIndexed { index, _ ->
+                if(!root.child("motd/${names[index]}.txt").exists()) {
+                    root.child("motd/${names[index]}.txt").writeString(texts[index])
                 }
             }
         }
@@ -264,9 +265,9 @@ class Main: Plugin() {
             root.child("messages").mkdirs()
             val names = arrayListOf("en", "ko")
             val texts = arrayListOf("To edit this message, open [green]config/mods/Essentials/messages[] folder and edit [green]en.txt[]", "이 메세지를 수정할려면 [green]config/mods/Essentials/messages[] 폴더에서 [green]ko.txt[] 파일을 수정하세요.")
-            for(a in 0 until names.size) {
-                if(!root.child("messages/${names[a]}.txt").exists()) {
-                    root.child("messages/${names[a]}.txt").writeString(texts[a])
+            names.forEachIndexed { index, _ ->
+                if(!root.child("messages/${names[index]}.txt").exists()) {
+                    root.child("messages/${names[index]}.txt").writeString(texts[index])
                 }
             }
         }

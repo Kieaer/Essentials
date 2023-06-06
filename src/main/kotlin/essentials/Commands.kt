@@ -36,7 +36,6 @@ import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.gen.Unit
 import mindustry.maps.Map
-import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.type.Item
@@ -174,13 +173,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(map == null) {
                 val list = maps.all().sortedBy { a -> a.name() }
                 val arr = ObjectMap<Map, Int>()
-                for((order, a) in list.withIndex()) {
-                    arr.put(a, order)
+                list.forEachIndexed { index, m ->
+                    arr.put(m, index)
                 }
-                for(a in arr) {
-                    if(a.value == arg[0].toInt()) {
-                        map = a.key
-                        break
+                arr.forEach {
+                    if(it.value == arg[0].toInt()) {
+                        map = it.key
+                        return@forEach
                     }
                 }
             }
@@ -318,100 +317,101 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 letters.put("\"", intArrayOf(1, 1, 0, 0, 1, 1))
 
                 val texts = arg[0].toCharArray()
-                for(i in texts) {
+                texts.forEach {
                     val pos = Seq<IntArray>()
-                    if(!letters.containsKey(i.uppercaseChar().toString())) continue
-                    val target = letters[i.uppercaseChar().toString()]
-                    var xv = 0
-                    var yv = 0
-                    when(target.size) {
-                        25 -> {
-                            xv = 5
-                            yv = 5
-                        }
+                    if(letters.containsKey(it.uppercaseChar().toString())) {
+                        val target = letters[it.uppercaseChar().toString()]
+                        var xv = 0
+                        var yv = 0
+                        when(target.size) {
+                            25 -> {
+                                xv = 5
+                                yv = 5
+                            }
 
-                        20 -> {
-                            xv = 5
-                            yv = 4
-                        }
+                            20 -> {
+                                xv = 5
+                                yv = 4
+                            }
 
-                        18 -> {
-                            xv = 6
-                            yv = 3
-                        }
+                            18 -> {
+                                xv = 6
+                                yv = 3
+                            }
 
-                        15 -> {
-                            xv = 5
-                            yv = 3
-                        }
+                            15 -> {
+                                xv = 5
+                                yv = 3
+                            }
 
-                        10 -> {
-                            xv = 5
-                            yv = 2
-                        }
+                            10 -> {
+                                xv = 5
+                                yv = 2
+                            }
 
-                        9 -> {
-                            xv = 3
-                            yv = 3
-                        }
+                            9 -> {
+                                xv = 3
+                                yv = 3
+                            }
 
-                        6 -> {
-                            xv = 2
-                            yv = 3
-                        }
+                            6 -> {
+                                xv = 2
+                                yv = 3
+                            }
 
-                        4 -> {
-                            xv = 4
-                            yv = 1
-                        }
+                            4 -> {
+                                xv = 4
+                                yv = 1
+                            }
 
-                        5 -> {
-                            xv = 5
-                            yv = 1
-                        }
+                            5 -> {
+                                xv = 5
+                                yv = 1
+                            }
 
-                        2 -> {
-                            xv = 2
-                            yv = 1
-                        }
-                    }
-                    for(y in 0 until yv) {
-                        for(x in 0 until xv) {
-                            pos.add(intArrayOf(y, -x))
-                        }
-                    }
-                    for(a in 0 until pos.size) {
-                        if(t != null) {
-                            val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
-                            if(target[a] == 1) {
-                                Call.setTile(tar, Blocks.scrapWall, Team.sharded, 0)
-                            } else if(tar != null) {
-                                Call.setTile(tar, tar.block(), Team.sharded, 0)
+                            2 -> {
+                                xv = 2
+                                yv = 1
                             }
                         }
+                        for(y in 0 until yv) {
+                            for(x in 0 until xv) {
+                                pos.add(intArrayOf(y, -x))
+                            }
+                        }
+                        for(a in 0 until pos.size) {
+                            if(t != null) {
+                                val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
+                                if(target[a] == 1) {
+                                    Call.setTile(tar, Blocks.scrapWall, Team.sharded, 0)
+                                } else if(tar != null) {
+                                    Call.setTile(tar, tar.block(), Team.sharded, 0)
+                                }
+                            }
+                        }
+                        val left : Int = when(target.size) {
+                            20 -> {
+                                xv + 1
+                            }
+
+                            15, 18 -> {
+                                xv
+                            }
+
+                            5 -> {
+                                xv - 2
+                            }
+
+                            25 -> {
+                                xv + 2
+                            }
+
+                            else -> {
+                                xv - 1
+                            }
+                        }
+                        t = world.tile(t.x + left, t.y.toInt())
                     }
-                    val left : Int = when(target.size) {
-                        20 -> {
-                            xv + 1
-                        }
-
-                        15, 18 -> {
-                            xv
-                        }
-
-                        5 -> {
-                            xv - 2
-                        }
-
-                        25 -> {
-                            xv + 2
-                        }
-
-                        else -> {
-                            xv - 1
-                        }
-                    }
-                    t = world.tile(t.x + left, t.y.toInt())
                 }
             }
         }
@@ -574,8 +574,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 err("command.fillitems.core.empty")
             }
 
-            for(item in content.items()) {
-                state.teams.cores(team).first().items[item] = state.teams.cores(team).first().storageCapacity
+            content.items().forEach {
+                state.teams.cores(team).first().items[it] = state.teams.cores(team).first().storageCapacity
             }
 
             send("command.fillitems.core.filled")
@@ -849,8 +849,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun kickall() {
             if(!Permission.check(player, "kickall")) return
-            for(a in Groups.player) {
-                if(!a.admin) Call.kick(a.con, Packets.KickReason.kick)
+            Groups.player.forEach {
+                if(!it.admin) Call.kick(it.con, Packets.KickReason.kick)
             }
         }
 
@@ -867,14 +867,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun killall() {
             if(!Permission.check(player, "killall")) return
             if(arg.isEmpty()) {
-                for(a in Team.all.indices) {
+                repeat(Team.all.count()) {
                     Groups.unit.each { u : Unit -> if(player.team() == u.team) u.kill() }
                 }
             } else {
                 val team = selectTeam(arg[0])
                 Groups.unit.each { u -> if(u.team == team) u.kill() }
             }
-
         }
 
         fun killunit() {
@@ -996,8 +995,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(Config.chatBlacklist) {
                 val file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
                 if(file.isNotEmpty()) {
-                    for(a in file) {
-                        if((Config.chatBlacklistRegex && arg[0].contains(Regex(a))) || (!Config.chatBlacklistRegex && arg[0].contains(a))) {
+                    file.forEach {
+                        if((Config.chatBlacklistRegex && arg[0].contains(Regex(it))) || (!Config.chatBlacklistRegex && arg[0].contains(it))) {
                             err("event.chat.blacklisted")
                             return
                         }
@@ -1125,21 +1124,23 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         data.status.remove("router")
                     } else {
                         Thread {
+                            fun change(name : String) {
+                                player.name(name)
+                                sleep(500)
+                            }
+
                             data.status.put("router", "true")
                             while(!player.isNull) {
-                                for(d in loop) {
-                                    player.name(d)
-                                    sleep(500)
+                                loop.forEach {
+                                    change(it)
                                 }
                                 if(!data.status.containsKey("router")) break
                                 sleep(5000)
-                                for(i in loop.indices.reversed()) {
-                                    player.name(loop[i])
-                                    sleep(500)
+                                loop.reversed().forEach {
+                                    change(it)
                                 }
-                                for(d in zero) {
-                                    player.name(d)
-                                    sleep(500)
+                                zero.forEach {
+                                    change(it)
                                 }
                             }
                         }.start()
@@ -1229,9 +1230,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             } else if(arg.size > 1) {
                 player.sendMessage("[green][PM] ${target.plainName()}[yellow] => [white] ${arg[1]}")
                 target.sendMessage("[blue][PM] [gray][${data.entityid}][]${player.plainName()}[yellow] => [white] ${arg[1]}")
-                for(a in database.players) {
-                    if(Permission.check(a.player, "pm.other") && a.uuid != player.uuid()) {
-                        a.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${arg[1]}")
+                database.players.forEach {
+                    if(Permission.check(it.player, "pm.other") && it.uuid != player.uuid()) {
+                        it.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${arg[1]}")
                     }
                 }
             } else {
@@ -1271,19 +1272,19 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val breakBlock = mutableMapOf<ArrayMap<String, String>, Int>()
                     val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
 
-                    for(a in all) {
-                        if(a.hideRanking && !netServer.admins.banned.contains { b -> b.id == a.uuid }) {
+                    all.forEach {
+                        if(it.hideRanking && !netServer.admins.banned.contains { b -> b.id == it.uuid }) {
                             val info = ArrayMap<String, String>()
-                            val pvpcount = ArrayMap<Int, Int>()
-                            info.put(a.name, a.uuid)
-                            pvpcount.put(a.pvpVictoriesCount, a.pvpDefeatCount)
+                            val pvpCount = ArrayMap<Int, Int>()
+                            info.put(it.name, it.uuid)
+                            pvpCount.put(it.pvpVictoriesCount, it.pvpDefeatCount)
 
-                            time[info] = a.totalPlayTime
-                            exp[info] = a.exp
-                            attack[info] = a.attackModeClear
-                            placeBlock[info] = a.blockPlaceCount
-                            breakBlock[info] = a.blockBreakCount
-                            pvp[info] = pvpcount
+                            time[info] = it.totalPlayTime
+                            exp[info] = it.exp
+                            attack[info] = it.attackModeClear
+                            placeBlock[info] = it.blockPlaceCount
+                            breakBlock[info] = it.blockBreakCount
+                            pvp[info] = pvpCount
                         }
                     }
 
@@ -1385,12 +1386,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun rollback() { // todo 메세지 내용이 되돌려지지 않음
             if(!Permission.check(player, "rollback")) return
 
-            for(a in worldHistory) {
+            worldHistory.forEach {
                 val buf = Seq<Event.TileLog>()
-                if(a.player.contains(arg[0])) {
-                    for(b in worldHistory) {
-                        if(b.x == a.x && b.y == a.y) {
-                            buf.add(b)
+                if(it.player.contains(arg[0])) {
+                    worldHistory.forEach { two ->
+                        if(two.x == it.x && two.y == it.y) {
+                            buf.add(two)
                         }
                     }
 
@@ -1422,8 +1423,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(data == null) {
                 val e = netServer.admins.findByName(arg[0])
                 if(e.size > 0) {
-                    for(info : Administration.PlayerInfo in e) {
-                        result.add(database[info.id])
+                    e.forEach {
+                        result.add(database[it.id])
                     }
                 } else {
                     result.add(database[arg[0]])
@@ -1433,28 +1434,28 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             if(result.size > 0) {
-                for(a in result) {
-                    if(a != null) {
+                result.forEach {
+                    if(it != null) {
                         val texts = """
-                        ${bundle["info.name"]}: ${a.name}
-                        ${bundle["info.uuid"]}: ${a.uuid}
-                        ${bundle["info.languageTag"]}: ${a.languageTag}
-                        ${bundle["info.placecount"]}: ${a.blockPlaceCount}
-                        ${bundle["info.breakcount"]}: ${a.blockBreakCount}
-                        ${bundle["info.joincount"]}: ${a.totalJoinCount}
-                        ${bundle["info.kickcount"]}: ${a.totalKickCount}
-                        ${bundle["info.level"]}: ${a.level}
-                        ${bundle["info.exp"]}: ${a.exp}
-                        ${bundle["info.joindate"]}: ${a.firstPlayDate}
-                        ${bundle["info.lastdate"]}: ${a.lastLoginDate}
-                        ${bundle["info.playtime"]}: ${a.totalPlayTime}
-                        ${bundle["info.attackclear"]}: ${a.attackModeClear}
-                        ${bundle["info.pvpwincount"]}: ${a.pvpVictoriesCount}
-                        ${bundle["info.pvplosecount"]}: ${a.pvpDefeatCount}
-                        ${bundle["info.colornick"]}: ${a.colornick}
-                        ${bundle["info.permission"]}: ${a.permission}
-                        ${bundle["info.mute"]}: ${a.mute}
-                        ${bundle["info.status"]}: ${a.status}
+                        ${bundle["info.name"]}: ${it.name}
+                        ${bundle["info.uuid"]}: ${it.uuid}
+                        ${bundle["info.languageTag"]}: ${it.languageTag}
+                        ${bundle["info.placecount"]}: ${it.blockPlaceCount}
+                        ${bundle["info.breakcount"]}: ${it.blockBreakCount}
+                        ${bundle["info.joincount"]}: ${it.totalJoinCount}
+                        ${bundle["info.kickcount"]}: ${it.totalKickCount}
+                        ${bundle["info.level"]}: ${it.level}
+                        ${bundle["info.exp"]}: ${it.exp}
+                        ${bundle["info.joindate"]}: ${it.firstPlayDate}
+                        ${bundle["info.lastdate"]}: ${it.lastLoginDate}
+                        ${bundle["info.playtime"]}: ${it.totalPlayTime}
+                        ${bundle["info.attackclear"]}: ${it.attackModeClear}
+                        ${bundle["info.pvpwincount"]}: ${it.pvpVictoriesCount}
+                        ${bundle["info.pvplosecount"]}: ${it.pvpDefeatCount}
+                        ${bundle["info.colornick"]}: ${it.colornick}
+                        ${bundle["info.permission"]}: ${it.permission}
+                        ${bundle["info.mute"]}: ${it.mute}
+                        ${bundle["info.status"]}: ${it.status}
                         """.trimIndent()
                         player.sendMessage(texts)
                     }
@@ -1488,7 +1489,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(item != null) {
                 set(item)
             } else if(!arg[0].equals("all", true)) {
-                for(a in content.items()) set(a)
+                content.items().forEach {
+                    set(it)
+                }
             } else {
                 err("command.setitem.item.not.exists")
             }
@@ -1724,7 +1727,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(target != null) {
                 netServer.admins.unbanPlayerID(target.first().id)
                 val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
-                for (a in netServer.admins.getInfo(target.first().id).ips) {
+                for(a in netServer.admins.getInfo(target.first().id).ips) {
                     ipBanList.removeAll { b -> b.asString() == a }
                 }
 
@@ -1875,13 +1878,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 if(target == null) {
                                     val list = maps.all().sortedBy { a -> a.name() }
                                     val arr = ObjectMap<Map, Int>()
-                                    for((order, a) in list.withIndex()) {
-                                        arr.put(a, order)
+                                    list.forEachIndexed { index, map ->
+                                        arr.put(map, index)
                                     }
-                                    for(a in arr) {
-                                        if(a.value == arg[1].toInt()) {
-                                            target = a.key
-                                            break
+                                    arr.forEach {
+                                        if(it.value == arg[1].toInt()) {
+                                            target = it.key
+                                            return@forEach
                                         }
                                     }
                                 }
@@ -2076,16 +2079,16 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                 val result = StringBuilder()
 
-                for(b in clientCommands.commandList) {
-                    val temp = "| ${b.text} | ${StringUtils().encodeHtml(b.paramText)} | ${b.description} |\n"
+                clientCommands.commandList.forEach {
+                    val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
                     result.append(temp)
                 }
 
                 val tmp = "$client$result\n\n"
 
                 result.clear()
-                for(c in serverCommands.commandList) {
-                    val temp = "| ${c.text} | ${StringUtils().encodeHtml(c.paramText)} | ${c.description} |\n"
+                serverCommands.commandList.forEach {
+                    val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
                     result.append(temp)
                 }
 

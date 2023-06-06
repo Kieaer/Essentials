@@ -168,8 +168,8 @@ object Permission {
         main = JsonValue.readHjson(mainFile.reader()).asObject()
         user = JsonValue.readHjson(userFile.reader()).asArray()
 
-        for(data in main) {
-            val name = data.name
+        main.forEach {
+            val name = it.name
             if(Config.authType == Config.AuthType.None && main.get(name).asObject().has("default")) {
                 default = name
             }
@@ -177,9 +177,9 @@ object Permission {
             if(main.get(name).asObject().has("inheritance")) {
                 var inheritance = main.get(name).asObject().getString("inheritance", null)
                 while(inheritance != null) {
-                    for(a in 0 until main.get(inheritance).asObject()["permission"].asArray().size()) {
-                        if(!main.get(inheritance).asObject()["permission"].asArray()[a].asString().contains("*")) {
-                            main.get(name).asObject().get("permission").asArray().add(main.get(inheritance).asObject()["permission"].asArray()[a].asString())
+                    main.get(inheritance).asObject()["permission"].asArray().forEach { value ->
+                        if(!value.asString().contains("*")) {
+                            main.get(name).asObject().get("permission").asArray().add(value.asString())
                         }
                     }
                     inheritance = main.get(inheritance).asObject().getString("inheritance", null)
@@ -191,8 +191,8 @@ object Permission {
     }
 
     fun apply() {
-        for(a in JsonValue.readHjson(userFile.reader()).asArray()) {
-            val b = a.asObject()
+        JsonValue.readHjson(userFile.reader()).asArray().forEach {
+            val b = it.asObject()
             val c = database.players.find { e -> e.uuid == b.get("uuid").asString() }
             if(c == null) {
                 val data = database[b.get("uuid").asString()]
@@ -237,11 +237,8 @@ object Permission {
     }
 
     fun check(player : Playerc, command : String) : Boolean {
-        val data = get(player).group
-        val size = main[data].asObject()["permission"].asArray().size()
-        for(a in 0 until size) {
-            val node = main[data].asObject()["permission"].asArray()[a].asString()
-            if(node == command || node.equals("all", true)) {
+        main[get(player).group].asObject()["permission"].asArray().forEach {
+            if(it.asString() == command || it.asString().equals("all", true)) {
                 return true
             }
         }

@@ -21,9 +21,9 @@ object FileWatchService: Runnable {
                 watchKey = watchService.take()
                 Thread.sleep(100)
                 val events = watchKey.pollEvents()
-                for(event in events) {
-                    val kind = event.kind()
-                    val paths = (event.context() as Path).fileName.toString()
+                events.forEach {
+                    val kind = it.kind()
+                    val paths = (it.context() as Path).fileName.toString()
                     if(kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         if(paths == "permission_user.txt" || paths == "permission.txt") {
                             try {

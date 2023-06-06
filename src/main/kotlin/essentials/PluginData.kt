@@ -61,7 +61,7 @@ object PluginData {
         val data = JsonObject()
         var buffer = JsonArray()
 
-        for(it in warpZones) {
+        warpZones.forEach { it ->
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("start", it.start)
@@ -74,7 +74,7 @@ object PluginData {
         data.add("warpZones", buffer)
         buffer = JsonArray()
 
-        for(it in warpBlocks) {
+        warpBlocks.forEach {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("x", it.x)
@@ -89,7 +89,7 @@ object PluginData {
         data.add("warpBlocks", buffer)
         buffer = JsonArray()
 
-        for(it in warpCounts) {
+        warpCounts.forEach {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("pos", it.pos)
@@ -102,7 +102,7 @@ object PluginData {
         data.add("warpCounts", buffer)
         buffer = JsonArray()
 
-        for(it in warpTotals) {
+        warpTotals.forEach {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("pos", it.pos)
@@ -113,11 +113,13 @@ object PluginData {
         data.add("warpTotals", buffer)
         buffer = JsonArray()
 
-        for(it in blacklist) buffer.add(it.pattern())
+        blacklist.forEach {
+            buffer.add(it.pattern())
+        }
         data.add("blacklist", buffer)
         buffer = JsonArray()
 
-        for(it in banned) {
+        banned.forEach {
             val obj = JsonObject()
             obj.add("time", it.time)
             obj.add("name", it.name)
@@ -128,7 +130,7 @@ object PluginData {
         data.add("banned", buffer)
 
         val json = JsonObject()
-        for(it in status) {
+        status.forEach {
             json.add(it.key, it.value)
         }
         data.add("status", json.toString())
