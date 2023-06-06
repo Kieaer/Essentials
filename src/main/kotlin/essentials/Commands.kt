@@ -1386,6 +1386,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun rollback() { // todo 메세지 내용이 되돌려지지 않음
             if(!Permission.check(player, "rollback")) return
 
+            state.set(GameState.State.paused)
             worldHistory.forEach {
                 val buf = Seq<Event.TileLog>()
                 if(it.player.contains(arg[0])) {
@@ -1408,6 +1409,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
             }
             worldHistory.removeAll { a -> a.player.contains(arg[0]) }
+            state.set(GameState.State.playing)
         }
 
         fun search() {
