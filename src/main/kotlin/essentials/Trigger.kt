@@ -125,10 +125,8 @@ object Trigger {
 
     class Thread: Runnable {
         private var ping = 0.000
-        private var servers = ArrayMap<String, Int>()
         private val dummy = Player.create()
 
-        // todo 어떠한 이유로 인해 동기화 문제가 발생하고 있음
         override fun run() {
             while(!currentThread().isInterrupted) {
                 try {
@@ -153,47 +151,44 @@ object Trigger {
                     }
 
                     if(state.isPlaying) {
-                        servers = ArrayMap<String, Int>()
+                        val serverInfos = getServerInfo()
+                        var total = 0
+                        serverInfos.forEach { a -> total += a.players }
+
                         for(i in 0 until PluginData.warpCounts.size) {
                             if(state.map.name() == PluginData.warpCounts[i].mapName) {
                                 val value = PluginData.warpCounts[i]
-                                pingHostImpl(value.ip, value.port) { r : Host ->
-                                    if(r.name !== null) {
-                                        ping += ("0." + r.ping).toDouble()
-
-                                        val str = r.players.toString()
-                                        val digits = IntArray(str.length)
-                                        for(a in str.indices) digits[a] = str[a] - '0'
-                                        val tile = value.tile
-                                        if(value.players != r.players) {
-                                            Core.app.post {
-                                                for(px in 0..2) {
-                                                    for(py in 0..4) {
-                                                        Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
-                                                    }
+                                val info = serverInfos.find { a -> a.address == value.ip && a.port == value.port }
+                                if(info != null) {
+                                    val str = info.players.toString()
+                                    val digits = IntArray(str.length)
+                                    for(a in str.indices) digits[a] = str[a] - '0'
+                                    val tile = value.tile
+                                    if(value.players != info.players) {
+                                        Core.app.post {
+                                            for(px in 0..2) {
+                                                for(py in 0..4) {
+                                                    Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
                                                 }
                                             }
                                         }
-                                        dummy.x = tile.getX()
-                                        dummy.y = tile.getY()
+                                    }
+                                    dummy.x = tile.getX()
+                                    dummy.y = tile.getY()
 
-                                        Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
-                                        PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, r.players, digits.size)
-                                        addPlayers(value.ip, value.port, r.players)
-                                    } else {
-                                        ping += 1.000
-
-                                        dummy.x = value.tile.getX()
-                                        dummy.y = value.tile.getY()
-                                        Core.app.post {
-                                            Commands.Client(arrayOf("no"), dummy).chars(value.tile)
-                                        }
+                                    Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
+                                    PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, info.players, digits.size)
+                                } else {
+                                    dummy.x = value.tile.getX()
+                                    dummy.y = value.tile.getY()
+                                    Core.app.post {
+                                        Commands.Client(arrayOf("no"), dummy).chars(value.tile)
                                     }
                                 }
                             }
                         }
 
-                        val memory = mutableListOf<Pair<Playerc, String>>()
+                        val memory = mutableListOf<Pair<Playerc, Triple<String, Float, Float>>>()
                         for(value in PluginData.warpBlocks) {
                             if(state.map.name() == value.mapName) {
                                 val tile = world.tile(value.x, value.y)
@@ -229,42 +224,39 @@ object Trigger {
                                     var y = tile.build.getY() + if(isDup) margin - 8 else margin
                                     var players = 0
 
-                                    try {
-                                        pingHostImpl(value.ip, value.port) { r : Host ->
-                                            ping += ("0." + r.ping).toDouble()
-                                            if(isDup) y += 4
-                                            for(a in Groups.player) {
-                                                memory.add(a to "[yellow]${r.players}[] ${Bundle(a.locale)["event.server.warp.players"]}///$x///$y")
-                                            }
-                                            value.online = true
-                                            players = r.players
-                                        }
-                                    } catch(e : IOException) {
-                                        ping += 1.000
+                                    val info = serverInfos.find { a -> a.address == value.ip && a.port == value.port }
+                                    if(info != null) {
+                                        if(isDup) y += 4
                                         for(a in Groups.player) {
-                                            memory.add(a to "${Bundle(a.locale)["event.server.warp.offline"]}///$x///$y")
+                                            memory.add(a to Triple("[yellow]${info.players}[] ${Bundle(a.locale)["event.server.warp.players"]}", x, y))
+                                        }
+                                        value.online = true
+                                        players = info.players
+                                    } else {
+                                        for(a in Groups.player) {
+                                            memory.add(a to Triple(Bundle(a.locale)["event.server.warp.offline"], x, y))
                                         }
                                         value.online = false
                                     }
 
                                     if(isDup) margin -= 4
                                     for(a in Groups.player) {
-                                        memory.add(a to "${value.description}///$x///${tile.build.getY() - margin}")
+                                        memory.add(a to Triple(value.description, x, tile.build.getY() - margin))
                                     }
-                                    addPlayers(value.ip, value.port, players)
                                 }
                             }
                         }
                         for(m in memory) {
-                            val a = m.second.split("///").toTypedArray()
-                            Core.app.post { Call.label(m.first.con(), a[0], ping.toFloat() + 3f, a[1].toFloat(), a[2].toFloat()) }
+                            Core.app.post {
+                                Call.label(m.first.con(), m.second.first, ping.toFloat() + 3f, m.second.second, m.second.third)
+                            }
                         }
 
                         for(i in 0 until PluginData.warpTotals.size) {
                             val value = PluginData.warpTotals[i]
                             if(state.map.name() == value.mapName) {
-                                if(value.totalplayers != totalPlayers()) {
-                                    when(totalPlayers()) {
+                                if(value.totalplayers != total) {
+                                    when(total) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9 -> {
                                             for(px in 0..2) {
                                                 for(py in 0..4) {
@@ -290,17 +282,18 @@ object Trigger {
                                 dummy.x = value.tile.getX()
                                 dummy.y = value.tile.getY()
                                 Core.app.post {
-                                    Commands.Client(arrayOf(totalPlayers().toString()), dummy).chars(value.tile)
+                                    Commands.Client(arrayOf(getServerInfo().toString()), dummy).chars(value.tile)
                                 }
                             }
                         }
 
                         if(Config.countAllServers) {
-                            Core.settings.put("totalPlayers", totalPlayers() + Groups.player.size())
+                            Core.settings.put("totalPlayers", total + Groups.player.size())
                             Core.settings.saveValues()
                         }
-                        ping = 0.000
                     }
+
+                    ping = 0.000
                     TimeUnit.SECONDS.sleep(3)
                 } catch(e : Exception) {
                     currentThread().interrupt()
@@ -315,7 +308,7 @@ object Trigger {
             DatagramSocket().use { socket ->
                 val seconds : Long = Time.millis()
                 socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(address), port))
-                socket.soTimeout = 2000
+                socket.soTimeout = 1000
                 val packet : DatagramPacket = packetSupplier.get()
                 socket.receive(packet)
                 val buffer = ByteBuffer.wrap(packet.data)
@@ -325,18 +318,19 @@ object Trigger {
             }
         }
 
-        private fun addPlayers(ip : String?, port : Int, players : Int) {
-            val mip = "$ip:$port"
-            if(!servers.containsKey(mip)) {
-                servers.put(mip, players)
-            }
-        }
+        private fun getServerInfo() : Array<Host> {
+            var total = arrayOf<Host>()
+            val buf = ArrayMap<String, Int>()
 
-        private fun totalPlayers() : Int {
-            var total = 0
-            for(v in servers) {
-                total += v.value
+            for(a in PluginData.warpBlocks) buf.put(a.ip, a.port)
+            for(a in PluginData.warpCounts) buf.put(a.ip, a.port)
+            for(a in PluginData.warpZones) buf.put(a.ip, a.port)
+            for(a in buf) {
+                pingHostImpl(a.key, a.value) {
+                    total += it
+                }
             }
+
             return total
         }
     }
