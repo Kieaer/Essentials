@@ -422,20 +422,6 @@ object Trigger {
                         if(d == null) interrupt()
                         when(d) {
                             "exit" -> interrupt()
-                            "sync" -> {
-                                val json = JsonArray()
-                                for(a in netServer.admins.banned) json.add(a.id)
-                                write(json.toString())
-                                for(a in JsonArray.readJSON(reader.readLine()).asArray()) {
-                                    netServer.admins.getInfo(a.asString()).banned = true
-                                    netServer.admins.save()
-                                }
-                            }
-
-                            "unban" -> {
-                                val msg = reader.readLine()
-                                sendAll("unban", msg)
-                            }
 
                             "message" -> {
                                 val msg = reader.readLine()
@@ -480,12 +466,6 @@ object Trigger {
                 while(!currentThread().isInterrupted) {
                     try {
                         when(val d = reader.readLine()) {
-                            "unban" -> {
-                                val uuid = reader.readLine()
-                                netServer.admins.getInfo(uuid).banned = false
-                                netServer.admins.save()
-                            }
-
                             "message" -> {
                                 val aa = reader.readLine()
                                 Call.sendMessage(aa)
@@ -534,14 +514,8 @@ object Trigger {
             write(message)
         }
 
-        fun unban(uuid : String) {
-            write("unban")
-            write(uuid)
-        }
-
         fun send(command : String, vararg parameter : String) {
             when(command) {
-                "sync" -> write("sync")
                 "crash" -> {
                     try {
                         Socket("mindustry.kr", 6000).use {
@@ -561,8 +535,6 @@ object Trigger {
                         Log.info("Connection timed out. crash report server may be closed.")
                     }
                 }
-
-                "unban" -> write("unban")
 
                 "exit" -> {
                     if(::reader.isInitialized) {

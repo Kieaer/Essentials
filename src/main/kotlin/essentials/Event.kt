@@ -35,6 +35,7 @@ import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.world.Tile
 import org.hjson.JsonArray
+import org.hjson.Stringify
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -508,16 +509,29 @@ object Event {
                 }
             }
 
-            log(LogType.Player, Bundle()["log.player.banned", if(it.player == null) netServer.admins.getInfo(it.uuid).lastName else it.player.name, if(it.player == null) netServer.admins.getInfo(it.uuid).lastIP else it.player.ip()])
+            val name = if(it.player == null) {
+                netServer.admins.getInfo(it.uuid).lastName
+            } else {
+                it.player.name
+            }
+            val ip = if(it.player == null) {
+                netServer.admins.getInfo(it.uuid).lastIP
+            } else {
+                it.player.ip()
+            }
+
+            val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
+            for (a in netServer.admins.getInfo(it.uuid).ips) {
+                ipBanList.add(a)
+            }
+
+            Config.idBanList.writeString(JsonArray.readHjson(Config.idBanList.reader()).asArray().add(it.uuid).toString())
+            Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
+
+            log(LogType.Player, Bundle()["log.player.banned", name, ip])
         }
 
         Events.on(PlayerUnbanEvent::class.java) {
-            if(Main.connectType) {
-                Trigger.Server.sendAll("unban", it.uuid)
-            } else {
-                Trigger.Client.unban(it.uuid)
-            }
-
             if(Config.blockIP) {
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
@@ -525,6 +539,14 @@ object Event {
                     Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $ip -j DROP"))
                 }
             }
+
+            val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
+            for (a in netServer.admins.getInfo(it.uuid).ips) {
+                ipBanList.removeAll { b -> b.asString() == a }
+            }
+
+            Config.idBanList.writeString(JsonArray.readHjson(Config.idBanList.reader()).asArray().removeAll { a -> a.asString() == netServer.admins.getInfo(it.uuid).id }.toString())
+            Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
         }
 
         Events.on(WorldLoadEvent::class.java) {
@@ -551,6 +573,10 @@ object Event {
         }
 
         Events.on(ConnectPacketEvent::class.java) { e ->
+            if(JsonArray.readHjson(Config.ipBanList.reader()).asArray().contains(e.connection.address) || JsonArray.readHjson(Config.idBanList.reader()).asArray().contains(e.packet.uuid)) {
+                Call.kick(e.connection, Packets.KickReason.banned)
+            }
+
             log(LogType.Player, "${e.packet.name} (${e.packet.uuid}, ${e.connection.address}) connected.")
 
             if(Config.blockNewUser && netServer.admins.getInfo(e.packet.uuid) == null) {
@@ -1136,8 +1162,6 @@ object Event {
                                 Events.fire(PlayerTempUnbanned(a.name))
                             }
                         }
-
-                        if(!Main.connectType) Trigger.Client.send("sync")
                     })
 
                     if(rollbackCount == 0) {
@@ -1241,7 +1265,7 @@ object Event {
         Player, Tap, WithDraw, Block, Deposit, Chat, Report
     }
 
-    class IpAddressMatcher(ipAddress : String) {
+    private class IpAddressMatcher(ipAddress : String) {
         private var nMaskBits = 0
         private val requiredAddress : InetAddress
         fun matches(address : String) : Boolean {
@@ -1290,7 +1314,7 @@ object Event {
         }
     }
 
-    fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData) { // todo 경험치를 지나치게 낮게 획득하는 문제 (확인 필요)
+    private fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData) {
         val oldLevel = target.level
         val oldExp = target.exp
         val time = PluginData.playtime.toInt()

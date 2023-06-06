@@ -10,7 +10,9 @@ import essentials.Permission.bundle
 import mindustry.Vars
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
+import org.hjson.JsonArray
 import org.hjson.JsonValue
+import org.hjson.Stringify
 import java.io.*
 import java.net.ServerSocket
 import java.net.SocketException
@@ -216,6 +218,24 @@ class Main: Plugin() {
                 if(Config.webServer) webServer.stop()
             }
         })
+
+        if(!Config.ipBanList.exists()){
+            val data = JsonArray()
+            for(a in Vars.netServer.admins.banned){
+                for(b in a.ips){
+                    data.add(b)
+                }
+            }
+            Config.ipBanList.writeString(data.toString(Stringify.HJSON))
+        }
+
+        if(!Config.idBanList.exists()){
+            val data = JsonArray()
+            for(a in Vars.netServer.admins.banned){
+                data.add(a.id)
+            }
+            Config.idBanList.writeString(data.toString(Stringify.HJSON))
+        }
 
         Log.info(Bundle()["event.plugin.loaded"])
     }

@@ -44,6 +44,7 @@ import mindustry.type.UnitType
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
+import org.hjson.Stringify
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -138,7 +139,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
             handler.register("reload", "Reload permission and config files.") { a -> Server(a).reload() }
             handler.register("setperm", "<player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
-            handler.register("sync", "Match ban list with all connected servers.") { a -> Server(a).sync() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
             serverCommands = handler
         }
@@ -1596,7 +1596,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             if(!Permission.check(player, "status")) return
-            val bans = netServer.admins.banned.size
+            val bans = JsonArray.readHjson(Config.idBanList.reader()).asArray().size()
 
             player.sendMessage("""
                 [#DEA82A]${bundle["command.status.info"]}[]
@@ -1723,6 +1723,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val target = netServer.admins.findByName(arg[0])
             if(target != null) {
                 netServer.admins.unbanPlayerID(target.first().id)
+                val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
+                for (a in netServer.admins.getInfo(target.first().id).ips) {
+                    ipBanList.removeAll { b -> b.asString() == a }
+                }
+
+                Config.idBanList.writeString(JsonArray.readHjson(Config.idBanList.reader()).asArray().removeAll { a -> a.asString() == target.first().id }.toString())
+                Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
+
                 Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
             } else {
                 err("player.not.found")
@@ -2019,6 +2027,47 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
     }
 
     class Server(val arg : Array<String>) {
+        private inner class StringUtils {
+            // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
+            private val htmlEncodeChars = ObjectMap<Char, String>()
+            fun encodeHtml(source : String?) : String? {
+                return encode(source)
+            }
+
+            private fun encode(source : String?) : String? {
+                if(null == source) return null
+                var encode : StringBuilder? = null
+                val encodeArray = source.toCharArray()
+                var match = -1
+                var difference : Int
+                for(i in encodeArray.indices) {
+                    val charEncode = encodeArray[i]
+                    if(htmlEncodeChars.containsKey(charEncode)) {
+                        if(null == encode) encode = StringBuilder(source.length)
+                        difference = i - (match + 1)
+                        if(difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
+                        encode.append(htmlEncodeChars[charEncode])
+                        match = i
+                    }
+                }
+                return if(null == encode) {
+                    source
+                } else {
+                    difference = encodeArray.size - (match + 1)
+                    if(difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
+                    encode.toString()
+                }
+            }
+
+            init {
+                htmlEncodeChars.put('\u0026', "&amp;")
+                htmlEncodeChars.put('\u003C', "&lt;")
+                htmlEncodeChars.put('\u003E', "&gt;")
+                htmlEncodeChars.put('\u0022', "&quot;")
+                htmlEncodeChars.put('\u00A0', "&nbsp;")
+            }
+        }
+
         fun genDocs() {
             if(System.getenv("DEBUG_KEY") != null) {
                 val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
@@ -2028,7 +2077,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 val result = StringBuilder()
 
                 for(b in clientCommands.commandList) {
-                    val temp = "| ${b.text} | ${StringUtils.encodeHtml(b.paramText)} | ${b.description} |\n"
+                    val temp = "| ${b.text} | ${StringUtils().encodeHtml(b.paramText)} | ${b.description} |\n"
                     result.append(temp)
                 }
 
@@ -2036,7 +2085,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                 result.clear()
                 for(c in serverCommands.commandList) {
-                    val temp = "| ${c.text} | ${StringUtils.encodeHtml(c.paramText)} | ${c.description} |\n"
+                    val temp = "| ${c.text} | ${StringUtils().encodeHtml(c.paramText)} | ${c.description} |\n"
                     result.append(temp)
                 }
 
@@ -2101,15 +2150,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
             } else {
                 Log.info(stripColors(bundle["player.not.found"]))
-            }
-        }
-
-        fun sync() {
-            if(Main.connectType) {
-                Log.info(bundle["command.sync.client.only"])
-            } else {
-                Trigger.Client.send("sync")
-                Log.info(bundle["success"])
             }
         }
 
@@ -2297,44 +2337,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
     }
 
-    object StringUtils {
-        // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
-        private val htmlEncodeChars = ObjectMap<Char, String>()
-        fun encodeHtml(source : String?) : String? {
-            return encode(source)
-        }
-
-        private fun encode(source : String?) : String? {
-            if(null == source) return null
-            var encode : StringBuilder? = null
-            val encodeArray = source.toCharArray()
-            var match = -1
-            var difference : Int
-            for(i in encodeArray.indices) {
-                val charEncode = encodeArray[i]
-                if(htmlEncodeChars.containsKey(charEncode)) {
-                    if(null == encode) encode = StringBuilder(source.length)
-                    difference = i - (match + 1)
-                    if(difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
-                    encode.append(htmlEncodeChars[charEncode])
-                    match = i
-                }
-            }
-            return if(null == encode) {
-                source
-            } else {
-                difference = encodeArray.size - (match + 1)
-                if(difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
-                encode.toString()
-            }
-        }
-
-        init {
-            htmlEncodeChars.put('\u0026', "&amp;")
-            htmlEncodeChars.put('\u003C', "&lt;")
-            htmlEncodeChars.put('\u003E', "&gt;")
-            htmlEncodeChars.put('\u0022', "&quot;")
-            htmlEncodeChars.put('\u00A0', "&nbsp;")
-        }
+    fun findPlayerData(uuid : String) : DB.PlayerData? {
+        return database.players.find { e -> e.uuid == uuid }
     }
 }

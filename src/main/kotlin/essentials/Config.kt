@@ -12,9 +12,16 @@ import java.util.regex.Pattern
 
 object Config {
     private var obj = JsonObject()
+    private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
+    private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
+    private val allowLanguageRegex : Pattern = Pattern.compile("en|ja|ko|ru|uk|zh")
+
+    val idBanList : Fi = Core.settings.dataDirectory.child("mods/Essentials/data/idban.txt")
+    val ipBanList : Fi = Core.settings.dataDirectory.child("mods/Essentials/data/ipban.txt")
 
     var update = true
     var database : String = Main.root.child("database").absolutePath()
+    var banList : String = Core.settings.dataDirectory.child("mods/Essentials/data").absolutePath()
     var afk = false
     var afkTime = 300
     var afkServer = ""
@@ -64,11 +71,7 @@ object Config {
     var discordURL = ""
     var banChannelToken = ""
 
-    private var configVersion = 18
-
-    private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/config.txt")
-    private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
-    private val allowLanguageRegex : Pattern = Pattern.compile("en|ja|ko|ru|uk|zh")
+    private var configVersion = 19
 
     private fun wizard() {
         Log.info(bundle["config.wiki"])
@@ -115,6 +118,7 @@ object Config {
         plugin.add("report", report, bundle["config.report"])
         plugin.add("authType", authType.toString(), bundle["config.authtype"])
         plugin.add("database", database, bundle["config.database"])
+        plugin.add("banList", banList, bundle["config.banlist"])
 
         val features = JsonObject()
         features.add("afk", afk, bundle["config.afk"])
@@ -189,6 +193,7 @@ object Config {
         report = plugin.getBoolean("report", report)
         authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
         database = if(plugin.getString("database", database) == "default") database else plugin.getString("database", database)
+        banList = plugin.getString("banList", banList)
 
         afk = features.getBoolean("afk", afk)
         afkTime = features.getInt("afkTime", afkTime)
