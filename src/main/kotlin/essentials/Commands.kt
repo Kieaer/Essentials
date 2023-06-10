@@ -17,7 +17,6 @@ import com.mewna.catnip.Catnip
 import com.mewna.catnip.entity.message.Message
 import com.mewna.catnip.shard.DiscordEvent
 import essentials.Event.findPlayerData
-import essentials.Event.findPlayerDataByName
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
 import essentials.Event.worldHistory
@@ -151,8 +150,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val d = findPlayerData(player.uuid())
             if(d != null) {
                 data = d
-            } else if(findPlayerDataByName(player.plainName()) != null) {
-                data = findPlayerDataByName(player.plainName())!!
             } else {
                 DB.PlayerData()
             }
@@ -948,11 +945,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 if(result.accountID == result.accountPW) {
                     Bundle(player.locale())["command.login.default.password"]
                 } else {
-                    if(findPlayersByName(result.name) == null) {
+                    if(findPlayerData(result.uuid) == null) {
                         database.players.remove { a -> a.uuid == player.uuid() }
-                        if(result.oldUUID != null) {
-                            result.oldUUID = result.oldUUID
-                        }
+                        result.oldUUID = result.uuid
                         result.uuid = player.uuid()
                         Trigger.loadPlayer(player, result, true)
                     } else {

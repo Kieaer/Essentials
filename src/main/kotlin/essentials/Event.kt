@@ -137,7 +137,7 @@ object Event {
         Events.on(TapEvent::class.java) {
             log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), it.tile.block().name])
             addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
-            val data = findPlayerDataByName(it.player.plainName())
+            val data = findPlayerData(it.player.uuid())
             if(data != null) {
                 PluginData.warpBlocks.forEach { two ->
                     if(it.tile.block().name == two.tileName && it.tile.build.tileX() == two.x && it.tile.build.tileY() == two.y) {
@@ -287,7 +287,7 @@ object Event {
                 var isMute = false
 
                 if(!message.startsWith("/")) {
-                    val data = findPlayerDataByName(player.name)
+                    val data = findPlayerData(player.uuid())
                     if(data != null) {
                         log(LogType.Chat, "${data.name}: $message")
 
@@ -328,12 +328,12 @@ object Event {
                                     file.forEach { text ->
                                         if(Config.chatBlacklistRegex) {
                                             if(message.contains(Regex(text))) {
-                                                player.sendMessage(Bundle(findPlayerDataByName(player.name)!!.languageTag)["event.chat.blacklisted"])
+                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
                                                 isMute = true
                                             }
                                         } else {
                                             if(message.contains(text)) {
-                                                player.sendMessage(Bundle(findPlayerDataByName(player.name)!!.languageTag)["event.chat.blacklisted"])
+                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
                                                 isMute = true
                                             }
                                         }
@@ -384,7 +384,7 @@ object Event {
                     }
                 }
                 Groups.player.forEach { player ->
-                    val target = findPlayerDataByName(player.name)
+                    val target = findPlayerData(player.uuid())
                     if(target != null) earnEXP(it.winner, player, target)
                 }
             }
@@ -403,7 +403,7 @@ object Event {
 
             if(it.unit.isPlayer) {
                 val player = it.unit.player
-                val target = findPlayerDataByName(player.name)
+                val target = findPlayerData(player.uuid())
 
                 if(!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
                     val block = it.tile.block()
@@ -728,17 +728,14 @@ object Event {
                 database.players.forEach {
                     if(state.rules.pvp) {
                         if(it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.contains(it.uuid) && !Permission.check(it.player, "pvp.spector")) {
-                            val data = findPlayerDataByName(it.name)
-                            if(data != null) {
-                                data.pvpDefeatCount++
-                            }
+                            it.pvpDefeatCount++
                             it.player.team(Team.derelict)
                             pvpSpectors.add(it.uuid)
                         }
                     }
 
                     if(it.status.containsKey("freeze")) {
-                        val d = findPlayerDataByName(it.name)
+                        val d = findPlayerData(it.uuid)
                         if(d != null) {
                             val player = d.player
                             val split = it.status.get("freeze").toString().split("/")
@@ -938,7 +935,7 @@ object Event {
                                 if(isPvP) {
                                     Groups.player.forEach {
                                         if(it.team() == voteTeam) {
-                                            val data = findPlayerDataByName(it.name)
+                                            val data = findPlayerData(it.uuid())
                                             if(data != null) {
                                                 if(voteTargetUUID != data.uuid) {
                                                     val bundle = Bundle(data.languageTag)
@@ -1385,11 +1382,7 @@ object Event {
     }
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {
-        return database.players.find { e -> e.uuid == uuid }
-    }
-
-    fun findPlayerDataByName(name : String) : DB.PlayerData? {
-        return database.players.find { e -> e.name == name }
+        return database.players.find { data -> (data.oldUUID != null && data.oldUUID == uuid) || data.uuid == uuid }
     }
 
     fun findPlayers(name : String) : Playerc? {
