@@ -111,12 +111,12 @@ object Event {
             }
         }
 
-        Events.on(ConfigEvent::class.java) { // todo 전력 노드 오작동
+        Events.on(ConfigEvent::class.java) {
             if(it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) {
                 if(Config.antiGrief) {
                     val entity = it.tile
                     val other = world.tile(it.value as Int)
-                    val valid = other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload
+                    val valid = other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload && other.block() != Blocks.massDriver && other.block() == Blocks.payloadMassDriver && other.block() == Blocks.largePayloadMassDriver
                     if(valid) {
                         val oldGraph = entity.power.graph
                         val newGraph = other.build.power.graph
