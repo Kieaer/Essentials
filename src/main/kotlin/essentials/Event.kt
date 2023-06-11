@@ -72,7 +72,7 @@ object Event {
     var isPvP : Boolean = false
     var voteTeam : Team = state.rules.defaultTeam
     var voteCooltime : Int = 0
-    private var voted = Seq<String>()
+    var voted = Seq<String>()
     private var lastVoted = LocalTime.now()
     private var isAdminVote = false
     private var isCanceled = false
@@ -293,7 +293,7 @@ object Event {
 
                         if(!data.mute) {
                             val isAdmin = Permission.check(player, "vote.pass") // todo 자신이 시작한 투표에 자기 자신이 y 를 쳐서 투표에 참여하면 무조건 투표 통과가 되는 문제 (확인 필요)
-                            if(voting && message.equals("y", true) && !voted.contains(player.uuid())) {
+                            if(voting && message.equals("y", true) && voteStarter != player && !voted.contains(player.uuid())) {
                                 if(isAdmin) {
                                     isAdminVote = true
                                 } else {

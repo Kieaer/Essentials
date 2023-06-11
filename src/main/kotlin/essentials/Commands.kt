@@ -1393,7 +1393,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     val last = buf.last()
                     if(last.action == "place") {
-                        Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), Blocks.air, state.rules.defaultTeam, 0)
+                        Call.removeTile(world.tile(last.x.toInt(), last.y.toInt()))
                     } else if(last.action == "break") {
                         Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)/*println(content.block(last.tile).name)
                         if (world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.message || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.reinforcedMessage || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.worldMessage) {
@@ -1797,6 +1797,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun vote(player : Playerc, arg : Array<out String>) {
             fun sendStart(message : String, vararg parameter : Any) {
+                Event.voted.add(player.uuid())
                 database.players.forEach {
                     if(Event.isPvP) {
                         if(Event.voteTeam == it.player.team()) {
@@ -2335,9 +2336,5 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun shutdownNow() {
             if(Discord::catnip.isInitialized) catnip.shutdown()
         }
-    }
-
-    fun findPlayerData(uuid : String) : DB.PlayerData? {
-        return database.players.find { e -> e.uuid == uuid }
     }
 }
