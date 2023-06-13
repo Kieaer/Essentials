@@ -112,8 +112,8 @@ object Event {
         }
 
         Events.on(ConfigEvent::class.java) {
-            if(it.tile != null && it.tile.block() != null && it.player != null && it.value is Int) {
-                if(Config.antiGrief) {
+            if(it.tile != null && it.tile.block() != null && it.player != null) {
+                if(Config.antiGrief && it.value is Int) {
                     val entity = it.tile
                     val other = world.tile(it.value as Int)
                     val valid = other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload && other.block() != Blocks.massDriver && other.block() == Blocks.payloadMassDriver && other.block() == Blocks.largePayloadMassDriver
@@ -130,13 +130,13 @@ object Event {
                     }
                 }
 
-                addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team))
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team, it.value))
             }
         }
 
         Events.on(TapEvent::class.java) {
             log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), it.tile.block().name])
-            addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
+            addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, null))
             val data = findPlayerData(it.player.uuid())
             if(data != null) {
                 PluginData.warpBlocks.forEach { two ->
@@ -409,7 +409,7 @@ object Event {
                     val block = it.tile.block()
                     if(!it.breaking) {
                         log(LogType.Block, Bundle()["log.block.place", target.name, block.name, it.tile.x, it.tile.y])
-                        addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
+                        addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
 
                         if(!state.rules.infiniteResources) {
                             target.blockPlaceCount++
@@ -421,7 +421,7 @@ object Event {
                         }
                     } else if(it.breaking) {
                         log(LogType.Block, Bundle()["log.block.break", target.name, block.name, it.tile.x, it.tile.y])
-                        addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam))
+                        addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if(it.tile.build != null) it.tile.build.rotation else 0, if(it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
 
                         if(!state.rules.infiniteResources) {
                             target.blockBreakCount++
@@ -1427,5 +1427,5 @@ object Event {
         worldHistory.add(log)
     }
 
-    class TileLog(val time : Long, val player : String, val action : String, val x : Short, val y : Short, val tile : String, val rotate : Int, val team : Team)
+    class TileLog(val time : Long, val player : String, val action : String, val x : Short, val y : Short, val tile : String, val rotate : Int, val team : Team, val value: Any?)
 }

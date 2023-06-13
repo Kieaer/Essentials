@@ -1395,11 +1395,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if(last.action == "place") {
                         Call.removeTile(world.tile(last.x.toInt(), last.y.toInt()))
                     } else if(last.action == "break") {
-                        Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)/*println(content.block(last.tile).name)
-                        if (world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.message || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.reinforcedMessage || world.tile(last.x.toInt(), last.y.toInt()).block() == Blocks.worldMessage) {
-                            val t = world.tile(last.x.toInt(), last.y.toInt()).block() as MessageBlock
-                            t.MessageBuild().message = StringBuilder().append(last.other)
-                        }*/
+                        Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)
+
+                        run breaking@ {
+                            buf.reverse().forEach { tile ->
+                                if(tile.value != null) {
+                                    Call.tileConfig(null, world.tile(last.x.toInt(), last.y.toInt()).build, tile.value)
+                                    return@breaking
+                                }
+                            }
+                        }
+
                     }
                 }
             }
