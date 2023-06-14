@@ -926,8 +926,6 @@ object Event {
                                 }
                             }
                         }
-
-                        database.queue(it)
                     }
 
                     if(voting) {

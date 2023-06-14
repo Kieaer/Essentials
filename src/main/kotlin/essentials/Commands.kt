@@ -39,6 +39,7 @@ import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.type.Item
 import mindustry.type.UnitType
+import mindustry.ui.Menus
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
@@ -798,21 +799,107 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             if(arg.isNotEmpty()) {
-                if(!Permission.check(player, "info.other")) return
-                val target = findPlayers(arg[0])
+                if(!Permission.check(player, "info.admin")) return
+                var target = findPlayers(arg[0])
+                var targetData: DB.PlayerData? = null
+
+                fun banPlayer(data: DB.PlayerData?) {
+                    if (data != null) {
+                        val name = data.name
+                        val ip = netServer.admins.getInfo(data.uuid).lastIP
+
+                        val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
+                        for(a in netServer.admins.getInfo(data.uuid).ips) {
+                            ipBanList.add(a)
+                        }
+
+                        Config.idBanList.writeString(JsonArray.readHjson(Config.idBanList.reader()).asArray().add(data.uuid).toString())
+                        Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
+
+                        Event.log(Event.LogType.Player, Bundle()["log.player.banned", name, ip])
+                    }
+                }
+
+                val controlMenus = arrayOf(
+                    arrayOf(bundle["info.button.close"]),
+                    arrayOf(bundle["info.button.ban"], bundle["info.button.kick"])
+                )
+
+                val banMenus = arrayOf(
+                    arrayOf(bundle["info.button.tempban.10min"], bundle["info.button.tempban.1hour"],bundle["info.button.tempban.1day"]),
+                    arrayOf(bundle["info.button.tempban.1week"], bundle["info.button.tempban.2week"], bundle["info.button.tempban.1month"]),
+                    arrayOf(bundle["info.button.ban.permanently"]),
+                    arrayOf(bundle["info.button.close"])
+                )
+
+                val mainMenu = Menus.registerMenu(Menus.MenuListener { player, select ->
+                    if (select == 1) {
+                        val innerMenu = Menus.registerMenu(Menus.MenuListener { _, s ->
+                            val time = when (s) {
+                                0 -> 10
+                                1 -> 60
+                                2 -> 1440
+                                3 -> 10080
+                                4 -> 20160
+                                5 -> 43800
+                                else -> 0
+                            }
+
+                            val timeText = bundle["info.button.tempban.${when (s) {
+                                0 -> "10min"
+                                1 -> "1hour"
+                                2 -> "1day"
+                                3 -> "1week"
+                                4 -> "2week"
+                                5 -> "1month"
+                                else -> ""
+                            }}"]
+
+                            if (s <= 5) {
+                                val tempBanConfirmMenu = Menus.registerMenu(Menus.MenuListener { _, i ->
+                                    if (i == 0) {
+                                        data.banTime = time.toString()
+                                        database.queue(data)
+                                        banPlayer(data)
+                                    }
+                                })
+
+                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText], arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                            } else {
+                                val banConfirmMenu = Menus.registerMenu(Menus.MenuListener { _, i ->
+                                    if (i == 0) {
+                                        banPlayer(targetData)
+                                    }
+                                })
+
+                                Call.menu(player.con(), banConfirmMenu, bundle["info.title.ban.time"], bundle["info.ban.time"], arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                            }
+                        })
+                        Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"], banMenus)
+                    } else if (select == 2){
+                        if (target != null) {
+                            Call.kick(target.con(), Packets.KickReason.kick)
+                        }
+                    }
+                })
+
                 if(target != null) {
+                    val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))}"
                     val other = findPlayerData(target.uuid())
                     if(other != null) {
-                        Call.infoMessage(player.con(), show(other))
+                        targetData = other
+                        Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other)+banned, controlMenus)
                     } else {
                         err("player.not.found")
                     }
                 } else {
                     val p = findPlayersByName(arg[0])
                     if(p != null) {
+                        val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(p.id) || netServer.admins.isIPBanned(p.lastIP))}"
                         val a = database[p.id]
                         if(a != null) {
-                            Call.infoMessage(player.con(), show(a))
+                            targetData = a
+                            Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(a)+banned, controlMenus)
                         } else {
                             err("player.not.registered")
                         }
@@ -821,7 +908,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
             } else {
-                Call.infoMessage(player.con(), show(data))
+                Call.menu(player.con(), 0, bundle["info.title"], show(data), arrayOf(arrayOf(bundle["info.button.close"])))
             }
         }
 

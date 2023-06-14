@@ -43,7 +43,6 @@ object Trigger {
             if(data.duplicateName != "null" && data.duplicateName != player.name()) {
                 data.name = player.name()
                 data.duplicateName = "null"
-                database.queue(data)
             }
             if(Config.fixedName) player.name(data.name)
             data.lastLoginDate = System.currentTimeMillis()
