@@ -102,12 +102,14 @@ object Event {
         Events.on(WithdrawEvent::class.java) {
             if(it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(LogType.WithDraw, Bundle()["log.withdraw", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "withdraw", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team, it.tile.config()))
             }
         }
 
         Events.on(DepositEvent::class.java) {
             if(it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(LogType.Deposit, Bundle()["log.deposit", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "deposit", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team, it.tile.config()))
             }
         }
 
@@ -184,6 +186,8 @@ object Event {
                             "break" -> "[scarlet]${bundle["event.log.break"]}[]"
                             "place" -> "[sky]${bundle["event.log.place"]}[]"
                             "config" -> "[cyan]${bundle["event.log.config"]}[]"
+                            "withdraw" -> "[green]${bundle["event.log.withdraw"]}"
+                            "deposit" -> "[brown]${bundle["event.log.deposit"]}"
                             else -> ""
                         }
 

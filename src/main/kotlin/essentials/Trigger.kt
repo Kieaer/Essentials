@@ -338,7 +338,7 @@ object Trigger {
 
         override fun run() {
             while(!currentThread().isInterrupted) {
-                for(a in queue) {
+                queue.forEach { a ->
                     database.update(a.uuid, a)
                     queue.removeAll { b -> b.uuid == a.uuid }
                 }

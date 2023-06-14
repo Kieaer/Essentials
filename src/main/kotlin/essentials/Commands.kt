@@ -1378,7 +1378,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
         }
 
-        fun rollback() { // todo 메세지 내용이 되돌려지지 않음
+        fun rollback() {
             if(!Permission.check(player, "rollback")) return
 
             state.set(GameState.State.paused)
