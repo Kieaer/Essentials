@@ -785,18 +785,20 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             fun show(target : DB.PlayerData) : String {
                 return """
-                        ${bundle["info.name"]}: ${target.name}[white]
-                        ${bundle["info.placecount"]}: ${target.blockPlaceCount}
-                        ${bundle["info.breakcount"]}: ${target.blockBreakCount}
-                        ${bundle["info.level"]}: ${target.level}
-                        ${bundle["info.exp"]}: ${Exp[target]}
-                        ${bundle["info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                        ${bundle["info.playtime"]}: ${bundle["command.info.time", (target.totalPlayTime / 60 / 60 / 24) % 365, (target.totalPlayTime / 60 / 24) % 24, (target.totalPlayTime / 60) % 60, (target.totalPlayTime) % 60]}
-                        ${bundle["info.attackclear"]}: ${target.attackModeClear}
-                        ${bundle["info.pvpwincount"]}: ${target.pvpVictoriesCount}
-                        ${bundle["info.pvplosecount"]}: ${target.pvpDefeatCount}
+                        ${bundle["command.info.name"]}: ${target.name}[white]
+                        ${bundle["command.info.placecount"]}: ${target.blockPlaceCount}
+                        ${bundle["command.info.breakcount"]}: ${target.blockBreakCount}
+                        ${bundle["command.info.level"]}: ${target.level}
+                        ${bundle["command.info.exp"]}: ${Exp[target]}
+                        ${bundle["command.info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
+                        ${bundle["command.info.playtime"]}: ${bundle["command.info.time", (target.totalPlayTime / 60 / 60 / 24) % 365, (target.totalPlayTime / 60 / 24) % 24, (target.totalPlayTime / 60) % 60, (target.totalPlayTime) % 60]}
+                        ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
+                        ${bundle["command.info.pvpwincount"]}: ${target.pvpVictoriesCount}
+                        ${bundle["command.info.pvplosecount"]}: ${target.pvpDefeatCount}
                         """.trimIndent()
             }
+
+            val lineBreak = "\n"
 
             if(arg.isNotEmpty()) {
                 if(!Permission.check(player, "info.admin")) return
@@ -864,7 +866,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     }
                                 })
 
-                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText], arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText]+lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             } else {
                                 val banConfirmMenu = Menus.registerMenu(Menus.MenuListener { _, i ->
                                     if (i == 0) {
@@ -872,10 +874,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     }
                                 })
 
-                                Call.menu(player.con(), banConfirmMenu, bundle["info.title.ban.time"], bundle["info.ban.time"], arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                Call.menu(player.con(), banConfirmMenu, bundle["info.title.ban.time"], bundle["info.ban.time"]+lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             }
                         })
-                        Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"], banMenus)
+                        Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"]+lineBreak, banMenus)
                     } else if (select == 2){
                         if (target != null) {
                             Call.kick(target.con(), Packets.KickReason.kick)
@@ -887,8 +889,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))}"
                     val other = findPlayerData(target.uuid())
                     if(other != null) {
+                        val menu = if(Permission.check(other.player, "info.admin")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                         targetData = other
-                        Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other)+banned, controlMenus)
+                        Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
                     } else {
                         err("player.not.found")
                     }
@@ -896,10 +899,11 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val p = findPlayersByName(arg[0])
                     if(p != null) {
                         val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(p.id) || netServer.admins.isIPBanned(p.lastIP))}"
-                        val a = database[p.id]
-                        if(a != null) {
-                            targetData = a
-                            Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(a)+banned, controlMenus)
+                        val other = database[p.id]
+                        if(other != null) {
+                            val menu = if(Permission.check(other.player, "info.admin")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
+                            targetData = other
+                            Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
                         } else {
                             err("player.not.registered")
                         }
@@ -908,7 +912,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
             } else {
-                Call.menu(player.con(), 0, bundle["info.title"], show(data), arrayOf(arrayOf(bundle["info.button.close"])))
+                Call.menu(player.con(), 0, bundle["info.title"], show(data)+lineBreak, arrayOf(arrayOf(bundle["info.button.close"])))
             }
         }
 
@@ -1554,25 +1558,25 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 result.forEach {
                     if(it != null) {
                         val texts = """
-                        ${bundle["info.name"]}: ${it.name}
-                        ${bundle["info.uuid"]}: ${it.uuid}
-                        ${bundle["info.languageTag"]}: ${it.languageTag}
-                        ${bundle["info.placecount"]}: ${it.blockPlaceCount}
-                        ${bundle["info.breakcount"]}: ${it.blockBreakCount}
-                        ${bundle["info.joincount"]}: ${it.totalJoinCount}
-                        ${bundle["info.kickcount"]}: ${it.totalKickCount}
-                        ${bundle["info.level"]}: ${it.level}
-                        ${bundle["info.exp"]}: ${it.exp}
-                        ${bundle["info.joindate"]}: ${it.firstPlayDate}
-                        ${bundle["info.lastdate"]}: ${it.lastLoginDate}
-                        ${bundle["info.playtime"]}: ${it.totalPlayTime}
-                        ${bundle["info.attackclear"]}: ${it.attackModeClear}
-                        ${bundle["info.pvpwincount"]}: ${it.pvpVictoriesCount}
-                        ${bundle["info.pvplosecount"]}: ${it.pvpDefeatCount}
-                        ${bundle["info.colornick"]}: ${it.colornick}
-                        ${bundle["info.permission"]}: ${it.permission}
-                        ${bundle["info.mute"]}: ${it.mute}
-                        ${bundle["info.status"]}: ${it.status}
+                        ${bundle["command.info.name"]}: ${it.name}
+                        ${bundle["command.info.uuid"]}: ${it.uuid}
+                        ${bundle["command.info.languageTag"]}: ${it.languageTag}
+                        ${bundle["command.info.placecount"]}: ${it.blockPlaceCount}
+                        ${bundle["command.info.breakcount"]}: ${it.blockBreakCount}
+                        ${bundle["command.info.joincount"]}: ${it.totalJoinCount}
+                        ${bundle["command.info.kickcount"]}: ${it.totalKickCount}
+                        ${bundle["command.info.level"]}: ${it.level}
+                        ${bundle["command.info.exp"]}: ${it.exp}
+                        ${bundle["command.info.joindate"]}: ${it.firstPlayDate}
+                        ${bundle["command.info.lastdate"]}: ${it.lastLoginDate}
+                        ${bundle["command.info.playtime"]}: ${it.totalPlayTime}
+                        ${bundle["command.info.attackclear"]}: ${it.attackModeClear}
+                        ${bundle["command.info.pvpwincount"]}: ${it.pvpVictoriesCount}
+                        ${bundle["command.info.pvplosecount"]}: ${it.pvpDefeatCount}
+                        ${bundle["command.info.colornick"]}: ${it.colornick}
+                        ${bundle["command.info.permission"]}: ${it.permission}
+                        ${bundle["command.info.mute"]}: ${it.mute}
+                        ${bundle["command.info.status"]}: ${it.status}
                         """.trimIndent()
                         player.sendMessage(texts)
                     }
