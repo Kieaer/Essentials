@@ -1053,23 +1053,50 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             for((order, a) in list.withIndex()) {
                 arr.put(a, order)
             }
-            val build = StringBuilder()
 
-            val page = if(arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0
-
+            val prebuilt = Seq<Pair<String, Array<Array<String>>>>()
             val buffer = Mathf.ceil(list.size.toFloat() / 6)
             val pages = if(buffer > 1.0) buffer - 1 else 0
+            val title = bundle["command.page.server"]
 
-            if(page > pages || page < 0) {
-                err("command.page.range", pages)
-                return
-            }
-            build.append("[green]==[white] ${bundle["command.page.server"]} $page/$pages [green]==[white]\n")
-            for(a in 6 * page until (6 * (page + 1)).coerceAtMost(list.size)) {
-                build.append("[gray]$a[] ${list[a].name()}[white]\n")
+            for (page in 0..pages) {
+                val build = StringBuilder()
+                for(a in 6 * page until (6 * (page + 1)).coerceAtMost(list.size)) {
+                    build.append("${list[a].name()}\n[orange]${bundle["command.maps.author"]} ${list[a].author()}[white]\n[gray]ID: $a[green]   ${list[a].width}x${list[a].height}[white]\n\n")
+                }
+
+                val options = arrayOf(
+                    arrayOf("<-", bundle["command.maps.page", page, pages], "->"),
+                    arrayOf(bundle["command.maps.close"])
+                )
+
+                prebuilt.add(Pair(build.toString(), options))
             }
 
-            player.sendMessage(build.toString())
+            data.status.put("page", "0")
+
+            var mainMenu: Int = 0
+            mainMenu = Menus.registerMenu(Menus.MenuListener { player, select ->
+                var page = data.status.get("page").toInt()
+                when (select) {
+                    0 -> {
+                        if (page != 0) page--
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+                    1 -> {
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+                    2 -> {
+                        if (page != pages) page++
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+                    else -> {
+                        data.status.remove("page")
+                    }
+                }
+                data.status.put("page", page.toString())
+            })
+            Call.menu(player.con(), mainMenu, title, prebuilt.get(0).first, prebuilt.get(0).second)
         }
 
         fun me() {
