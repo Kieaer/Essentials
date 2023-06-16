@@ -61,7 +61,7 @@ object PluginData {
         val data = JsonObject()
         var buffer = JsonArray()
 
-        warpZones.forEach { it ->
+        warpZones.forEach {
             val obj = JsonObject()
             obj.add("mapName", it.mapName)
             obj.add("start", it.start)

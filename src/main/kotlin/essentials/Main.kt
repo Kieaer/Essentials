@@ -18,13 +18,14 @@ import java.net.ServerSocket
 import java.net.SocketException
 import java.net.URL
 import java.util.*
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class Main: Plugin() {
     companion object {
         val database = DB()
         val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-        val daemon = Executors.newCachedThreadPool()
+        val daemon : ExecutorService = Executors.newCachedThreadPool()
         var connectType = false
     }
 

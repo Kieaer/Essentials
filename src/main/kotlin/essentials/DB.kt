@@ -17,14 +17,14 @@ import java.io.BufferedInputStream
 import java.io.FileOutputStream
 import java.net.URL
 import java.sql.SQLException
+import java.time.LocalDate
 import java.util.*
 
 class DB {
     val players : Seq<PlayerData> = Seq()
-    var isRemote : Boolean = false
+    private var isRemote : Boolean = false
     lateinit var db : Database
     var dbServer : Server? = null
-    var dbVersion : Int = 2
 
     fun open() {
         try {
@@ -91,7 +91,7 @@ class DB {
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS breakcount RENAME TO \"blockBreakCount\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS joincount RENAME TO \"totalJoinCount\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS kickcount RENAME TO \"totalKickCount\"",
-                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS lastdate RENAME TO \"lastLoginDate\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS lastdate RENAME TO \"lastLoginTime\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS \"joinDate\" RENAME TO \"firstPlayDate\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS playtime RENAME TO \"totalPlayTime\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS attackclear RENAME TO \"attackModeClear\"",
@@ -112,7 +112,9 @@ class DB {
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"banTime\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"duplicateName\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tracking BOOLEAN",
-                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"joinStacks\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLoginDate\" CHARACTER VARYING",
+                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false, \"joinStacks\" = 0",
                                 )
                                 Log.info(Bundle()["event.plugin.db.version", 2])
                                 Log.warn(Bundle()["event.plugin.db.warning"])
@@ -194,7 +196,7 @@ class DB {
         val level = integer("level")
         val exp = integer("exp")
         val firstPlayDate = long("firstPlayDate")
-        val lastLoginDate = long("lastLoginDate")
+        val lastLoginTime = long("lastLoginTime")
         val totalPlayTime = long("totalPlayTime")
         val attackModeClear = integer("attackModeClear")
         val pvpVictoriesCount = integer("pvpVictoriesCount")
@@ -218,6 +220,8 @@ class DB {
         val banTime = text("banTime").nullable()
         val duplicateName = text("duplicateName").nullable()
         val tracking = bool("tracking")
+        val joinStacks = integer("joinStacks")
+        val lastLoginDate = text("lastLoginDate").nullable()
     }
 
     class PlayerData {
@@ -231,7 +235,7 @@ class DB {
         var level : Int = 0
         var exp : Int = 0
         var firstPlayDate : Long = 0
-        var lastLoginDate : Long = 0
+        var lastLoginTime : Long = 0
         var totalPlayTime : Long = 0
         var attackModeClear : Int = 0
         var pvpVictoriesCount : Int = 0
@@ -255,6 +259,9 @@ class DB {
         var banTime : String? = null
         var duplicateName : String? = null
         var tracking : Boolean = false
+        var joinStacks : Int = 0
+        var lastLoginDate : LocalDate? = null
+        var expMultiplier : Double = 1.0
 
         var afkTime : Int = 0
         var player : Playerc = mindustry.gen.Player.create()
@@ -272,7 +279,7 @@ class DB {
                 level: $level
                 exp: $exp
                 firstPlayDate: $firstPlayDate
-                lastLoginDate: $lastLoginDate
+                lastLoginTime: $lastLoginTime
                 totalPlayTime: $totalPlayTime
                 attackModeClear: $attackModeClear
                 pvpVictoriesCount: $pvpVictoriesCount
@@ -296,8 +303,11 @@ class DB {
                 banTime: $banTime
                 duplicateName: $duplicateName
                 tracking: $tracking
+                joinStacks: $joinStacks
                 afkTime: $afkTime
                 entityid: $entityid
+                lastLoginDate: ${if (lastLoginDate != null) lastLoginDate.toString() else "null"}
+                expMultiplier: $expMultiplier
             """.trimIndent()
         }
     }
@@ -315,7 +325,7 @@ class DB {
                 it[level] = data.level
                 it[exp] = data.exp
                 it[firstPlayDate] = data.firstPlayDate
-                it[lastLoginDate] = data.lastLoginDate
+                it[lastLoginTime] = data.lastLoginTime
                 it[totalPlayTime] = data.totalPlayTime
                 it[attackModeClear] = data.attackModeClear
                 it[pvpVictoriesCount] = data.pvpVictoriesCount
@@ -339,6 +349,8 @@ class DB {
                 it[banTime] = null
                 it[duplicateName] = null
                 it[tracking] = data.tracking
+                it[joinStacks] = data.joinStacks
+                it[lastLoginDate] = LocalDate.now().toString()
             }
         }
     }
@@ -357,7 +369,7 @@ class DB {
             data.level = d[Player.level]
             data.exp = d[Player.exp]
             data.firstPlayDate = d[Player.firstPlayDate]
-            data.lastLoginDate = d[Player.lastLoginDate]
+            data.lastLoginTime = d[Player.lastLoginTime]
             data.totalPlayTime = d[Player.totalPlayTime]
             data.attackModeClear = d[Player.attackModeClear]
             data.pvpVictoriesCount = d[Player.pvpVictoriesCount]
@@ -380,6 +392,8 @@ class DB {
             data.banTime = d[Player.banTime]
             data.duplicateName = d[Player.duplicateName]
             data.tracking = d[Player.tracking]
+            data.joinStacks = d[Player.joinStacks]
+            data.lastLoginDate = LocalDate.parse(d[Player.lastLoginDate])
 
             val obj = ObjectMap<String, String>()
             JsonObject.readHjson(d[Player.status]).asObject().forEach {
@@ -408,7 +422,7 @@ class DB {
                 data.level = it[Player.level]
                 data.exp = it[Player.exp]
                 data.firstPlayDate = it[Player.firstPlayDate]
-                data.lastLoginDate = it[Player.lastLoginDate]
+                data.lastLoginTime = it[Player.lastLoginTime]
                 data.totalPlayTime = it[Player.totalPlayTime]
                 data.attackModeClear = it[Player.attackModeClear]
                 data.pvpVictoriesCount = it[Player.pvpVictoriesCount]
@@ -431,10 +445,12 @@ class DB {
                 data.banTime = it[Player.banTime]
                 data.duplicateName = it[Player.duplicateName]
                 data.tracking = it[Player.tracking]
+                data.joinStacks = it[Player.joinStacks]
+                data.lastLoginDate = LocalDate.parse(it[Player.lastLoginDate])
 
                 val obj = ObjectMap<String, String>()
-                JsonObject.readHjson(it[Player.status]).asObject().forEach {
-                    obj.put(it.name, it.value.asString())
+                JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
+                    obj.put(member.name, member.value.asString())
                 }
                 data.status = obj
                 d.add(data)
@@ -481,7 +497,7 @@ class DB {
                 it[level] = data.level
                 it[exp] = data.exp
                 it[firstPlayDate] = data.firstPlayDate
-                it[lastLoginDate] = data.lastLoginDate
+                it[lastLoginTime] = data.lastLoginTime
                 it[totalPlayTime] = data.totalPlayTime
                 it[attackModeClear] = data.attackModeClear
                 it[pvpVictoriesCount] = data.pvpVictoriesCount
@@ -504,6 +520,8 @@ class DB {
                 it[banTime] = data.banTime!!
                 it[duplicateName] = data.duplicateName!!
                 it[tracking] = data.tracking
+                it[joinStacks] = data.joinStacks
+                it[lastLoginDate] = data.lastLoginDate.toString()
 
                 val json = JsonObject()
                 data.status.forEach {
@@ -528,7 +546,7 @@ class DB {
                 data.level = this[Player.level]
                 data.exp = this[Player.exp]
                 data.firstPlayDate = this[Player.firstPlayDate]
-                data.lastLoginDate = this[Player.lastLoginDate]
+                data.lastLoginTime = this[Player.lastLoginTime]
                 data.totalPlayTime = this[Player.totalPlayTime]
                 data.attackModeClear = this[Player.attackModeClear]
                 data.pvpVictoriesCount = this[Player.pvpVictoriesCount]
@@ -551,6 +569,8 @@ class DB {
                 data.banTime = this[Player.banTime]
                 data.duplicateName = this[Player.duplicateName]
                 data.tracking = this[Player.tracking]
+                data.joinStacks = this[Player.joinStacks]
+                data.lastLoginDate = LocalDate.parse(this[Player.lastLoginDate])
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(this[Player.status]).asObject().forEach {
@@ -567,9 +587,5 @@ class DB {
 
     fun close() {
         TransactionManager.closeAndUnregister(db)
-    }
-
-    fun upgrade() {
-
     }
 }

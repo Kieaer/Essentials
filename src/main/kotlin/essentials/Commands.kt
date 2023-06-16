@@ -143,7 +143,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
     }
 
-    class Client(val arg : Array<String>, val player : Playerc) {
+    class Client(val arg : Array<String>, private val player : Playerc) {
         private var bundle = Bundle()
         private var data = DB.PlayerData()
 
@@ -157,7 +157,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             bundle = Bundle(data.languageTag)
         }
 
-        fun send(msg : String, vararg parameters : Any) {
+        private fun send(msg : String, vararg parameters : Any) {
             player.sendMessage(MessageFormat.format(bundle.resource.getString(msg), *parameters))
         }
 
@@ -802,7 +802,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             if(arg.isNotEmpty()) {
                 if(!Permission.check(player, "info.admin")) return
-                var target = findPlayers(arg[0])
+                val target = findPlayers(arg[0])
                 var targetData: DB.PlayerData? = null
 
                 fun banPlayer(data: DB.PlayerData?) {
@@ -834,10 +834,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     arrayOf(bundle["info.button.close"])
                 )
 
-                val mainMenu = Menus.registerMenu(Menus.MenuListener { player, select ->
-                    if (select == 1) {
-                        val innerMenu = Menus.registerMenu(Menus.MenuListener { _, s ->
-                            val time = when (s) {
+                val mainMenu = Menus.registerMenu { player, select ->
+                    if(select == 1) {
+                        val innerMenu = Menus.registerMenu { _, s ->
+                            val time = when(s) {
                                 0 -> 10
                                 1 -> 60
                                 2 -> 1440
@@ -847,43 +847,45 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 else -> 0
                             }
 
-                            val timeText = bundle["info.button.tempban.${when (s) {
-                                0 -> "10min"
-                                1 -> "1hour"
-                                2 -> "1day"
-                                3 -> "1week"
-                                4 -> "2week"
-                                5 -> "1month"
-                                else -> ""
-                            }}"]
+                            val timeText = bundle["info.button.tempban.${
+                                when(s) {
+                                    0 -> "10min"
+                                    1 -> "1hour"
+                                    2 -> "1day"
+                                    3 -> "1week"
+                                    4 -> "2week"
+                                    5 -> "1month"
+                                    else -> ""
+                                }
+                            }"]
 
-                            if (s <= 5) {
-                                val tempBanConfirmMenu = Menus.registerMenu(Menus.MenuListener { _, i ->
-                                    if (i == 0) {
+                            if(s <= 5) {
+                                val tempBanConfirmMenu = Menus.registerMenu { _, i ->
+                                    if(i == 0) {
                                         data.banTime = time.toString()
                                         database.queue(data)
                                         banPlayer(data)
                                     }
-                                })
+                                }
 
-                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText]+lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             } else {
-                                val banConfirmMenu = Menus.registerMenu(Menus.MenuListener { _, i ->
-                                    if (i == 0) {
+                                val banConfirmMenu = Menus.registerMenu { _, i ->
+                                    if(i == 0) {
                                         banPlayer(targetData)
                                     }
-                                })
+                                }
 
-                                Call.menu(player.con(), banConfirmMenu, bundle["info.title.ban.time"], bundle["info.ban.time"]+lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                Call.menu(player.con(), banConfirmMenu, bundle["info.title.ban.time"], bundle["info.ban.time"] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             }
-                        })
-                        Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"]+lineBreak, banMenus)
-                    } else if (select == 2){
-                        if (target != null) {
+                        }
+                        Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"] + lineBreak, banMenus)
+                    } else if(select == 2) {
+                        if(target != null) {
                             Call.kick(target.con(), Packets.KickReason.kick)
                         }
                     }
-                })
+                }
 
                 if(target != null) {
                     val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))}"
@@ -1079,27 +1081,30 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             data.status.put("page", "0")
 
-            var mainMenu: Int = 0
-            mainMenu = Menus.registerMenu(Menus.MenuListener { player, select ->
+            var mainMenu = 0
+            mainMenu = Menus.registerMenu { player, select ->
                 var page = data.status.get("page").toInt()
-                when (select) {
+                when(select) {
                     0 -> {
-                        if (page != 0) page--
+                        if(page != 0) page--
                         Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
                     }
+
                     1 -> {
                         Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
                     }
+
                     2 -> {
-                        if (page != pages) page++
+                        if(page != pages) page++
                         Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
                     }
+
                     else -> {
                         data.status.remove("page")
                     }
                 }
                 data.status.put("page", page.toString())
-            })
+            }
             Call.menu(player.con(), mainMenu, title, prebuilt.get(0).first, prebuilt.get(0).second)
         }
 
@@ -1568,7 +1573,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.level"]}: ${it.level}
                         ${bundle["command.info.exp"]}: ${it.exp}
                         ${bundle["command.info.joindate"]}: ${it.firstPlayDate}
-                        ${bundle["command.info.lastdate"]}: ${it.lastLoginDate}
+                        ${bundle["command.info.lastdate"]}: ${it.lastLoginTime}
                         ${bundle["command.info.playtime"]}: ${it.totalPlayTime}
                         ${bundle["command.info.attackclear"]}: ${it.attackModeClear}
                         ${bundle["command.info.pvpwincount"]}: ${it.pvpVictoriesCount}
@@ -2120,7 +2125,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
         }
 
-        fun selectTeam(arg : String) : Team {
+        private fun selectTeam(arg : String) : Team {
             return if("derelict".first() == arg.first()) {
                 Team.derelict
             } else if("sharded".first() == arg.first()) {
@@ -2305,7 +2310,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
         }
 
-        fun stripColors(string : String) : String {
+        private fun stripColors(string : String) : String {
             return string.replace(" *\\(.+?\\)".toRegex(), "")
         }
     }
@@ -2343,7 +2348,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
     object Discord {
         val pin : ObjectMap<String, Int> = ObjectMap()
-        lateinit var catnip : Catnip
+        private lateinit var catnip : Catnip
 
         init {
             if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) {

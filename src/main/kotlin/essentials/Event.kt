@@ -83,16 +83,16 @@ object Event {
     private var random = Random()
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     private var blockExp = ObjectMap<String, Int>()
-    var dosBlacklist = ObjectSet<String>()
+    private var dosBlacklist = ObjectSet<String>()
     private var pvpCount = Config.pvpPeaceTime
     private var count = 60
     var pvpSpectors = Seq<String>()
     var pvpPlayer = Seq<String>()
     var isGlobalMute = false
 
-    val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
-    val blockSelectRegex : Pattern = Pattern.compile(".*build.*")
-    val nameRegex : Pattern = Pattern.compile("(.*\\[.*].*)|　|^(.*\\s+.*)+\$")
+    private val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
+    private val blockSelectRegex : Pattern = Pattern.compile(".*build.*")
+    private val nameRegex : Pattern = Pattern.compile("(.*\\[.*].*)|　|^(.*\\s+.*)+\$")
 
     var dpsBlocks = 0f
     var dpsTile : Tile? = null
@@ -888,7 +888,7 @@ object Event {
                             it.afkTime = 0
                         }
 
-                        it.exp = it.exp + random.nextInt(7)
+                        it.exp = it.exp + ((random.nextInt(7) * it.expMultiplier).toInt())
                         Commands.Exp[it]
 
                         if(Config.expDisplay) {
@@ -900,8 +900,7 @@ object Event {
                             val array = JsonArray.readJSON(it.hud).asArray()
 
                             fun color(current : Float, max : Float) : String {
-                                val result = current / max * 100.0
-                                return when(result) {
+                                return when(current / max * 100.0) {
                                     in 50.0..100.0 -> "[green]"
                                     in 20.0..49.9 -> "[yellow]"
                                     else -> "[scarlet]"
@@ -1347,7 +1346,7 @@ object Event {
                 0
             }
 
-            target.exp = target.exp + score
+            target.exp = target.exp + ((score * target.expMultiplier).toInt())
             p.sendMessage(bundle["event.exp.earn.victory", score])
         } else {
             val score : Int = if(state.rules.attackMode) {
@@ -1370,7 +1369,7 @@ object Event {
                 ""
             }
 
-            target.exp = target.exp + score
+            target.exp = target.exp + ((score * target.expMultiplier).toInt())
             p.sendMessage(message)
 
             if(score < 0) {

@@ -27,13 +27,14 @@ import java.lang.Thread.currentThread
 import java.lang.Thread.sleep
 import java.net.*
 import java.nio.ByteBuffer
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
 object Trigger {
-    var order = 0
+    private var order = 0
     val clients = Seq<Socket>()
 
     fun loadPlayer(player : Playerc, data : DB.PlayerData, login : Boolean) {
@@ -45,7 +46,19 @@ object Trigger {
                 data.duplicateName = "null"
             }
             if(Config.fixedName) player.name(data.name)
-            data.lastLoginDate = System.currentTimeMillis()
+            if (data.lastLoginDate == null) {
+                data.lastLoginDate = LocalDate.now()
+            }
+            if (data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
+                data.joinStacks = data.joinStacks++
+            } else {
+                data.joinStacks = 0
+            }
+            if (data.joinStacks % 7 == 0) {
+                data.expMultiplier = 1.5
+            }
+
+            data.lastLoginTime = System.currentTimeMillis()
             data.totalJoinCount = data.totalJoinCount++
             data.player = player
 
@@ -150,14 +163,14 @@ object Trigger {
                     }
 
                     if(state.isPlaying) {
-                        val serverInfos = getServerInfo()
+                        val serverInfo = getServerInfo()
                         var total = 0
-                        serverInfos.forEach { a -> total += a.players }
+                        serverInfo.forEach { a -> total += a.players }
 
                         for(i in 0 until PluginData.warpCounts.size) {
                             if(state.map.name() == PluginData.warpCounts[i].mapName) {
                                 val value = PluginData.warpCounts[i]
-                                val info = serverInfos.find { a -> a.address == value.ip && a.port == value.port }
+                                val info = serverInfo.find { a -> a.address == value.ip && a.port == value.port }
                                 if(info != null) {
                                     val str = info.players.toString()
                                     val digits = IntArray(str.length)
@@ -222,7 +235,7 @@ object Trigger {
 
                                     var y = tile.build.getY() + if(isDup) margin - 8 else margin
 
-                                    val info = serverInfos.find { a -> a.address == value.ip && a.port == value.port }
+                                    val info = serverInfo.find { a -> a.address == value.ip && a.port == value.port }
                                     if(info != null) {
                                         if(isDup) y += 4
                                         for(a in Groups.player) {
@@ -389,7 +402,7 @@ object Trigger {
             }
         }
 
-        class Handler(val socket : Socket): java.lang.Thread() {
+        class Handler(private val socket : Socket): java.lang.Thread() {
             override fun run() {
                 try {
                     val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
@@ -427,11 +440,11 @@ object Trigger {
     }
 
     object Client: Runnable {
-        val address = Config.shareBanListServer
-        const val port = 6000
-        val socket = Socket()
-        lateinit var reader : BufferedReader
-        lateinit var writer : BufferedWriter
+        private val address = Config.shareBanListServer
+        private const val port = 6000
+        private val socket = Socket()
+        private lateinit var reader : BufferedReader
+        private lateinit var writer : BufferedWriter
 
         override fun run() {
             try {
@@ -481,7 +494,7 @@ object Trigger {
             }
         }
 
-        fun write(msg : String) {
+        private fun write(msg : String) {
             writer.write(msg)
             writer.newLine()
             writer.flush()
