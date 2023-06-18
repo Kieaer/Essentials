@@ -1,8 +1,9 @@
-import org.gradle.internal.os.OperatingSystem
+import com.github.gradle.node.npm.task.NpmTask
 
 plugins {
     kotlin("jvm") version "1.8.20"
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.github.node-gradle.node") version "5.0.0"
 }
 
 java {
@@ -23,8 +24,8 @@ repositories {
 
 dependencies {
     val exposedVersion = "0.41.1"
-    val mindustryVersion = "v143"
-    val arcVersion = "v143"
+    val mindustryVersion = "v145"
+    val arcVersion = "v145"
 
     compileOnly("com.github.anuken.arc:arc-core:$arcVersion")
     compileOnly("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
@@ -49,18 +50,16 @@ dependencies {
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("net.datafaker:datafaker:1.8.1")
 
-    val ktor_version = "2.2.3"
-    implementation("io.ktor:ktor-server-core:$ktor_version")
-    implementation("io.ktor:ktor-server-netty:$ktor_version")
-    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
-    implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
-    implementation("io.ktor:ktor-server-rate-limit:$ktor_version")
+    val ktor = "2.3.1"
+    implementation("io.ktor:ktor-server-core:$ktor")
+    implementation("io.ktor:ktor-server-netty:$ktor")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor")
+    implementation("io.ktor:ktor-serialization-jackson:$ktor")
+    implementation("io.ktor:ktor-server-rate-limit:$ktor")
 }
 
 tasks.jar {
     enabled = false
-
-
 
     if (!file("./src/main/resources/www").exists()) {
         dependsOn("web")
@@ -74,30 +73,32 @@ tasks.jar {
     }
 
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
 
+tasks.register("compression") {
+    dependsOn(tasks.jar)
     dependsOn(tasks.shadowJar)
 }
 
+node {
+    download.set(true)
+    version.set("18.16.0")
+    npmVersion.set("9.5.1")
+    nodeProjectDir.set(file("./src/www"))
+}
+
+val nodeBuild = tasks.register<NpmTask>("nodeBuild") {
+    args.set(listOf("run", "build"))
+}
+
+val nodeInstall = tasks.register<NpmTask>("nodeInstall") {
+    args.set(listOf("install"))
+}
+
 tasks.register("web") {
-    if (OperatingSystem.current() == OperatingSystem.forName("windows")) {
-        exec {
-            workingDir("./src/www")
-            commandLine("npm.cmd", "i")
-        }
-        exec {
-            workingDir("./src/www")
-            commandLine("npm.cmd", "run", "build")
-        }
-    } else { /* if os is unix-like */
-        exec {
-            workingDir("./src/www")
-            commandLine("npm", "i")
-        }
-        exec {
-            workingDir("./src/www")
-            commandLine("npm", "run", "build")
-        }
-    }
+    dependsOn(nodeInstall)
+    dependsOn(nodeBuild)
+
     project.delete(
         files("./src/main/resources/www")
     )
@@ -107,18 +108,14 @@ tasks.register("web") {
     }
 }
 
-tasks.compileKotlin {
-    kotlinOptions.allWarningsAsErrors = false
-}
-
 tasks.shadowJar {
     archiveFileName.set("Essentials.jar")
 
-   minimize {
-       exclude(dependency("org.jetbrains.exposed:.*:.*"))
-       exclude(dependency("org.slf4j:slf4j-nop:.*"))
-       exclude(dependency(files("libs/lingua.jar")))
-   }
+    minimize {
+        exclude(dependency("org.jetbrains.exposed:.*:.*"))
+        exclude(dependency("org.slf4j:slf4j-nop:.*"))
+        exclude(dependency(files("libs/lingua.jar")))
+    }
 }
 
 sourceSets{
