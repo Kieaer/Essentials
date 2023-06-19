@@ -416,7 +416,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun color() {
             if(!Permission.check(player, "color")) return
-            data.colornick = !data.colornick
+            data.animatedName = !data.animatedName
         }
 
         fun broadcast() {
@@ -1578,7 +1578,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.attackclear"]}: ${it.attackModeClear}
                         ${bundle["command.info.pvpwincount"]}: ${it.pvpVictoriesCount}
                         ${bundle["command.info.pvplosecount"]}: ${it.pvpDefeatCount}
-                        ${bundle["command.info.colornick"]}: ${it.colornick}
+                        ${bundle["command.info.colornick"]}: ${it.animatedName}
                         ${bundle["command.info.permission"]}: ${it.permission}
                         ${bundle["command.info.mute"]}: ${it.mute}
                         ${bundle["command.info.status"]}: ${it.status}

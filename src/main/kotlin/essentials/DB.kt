@@ -97,6 +97,7 @@ class DB {
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS attackclear RENAME TO \"attackModeClear\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS pvpwincount RENAME TO \"pvpVictoriesCount\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS pvplosecount RENAME TO \"pvpDefeatCount\"",
+                                    "ALTER TABLE Player ALTER COLUMN IF EXISTS colornick RENAME TO \"animatedName\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS id RENAME TO \"accountID\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS pw RENAME TO \"accountPW\"",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS discord CHARACTER VARYING",
@@ -201,7 +202,7 @@ class DB {
         val attackModeClear = integer("attackModeClear")
         val pvpVictoriesCount = integer("pvpVictoriesCount")
         val pvpDefeatCount = integer("pvpDefeatCount")
-        val colornick = bool("colornick")
+        val animatedName = bool("animatedName")
         val permission = text("permission")
         val mute = bool("mute")
         val accountID = text("accountID")
@@ -240,7 +241,7 @@ class DB {
         var attackModeClear : Int = 0
         var pvpVictoriesCount : Int = 0
         var pvpDefeatCount : Int = 0
-        var colornick : Boolean = false
+        var animatedName : Boolean = false
         var permission : String = "visitor"
         var mute : Boolean = false
         var accountID : String = "none"
@@ -284,7 +285,7 @@ class DB {
                 attackModeClear: $attackModeClear
                 pvpVictoriesCount: $pvpVictoriesCount
                 pvpDefeatCount: $pvpDefeatCount
-                colornick: $colornick
+                animatedName: $animatedName
                 permission: $permission
                 mute: $mute
                 accountID: $accountID
@@ -330,7 +331,7 @@ class DB {
                 it[attackModeClear] = data.attackModeClear
                 it[pvpVictoriesCount] = data.pvpVictoriesCount
                 it[pvpDefeatCount] = data.pvpDefeatCount
-                it[colornick] = data.colornick
+                it[animatedName] = data.animatedName
                 it[permission] = data.permission
                 it[mute] = data.mute
                 it[accountID] = data.accountID
@@ -374,7 +375,7 @@ class DB {
             data.attackModeClear = d[Player.attackModeClear]
             data.pvpVictoriesCount = d[Player.pvpVictoriesCount]
             data.pvpDefeatCount = d[Player.pvpDefeatCount]
-            data.colornick = d[Player.colornick]
+            data.animatedName = d[Player.animatedName]
             data.permission = d[Player.permission]
             data.mute = d[Player.mute]
             data.accountID = d[Player.accountID]
@@ -427,7 +428,7 @@ class DB {
                 data.attackModeClear = it[Player.attackModeClear]
                 data.pvpVictoriesCount = it[Player.pvpVictoriesCount]
                 data.pvpDefeatCount = it[Player.pvpDefeatCount]
-                data.colornick = it[Player.colornick]
+                data.animatedName = it[Player.animatedName]
                 data.permission = it[Player.permission]
                 data.mute = it[Player.mute]
                 data.accountID = it[Player.accountID]
@@ -502,7 +503,7 @@ class DB {
                 it[attackModeClear] = data.attackModeClear
                 it[pvpVictoriesCount] = data.pvpVictoriesCount
                 it[pvpDefeatCount] = data.pvpDefeatCount
-                it[colornick] = data.colornick
+                it[animatedName] = data.animatedName
                 it[permission] = data.permission
                 it[mute] = data.mute
                 it[accountID] = data.accountID
@@ -551,7 +552,7 @@ class DB {
                 data.attackModeClear = this[Player.attackModeClear]
                 data.pvpVictoriesCount = this[Player.pvpVictoriesCount]
                 data.pvpDefeatCount = this[Player.pvpDefeatCount]
-                data.colornick = this[Player.colornick]
+                data.animatedName = this[Player.animatedName]
                 data.permission = this[Player.permission]
                 data.mute = this[Player.mute]
                 data.accountID = this[Player.accountID]

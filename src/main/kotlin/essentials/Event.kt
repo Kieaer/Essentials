@@ -858,7 +858,7 @@ object Event {
                     database.players.forEach {
                         it.totalPlayTime = it.totalPlayTime + 1
 
-                        if(it.colornick) {
+                        if(it.animatedName) {
                             val name = it.name.replace("\\[(.*?)]".toRegex(), "")
                             nickcolor(name, it.player)
                         } else {

@@ -45,29 +45,37 @@ object Trigger {
                 data.name = player.name()
                 data.duplicateName = "null"
             }
-            if(Config.fixedName) player.name(data.name)
+
             if (data.lastLoginDate == null) {
                 data.lastLoginDate = LocalDate.now()
             }
+
             if (data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
                 data.joinStacks = data.joinStacks++
             } else {
                 data.joinStacks = 0
             }
-            if (data.joinStacks % 7 == 0) {
+
+            if (data.joinStacks % 3 == 0) {
+                data.expMultiplier = 1.2
+            } else if (data.joinStacks % 7 == 0) {
                 data.expMultiplier = 1.5
+            } else if (data.joinStacks % 30 == 0) {
+                data.expMultiplier = 2.5
             }
 
+            val bundle = Bundle(data.languageTag)
+            if(Config.fixedName) player.name(data.name)
             data.lastLoginTime = System.currentTimeMillis()
             data.totalJoinCount = data.totalJoinCount++
             data.player = player
 
+            val message = StringBuilder()
+
             val perm = Permission[player]
             if(perm.name.isNotEmpty()) player.name(Permission[player].name)
             player.admin(Permission[player].admin)
-            player.sendMessage(Bundle(data.languageTag)[if(login) "event.player.logged" else "event.player.loaded"])
-
-            database.players.add(data)
+            message.appendLine(bundle[if(login) "event.player.logged" else "event.player.loaded"])
 
             data.entityid = order
             order++
@@ -80,7 +88,7 @@ object Trigger {
                     if(file.exists()) file.readString() else ""
                 }
                 val count = motd.split("\r\n|\r|\n").toTypedArray().size
-                if(count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
+                if(count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
             }
 
             if(perm.isAlert) {
@@ -102,9 +110,8 @@ object Trigger {
             }
 
             if(Event.voting) {
-                val bundle = Bundle(data.languageTag)
-                player.sendMessage(bundle["command.vote.starter", player.plainName()])
-                player.sendMessage(when(Event.voteType) {
+                message.appendLine(bundle["command.vote.starter", player.plainName()])
+                message.appendLine(when(Event.voteType) {
                     "kick" -> bundle["command.vote.kick.start", Event.voteTarget!!.plainName(), Event.voteReason!!]
                     "map" -> bundle["command.vote.map.start", Event.voteMap!!.name(), Event.voteReason!!]
                     "gg" -> bundle["command.vote.gg.start"]
@@ -113,8 +120,15 @@ object Trigger {
                     "random" -> bundle["command.vote.random.start"]
                     else -> ""
                 })
-                player.sendMessage(bundle["command.vote.how"])
+                message.appendLine(bundle["command.vote.how"])
             }
+
+            if (data.expMultiplier != 1.0) {
+                message.appendLine(bundle["event.player.expboost", data.joinStacks, data.expMultiplier])
+            }
+
+            database.players.add(data)
+            player.sendMessage(message.toString())
         }
     }
 
