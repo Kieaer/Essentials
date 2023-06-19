@@ -85,7 +85,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("color", "Enable color nickname") { a, p : Playerc -> Client(a, p).color() }
             handler.register("discord", "Authenticate your Discord account to the server.") { a, p : Playerc -> Client(a, p).discord() }
             handler.register("dps", "Create damage per seconds meter block") { a, p : Playerc -> Client(a, p).dps() }
-            handler.register("effect", "<level> [color]", "Set the effect and color for each level.") { a, p : Playerc -> Client(a, p).effect() }
+            handler.register("effect", "<on/off or level> [color]", "Turn other players' effects on or off, or set effects and colors for each level.") { a, p : Playerc -> Client(a, p).effect() }
             handler.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p : Playerc -> Client(a, p).exp() }
             handler.register("fillitems", "<team>", "Fill the core with items.") { a, p : Playerc -> Client(a, p).fillitems() }
             handler.register("freeze", "<player>", "Stop player unit movement") { a, p : Playerc -> Client(a, p).freeze() }
@@ -480,6 +480,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     err("command.effect.level")
                 }
+            } else if (arg[0].equals("off")) {
+                data.showLevelEffects = false
+                send("command.effect.off")
+            } else if (arg[0].equals("on")) {
+                data.showLevelEffects = true
+                send("command.effect.on")
             } else {
                 err("command.effect.invalid")
             }

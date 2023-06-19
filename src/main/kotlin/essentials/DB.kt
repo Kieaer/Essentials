@@ -115,7 +115,8 @@ class DB {
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tracking BOOLEAN",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"joinStacks\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLoginDate\" CHARACTER VARYING",
-                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false, \"joinStacks\" = 0",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"showLevelEffects\" CHARACTER VARYING",
+                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false, \"joinStacks\" = 0, \"showLevelEffects\" = true",
                                 )
                                 Log.info(Bundle()["event.plugin.db.version", 2])
                                 Log.warn(Bundle()["event.plugin.db.warning"])
@@ -223,6 +224,7 @@ class DB {
         val tracking = bool("tracking")
         val joinStacks = integer("joinStacks")
         val lastLoginDate = text("lastLoginDate").nullable()
+        val showLevelEffects = bool("showLevelEffects")
     }
 
     class PlayerData {
@@ -262,6 +264,7 @@ class DB {
         var tracking : Boolean = false
         var joinStacks : Int = 0
         var lastLoginDate : LocalDate? = null
+        var showLevelEffects : Boolean = true
         var expMultiplier : Double = 1.0
 
         var afkTime : Int = 0
@@ -308,6 +311,7 @@ class DB {
                 afkTime: $afkTime
                 entityid: $entityid
                 lastLoginDate: ${if(lastLoginDate != null) lastLoginDate.toString() else "null"}
+                showLevelEffects: $showLevelEffects
                 expMultiplier: $expMultiplier
             """.trimIndent()
         }
@@ -352,6 +356,7 @@ class DB {
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
                 it[lastLoginDate] = LocalDate.now().toString()
+                it[showLevelEffects] = data.showLevelEffects
             }
         }
     }
@@ -395,6 +400,7 @@ class DB {
             data.tracking = d[Player.tracking]
             data.joinStacks = d[Player.joinStacks]
             data.lastLoginDate = LocalDate.parse(d[Player.lastLoginDate])
+            data.showLevelEffects = d[Player.showLevelEffects]
 
             val obj = ObjectMap<String, String>()
             JsonObject.readHjson(d[Player.status]).asObject().forEach {
@@ -448,6 +454,7 @@ class DB {
                 data.tracking = it[Player.tracking]
                 data.joinStacks = it[Player.joinStacks]
                 data.lastLoginDate = LocalDate.parse(it[Player.lastLoginDate])
+                data.showLevelEffects = it[Player.showLevelEffects]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
@@ -523,6 +530,7 @@ class DB {
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
                 it[lastLoginDate] = data.lastLoginDate.toString()
+                it[showLevelEffects] = data.showLevelEffects
 
                 val json = JsonObject()
                 data.status.forEach {
@@ -572,6 +580,7 @@ class DB {
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
                 data.lastLoginDate = LocalDate.parse(this[Player.lastLoginDate])
+                data.showLevelEffects = this[Player.showLevelEffects]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(this[Player.status]).asObject().forEach {

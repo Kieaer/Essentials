@@ -718,6 +718,8 @@ object Event {
         var messageCount = Config.messageTime
         var messageOrder = 0
 
+        data class effectData(val player: Playerc, val x: Float, val y: Float, val rotate: Float, val effectLevel: Int?, val level: Int, val color: Color)
+
         Core.app.addListener(object: ApplicationListener {
             override fun update() {
                 if(Config.unbreakableCore) {
@@ -779,6 +781,8 @@ object Event {
 
                 if(Config.moveEffects) {
                     if(milsCount == 5) {
+                        val effectList = Seq<effectData>()
+
                         database.players.forEach {
                             if(it.player.unit() != null && it.player.unit().health > 0f) {
                                 val color = if(it.effectColor != null) {
@@ -799,27 +803,28 @@ object Event {
                                     }
                                 }
 
-                                val x = it.player.x
-                                val y = it.player.y
-                                val rot = it.player.unit().rotation
-
-                                when(if(it.effectLevel != null) it.effectLevel else it.level) {
-                                    in 10..19 -> Call.effect(Fx.freezing, x, y, rot, color)
-                                    in 20..29 -> Call.effect(Fx.overdriven, x, y, rot, color)
-                                    in 30..39 -> {
-                                        Call.effect(Fx.burning, x, y, rot, color)
-                                        Call.effect(Fx.melting, x, y, rot, color)
-                                    }
-
-                                    in 40..49 -> Call.effect(Fx.steam, x, y, rot, color)
-                                    in 50..59 -> Call.effect(Fx.shootSmallSmoke, x, y, rot, color)
-                                    in 60..69 -> Call.effect(Fx.mine, x, y, rot, color)
-                                    in 70..79 -> Call.effect(Fx.explosion, x, y, rot, color)
-                                    in 80..89 -> Call.effect(Fx.hitLaser, x, y, rot, color)
-                                    in 90..99 -> Call.effect(Fx.crawlDust, x, y, rot, color)
-                                    in 100..Int.MAX_VALUE -> Call.effect(Fx.mineImpact, x, y, rot, color)
-                                    else -> {}
+                                if(it.showLevelEffects) {
+                                    effectList.add(effectData(it.player, it.player.x, it.player.y, it.player.unit().rotation, it.effectLevel, it.level, color))
                                 }
+                            }
+                        }
+
+                        effectList.forEach {
+                            when(if(it.effectLevel != null) it.effectLevel else it.level) {
+                                in 10..19 -> Call.effect(it.player.con(), Fx.freezing, it.x, it.y, it.rotate, it.color)
+                                in 20..29 -> Call.effect(it.player.con(), Fx.overdriven, it.x, it.y, it.rotate, it.color)
+                                in 30..39 -> {
+                                    Call.effect(it.player.con(), Fx.burning, it.x, it.y, it.rotate, it.color)
+                                    Call.effect(it.player.con(), Fx.melting, it.x, it.y, it.rotate, it.color)
+                                }
+                                in 40..49 -> Call.effect(it.player.con(), Fx.steam, it.x, it.y, it.rotate, it.color)
+                                in 50..59 -> Call.effect(it.player.con(), Fx.shootSmallSmoke, it.x, it.y, it.rotate, it.color)
+                                in 60..69 -> Call.effect(it.player.con(), Fx.mine, it.x, it.y, it.rotate, it.color)
+                                in 70..79 -> Call.effect(it.player.con(), Fx.explosion, it.x, it.y, it.rotate, it.color)
+                                in 80..89 -> Call.effect(it.player.con(), Fx.hitLaser, it.x, it.y, it.rotate, it.color)
+                                in 90..99 -> Call.effect(it.player.con(), Fx.crawlDust, it.x, it.y, it.rotate, it.color)
+                                in 100..Int.MAX_VALUE -> Call.effect(it.player.con(), Fx.mineImpact, it.x, it.y, it.rotate, it.color)
+                                else -> {}
                             }
                         }
                         milsCount = 0
