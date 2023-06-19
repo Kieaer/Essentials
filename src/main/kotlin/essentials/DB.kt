@@ -307,7 +307,7 @@ class DB {
                 joinStacks: $joinStacks
                 afkTime: $afkTime
                 entityid: $entityid
-                lastLoginDate: ${if (lastLoginDate != null) lastLoginDate.toString() else "null"}
+                lastLoginDate: ${if(lastLoginDate != null) lastLoginDate.toString() else "null"}
                 expMultiplier: $expMultiplier
             """.trimIndent()
         }

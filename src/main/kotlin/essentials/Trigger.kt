@@ -46,21 +46,21 @@ object Trigger {
                 data.duplicateName = "null"
             }
 
-            if (data.lastLoginDate == null) {
+            if(data.lastLoginDate == null) {
                 data.lastLoginDate = LocalDate.now()
             }
 
-            if (data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
+            if(data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
                 data.joinStacks = data.joinStacks++
             } else {
                 data.joinStacks = 0
             }
 
-            if (data.joinStacks % 3 == 0) {
+            if(data.joinStacks % 3 == 0) {
                 data.expMultiplier = 1.2
-            } else if (data.joinStacks % 7 == 0) {
+            } else if(data.joinStacks % 7 == 0) {
                 data.expMultiplier = 1.5
-            } else if (data.joinStacks % 30 == 0) {
+            } else if(data.joinStacks % 30 == 0) {
                 data.expMultiplier = 2.5
             }
 
@@ -123,7 +123,7 @@ object Trigger {
                 message.appendLine(bundle["command.vote.how"])
             }
 
-            if (data.expMultiplier != 1.0) {
+            if(data.expMultiplier != 1.0) {
                 message.appendLine(bundle["event.player.expboost", data.joinStacks, data.expMultiplier])
             }
 

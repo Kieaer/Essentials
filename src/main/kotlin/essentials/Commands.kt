@@ -803,10 +803,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(arg.isNotEmpty()) {
                 if(!Permission.check(player, "info.admin")) return
                 val target = findPlayers(arg[0])
-                var targetData: DB.PlayerData? = null
+                var targetData : DB.PlayerData? = null
 
-                fun banPlayer(data: DB.PlayerData?) {
-                    if (data != null) {
+                fun banPlayer(data : DB.PlayerData?) {
+                    if(data != null) {
                         val name = data.name
                         val ip = netServer.admins.getInfo(data.uuid).lastIP
 
@@ -828,7 +828,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 )
 
                 val banMenus = arrayOf(
-                    arrayOf(bundle["info.button.tempban.10min"], bundle["info.button.tempban.1hour"],bundle["info.button.tempban.1day"]),
+                    arrayOf(bundle["info.button.tempban.10min"], bundle["info.button.tempban.1hour"], bundle["info.button.tempban.1day"]),
                     arrayOf(bundle["info.button.tempban.1week"], bundle["info.button.tempban.2week"], bundle["info.button.tempban.1month"]),
                     arrayOf(bundle["info.button.ban.permanently"]),
                     arrayOf(bundle["info.button.close"])
@@ -914,7 +914,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
             } else {
-                Call.menu(player.con(), 0, bundle["info.title"], show(data)+lineBreak, arrayOf(arrayOf(bundle["info.button.close"])))
+                Call.menu(player.con(), 0, bundle["info.title"], show(data) + lineBreak, arrayOf(arrayOf(bundle["info.button.close"])))
             }
         }
 
@@ -1065,7 +1065,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val pages = if(buffer > 1.0) buffer - 1 else 0
             val title = bundle["command.page.server"]
 
-            for (page in 0..pages) {
+            for(page in 0..pages) {
                 val build = StringBuilder()
                 for(a in 6 * page until (6 * (page + 1)).coerceAtMost(list.size)) {
                     build.append("${list[a].name()}\n[orange]${bundle["command.maps.author"]} ${list[a].author()}[white]\n[gray]ID: $a[green]   ${list[a].width}x${list[a].height}[white]\n\n")
@@ -1520,7 +1520,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     } else if(last.action == "break") {
                         Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)
 
-                        run breaking@ {
+                        run breaking@{
                             buf.reverse().forEach { tile ->
                                 if(tile.value != null) {
                                     Call.tileConfig(null, world.tile(last.x.toInt(), last.y.toInt()).build, tile.value)
@@ -2348,7 +2348,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
     object Discord {
         val pin : ObjectMap<String, Int> = ObjectMap()
-        private lateinit var catnip : Catnip
+        lateinit var catnip : Catnip
 
         init {
             if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) {

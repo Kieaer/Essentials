@@ -1,7 +1,7 @@
 import com.github.gradle.node.npm.task.NpmTask
 
 plugins {
-    kotlin("jvm") version "1.8.20"
+    kotlin("jvm") version "1.8.22"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("com.github.node-gradle.node") version "5.0.0"
 }
@@ -59,8 +59,6 @@ dependencies {
 }
 
 tasks.jar {
-    enabled = false
-
     if (!file("./src/main/resources/www").exists()) {
         dependsOn("web")
     }

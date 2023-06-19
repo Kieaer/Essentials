@@ -18,6 +18,7 @@ import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.Main.Companion.database
+import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.*
 import mindustry.core.NetServer
@@ -57,9 +58,9 @@ import kotlin.math.abs
 import kotlin.math.floor
 
 object Event {
-    private var orignalBlockMultiplier = 1f
-    private var orignalUnitMultiplier = 1f
-    private var enemyBuildingDestroyed = 0
+    var orignalBlockMultiplier = 1f
+    var orignalUnitMultiplier = 1f
+    var enemyBuildingDestroyed = 0
 
     var voting = false
     var voteType : String? = null
@@ -73,19 +74,19 @@ object Event {
     var voteTeam : Team = state.rules.defaultTeam
     var voteCooltime : Int = 0
     var voted = Seq<String>()
-    private var lastVoted = LocalTime.now()
-    private var isAdminVote = false
-    private var isCanceled = false
+    var lastVoted = LocalTime.now()
+    var isAdminVote = false
+    var isCanceled = false
 
     var worldHistory = Seq<TileLog>()
     var voterCooltime = ObjectMap<String, Int>()
 
     private var random = Random()
     private var dateformat = SimpleDateFormat("HH:mm:ss")
-    private var blockExp = ObjectMap<String, Int>()
-    private var dosBlacklist = ObjectSet<String>()
-    private var pvpCount = Config.pvpPeaceTime
-    private var count = 60
+    var blockExp = ObjectMap<String, Int>()
+    var dosBlacklist = ObjectSet<String>()
+    var pvpCount = Config.pvpPeaceTime
+    var count = 60
     var pvpSpectors = Seq<String>()
     var pvpPlayer = Seq<String>()
     var isGlobalMute = false
@@ -1428,5 +1429,5 @@ object Event {
         worldHistory.add(log)
     }
 
-    class TileLog(val time : Long, val player : String, val action : String, val x : Short, val y : Short, val tile : String, val rotate : Int, val team : Team, val value: Any?)
+    class TileLog(val time : Long, val player : String, val action : String, val x : Short, val y : Short, val tile : String, val rotate : Int, val team : Team, val value : Any?)
 }
