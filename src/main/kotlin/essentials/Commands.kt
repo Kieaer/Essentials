@@ -13,9 +13,6 @@ import arc.util.Log
 import arc.util.Strings
 import arc.util.Threads.sleep
 import arc.util.Tmp
-import com.mewna.catnip.Catnip
-import com.mewna.catnip.entity.message.Message
-import com.mewna.catnip.shard.DiscordEvent
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
@@ -41,6 +38,10 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
@@ -430,18 +431,16 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun discord() {
             if(!Permission.check(player, "discord")) return
-            Call.openURI(player.con(), Config.discordURL)
-            if(Config.authType == Config.AuthType.Discord) {
-                if(data.discord == null) {
-                    val number = if(Discord.pin.containsKey(player.uuid())) {
-                        Discord.pin.get(player.uuid())
-                    } else {
-                        Discord.queue(player)
-                    }
-                    send("command.discord.pin", number)
+            if(Config.discordURL.isNotEmpty()) Call.openURI(player.con(), Config.discordURL)
+            if(data.discord == null) {
+                val number = if(Discord.pin.containsKey(player.uuid())) {
+                    Discord.pin.get(player.uuid())
                 } else {
-                    send("command.discord.already")
+                    Discord.queue(player)
                 }
+                send("command.discord.pin", number)
+            } else {
+                send("command.discord.already")
             }
         }
 
@@ -2352,114 +2351,99 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
     }
 
-    object Discord {
+    object Discord : ListenerAdapter() {
         val pin : ObjectMap<String, Int> = ObjectMap()
-        lateinit var catnip : Catnip
+        var jda : JDA? = null
 
-        init {
-            if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) {
-                catnip = Catnip.catnip(Config.botToken)
+        fun start() {
+            if (Config.botToken.isNotEmpty()) {
+                jda = JDABuilder.createDefault(Config.botToken).build()
+                jda!!.awaitReady()
+                jda!!.addEventListener(this)
             }
         }
 
-        fun start() {
-            catnip.observable(DiscordEvent.MESSAGE_CREATE).subscribe({
-                if(it.channelIdAsLong().toString() == Config.channelToken && !it.author().bot()) {
-                    if(it.content().toIntOrNull() != null) {
-                        if(pin.findKey(it.content(), true) != null) {
-                            val data = database[pin.findKey(it.content().toInt(), true)]
-                            data?.discord = it.author().id()
-                            pin.remove(pin.findKey(it.content().toInt(), true))
-                        }
-                    } else {
-                        with(it.content()) {
-                            when {
-                                equals("help", true) -> {
-                                    val message = """
+        override fun onMessageReceived(event : MessageReceivedEvent) {
+            if(event.channel.id == Config.channelToken && !event.author.isBot) {
+                if(event.message.contentStripped.toIntOrNull() != null) {
+                    if(pin.findKey(event.message.contentStripped, true) != null) {
+                        val data = database[pin.findKey(event.message.contentStripped.toInt(), true)]
+                        data?.discord = event.author.id
+                        pin.remove(pin.findKey(event.message.contentStripped.toInt(), true))
+                    }
+                } else {
+                    with(event.message.contentStripped) {
+                        when {
+                            equals("!help", true) -> {
+                                val message = """
                                     ``!help`` ${Bundle()["event.discord.help.help"]}
                                     ``!ping`` ${Bundle()["event.discord.help.ping"]}
                                 """.trimIndent()
-                                    it.reply(message, true).subscribe { m : Message ->
-                                        sleep(7000)
-                                        m.delete()
-                                    }
+                                event.message.reply(message).queue {
+                                    sleep(7000)
+                                    it.delete()
                                 }
+                            }
 
-                                equals("ping", true) -> {
-                                    val start = System.currentTimeMillis()
-                                    it.reply("pong!", true).subscribe { ping : Message ->
-                                        val end = System.currentTimeMillis()
-                                        ping.edit("pong! (" + (end - start) + "ms).")
-                                        sleep(5000)
-                                        ping.delete()
-                                    }
+                            equals("!ping", true) -> {
+                                val start = System.currentTimeMillis()
+                                event.message.reply("pong!").queue { ping ->
+                                    val end = System.currentTimeMillis()
+                                    ping.editMessage("pong! (" + (end - start) + "ms).")
+                                    sleep(5000)
+                                    ping.delete()
                                 }
+                            }
 
-                                /*startsWith("!auth", true) -> {
-                                    if (Config.authType == Config.AuthType.Discord) {
-                                        val arg = it.content().replace("!auth ", "").split(" ")
-                                        if (arg.size == 1) {
-                                            try {
-                                                var isMatch = false
-
-                                                for (a in database.getAll()) {
-                                                    if (a.status.containsKey("discord")) {
-                                                        if (a.status.get("discord") != it.author().id()) {
-                                                            isMatch = true
-                                                        }
-                                                    }
+                            startsWith("!auth", true) -> {
+                                val arg = event.message.contentStripped.replace("!auth ", "").split(" ")
+                                if(arg.size == 1) {
+                                    try {
+                                        if(database.getAll().find { it.discord != null && it.discord == event.message.author.id } == null) {
+                                            var data : DB.PlayerData? = null
+                                            for(a in pin) {
+                                                if(a.value == arg[0].toInt()) {
+                                                    data = database.getAll().find { b -> b.name == a.key }
                                                 }
+                                            }
 
-                                                if (!isMatch) {
-                                                    var data: DB.PlayerData? = null
-                                                    for (a in pin) {
-                                                        if (a.value == arg[0].toInt()) {
-                                                            data = database.getAll().find { b -> b.name == a.key }
-                                                        }
-                                                    }
-
-                                                    if (data != null) {
-                                                        data.status.put("discord", it.author().id())
-
-                                                        it.reply(Bundle()["event.discord.auth.success"], true).subscribe { m: Message ->
-                                                            sleep(5000)
-                                                            m.delete()
-                                                        }
-                                                        pin.removeAll { a -> a.value == arg[0].toInt() }
-                                                    } else {
-                                                        it.reply("등록되지 않은 계정입니다!", true).subscribe { m: Message ->
-                                                            sleep(5000)
-                                                            m.delete()
-                                                        }
-                                                    }
-                                                } else {
-                                                    it.reply("이미 등록된 계정입니다!", true).subscribe { m: Message ->
-                                                        sleep(5000)
-                                                        m.delete()
-                                                    }
-                                                }
-                                            } catch (e: Exception) {
-                                                it.reply("올바른 PIN 번호가 아닙니다! 사용법: ``!auth <PIN 번호>``", true).subscribe { m: Message ->
+                                            if(data != null) {
+                                                data.discord = event.message.author.id
+                                                event.message.reply(Bundle()["event.discord.auth.success"]).queue {
                                                     sleep(5000)
-                                                    m.delete()
+                                                    it.delete()
+                                                }
+                                                pin.removeAll { a -> a.value == arg[0].toInt() }
+                                            } else {
+                                                event.message.reply(Bundle()["event.discord.auth.not-found"]).queue {
+                                                    sleep(5000)
+                                                    it.delete()
                                                 }
                                             }
                                         } else {
-                                            it.reply("사용법: ``!auth <PIN 번호>``", true).subscribe { m: Message ->
+                                            event.message.reply(Bundle()["event.discord.auth.already-exists"]).queue {
                                                 sleep(5000)
-                                                m.delete()
+                                                it.delete()
                                             }
                                         }
-                                    } else {
-                                        it.reply("현재 서버에 Discord 인증이 활성화 되어 있지 않습니다!", true)
+                                    } catch(e : Exception) {
+                                        event.message.reply(Bundle()["event.discord.auth.pin.invalid"]).queue {
+                                            sleep(5000)
+                                            it.delete()
+                                        }
                                     }
-                                }*/
-                                else -> {}
+                                } else {
+                                    event.message.reply(Bundle()["event.discord.auth.usage"]).queue {
+                                        sleep(5000)
+                                        it.delete()
+                                    }
+                                }
                             }
+                            else -> {}
                         }
                     }
                 }
-            }) { e : Throwable -> e.printStackTrace() }
+            }
         }
 
         fun queue(player : Playerc) : Int {
@@ -2469,7 +2453,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun shutdownNow() {
-            if(Discord::catnip.isInitialized) catnip.shutdown()
+            jda?.shutdown()
         }
     }
 }
