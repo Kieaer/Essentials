@@ -114,14 +114,15 @@ class DB {
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"banTime\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"duplicateName\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tracking BOOLEAN",
-                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"joinStacks\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"joinStacks\" INTEGER",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLoginDate\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLeaveDate\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"showLevelEffects\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"isConnected\" BOOLEAN",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldName\" CHARACTER VARYING",
-                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"currentPlayTime\" CHARACTER VARYING",
-                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false, \"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"currentPlayTime\" INTEGER",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"mvpTime\" INTEGER",
+                                    "UPDATE player SET\"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0",
                                 )
                                 Log.info(Bundle()["event.plugin.db.version", 2])
                                 Log.warn(Bundle()["event.plugin.db.warning"])
@@ -236,6 +237,7 @@ class DB {
         val lastPlayedWorldName = text("lastPlayedWorldName").nullable()
         val lastPlayedWorldMode = text("lastPlayedWorldMode").nullable()
         val lastPlayedWorldId = integer("lastPlayedWorldId").nullable()
+        val mvpTime = integer("mvpTime")
     }
 
     class PlayerData {
@@ -282,6 +284,7 @@ class DB {
         var lastPlayedWorldName : String? = null
         var lastPlayedWorldMode : String? = null
         var lastPlayedWorldId : Int? = null
+        var mvpTime : Int = 0
 
         var expMultiplier : Double = 1.0
 
@@ -337,6 +340,7 @@ class DB {
                 lastPlayedWorldName: $lastPlayedWorldName
                 lastPlayedWorldMode: $lastPlayedWorldMode
                 lastPlayedWorldId: $lastPlayedWorldId
+                mvpTime: $mvpTime
             """.trimIndent()
         }
     }
@@ -387,59 +391,61 @@ class DB {
                 it[lastPlayedWorldName] = data.lastPlayedWorldName
                 it[lastPlayedWorldMode] = data.lastPlayedWorldMode
                 it[lastPlayedWorldId] = data.lastPlayedWorldId
+                it[mvpTime] = data.mvpTime
             }
         }
     }
 
     operator fun get(uuid : String) : PlayerData? {
-        val d = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
-        if(d != null) {
+        val it = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
+        if(it != null) {
             val data = PlayerData()
-            data.name = d[Player.name]
-            data.uuid = d[Player.uuid]
-            data.languageTag = d[Player.languageTag]
-            data.blockPlaceCount = d[Player.blockPlaceCount]
-            data.blockBreakCount = d[Player.blockBreakCount]
-            data.totalJoinCount = d[Player.totalJoinCount]
-            data.totalKickCount = d[Player.totalKickCount]
-            data.level = d[Player.level]
-            data.exp = d[Player.exp]
-            data.firstPlayDate = d[Player.firstPlayDate]
-            data.lastLoginTime = d[Player.lastLoginTime]
-            data.totalPlayTime = d[Player.totalPlayTime]
-            data.attackModeClear = d[Player.attackModeClear]
-            data.pvpVictoriesCount = d[Player.pvpVictoriesCount]
-            data.pvpDefeatCount = d[Player.pvpDefeatCount]
-            data.animatedName = d[Player.animatedName]
-            data.permission = d[Player.permission]
-            data.mute = d[Player.mute]
-            data.accountID = d[Player.accountID]
-            data.accountPW = d[Player.accountPW]
-            data.discord = d[Player.discord]
-            data.effectLevel = d[Player.effectLevel]
-            data.effectColor = d[Player.effectColor]
-            data.hideRanking = d[Player.hideRanking]
-            data.freeze = d[Player.freeze]
-            data.hud = d[Player.hud]
-            data.tpp = d[Player.tpp]
-            data.tppTeam = d[Player.tppTeam]
-            data.log = d[Player.log]
-            data.oldUUID = d[Player.oldUUID]
-            data.banTime = d[Player.banTime]
-            data.duplicateName = d[Player.duplicateName]
-            data.tracking = d[Player.tracking]
-            data.joinStacks = d[Player.joinStacks]
-            data.lastLoginDate = if(d[Player.lastLoginDate] == null) null else LocalDate.parse(d[Player.lastLoginDate])
-            data.lastLeaveDate = if(d[Player.lastLeaveDate] == null) null else LocalDateTime.parse(d[Player.lastLeaveDate])
-            data.showLevelEffects = d[Player.showLevelEffects]
-            data.currentPlayTime = d[Player.currentPlayTime]
-            data.isConnected = d[Player.isConnected]
-            data.lastPlayedWorldName = d[Player.lastPlayedWorldName]
-            data.lastPlayedWorldMode = d[Player.lastPlayedWorldMode]
-            data.lastPlayedWorldId = d[Player.lastPlayedWorldId]
+            data.name = it[Player.name]
+            data.uuid = it[Player.uuid]
+            data.languageTag = it[Player.languageTag]
+            data.blockPlaceCount = it[Player.blockPlaceCount]
+            data.blockBreakCount = it[Player.blockBreakCount]
+            data.totalJoinCount = it[Player.totalJoinCount]
+            data.totalKickCount = it[Player.totalKickCount]
+            data.level = it[Player.level]
+            data.exp = it[Player.exp]
+            data.firstPlayDate = it[Player.firstPlayDate]
+            data.lastLoginTime = it[Player.lastLoginTime]
+            data.totalPlayTime = it[Player.totalPlayTime]
+            data.attackModeClear = it[Player.attackModeClear]
+            data.pvpVictoriesCount = it[Player.pvpVictoriesCount]
+            data.pvpDefeatCount = it[Player.pvpDefeatCount]
+            data.animatedName = it[Player.animatedName]
+            data.permission = it[Player.permission]
+            data.mute = it[Player.mute]
+            data.accountID = it[Player.accountID]
+            data.accountPW = it[Player.accountPW]
+            data.discord = it[Player.discord]
+            data.effectLevel = it[Player.effectLevel]
+            data.effectColor = it[Player.effectColor]
+            data.hideRanking = it[Player.hideRanking]
+            data.freeze = it[Player.freeze]
+            data.hud = it[Player.hud]
+            data.tpp = it[Player.tpp]
+            data.tppTeam = it[Player.tppTeam]
+            data.log = it[Player.log]
+            data.oldUUID = it[Player.oldUUID]
+            data.banTime = it[Player.banTime]
+            data.duplicateName = it[Player.duplicateName]
+            data.tracking = it[Player.tracking]
+            data.joinStacks = it[Player.joinStacks]
+            data.lastLoginDate = if(it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
+            data.lastLeaveDate = if(it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
+            data.showLevelEffects = it[Player.showLevelEffects]
+            data.currentPlayTime = it[Player.currentPlayTime]
+            data.isConnected = it[Player.isConnected]
+            data.lastPlayedWorldName = it[Player.lastPlayedWorldName]
+            data.lastPlayedWorldMode = it[Player.lastPlayedWorldMode]
+            data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
+            data.mvpTime = it[Player.mvpTime]
 
             val obj = ObjectMap<String, String>()
-            JsonObject.readHjson(d[Player.status]).asObject().forEach {
+            JsonObject.readHjson(it[Player.status]).asObject().forEach {
                 obj.put(it.name, it.value.asString())
             }
             data.status = obj
@@ -497,6 +503,7 @@ class DB {
                 data.lastPlayedWorldName = it[Player.lastPlayedWorldName]
                 data.lastPlayedWorldMode = it[Player.lastPlayedWorldMode]
                 data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
+                data.mvpTime = it[Player.mvpTime]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
@@ -579,6 +586,7 @@ class DB {
                 it[lastPlayedWorldName] = data.lastPlayedWorldName
                 it[lastPlayedWorldMode] = data.lastPlayedWorldMode
                 it[lastPlayedWorldId] = data.lastPlayedWorldId
+                it[mvpTime] = data.mvpTime
 
                 val json = JsonObject()
                 data.status.forEach {
@@ -635,6 +643,7 @@ class DB {
                 data.lastPlayedWorldName = this[Player.lastPlayedWorldName]
                 data.lastPlayedWorldMode = this[Player.lastPlayedWorldMode]
                 data.lastPlayedWorldId = this[Player.lastPlayedWorldId]
+                data.mvpTime = this[Player.mvpTime]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(this[Player.status]).asObject().forEach {
