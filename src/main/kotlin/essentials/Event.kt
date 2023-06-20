@@ -773,8 +773,8 @@ object Event {
 
                 if(Config.border) {
                     Groups.unit.forEach {
-                        if(it.x > world.width() * 8 || it.x < 0 || it.y > world.height() * 8 || it.y < 0) {
-                            it.health(0f)
+                        if(it.x < 0 || it.y < 0 || it.x > (world.width() * 8) || it.y > (world.height() * 8)) {
+                            it.kill()
                         }
                     }
                 }
