@@ -398,6 +398,7 @@ object Event {
             worldHistory = Seq<TileLog>()
             pvpSpectors = Seq<String>()
             pvpPlayer = Seq<String>()
+            dpsTile = null
         }
 
         Events.on(BlockBuildBeginEvent::class.java) {
