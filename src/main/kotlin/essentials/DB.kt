@@ -18,6 +18,7 @@ import java.io.FileOutputStream
 import java.net.URL
 import java.sql.SQLException
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 
 class DB {
@@ -265,7 +266,9 @@ class DB {
         var joinStacks : Int = 0
         var lastLoginDate : LocalDate? = null
         var showLevelEffects : Boolean = true
+
         var expMultiplier : Double = 1.0
+        var currentPlayTime : Long = 0L
 
         var afkTime : Int = 0
         var player : Playerc = mindustry.gen.Player.create()
@@ -313,6 +316,7 @@ class DB {
                 lastLoginDate: ${if(lastLoginDate != null) lastLoginDate.toString() else "null"}
                 showLevelEffects: $showLevelEffects
                 expMultiplier: $expMultiplier
+                currentPlayTime: $currentPlayTime
             """.trimIndent()
         }
     }

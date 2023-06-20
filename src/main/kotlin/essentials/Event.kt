@@ -582,6 +582,10 @@ object Event {
                     }
                 }
             }
+
+            database.players.forEach { data ->
+                data.currentPlayTime = 0
+            }
         }
 
         Events.on(ConnectPacketEvent::class.java) {
@@ -863,7 +867,8 @@ object Event {
                     dpsBlocks = 0f
 
                     database.players.forEach {
-                        it.totalPlayTime = it.totalPlayTime + 1
+                        it.totalPlayTime = it.totalPlayTime++
+                        it.currentPlayTime = it.currentPlayTime++
 
                         if(it.animatedName) {
                             val name = it.name.replace("\\[(.*?)]".toRegex(), "")
