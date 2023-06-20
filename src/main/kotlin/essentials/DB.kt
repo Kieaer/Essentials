@@ -118,9 +118,11 @@ class DB {
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLoginDate\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLeaveDate\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"showLevelEffects\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"currentPlayTime\" INTEGER",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"isConnected\" BOOLEAN",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldName\" CHARACTER VARYING",
-                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"currentPlayTime\" INTEGER",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldMode\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldId\" INTEGER",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"mvpTime\" INTEGER",
                                     "UPDATE player SET\"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0",
                                 )
