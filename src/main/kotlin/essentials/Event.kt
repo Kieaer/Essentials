@@ -46,6 +46,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -90,15 +91,17 @@ object Event {
     var pvpSpectors = Seq<String>()
     var pvpPlayer = Seq<String>()
     var isGlobalMute = false
+    var dpsBlocks = 0f
+    var dpsTile : Tile? = null
+    var maxdps = 0f
+    var unitLimitMessageCooldown = 0
+    val offlinePlayers = Seq<DB.PlayerData>()
 
     private val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
     private val blockSelectRegex : Pattern = Pattern.compile(".*build.*")
     private val nameRegex : Pattern = Pattern.compile("(.*\\[.*].*)|　|^(.*\\s+.*)+\$")
 
-    var dpsBlocks = 0f
-    var dpsTile : Tile? = null
-    var maxdps = 0f
-    var unitLimitMessageCooldown = 0
+
 
     fun register() {
         Events.on(WithdrawEvent::class.java) {
@@ -389,9 +392,11 @@ object Event {
                         }
                     }
                 }
-                Groups.player.forEach { player ->
-                    val target = findPlayerData(player.uuid())
-                    if(target != null) earnEXP(it.winner, player, target)
+                database.players.forEach { data ->
+                    earnEXP(it.winner, data.player, data, true)
+                }
+                offlinePlayers.forEach { data ->
+                    earnEXP(it.winner, data.player, data, false)
                 }
             }
             if(voting && voteType == "gg") resetVote()
@@ -502,11 +507,18 @@ object Event {
         Events.on(PlayerLeave::class.java) {
             log(LogType.Player, Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address])
             val data = database.players.find { data -> data.name == it.player.name }
+            if(data != null) {
+                data.lastPlayedWorldName = state.map.plainName()
+                data.lastPlayedWorldMode = state.rules.modeName
+                data.lastPlayedWorldId = Vars.port
+                data.lastLeaveDate = LocalDateTime.now()
+            }
             if(data?.oldUUID != null) {
                 data.uuid = data.oldUUID!!
                 data.oldUUID = null
                 database.queue(data)
             }
+            offlinePlayers.add(data)
             database.players.remove(data)
         }
 
@@ -991,7 +1003,7 @@ object Event {
 
                                     "map" -> {
                                         database.players.forEach {
-                                            earnEXP(state.rules.waveTeam, it.player, it)
+                                            earnEXP(state.rules.waveTeam, it.player, it, true)
                                         }
                                         back(voteMap)
                                     }
@@ -1335,10 +1347,10 @@ object Event {
         }
     }
 
-    private fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData) {
+    private fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData, isConnected : Boolean) {
         val oldLevel = target.level
         val oldExp = target.exp
-        val time = PluginData.playtime.toInt()
+        val time = target.currentPlayTime.toInt()
         var blockexp = 0
 
         state.stats.placedBlockCount.forEach {
@@ -1363,7 +1375,7 @@ object Event {
             }
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
-            p.sendMessage(bundle["event.exp.earn.victory", score])
+            if(isConnected) p.sendMessage(bundle["event.exp.earn.victory", score])
         } else {
             val score : Int = if(state.rules.attackMode) {
                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
@@ -1386,16 +1398,25 @@ object Event {
             }
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
-            p.sendMessage(message)
+            if(isConnected) {
+                p.sendMessage(message)
 
-            if(score < 0) {
-                p.sendMessage(bundle["event.exp.lost.reason"])
-                p.sendMessage(bundle["event.exp.lost.result", time, blockexp, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
+                if(score < 0) {
+                    p.sendMessage(bundle["event.exp.lost.reason"])
+                    p.sendMessage(bundle["event.exp.lost.result", time, blockexp, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
+                }
             }
         }
 
         Commands.Exp[target]
-        p.sendMessage(bundle["event.exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
+        if(!isConnected) {
+            if(target.oldUUID != null) {
+                target.uuid = target.oldUUID!!
+                target.oldUUID = null
+                database.queue(target)
+            }
+        }
+        if(isConnected) p.sendMessage(bundle["event.exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
     }
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {

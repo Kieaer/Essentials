@@ -116,8 +116,12 @@ class DB {
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tracking BOOLEAN",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"joinStacks\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLoginDate\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLeaveDate\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"showLevelEffects\" CHARACTER VARYING",
-                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false, \"joinStacks\" = 0, \"showLevelEffects\" = true",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"isConnected\" BOOLEAN",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldName\" CHARACTER VARYING",
+                                    "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"currentPlayTime\" CHARACTER VARYING",
+                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false, \"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0",
                                 )
                                 Log.info(Bundle()["event.plugin.db.version", 2])
                                 Log.warn(Bundle()["event.plugin.db.warning"])
@@ -225,7 +229,13 @@ class DB {
         val tracking = bool("tracking")
         val joinStacks = integer("joinStacks")
         val lastLoginDate = text("lastLoginDate").nullable()
+        val lastLeaveDate = text("lastLeaveDate").nullable()
         val showLevelEffects = bool("showLevelEffects")
+        val currentPlayTime = long("currentPlayTime")
+        val isConnected = bool("isConnected")
+        val lastPlayedWorldName = text("lastPlayedWorldName").nullable()
+        val lastPlayedWorldMode = text("lastPlayedWorldMode").nullable()
+        val lastPlayedWorldId = integer("lastPlayedWorldId").nullable()
     }
 
     class PlayerData {
@@ -265,10 +275,15 @@ class DB {
         var tracking : Boolean = false
         var joinStacks : Int = 0
         var lastLoginDate : LocalDate? = null
+        var lastLeaveDate : LocalDateTime? = null
         var showLevelEffects : Boolean = true
+        var currentPlayTime : Long = 0L
+        var isConnected : Boolean = false
+        var lastPlayedWorldName : String? = null
+        var lastPlayedWorldMode : String? = null
+        var lastPlayedWorldId : Int? = null
 
         var expMultiplier : Double = 1.0
-        var currentPlayTime : Long = 0L
 
         var afkTime : Int = 0
         var player : Playerc = mindustry.gen.Player.create()
@@ -314,9 +329,14 @@ class DB {
                 afkTime: $afkTime
                 entityid: $entityid
                 lastLoginDate: ${if(lastLoginDate != null) lastLoginDate.toString() else "null"}
+                lastLeaveDate: ${if(lastLeaveDate != null) lastLeaveDate.toString() else "null"}
                 showLevelEffects: $showLevelEffects
                 expMultiplier: $expMultiplier
                 currentPlayTime: $currentPlayTime
+                isConnected: $isConnected
+                lastPlayedWorldName: $lastPlayedWorldName
+                lastPlayedWorldMode: $lastPlayedWorldMode
+                lastPlayedWorldId: $lastPlayedWorldId
             """.trimIndent()
         }
     }
@@ -360,7 +380,13 @@ class DB {
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
                 it[lastLoginDate] = if(data.lastLoginDate == null) null else LocalDate.now().toString()
+                it[lastLeaveDate] = null
                 it[showLevelEffects] = data.showLevelEffects
+                it[currentPlayTime] = data.currentPlayTime
+                it[isConnected] = data.isConnected
+                it[lastPlayedWorldName] = data.lastPlayedWorldName
+                it[lastPlayedWorldMode] = data.lastPlayedWorldMode
+                it[lastPlayedWorldId] = data.lastPlayedWorldId
             }
         }
     }
@@ -404,7 +430,13 @@ class DB {
             data.tracking = d[Player.tracking]
             data.joinStacks = d[Player.joinStacks]
             data.lastLoginDate = if(d[Player.lastLoginDate] == null) null else LocalDate.parse(d[Player.lastLoginDate])
+            data.lastLeaveDate = if(d[Player.lastLeaveDate] == null) null else LocalDateTime.parse(d[Player.lastLeaveDate])
             data.showLevelEffects = d[Player.showLevelEffects]
+            data.currentPlayTime = d[Player.currentPlayTime]
+            data.isConnected = d[Player.isConnected]
+            data.lastPlayedWorldName = d[Player.lastPlayedWorldName]
+            data.lastPlayedWorldMode = d[Player.lastPlayedWorldMode]
+            data.lastPlayedWorldId = d[Player.lastPlayedWorldId]
 
             val obj = ObjectMap<String, String>()
             JsonObject.readHjson(d[Player.status]).asObject().forEach {
@@ -458,7 +490,13 @@ class DB {
                 data.tracking = it[Player.tracking]
                 data.joinStacks = it[Player.joinStacks]
                 data.lastLoginDate = if(it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
+                data.lastLeaveDate = if(it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
                 data.showLevelEffects = it[Player.showLevelEffects]
+                data.currentPlayTime = it[Player.currentPlayTime]
+                data.isConnected = it[Player.isConnected]
+                data.lastPlayedWorldName = it[Player.lastPlayedWorldName]
+                data.lastPlayedWorldMode = it[Player.lastPlayedWorldMode]
+                data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
@@ -534,7 +572,13 @@ class DB {
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
                 it[lastLoginDate] = if(data.lastLoginDate == null) null else data.lastLoginDate.toString()
+                it[lastLeaveDate] = if(data.lastLeaveDate == null) null else data.lastLeaveDate.toString()
                 it[showLevelEffects] = data.showLevelEffects
+                it[currentPlayTime] = data.currentPlayTime
+                it[isConnected] = data.isConnected
+                it[lastPlayedWorldName] = data.lastPlayedWorldName
+                it[lastPlayedWorldMode] = data.lastPlayedWorldMode
+                it[lastPlayedWorldId] = data.lastPlayedWorldId
 
                 val json = JsonObject()
                 data.status.forEach {
@@ -584,7 +628,13 @@ class DB {
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
                 data.lastLoginDate = if(data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
+                data.lastLeaveDate = if(data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
                 data.showLevelEffects = this[Player.showLevelEffects]
+                data.currentPlayTime = this[Player.currentPlayTime]
+                data.isConnected = this[Player.isConnected]
+                data.lastPlayedWorldName = this[Player.lastPlayedWorldName]
+                data.lastPlayedWorldMode = this[Player.lastPlayedWorldMode]
+                data.lastPlayedWorldId = this[Player.lastPlayedWorldId]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(this[Player.status]).asObject().forEach {

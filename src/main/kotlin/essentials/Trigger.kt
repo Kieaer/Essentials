@@ -8,6 +8,7 @@ import arc.util.Log
 import arc.util.Time
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
+import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.game.Team
@@ -61,6 +62,14 @@ object Trigger {
                 }
             } else {
                 data.joinStacks = 0
+            }
+
+            if(data.lastLeaveDate!!.plusMinutes(30).isBefore(LocalDateTime.now())) {
+                if(data.lastPlayedWorldId == Vars.port && (data.lastPlayedWorldName != state.map.name() || data.lastPlayedWorldMode != state.rules.modeName)) {
+                    data.currentPlayTime = 0L
+                }
+            } else {
+                data.currentPlayTime = 0L
             }
 
             val bundle = Bundle(data.languageTag)
