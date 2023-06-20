@@ -355,7 +355,7 @@ class DB {
                 it[duplicateName] = null
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = LocalDate.now().toString()
+                it[lastLoginDate] = if(data.lastLoginDate == null) null else LocalDate.now().toString()
                 it[showLevelEffects] = data.showLevelEffects
             }
         }
@@ -399,7 +399,7 @@ class DB {
             data.duplicateName = d[Player.duplicateName]
             data.tracking = d[Player.tracking]
             data.joinStacks = d[Player.joinStacks]
-            data.lastLoginDate = LocalDate.parse(d[Player.lastLoginDate])
+            data.lastLoginDate = if(d[Player.lastLoginDate] == null) null else LocalDate.parse(d[Player.lastLoginDate])
             data.showLevelEffects = d[Player.showLevelEffects]
 
             val obj = ObjectMap<String, String>()
@@ -453,7 +453,7 @@ class DB {
                 data.duplicateName = it[Player.duplicateName]
                 data.tracking = it[Player.tracking]
                 data.joinStacks = it[Player.joinStacks]
-                data.lastLoginDate = LocalDate.parse(it[Player.lastLoginDate])
+                data.lastLoginDate = if(it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
                 data.showLevelEffects = it[Player.showLevelEffects]
 
                 val obj = ObjectMap<String, String>()
@@ -529,7 +529,7 @@ class DB {
                 it[duplicateName] = data.duplicateName!!
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = data.lastLoginDate.toString()
+                it[lastLoginDate] = if(data.lastLoginDate == null) null else data.lastLoginDate.toString()
                 it[showLevelEffects] = data.showLevelEffects
 
                 val json = JsonObject()
@@ -579,7 +579,7 @@ class DB {
                 data.duplicateName = this[Player.duplicateName]
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
-                data.lastLoginDate = LocalDate.parse(this[Player.lastLoginDate])
+                data.lastLoginDate = if(data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
                 data.showLevelEffects = this[Player.showLevelEffects]
 
                 val obj = ObjectMap<String, String>()
