@@ -98,6 +98,7 @@ object Event {
     var dpsBlocks = 0f
     var dpsTile : Tile? = null
     var maxdps = 0f
+    var unitLimitMessageCooldown = 0
 
     fun register() {
         Events.on(WithdrawEvent::class.java) {
@@ -460,10 +461,13 @@ object Event {
 
         Events.on(UnitCreateEvent::class.java) { u ->
             if(Groups.unit.size() > Config.spawnLimit) {
-                u.unit.health(0f)
+                u.unit.kill()
 
-                database.players.forEach {
-                    it.player.sendMessage(Bundle(it.languageTag)["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${Config.spawnLimit}"])
+                if(unitLimitMessageCooldown == 0) {
+                    database.players.forEach {
+                        it.player.sendMessage(Bundle(it.languageTag)["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${Config.spawnLimit}"])
+                    }
+                    unitLimitMessageCooldown = 60
                 }
             }
         }
@@ -723,12 +727,8 @@ object Event {
         Core.app.addListener(object: ApplicationListener {
             override fun update() {
                 if(Config.unbreakableCore) {
-                    Groups.build.forEach {
-                        when(it.block) {
-                            Blocks.coreAcropolis, Blocks.coreBastion, Blocks.coreCitadel, Blocks.coreFoundation, Blocks.coreNucleus, Blocks.coreShard -> {
-                                it.health(1.0E8f)
-                            }
-                        }
+                    state.rules.defaultTeam.cores().forEach {
+                        it.health(1.0E8f)
                     }
                 }
 
@@ -1144,6 +1144,10 @@ object Event {
                             state.rules.unitDamageMultiplier = orignalUnitMultiplier
                             send("event.pvp.peace.end")
                         }
+                    }
+
+                    if(unitLimitMessageCooldown > 0) {
+                        unitLimitMessageCooldown = unitLimitMessageCooldown--
                     }
 
                     secondCount = 0

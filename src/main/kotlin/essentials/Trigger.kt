@@ -52,16 +52,15 @@ object Trigger {
 
             if(data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
                 data.joinStacks = data.joinStacks++
+                if(data.joinStacks % 3 == 0) {
+                    data.expMultiplier = 1.2
+                } else if(data.joinStacks % 7 == 0) {
+                    data.expMultiplier = 1.5
+                } else if(data.joinStacks % 30 == 0) {
+                    data.expMultiplier = 2.5
+                }
             } else {
                 data.joinStacks = 0
-            }
-
-            if(data.joinStacks % 3 == 0) {
-                data.expMultiplier = 1.2
-            } else if(data.joinStacks % 7 == 0) {
-                data.expMultiplier = 1.5
-            } else if(data.joinStacks % 30 == 0) {
-                data.expMultiplier = 2.5
             }
 
             val bundle = Bundle(data.languageTag)
