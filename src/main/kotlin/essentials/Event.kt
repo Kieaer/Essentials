@@ -89,7 +89,7 @@ object Event {
     var pvpCount = Config.pvpPeaceTime
     var count = 60
     var pvpSpectors = Seq<String>()
-    var pvpPlayer = Seq<String>()
+    var pvpPlayer = ObjectMap<String, Team>()
     var isGlobalMute = false
     var dpsBlocks = 0f
     var dpsTile : Tile? = null
@@ -400,9 +400,9 @@ object Event {
                 }
             }
             if(voting && voteType == "gg") resetVote()
-            worldHistory = Seq<TileLog>()
-            pvpSpectors = Seq<String>()
-            pvpPlayer = Seq<String>()
+            worldHistory = Seq()
+            pvpSpectors = Seq()
+            pvpPlayer = ObjectMap()
             dpsTile = null
         }
 
@@ -751,10 +751,11 @@ object Event {
 
                 database.players.forEach {
                     if(state.rules.pvp) {
-                        if(it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.contains(it.uuid) && !Permission.check(it.player, "pvp.spector")) {
+                        if(it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
                             it.pvpDefeatCount++
                             it.player.team(Team.derelict)
                             pvpSpectors.add(it.uuid)
+                            pvpPlayer.remove(it.uuid)
                         }
                     }
 
@@ -1176,8 +1177,8 @@ object Event {
                 if(minuteCount == 3600) {
                     if(state.rules.pvp) {
                         database.players.forEach {
-                            if(!pvpPlayer.contains { b -> b == it.uuid }) {
-                                pvpPlayer.add(it.uuid)
+                            if(!pvpPlayer.containsKey(it.uuid) && it.player.team() != Team.derelict) {
+                                pvpPlayer.put(it.uuid, it.player.team())
                             }
                         }
                     }

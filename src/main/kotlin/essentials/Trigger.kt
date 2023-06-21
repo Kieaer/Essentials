@@ -109,7 +109,9 @@ object Trigger {
             }
 
             if(state.rules.pvp) {
-                if(Permission.check(player, "pvp.spector") || Event.pvpSpectors.contains(player.uuid())) {
+                if (Event.pvpPlayer.containsKey(player.uuid())) {
+                    player.team(Event.pvpPlayer.get(player.uuid()))
+                } else if(Event.pvpSpectors.contains(player.uuid()) || Permission.check(player, "pvp.spector")) {
                     player.team(Team.derelict)
                 }
 

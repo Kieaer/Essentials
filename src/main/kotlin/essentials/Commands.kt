@@ -801,7 +801,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
                         ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[while]([sky]${round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100)}[white])
                         ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
-                        
                         """.trimIndent()
             }
 
