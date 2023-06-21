@@ -799,8 +799,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.playtime"]}: ${bundle["command.info.time", (target.totalPlayTime / 60 / 60 / 24) % 365, (target.totalPlayTime / 60 / 24) % 24, (target.totalPlayTime / 60) % 60, (target.totalPlayTime) % 60]}
                         ${bundle["command.info.playtime.current"]}: ${bundle["command.info.time.minimal", (target.currentPlayTime / 60 / 24) % 24, (target.currentPlayTime / 60) % 60, (target.currentPlayTime) % 60]}
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
-                        ${bundle["command.info.pvpwincount"]}: ${target.pvpVictoriesCount}
-                        ${bundle["command.info.pvplosecount"]}: ${target.pvpDefeatCount}
+                        ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[while]([sky]${round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100)}[white])
+                        ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
+                        
                         """.trimIndent()
             }
 
