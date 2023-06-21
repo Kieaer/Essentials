@@ -59,6 +59,7 @@ object Config {
     var restAPIRequestsLimit = 5
     var restAPILimitRefillPeriod = 30
     var skiplimit = 10
+    var pvpAutoTeam = true
 
     var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
@@ -147,11 +148,14 @@ object Config {
         features.add("waveskip", waveskip, bundle["config.waveskip"])
         features.add("unbreakableCore", unbreakableCore, bundle["config.unbreakablecore"])
         features.add("moveEffects", moveEffects, bundle["config.moveeffects"])
+
         features.add("webServer", webServer, bundle["config.webserver"])
         features.add("webServerPort", webServerPort, bundle["config.webserver.port"])
         features.add("restAPIRequestsLimit", restAPIRequestsLimit, bundle["config.webserver.limit"])
         features.add("restAPILimitRefillPeriod", restAPILimitRefillPeriod, bundle["config.webserver.limit.reset"])
+
         features.add("skiplimit", skiplimit, bundle["config.skiplimit"])
+        features.add("pvpAutoTeam", pvpAutoTeam, bundle["config.pvpAutoTeam"])
 
         val ban = JsonObject()
         ban.add("shareBanList", shareBanList, bundle["config.share.list"])
@@ -226,6 +230,7 @@ object Config {
         restAPIRequestsLimit = features.getInt("restAPIRequestsLimit", restAPIRequestsLimit)
         restAPILimitRefillPeriod = features.getInt("restAPILimitRefillPeriod", restAPILimitRefillPeriod)
         skiplimit = features.getInt("skiplimit", skiplimit)
+        pvpAutoTeam = features.getBoolean("pvpAutoTeam", pvpAutoTeam)
 
         votekick = security.getBoolean("votekick", votekick)
         antiGrief = security.getBoolean("antiGrief", antiGrief)

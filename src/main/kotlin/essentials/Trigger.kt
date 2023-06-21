@@ -8,7 +8,6 @@ import arc.util.Log
 import arc.util.Time
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
-import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.game.Team
@@ -65,7 +64,7 @@ object Trigger {
             }
 
             if(data.lastLeaveDate != null && data.lastLeaveDate!!.plusMinutes(30).isBefore(LocalDateTime.now())) {
-                if(data.lastPlayedWorldId == Vars.port && (data.lastPlayedWorldName != state.map.name() || data.lastPlayedWorldMode != state.rules.modeName)) {
+                if(data.lastPlayedWorldId == port && (data.lastPlayedWorldName != state.map.name() || data.lastPlayedWorldMode != state.rules.modeName)) {
                     data.currentPlayTime = 0L
                 }
             } else {
@@ -110,10 +109,37 @@ object Trigger {
             }
 
             if(state.rules.pvp) {
-                if(Permission.check(player, "pvp.spector")) {
+                if(Permission.check(player, "pvp.spector") || Event.pvpSpectors.contains(player.uuid())) {
                     player.team(Team.derelict)
-                } else if(Event.pvpSpectors.contains(player.uuid())) {
-                    player.team(Team.derelict)
+                }
+
+                if (Groups.player.size() > 3 && Config.pvpAutoTeam) {
+                    val teamStatus = Seq<Triple<Team, String, Int>>()
+                    val teams = mutableListOf<Pair<Team, Double>>()
+                    database.players.forEach {
+                        teamStatus.add(Triple(it.player.team(), it.name, (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100))
+                    }
+
+                    fun winPercentage(team: Team): Double? {
+                        val teamPlayers = teamStatus.filter { it.first == team }
+                        val winPercentages = teamPlayers.map { it.third }
+                        if (winPercentages.isEmpty) {
+                            return null
+                        }
+                        return winPercentages.average()
+                    }
+
+                    val sortedTeams = teamStatus.map { it.first }.distinct().sortedByDescending { winPercentage(it) }
+
+                    sortedTeams.forEach { teamName ->
+                        val averagePercentage = winPercentage(teamName)
+                        if (averagePercentage != null) {
+                            teams.add(Pair(teamName, averagePercentage))
+                        }
+                    }
+
+                    val rate = teams.minByOrNull { it.second }
+                    if (rate != null) player.team(rate.first)
                 }
             }
 
