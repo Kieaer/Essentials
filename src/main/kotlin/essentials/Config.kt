@@ -20,13 +20,15 @@ object Config {
     val ipBanList : Fi = Core.settings.dataDirectory.child("mods/Essentials/data/ipban.txt")
 
     var update = true
+    var report = true
     var database : String = Main.root.child("database").absolutePath()
+    var authType = AuthType.None
     var banList : String = Core.settings.dataDirectory.child("mods/Essentials/data").absolutePath()
+
     var afk = false
     var afkTime = 300
     var afkServer = ""
     var border = false
-    var report = true
     var spawnLimit = 3000
     var vote = true
     var votekick = false
@@ -61,10 +63,8 @@ object Config {
     var skiplimit = 10
     var pvpAutoTeam = true
 
-    var authType = AuthType.None
     var chatFormat = "%1[orange] >[white] %2"
 
-    var shareBanList = false
     var shareBanListServer = "127.0.0.1"
 
     var botToken = ""
@@ -148,17 +148,14 @@ object Config {
         features.add("waveskip", waveskip, bundle["config.waveskip"])
         features.add("unbreakableCore", unbreakableCore, bundle["config.unbreakablecore"])
         features.add("moveEffects", moveEffects, bundle["config.moveeffects"])
-
         features.add("webServer", webServer, bundle["config.webserver"])
         features.add("webServerPort", webServerPort, bundle["config.webserver.port"])
         features.add("restAPIRequestsLimit", restAPIRequestsLimit, bundle["config.webserver.limit"])
         features.add("restAPILimitRefillPeriod", restAPILimitRefillPeriod, bundle["config.webserver.limit.reset"])
-
         features.add("skiplimit", skiplimit, bundle["config.skiplimit"])
         features.add("pvpAutoTeam", pvpAutoTeam, bundle["config.pvpAutoTeam"])
 
         val ban = JsonObject()
-        ban.add("shareBanList", shareBanList, bundle["config.share.list"])
         ban.add("shareBanListServer", shareBanListServer, bundle["config.share.server"])
 
         val security = JsonObject()
