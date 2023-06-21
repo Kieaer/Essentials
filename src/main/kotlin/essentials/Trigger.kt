@@ -51,7 +51,7 @@ object Trigger {
             }
 
             if(data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
-                data.joinStacks = data.joinStacks++
+                data.joinStacks++
                 if(data.joinStacks % 3 == 0) {
                     data.expMultiplier = 1.2
                 } else if(data.joinStacks % 7 == 0) {
@@ -74,7 +74,7 @@ object Trigger {
             val bundle = Bundle(data.languageTag)
             if(Config.fixedName) player.name(data.name)
             data.lastLoginTime = System.currentTimeMillis()
-            data.totalJoinCount = data.totalJoinCount++
+            data.totalJoinCount++
             data.player = player
 
             val message = StringBuilder()

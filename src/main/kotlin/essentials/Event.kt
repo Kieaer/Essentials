@@ -379,22 +379,22 @@ object Event {
 
             if(!state.rules.infiniteResources) {
                 if(state.rules.pvp) {
-                    database.players.forEach { data ->
+                    for(data in database.players) {
                         if(data.player.team() == it.winner) {
                             data.pvpVictoriesCount++
                         }
                     }
                 } else if(state.rules.attackMode) {
-                    database.players.forEach { data ->
+                    for(data in database.players) {
                         if(data.player.team() == it.winner) {
                             data.attackModeClear++
                         }
                     }
                 }
-                database.players.forEach { data ->
+                for(data in database.players) {
                     earnEXP(it.winner, data.player, data, true)
                 }
-                offlinePlayers.forEach { data ->
+                for(data in offlinePlayers) {
                     earnEXP(it.winner, data.player, data, false)
                 }
             }
@@ -587,14 +587,14 @@ object Event {
                 }
                 pvpSpectors = Seq<String>()
 
-                database.players.forEach { data ->
+                for(data in database.players) {
                     if(Permission.check(data.player, "pvp.spector")) {
                         data.player.team(Team.derelict)
                     }
                 }
             }
 
-            database.players.forEach { data ->
+            for(data in database.players) {
                 data.currentPlayTime = 0
             }
         }
@@ -748,7 +748,7 @@ object Event {
                     }
                 }
 
-                database.players.forEach {
+                for(it in database.players) {
                     if(state.rules.pvp) {
                         if(it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
                             it.pvpDefeatCount++
@@ -878,9 +878,9 @@ object Event {
                     }
                     dpsBlocks = 0f
 
-                    database.players.forEach {
-                        it.totalPlayTime = it.totalPlayTime++
-                        it.currentPlayTime = it.currentPlayTime++
+                    for(it in database.players) {
+                        it.totalPlayTime++
+                        it.currentPlayTime++
 
                         if(it.animatedName) {
                             val name = it.name.replace("\\[(.*?)]".toRegex(), "")
@@ -1002,7 +1002,7 @@ object Event {
                                     }
 
                                     "map" -> {
-                                        database.players.forEach {
+                                        for(it in database.players) {
                                             earnEXP(state.rules.waveTeam, it.player, it, true)
                                         }
                                         back(voteMap)
@@ -1217,7 +1217,6 @@ object Event {
                                     messageOrder = 0
                                 }
                                 it.player.sendMessage(c[messageOrder])
-
                             }
                             messageOrder++
                             messageCount = 0

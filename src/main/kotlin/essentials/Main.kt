@@ -239,6 +239,9 @@ class Main: Plugin() {
             Config.idBanList.writeString(data.toString(Stringify.HJSON))
         }
 
+        Vars.netServer.admins.bannedIPs.clear()
+        Vars.netServer.admins.banned.clear()
+
         Log.info(Bundle()["event.plugin.loaded"])
     }
 

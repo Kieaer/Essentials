@@ -1371,7 +1371,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 return
             }
             Main.daemon.submit(Thread {
-                PluginData.isRankingWorking = true
                 try {
                     val firstMessage = when(arg[0].lowercase()) {
                         "time" -> "command.ranking.time"
@@ -1388,6 +1387,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         return@Thread
                     }
 
+                    PluginData.isRankingWorking = true
+                    player.sendMessage(bundle["command.ranking.wait"])
                     val all = database.getAll()
                     val time = mutableMapOf<ArrayMap<String, String>, Long>()
                     val exp = mutableMapOf<ArrayMap<String, String>, Int>()
@@ -1397,7 +1398,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
 
                     all.forEach {
-                        if(it.hideRanking && !netServer.admins.banned.contains { b -> b.id == it.uuid }) {
+                        if(!it.hideRanking && !JsonArray.readHjson(Config.idBanList.reader()).asArray().contains(it.uuid)) {
                             val info = ArrayMap<String, String>()
                             val pvpCount = ArrayMap<Int, Int>()
                             info.put(it.name, it.uuid)
@@ -1419,7 +1420,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         "place" -> placeBlock.toList().sortedWith(compareBy { -it.second })
                         "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
                         "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.firstKey() })
-                        else -> return@Thread
+                        else -> {
+                            PluginData.isRankingWorking = true
+                            return@Thread
+                        }
                     }
 
                     val string = StringBuilder()
@@ -1430,6 +1434,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     if(page >= pages || page < 0) {
                         Core.app.post { err("command.page.range", pages) }
+                        PluginData.isRankingWorking = false
                         return@Thread
                     }
                     string.append(bundle[firstMessage, page + 1, pages] + "\n")
