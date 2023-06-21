@@ -124,7 +124,7 @@ class DB {
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldMode\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldId\" INTEGER",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"mvpTime\" INTEGER",
-                                    "UPDATE player SET\"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0",
+                                    "UPDATE player SET\"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0"
                                 )
                                 Log.info(Bundle()["event.plugin.db.version", 2])
                                 Log.warn(Bundle()["event.plugin.db.warning"])
@@ -133,7 +133,7 @@ class DB {
                             exec("INSERT INTO DB VALUES 2")
                         } else {
                             when(DB.selectAll().first()[DB.version]) {
-                                2 -> {
+                                3 -> {
                                     // TODO DB 업데이트 명령줄
                                 }
                             }
@@ -566,18 +566,18 @@ class DB {
                 it[mute] = data.mute
                 it[accountID] = data.accountID
                 it[accountPW] = data.accountPW
-                it[discord] = data.discord!!
-                it[effectLevel] = data.effectLevel!!
-                it[effectColor] = data.effectColor!!
+                it[discord] = data.discord
+                it[effectLevel] = data.effectLevel
+                it[effectColor] = data.effectColor
                 it[hideRanking] = data.hideRanking
                 it[freeze] = data.freeze
-                it[hud] = data.hud!!
-                it[tpp] = data.tpp!!
+                it[hud] = data.hud
+                it[tpp] = data.tpp
                 it[tppTeam] = data.tppTeam
                 it[log] = data.log
-                it[oldUUID] = data.oldUUID!!
-                it[banTime] = data.banTime!!
-                it[duplicateName] = data.duplicateName!!
+                it[oldUUID] = data.oldUUID
+                it[banTime] = data.banTime
+                it[duplicateName] = data.duplicateName
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
                 it[lastLoginDate] = if(data.lastLoginDate == null) null else data.lastLoginDate.toString()
