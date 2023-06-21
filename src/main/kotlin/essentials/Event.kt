@@ -46,7 +46,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -510,7 +509,7 @@ object Event {
             if(data != null) {
                 data.lastPlayedWorldName = state.map.plainName()
                 data.lastPlayedWorldMode = state.rules.modeName
-                data.lastPlayedWorldId = Vars.port
+                data.lastPlayedWorldId = port
                 data.lastLeaveDate = LocalDateTime.now()
             }
             if(data?.oldUUID != null) {
@@ -872,7 +871,7 @@ object Event {
 
                     if(dpsTile != null) {
                         if(dpsBlocks > maxdps) maxdps = dpsBlocks
-                        val message = "Max DPS: $maxdps\nDPS: ${dpsBlocks}/s"
+                        val message = "Max DPS: $maxdps/min\nDPS: ${dpsBlocks}/s"
                         Call.label(message, 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
                     } else {
                         maxdps = 0f
@@ -1226,6 +1225,8 @@ object Event {
                             messageCount++
                         }
                     }
+
+                    maxdps = 0f
                     minuteCount = 0
                 } else {
                     minuteCount++
