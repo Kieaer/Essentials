@@ -34,7 +34,7 @@ object Config {
     var antiVPN = false
     var pvpPeace = false
     var pvpPeaceTime = 300
-    var pvpSpector = true
+    var pvpSpector = false
     var rollbackTime = 10
     var message = false
     var messageTime = 10
