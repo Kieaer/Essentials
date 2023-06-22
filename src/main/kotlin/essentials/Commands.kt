@@ -20,6 +20,7 @@ import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
+import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -799,7 +800,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.playtime"]}: ${bundle["command.info.time", (target.totalPlayTime / 60 / 60 / 24) % 365, (target.totalPlayTime / 60 / 24) % 24, (target.totalPlayTime / 60) % 60, (target.totalPlayTime) % 60]}
                         ${bundle["command.info.playtime.current"]}: ${bundle["command.info.time.minimal", (target.currentPlayTime / 60 / 24) % 24, (target.currentPlayTime / 60) % 60, (target.currentPlayTime) % 60]}
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
-                        ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100)}%[white])
+                        ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${if(target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100) else "0%"}%[white])
                         ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
                         """.trimIndent()
             }
@@ -1388,7 +1389,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     PluginData.isRankingWorking = true
-                    player.sendMessage(bundle["command.ranking.wait"])
+                    Core.app.post { player.sendMessage(bundle["command.ranking.wait"]) }
                     val all = database.getAll()
                     val time = mutableMapOf<ArrayMap<String, String>, Long>()
                     val exp = mutableMapOf<ArrayMap<String, String>, Int>()
@@ -2377,7 +2378,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         data?.discord = event.author.id
                         pin.remove(pin.findKey(event.message.contentStripped.toInt(), true))
                     }
-                } else {
+                } else if (Core.settings.getInt("port") == Vars.port){
                     with(event.message.contentStripped) {
                         when {
                             equals("!help", true) -> {

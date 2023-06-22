@@ -3,6 +3,7 @@ package essentials
 import arc.Core
 import arc.func.Prov
 import arc.struct.ArrayMap
+import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
@@ -16,6 +17,7 @@ import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.net.Host
+import mindustry.net.NetworkIO
 import mindustry.net.NetworkIO.readServerData
 import org.hjson.JsonArray
 import org.jetbrains.exposed.sql.selectAll
@@ -212,9 +214,9 @@ object Trigger {
                         e.printStackTrace()
                     }
 
+                    var total = 0
                     if(state.isPlaying) {
                         val serverInfo = getServerInfo()
-                        var total = 0
                         serverInfo.forEach { a -> total += a.players }
 
                         for(i in 0 until PluginData.warpCounts.size) {
@@ -285,11 +287,19 @@ object Trigger {
 
                                     var y = tile.build.getY() + if(isDup) margin - 8 else margin
 
-                                    val info = serverInfo.find { a -> a.address == value.ip && a.port == value.port }
-                                    if(info != null) {
+                                    var alive = false
+                                    var alivePlayer = 0
+                                    serverInfo.forEach {
+                                        if((it.address == value.ip || it.address == InetAddress.getByName(value.ip).hostAddress) && it.port == value.port) {
+                                            alive = true
+                                            alivePlayer = it.players
+                                        }
+                                    }
+
+                                    if(alive) {
                                         if(isDup) y += 4
                                         for(a in Groups.player) {
-                                            memory.add(a to Triple("[yellow]${info.players}[] ${Bundle(a.locale)["event.server.warp.players"]}", x, y))
+                                            memory.add(a to Triple("[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}", x, y))
                                         }
                                         value.online = true
                                     } else {
@@ -346,11 +356,11 @@ object Trigger {
                                 }
                             }
                         }
+                    }
 
-                        if(Config.countAllServers) {
-                            Core.settings.put("totalPlayers", total + Groups.player.size())
-                            Core.settings.saveValues()
-                        }
+                    if(Config.countAllServers) {
+                        Core.settings.put("totalPlayers", total + database.players.size)
+                        Core.settings.saveValues()
                     }
 
                     ping = 0.000
@@ -365,29 +375,39 @@ object Trigger {
         private fun pingHostImpl(address : String, port : Int, listener : Consumer<Host>) {
             val packetSupplier : Prov<DatagramPacket> = Prov<DatagramPacket> { DatagramPacket(ByteArray(512), 512) }
 
-            DatagramSocket().use { socket ->
-                val seconds : Long = Time.millis()
-                socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(address), port))
-                socket.soTimeout = 1000
-                val packet : DatagramPacket = packetSupplier.get()
-                socket.receive(packet)
-                val buffer = ByteBuffer.wrap(packet.data)
-                val host = readServerData(Time.timeSinceMillis(seconds).toInt(), packet.address.hostAddress, buffer)
-                host.port = port
-                listener.accept(host)
+            try {
+                DatagramSocket().use { socket ->
+                    val s : Long = Time.millis()
+                    socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(address), port))
+                    socket.soTimeout = 1000
+                    val packet : DatagramPacket = packetSupplier.get()
+                    socket.receive(packet)
+                    val buffer = ByteBuffer.wrap(packet.data)
+                    val host = NetworkIO.readServerData(Time.timeSinceMillis(s).toInt(), packet.address.hostAddress, buffer)
+                    host.port = port
+                    listener.accept(host)
+                }
+            } catch(e: SocketTimeoutException) {
+                listener.accept(Host(0, null, null, null, 0, 0, 0, null, null, 0, null, null))
             }
         }
 
-        private fun getServerInfo() : Array<Host> {
-            var total = arrayOf<Host>()
-            val buf = ArrayMap<String, Int>()
+        private fun getServerInfo() : Seq<Host> {
+            val total = Seq<Host>()
+            var buf = arrayOf<Pair<String, Int>>()
 
-            for(a in PluginData.warpBlocks) buf.put(a.ip, a.port)
-            for(a in PluginData.warpCounts) buf.put(a.ip, a.port)
-            for(a in PluginData.warpZones) buf.put(a.ip, a.port)
+            for(it in PluginData.warpBlocks) {
+                buf += Pair(it.ip, it.port)
+            }
+            for(it in PluginData.warpCounts) {
+                buf += Pair(it.ip, it.port)
+            }
+            for(it in PluginData.warpZones) {
+                buf += Pair(it.ip, it.port)
+            }
             for(a in buf) {
-                pingHostImpl(a.key, a.value) {
-                    total += it
+                pingHostImpl(a.first, a.second) {
+                    if (it.name != null) total.add(it)
                 }
             }
 

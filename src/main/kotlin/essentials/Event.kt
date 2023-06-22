@@ -515,8 +515,8 @@ object Event {
             if(data?.oldUUID != null) {
                 data.uuid = data.oldUUID!!
                 data.oldUUID = null
-                database.queue(data)
             }
+            database.queue(data)
             offlinePlayers.add(data)
             database.players.remove(data)
         }
