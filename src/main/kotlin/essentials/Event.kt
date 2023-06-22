@@ -638,6 +638,19 @@ object Event {
             }
         }
 
+        Events.on(BuildingBulletDestroyEvent::class.java) {
+            if(state.rules.pvp) {
+                if(it.build.closestCore() == null) {
+                    for(data in database.players) {
+                        if(data.player.team() == it.bullet.team) {
+                            data.pvpEliminationTeamCount++
+                        }
+                        data.player.sendMessage(Bundle(data.languageTag)["event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName()])
+                    }
+                }
+            }
+        }
+
         fun send(message : String, vararg parameter : Any) {
             database.players.forEach {
                 if(voteTargetUUID != it.uuid) {

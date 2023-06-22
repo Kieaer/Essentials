@@ -87,7 +87,7 @@ class DB {
                             try {
                                 exec("SELECT hud FROM Players")
                             } catch(e : SQLException) {
-                                val s = listOf(
+                                val sql = listOf(
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS placecount RENAME TO \"blockPlaceCount\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS breakcount RENAME TO \"blockBreakCount\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS joincount RENAME TO \"totalJoinCount\"",
@@ -128,13 +128,21 @@ class DB {
                                 )
                                 Log.info(Bundle()["event.plugin.db.version", 2])
                                 Log.warn(Bundle()["event.plugin.db.warning"])
-                                execInBatch(s)
+                                execInBatch(sql)
                             }
                             exec("INSERT INTO DB VALUES 2")
                         } else {
                             when(DB.selectAll().first()[DB.version]) {
                                 2 -> {
                                     // TODO DB 업데이트 명령줄
+                                    val sql = listOf(
+                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"pvpEliminationTeamCount\" INTEGER",
+                                        "UPDATE player SET \"pvpEliminationTeamCount\" = 0"
+                                    )
+
+                                    Log.info(Bundle()["event.plugin.db.version", 3])
+                                    Log.warn(Bundle()["event.plugin.db.warning"])
+                                    execInBatch(sql)
                                 }
                             }
                         }
@@ -240,6 +248,7 @@ class DB {
         val lastPlayedWorldMode = text("lastPlayedWorldMode").nullable()
         val lastPlayedWorldId = integer("lastPlayedWorldId").nullable()
         val mvpTime = integer("mvpTime")
+        val pvpEliminationTeamCount = integer("pvpEliminationTeamCount")
     }
 
     class PlayerData {
@@ -287,6 +296,7 @@ class DB {
         var lastPlayedWorldMode : String? = null
         var lastPlayedWorldId : Int? = null
         var mvpTime : Int = 0
+        var pvpEliminationTeamCount : Int = 0
 
         var expMultiplier : Double = 1.0
 
@@ -343,6 +353,7 @@ class DB {
                 lastPlayedWorldMode: $lastPlayedWorldMode
                 lastPlayedWorldId: $lastPlayedWorldId
                 mvpTime: $mvpTime
+                pvpEliminationTeamCount: $pvpEliminationTeamCount
             """.trimIndent()
         }
     }
@@ -394,6 +405,7 @@ class DB {
                 it[lastPlayedWorldMode] = data.lastPlayedWorldMode
                 it[lastPlayedWorldId] = data.lastPlayedWorldId
                 it[mvpTime] = data.mvpTime
+                it[pvpEliminationTeamCount] = data.pvpEliminationTeamCount
             }
         }
     }
@@ -445,6 +457,7 @@ class DB {
             data.lastPlayedWorldMode = it[Player.lastPlayedWorldMode]
             data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
             data.mvpTime = it[Player.mvpTime]
+            data.pvpEliminationTeamCount = it[Player.pvpEliminationTeamCount]
 
             val obj = ObjectMap<String, String>()
             JsonObject.readHjson(it[Player.status]).asObject().forEach {
@@ -506,6 +519,7 @@ class DB {
                 data.lastPlayedWorldMode = it[Player.lastPlayedWorldMode]
                 data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
                 data.mvpTime = it[Player.mvpTime]
+                data.pvpEliminationTeamCount = it[Player.pvpEliminationTeamCount]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
@@ -589,6 +603,7 @@ class DB {
                 it[lastPlayedWorldMode] = data.lastPlayedWorldMode
                 it[lastPlayedWorldId] = data.lastPlayedWorldId
                 it[mvpTime] = data.mvpTime
+                it[pvpEliminationTeamCount] = data.pvpEliminationTeamCount
 
                 val json = JsonObject()
                 data.status.forEach {
@@ -646,6 +661,7 @@ class DB {
                 data.lastPlayedWorldMode = this[Player.lastPlayedWorldMode]
                 data.lastPlayedWorldId = this[Player.lastPlayedWorldId]
                 data.mvpTime = this[Player.mvpTime]
+                data.pvpEliminationTeamCount = this[Player.pvpEliminationTeamCount]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(this[Player.status]).asObject().forEach {
