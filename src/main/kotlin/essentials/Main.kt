@@ -241,6 +241,7 @@ class Main: Plugin() {
 
         Vars.netServer.admins.bannedIPs.clear()
         Vars.netServer.admins.banned.clear()
+        Vars.netServer.admins.save()
 
         Log.info(Bundle()["event.plugin.loaded"])
     }

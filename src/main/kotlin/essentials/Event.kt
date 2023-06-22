@@ -1257,7 +1257,7 @@ object Event {
 
                     if(logFiles != null) {
                         if(logFiles.size >= maxLogFile) {
-                            val zipFileName = "$time.zip"
+                            val zipFileName = "log/old/$type/$time.zip"
                             val zipOutputStream = ZipOutputStream(FileOutputStream(zipFileName))
 
                             for(logFile in logFiles) {

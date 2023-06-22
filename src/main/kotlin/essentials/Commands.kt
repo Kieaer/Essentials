@@ -1863,7 +1863,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if(!Permission.check(player, "unban")) return
             val target = netServer.admins.findByName(arg[0])
             if(target != null) {
-                netServer.admins.unbanPlayerID(target.first().id)
+                netServer.admins.unbanPlayerID(arg[0])
                 val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
                 for(a in netServer.admins.getInfo(target.first().id).ips) {
                     ipBanList.removeAll { b -> b.asString() == a }
