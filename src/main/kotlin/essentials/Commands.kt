@@ -43,6 +43,7 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.requests.GatewayIntent
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
@@ -2364,7 +2365,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun start() {
             if (Config.botToken.isNotEmpty()) {
-                jda = JDABuilder.createDefault(Config.botToken).build()
+                jda = JDABuilder.createDefault(Config.botToken).enableIntents(GatewayIntent.MESSAGE_CONTENT).build()
                 jda!!.awaitReady()
                 jda!!.addEventListener(this)
             }

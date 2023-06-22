@@ -217,7 +217,9 @@ object Trigger {
                     var total = 0
                     if(state.isPlaying) {
                         val serverInfo = getServerInfo()
-                        serverInfo.forEach { a -> total += a.players }
+                        for(a in serverInfo) {
+                            total += a.players
+                        }
 
                         for(i in 0 until PluginData.warpCounts.size) {
                             if(state.map.name() == PluginData.warpCounts[i].mapName) {

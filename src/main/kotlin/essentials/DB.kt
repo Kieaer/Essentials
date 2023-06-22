@@ -133,7 +133,7 @@ class DB {
                             exec("INSERT INTO DB VALUES 2")
                         } else {
                             when(DB.selectAll().first()[DB.version]) {
-                                3 -> {
+                                2 -> {
                                     // TODO DB 업데이트 명령줄
                                 }
                             }
