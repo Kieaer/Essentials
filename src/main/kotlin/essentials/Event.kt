@@ -1208,16 +1208,20 @@ object Event {
                             database.players.forEach {
                                 val message = if(Main.root.child("messages/${it.languageTag}.txt").exists()) {
                                     Main.root.child("messages/${it.languageTag}.txt").readString()
-                                } else {
+                                } else if(Main.root.child("messages").list().isNotEmpty()) {
                                     val file = Main.root.child("messages/en.txt")
-                                    if(file.exists()) file.readString() else ""
+                                    if(file.exists()) file.readString() else null
+                                } else {
+                                    null
                                 }
-                                val c = message.split(Regex("\r\n"))
+                                if (message != null) {
+                                    val c = message.split(Regex("\r\n"))
 
-                                if(c.size <= messageOrder) {
-                                    messageOrder = 0
+                                    if(c.size <= messageOrder) {
+                                        messageOrder = 0
+                                    }
+                                    it.player.sendMessage(c[messageOrder])
                                 }
-                                it.player.sendMessage(c[messageOrder])
                             }
                             messageOrder++
                             messageCount = 0

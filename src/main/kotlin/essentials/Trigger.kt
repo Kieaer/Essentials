@@ -91,12 +91,16 @@ object Trigger {
             if(!login) {
                 val motd = if(root.child("motd/${data.languageTag}.txt").exists()) {
                     root.child("motd/${data.languageTag}.txt").readString()
-                } else {
+                } else if(root.child("motd").list().isNotEmpty()) {
                     val file = root.child("motd/en.txt")
-                    if(file.exists()) file.readString() else ""
+                    if(file.exists()) file.readString() else null
+                } else {
+                    null
                 }
-                val count = motd.split("\r\n|\r|\n").toTypedArray().size
-                if(count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
+                if (motd != null) {
+                    val count = motd.split("\r\n|\r|\n").toTypedArray().size
+                    if(count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
+                }
             }
 
             if(perm.isAlert) {

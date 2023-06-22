@@ -124,7 +124,7 @@ class DB {
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldMode\" CHARACTER VARYING",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldId\" INTEGER",
                                     "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"mvpTime\" INTEGER",
-                                    "UPDATE player SET\"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0"
+                                    "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0"
                                 )
                                 Log.info(Bundle()["event.plugin.db.version", 2])
                                 Log.warn(Bundle()["event.plugin.db.warning"])
