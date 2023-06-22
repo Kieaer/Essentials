@@ -18,7 +18,6 @@ import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.Main.Companion.database
-import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.*
 import mindustry.core.NetServer
@@ -511,14 +510,16 @@ object Event {
                 data.lastPlayedWorldMode = state.rules.modeName
                 data.lastPlayedWorldId = port
                 data.lastLeaveDate = LocalDateTime.now()
+
+                if(data.oldUUID != null) {
+                    data.uuid = data.oldUUID!!
+                    data.oldUUID = null
+                }
+
+                database.queue(data)
+                offlinePlayers.add(data)
+                database.players.remove(data)
             }
-            if(data?.oldUUID != null) {
-                data.uuid = data.oldUUID!!
-                data.oldUUID = null
-            }
-            database.queue(data)
-            offlinePlayers.add(data)
-            database.players.remove(data)
         }
 
         Events.on(PlayerBanEvent::class.java) {
