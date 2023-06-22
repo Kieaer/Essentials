@@ -48,22 +48,21 @@ object Trigger {
                 data.duplicateName = "null"
             }
 
-            if(data.lastLoginDate == null) {
-                data.lastLoginDate = LocalDate.now()
-            }
-
-            if(data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
-                data.joinStacks++
-                if(data.joinStacks % 3 == 0) {
-                    data.expMultiplier = 1.2
-                } else if(data.joinStacks % 7 == 0) {
-                    data.expMultiplier = 1.5
-                } else if(data.joinStacks % 30 == 0) {
-                    data.expMultiplier = 2.5
+            if(data.lastLoginDate != null) {
+                if(data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
+                    data.joinStacks++
+                    if(data.joinStacks % 3 == 0) {
+                        data.expMultiplier = 1.2
+                    } else if(data.joinStacks % 7 == 0) {
+                        data.expMultiplier = 1.5
+                    } else if(data.joinStacks % 30 == 0) {
+                        data.expMultiplier = 2.5
+                    }
+                } else {
+                    data.joinStacks = 0
                 }
-            } else {
-                data.joinStacks = 0
             }
+            data.lastLoginDate = LocalDate.now()
 
             if(data.lastLeaveDate != null && data.lastLeaveDate!!.plusMinutes(30).isBefore(LocalDateTime.now())) {
                 if(data.lastPlayedWorldId == port && (data.lastPlayedWorldName != state.map.name() || data.lastPlayedWorldMode != state.rules.modeName)) {
