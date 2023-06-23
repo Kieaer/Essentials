@@ -646,8 +646,9 @@ object Event {
         }
 
         Events.on(BuildingBulletDestroyEvent::class.java) {
+            val cores = listOf(Blocks.coreAcropolis, Blocks.coreBastion, Blocks.coreCitadel, Blocks.coreFoundation, Blocks.coreAcropolis, Blocks.coreNucleus, Blocks.coreShard)
             if (state.rules.pvp) {
-                if (it.build.closestCore() == null) {
+                if (it.build.closestCore() == null && cores.contains(it.build.block())) {
                     for (data in database.players) {
                         if (data.player.team() == it.bullet.team) {
                             data.pvpEliminationTeamCount++

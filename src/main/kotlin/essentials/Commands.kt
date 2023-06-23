@@ -1669,7 +1669,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (!Permission.check(player, "skip")) return
             val wave = arg[0].toIntOrNull()
             if (wave != null) {
-                if (wave < 0) {
+                if (wave > 0) {
                     val previousWave = state.wave
                     var loop = 0
                     while (arg[0].toInt() != loop) {
