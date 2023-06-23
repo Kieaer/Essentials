@@ -214,6 +214,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 if (target != null) {
                     val data = findPlayerData(target.uuid())
                     if (data != null) {
+                        Events.fire(PlayerNameChanged(data.name, arg[0], data.uuid))
                         data.name = arg[0]
                         target.name(arg[0])
                         database.queue(data)

@@ -5,3 +5,4 @@ class PlayerVoteBanned(val name : String, val voteReason : String, val online : 
 class PlayerTempUnbanned(val name : String)
 class PlayerTempBanned(val name : String, val by : String, val date : String)
 class PlayerUnbanned(val by : String, val name : String, val date : String)
+class PlayerNameChanged(val oldName : String, val newName : String, val uuid : String)

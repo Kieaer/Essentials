@@ -70,7 +70,12 @@ object Trigger {
             }
 
             val bundle = Bundle(data.languageTag)
-            if (Config.fixedName) player.name(data.name)
+            if (Config.fixedName) {
+                database.players.forEach {
+                    it.player.sendMessage(Bundle(it.languageTag)["event.player.name.changed", player.plainName(), data.name])
+                }
+                player.name(data.name)
+            }
             data.lastLoginTime = System.currentTimeMillis()
             data.totalJoinCount++
             data.player = player
