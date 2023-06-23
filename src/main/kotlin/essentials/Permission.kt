@@ -11,7 +11,7 @@ import java.util.*
 object Permission {
     private var main = JsonObject()
     private var user = JsonArray()
-    private var default = if(Config.authType == Config.AuthType.None) "user" else "visitor"
+    private var default = if (Config.authType == Config.AuthType.None) "user" else "visitor"
     private val mainFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
     private val userFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
 
@@ -54,7 +54,7 @@ object Permission {
         ]""".trimIndent()
 
     init {
-        if(!mainFile.exists()) {
+        if (!mainFile.exists()) {
             val json = JsonObject()
 
             val owner = JsonObject()
@@ -151,7 +151,7 @@ object Permission {
             mainFile.writeString(json.toString(Stringify.HJSON))
         }
 
-        if(!userFile.exists()) {
+        if (!userFile.exists()) {
             val obj = JsonArray()
             obj.setComment(comment)
             userFile.writeString(obj.toString(Stringify.HJSON_COMMENTS))
@@ -170,15 +170,15 @@ object Permission {
 
         main.forEach {
             val name = it.name
-            if(Config.authType == Config.AuthType.None && main.get(name).asObject().has("default")) {
+            if (Config.authType == Config.AuthType.None && main.get(name).asObject().has("default")) {
                 default = name
             }
 
-            if(main.get(name).asObject().has("inheritance")) {
+            if (main.get(name).asObject().has("inheritance")) {
                 var inheritance = main.get(name).asObject().getString("inheritance", null)
-                while(inheritance != null) {
+                while (inheritance != null) {
                     main.get(inheritance).asObject()["permission"].asArray().forEach { value ->
-                        if(!value.asString().contains("*")) {
+                        if (!value.asString().contains("*")) {
                             main.get(name).asObject().get("permission").asArray().add(value.asString())
                         }
                     }
@@ -194,9 +194,9 @@ object Permission {
         JsonValue.readHjson(userFile.reader()).asArray().forEach {
             val b = it.asObject()
             val c = database.players.find { e -> e.uuid == b.get("uuid").asString() }
-            if(c == null) {
+            if (c == null) {
                 val data = database[b.get("uuid").asString()]
-                if(data != null && b.has("group")) {
+                if (data != null && b.has("group")) {
                     data.permission = b.get("group").asString()
                     data.name = b.getString("name", data.name)
                     database.queue(data)
@@ -216,7 +216,7 @@ object Permission {
         val p = database.players.find { e -> e.uuid == player.uuid() }
 
         val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString().equals(player.uuid()) }
-        if(u != null) {
+        if (u != null) {
             result.uuid = u.asObject().getString("uuid", player.uuid())
             result.name = u.asObject().getString("name", player.name())
             result.group = u.asObject().getString("group", p?.permission ?: default)
@@ -238,11 +238,11 @@ object Permission {
 
     fun check(player : Playerc, command : String) : Boolean {
         main[get(player).group].asObject()["permission"].asArray().forEach {
-            if(it.asString() == command || it.asString().equals("all", true)) {
+            if (it.asString() == command || it.asString().equals("all", true)) {
                 return true
             }
         }
-        return if(database.players.find { e -> e.uuid == player.uuid() } == null) false else false
+        return if (database.players.find { e -> e.uuid == player.uuid() } == null) false else false
     }
 
     class PermissionData {

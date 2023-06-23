@@ -16,7 +16,7 @@ object FileWatchService: Runnable {
         val path = Paths.get(root.absolutePath())
         path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
 
-        while(!Thread.currentThread().isInterrupted) {
+        while (!Thread.currentThread().isInterrupted) {
             try {
                 watchKey = watchService.take()
                 Thread.sleep(100)
@@ -24,29 +24,29 @@ object FileWatchService: Runnable {
                 events.forEach {
                     val kind = it.kind()
                     val paths = (it.context() as Path).fileName.toString()
-                    if(kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        if(paths == "permission_user.txt" || paths == "permission.txt") {
+                    if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                        if (paths == "permission_user.txt" || paths == "permission.txt") {
                             try {
                                 Permission.load()
                                 Log.info(Bundle()["config.permission.updated"])
-                            } catch(e : ParseException) {
+                            } catch (e : ParseException) {
                                 Log.err(e)
                             }
-                        } else if(paths == "config.txt") {
+                        } else if (paths == "config.txt") {
                             Config.load()
                             Log.info(Bundle()["config.reloaded"])
                         }
                     }
                 }
-                if(!watchKey.reset()) {
+                if (!watchKey.reset()) {
                     try {
                         watchService.close()
                         break
-                    } catch(e : IOException) {
+                    } catch (e : IOException) {
                         println(e)
                     }
                 }
-            } catch(e : InterruptedException) {
+            } catch (e : InterruptedException) {
                 watchService.close()
                 Thread.currentThread().interrupt()
             }

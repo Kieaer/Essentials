@@ -78,10 +78,10 @@ object Config {
         Log.info(bundle["config.wiki"])
         val sc = Scanner(System.`in`)
 
-        if(sc.hasNextLine()) {
-            when(sc.nextLine()) {
+        if (sc.hasNextLine()) {
+            when (sc.nextLine()) {
                 "y", "Y" -> {
-                    if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
                         Desktop.getDesktop().browse(URI("https://github.com/Kieaer/Essentials/wiki"))
                     }
                 }
@@ -112,7 +112,7 @@ object Config {
     }
 
     fun save() {
-        if(System.getenv("DEBUG_KEY") == null && !root.exists()) wizard()
+        if (System.getenv("DEBUG_KEY") == null && !root.exists()) wizard()
 
         val plugin = JsonObject()
         plugin.add("update", update, bundle["config.update"])
@@ -193,7 +193,7 @@ object Config {
         update = plugin.getBoolean("update", update)
         report = plugin.getBoolean("report", report)
         authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
-        database = if(plugin.getString("database", database) == "default") database else plugin.getString("database", database)
+        database = if (plugin.getString("database", database) == "default") database else plugin.getString("database", database)
         banList = plugin.getString("banList", banList)
 
         afk = features.getBoolean("afk", afk)
@@ -241,8 +241,8 @@ object Config {
         discordURL = discord.getString("discordURL", discordURL)
         banChannelToken = discord.getString("banChannelToken", banChannelToken)
 
-        if(chatlimit) {
-            if(!allowLanguageRegex.matcher(chatlanguage).matches()) {
+        if (chatlimit) {
+            if (!allowLanguageRegex.matcher(chatlanguage).matches()) {
                 chatlimit = false
             }
         }
@@ -250,7 +250,7 @@ object Config {
 
     fun update() {
         val version = JsonObject.readHjson(root.readString("utf-8")).asObject().getInt("configVersion", 1)
-        if(configVersion > version) {
+        if (configVersion > version) {
             save()
         }
     }

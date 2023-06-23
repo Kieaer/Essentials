@@ -64,6 +64,6 @@ class WebServer {
     }
 
     fun stop() {
-        if(::server.isInitialized) server.stop()
+        if (::server.isInitialized) server.stop()
     }
 }

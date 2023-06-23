@@ -29,15 +29,15 @@ class DB {
 
     fun open() {
         try {
-            if(Main.root.child("database.db.mv.db").exists()) {
-                if(!Main.root.child("data/h2-1.4.200.jar").exists()) {
+            if (Main.root.child("database.db.mv.db").exists()) {
+                if (!Main.root.child("data/h2-1.4.200.jar").exists()) {
                     Main.root.child("data").mkdirs()
                     URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar").openStream().use { b ->
                         BufferedInputStream(b).use { bis ->
                             FileOutputStream(Main.root.child("data/h2-1.4.200.jar").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
                                 var count : Int
-                                while(bis.read(data, 0, 1024).also { count = it } != -1) {
+                                while (bis.read(data, 0, 1024).also { count = it } != -1) {
                                     fos.write(data, 0, count)
                                 }
                             }
@@ -46,7 +46,7 @@ class DB {
                 }
 
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-                if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
                     val cmd = arrayOf("/bin/bash", "-c", "cd ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql")
                     Runtime.getRuntime().exec(cmd).waitFor()
                 } else {
@@ -59,11 +59,11 @@ class DB {
             }
 
             isRemote = !Config.database.equals(Main.root.child("database").absolutePath(), false)
-            if(!isRemote) {
+            if (!isRemote) {
                 try {
                     dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Config.database).start()
                     db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
-                } catch(e : Exception) {
+                } catch (e : Exception) {
                     db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
                     Log.info(Bundle()["event.database.remote"])
                 }
@@ -71,22 +71,22 @@ class DB {
                 db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
             }
 
-            if(Main.root.child("data/script.sql").exists()) {
+            if (Main.root.child("data/script.sql").exists()) {
                 RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath(), "-options", "FROM_1X")
                 Main.root.child("data/script.sql").moveTo(Main.root.child("data/script_backup.sql"))
             }
 
             transaction {
-                if(!connection.isClosed) {
+                if (!connection.isClosed) {
                     SchemaUtils.create(Player)
                     SchemaUtils.create(Data)
                     SchemaUtils.create(DB)
 
-                    if(!isRemote) {
-                        if(DB.selectAll().empty()) {
+                    if (!isRemote) {
+                        if (DB.selectAll().empty()) {
                             try {
                                 exec("SELECT hud FROM Players")
-                            } catch(e : SQLException) {
+                            } catch (e : SQLException) {
                                 val sql = listOf(
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS placecount RENAME TO \"blockPlaceCount\"",
                                     "ALTER TABLE Player ALTER COLUMN IF EXISTS breakcount RENAME TO \"blockBreakCount\"",
@@ -132,7 +132,7 @@ class DB {
                             }
                             exec("INSERT INTO DB VALUES 2")
                         } else {
-                            when(DB.selectAll().first()[DB.version]) {
+                            when (DB.selectAll().first()[DB.version]) {
                                 2 -> {
                                     // TODO DB 업데이트 명령줄
                                     val sql = listOf(
@@ -149,7 +149,7 @@ class DB {
 
                         try {
                             getAll()
-                        } catch(e : ParseException) {
+                        } catch (e : ParseException) {
                             Player.update {
                                 it[status] = "{}"
                             }
@@ -165,15 +165,15 @@ class DB {
                         """.trimIndent()
 
                         exec(sql) { rs ->
-                            while(rs.next()) {
+                            while (rs.next()) {
                                 val data = get(rs.getString("uuid"))
-                                if(data != null) {
+                                if (data != null) {
                                     try {
-                                        if(rs.getString("duplicateName") == "null") {
+                                        if (rs.getString("duplicateName") == "null") {
                                             data.duplicateName = data.name
                                         }
-                                    } catch(e : ParseException) {
-                                        if(data.duplicateName == null) {
+                                    } catch (e : ParseException) {
+                                        if (data.duplicateName == null) {
                                             data.duplicateName = data.name
                                         }
                                     }
@@ -189,7 +189,7 @@ class DB {
                     Core.app.exit()
                 }
             }
-        } catch(e : Exception) {
+        } catch (e : Exception) {
             e.printStackTrace()
             Core.app.exit()
         }
@@ -343,8 +343,8 @@ class DB {
                 joinStacks: $joinStacks
                 afkTime: $afkTime
                 entityid: $entityid
-                lastLoginDate: ${if(lastLoginDate != null) lastLoginDate.toString() else "null"}
-                lastLeaveDate: ${if(lastLeaveDate != null) lastLeaveDate.toString() else "null"}
+                lastLoginDate: ${if (lastLoginDate != null) lastLoginDate.toString() else "null"}
+                lastLeaveDate: ${if (lastLeaveDate != null) lastLeaveDate.toString() else "null"}
                 showLevelEffects: $showLevelEffects
                 expMultiplier: $expMultiplier
                 currentPlayTime: $currentPlayTime
@@ -396,7 +396,7 @@ class DB {
                 it[duplicateName] = null
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = if(data.lastLoginDate == null) null else LocalDate.now().toString()
+                it[lastLoginDate] = if (data.lastLoginDate == null) null else LocalDate.now().toString()
                 it[lastLeaveDate] = null
                 it[showLevelEffects] = data.showLevelEffects
                 it[currentPlayTime] = data.currentPlayTime
@@ -412,7 +412,7 @@ class DB {
 
     operator fun get(uuid : String) : PlayerData? {
         val it = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
-        if(it != null) {
+        if (it != null) {
             val data = PlayerData()
             data.name = it[Player.name]
             data.uuid = it[Player.uuid]
@@ -448,8 +448,8 @@ class DB {
             data.duplicateName = it[Player.duplicateName]
             data.tracking = it[Player.tracking]
             data.joinStacks = it[Player.joinStacks]
-            data.lastLoginDate = if(it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
-            data.lastLeaveDate = if(it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
+            data.lastLoginDate = if (it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
+            data.lastLeaveDate = if (it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
             data.showLevelEffects = it[Player.showLevelEffects]
             data.currentPlayTime = it[Player.currentPlayTime]
             data.isConnected = it[Player.isConnected]
@@ -510,8 +510,8 @@ class DB {
                 data.duplicateName = it[Player.duplicateName]
                 data.tracking = it[Player.tracking]
                 data.joinStacks = it[Player.joinStacks]
-                data.lastLoginDate = if(it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
-                data.lastLeaveDate = if(it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
+                data.lastLoginDate = if (it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
+                data.lastLeaveDate = if (it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
                 data.showLevelEffects = it[Player.showLevelEffects]
                 data.currentPlayTime = it[Player.currentPlayTime]
                 data.isConnected = it[Player.isConnected]
@@ -594,8 +594,8 @@ class DB {
                 it[duplicateName] = data.duplicateName
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = if(data.lastLoginDate == null) null else data.lastLoginDate.toString()
-                it[lastLeaveDate] = if(data.lastLeaveDate == null) null else data.lastLeaveDate.toString()
+                it[lastLoginDate] = if (data.lastLoginDate == null) null else data.lastLoginDate.toString()
+                it[lastLeaveDate] = if (data.lastLeaveDate == null) null else data.lastLeaveDate.toString()
                 it[showLevelEffects] = data.showLevelEffects
                 it[currentPlayTime] = data.currentPlayTime
                 it[isConnected] = data.isConnected
@@ -616,7 +616,7 @@ class DB {
 
     fun search(id : String, pw : String) : PlayerData? {
         transaction { Player.select { Player.accountID eq id }.firstOrNull() }.run {
-            if(this != null) {
+            if (this != null) {
                 val data = PlayerData()
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
@@ -652,8 +652,8 @@ class DB {
                 data.duplicateName = this[Player.duplicateName]
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
-                data.lastLoginDate = if(data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
-                data.lastLeaveDate = if(data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
+                data.lastLoginDate = if (data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
+                data.lastLeaveDate = if (data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
                 data.showLevelEffects = this[Player.showLevelEffects]
                 data.currentPlayTime = this[Player.currentPlayTime]
                 data.isConnected = this[Player.isConnected]
@@ -669,7 +669,7 @@ class DB {
                 }
                 data.status = obj
 
-                return if(data.accountID == data.accountPW) data else if(BCrypt.checkpw(pw, data.accountPW)) data else null
+                return if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(pw, data.accountPW)) data else null
             } else {
                 return null
             }

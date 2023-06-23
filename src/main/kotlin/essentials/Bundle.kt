@@ -12,11 +12,11 @@ class Bundle {
 
     constructor(languageTag : String) {
         val locale = try {
-            when(languageTag.substring(0, 2)) {
+            when (languageTag.substring(0, 2)) {
                 "ko" -> Locale.KOREA
                 else -> Locale.ENGLISH
             }
-        } catch(e : Exception) {
+        } catch (e : Exception) {
             Locale.ENGLISH
         }
         resource = ResourceBundle.getBundle("bundle", locale)

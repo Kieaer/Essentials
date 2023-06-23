@@ -9,6 +9,7 @@ import arc.util.Log
 import essentials.Permission.bundle
 import mindustry.Vars
 import mindustry.mod.Plugin
+import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonArray
 import org.hjson.JsonValue
@@ -20,6 +21,7 @@ import java.net.URL
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.function.Consumer
 
 class Main: Plugin() {
     companion object {
@@ -33,27 +35,27 @@ class Main: Plugin() {
 
     init {
         Log.info("[Essentials] Loading")
-        if((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
+        if ((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
             root.child("database.mv.db").delete()
         }
 
         createFile()
-        if(!root.child("config.txt").exists()) Config.save()
+        if (!root.child("config.txt").exists()) Config.save()
         Config.load()
         Config.update()
         database.open()
         Permission.load()
         PluginData.load()
 
-        if(Config.database != root.child("database").absolutePath()) {
+        if (Config.database != root.child("database").absolutePath()) {
             Log.info(Bundle()["event.database.remote"])
             root.child("database.mv.db").delete()
         }
 
-        if(Config.blockIP) {
+        if (Config.blockIP) {
             val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-            if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                if(System.getenv("sudopassword") == null) {
+            if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                if (System.getenv("sudopassword") == null) {
                     Log.info(bundle["config.sudopassword"])
                     Log.info(bundle["config.sudopassword.repeat"])
 
@@ -62,7 +64,7 @@ class Main: Plugin() {
 
                     // 시스템이 Console 를 지원 안할경우 (비밀번호 노출됨)
                     print(bundle["config.sudopassword.password"] + " ")
-                    if(co == null) {
+                    if (co == null) {
                         PluginData.sudoPassword = sc.nextLine()
                     } else {
                         PluginData.sudoPassword = String(co.readPassword())
@@ -77,28 +79,28 @@ class Main: Plugin() {
             }
         }
 
-        if(Config.antiVPN) {
-            if(!root.child("data/ipv4.txt").exists()) {
+        if (Config.antiVPN) {
+            if (!root.child("data/ipv4.txt").exists()) {
                 root.child("data").mkdirs()
                 var isUpdate = false
 
-                if(PluginData["vpnListDate"] == null) {
+                if (PluginData["vpnListDate"] == null) {
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
-                } else if((PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()) {
+                } else if ((PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()) {
                     PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                     isUpdate = true
                 }
                 PluginData.save(false)
                 PluginData.changed = true
 
-                if(isUpdate) {
+                if (isUpdate) {
                     URL("https://github.com/X4BNet/lists_vpn/blob/main/output/datacenter/ipv4.txt").openStream().use { b ->
                         BufferedInputStream(b).use { bis ->
                             FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
                                 var count : Int
-                                while(bis.read(data, 0, 1024).also { count = it } != -1) {
+                                while (bis.read(data, 0, 1024).also { count = it } != -1) {
                                     fos.write(data, 0, count)
                                 }
                             }
@@ -118,24 +120,24 @@ class Main: Plugin() {
         Log.info(Bundle()["event.plugin.starting"])
         val isPortOpen = try {
             ServerSocket(6000).use { _ -> true }
-        } catch(e : IOException) {
+        } catch (e : IOException) {
             false
         }
 
         daemon.submit(FileWatchService)
         daemon.submit(Trigger.Thread())
         daemon.submit(Trigger.UpdateThread)
-        daemon.submit(if(isPortOpen) Trigger.Server else Trigger.Client)
-        if(Config.webServer) webServer.start()
+        daemon.submit(if (isPortOpen) Trigger.Server else Trigger.Client)
+        if (Config.webServer) webServer.start()
         connectType = isPortOpen
-        if(Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
+        if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
-        if(Config.update) {
+        if (Config.update) {
             Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000).error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }.submit {
-                if(it.status == Http.HttpStatus.OK) {
+                if (it.status == Http.HttpStatus.OK) {
                     val json = JsonValue.readJSON(it.resultAsString).asObject()
                     Vars.mods.list().forEach { mod ->
-                        if(mod.meta.name == "Essentials") {
+                        if (mod.meta.name == "Essentials") {
                             PluginData.pluginVersion = mod.meta.version
                             return@forEach
                         }
@@ -152,7 +154,7 @@ class Main: Plugin() {
             }
         } else {
             Vars.mods.list().forEach { mod ->
-                if(mod.meta.name == "Essentials") {
+                if (mod.meta.name == "Essentials") {
                     PluginData.pluginVersion = mod.meta.version
                     return@forEach
                 }
@@ -160,19 +162,19 @@ class Main: Plugin() {
         }
 
         Vars.netServer.admins.addActionFilter { e ->
-            if(e.player == null) return@addActionFilter true
+            if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
             val isHub = PluginData["hubMode"]
             PluginData.warpBlocks.forEach {
-                if(e.tile != null) {
-                    if(it.mapName == Vars.state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                if (e.tile != null) {
+                    if (it.mapName == Vars.state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                         return@addActionFilter false
                     }
                 }
             }
 
-            if(data != null) {
-                if(isHub != null && isHub == Vars.state.map.name()) {
+            if (data != null) {
+                if (isHub != null && isHub == Vars.state.map.name()) {
                     return@addActionFilter Permission.check(e.player, "hub.build")
                 } else {
                     return@addActionFilter true
@@ -181,7 +183,7 @@ class Main: Plugin() {
             return@addActionFilter false
         }
 
-        if(Config.blockfooclient) {
+        if (Config.blockfooclient) {
             val fooArray = arrayOf("fooCheck", "fooTransmission", "fooTransmissionEnabled")
             fooArray.forEach {
                 Vars.netServer.addPacketHandler(it) { packet, _ ->
@@ -193,7 +195,7 @@ class Main: Plugin() {
 
         Core.app.addListener(object: ApplicationListener {
             override fun dispose() {
-                if(connectType) {
+                if (connectType) {
                     Trigger.clients.forEach {
                         val writer = BufferedWriter(OutputStreamWriter(it.getOutputStream()))
                         try {
@@ -201,7 +203,7 @@ class Main: Plugin() {
                             writer.newLine()
                             writer.flush()
                             it.close()
-                        } catch(e : SocketException) {
+                        } catch (e : SocketException) {
                             it.close()
                             Trigger.clients.remove(it)
                         }
@@ -216,12 +218,12 @@ class Main: Plugin() {
                 Config.save()
                 database.close()
                 webServer.stop()
-                if(database.dbServer != null) database.dbServer!!.stop()
-                if(Config.webServer) webServer.stop()
+                if (database.dbServer != null) database.dbServer!!.stop()
+                if (Config.webServer) webServer.stop()
             }
         })
 
-        if(!Config.ipBanList.exists()) {
+        if (!Config.ipBanList.exists()) {
             val data = JsonArray()
             Vars.netServer.admins.banned.forEach {
                 it.ips.forEach { ip ->
@@ -231,7 +233,7 @@ class Main: Plugin() {
             Config.ipBanList.writeString(data.toString(Stringify.HJSON))
         }
 
-        if(!Config.idBanList.exists()) {
+        if (!Config.idBanList.exists()) {
             val data = JsonArray()
             Vars.netServer.admins.banned.forEach {
                 data.add(it.id)
@@ -239,8 +241,7 @@ class Main: Plugin() {
             Config.idBanList.writeString(data.toString(Stringify.HJSON))
         }
 
-        Vars.netServer.admins.bannedIPs.clear()
-        Vars.netServer.admins.banned.clear()
+        Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
         Vars.netServer.admins.save()
 
         Log.info(Bundle()["event.plugin.loaded"])
@@ -255,7 +256,7 @@ class Main: Plugin() {
     }
 
     private fun createFile() {
-        if(!root.child("chat_blacklist.txt").exists()) {
+        if (!root.child("chat_blacklist.txt").exists()) {
             root.child("chat_blacklist.txt").writeString("않")
         }
     }

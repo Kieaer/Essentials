@@ -138,7 +138,7 @@ object PluginData {
         val encode = Base64.getEncoder()
         lastMemory = encode.encodeToString(data.toString().toByteArray())
 
-        if(first) {
+        if (first) {
             transaction {
                 DB.Data.insert {
                     it[DB.Data.data] = lastMemory
@@ -149,7 +149,7 @@ object PluginData {
 
     fun load() {
         try {
-            if(transaction { DB.Data.selectAll().empty() }) {
+            if (transaction { DB.Data.selectAll().empty() }) {
                 save(true)
             } else {
                 warpZones = Seq<WarpZone>()
@@ -161,7 +161,7 @@ object PluginData {
                 status = ObjectMap<String, String>()
 
                 transaction {
-                    if(!DB.Data.selectAll().empty()) {
+                    if (!DB.Data.selectAll().empty()) {
                         DB.Data.selectAll().first().run {
                             val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
 
@@ -196,24 +196,24 @@ object PluginData {
                                 JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {
                                     status.put(it.name, it.value.asString())
                                 }
-                            } catch(e : Exception) {
+                            } catch (e : Exception) {
                                 data["status"].asArray().forEach {
-                                    if(!it.asString().equals("hubMode")) status.put(it.asString(), "none")
-                                    if(it.asString().equals("hubMode")) Log.warn(Bundle()["event.plugin.hubmode.reset"])
+                                    if (!it.asString().equals("hubMode")) status.put(it.asString(), "none")
+                                    if (it.asString().equals("hubMode")) Log.warn(Bundle()["event.plugin.hubmode.reset"])
                                 }
                                 changed = true
                             }
                         }
-                    } else if(DB.Data.selectAll().empty()) {
+                    } else if (DB.Data.selectAll().empty()) {
                         DB.Data.insert {
                             it[data] = lastMemory
                         }
                     }
                 }
             }
-        } catch(e : IOException) {
+        } catch (e : IOException) {
             e.printStackTrace()
-        } catch(e : Exception) {
+        } catch (e : Exception) {
             e.printStackTrace()
         }
     }
