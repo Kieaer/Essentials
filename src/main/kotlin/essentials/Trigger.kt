@@ -220,12 +220,12 @@ object Trigger {
                     }
 
                     var total = 0
-                    if (state.isPlaying) {
-                        val serverInfo = getServerInfo()
-                        for (a in serverInfo) {
-                            total += a.players
-                        }
+                    val serverInfo = getServerInfo()
+                    for (a in serverInfo) {
+                        total += a.players
+                    }
 
+                    if (state.isPlaying) {
                         for (i in 0 until PluginData.warpCounts.size) {
                             if (state.map.name() == PluginData.warpCounts[i].mapName) {
                                 val value = PluginData.warpCounts[i]
@@ -414,7 +414,10 @@ object Trigger {
             }
             for (a in buf) {
                 pingHostImpl(a.first, a.second) {
-                    if (it.name != null) total.add(it)
+                    if (it.name != null) {
+                        println("${it.port} ${it.players}")
+                        total.add(it)
+                    }
                 }
             }
 
