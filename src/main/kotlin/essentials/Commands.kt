@@ -922,7 +922,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
             } else {
-                Call.menu(player.con(), 0, bundle["info.title"], show(data) + lineBreak, arrayOf(arrayOf(bundle["info.button.close"])))
+                Call.menu(player.con(), -1, bundle["info.title"], show(data) + lineBreak, arrayOf(arrayOf(bundle["info.button.close"])))
             }
         }
 
@@ -977,22 +977,23 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun killunit() {
             if (!Permission.check(player, "killunit")) return
             val unit = content.units().find { unitType : UnitType -> unitType.name == arg[0] }
-            if (unit != null) {
-                if (arg.size > 1) {
-                    fun destroy(team : Team) {
-                        if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
-                            Groups.unit.forEach { if (it == unit && it.team == team) it.kill() }
-                        } else {
-                            var count = 0
-                            Groups.unit.forEach {
-                                if (it == unit && it.team == team && count != arg[1].toInt()) {
-                                    it.kill()
-                                    count++
-                                }
-                            }
+
+            fun destroy(team : Team) {
+                if (Groups.unit.size() < arg[1].toInt() || arg[1].toInt() == 0) {
+                    Groups.unit.forEach { if (it.type() == unit && it.team == team) it.kill() }
+                } else {
+                    var count = 0
+                    Groups.unit.forEach {
+                        if (it.type() == unit && it.team == team && count != arg[1].toInt()) {
+                            it.kill()
+                            count++
                         }
                     }
+                }
+            }
 
+            if (unit != null) {
+                if (arg.size > 1) {
                     if (arg[1].toIntOrNull() != null) {
                         if (arg.size == 3) {
                             val team = selectTeam(arg[2])
@@ -1004,7 +1005,11 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         err("command.killunit.invalid.number")
                     }
                 } else {
-                    Groups.unit.forEach { if (it == unit && it.team == player.team()) it.kill() }
+                    for(it in Groups.unit) {
+                        if (it.type() == unit && it.team == player.team()) {
+                            it.kill()
+                        }
+                    }
                 }
             } else {
                 err("command.killunit.not.found")

@@ -761,7 +761,7 @@ object Event {
         var messageCount = Config.messageTime
         var messageOrder = 0
 
-        data class effectData(val player : Playerc, val x : Float, val y : Float, val rotate : Float, val effectLevel : Int?, val level : Int, val color : Color)
+        data class effectData(val x : Float, val y : Float, val rotate : Float, val effectLevel : Int?, val level : Int, val color : Color)
 
         Core.app.addListener(object: ApplicationListener {
             override fun update() {
@@ -843,29 +843,31 @@ object Event {
                                     }
                                 }
 
-                                if (it.showLevelEffects) {
-                                    effectList.add(effectData(it.player, it.player.x, it.player.y, it.player.unit().rotation, it.effectLevel, it.level, color))
-                                }
+                                effectList.add(effectData(it.player.x, it.player.y, it.player.unit().rotation, it.effectLevel, it.level, color))
                             }
                         }
 
-                        effectList.forEach {
-                            when (if (it.effectLevel != null) it.effectLevel else it.level) {
-                                in 10..19 -> Call.effect(it.player.con(), Fx.freezing, it.x, it.y, it.rotate, it.color)
-                                in 20..29 -> Call.effect(it.player.con(), Fx.overdriven, it.x, it.y, it.rotate, it.color)
-                                in 30..39 -> {
-                                    Call.effect(it.player.con(), Fx.burning, it.x, it.y, it.rotate, it.color)
-                                    Call.effect(it.player.con(), Fx.melting, it.x, it.y, it.rotate, it.color)
-                                }
+                        database.players.forEach { data ->
+                            if (data.showLevelEffects) {
+                                effectList.forEach {
+                                    when (it.effectLevel ?: it.level) {
+                                        in 10..19 -> Call.effect(data.player.con(), Fx.freezing, it.x, it.y, it.rotate, it.color)
+                                        in 20..29 -> Call.effect(data.player.con(), Fx.overdriven, it.x, it.y, it.rotate, it.color)
+                                        in 30..39 -> {
+                                            Call.effect(data.player.con(), Fx.burning, it.x, it.y, it.rotate, it.color)
+                                            Call.effect(data.player.con(), Fx.melting, it.x, it.y, it.rotate, it.color)
+                                        }
 
-                                in 40..49 -> Call.effect(it.player.con(), Fx.steam, it.x, it.y, it.rotate, it.color)
-                                in 50..59 -> Call.effect(it.player.con(), Fx.shootSmallSmoke, it.x, it.y, it.rotate, it.color)
-                                in 60..69 -> Call.effect(it.player.con(), Fx.mine, it.x, it.y, it.rotate, it.color)
-                                in 70..79 -> Call.effect(it.player.con(), Fx.explosion, it.x, it.y, it.rotate, it.color)
-                                in 80..89 -> Call.effect(it.player.con(), Fx.hitLaser, it.x, it.y, it.rotate, it.color)
-                                in 90..99 -> Call.effect(it.player.con(), Fx.crawlDust, it.x, it.y, it.rotate, it.color)
-                                in 100..Int.MAX_VALUE -> Call.effect(it.player.con(), Fx.mineImpact, it.x, it.y, it.rotate, it.color)
-                                else -> {}
+                                        in 40..49 -> Call.effect(data.player.con(), Fx.steam, it.x, it.y, it.rotate, it.color)
+                                        in 50..59 -> Call.effect(data.player.con(), Fx.shootSmallSmoke, it.x, it.y, it.rotate, it.color)
+                                        in 60..69 -> Call.effect(data.player.con(), Fx.mine, it.x, it.y, it.rotate, it.color)
+                                        in 70..79 -> Call.effect(data.player.con(), Fx.explosion, it.x, it.y, it.rotate, it.color)
+                                        in 80..89 -> Call.effect(data.player.con(), Fx.hitLaser, it.x, it.y, it.rotate, it.color)
+                                        in 90..99 -> Call.effect(data.player.con(), Fx.crawlDust, it.x, it.y, it.rotate, it.color)
+                                        in 100..Int.MAX_VALUE -> Call.effect(data.player.con(), Fx.mineImpact, it.x, it.y, it.rotate, it.color)
+                                        else -> {}
+                                    }
+                                }
                             }
                         }
                         milsCount = 0

@@ -70,7 +70,7 @@ object Trigger {
             }
 
             val bundle = Bundle(data.languageTag)
-            if (Config.fixedName) {
+            if (Config.fixedName && player.name() != data.name) {
                 database.players.forEach {
                     it.player.sendMessage(Bundle(it.languageTag)["event.player.name.changed", player.plainName(), data.name])
                 }
@@ -417,7 +417,6 @@ object Trigger {
             for (a in buf) {
                 pingHostImpl(a.first, a.second) {
                     if (it.name != null) {
-                        println("${it.port} ${it.players}")
                         total.add(it)
                     }
                 }
