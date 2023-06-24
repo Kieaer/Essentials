@@ -955,18 +955,30 @@ object Event {
                                 }
                             }
 
+                            fun shieldColor(current : Float, max : Float) : String {
+                                return when (current / max * 100.0) {
+                                    in 50.0..100.0 -> "[#ffffe0]"
+                                    in 20.0..49.9 -> "[orange]"
+                                    else -> "[#CC5500]"
+                                }
+                            }
+
                             array.forEach { value ->
                                 when (value.asString()) {
                                     "health" -> {
                                         Groups.unit.forEach { unit ->
+                                            val msg = StringBuilder()
+                                            val color = color(unit.health, unit.maxHealth)
+                                            if(unit.shield > 0) {
+                                                val shield = shieldColor(unit.health, unit.maxHealth)
+                                                msg.appendLine("$shield${floor(unit.shield.toDouble())}")
+                                            }
+                                            msg.appendLine("$color${floor(unit.health.toDouble())}")
+
                                             if (unit.team != it.player.team() && Permission.check(it.player, "hud.enemy")) {
-                                                val color = color(unit.health, unit.maxHealth)
-                                                val msg = "$color${floor(unit.health.toDouble())}"
-                                                Call.label(it.player.con(), msg, Time.delta, unit.getX(), unit.getY())
+                                                Call.label(it.player.con(), msg.toString(), Time.delta, unit.getX(), unit.getY())
                                             } else if (unit.team == it.player.team()) {
-                                                val color = color(unit.health, unit.maxHealth)
-                                                val msg = "$color${floor(unit.health.toDouble())}"
-                                                Call.label(it.player.con(), msg, Time.delta, unit.getX(), unit.getY())
+                                                Call.label(it.player.con(), msg.toString(), Time.delta, unit.getX(), unit.getY())
                                             }
                                         }
                                     }
