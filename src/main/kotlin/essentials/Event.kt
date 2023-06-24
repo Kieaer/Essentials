@@ -509,6 +509,7 @@ object Event {
                 data.lastPlayedWorldMode = state.rules.modeName
                 data.lastPlayedWorldId = port
                 data.lastLeaveDate = LocalDateTime.now()
+                data.isConnected = false
 
                 if (data.oldUUID != null) {
                     data.uuid = data.oldUUID!!

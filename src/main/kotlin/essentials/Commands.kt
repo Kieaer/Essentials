@@ -20,7 +20,6 @@ import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
-import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -1046,6 +1045,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (result != null) {
                 if (result.accountID == result.accountPW) {
                     Bundle(player.locale())["command.login.default.password"]
+                } else if (result.isConnected) {
+                    Bundle(player.locale())["command.login.already"]
                 } else {
                     if (findPlayerData(result.uuid) == null) {
                         database.players.remove { a -> a.uuid == player.uuid() }
@@ -1449,7 +1450,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                         } else {
                             val t = d[a].second.toString().toLong()
-                            val timeMessage = bundle["command.info.time", (t / 60 / 60) / 24, (t / 60 / 60) % 24, (t / 60) % 60, t % 60]
+                            val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
                             string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}\n")
                         }
                     }
@@ -1463,7 +1464,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                             } else {
                                 val t = d[a].second.toString().toLong()
-                                val timeMessage = bundle["command.info.time", (t / 60 / 60) / 24, (t / 60 / 60) % 24, (t / 60) % 60, t % 60]
+                                val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
                                 string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}")
                             }
                         }

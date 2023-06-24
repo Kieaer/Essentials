@@ -170,6 +170,8 @@ object Trigger {
                 message.appendLine(bundle["event.player.expboost", data.joinStacks, data.expMultiplier])
             }
 
+            data.isConnected = true
+
             database.players.add(data)
             player.sendMessage(message.toString())
         }
