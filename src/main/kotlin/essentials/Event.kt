@@ -41,6 +41,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.InetAddress
 import java.net.UnknownHostException
+import java.nio.file.CopyOption
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -54,6 +55,7 @@ import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.experimental.and
+import kotlin.io.path.Path
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -1298,33 +1300,37 @@ object Event {
 
                     if (logFiles != null) {
                         if (logFiles.size >= maxLogFile) {
-                            val zipFileName = "log/old/$type/$time.zip"
+                            val zipFileName = "$time.zip"
                             val zipOutputStream = ZipOutputStream(FileOutputStream(zipFileName))
 
-                            for (logFile in logFiles) {
-                                val entryName = logFile.name
-                                val zipEntry = ZipEntry(entryName)
-                                zipOutputStream.putNextEntry(zipEntry)
+                            Thread {
+                                for (logFile in logFiles) {
+                                    val entryName = logFile.name
+                                    val zipEntry = ZipEntry(entryName)
+                                    zipOutputStream.putNextEntry(zipEntry)
 
-                                val fileInputStream = FileInputStream(logFile)
-                                val buffer = ByteArray(1024)
-                                var length : Int
-                                while (fileInputStream.read(buffer).also { length = it } > 0) {
-                                    zipOutputStream.write(buffer, 0, length)
+                                    val fileInputStream = FileInputStream(logFile)
+                                    val buffer = ByteArray(1024)
+                                    var length : Int
+                                    while (fileInputStream.read(buffer).also { length = it } > 0) {
+                                        zipOutputStream.write(buffer, 0, length)
+                                    }
+
+                                    fileInputStream.close()
+                                    zipOutputStream.closeEntry()
                                 }
 
-                                fileInputStream.close()
-                                zipOutputStream.closeEntry()
-                            }
+                                zipOutputStream.close()
 
-                            zipOutputStream.close()
+                                logFiles.forEach {
+                                    it.delete()
+                                }
 
-                            logFiles.forEach {
-                                it.delete()
-                            }
+                                Files.move(Path(Core.files.external(zipFileName).absolutePath()), Path(root.child("log/old/$type/$zipFileName").absolutePath()))
+                            }.start()
                         }
                     }
-                } catch (e : IOException) {
+                } catch (e : Exception) {
                     e.printStackTrace()
                 }
                 main = null
