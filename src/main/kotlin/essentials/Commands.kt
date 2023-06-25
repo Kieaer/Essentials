@@ -1863,8 +1863,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun track() {
             if (!Permission.check(player, "tp")) return
             data.tracking = !data.tracking
-            val msg = if (data.tracking) "disabled" else ""
-            send("command.track.toggle.$msg")
+            val msg = if (data.tracking) ".disabled" else ""
+            send("command.track.toggle$msg")
         }
 
         fun unban() {

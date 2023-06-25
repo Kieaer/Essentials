@@ -122,11 +122,11 @@ object Trigger {
                     player.team(Team.derelict)
                 }
 
-                if (Groups.player.size() > 3 && Config.pvpAutoTeam) {
+                if (Groups.player.size() > state.teams.active.size && Config.pvpAutoTeam) {
                     val teamStatus = Seq<Triple<Team, String, Int>>()
                     val teams = mutableListOf<Pair<Team, Double>>()
                     database.players.forEach {
-                        teamStatus.add(Triple(it.player.team(), it.name, (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100))
+                        teamStatus.add(Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
                     }
 
                     fun winPercentage(team : Team) : Double? {
@@ -171,7 +171,6 @@ object Trigger {
             }
 
             data.isConnected = true
-
             database.players.add(data)
             player.sendMessage(message.toString())
         }

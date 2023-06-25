@@ -1187,8 +1187,15 @@ object Event {
 
                                 resetVote()
                             } else if ((count == 0 && check() > voted.size) || isCanceled) {
-                                send("command.vote.failed")
-
+                                if (isPvP) {
+                                    database.players.forEach {
+                                        if (it.player.team() == voteTeam) {
+                                            Core.app.post { it.player.sendMessage(Bundle(it.languageTag)["command.vote.failed"]) }
+                                        }
+                                    }
+                                } else {
+                                    send("command.vote.failed")
+                                }
                                 resetVote()
                             }
                         }
