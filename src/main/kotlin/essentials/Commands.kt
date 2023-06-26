@@ -1071,11 +1071,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun maps() {
             if (!Permission.check(player, "maps")) return
             val list = maps.all().sortedBy { a -> a.name() }
-            val arr = ObjectMap<Map, Int>()
-            for ((order, a) in list.withIndex()) {
-                arr.put(a, order)
-            }
-
             val prebuilt = Seq<Pair<String, Array<Array<String>>>>()
             val buffer = Mathf.ceil(list.size.toFloat() / 6)
             val pages = if (buffer > 1.0) buffer - 1 else 0
@@ -1337,23 +1332,52 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun players() {
             if (!Permission.check(player, "players")) return
-            val message = StringBuilder()
-            val page = if (arg.isNotEmpty() && arg[0].toIntOrNull() != null) arg[0].toInt() else 0
-
+            val prebuilt = Seq<Pair<String, Array<Array<String>>>>()
             val buffer = Mathf.ceil(database.players.size.toFloat() / 6)
             val pages = if (buffer > 1.0) buffer - 1 else 0
+            val title = bundle["command.page.server"]
 
-            if (pages < page) {
-                err("command.page.range", pages)
-            } else {
-                message.append("[green]==[white] ${bundle["command.page.players"]} [orange]$page[]/[orange]$pages\n")
+            for (page in 0..pages) {
+                val build = StringBuilder()
                 for (a in 6 * page until (6 * (page + 1)).coerceAtMost(database.players.size)) {
-                    val name = database.players.get(a).name
-                    val id = database.players.get(a).entityid
-                    message.append("[gray]$id [white]$name\n")
+                    build.append("[gray]${database.players.get(a).entityid} ${database.players.get(a).name}")
                 }
-                player.sendMessage(message.toString().dropLast(1))
+
+                val options = arrayOf(
+                    arrayOf("<-", bundle["command.players.page", page, pages], "->"),
+                    arrayOf(bundle["command.players.close"])
+                )
+
+                prebuilt.add(Pair(build.toString(), options))
             }
+
+            data.status.put("page", "0")
+
+            var mainMenu = 0
+            mainMenu = Menus.registerMenu { player, select ->
+                var page = data.status.get("page").toInt()
+                when (select) {
+                    0 -> {
+                        if (page != 0) page--
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+
+                    1 -> {
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+
+                    2 -> {
+                        if (page != pages) page++
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+
+                    else -> {
+                        data.status.remove("page")
+                    }
+                }
+                data.status.put("page", page.toString())
+            }
+            Call.menu(player.con(), mainMenu, title, prebuilt.get(0).first, prebuilt.get(0).second)
         }
 
         fun pm() {
