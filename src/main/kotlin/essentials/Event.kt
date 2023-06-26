@@ -24,6 +24,7 @@ import mindustry.core.NetServer
 import mindustry.entities.Damage
 import mindustry.game.EventType.*
 import mindustry.game.Team
+import mindustry.game.Teams.TeamData
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -38,10 +39,8 @@ import org.hjson.JsonArray
 import org.hjson.Stringify
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.IOException
 import java.net.InetAddress
 import java.net.UnknownHostException
-import java.nio.file.CopyOption
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -610,8 +609,11 @@ object Event {
         }
 
         Events.on(ConnectPacketEvent::class.java) {
-            if (JsonArray.readHjson(Config.ipBanList.readString()).asArray().contains(it.connection.address) || JsonArray.readHjson(Config.idBanList.readString()).asArray().contains(it.packet.uuid)) {
+            val isIPbanned = JsonArray.readHjson(Config.ipBanList.readString()).asArray().contains(it.connection.address)
+            val isIDbanned = JsonArray.readHjson(Config.idBanList.readString()).asArray().contains(it.packet.uuid)
+            if (isIPbanned || isIDbanned) {
                 Call.kick(it.connection, Packets.KickReason.banned)
+                Log.info(Bundle()["event.player.banned", it.packet.name, if(isIPbanned) "IP (${it.connection.address})" else "UUID (${it.packet.uuid})"])
                 return@on
             }
 
@@ -657,6 +659,14 @@ object Event {
                             data.pvpEliminationTeamCount++
                         }
                         data.player.sendMessage(Bundle(data.languageTag)["event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName()])
+                    }
+                    if(netServer.isWaitingForPlayers) {
+                        for (t in state.teams.getActive()) {
+                            if (Groups.player.count { p : Player -> p.team() === t.team } > 0) {
+                                Events.fire(GameOverEvent(t.team))
+                                return@on
+                            }
+                        }
                     }
                 }
             }
@@ -977,7 +987,7 @@ object Event {
                                                 val shield = shieldColor(unit.health, unit.maxHealth)
                                                 msg.appendLine("$shield${floor(unit.shield.toDouble())}")
                                             }
-                                            msg.appendLine("$color${floor(unit.health.toDouble())}")
+                                            msg.append("$color${floor(unit.health.toDouble())}")
 
                                             if (unit.team != it.player.team() && Permission.check(it.player, "hud.enemy")) {
                                                 Call.label(it.player.con(), msg.toString(), Time.delta, unit.getX(), unit.getY())

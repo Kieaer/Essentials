@@ -20,6 +20,7 @@ import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
+import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -1747,7 +1748,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (!Permission.check(player, "status")) return
             val bans = JsonArray.readHjson(Config.idBanList.reader()).asArray().size()
 
-            player.sendMessage("""
+            val message = StringBuilder()
+            message.append("""
                 [#DEA82A]${bundle["command.status.info"]}[]
                 [#2B60DE]========================================[]
                 ${bundle["command.status.name"]}: ${state.map.name()}[white]
@@ -1756,6 +1758,45 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 ${bundle["command.status.playtime"]}: ${longToTime(PluginData.playtime)}
                 ${bundle["command.status.uptime"]}: ${longToTime(PluginData.uptime)}
             """.trimIndent())
+
+            if (state.rules.pvp) {
+                message.appendLine()
+                message.append("""
+                    [#2B60DE]========================================[]
+                    [#DEA82A]${bundle["command.status.pvp"]}[]
+                """.trimIndent())
+
+                val teamStatus = Seq<Triple<Team, String, Int>>()
+                val teams = mutableListOf<Pair<Team, Double>>()
+                database.players.forEach {
+                    teamStatus.add(Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
+                }
+
+                fun winPercentage(team : Team) : Double? {
+                    val teamPlayers = teamStatus.filter { it.first == team }
+                    val winPercentages = teamPlayers.map { it.third }
+                    if (winPercentages.isEmpty) {
+                        return null
+                    }
+                    return winPercentages.average()
+                }
+
+                val sortedTeams = teamStatus.map { it.first }.distinct().sortedBy { winPercentage(it) }
+
+                sortedTeams.forEach { teamName ->
+                    val averagePercentage = winPercentage(teamName)
+                    if (averagePercentage != null) {
+                        teams.add(Pair(teamName, averagePercentage))
+                    }
+                }
+
+                teams.forEach {
+                    message.append("${it.first.coloredName()} : ${it.second}")
+                }
+            }
+
+            player.sendMessage(message.toString())
+
         }
 
         fun t() {
