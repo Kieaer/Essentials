@@ -153,7 +153,7 @@ object Trigger {
             }
 
             if (Event.voting) {
-                message.appendLine(bundle["command.vote.starter", player.plainName()])
+                if (Event.voteStarter != null) message.appendLine(bundle["command.vote.starter", Event.voteStarter!!.plainName()])
                 message.appendLine(when (Event.voteType) {
                     "kick" -> bundle["command.vote.kick.start", Event.voteTarget!!.plainName(), Event.voteReason!!]
                     "map" -> bundle["command.vote.map.start", Event.voteMap!!.name(), Event.voteReason!!]
