@@ -59,6 +59,8 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.round
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 class Commands(handler : CommandHandler, isClient : Boolean) {
     companion object {
@@ -791,6 +793,19 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun info() {
             if (!Permission.check(player, "info")) return
 
+            fun timeFormat(seconds: Long, msg: String): String {
+                val days = seconds / (24 * 60 * 60)
+                val hours = (seconds % (24 * 60 * 60)) / (60 * 60)
+                val minutes = ((seconds % (24 * 60 * 60)) % (60 * 60)) / 60
+                val remainingSeconds = ((seconds % (24 * 60 * 60)) % (60 * 60)) % 60
+
+                return when (msg) {
+                    "command.info.time" -> bundle["command.info.time", days, hours, minutes, remainingSeconds]
+                    "command.info.time.minimal" -> bundle["command.info.time.minimal", hours, minutes, remainingSeconds]
+                    else -> ""
+                }
+            }
+
             fun show(target : DB.PlayerData) : String {
                 return """
                         ${bundle["command.info.name"]}: ${target.name}[white]
@@ -799,8 +814,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.level"]}: ${target.level}
                         ${bundle["command.info.exp"]}: ${Exp[target]}
                         ${bundle["command.info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
-                        ${bundle["command.info.playtime"]}: ${bundle["command.info.time", (target.totalPlayTime / 60 / 60 / 24) % 365, (target.totalPlayTime / 60 / 24) % 24, (target.totalPlayTime / 60) % 60, (target.totalPlayTime) % 60]}
-                        ${bundle["command.info.playtime.current"]}: ${bundle["command.info.time.minimal", (target.currentPlayTime / 60 / 24) % 24, (target.currentPlayTime / 60) % 60, (target.currentPlayTime) % 60]}
+                        ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, "command.info.time")}}
+                        ${bundle["command.info.playtime.current"]}: ${timeFormat(target.currentPlayTime, "command.info.time.minimal")}
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
                         ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${if (target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100) else "0%"}%[white])
                         ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
@@ -1406,6 +1421,15 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
             Main.daemon.submit(Thread {
                 try {
+                    fun timeFormat(seconds: Long): String {
+                        val days = seconds / (24 * 60 * 60)
+                        val hours = (seconds % (24 * 60 * 60)) / (60 * 60)
+                        val minutes = ((seconds % (24 * 60 * 60)) % (60 * 60)) / 60
+                        val remainingSeconds = ((seconds % (24 * 60 * 60)) % (60 * 60)) % 60
+
+                        return bundle["command.info.time", days, hours, minutes, remainingSeconds]
+                    }
+
                     val firstMessage = when (arg[0].lowercase()) {
                         "time" -> "command.ranking.time"
                         "exp" -> "command.ranking.exp"
@@ -1479,9 +1503,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
                             string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                         } else {
-                            val t = d[a].second.toString().toLong()
-                            val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
-                            string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}\n")
+                            string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeFormat(d[a].second.toString().toLong()) else d[a].second}\n")
                         }
                     }
                     string.substring(0, string.length - 1)
@@ -1493,9 +1515,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
                                 string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                             } else {
-                                val t = d[a].second.toString().toLong()
-                                val timeMessage = bundle["command.info.time", (t / 60 / 60 / 24) % 365, (t / 60 / 24) % 24, (t / 60) % 60, t % 60]
-                                string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeMessage else d[a].second}")
+                                string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeFormat(d[a].second.toString().toLong()) else d[a].second}")
                             }
                         }
                     }
