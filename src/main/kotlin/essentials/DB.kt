@@ -410,7 +410,7 @@ class DB {
                 it[duplicateName] = null
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = if (data.lastLoginDate == null) null else LocalDate.now().toString()
+                it[lastLoginDate] = LocalDate.now().toString()
                 it[lastLeaveDate] = null
                 it[showLevelEffects] = data.showLevelEffects
                 it[currentPlayTime] = data.currentPlayTime

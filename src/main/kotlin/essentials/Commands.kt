@@ -1805,7 +1805,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             if (state.rules.pvp) {
                 message.appendLine()
-                message.append("""
+                message.appendLine("""
                     [#2B60DE]========================================[]
                     [#DEA82A]${bundle["command.status.pvp"]}[]
                 """.trimIndent())
