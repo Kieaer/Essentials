@@ -2,6 +2,7 @@ package essentials
 
 import arc.Core
 import arc.func.Prov
+import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
@@ -123,32 +124,30 @@ object Trigger {
                 }
 
                 if (Groups.player.size() > state.teams.active.size && Config.pvpAutoTeam) {
-                    val teamStatus = Seq<Triple<Team, String, Int>>()
-                    val teams = mutableListOf<Pair<Team, Double>>()
+                    var teamStatus = arrayOf<Triple<Team, String, Int>>()
+                    val teams = ObjectMap<Team, Double>()
+                    val teamPlayers = ObjectMap<Team, Int>()
                     database.players.forEach {
-                        teamStatus.add(Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
+                        teamStatus += (Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
                     }
 
                     fun winPercentage(team : Team) : Double? {
                         val teamPlayers = teamStatus.filter { it.first == team }
                         val winPercentages = teamPlayers.map { it.third }
-                        if (winPercentages.isEmpty) {
+                        if (winPercentages.isEmpty()) {
                             return null
                         }
                         return winPercentages.average()
                     }
 
-                    val sortedTeams = teamStatus.map { it.first }.distinct().sortedByDescending { winPercentage(it) }
-
-                    sortedTeams.forEach { teamName ->
-                        val averagePercentage = winPercentage(teamName)
-                        if (averagePercentage != null) {
-                            teams.add(Pair(teamName, averagePercentage))
-                        }
+                    for(a in state.teams.active) {
+                        teams.put(a.team, winPercentage(a.team))
+                        teamPlayers.put(a.team, a.players.size)
                     }
 
-                    val rate = teams.minByOrNull { it.second }
-                    if (rate != null) player.team(rate.first)
+                    val rate = teams.sortedBy { it.value }
+
+                    player.team(rate.last().key)
                 }
             }
 

@@ -16,14 +16,11 @@ object Config {
     private var bundle : Bundle = Bundle(Locale.getDefault().toLanguageTag())
     private val allowLanguageRegex : Pattern = Pattern.compile("en|ja|ko|ru|uk|zh")
 
-    val idBanList : Fi = Core.settings.dataDirectory.child("mods/Essentials/data/idban.txt")
-    val ipBanList : Fi = Core.settings.dataDirectory.child("mods/Essentials/data/ipban.txt")
-
     var update = true
     var report = true
     var database : String = Main.root.child("database").absolutePath()
     var authType = AuthType.None
-    var banList : String = Core.settings.dataDirectory.child("mods/Essentials/data").absolutePath()
+    var banList : String = Core.settings.dataDirectory.child("mods/Essentials/ban.txt").absolutePath()
 
     var afk = false
     var afkTime = 300

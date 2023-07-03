@@ -9,22 +9,19 @@ import arc.graphics.Colors
 import arc.struct.ObjectMap
 import arc.struct.ObjectSet
 import arc.struct.Seq
-import arc.util.Align
-import arc.util.Log
-import arc.util.Strings
-import arc.util.Time
+import arc.util.*
 import com.github.pemistahl.lingua.api.IsoCode639_1
 import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.Main.Companion.database
+import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.*
 import mindustry.core.NetServer
 import mindustry.entities.Damage
 import mindustry.game.EventType.*
 import mindustry.game.Team
-import mindustry.game.Teams.TeamData
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -36,6 +33,7 @@ import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.world.Tile
 import org.hjson.JsonArray
+import org.hjson.JsonObject
 import org.hjson.Stringify
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -299,7 +297,7 @@ object Event {
                         log(LogType.Chat, "${data.name}: $message")
 
                         if (!data.mute) {
-                            val isAdmin = Permission.check(player, "vote.pass") // todo 자신이 시작한 투표에 자기 자신이 y 를 쳐서 투표에 참여하면 무조건 투표 통과가 되는 문제 (확인 필요)
+                            val isAdmin = Permission.check(player, "vote.pass")
                             if (voting && message.equals("y", true) && voteStarter != player && !voted.contains(player.uuid())) {
                                 if (isAdmin) {
                                     isAdminVote = true
@@ -348,7 +346,7 @@ object Event {
                                 }
                             }
                             val format = Permission[player].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message)
-                            return@ChatFormatter if (isGlobalMute && Permission.check(player, "chat.admin")) {
+                            return@ChatFormatter if (isGlobalMute && Permission.check(player, "chat.admin") && !isMute) {
                                 format
                             } else if (!isGlobalMute && !(voting && message.contains("y") && !isMute)) {
                                 format
@@ -534,31 +532,30 @@ object Event {
                 }
             }
 
-            val name = if (it.player == null) {
-                netServer.admins.getInfo(it.uuid).lastName
-            } else {
-                it.player.name
+            val json = JsonObject()
+            json.add("id", it.uuid)
+
+            val ips = JsonArray()
+            for(a in netServer.admins.getInfo(it.uuid).ips) {
+                ips.add(a)
             }
-            val ip = if (it.player == null) {
-                netServer.admins.getInfo(it.uuid).lastIP
-            } else {
-                it.player.ip()
+            json.add("ip", ips)
+
+            val names = JsonArray()
+            for(a in netServer.admins.getInfo(it.uuid).names) {
+                names.add(a)
             }
 
-            val ipBanList = JsonArray.readHjson(Config.ipBanList.readString()).asArray()
-            for (a in netServer.admins.getInfo(it.uuid).ips) {
-                ipBanList.add(a)
-            }
-            val idBanList = JsonArray.readHjson(Config.idBanList.readString()).asArray()
-            idBanList.add(it.uuid)
+            json.add("name", names)
 
-            Config.idBanList.writeString(idBanList.toString(Stringify.HJSON))
-            Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
+            Fi(Config.banList).writeString(JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(Stringify.HJSON))
 
             netServer.admins.playerInfo.values().forEach(Consumer { info : PlayerInfo -> info.banned = false })
             netServer.admins.save()
 
-            log(LogType.Player, Bundle()["log.player.banned", name, ip])
+            if (!ips.isEmpty && !names.isEmpty) {
+                log(LogType.Player, Bundle()["log.player.banned", names.first(), ips.first()])
+            }
         }
 
         Events.on(PlayerUnbanEvent::class.java) {
@@ -570,15 +567,11 @@ object Event {
                 }
             }
 
-            val ipBanList = JsonArray.readHjson(Config.ipBanList.readString()).asArray()
-            for (a in netServer.admins.getInfo(it.uuid).ips) {
-                ipBanList.removeAll { b -> b.asString() == a }
-            }
-            val idBanList = JsonArray.readHjson(Config.idBanList.readString()).asArray()
-            idBanList.removeAll { a -> a.asString() == it.uuid }
+            val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
+            json.removeAll { a -> a.asObject().get("id").asString() == it.uuid }
+            Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
-            Config.idBanList.writeString(idBanList.toString(Stringify.HJSON))
-            Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
+            Events.fire(PlayerUnbanned("Console", netServer.admins.getInfo(it.uuid).lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
         }
 
         Events.on(WorldLoadEvent::class.java) {
@@ -609,11 +602,12 @@ object Event {
         }
 
         Events.on(ConnectPacketEvent::class.java) {
-            val isIPbanned = JsonArray.readHjson(Config.ipBanList.readString()).asArray().contains(it.connection.address)
-            val isIDbanned = JsonArray.readHjson(Config.idBanList.readString()).asArray().contains(it.packet.uuid)
-            if (isIPbanned || isIDbanned) {
+            val isIDBanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("id").asString() == it.packet.uuid }
+            val isIPbanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("ip").asArray().find { b -> b.asString() == it.connection.address } != null }
+
+            if (isIDBanned != null || isIPbanned != null) {
                 Call.kick(it.connection, Packets.KickReason.banned)
-                Log.info(Bundle()["event.player.banned", it.packet.name, if(isIPbanned) "IP (${it.connection.address})" else "UUID (${it.packet.uuid})"])
+                Log.info(Bundle()["event.player.banned", it.packet.name, if(isIPbanned != null) "IP (${it.connection.address})" else "UUID (${it.packet.uuid})"])
                 return@on
             }
 

@@ -2,6 +2,7 @@ package essentials
 
 import arc.Core
 import arc.Events
+import arc.files.Fi
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.math.Mathf
@@ -813,7 +814,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.breakcount"]}: ${target.blockBreakCount}
                         ${bundle["command.info.level"]}: ${target.level}
                         ${bundle["command.info.exp"]}: ${Exp[target]}
-                        ${bundle["command.info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm"))}
+                        ${bundle["command.info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss"))}
                         ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, "command.info.time")}}
                         ${bundle["command.info.playtime.current"]}: ${timeFormat(target.currentPlayTime, "command.info.time.minimal")}
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
@@ -834,13 +835,16 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         val name = data.name
                         val ip = netServer.admins.getInfo(data.uuid).lastIP
 
-                        val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
+                        val ipBanList = JsonArray()
                         for (a in netServer.admins.getInfo(data.uuid).ips) {
                             ipBanList.add(a)
                         }
 
-                        Config.idBanList.writeString(JsonArray.readHjson(Config.idBanList.reader()).asArray().add(data.uuid).toString())
-                        Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
+                        val json = JsonObject()
+                        json.add("id", data.uuid)
+                        json.add("ip", ipBanList)
+                        json.add("name", netServer.admins.getInfo(data.uuid).names.toString())
+                        Fi(Config.banList).writeString(JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(Stringify.HJSON))
 
                         Event.log(Event.LogType.Player, Bundle()["log.player.banned", name, ip])
                     }
@@ -1456,7 +1460,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
 
                     all.forEach {
-                        if (!it.hideRanking && !JsonArray.readHjson(Config.idBanList.reader()).asArray().contains(it.uuid)) {
+                        if (!it.hideRanking && JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("id").asString() == it.uuid } == null) {
                             val info = ArrayMap<String, String>()
                             val pvpCount = ArrayMap<Int, Int>()
                             info.put(it.name, it.uuid)
@@ -1790,7 +1794,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             if (!Permission.check(player, "status")) return
-            val bans = JsonArray.readHjson(Config.idBanList.reader()).asArray().size()
+            val bans = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().size()
 
             val message = StringBuilder()
             message.append("""
@@ -1810,37 +1814,33 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     [#DEA82A]${bundle["command.status.pvp"]}[]
                 """.trimIndent())
 
-                val teamStatus = Seq<Triple<Team, String, Int>>()
-                val teams = mutableListOf<Pair<Team, Double>>()
+                var teamStatus = arrayOf<Triple<Team, String, Int>>()
+                val teams = ObjectMap<Team, Double>()
                 database.players.forEach {
-                    teamStatus.add(Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
+                    teamStatus += (Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
                 }
 
                 fun winPercentage(team : Team) : Double? {
                     val teamPlayers = teamStatus.filter { it.first == team }
                     val winPercentages = teamPlayers.map { it.third }
-                    if (winPercentages.isEmpty) {
+                    if (winPercentages.isEmpty()) {
                         return null
                     }
                     return winPercentages.average()
                 }
 
-                val sortedTeams = teamStatus.map { it.first }.distinct().sortedBy { winPercentage(it) }
-
-                sortedTeams.forEach { teamName ->
-                    val averagePercentage = winPercentage(teamName)
-                    if (averagePercentage != null) {
-                        teams.add(Pair(teamName, averagePercentage))
-                    }
+                for(a in state.teams.active) {
+                    teams.put(a.team, winPercentage(a.team))
                 }
 
                 teams.forEach {
-                    message.append("${it.first.coloredName()} : ${it.second}")
+                    message.appendLine("${it.key.coloredName()} : ${round(it.value)}%")
                 }
+
+                player.sendMessage(message.toString().dropLast(1))
+            } else {
+                player.sendMessage(message.toString())
             }
-
-            player.sendMessage(message.toString())
-
         }
 
         fun t() {
@@ -1898,7 +1898,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun time() {
             if (!Permission.check(player, "time")) return
             val now = LocalDateTime.now()
-            val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss").withLocale(Locale(data.languageTag))
             send("command.time", now.format(dateTimeFormatter))
         }
 
@@ -1956,16 +1956,11 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (!Permission.check(player, "unban")) return
             val target = netServer.admins.findByName(arg[0])
             if (target != null) {
-                netServer.admins.unbanPlayerID(arg[0])
-                val ipBanList = JsonArray.readHjson(Config.ipBanList.reader()).asArray()
-                for (a in netServer.admins.getInfo(target.first().id).ips) {
-                    ipBanList.removeAll { b -> b.asString() == a }
-                }
+                val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
+                json.removeAll { a -> a.asObject().get("id").asString() == target.first().id }
+                Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
-                Config.idBanList.writeString(JsonArray.readHjson(Config.idBanList.reader()).asArray().removeAll { a -> a.asString() == target.first().id }.toString())
-                Config.ipBanList.writeString(ipBanList.toString(Stringify.HJSON))
-
-                Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
+                Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd a HH:mm:ss"))))
             } else {
                 err("player.not.found")
             }

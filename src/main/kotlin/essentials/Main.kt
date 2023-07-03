@@ -12,6 +12,7 @@ import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonArray
+import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
 import java.io.*
@@ -223,23 +224,29 @@ class Main: Plugin() {
             }
         })
 
-        if (!Config.ipBanList.exists()) {
+        if (!Fi(Config.banList).exists()) {
             val data = JsonArray()
             Vars.netServer.admins.banned.forEach {
-                it.ips.forEach { ip ->
-                    data.add(ip)
+                val json = JsonObject()
+                json.add("id", it.id)
+
+                val ips = JsonArray()
+                for(a in it.ips) {
+                    ips.add(a)
                 }
+                json.add("ip", ips)
+
+                val names = JsonArray()
+                for(a in it.names) {
+                    names.add(a)
+                }
+
+                json.add("name", names)
             }
-            Config.ipBanList.writeString(data.toString(Stringify.HJSON))
+
+            Fi(Config.banList).writeString(data.toString(Stringify.HJSON))
         }
 
-        if (!Config.idBanList.exists()) {
-            val data = JsonArray()
-            Vars.netServer.admins.banned.forEach {
-                data.add(it.id)
-            }
-            Config.idBanList.writeString(data.toString(Stringify.HJSON))
-        }
 
         Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
         Vars.netServer.admins.save()
