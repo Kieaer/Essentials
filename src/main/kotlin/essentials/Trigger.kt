@@ -136,8 +136,8 @@ object Trigger {
                     }
 
                     fun winPercentage(team : Team) : Double? {
-                        val teamPlayers = teamStatus.filter { it.first == team }
-                        val winPercentages = teamPlayers.map { it.third }
+                        val players = teamStatus.filter { it.first == team }
+                        val winPercentages = players.map { it.third }
                         if (winPercentages.isEmpty()) {
                             return null
                         }

@@ -725,7 +725,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "block" -> if (arg.size < 3) {
+                "block" -> if (arg.size != 3) {
                     err("command.hub.block.parameter")
                 } else {
                     val t : Tile = player.tileOn()
