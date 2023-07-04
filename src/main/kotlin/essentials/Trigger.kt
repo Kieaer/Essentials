@@ -17,6 +17,7 @@ import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO
+import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -32,6 +33,7 @@ import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
+import kotlin.math.abs
 
 object Trigger {
     private var order = 0
@@ -71,9 +73,11 @@ object Trigger {
             }
 
             val bundle = Bundle(data.languageTag)
-            if (Config.fixedName && player.name() != data.name) {
-                database.players.forEach {
-                    it.player.sendMessage(Bundle(it.languageTag)["event.player.name.changed", player.plainName(), data.name])
+            if (Config.fixedName) {
+                if (player.name() != data.name) {
+                    database.players.forEach {
+                        it.player.sendMessage(Bundle(it.languageTag)["event.player.name.changed", player.plainName(), data.name])
+                    }
                 }
                 player.name(data.name)
             }
@@ -147,7 +151,11 @@ object Trigger {
 
                     val rate = teams.sortedBy { it.value }
 
-                    player.team(rate.last().key)
+                    if (abs(teamPlayers.sortedBy { a -> a.value }.first().value - teamPlayers.get(rate.last().key)) > 3) {
+                        player.team(rate.last().key)
+                    } else {
+                        player.team(rate.first().key)
+                    }
                 }
             }
 
@@ -195,6 +203,40 @@ object Trigger {
     class Thread: Runnable {
         private var ping = 0.000
         private val dummy = Player.create()
+
+        fun caculateCenter(startTile: Tile, endTile: Tile) : Pair<Int, Int> {
+            data class Point(val x : Int, val y : Int)
+
+            data class Tile(val coordinates : Point, val areaValue : Double)
+
+            fun calculateAreaValue(x : Int, y : Int) : Double {
+                return (x + y) / 2.0
+            }
+
+            fun findMedianCoordinates(startPoint : mindustry.world.Tile, endPoint : mindustry.world.Tile) : Pair<Int, Int> {
+                val regionWidth = endPoint.x - startPoint.x
+                val regionHeight = endPoint.y - startPoint.y
+                val totalTiles = regionWidth * regionHeight
+                val tiles = mutableListOf<Tile>()
+
+                for (y in startPoint.y until endPoint.y) {
+                    for (x in startPoint.x until endPoint.x) {
+                        val areaValue = calculateAreaValue(x, y)
+                        val tile = Tile(Point(x, y), areaValue)
+                        tiles.add(tile)
+                    }
+                }
+
+                tiles.sortBy { it.areaValue }
+
+                val medianIndex = totalTiles / 2
+                val medianTile = tiles[medianIndex]
+
+                return Pair(medianTile.coordinates.x, medianTile.coordinates.y)
+            }
+
+            return findMedianCoordinates(startTile, endTile)
+        }
 
         override fun run() {
             while (!currentThread().isInterrupted) {
@@ -319,6 +361,31 @@ object Trigger {
                                     if (isDup) margin -= 4
                                     for (a in Groups.player) {
                                         memory.add(a to Triple(value.description, x, tile.build.getY() - margin))
+                                    }
+                                }
+                            }
+                        }
+
+                        for (value in PluginData.warpZones) {
+                            if (state.map.name() == value.mapName) {
+                                val center = caculateCenter(value.startTile, value.finishTile)
+
+                                var alive = false
+                                var alivePlayer = 0
+                                serverInfo.forEach {
+                                    if ((it.address == value.ip || it.address == InetAddress.getByName(value.ip).hostAddress) && it.port == value.port) {
+                                        alive = true
+                                        alivePlayer = it.players
+                                    }
+                                }
+
+                                if (alive) {
+                                    for (a in Groups.player) {
+                                        memory.add(a to Triple("[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}", (center.first * 8).toFloat(), (center.second * 8).toFloat()))
+                                    }
+                                } else {
+                                    for (a in Groups.player) {
+                                        memory.add(a to Triple(Bundle(a.locale)["event.server.warp.offline"], (center.first * 8).toFloat(), (center.second * 8).toFloat()))
                                     }
                                 }
                             }

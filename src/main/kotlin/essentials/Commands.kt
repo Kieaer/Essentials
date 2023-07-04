@@ -1830,7 +1830,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
 
                 for(a in state.teams.active) {
-                    teams.put(a.team, winPercentage(a.team))
+                    if (winPercentage(a.team) != null) {
+                        teams.put(a.team, winPercentage(a.team))
+                    }
                 }
 
                 teams.forEach {

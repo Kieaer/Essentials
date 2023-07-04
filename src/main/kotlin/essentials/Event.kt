@@ -15,7 +15,6 @@ import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.Main.Companion.database
-import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.*
 import mindustry.core.NetServer
