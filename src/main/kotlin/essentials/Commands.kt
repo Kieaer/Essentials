@@ -709,21 +709,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                 // hub zone <ip>
                 // TODO 이 명령어를 입력하고 클릭으로 마지막 지점을 선택하게 하고, 메뉴로 클릭시 입장 유무 띄우기
-                "zone" -> if (arg.size != 5) {
-                    send("command.hub.zone.help")
-                } else {
-                    size = arg[2].toIntOrNull()
-                    clickable = arg[3].toBooleanStrictOrNull()
-
-                    if (size == null) {
-                        err("command.hub.size.invalid")
-                    } else if (clickable == null) {
-                        err("command.hub.clickable.invalid")
-                    }
-
-                    if (size != null && clickable != null) {
-                        PluginData.warpZones.add(PluginData.WarpZone(name, world.tile(x, y).pos(), world.tile(x + size, y + size).pos(), clickable, ip, port))
-                        send("command.hub.zone.added", "$x:$y", ip, if (clickable) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"])
+                "zone" -> {
+                    if (!data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {
+                        data.status.put("hub_ip", ip)
+                        data.status.put("hub_port", port.toString())
+                        data.status.put("hub_first", "true")
+                        send("command.hub.zone.first")
                     }
                 }
 

@@ -30,6 +30,7 @@ import mindustry.maps.Map
 import mindustry.net.Administration.PlayerInfo
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
+import mindustry.ui.Menus
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
@@ -155,7 +156,7 @@ object Event {
                 }
 
                 PluginData.warpZones.forEach { two ->
-                    if (it.tile.x > two.startTile.x && it.tile.x < two.finishTile.x && it.tile.y > two.startTile.y && it.tile.y < two.finishTile.y) {
+                    if (two.click && it.tile.x > two.startTile.x && it.tile.x < two.finishTile.x && it.tile.y > two.startTile.y && it.tile.y < two.finishTile.y) {
                         Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(it.player.con(), two.ip, two.port)
                         return@forEach
@@ -210,6 +211,35 @@ object Event {
                 database.players.forEach { two ->
                     if (two.tracking) {
                         Call.effect(two.player.con(), Fx.bigShockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
+                    }
+
+                    if (two.status.containsKey("hub_first") && !two.status.containsKey("hub_second")) {
+                        two.status.put("hub_first", "${it.tile.x},${it.tile.y}")
+                        two.status.put("hub_second", "true")
+                        two.player.sendMessage(Bundle(two.languageTag)["command.hub.zone.next", "${it.tile.x},${it.tile.y}"])
+                    } else if (two.status.containsKey("hub_first") && two.status.containsKey("hub_second")) {
+                        val x = two.status.get("hub_first").split(",")[0].toInt()
+                        val y = two.status.get("hub_first").split(",")[1].toInt()
+                        val ip = two.status.get("hub_ip")
+                        val port = two.status.get("hub_port").toInt()
+
+                        val bundle = Bundle(two.languageTag)
+                        val options = arrayOf(arrayOf(bundle["command.hub.touch.yes"], bundle["command.hub.touch.no"]))
+                        val menu = Menus.registerMenu { player, option ->
+                            val touch = when (option) {
+                                0 -> true
+                                else -> false
+                            }
+                            PluginData.warpZones.add(PluginData.WarpZone(state.map.plainName(), world.tile(x, y).pos(), it.tile.pos(), touch, ip, port))
+                            player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
+                        }
+
+                        Call.menu(two.player.con(), menu, bundle["command.hub.touch.title"], bundle["command.hub.touch.message"], options)
+
+                        two.status.remove("hub_first")
+                        two.status.remove("hub_second")
+                        two.status.remove("hub_ip")
+                        two.status.remove("hub_port")
                     }
                 }
             }
@@ -825,6 +855,14 @@ object Event {
                         } else {
                             it.tpp = null
                             Call.setCameraPosition(it.player.con(), it.player.x, it.player.y)
+                        }
+                    }
+
+                    PluginData.warpZones.forEach { two ->
+                        if (!two.click && it.player.unit().tileX() > two.startTile.x && it.player.unit().tileX() < two.finishTile.x && it.player.unit().tileY() > two.startTile.y && it.player.unit().tileY() < two.finishTile.y) {
+                            Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
+                            Call.connect(it.player.con(), two.ip, two.port)
+                            return@forEach
                         }
                     }
                 }

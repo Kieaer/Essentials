@@ -34,7 +34,7 @@ object PluginData {
     var changed = false
     var isRankingWorking = false
 
-    data class WarpZone(val mapName : String, val start : Int, val finish : Int, val touch : Boolean, val ip : String, val port : Int) {
+    data class WarpZone(val mapName : String, val start : Int, val finish : Int, val click : Boolean, val ip : String, val port : Int) {
         val startTile : Tile get() = Vars.world.tile(start)
         val finishTile : Tile get() = Vars.world.tile(finish)
     }
@@ -66,7 +66,7 @@ object PluginData {
             obj.add("mapName", it.mapName)
             obj.add("start", it.start)
             obj.add("finish", it.finish)
-            obj.add("touch", it.touch)
+            obj.add("touch", it.click)
             obj.add("ip", it.ip)
             obj.add("port", it.port)
             buffer.add(obj)
