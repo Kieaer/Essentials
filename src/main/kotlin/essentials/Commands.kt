@@ -677,8 +677,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val x = player.tileX()
             val y = player.tileY()
             val name = state.map.name()
-            val size : Int?
-            val clickable : Boolean?
             var ip = ""
             var port = 6567
             if (arg.size > 1) {
@@ -707,14 +705,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                // hub zone <ip>
-                // TODO 이 명령어를 입력하고 클릭으로 마지막 지점을 선택하게 하고, 메뉴로 클릭시 입장 유무 띄우기
                 "zone" -> {
                     if (!data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {
                         data.status.put("hub_ip", ip)
                         data.status.put("hub_port", port.toString())
                         data.status.put("hub_first", "true")
                         send("command.hub.zone.first")
+                    } else {
+                        send("command.hub.zone.process")
                     }
                 }
 

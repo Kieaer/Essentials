@@ -224,7 +224,7 @@ object Event {
                         val port = two.status.get("hub_port").toInt()
 
                         val bundle = Bundle(two.languageTag)
-                        val options = arrayOf(arrayOf(bundle["command.hub.touch.yes"], bundle["command.hub.touch.no"]))
+                        val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
                         val menu = Menus.registerMenu { player, option ->
                             val touch = when (option) {
                                 0 -> true
@@ -234,7 +234,7 @@ object Event {
                             player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
                         }
 
-                        Call.menu(two.player.con(), menu, bundle["command.hub.touch.title"], bundle["command.hub.touch.message"], options)
+                        Call.menu(two.player.con(), menu, bundle["command.hub.zone.title"], bundle["command.hub.zone.message"], options)
 
                         two.status.remove("hub_first")
                         two.status.remove("hub_second")
