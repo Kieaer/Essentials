@@ -451,6 +451,7 @@ object Event {
                         if (!state.rules.infiniteResources) {
                             target.blockPlaceCount++
                             target.exp = target.exp + blockExp.get(block.name)
+                            target.currentExp = target.currentExp + blockExp.get(block.name)
                         }
 
                         if (isDebug) {
@@ -463,6 +464,7 @@ object Event {
                         if (!state.rules.infiniteResources) {
                             target.blockBreakCount++
                             target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
+                            target.currentExp = target.currentExp - blockExp.get(player.unit().buildPlan().block.name)
                         }
                     }
                 }
@@ -817,15 +819,10 @@ object Event {
                             val time = it.currentPlayTime
                             val score = time + 5000
                             val bundle = Bundle(it.languageTag)
-                            val message = bundle["event.exp.earn.defeat", score, (time + 5000)]
+                            val message = bundle["event.exp.earn.defeat", it.currentExp + score]
 
                             it.exp = it.exp + ((score * it.expMultiplier).toInt())
                             it.player.sendMessage(message)
-
-                            if (score < 0) {
-                                it.player.sendMessage(bundle["event.exp.lost.reason"])
-                                it.player.sendMessage(bundle["event.exp.lost.result", time, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
-                            }
                         }
                     }
 
@@ -994,7 +991,9 @@ object Event {
                             it.afkTime = 0
                         }
 
-                        it.exp = it.exp + ((random.nextInt(7) * it.expMultiplier).toInt())
+                        val randomResult = (random.nextInt(7) * it.expMultiplier).toInt()
+                        it.exp = it.exp + randomResult
+                        it.currentExp = it.currentExp + randomResult
                         Commands.Exp[it]
 
                         if (Config.expDisplay) {
@@ -1480,7 +1479,7 @@ object Event {
             }
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
-            if (isConnected) p.sendMessage(bundle["event.exp.earn.victory", score])
+            if (isConnected) p.sendMessage(bundle["event.exp.earn.victory", target.currentExp + score])
         } else if (p.team() != Team.derelict){
             val score : Int = if (state.rules.attackMode) {
                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
@@ -1493,27 +1492,22 @@ object Event {
             }
 
             val message = if (state.rules.attackMode) {
-                bundle["event.exp.earn.defeat", score, (time + enemyBuildingDestroyed + erekirAttack) - state.stats.buildingsDeconstructed]
+                bundle["event.exp.earn.defeat", target.currentExp + score, (time + enemyBuildingDestroyed + erekirAttack) - state.stats.buildingsDeconstructed]
             } else if (state.rules.waves) {
-                bundle["event.exp.earn.wave", score, state.wave]
+                bundle["event.exp.earn.wave", target.currentExp + score, state.wave]
             } else if (state.rules.pvp) {
-                bundle["event.exp.earn.defeat", score, (time + 5000)]
+                bundle["event.exp.earn.defeat", target.currentExp + score, (time + 5000)]
             } else {
                 ""
             }
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
-            if (isConnected) {
-                p.sendMessage(message)
-
-                if (score < 0) {
-                    p.sendMessage(bundle["event.exp.lost.reason"])
-                    p.sendMessage(bundle["event.exp.lost.result", time, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
-                }
-            }
+            if (isConnected) p.sendMessage(message)
         }
 
         Commands.Exp[target]
+        target.currentExp = 0
+
         if (!isConnected) {
             if (target.oldUUID != null) {
                 target.uuid = target.oldUUID!!

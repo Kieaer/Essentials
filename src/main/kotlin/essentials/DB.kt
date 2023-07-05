@@ -313,6 +313,7 @@ class DB {
         var pvpEliminationTeamCount : Int = 0
 
         var expMultiplier : Double = 1.0
+        var currentExp : Int = 0
 
         var afkTime : Int = 0
         var player : Playerc = mindustry.gen.Player.create()
@@ -368,6 +369,7 @@ class DB {
                 lastPlayedWorldId: $lastPlayedWorldId
                 mvpTime: $mvpTime
                 pvpEliminationTeamCount: $pvpEliminationTeamCount
+                currentExp: $currentExp
             """.trimIndent()
         }
     }
