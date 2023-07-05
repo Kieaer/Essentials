@@ -30,6 +30,7 @@ import java.net.*
 import java.nio.ByteBuffer
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -49,7 +50,7 @@ object Trigger {
             }
 
             if (data.lastLoginDate != null) {
-                if (data.lastLoginDate!!.plusDays(1).isEqual(LocalDate.now())) {
+                if (ChronoUnit.DAYS.between(data.lastLoginDate, LocalDate.now()) == 1L) {
                     data.joinStacks++
                     if (data.joinStacks % 3 == 0) {
                         data.expMultiplier = 1.2
@@ -152,9 +153,9 @@ object Trigger {
                     val rate = teams.sortedBy { it.value }
 
                     if (abs(teamPlayers.sortedBy { a -> a.value }.first().value - teamPlayers.get(rate.last().key)) > 3) {
-                        player.team(rate.last().key)
-                    } else {
                         player.team(rate.first().key)
+                    } else {
+                        player.team(rate.last().key)
                     }
                 }
             }

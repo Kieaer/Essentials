@@ -707,7 +707,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
-                "zone" -> if (arg.size != 4) {
+                // hub zone <ip>
+                // TODO 이 명령어를 입력하고 클릭으로 마지막 지점을 선택하게 하고, 메뉴로 클릭시 입장 유무 띄우기
+                "zone" -> if (arg.size != 5) {
                     send("command.hub.zone.help")
                 } else {
                     size = arg[2].toIntOrNull()
@@ -815,7 +817,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.level"]}: ${target.level}
                         ${bundle["command.info.exp"]}: ${Exp[target]}
                         ${bundle["command.info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss"))}
-                        ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, "command.info.time")}}
+                        ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, "command.info.time")}
                         ${bundle["command.info.playtime.current"]}: ${timeFormat(target.currentPlayTime, "command.info.time.minimal")}
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
                         ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${if (target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100) else "0%"}%[white])

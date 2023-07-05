@@ -783,6 +783,19 @@ object Event {
                             it.player.team(Team.derelict)
                             pvpSpectors.add(it.uuid)
                             pvpPlayer.remove(it.uuid)
+
+                            val time = it.currentPlayTime
+                            val score = time + 5000
+                            val bundle = Bundle(it.languageTag)
+                            val message = bundle["event.exp.earn.defeat", score, (time + 5000)]
+
+                            it.exp = it.exp + ((score * it.expMultiplier).toInt())
+                            it.player.sendMessage(message)
+
+                            if (score < 0) {
+                                it.player.sendMessage(bundle["event.exp.lost.reason"])
+                                it.player.sendMessage(bundle["event.exp.lost.result", time, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
+                            }
                         }
                     }
 
@@ -1410,11 +1423,6 @@ object Event {
         val oldLevel = target.level
         val oldExp = target.exp
         val time = target.currentPlayTime.toInt()
-        var blockexp = 0
-
-        state.stats.placedBlockCount.forEach {
-            blockexp += blockExp[it.key.name]
-        }
 
         val bundle = Bundle(target.languageTag)
         var coreitem = 0
@@ -1426,7 +1434,7 @@ object Event {
 
         if (winner == p.team()) {
             val score : Int = if (state.rules.attackMode) {
-                (time + blockexp + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                (time + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
             } else if (state.rules.pvp) {
                 time + erekirPvP + 5000
             } else {
@@ -1435,7 +1443,7 @@ object Event {
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
             if (isConnected) p.sendMessage(bundle["event.exp.earn.victory", score])
-        } else {
+        } else if (p.team() != Team.derelict){
             val score : Int = if (state.rules.attackMode) {
                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
             } else if (state.rules.waves) {
@@ -1447,7 +1455,7 @@ object Event {
             }
 
             val message = if (state.rules.attackMode) {
-                bundle["event.exp.earn.defeat", score, (time + blockexp + enemyBuildingDestroyed + erekirAttack) - state.stats.buildingsDeconstructed]
+                bundle["event.exp.earn.defeat", score, (time + enemyBuildingDestroyed + erekirAttack) - state.stats.buildingsDeconstructed]
             } else if (state.rules.waves) {
                 bundle["event.exp.earn.wave", score, state.wave]
             } else if (state.rules.pvp) {
@@ -1462,7 +1470,7 @@ object Event {
 
                 if (score < 0) {
                     p.sendMessage(bundle["event.exp.lost.reason"])
-                    p.sendMessage(bundle["event.exp.lost.result", time, blockexp, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
+                    p.sendMessage(bundle["event.exp.lost.result", time, enemyBuildingDestroyed, state.stats.buildingsDeconstructed])
                 }
             }
         }
