@@ -21,7 +21,6 @@ import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
-import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -60,8 +59,6 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.round
-import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
 
 class Commands(handler : CommandHandler, isClient : Boolean) {
     companion object {
@@ -785,7 +782,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun info() {
             if (!Permission.check(player, "info")) return
 
-            fun timeFormat(seconds: Long, msg: String): String {
+            fun timeFormat(seconds : Long, msg : String) : String {
                 val days = seconds / (24 * 60 * 60)
                 val hours = (seconds % (24 * 60 * 60)) / (60 * 60)
                 val minutes = ((seconds % (24 * 60 * 60)) % (60 * 60)) / 60
@@ -1016,7 +1013,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         err("command.killunit.invalid.number")
                     }
                 } else {
-                    for(it in Groups.unit) {
+                    for (it in Groups.unit) {
                         if (it.type() == unit && it.team == player.team()) {
                             it.kill()
                         }
@@ -1416,7 +1413,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
             Main.daemon.submit(Thread {
                 try {
-                    fun timeFormat(seconds: Long): String {
+                    fun timeFormat(seconds : Long) : String {
                         val days = seconds / (24 * 60 * 60)
                         val hours = (seconds % (24 * 60 * 60)) / (60 * 60)
                         val minutes = ((seconds % (24 * 60 * 60)) % (60 * 60)) / 60
@@ -1820,7 +1817,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     return winPercentages.average()
                 }
 
-                for(a in state.teams.active) {
+                for (a in state.teams.active) {
                     if (winPercentage(a.team) != null) {
                         teams.put(a.team, winPercentage(a.team))
                     }

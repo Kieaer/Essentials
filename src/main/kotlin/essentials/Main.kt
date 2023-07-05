@@ -231,13 +231,13 @@ class Main: Plugin() {
                 json.add("id", it.id)
 
                 val ips = JsonArray()
-                for(a in it.ips) {
+                for (a in it.ips) {
                     ips.add(a)
                 }
                 json.add("ip", ips)
 
                 val names = JsonArray()
-                for(a in it.names) {
+                for (a in it.names) {
                     names.add(a)
                 }
 

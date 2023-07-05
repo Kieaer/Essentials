@@ -145,7 +145,7 @@ object Trigger {
                         return winPercentages.average()
                     }
 
-                    for(a in state.teams.active) {
+                    for (a in state.teams.active) {
                         teams.put(a.team, winPercentage(a.team))
                         teamPlayers.put(a.team, a.players.size)
                     }
@@ -205,7 +205,7 @@ object Trigger {
         private var ping = 0.000
         private val dummy = Player.create()
 
-        fun caculateCenter(startTile: Tile, endTile: Tile) : Pair<Int, Int> {
+        fun caculateCenter(startTile : Tile, endTile : Tile) : Pair<Int, Int> {
             data class Point(val x : Int, val y : Int)
 
             data class Tile(val coordinates : Point, val areaValue : Double)

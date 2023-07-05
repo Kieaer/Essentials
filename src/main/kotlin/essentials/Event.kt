@@ -9,7 +9,10 @@ import arc.graphics.Colors
 import arc.struct.ObjectMap
 import arc.struct.ObjectSet
 import arc.struct.Seq
-import arc.util.*
+import arc.util.Align
+import arc.util.Log
+import arc.util.Strings
+import arc.util.Time
 import com.github.pemistahl.lingua.api.IsoCode639_1
 import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
@@ -37,6 +40,7 @@ import org.hjson.JsonObject
 import org.hjson.Stringify
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.lang.Thread.sleep
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.nio.file.Files
@@ -567,13 +571,13 @@ object Event {
             json.add("id", it.uuid)
 
             val ips = JsonArray()
-            for(a in netServer.admins.getInfo(it.uuid).ips) {
+            for (a in netServer.admins.getInfo(it.uuid).ips) {
                 ips.add(a)
             }
             json.add("ip", ips)
 
             val names = JsonArray()
-            for(a in netServer.admins.getInfo(it.uuid).names) {
+            for (a in netServer.admins.getInfo(it.uuid).names) {
                 names.add(a)
             }
 
@@ -638,7 +642,7 @@ object Event {
 
             if (isIDBanned != null || isIPbanned != null) {
                 Call.kick(it.connection, Packets.KickReason.banned)
-                Log.info(Bundle()["event.player.banned", it.packet.name, if(isIPbanned != null) "IP (${it.connection.address})" else "UUID (${it.packet.uuid})"])
+                Log.info(Bundle()["event.player.banned", it.packet.name, if (isIPbanned != null) "IP (${it.connection.address})" else "UUID (${it.packet.uuid})"])
                 return@on
             }
 
@@ -685,7 +689,7 @@ object Event {
                         }
                         data.player.sendMessage(Bundle(data.languageTag)["event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName()])
                     }
-                    if(netServer.isWaitingForPlayers) {
+                    if (netServer.isWaitingForPlayers) {
                         for (t in state.teams.getActive()) {
                             if (Groups.player.count { p : Player -> p.team() === t.team } > 0) {
                                 Events.fire(GameOverEvent(t.team))
@@ -1026,7 +1030,7 @@ object Event {
                                         Groups.unit.forEach { unit ->
                                             val msg = StringBuilder()
                                             val color = color(unit.health, unit.maxHealth)
-                                            if(unit.shield > 0) {
+                                            if (unit.shield > 0) {
                                                 val shield = shieldColor(unit.health, unit.maxHealth)
                                                 msg.appendLine("$shield${floor(unit.shield.toDouble())}")
                                             }
@@ -1139,7 +1143,7 @@ object Event {
                                                 val map : Map
                                                 val random = Random()
                                                 send("command.vote.random.is")
-                                                Thread.sleep(3000)
+                                                sleep(3000)
                                                 when (random.nextInt(7)) {
                                                     0 -> {
                                                         send("command.vote.random.unit")
@@ -1191,7 +1195,7 @@ object Event {
 
                                                     4 -> {
                                                         send("command.vote.random.storm")
-                                                        Thread.sleep(1000)
+                                                        sleep(1000)
                                                         Call.createWeather(Weathers.rain, 10f, 60 * 60f, 50f, 10f)
                                                     }
 
@@ -1206,7 +1210,7 @@ object Event {
                                                         map = state.map
 
                                                         while (tick != 0 && map == state.map) {
-                                                            Thread.sleep(1000)
+                                                            sleep(1000)
                                                             tick--
                                                             Core.app.post {
                                                                 Groups.unit.each {
@@ -1480,7 +1484,7 @@ object Event {
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
             if (isConnected) p.sendMessage(bundle["event.exp.earn.victory", target.currentExp + score])
-        } else if (p.team() != Team.derelict){
+        } else if (p.team() != Team.derelict) {
             val score : Int = if (state.rules.attackMode) {
                 time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
             } else if (state.rules.waves) {
