@@ -82,9 +82,16 @@ class DB {
                     SchemaUtils.create(Data)
                     SchemaUtils.create(DB)
 
-                    if (DB.selectAll().empty() && !Player.columns.contains(Player.blockPlaceCount)) {
+                    if (DB.selectAll().empty()) {
                         DB.insert {
-                            it[version] = 0
+                            val ver = if(!Player.columns.contains(Player.blockPlaceCount)) {
+                                0
+                            } else if(!Player.columns.contains(Player.pvpEliminationTeamCount)) {
+                                1
+                            } else {
+                                dbVersion
+                            }
+                            it[version] = ver
                         }
                     }
 
