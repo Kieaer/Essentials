@@ -1,4 +1,4 @@
-
+import arc.Application
 import arc.ApplicationCore
 import arc.Core
 import arc.Settings
@@ -6,12 +6,12 @@ import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.graphics.Color
 import arc.util.CommandHandler
+import arc.util.Log
 import essentials.Config
 import essentials.Main
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
-import mindustry.Vars.netServer
-import mindustry.Vars.world
+import mindustry.Vars.*
 import mindustry.content.UnitTypes
 import mindustry.core.*
 import mindustry.game.Team
@@ -19,6 +19,7 @@ import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.maps.Map
+import mindustry.mod.Mod
 import mindustry.net.Net
 import mindustry.net.NetConnection
 import mindustry.world.Tile
@@ -26,6 +27,10 @@ import net.datafaker.Faker
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mock
+import org.mockito.Mockito.`when`
+import org.mockito.MockitoAnnotations
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -40,7 +45,7 @@ class PluginTest {
         private lateinit var main : Main
         private val r = Random()
         lateinit var player : Playerc
-        private lateinit var path : Fi
+        lateinit var path : Fi
         val serverCommand : CommandHandler = CommandHandler("")
         val clientCommand : CommandHandler = CommandHandler("/")
 
@@ -51,6 +56,9 @@ class PluginTest {
             path.child("maps").deleteDirectory()
         }
     }
+
+    @Mock
+    lateinit var mockApplication : Application
 
     fun loadGame() {
         if (System.getProperty("os.name").contains("Windows")) {
@@ -85,58 +93,82 @@ class PluginTest {
             }
         }
 
-        val testMap = arrayOfNulls<Map>(1)
+        var testMap : Map? = null
         try {
             val begins = booleanArrayOf(false)
             val exceptionThrown = arrayOf<Throwable?>(null)
+            Log.useColors = false
             val core : ApplicationCore = object: ApplicationCore() {
                 override fun setup() {
-                    Vars.headless = true
-                    Vars.net = Net(null)
-                    Vars.tree = FileTree()
+                    headless = true
+                    net = Net(null)
+                    tree = FileTree()
                     Vars.init()
-                    Vars.content.createBaseContent()
-                    add(Logic().also { Vars.logic = it })
+                    world = object: World() {
+                        override fun getDarkness(x : Int, y : Int) : Float {
+                            return 0F
+                        }
+                    }
+                    content.createBaseContent()
+                    mods.loadScripts()
+                    content.createModContent()
+                    add(Logic().also { logic = it })
                     add(NetServer().also { netServer = it })
-                    Vars.content.init()
+                    content.init()
+                    mods.eachClass(Mod::init)
+                    if (mods.hasContentErrors()) {
+                        for (mod in mods.list()) {
+                            if (mod.hasContentErrors()) {
+                                for (cont in mod.erroredContent) {
+                                    throw RuntimeException("error in file: " + cont.minfo.sourceFile.path(), cont.minfo.baseError)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 override fun init() {
                     super.init()
                     begins[0] = true
-                    testMap[0] = Vars.maps.loadInternalMap("maze")
+                    testMap = maps.loadInternalMap("groundZero")
                     Thread.currentThread().interrupt()
                 }
             }
-            HeadlessApplication(core, 60f) { throwable : Throwable? -> exceptionThrown[0] = throwable }
+            HeadlessApplication(core) { throwable : Throwable? -> exceptionThrown[0] = throwable }
             while (!begins[0]) {
                 if (exceptionThrown[0] != null) {
-                    exceptionThrown[0]!!.printStackTrace()
-                    Assert.fail()
+                    Assert.fail(exceptionThrown[0]!!.stackTraceToString())
                 }
                 sleep(10)
             }
-        } catch (e : Exception) {
-            e.printStackTrace()
+
+            Groups.init()
+            // wait for map load
+            while (testMap == null) {
+                sleep(10)
+            }
+            world.loadMap(testMap!!)
+            Vars.state.set(GameState.State.playing)
+            Version.build = 145
+            Version.revision = 1
+
+            path.child("locales").delete()
+            path.child("version.properties").delete()
+
+            Core.settings.put("debugMode", true)
+
+            // 플레이어 생성
+            player = createPlayer()
+
+            // Call 오류 해결
+            Vars.player = player.self()
+            Vars.netClient = NetClient()
+
+            MockitoAnnotations.openMocks(this)
+            Core.app = mockApplication
+        } catch (r : Throwable) {
+            Assert.fail(r.stackTraceToString())
         }
-
-        Groups.init()
-        world.loadMap(testMap[0])
-        Vars.state.set(GameState.State.playing)
-        Version.build = 145
-        Version.revision = 1
-
-        path.child("locales").delete()
-        path.child("version.properties").delete()
-
-        Core.settings.put("debugMode", true)
-
-        // 플레이어 생성
-        player = createPlayer()
-
-        // Call 오류 해결
-        Vars.player = player as Player
-        Vars.netClient = NetClient()
     }
 
     fun loadPlugin() {
@@ -144,6 +176,14 @@ class PluginTest {
         main.init()
         main.registerClientCommands(clientCommand)
         main.registerServerCommands(serverCommand)
+    }
+
+    fun runPost() {
+        `when`(mockApplication.post(any(Runnable::class.java))).thenAnswer { invocation ->
+            val task = invocation.getArgument(0) as Runnable
+            task.run()
+            null
+        }
     }
 
     private fun getSaltString() : String {

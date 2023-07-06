@@ -52,6 +52,8 @@ dependencies {
     testImplementation("com.github.anuken.arc:backend-headless:$arcVersion")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
     testImplementation("net.datafaker:datafaker:1.8.1")
+    testImplementation("org.mockito:mockito-core:5.4.0")
+    testImplementation("org.locationtech.jts:jts-core:1.19.0")
 
     val ktor = "2.3.1"
     implementation("io.ktor:ktor-server-core:$ktor")

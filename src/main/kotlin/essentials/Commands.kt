@@ -161,11 +161,15 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         private fun send(msg : String, vararg parameters : Any) {
-            player.sendMessage(MessageFormat.format(bundle.resource.getString(msg), *parameters))
+            val text = MessageFormat.format(bundle.resource.getString(msg), *parameters)
+            data.lastSentMessage = text
+            player.sendMessage(text)
         }
 
         fun err(key : String, vararg parameters : Any) {
-            player.sendMessage("[scarlet]" + MessageFormat.format(bundle.resource.getString(key), *parameters))
+            val text = "[scarlet]" + MessageFormat.format(bundle.resource.getString(key), *parameters)
+            data.lastSentMessage = text
+            player.sendMessage(text)
         }
 
         fun changemap() {
@@ -198,10 +202,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     logic.play()
                     reloader.end()
                 } catch (_ : IllegalArgumentException) {
-                    err("command.changemap.mode.not.found")
+                    err("command.changemap.mode.not.found", arg[1])
                 }
             } else {
-                err("command.changemap.map.not.found")
+                err("command.changemap.map.not.found", arg[0])
             }
         }
 

@@ -339,6 +339,9 @@ class DB {
         var player : Playerc = mindustry.gen.Player.create()
         var entityid : Int = 0
 
+        // Use plugin test only
+        var lastSentMessage : String = ""
+
         override fun toString() : String {
             return """
                 name: $name
