@@ -4,15 +4,18 @@ import PluginTest.Companion.player
 import arc.Core
 import arc.Events
 import essentials.DB
+import essentials.Event
 import essentials.Main.Companion.connectType
 import essentials.Main.Companion.database
 import essentials.Permission
 import essentials.Trigger
 import junit.framework.TestCase.*
 import mindustry.Vars
+import mindustry.content.Blocks
 import mindustry.game.EventType.PlayerJoin
 import mindustry.game.EventType.PlayerLeave
 import mindustry.game.Gamemode
+import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.hjson.JsonArray
@@ -80,7 +83,7 @@ class CommandTest {
 
     @Test
     fun clientCommand_changemap() {
-        // Require admin or adobe permission
+        // Require admin or above permission
         setPermission("owner", true)
 
         // If map not found
@@ -107,7 +110,7 @@ class CommandTest {
 
     @Test
     fun clientCommand_changename() {
-        // Require admin or adobe permission
+        // Require admin or above permission
         setPermission("owner", true)
 
         // Change self name
@@ -135,7 +138,7 @@ class CommandTest {
 
     @Test
     fun clientCommand_changepw() {
-        // Require user or adobe permission
+        // Require user or above permission
         setPermission("user", true)
 
         // Change password
@@ -150,7 +153,7 @@ class CommandTest {
 
     @Test
     fun clientCommand_chat() {
-        // Require admin or adobe permission
+        // Require admin or above permission
         setPermission("admin", true)
 
         val dummy = newPlayer()
@@ -170,7 +173,7 @@ class CommandTest {
     }
 
     fun clientCommand_chars() {
-        // Require admin or adobe permission
+        // Require admin or above permission
         setPermission("admin", true)
 
         // todo chars 명령어
@@ -178,7 +181,7 @@ class CommandTest {
 
     @Test
     fun clientCommand_color() {
-        // Require admin or adobe permission
+        // Require admin or above permission
         setPermission("admin", true)
 
         // Enable animated name
@@ -214,6 +217,71 @@ class CommandTest {
     }
 
     fun clientCommand_discord() {
+        // Require user or above permission
+        setPermission("user", true)
+
+        clientCommand.handleMessage("/discord", player)
+
+        // todo mock discord
+    }
+
+    @Test
+    fun clientCommand_dps() {
+        // Require admin or above permission
+        setPermission("admin", true)
+
+        // Place damage per seconds meter block
+        clientCommand.handleMessage("/dps", player)
+        assertEquals(Blocks.thoriumWallLarge, player.tileOn().block())
+
+        // Wait for show damage meter
+        sleep(1250)
+
+        // If block deleted
+        Call.deconstructFinish(player.tileOn(), Blocks.air, player.unit())
+        sleep(64)
+        assertNull(Event.dpsTile)
+
+        // Replace damage per seconds meter block
+        clientCommand.handleMessage("/dps", player)
+        assertEquals(Blocks.thoriumWallLarge, player.tileOn().block())
+
+        // Remove damage per seconds meter block
+        clientCommand.handleMessage("/dps", player)
+        assertEquals(Blocks.air, player.tileOn().block())
+    }
+
+    @Test
+    fun clientCommand_effect() {
+        // Require user or above permission
+        setPermission("user", true)
+        playerData.exp = 100000
+
+        sleep(1000)
+
+        // todo call effect mock
+
+        // Disable all other player effects
+        clientCommand.handleMessage("/effect off", player)
+
+        // Enable all other player effects
+        clientCommand.handleMessage("/effect on", player)
+
+        // Use level-by-level effects manually
+        clientCommand.handleMessage("/effect 10", player)
+
+        // When setting a value higher than the current player level
+        clientCommand.handleMessage("/effect 500", player)
+
+        // Set effect color using hex
+        clientCommand.handleMessage("/effect 10 #ffffff", player)
+
+        // Set effect color using color name
+        clientCommand.handleMessage("/effect 10 red", player)
+    }
+
+    @Test
+    fun clientCommand_exp() {
 
     }
 }
