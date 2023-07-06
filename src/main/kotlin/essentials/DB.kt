@@ -78,15 +78,25 @@ class DB {
 
             transaction {
                 if (!connection.isClosed) {
-                    SchemaUtils.create(Player)
-                    SchemaUtils.create(Data)
                     SchemaUtils.create(DB)
 
-                    if (DB.selectAll().empty()) {
+                    if (DB.selectAll().firstOrNull() == null) {
+                        val query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='PLAYER'"
+                        val list = mutableListOf<String>()
+                        exec(query) {
+                            val id = it.findColumn("COLUMN_NAME")
+                            while (it.next()) {
+                                list.add(it.getString(id))
+                            }
+                        }
+
                         DB.insert {
-                            val ver = if(!Player.columns.contains(Player.blockPlaceCount)) {
+                            list.forEach { it1 ->
+                                println(it1)
+                            }
+                            val ver = if (!list.contains("blockPlaceCount")) {
                                 0
-                            } else if(!Player.columns.contains(Player.pvpEliminationTeamCount)) {
+                            } else if (!list.contains("pvpEliminationTeamCount")) {
                                 1
                             } else {
                                 dbVersion
@@ -94,6 +104,9 @@ class DB {
                             it[version] = ver
                         }
                     }
+
+                    SchemaUtils.create(Player)
+                    SchemaUtils.create(Data)
 
                     if (!isRemote) {
                         fun upgrade() {
