@@ -148,7 +148,7 @@ class PluginTest {
                 sleep(10)
             }
             world.loadMap(testMap!!)
-            Vars.state.set(GameState.State.playing)
+            state.set(GameState.State.playing)
             Version.build = 145
             Version.revision = 1
 
@@ -157,12 +157,7 @@ class PluginTest {
 
             Core.settings.put("debugMode", true)
 
-            // 플레이어 생성
-            player = createPlayer()
-
-            // Call 오류 해결
-            Vars.player = player.self()
-            Vars.netClient = NetClient()
+            netClient = NetClient()
 
             MockitoAnnotations.openMocks(this)
             Core.app = mockApplication
@@ -196,7 +191,7 @@ class PluginTest {
         return salt.toString()
     }
 
-    private fun createPlayer() : Player {
+    fun createPlayer() : Player {
         val player = Player.create()
         val faker = Faker(Locale.ENGLISH)
         val ip = r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)

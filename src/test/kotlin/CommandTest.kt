@@ -9,7 +9,9 @@ import essentials.Permission
 import junit.framework.TestCase.assertEquals
 import mindustry.Vars
 import mindustry.game.EventType.PlayerJoin
+import mindustry.game.EventType.PlayerLeave
 import mindustry.game.Gamemode
+import mindustry.gen.Playerc
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.junit.AfterClass
@@ -27,21 +29,38 @@ class CommandTest {
     }
 
     var playerData : DB.PlayerData
+    val test = PluginTest()
 
     init {
-        val test = PluginTest()
         test.loadGame()
         test.loadPlugin()
         test.runPost()
 
-        Events.fire(PlayerJoin(player.self()))
-
-        // Wait for database register time
-        sleep(500)
-
-        playerData = database.players.find { data -> data.uuid == player.uuid() }
+        val p = newPlayer()
+        Vars.player = p.first.self()
+        player = p.first.self()
+        playerData = p.second
     }
 
+    fun newPlayer() : Pair<Playerc, DB.PlayerData> {
+        val player = test.createPlayer()
+        Events.fire(PlayerJoin(player.self()))
+
+        // Wait for database add time
+        sleep(500)
+        return Pair(player, database.players.find { data -> data.uuid == player.uuid() })
+    }
+
+    fun newPlayerNotRegistered() : Playerc {
+        return test.createPlayer()
+    }
+
+    fun leavePlayer(player : Playerc) {
+        Events.fire(PlayerLeave(player.self()))
+
+        // Wait for database save time
+        sleep(500)
+    }
 
     fun setPermission(group : String, admin : Boolean) {
         val json = JsonArray()
@@ -81,5 +100,33 @@ class CommandTest {
         clientCommand.handleMessage("/changemap glacier", player)
         assertEquals("Glacier", Vars.state.map.name())
         assertEquals(Gamemode.survival, Vars.state.rules.mode())
+    }
+
+    @Test
+    fun clientCommand_changename() {
+        // Require admin or adobe permission
+        setPermission("owner", true)
+
+        // Change self name
+        clientCommand.handleMessage("/changename Kieaer", player)
+        assertEquals("Kieaer", player.name())
+
+        // Change other player name
+        val registeredUser = newPlayer()
+        clientCommand.handleMessage("/changename dummy ${registeredUser.first.name()}", player)
+        assertEquals("dummy", registeredUser.first.name())
+        leavePlayer(registeredUser.first)
+
+        // If target player not found
+        clientCommand.handleMessage("/changename eat yammi", player)
+        assertEquals("[scarlet]대상 플레이어를 찾을 수 없습니다!", playerData.lastSentMessage)
+
+        // If target player exists but registered
+        val notRegisteredUser = newPlayerNotRegistered()
+        val oldName = notRegisteredUser.name()
+        clientCommand.handleMessage("/changename not ${registeredUser.first.name()}", player)
+        assertEquals(oldName, notRegisteredUser.name())
+        assertEquals("[scarlet]해당 플레이어가 계정 등록을 하지 않았습니다.", playerData.lastSentMessage)
+        leavePlayer(notRegisteredUser)
     }
 }

@@ -220,6 +220,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         data.name = arg[0]
                         target.name(arg[0])
                         database.queue(data)
+                        send("command.changename.apply")
                     } else {
                         err("player.not.registered")
                     }
@@ -230,8 +231,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 data.name = arg[0]
                 player.name(arg[0])
                 database.queue(data)
+                send("command.changename.apply")
             }
-            send("command.changename.apply")
         }
 
         fun changepw() {
