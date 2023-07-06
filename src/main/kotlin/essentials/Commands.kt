@@ -170,19 +170,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun changemap() {
             if (!Permission.check(player, "changemap")) return
-            var map = maps.all().find { e -> e.name().contains(arg[0]) }
-            if (map == null) {
-                val list = maps.all().sortedBy { a -> a.name() }
-                val arr = ObjectMap<Map, Int>()
-                list.forEachIndexed { index, m ->
-                    arr.put(m, index)
-                }
-                arr.forEach {
-                    if (it.value == arg[0].toInt()) {
-                        map = it.key
-                        return@forEach
-                    }
-                }
+
+            val list = maps.all().sortedBy { a -> a.name() }
+            val arr = ObjectMap<Int, Map>()
+            list.forEachIndexed { index, m ->
+                arr.put(index, m)
+            }
+
+            val map : Map? = if (arg[0].toIntOrNull() != null) {
+                arr.get(arg[0].toInt())
+            } else {
+                maps.all().find { e -> e.name().contains(arg[0], true) }
             }
 
             if (map != null) {
