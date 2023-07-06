@@ -425,6 +425,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (!Permission.check(player, "broadcast")) return
             if (Main.connectType) {
                 Trigger.Server.sendAll("message", arg[0])
+                Trigger.Server.lastSentMessage = arg[0]
+                Call.sendMessage(arg[0])
             } else {
                 Trigger.Client.message(arg[0])
             }

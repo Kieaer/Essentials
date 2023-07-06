@@ -4,8 +4,10 @@ import PluginTest.Companion.player
 import arc.Core
 import arc.Events
 import essentials.DB
+import essentials.Main.Companion.connectType
 import essentials.Main.Companion.database
 import essentials.Permission
+import essentials.Trigger
 import junit.framework.TestCase.*
 import mindustry.Vars
 import mindustry.game.EventType.PlayerJoin
@@ -188,5 +190,30 @@ class CommandTest {
         clientCommand.handleMessage("/color", player)
         sleep(1250)
         assertFalse(player.name.contains("[#ff0000]"))
+    }
+
+    @Test
+    fun clientCommand_broadcast() {
+        // Require owner permission
+        setPermission("owner", true)
+
+        // Sent message from server
+        clientCommand.handleMessage("/broadcast serverTest", player)
+        sleep(100)
+        assertEquals("serverTest", Trigger.Server.lastSentMessage)
+
+        // Change mode
+        connectType = false
+
+        // Sent message from client
+        clientCommand.handleMessage("/broadcast clientTest", player)
+        sleep(100)
+        assertEquals("clientTest", Trigger.Client.lastReceivedMessage)
+
+        connectType = true
+    }
+
+    fun clientCommand_discord() {
+
     }
 }

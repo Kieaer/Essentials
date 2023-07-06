@@ -7,6 +7,8 @@ import arc.util.CommandHandler
 import arc.util.Log
 import essentials.Config
 import essentials.Main
+import essentials.Main.Companion.daemon
+import essentials.Trigger
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.Vars.*
@@ -160,9 +162,20 @@ class PluginTest {
 
     fun loadPlugin() {
         main = Main()
+
+        Config.border = true
+        Config.antiVPN = true
+        Config.antiGrief = true
+        Config.chatlimit = true
+        Config.chatBlacklist = true
+        Config.blockfooclient = true
+        Config.webServer = true
+
         main.init()
         main.registerClientCommands(clientCommand)
         main.registerServerCommands(serverCommand)
+
+        daemon.submit(Trigger.Client)
 
         Events.fire(ServerLoadEvent())
     }

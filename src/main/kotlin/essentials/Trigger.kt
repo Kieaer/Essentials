@@ -508,6 +508,7 @@ object Trigger {
 
     object Server: Runnable {
         lateinit var server : ServerSocket
+        var lastSentMessage = ""
 
         override fun run() {
             try {
@@ -592,6 +593,7 @@ object Trigger {
         private val socket = Socket()
         private lateinit var reader : BufferedReader
         private lateinit var writer : BufferedWriter
+        var lastReceivedMessage = ""
 
         override fun run() {
             try {
@@ -605,8 +607,9 @@ object Trigger {
                     try {
                         when (val d = reader.readLine()) {
                             "message" -> {
-                                val aa = reader.readLine()
-                                Call.sendMessage(aa)
+                                val msg = reader.readLine()
+                                lastReceivedMessage = msg
+                                Call.sendMessage(msg)
                             }
 
                             "exit" -> {
