@@ -7,6 +7,7 @@ import essentials.DB
 import essentials.Main.Companion.database
 import essentials.Permission
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertTrue
 import mindustry.Vars
 import mindustry.game.EventType.PlayerJoin
 import mindustry.game.EventType.PlayerLeave
@@ -16,6 +17,7 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.junit.AfterClass
 import org.junit.Test
+import org.mindrot.jbcrypt.BCrypt
 import java.lang.Thread.sleep
 
 class CommandTest {
@@ -128,5 +130,20 @@ class CommandTest {
         assertEquals(oldName, notRegisteredUser.name())
         assertEquals("[scarlet]해당 플레이어가 계정 등록을 하지 않았습니다.", playerData.lastSentMessage)
         leavePlayer(notRegisteredUser)
+    }
+
+    @Test
+    fun clientCommand_changepw() {
+        // Require user or adobe permission
+        setPermission("user", true)
+
+        // Change password
+        clientCommand.handleMessage("/changepw pass pass", player)
+        assertTrue(BCrypt.checkpw("pass", playerData.accountPW))
+        assertEquals("비밀번호가 변경 되었습니다!", playerData.lastSentMessage)
+
+        // If password isn't same
+        clientCommand.handleMessage("/changepw pass wd", player)
+        assertEquals("[scarlet]비밀번호가 같지 않습니다!", playerData.lastSentMessage)
     }
 }

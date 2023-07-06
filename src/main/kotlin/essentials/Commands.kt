@@ -237,11 +237,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun changepw() {
             if (!Permission.check(player, "changepw")) return
-            if (arg.size != 2) {
-                err("command.changepw.empty")
-                return
-            }
-
             if (arg[0] != arg[1]) {
                 err("command.changepw.same")
                 return

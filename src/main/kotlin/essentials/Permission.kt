@@ -104,6 +104,7 @@ object Permission {
             val userPerm = JsonArray()
             userPerm.add("*login")
             userPerm.add("*reg")
+            userPerm.add("changepw")
             userPerm.add("discord")
             userPerm.add("effect")
             userPerm.add("hud")
