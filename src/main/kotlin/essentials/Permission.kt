@@ -67,6 +67,8 @@ object Permission {
             adminPerm.add("afk.admin")
             adminPerm.add("changemap")
             adminPerm.add("chars")
+            adminPerm.add("chat")
+            adminPerm.add("chat.admin")
             adminPerm.add("color")
             adminPerm.add("dps")
             adminPerm.add("fillitems")

@@ -1,7 +1,4 @@
-import arc.Application
-import arc.ApplicationCore
-import arc.Core
-import arc.Settings
+import arc.*
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.graphics.Color
@@ -14,10 +11,10 @@ import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.UnitTypes
 import mindustry.core.*
+import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import mindustry.gen.Playerc
 import mindustry.maps.Map
 import mindustry.mod.Mod
 import mindustry.net.Net
@@ -44,7 +41,7 @@ class PluginTest {
     companion object {
         private lateinit var main : Main
         private val r = Random()
-        lateinit var player : Playerc
+        lateinit var player : Player
         lateinit var path : Fi
         val serverCommand : CommandHandler = CommandHandler("")
         val clientCommand : CommandHandler = CommandHandler("/")
@@ -171,6 +168,8 @@ class PluginTest {
         main.init()
         main.registerClientCommands(clientCommand)
         main.registerServerCommands(serverCommand)
+
+        Events.fire(ServerLoadEvent())
     }
 
     fun runPost() {

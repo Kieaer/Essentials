@@ -6,12 +6,12 @@ import arc.Events
 import essentials.DB
 import essentials.Main.Companion.database
 import essentials.Permission
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertTrue
+import junit.framework.TestCase.*
 import mindustry.Vars
 import mindustry.game.EventType.PlayerJoin
 import mindustry.game.EventType.PlayerLeave
 import mindustry.game.Gamemode
+import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.hjson.JsonArray
 import org.hjson.JsonObject
@@ -44,9 +44,9 @@ class CommandTest {
         playerData = p.second
     }
 
-    fun newPlayer() : Pair<Playerc, DB.PlayerData> {
+    fun newPlayer() : Pair<Player, DB.PlayerData> {
         val player = test.createPlayer()
-        Events.fire(PlayerJoin(player.self()))
+        Events.fire(PlayerJoin(player))
 
         // Wait for database add time
         sleep(500)
@@ -145,5 +145,26 @@ class CommandTest {
         // If password isn't same
         clientCommand.handleMessage("/changepw pass wd", player)
         assertEquals("[scarlet]비밀번호가 같지 않습니다!", playerData.lastSentMessage)
+    }
+
+    @Test
+    fun clientCommand_chat() {
+        // Require admin or adobe permission
+        setPermission("admin", true)
+
+        val dummy = newPlayer()
+
+        // Set all players mute
+        clientCommand.handleMessage("/chat off", player)
+        assertNull(Vars.netServer.chatFormatter.format(dummy.first, "hello"))
+
+        // But if player has chat.admin permission, still can chat
+        assertNotNull(Vars.netServer.chatFormatter.format(player, "hello"))
+
+        // Set all players unmute
+        clientCommand.handleMessage("/chat on", player)
+        assertNotNull(Vars.netServer.chatFormatter.format(dummy.first, "hello"))
+
+        leavePlayer(dummy.first)
     }
 }

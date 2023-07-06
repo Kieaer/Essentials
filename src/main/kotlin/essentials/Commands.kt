@@ -250,7 +250,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun chat() {
             if (!Permission.check(player, "chat")) return
-            Event.isGlobalMute = arg[0].equals("on", true)
+            Event.isGlobalMute = arg[0].equals("off", true)
             if (Event.isGlobalMute) {
                 send("command.chat.off")
             } else {
