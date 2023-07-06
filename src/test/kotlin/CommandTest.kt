@@ -36,7 +36,6 @@ class CommandTest {
     init {
         test.loadGame()
         test.loadPlugin()
-        test.runPost()
 
         val p = newPlayer()
         Vars.player = p.first.self()
@@ -166,5 +165,28 @@ class CommandTest {
         assertNotNull(Vars.netServer.chatFormatter.format(dummy.first, "hello"))
 
         leavePlayer(dummy.first)
+    }
+
+    fun clientCommand_chars() {
+        // Require admin or adobe permission
+        setPermission("admin", true)
+
+        // todo chars 명령어
+    }
+
+    @Test
+    fun clientCommand_color() {
+        // Require admin or adobe permission
+        setPermission("admin", true)
+
+        // Enable animated name
+        clientCommand.handleMessage("/color", player)
+        sleep(1250)
+        assertTrue(player.name.contains("[#ff0000]"))
+
+        // Disable animated name
+        clientCommand.handleMessage("/color", player)
+        sleep(1250)
+        assertFalse(player.name.contains("[#ff0000]"))
     }
 }

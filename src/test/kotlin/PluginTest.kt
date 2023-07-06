@@ -1,6 +1,7 @@
 import arc.*
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
+import arc.graphics.Camera
 import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Log
@@ -24,10 +25,7 @@ import net.datafaker.Faker
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -128,7 +126,6 @@ class PluginTest {
                     super.init()
                     begins[0] = true
                     testMap = maps.loadInternalMap("groundZero")
-                    Thread.currentThread().interrupt()
                 }
             }
             HeadlessApplication(core) { throwable : Throwable? -> exceptionThrown[0] = throwable }
@@ -155,9 +152,7 @@ class PluginTest {
             Core.settings.put("debugMode", true)
 
             netClient = NetClient()
-
-            MockitoAnnotations.openMocks(this)
-            Core.app = mockApplication
+            Core.camera = Camera()
         } catch (r : Throwable) {
             Assert.fail(r.stackTraceToString())
         }
@@ -170,14 +165,6 @@ class PluginTest {
         main.registerServerCommands(serverCommand)
 
         Events.fire(ServerLoadEvent())
-    }
-
-    fun runPost() {
-        `when`(mockApplication.post(any(Runnable::class.java))).thenAnswer { invocation ->
-            val task = invocation.getArgument(0) as Runnable
-            task.run()
-            null
-        }
     }
 
     private fun getSaltString() : String {
