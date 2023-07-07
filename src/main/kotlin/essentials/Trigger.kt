@@ -497,11 +497,11 @@ object Trigger {
 
         override fun run() {
             while (!currentThread().isInterrupted) {
-                queue.forEach { a ->
+                for (a in queue) {
                     database.update(a.uuid, a)
-                    queue.removeAll { b -> b.uuid == a.uuid }
+                    queue.remove(a)
                 }
-                sleep(1000)
+                sleep(200)
             }
         }
     }

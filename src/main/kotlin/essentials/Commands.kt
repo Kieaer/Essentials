@@ -497,36 +497,43 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (!Permission.check(player, "exp")) return
 
             fun set(exp : Int?, type : String) {
-                var b : DB.PlayerData = data
+                fun set(data : DB.PlayerData) {
+                    val previous = data.exp
+                    when (type) {
+                        "set" -> data.exp = arg[1].toInt()
+                        "add" -> data.exp += arg[1].toInt()
+                        "remove" -> data.exp -= arg[1].toInt()
+                    }
+                    database.queue(data)
+                    send("command.exp.result", previous, data.exp)
+                }
+
                 if (exp != null) {
                     if (arg.size == 3) {
                         val target = findPlayers(arg[2])
                         if (target != null) {
                             val data = findPlayerData(target.uuid())
-                            if (data != null) b = data
+                            if (data != null) {
+                                set(data)
+                            } else {
+                                err("player.not.registered")
+                                return
+                            }
                         } else {
                             val p = findPlayersByName(arg[2])
                             if (p != null) {
                                 val a = database[p.id]
                                 if (a != null) {
-                                    b = a
-                                } else {
-                                    err("player.not.registered")
+                                    set(a)
                                 }
                             } else {
                                 err("player.not.found")
+                                return
                             }
                         }
+                    } else {
+                        set(data)
                     }
-
-                    val previous = b.exp
-                    when (type) {
-                        "set" -> b.exp = arg[1].toInt()
-                        "add" -> b.exp += arg[1].toInt()
-                        "remove" -> b.exp -= arg[1].toInt()
-                    }
-                    database.queue(b)
-                    send("command.exp.result", previous, data.exp)
                 } else {
                     err("command.exp.invalid")
                 }
@@ -534,36 +541,41 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             when (arg[0]) {
                 "set" -> {
                     if (!Permission.check(player, "exp.admin")) return
-                    set(arg[1].toInt(), "set")
+                    set(arg[1].toIntOrNull(), "set")
                 }
 
                 "hide" -> {
                     if (!Permission.check(player, "exp.admin")) return
-                    var b = data
-
                     if (arg.size == 2) {
                         val target = findPlayers(arg[1])
                         if (target != null) {
-                            val data = findPlayerData(target.uuid())
-                            if (data != null) b = data
+                            val other = findPlayerData(target.uuid())
+                            if (other != null) {
+                                other.hideRanking = !other.hideRanking
+                                val msg = if (other.hideRanking) "hide" else "unhide"
+                                send("command.exp.ranking.$msg")
+                                return
+                            }
                         } else {
                             err("player.not.found")
+                            return
                         }
                     }
 
-                    b.hideRanking = !b.hideRanking
-                    val msg = if (b.hideRanking) "unhide" else "hide"
+                    data.hideRanking = !data.hideRanking
+                    database.queue(data)
+                    val msg = if (data.hideRanking) "hide" else "unhide"
                     send("command.exp.ranking.$msg")
                 }
 
                 "add" -> {
                     if (!Permission.check(player, "exp.admin")) return
-                    set(arg[1].toInt(), "add")
+                    set(arg[1].toIntOrNull(), "add")
                 }
 
                 "remove" -> {
                     if (!Permission.check(player, "exp.admin")) return
-                    set(arg[1].toInt(), "remove")
+                    set(arg[1].toIntOrNull(), "remove")
                 }
 
                 else -> {
@@ -1512,7 +1524,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                     }
 
-                    Core.app.post { player.sendMessage(string.toString()) }
+                    Core.app.post {
+                        data.lastSentMessage = string.toString()
+                        player.sendMessage(string.toString())
+                    }
                 } catch (e : Exception) {
                     e.printStackTrace()
                     Core.app.exit()

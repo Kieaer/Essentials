@@ -16,6 +16,7 @@ import mindustry.game.EventType.PlayerJoin
 import mindustry.game.EventType.PlayerLeave
 import mindustry.game.Gamemode
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.hjson.JsonArray
@@ -41,6 +42,7 @@ class CommandTest {
     init {
         test.loadGame()
         test.loadPlugin()
+        //test.runPost()
 
         val p = newPlayer()
         Vars.player = p.first.self()
@@ -63,8 +65,13 @@ class CommandTest {
 
     fun leavePlayer(player : Playerc) {
         Events.fire(PlayerLeave(player.self()))
+        player.remove()
+        Groups.player.update()
 
         // Wait for database save time
+        while (Groups.player.find { a -> a.uuid() == player.uuid() } != null) {
+            sleep(10)
+        }
         sleep(500)
     }
 
@@ -282,6 +289,112 @@ class CommandTest {
 
     @Test
     fun clientCommand_exp() {
+        // Require owner permission
+        setPermission("owner", true)
 
+        // Set EXP value
+        clientCommand.handleMessage("/exp set 1000", player)
+        assertEquals(1000, playerData.exp)
+
+        // Set another player EXP value
+        val dummy = newPlayer()
+        clientCommand.handleMessage("/exp set 500 ${dummy.first.name}", player)
+        assertEquals(500, dummy.second.exp)
+
+        // If player enter wrong value
+        clientCommand.handleMessage("/exp set number", player)
+        assertEquals("[scarlet]경험치 값은 반드시 숫자이어야 합니다!", playerData.lastSentMessage)
+
+        // Hides player's rank in the ranking list
+        clientCommand.handleMessage("/exp hide", player)
+        database.update(player.uuid(), playerData)
+        clientCommand.handleMessage("/ranking exp", player)
+        sleep(250)
+        assertFalse(playerData.lastSentMessage.contains(player.name))
+
+        // Un-hides player's rank in the ranking list
+        clientCommand.handleMessage("/exp hide", player)
+        database.update(player.uuid(), playerData)
+        clientCommand.handleMessage("/ranking exp", player)
+        sleep(250)
+        assertTrue(playerData.lastSentMessage.contains(player.name))
+
+        // Hide other players' rankings in the ranking list
+        clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
+        database.update(dummy.first.uuid(), dummy.second)
+        clientCommand.handleMessage("/ranking exp", player)
+        sleep(250)
+        assertFalse(playerData.lastSentMessage.contains(dummy.first.name))
+
+        // Un-hide other players' rankings in the ranking list
+        clientCommand.handleMessage("/exp hide ${dummy.second.entityid}", player)
+        database.update(dummy.first.uuid(), dummy.second)
+        clientCommand.handleMessage("/ranking exp", player)
+        sleep(250)
+        assertTrue(playerData.lastSentMessage.contains(dummy.first.name))
+
+        // Add exp value
+        clientCommand.handleMessage("/exp add 500", player)
+        assertTrue(playerData.exp >= 1500)
+
+        // Add other player exp value
+        clientCommand.handleMessage("/exp add 500 ${dummy.first.name}", player)
+        assertTrue(dummy.second.exp >= 1000)
+
+        // Subtract value from current experience
+        clientCommand.handleMessage("/exp remove 300", player)
+        assertTrue(playerData.exp in 1200..1499)
+
+        // Subtract the value from another player's current experience
+        clientCommand.handleMessage("/exp remove 300 ${dummy.first.name}", player)
+        assertTrue(dummy.second.exp in 700..999)
+
+        // Set EXP for players who are not currently logged in
+        leavePlayer(dummy.first)
+        clientCommand.handleMessage("/exp set 10 ${dummy.first.name}", player)
+        for (time in 1..10) {
+            if (database[dummy.first.uuid()]!!.exp != 10) {
+                sleep(200)
+            } else if (time == 10 && database[dummy.first.uuid()]!!.exp != 10) {
+                fail()
+            }
+        }
+
+        // Add EXP for players who are not currently logged in
+        clientCommand.handleMessage("/exp add 10 ${dummy.first.name}", player)
+        for (time in 1..10) {
+            if (database[dummy.first.uuid()]!!.exp != 10) {
+                sleep(200)
+            } else if (time == 10 && database[dummy.first.uuid()]!!.exp != 20) {
+                fail()
+            }
+        }
+
+        // Subtract EXP for players who are not currently logged in
+        clientCommand.handleMessage("/exp remove ${dummy.first.name}", player)
+        for (time in 1..10) {
+            if (database[dummy.first.uuid()]!!.exp != 10) {
+                sleep(200)
+            } else if (time == 10 && database[dummy.first.uuid()]!!.exp != 0) {
+                fail()
+            }
+        }
+
+        // If target player not found
+        clientCommand.handleMessage("/exp set 10 dummy", player)
+        assertEquals("[scarlet]대상 플레이어를 찾을 수 없습니다!", playerData.lastSentMessage)
+
+        // If target player exist but not registered
+        val bot = test.createPlayer()
+        clientCommand.handleMessage("/exp set 10 ${bot.name}", player)
+        assertEquals("[scarlet]해당 플레이어가 계정 등록을 하지 않았습니다.", playerData.lastSentMessage)
+
+        // If the target player is not logged in and looking for a player that isn't in the database
+        clientCommand.handleMessage("/exp hide 냠냠", player)
+        assertEquals("[scarlet]대상 플레이어를 찾을 수 없습니다!", playerData.lastSentMessage)
+
+        // If player enter wrong command
+        clientCommand.handleMessage("/exp wrongCommand", player)
+        assertEquals("[scarlet]/help exp 를 사용하여 명령어 사용 방법을 확인하세요.", playerData.lastSentMessage)
     }
 }

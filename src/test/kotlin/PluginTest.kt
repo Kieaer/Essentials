@@ -27,7 +27,10 @@ import net.datafaker.Faker
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
+import org.mockito.Mockito.`when`
+import org.mockito.MockitoAnnotations
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -178,6 +181,17 @@ class PluginTest {
         daemon.submit(Trigger.Client)
 
         Events.fire(ServerLoadEvent())
+    }
+
+    fun runPost() {
+        MockitoAnnotations.openMocks(this)
+        Core.app = mockApplication
+
+        `when`(mockApplication.post(any(Runnable::class.java))).thenAnswer { invocation ->
+            val task = invocation.getArgument(0) as Runnable
+            task.run()
+            null
+        }
     }
 
     private fun getSaltString() : String {
