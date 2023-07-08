@@ -90,7 +90,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("dps", "Create damage per seconds meter block") { a, p : Playerc -> Client(a, p).dps() }
             handler.register("effect", "<on/off/level> [color]", "Turn other players' effects on or off, or set effects and colors for each level.") { a, p : Playerc -> Client(a, p).effect() }
             handler.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p : Playerc -> Client(a, p).exp() }
-            handler.register("fillitems", "<team>", "Fill the core with items.") { a, p : Playerc -> Client(a, p).fillitems() }
+            handler.register("fillitems", "[team]", "Fill the core with items.") { a, p : Playerc -> Client(a, p).fillitems() }
             handler.register("freeze", "<player>", "Stop player unit movement") { a, p : Playerc -> Client(a, p).freeze() }
             handler.register("gg", "[team]", "Force gameover") { a, p : Playerc -> Client(a, p).gg() }
             handler.register("god", "[name]", "Set max player health") { a, p : Playerc -> Client(a, p).god() }
@@ -586,43 +586,51 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun fillitems() {
             if (!Permission.check(player, "fillitems")) return
-            val team = selectTeam(arg[0])
+            if (arg.isEmpty()) {
+                if (state.teams.cores(player.team()).isEmpty) {
+                    err("command.fillitems.core.empty")
+                    return
+                }
 
-            if (state.teams.cores(team).isEmpty) {
-                err("command.fillitems.core.empty")
+                content.items().forEach {
+                    state.teams.cores(player.team()).first().items[it] = state.teams.cores(player.team()).first().storageCapacity
+                }
+                send("command.fillitems.core.filled", player.team().coloredName())
+            } else {
+                val team = selectTeam(arg[0])
+                if (state.teams.cores(team).isEmpty) {
+                    err("command.fillitems.core.empty")
+                    return
+                }
+
+                content.items().forEach {
+                    state.teams.cores(team).first().items[it] = state.teams.cores(team).first().storageCapacity
+                }
+
+                send("command.fillitems.core.filled", team.coloredName())
             }
-
-            content.items().forEach {
-                state.teams.cores(team).first().items[it] = state.teams.cores(team).first().storageCapacity
-            }
-
-            send("command.fillitems.core.filled")
         }
 
         fun freeze() {
             if (!Permission.check(player, "freeze")) return
-            if (arg.isEmpty()) {
-                err("player.not.found")
-            } else {
-                val target = findPlayers(arg[0])
-                if (target != null) {
-                    val data = findPlayerData(target.uuid())
-                    if (data != null) {
-                        data.freeze = !data.freeze
-                        val msg = if (data.freeze) {
-                            data.status.put("freeze", "${target.x}/${target.y}")
-                            "done"
-                        } else {
-                            data.status.remove("freeze")
-                            "undo"
-                        }
-                        send("command.freeze.$msg", target.plainName())
+            val target = findPlayers(arg[0])
+            if (target != null) {
+                val data = findPlayerData(target.uuid())
+                if (data != null) {
+                    data.freeze = !data.freeze
+                    val msg = if (data.freeze) {
+                        data.status.put("freeze", "${target.x}/${target.y}")
+                        "done"
                     } else {
-                        err("player.not.registered")
+                        data.status.remove("freeze")
+                        "undo"
                     }
+                    send("command.freeze.$msg", target.plainName())
                 } else {
-                    err("player.not.found")
+                    err("player.not.registered")
                 }
+            } else {
+                err("player.not.found")
             }
         }
 
@@ -633,8 +641,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             } else {
                 Events.fire(EventType.GameOverEvent(selectTeam(arg[0])))
             }
-
-            player.unit().buildSpeedMultiplier(100f)
         }
 
         fun god() {

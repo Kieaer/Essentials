@@ -3,18 +3,18 @@ import PluginTest.Companion.path
 import PluginTest.Companion.player
 import arc.Core
 import arc.Events
-import essentials.DB
-import essentials.Event
+import essentials.*
 import essentials.Main.Companion.connectType
 import essentials.Main.Companion.database
-import essentials.Permission
 import essentials.Trigger
 import junit.framework.TestCase.*
 import mindustry.Vars
 import mindustry.content.Blocks
-import mindustry.game.EventType.PlayerJoin
-import mindustry.game.EventType.PlayerLeave
+import mindustry.content.Items
+import mindustry.content.Liquids
+import mindustry.game.EventType.*
 import mindustry.game.Gamemode
+import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -25,6 +25,7 @@ import org.junit.AfterClass
 import org.junit.Test
 import org.mindrot.jbcrypt.BCrypt
 import java.lang.Thread.sleep
+import java.text.MessageFormat
 
 class CommandTest {
     companion object {
@@ -88,14 +89,22 @@ class CommandTest {
         Permission.load()
     }
 
+    fun err(key : String, vararg parameters : Any) : String {
+        return "[scarlet]" + MessageFormat.format(Bundle().resource.getString(key), *parameters)
+    }
+
+    fun log(msg : String, vararg parameters : Any) : String {
+        return MessageFormat.format(Bundle().resource.getString(msg), *parameters)
+    }
+
     @Test
-    fun clientCommand_changemap() {
+    fun client_changemap() {
         // Require admin or above permission
         setPermission("owner", true)
 
         // If map not found
         clientCommand.handleMessage("/changemap nothing survival", player)
-        assertEquals("[scarlet]nothing 맵을 찾을 수 없습니다!", playerData.lastSentMessage)
+        assertEquals(err("command.changemap.map.not.found", "nothing"), playerData.lastSentMessage)
 
         // Number method
         clientCommand.handleMessage("/changemap 0 survival", player)
@@ -107,7 +116,7 @@ class CommandTest {
 
         // If player enter wrong gamemode
         clientCommand.handleMessage("/changemap fork creative", player)
-        assertEquals("[scarlet]creative 게임 모드는 없는 모드 입니다!", playerData.lastSentMessage)
+        assertEquals(err("command.changemap.mode.not.found", "creative"), playerData.lastSentMessage)
 
         // If player enter only map name
         clientCommand.handleMessage("/changemap glacier", player)
@@ -116,7 +125,7 @@ class CommandTest {
     }
 
     @Test
-    fun clientCommand_changename() {
+    fun client_changename() {
         // Require admin or above permission
         setPermission("owner", true)
 
@@ -132,34 +141,34 @@ class CommandTest {
 
         // If target player not found
         clientCommand.handleMessage("/changename eat yammi", player)
-        assertEquals("[scarlet]대상 플레이어를 찾을 수 없습니다!", playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), playerData.lastSentMessage)
 
         // If target player exists but registered
         val notRegisteredUser = newPlayerNotRegistered()
         val oldName = notRegisteredUser.name()
         clientCommand.handleMessage("/changename not ${registeredUser.first.name()}", player)
         assertEquals(oldName, notRegisteredUser.name())
-        assertEquals("[scarlet]해당 플레이어가 계정 등록을 하지 않았습니다.", playerData.lastSentMessage)
+        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
         leavePlayer(notRegisteredUser)
     }
 
     @Test
-    fun clientCommand_changepw() {
+    fun client_changepw() {
         // Require user or above permission
         setPermission("user", true)
 
         // Change password
         clientCommand.handleMessage("/changepw pass pass", player)
         assertTrue(BCrypt.checkpw("pass", playerData.accountPW))
-        assertEquals("비밀번호가 변경 되었습니다!", playerData.lastSentMessage)
+        assertEquals(log("command.changepw.apply"), playerData.lastSentMessage)
 
         // If password isn't same
         clientCommand.handleMessage("/changepw pass wd", player)
-        assertEquals("[scarlet]비밀번호가 같지 않습니다!", playerData.lastSentMessage)
+        assertEquals(err("command.changepw.same"), playerData.lastSentMessage)
     }
 
     @Test
-    fun clientCommand_chat() {
+    fun client_chat() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -179,7 +188,7 @@ class CommandTest {
         leavePlayer(dummy.first)
     }
 
-    fun clientCommand_chars() {
+    fun client_chars() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -187,7 +196,7 @@ class CommandTest {
     }
 
     @Test
-    fun clientCommand_color() {
+    fun client_color() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -203,7 +212,7 @@ class CommandTest {
     }
 
     @Test
-    fun clientCommand_broadcast() {
+    fun client_broadcast() {
         // Require owner permission
         setPermission("owner", true)
 
@@ -223,7 +232,7 @@ class CommandTest {
         connectType = true
     }
 
-    fun clientCommand_discord() {
+    fun client_discord() {
         // Require user or above permission
         setPermission("user", true)
 
@@ -233,7 +242,7 @@ class CommandTest {
     }
 
     @Test
-    fun clientCommand_dps() {
+    fun client_dps() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -259,7 +268,7 @@ class CommandTest {
     }
 
     @Test
-    fun clientCommand_effect() {
+    fun client_effect() {
         // Require user or above permission
         setPermission("user", true)
         playerData.exp = 100000
@@ -288,7 +297,7 @@ class CommandTest {
     }
 
     @Test
-    fun clientCommand_exp() {
+    fun client_exp() {
         // Require owner permission
         setPermission("owner", true)
 
@@ -303,7 +312,7 @@ class CommandTest {
 
         // If player enter wrong value
         clientCommand.handleMessage("/exp set number", player)
-        assertEquals("[scarlet]경험치 값은 반드시 숫자이어야 합니다!", playerData.lastSentMessage)
+        assertEquals(err("command.exp.invalid"), playerData.lastSentMessage)
 
         // Hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
@@ -382,19 +391,155 @@ class CommandTest {
 
         // If target player not found
         clientCommand.handleMessage("/exp set 10 dummy", player)
-        assertEquals("[scarlet]대상 플레이어를 찾을 수 없습니다!", playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), playerData.lastSentMessage)
 
         // If target player exist but not registered
         val bot = test.createPlayer()
         clientCommand.handleMessage("/exp set 10 ${bot.name}", player)
-        assertEquals("[scarlet]해당 플레이어가 계정 등록을 하지 않았습니다.", playerData.lastSentMessage)
+        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
 
         // If the target player is not logged in and looking for a player that isn't in the database
         clientCommand.handleMessage("/exp hide 냠냠", player)
-        assertEquals("[scarlet]대상 플레이어를 찾을 수 없습니다!", playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), playerData.lastSentMessage)
 
         // If player enter wrong command
         clientCommand.handleMessage("/exp wrongCommand", player)
-        assertEquals("[scarlet]/help exp 를 사용하여 명령어 사용 방법을 확인하세요.", playerData.lastSentMessage)
+        assertEquals(err("command.exp.invalid.command"), playerData.lastSentMessage)
+    }
+
+    @Test
+    fun client_fillitems() {
+        // Require admin or above permission
+        setPermission("admin", true)
+
+        // Fill core items
+        clientCommand.handleMessage("/fillitems", player)
+        assertEquals(Vars.state.teams.cores(player.team()).first().storageCapacity, Vars.state.teams.cores(player.team()).first().items.get(Items.copper))
+
+        // If player core doesn't exist
+        Call.deconstructFinish(Vars.state.teams.cores(player.team()).first().tile, Blocks.air, player.unit())
+        clientCommand.handleMessage("/fillitems", player)
+        assertEquals(err("command.fillitems.core.empty"), playerData.lastSentMessage)
+
+        // If target team core doesn't exist
+        clientCommand.handleMessage("/fillitems green", player)
+        assertEquals(err("command.fillitems.core.empty"), playerData.lastSentMessage)
+
+        // If target team core exists
+        Call.constructFinish(player.tileOn(), Blocks.coreShard, player.unit(), 0, Team.green, null)
+        clientCommand.handleMessage("/fillitems green", player)
+        assertEquals(Vars.state.teams.cores(Team.green).first().storageCapacity, Vars.state.teams.cores(Team.green).first().items.get(Items.copper))
+    }
+
+    @Test
+    fun client_freeze() {
+        // Require admin or above permission
+        setPermission("admin", true)
+
+        // Freeze target player
+        val dummy = newPlayer()
+        var oldX = dummy.first.unit().x
+        var oldY = dummy.first.unit().y
+        clientCommand.handleMessage("/freeze ${dummy.first.name}", player)
+        dummy.first.unit().x = 24f
+        dummy.first.unit().y = 24f
+        for (time in 0..10) {
+            if (dummy.first.unit().x != oldX || dummy.first.unit().y != oldY) {
+                sleep(16)
+            } else if (time == 10 && (dummy.first.unit().x != oldX || dummy.first.unit().y != oldY)) {
+                fail()
+            }
+        }
+        assertEquals(log("command.freeze.done", dummy.first.name), playerData.lastSentMessage)
+
+        // Un-freeze target player
+        oldX = dummy.first.unit().x
+        oldY = dummy.first.unit().y
+        clientCommand.handleMessage("/freeze ${dummy.first.name}", player)
+        dummy.first.unit().x = 48f
+        dummy.first.unit().y = 48f
+        for (time in 0..10) {
+            if (dummy.first.unit().x == oldX || dummy.first.unit().y == oldY) {
+                sleep(16)
+            } else if (time == 10 && (dummy.first.unit().x == oldX && dummy.first.unit().y == oldY)) {
+                fail()
+            }
+        }
+        assertEquals(log("command.freeze.undo", dummy.first.name), playerData.lastSentMessage)
+
+        // If player exists but not registered
+        val bot = test.createPlayer()
+        clientCommand.handleMessage("/freeze ${bot.name}", player)
+        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
+
+        // If player not found
+        clientCommand.handleMessage("/freeze nothing", player)
+        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+    }
+
+    @Test
+    fun client_gg() {
+        // Require admin or above permission
+        setPermission("admin", true)
+
+        var winner = Team.derelict
+        Events.on(GameOverEvent::class.java) {
+            winner = it.winner
+        }
+
+        // No args
+        clientCommand.handleMessage("/gg", player)
+        while (Vars.state.gameOver) {
+            sleep(16)
+        }
+        assertEquals(Vars.state.rules.waveTeam, winner)
+
+        // Select win team
+        clientCommand.handleMessage("/gg green", player)
+        while (Vars.state.gameOver) {
+            sleep(16)
+        }
+        assertEquals(Team.green, winner)
+
+        // If only the first letter of the team name is entered
+        clientCommand.handleMessage("/gg b", player)
+        while (Vars.state.gameOver) {
+            sleep(16)
+        }
+        assertEquals(Team.blue, winner)
+
+        // If player select wrong team
+        clientCommand.handleMessage("/gg ah!", player)
+        while (Vars.state.gameOver) {
+            sleep(16)
+        }
+        assertEquals(player.team(), winner)
+    }
+
+    @Test
+    fun client_god() {
+        // Require admin or above permission
+        setPermission("admin", true)
+
+        Vars.state.rules.infiniteResources = true
+        Vars.state.rules.attackMode = true
+
+        // Wait for spawn unit from core
+        sleep(1000)
+        Call.setPosition(player.con(), 240f, 240f)
+        clientCommand.handleMessage("/god", player)
+
+        // Spawn spector turret and maximum boost
+        Call.constructFinish(player.tileOn(), Blocks.spectre, player.unit(), 0, Team.crux, null)
+        Call.constructFinish(Vars.world.tile(player.tileX(), player.tileY() + 3), Blocks.itemSource, player.unit(), 0, Team.crux, null)
+        Call.constructFinish(Vars.world.tile(player.tileX() + 1, player.tileY() + 3), Blocks.liquidSource, player.unit(), 0, Team.crux, null)
+        Vars.world.tile(player.tileX(), player.tileY() + 3).build.configureAny(Items.thorium)
+        Vars.world.tile(player.tileX() + 1, player.tileY() + 3).build.configureAny(Liquids.cryofluid)
+
+        // Check unit not dead
+        for (time in 0..10) {
+            assert(!player.unit().dead)
+            sleep(100)
+        }
     }
 }

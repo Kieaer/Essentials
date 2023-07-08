@@ -242,6 +242,13 @@ class PluginTest {
     }
 
     @Test
+    fun startPlugin() {
+        loadGame()
+        loadPlugin()
+        runPost()
+    }
+
+    @Test
     fun dbUpgradeTest() {
         loadGame()
 
@@ -252,5 +259,6 @@ class PluginTest {
         println(Config.database)
 
         loadPlugin()
+        runPost()
     }
 }

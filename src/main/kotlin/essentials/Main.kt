@@ -36,9 +36,6 @@ class Main: Plugin() {
 
     init {
         Log.info("[Essentials] Loading")
-        if ((Core.settings.has("debugMode") && Core.settings.getBool("debugMode"))) {
-            root.child("database.mv.db").delete()
-        }
 
         createFile()
         if (!root.child("config.txt").exists()) Config.save()
@@ -50,7 +47,6 @@ class Main: Plugin() {
 
         if (Config.database != root.child("database").absolutePath()) {
             Log.info(Bundle()["event.database.remote"])
-            root.child("database.mv.db").delete()
         }
 
         if (Config.blockIP) {

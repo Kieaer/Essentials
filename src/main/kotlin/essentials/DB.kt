@@ -62,13 +62,13 @@ class DB {
             if (!isRemote) {
                 try {
                     dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Config.database).start()
-                    db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
+                    Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
                 } catch (e : Exception) {
-                    db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
+                    Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
                     Log.info(Bundle()["event.database.remote"])
                 }
             } else {
-                db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
+                Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
             }
 
             if (Main.root.child("data/script.sql").exists()) {
@@ -78,9 +78,11 @@ class DB {
 
             transaction {
                 if (!connection.isClosed) {
+                    SchemaUtils.create(Player)
+                    SchemaUtils.create(Data)
                     SchemaUtils.create(DB)
 
-                    if (DB.selectAll().firstOrNull() == null) {
+                    if (DB.selectAll().empty()) {
                         val query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='PLAYER'"
                         val list = mutableListOf<String>()
                         exec(query) {
@@ -91,9 +93,6 @@ class DB {
                         }
 
                         DB.insert {
-                            list.forEach { it1 ->
-                                println(it1)
-                            }
                             val ver = if (!list.contains("blockPlaceCount")) {
                                 0
                             } else if (!list.contains("pvpEliminationTeamCount")) {
@@ -104,9 +103,6 @@ class DB {
                             it[version] = ver
                         }
                     }
-
-                    SchemaUtils.create(Player)
-                    SchemaUtils.create(Data)
 
                     if (!isRemote) {
                         fun upgrade() {
