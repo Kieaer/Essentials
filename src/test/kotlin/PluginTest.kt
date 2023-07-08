@@ -247,7 +247,7 @@ object PluginTest {
         Events.fire(EventType.PlayerJoin(player))
 
         // Wait for database add time
-        Thread.sleep(500)
+        sleep(500)
         return Pair(player, Main.database.players.find { data -> data.uuid == player.uuid() })
     }
 
@@ -258,9 +258,9 @@ object PluginTest {
 
         // Wait for database save time
         while (Groups.player.find { a -> a.uuid() == player.uuid() } != null) {
-            Thread.sleep(10)
+            sleep(10)
         }
-        Thread.sleep(500)
+        sleep(500)
     }
 
     fun setPermission(group : String, admin : Boolean) {

@@ -154,9 +154,7 @@ object Trigger {
             player.team(Event.pvpPlayer.get(player.uuid()))
         } else if (Event.pvpSpectors.contains(player.uuid()) || Permission.check(player, "pvp.spector")) {
             player.team(Team.derelict)
-        }
-
-        if (Groups.player.size() > state.teams.active.size && Config.pvpAutoTeam) {
+        } else if (Groups.player.size() > state.teams.active.size && Config.pvpAutoTeam) {
             var teamStatus = arrayOf<Triple<Team, String, Double>>()
             val teams = mutableMapOf<Team, Double>()
             val teamPlayers = ObjectMap<Team, Int>()
