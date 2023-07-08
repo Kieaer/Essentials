@@ -5,25 +5,27 @@ import arc.graphics.Camera
 import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Log
-import essentials.Config
-import essentials.Main
+import essentials.*
 import essentials.Main.Companion.daemon
-import essentials.Trigger
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.UnitTypes
 import mindustry.core.*
+import mindustry.game.EventType
 import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
+import mindustry.gen.Playerc
 import mindustry.maps.Map
 import mindustry.mod.Mod
 import mindustry.net.Net
 import mindustry.net.NetConnection
 import mindustry.world.Tile
 import net.datafaker.Faker
+import org.hjson.JsonArray
+import org.hjson.JsonObject
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
@@ -36,25 +38,24 @@ import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
 
-class PluginTest {
-    companion object {
-        private lateinit var main : Main
-        private val r = Random()
-        lateinit var player : Player
-        lateinit var path : Fi
-        val serverCommand : CommandHandler = CommandHandler("")
-        val clientCommand : CommandHandler = CommandHandler("/")
+object PluginTest {
+    private lateinit var main : Main
+    private val r = Random()
+    lateinit var player : Player
+    lateinit var path : Fi
+    val serverCommand : CommandHandler = CommandHandler("")
+    val clientCommand : CommandHandler = CommandHandler("/")
 
-        @AfterClass
-        @JvmStatic
-        fun shutdown() {
-            path.child("mods/Essentials").deleteDirectory()
-            path.child("maps").deleteDirectory()
-        }
+    @AfterClass
+    @JvmStatic
+    fun shutdown() {
+        path.child("mods/Essentials").deleteDirectory()
+        path.child("maps").deleteDirectory()
     }
 
     @Mock
@@ -241,11 +242,52 @@ class PluginTest {
         return world.tile(random.nextInt(100), random.nextInt(100))
     }
 
+    fun newPlayer() : Pair<Player, DB.PlayerData> {
+        val player = createPlayer()
+        Events.fire(EventType.PlayerJoin(player))
+
+        // Wait for database add time
+        Thread.sleep(500)
+        return Pair(player, Main.database.players.find { data -> data.uuid == player.uuid() })
+    }
+
+    fun leavePlayer(player : Playerc) {
+        Events.fire(EventType.PlayerLeave(player.self()))
+        player.remove()
+        Groups.player.update()
+
+        // Wait for database save time
+        while (Groups.player.find { a -> a.uuid() == player.uuid() } != null) {
+            Thread.sleep(10)
+        }
+        Thread.sleep(500)
+    }
+
+    fun setPermission(group : String, admin : Boolean) {
+        val json = JsonArray()
+        val obj = JsonObject()
+        obj.add("name", player.name())
+        obj.add("uuid", player.uuid())
+        obj.add("group", group)
+        obj.add("admin", admin)
+        json.add(obj)
+
+        Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt").writeString(json.toString())
+        Permission.load()
+    }
+
+    fun err(key : String, vararg parameters : Any) : String {
+        return "[scarlet]" + MessageFormat.format(Bundle().resource.getString(key), *parameters)
+    }
+
+    fun log(msg : String, vararg parameters : Any) : String {
+        return MessageFormat.format(Bundle().resource.getString(msg), *parameters)
+    }
+
     @Test
     fun startPlugin() {
         loadGame()
         loadPlugin()
-        runPost()
     }
 
     @Test
@@ -259,6 +301,5 @@ class PluginTest {
         println(Config.database)
 
         loadPlugin()
-        runPost()
     }
 }

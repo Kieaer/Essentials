@@ -122,42 +122,7 @@ object Trigger {
             }
 
             if (state.rules.pvp) {
-                if (Event.pvpPlayer.containsKey(player.uuid())) {
-                    player.team(Event.pvpPlayer.get(player.uuid()))
-                } else if (Event.pvpSpectors.contains(player.uuid()) || Permission.check(player, "pvp.spector")) {
-                    player.team(Team.derelict)
-                }
-
-                if (Groups.player.size() > state.teams.active.size && Config.pvpAutoTeam) {
-                    var teamStatus = arrayOf<Triple<Team, String, Int>>()
-                    val teams = ObjectMap<Team, Double>()
-                    val teamPlayers = ObjectMap<Team, Int>()
-                    database.players.forEach {
-                        teamStatus += (Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
-                    }
-
-                    fun winPercentage(team : Team) : Double? {
-                        val players = teamStatus.filter { it.first == team }
-                        val winPercentages = players.map { it.third }
-                        if (winPercentages.isEmpty()) {
-                            return null
-                        }
-                        return winPercentages.average()
-                    }
-
-                    for (a in state.teams.active) {
-                        teams.put(a.team, winPercentage(a.team))
-                        teamPlayers.put(a.team, a.players.size)
-                    }
-
-                    val rate = teams.sortedBy { it.value }
-
-                    if (abs(teamPlayers.sortedBy { a -> a.value }.first().value - teamPlayers.get(rate.last().key)) > 3) {
-                        player.team(rate.first().key)
-                    } else {
-                        player.team(rate.last().key)
-                    }
-                }
+                pvpMatch(player)
             }
 
             if (Event.voting) {
@@ -182,6 +147,47 @@ object Trigger {
             database.players.add(data)
             player.sendMessage(message.toString())
         }
+    }
+
+    fun pvpMatch(player : Playerc) : Team {
+        if (Event.pvpPlayer.containsKey(player.uuid())) {
+            player.team(Event.pvpPlayer.get(player.uuid()))
+        } else if (Event.pvpSpectors.contains(player.uuid()) || Permission.check(player, "pvp.spector")) {
+            player.team(Team.derelict)
+        }
+
+        if (Groups.player.size() > state.teams.active.size && Config.pvpAutoTeam) {
+            var teamStatus = arrayOf<Triple<Team, String, Double>>()
+            val teams = mutableMapOf<Team, Double>()
+            val teamPlayers = ObjectMap<Team, Int>()
+            database.players.forEach {
+                teamStatus += (Triple(it.player.team(), it.name, (it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount))))
+            }
+
+            fun winPercentage(team : Team) : Double {
+                val players = teamStatus.filter { it.first == team }
+                val winPercentages = players.map { it.third }
+                if (winPercentages.isEmpty()) {
+                    return 0.0
+                }
+                return winPercentages.average()
+            }
+
+            for (a in state.teams.active) {
+                teams[a.team] = winPercentage(a.team)
+                teamPlayers.put(a.team, a.players.size)
+            }
+
+            val rate = teams.toList().sortedWith(compareBy { it.second })
+
+            if (abs(teamPlayers.sortedByDescending { a -> a.value }.first().value - teamPlayers.get(rate.last().first)) > 3) {
+                player.team(rate.first().first)
+            } else {
+                player.team(rate.last().first)
+            }
+        }
+
+        return player.team()
     }
 
     fun createPlayer(player : Playerc, id : String?, password : String?) {

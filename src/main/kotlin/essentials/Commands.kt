@@ -921,6 +921,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
+                // todo 특정 플레이어 조회 안됨
                 if (target != null) {
                     val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))}"
                     val other = findPlayerData(target.uuid())
@@ -1824,32 +1825,32 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 """.trimIndent())
 
                 var teamStatus = arrayOf<Triple<Team, String, Int>>()
-                val teams = ObjectMap<Team, Double>()
+                val teams = mutableMapOf<Team, Double>()
                 database.players.forEach {
                     teamStatus += (Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
                 }
 
-                fun winPercentage(team : Team) : Double? {
+                fun winPercentage(team : Team) : Double {
                     val teamPlayers = teamStatus.filter { it.first == team }
                     val winPercentages = teamPlayers.map { it.third }
                     if (winPercentages.isEmpty()) {
-                        return null
+                        return 0.0
                     }
                     return winPercentages.average()
                 }
 
                 for (a in state.teams.active) {
-                    if (winPercentage(a.team) != null) {
-                        teams.put(a.team, winPercentage(a.team))
-                    }
+                    teams[a.team] = winPercentage(a.team)
                 }
 
                 teams.forEach {
                     message.appendLine("${it.key.coloredName()} : ${round(it.value)}%")
                 }
 
+                data.lastSentMessage = message.toString().dropLast(1)
                 player.sendMessage(message.toString().dropLast(1))
             } else {
+                data.lastSentMessage = message.toString()
                 player.sendMessage(message.toString())
             }
         }

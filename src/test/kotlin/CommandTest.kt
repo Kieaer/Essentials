@@ -1,9 +1,17 @@
-import PluginTest.Companion.clientCommand
-import PluginTest.Companion.path
-import PluginTest.Companion.player
-import arc.Core
+import PluginTest.clientCommand
+import PluginTest.createPlayer
+import PluginTest.err
+import PluginTest.leavePlayer
+import PluginTest.loadGame
+import PluginTest.loadPlugin
+import PluginTest.log
+import PluginTest.newPlayer
+import PluginTest.path
+import PluginTest.player
+import PluginTest.setPermission
 import arc.Events
-import essentials.*
+import essentials.DB
+import essentials.Event
 import essentials.Main.Companion.connectType
 import essentials.Main.Companion.database
 import essentials.Trigger
@@ -12,20 +20,14 @@ import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.Liquids
-import mindustry.game.EventType.*
+import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
-import mindustry.gen.Groups
-import mindustry.gen.Player
-import mindustry.gen.Playerc
-import org.hjson.JsonArray
-import org.hjson.JsonObject
 import org.junit.AfterClass
 import org.junit.Test
 import org.mindrot.jbcrypt.BCrypt
 import java.lang.Thread.sleep
-import java.text.MessageFormat
 
 class CommandTest {
     companion object {
@@ -38,63 +40,16 @@ class CommandTest {
     }
 
     var playerData : DB.PlayerData
-    val test = PluginTest()
 
     init {
-        test.loadGame()
-        test.loadPlugin()
+        loadGame()
+        loadPlugin()
         //test.runPost()
 
         val p = newPlayer()
         Vars.player = p.first.self()
         player = p.first.self()
         playerData = p.second
-    }
-
-    fun newPlayer() : Pair<Player, DB.PlayerData> {
-        val player = test.createPlayer()
-        Events.fire(PlayerJoin(player))
-
-        // Wait for database add time
-        sleep(500)
-        return Pair(player, database.players.find { data -> data.uuid == player.uuid() })
-    }
-
-    fun newPlayerNotRegistered() : Playerc {
-        return test.createPlayer()
-    }
-
-    fun leavePlayer(player : Playerc) {
-        Events.fire(PlayerLeave(player.self()))
-        player.remove()
-        Groups.player.update()
-
-        // Wait for database save time
-        while (Groups.player.find { a -> a.uuid() == player.uuid() } != null) {
-            sleep(10)
-        }
-        sleep(500)
-    }
-
-    fun setPermission(group : String, admin : Boolean) {
-        val json = JsonArray()
-        val obj = JsonObject()
-        obj.add("name", player.name())
-        obj.add("uuid", player.uuid())
-        obj.add("group", group)
-        obj.add("admin", admin)
-        json.add(obj)
-
-        Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt").writeString(json.toString())
-        Permission.load()
-    }
-
-    fun err(key : String, vararg parameters : Any) : String {
-        return "[scarlet]" + MessageFormat.format(Bundle().resource.getString(key), *parameters)
-    }
-
-    fun log(msg : String, vararg parameters : Any) : String {
-        return MessageFormat.format(Bundle().resource.getString(msg), *parameters)
     }
 
     @Test
@@ -144,7 +99,7 @@ class CommandTest {
         assertEquals(err("player.not.found"), playerData.lastSentMessage)
 
         // If target player exists but registered
-        val notRegisteredUser = newPlayerNotRegistered()
+        val notRegisteredUser = createPlayer()
         val oldName = notRegisteredUser.name()
         clientCommand.handleMessage("/changename not ${registeredUser.first.name()}", player)
         assertEquals(oldName, notRegisteredUser.name())
@@ -394,7 +349,7 @@ class CommandTest {
         assertEquals(err("player.not.found"), playerData.lastSentMessage)
 
         // If target player exist but not registered
-        val bot = test.createPlayer()
+        val bot = createPlayer()
         clientCommand.handleMessage("/exp set 10 ${bot.name}", player)
         assertEquals(err("player.not.registered"), playerData.lastSentMessage)
 
@@ -468,7 +423,7 @@ class CommandTest {
         assertEquals(log("command.freeze.undo", dummy.first.name), playerData.lastSentMessage)
 
         // If player exists but not registered
-        val bot = test.createPlayer()
+        val bot = createPlayer()
         clientCommand.handleMessage("/freeze ${bot.name}", player)
         assertEquals(err("player.not.registered"), playerData.lastSentMessage)
 
@@ -541,5 +496,25 @@ class CommandTest {
             assert(!player.unit().dead)
             sleep(100)
         }
+    }
+
+    @Test
+    fun client_help() {
+        // Require user or above permission
+        setPermission("user", true)
+
+        clientCommand.handleMessage("/help", player)
+
+        clientCommand.handleMessage("/help", player)
+
+        clientCommand.handleMessage("/help", player)
+
+        setPermission("owner", true)
+
+        clientCommand.handleMessage("/help", player)
+
+        clientCommand.handleMessage("/help", player)
+
+        clientCommand.handleMessage("/help", player)
     }
 }
