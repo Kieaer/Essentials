@@ -217,10 +217,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val data = findPlayerData(target.uuid())
                     if (data != null) {
                         Events.fire(PlayerNameChanged(data.name, arg[0], data.uuid))
+                        send("command.changename.apply.other", data.name, arg[0])
                         data.name = arg[0]
                         target.name(arg[0])
                         database.queue(data)
-                        send("command.changename.apply")
                     } else {
                         err("player.not.registered")
                     }
