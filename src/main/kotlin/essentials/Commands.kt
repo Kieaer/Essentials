@@ -688,7 +688,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             for (a in per * page until (per * (page + 1)).coerceAtMost(temp.size)) {
                 result.append(temp[a])
             }
-            player.sendMessage(result.toString().substring(0, result.length - 1))
+
+            val msg = result.toString().substring(0, result.length - 1)
+            data.lastSentMessage = msg
+            player.sendMessage(msg)
         }
 
         fun hub() {

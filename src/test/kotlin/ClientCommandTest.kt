@@ -29,7 +29,7 @@ import org.junit.Test
 import org.mindrot.jbcrypt.BCrypt
 import java.lang.Thread.sleep
 
-class CommandTest {
+class ClientCommandTest {
     companion object {
         @AfterClass
         @JvmStatic
@@ -53,7 +53,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_changemap() {
+    fun changemap() {
         // Require admin or above permission
         setPermission("owner", true)
 
@@ -80,7 +80,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_changename() {
+    fun changename() {
         // Require admin or above permission
         setPermission("owner", true)
 
@@ -108,7 +108,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_changepw() {
+    fun changepw() {
         // Require user or above permission
         setPermission("user", true)
 
@@ -123,7 +123,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_chat() {
+    fun chat() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -143,7 +143,7 @@ class CommandTest {
         leavePlayer(dummy.first)
     }
 
-    fun client_chars() {
+    fun chars() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -151,7 +151,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_color() {
+    fun color() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -167,7 +167,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_broadcast() {
+    fun broadcast() {
         // Require owner permission
         setPermission("owner", true)
 
@@ -187,7 +187,7 @@ class CommandTest {
         connectType = true
     }
 
-    fun client_discord() {
+    fun discord() {
         // Require user or above permission
         setPermission("user", true)
 
@@ -197,7 +197,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_dps() {
+    fun dps() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -223,7 +223,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_effect() {
+    fun effect() {
         // Require user or above permission
         setPermission("user", true)
         playerData.exp = 100000
@@ -252,7 +252,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_exp() {
+    fun exp() {
         // Require owner permission
         setPermission("owner", true)
 
@@ -363,7 +363,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_fillitems() {
+    fun fillitems() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -387,7 +387,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_freeze() {
+    fun freeze() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -433,7 +433,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_gg() {
+    fun gg() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -472,7 +472,7 @@ class CommandTest {
     }
 
     @Test
-    fun client_god() {
+    fun god() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -499,22 +499,237 @@ class CommandTest {
     }
 
     @Test
-    fun client_help() {
-        // Require user or above permission
+    fun help() {
+        // Test permission
+        setPermission("visitor", true)
+
+        clientCommand.handleMessage("/help", player)
+        assertTrue(playerData.lastSentMessage.contains("help"))
+        clientCommand.handleMessage("/help 1", player)
+        assertTrue(playerData.lastSentMessage.contains("help"))
+        clientCommand.handleMessage("/help 3", player)
+        assertFalse(playerData.lastSentMessage.contains("help"))
+
         setPermission("user", true)
-
         clientCommand.handleMessage("/help", player)
-
-        clientCommand.handleMessage("/help", player)
-
-        clientCommand.handleMessage("/help", player)
+        assertTrue(playerData.lastSentMessage.contains("vote"))
+        clientCommand.handleMessage("/help 3", player)
+        println(playerData.lastSentMessage)
+        clientCommand.handleMessage("/help 5", player)
 
         setPermission("owner", true)
-
         clientCommand.handleMessage("/help", player)
+        clientCommand.handleMessage("/help 2", player)
+        clientCommand.handleMessage("/help 7", player)
+    }
 
-        clientCommand.handleMessage("/help", player)
+    @Test
+    fun hub() {
 
-        clientCommand.handleMessage("/help", player)
+    }
+
+    @Test
+    fun hud() {
+
+    }
+
+    @Test
+    fun info() {
+
+    }
+
+    @Test
+    fun js() {
+
+    }
+
+    @Test
+    fun kickall() {
+
+    }
+
+    @Test
+    fun kill() {
+
+    }
+
+    @Test
+    fun killall() {
+
+    }
+
+    @Test
+    fun killunit() {
+
+    }
+
+    @Test
+    fun lang() {
+
+    }
+
+    @Test
+    fun log() {
+
+    }
+
+    @Test
+    fun login() {
+
+    }
+
+    @Test
+    fun maps() {
+
+    }
+
+    @Test
+    fun me() {
+
+    }
+
+    @Test
+    fun meme() {
+
+    }
+
+    @Test
+    fun motd() {
+
+    }
+
+    @Test
+    fun mute() {
+
+    }
+
+    @Test
+    fun pause() {
+
+    }
+
+    @Test
+    fun players() {
+
+    }
+
+    @Test
+    fun pm() {
+
+    }
+
+    @Test
+    fun ranking() {
+
+    }
+
+    @Test
+    fun register() {
+
+    }
+
+    @Test
+    fun report() {
+
+    }
+
+    @Test
+    fun rollback() {
+
+    }
+
+    @Test
+    fun search() {
+
+    }
+
+    @Test
+    fun setitem() {
+
+    }
+
+    @Test
+    fun setperm() {
+
+    }
+
+    @Test
+    fun skip() {
+
+    }
+
+    @Test
+    fun spanw() {
+
+    }
+
+    @Test
+    fun status() {
+
+    }
+
+    @Test
+    fun t() {
+
+    }
+
+    @Test
+    fun team() {
+
+    }
+
+    @Test
+    fun tempban() {
+
+    }
+
+    @Test
+    fun time() {
+
+    }
+
+    @Test
+    fun tp() {
+
+    }
+
+    @Test
+    fun tpp() {
+
+    }
+
+    @Test
+    fun click_track() {
+
+    }
+
+    @Test
+    fun unban() {
+
+    }
+
+    @Test
+    fun unmute() {
+
+    }
+
+    @Test
+    fun url() {
+
+    }
+
+    @Test
+    fun weather() {
+
+    }
+
+    @Test
+    fun vote() {
+
+    }
+
+    @Test
+    fun votekick() {
+
     }
 }
