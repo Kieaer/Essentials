@@ -252,10 +252,28 @@ class Main: Plugin() {
 
     override fun registerClientCommands(handler : CommandHandler) {
         Commands(handler, true)
+
+        if (root.child("bannedCommands.txt").exists()) {
+            val json = JsonArray.readHjson(root.child("bannedCommands.txt").readString())
+            for (command in json.asArray()) {
+                handler.removeCommand(command.asString())
+            }
+        } else {
+            root.child("bannedCommands.txt").writeString("")
+        }
     }
 
     override fun registerServerCommands(handler : CommandHandler) {
         Commands(handler, false)
+
+        if (root.child("bannedCommands.txt").exists()) {
+            val json = JsonArray.readHjson(root.child("bannedCommands.txt").readString())
+            for (command in json.asArray()) {
+                handler.removeCommand(command.asString())
+            }
+        } else {
+            root.child("bannedCommands.txt").writeString("")
+        }
     }
 
     private fun createFile() {
