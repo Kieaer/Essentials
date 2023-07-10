@@ -8,6 +8,7 @@ import arc.util.Http
 import arc.util.Log
 import essentials.Permission.bundle
 import mindustry.Vars
+import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
@@ -168,6 +169,10 @@ class Main: Plugin() {
                         return@addActionFilter false
                     }
                 }
+            }
+
+            if (Vars.state.rules.pvp && Config.pvpAutoTeam && e.player.team() == Team.derelict) {
+                return@addActionFilter false
             }
 
             if (data != null) {

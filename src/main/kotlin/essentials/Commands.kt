@@ -14,6 +14,7 @@ import arc.util.Log
 import arc.util.Strings
 import arc.util.Threads.sleep
 import arc.util.Tmp
+import com.github.lalyos.jfiglet.FigletFont
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
@@ -261,157 +262,31 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun chars(tile : Tile?) {
             if (!Permission.check(player, "chars")) return
             if (world != null) {
-                var t = tile ?: world.tile(player.tileX(), player.tileY())
-                val letters = ObjectMap<String, IntArray>()
-                letters.put("A", intArrayOf(0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1))
-                letters.put("B", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0))
-                letters.put("C", intArrayOf(0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1))
-                letters.put("D", intArrayOf(1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0))
-                letters.put("E", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1))
-                letters.put("F", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0))
-                letters.put("G", intArrayOf(0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1))
-                letters.put("H", intArrayOf(1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1))
-                letters.put("I", intArrayOf(1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1))
-                letters.put("J", intArrayOf(1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0))
-                letters.put("K", intArrayOf(1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1))
-                letters.put("L", intArrayOf(1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1))
-                letters.put("M", intArrayOf(1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1))
-                letters.put("N", intArrayOf(1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1))
-                letters.put("O", intArrayOf(0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0))
-                letters.put("P", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0))
-                letters.put("Q", intArrayOf(0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1))
-                letters.put("R", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1))
-                letters.put("S", intArrayOf(1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1))
-                letters.put("T", intArrayOf(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0))
-                letters.put("U", intArrayOf(1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0))
-                letters.put("V", intArrayOf(1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0))
-                letters.put("W", intArrayOf(1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0))
-                letters.put("X", intArrayOf(1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1))
-                letters.put("Y", intArrayOf(1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0))
-                letters.put("Z", intArrayOf(1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1))
-                letters.put("0", intArrayOf(1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1))
-                letters.put("1", intArrayOf(0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1))
-                letters.put("2", intArrayOf(1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1))
-                letters.put("3", intArrayOf(1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1))
-                letters.put("4", intArrayOf(1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1))
-                letters.put("5", intArrayOf(1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1))
-                letters.put("6", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1))
-                letters.put("7", intArrayOf(1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1))
-                letters.put("8", intArrayOf(1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1))
-                letters.put("9", intArrayOf(1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1))
-                letters.put("!", intArrayOf(1, 1, 1, 0, 1))
-                letters.put("?", intArrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0))
-                letters.put(" ", intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-                letters.put("#", intArrayOf(0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0))
-                letters.put("%", intArrayOf(1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1))
-                letters.put("^", intArrayOf(0, 1, 1, 0, 0, 1))
-                letters.put("&", intArrayOf(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1))
-                letters.put("*", intArrayOf(0, 1, 0, 1, 0, 1, 0, 1, 0))
-                letters.put("(", intArrayOf(0, 1, 1, 1, 0, 1, 0, 0, 0, 1))
-                letters.put(")", intArrayOf(1, 0, 0, 0, 1, 0, 1, 1, 1, 0))
-                letters.put(";", intArrayOf(1, 0, 1, 1))
-                letters.put(":", intArrayOf(0, 1, 0, 1, 0))
-                letters.put("'", intArrayOf(1, 1))
-                letters.put("[", intArrayOf(1, 1, 1, 1, 1, 1, 0, 0, 0, 1))
-                letters.put("]", intArrayOf(1, 0, 0, 0, 1, 1, 1, 1, 1, 1))
-                letters.put("\"", intArrayOf(1, 1, 0, 0, 1, 1))
-
-                val texts = arg[0].toCharArray()
-                texts.forEach {
-                    val pos = Seq<IntArray>()
-                    if (letters.containsKey(it.uppercaseChar().toString())) {
-                        val target = letters[it.uppercaseChar().toString()]
-                        var xv = 0
-                        var yv = 0
-                        when (target.size) {
-                            25 -> {
-                                xv = 5
-                                yv = 5
-                            }
-
-                            20 -> {
-                                xv = 5
-                                yv = 4
-                            }
-
-                            18 -> {
-                                xv = 6
-                                yv = 3
-                            }
-
-                            15 -> {
-                                xv = 5
-                                yv = 3
-                            }
-
-                            10 -> {
-                                xv = 5
-                                yv = 2
-                            }
-
-                            9 -> {
-                                xv = 3
-                                yv = 3
-                            }
-
-                            6 -> {
-                                xv = 2
-                                yv = 3
-                            }
-
-                            4 -> {
-                                xv = 4
-                                yv = 1
-                            }
-
-                            5 -> {
-                                xv = 5
-                                yv = 1
-                            }
-
-                            2 -> {
-                                xv = 2
-                                yv = 1
-                            }
-                        }
-                        for (y in 0 until yv) {
-                            for (x in 0 until xv) {
-                                pos.add(intArrayOf(y, -x))
-                            }
-                        }
-                        for (a in 0 until pos.size) {
-                            if (t != null) {
-                                val tar = world.tile(t.x + pos[a][0], t.y + pos[a][1])
-                                if (target[a] == 1) {
-                                    Call.setTile(tar, Blocks.scrapWall, Team.sharded, 0)
-                                } else if (tar != null) {
-                                    Call.setTile(tar, tar.block(), Team.sharded, 0)
-                                }
-                            }
-                        }
-                        val left : Int = when (target.size) {
-                            20 -> {
-                                xv + 1
-                            }
-
-                            15, 18 -> {
-                                xv
-                            }
-
-                            5 -> {
-                                xv - 2
-                            }
-
-                            25 -> {
-                                xv + 2
-                            }
-
-                            else -> {
-                                xv - 1
-                            }
-                        }
-                        t = world.tile(t.x + left, t.y.toInt())
+                fun convert(text : String) : Array<String>? {
+                    return try {
+                        val art = FigletFont.convertOneLine(Main::class.java.classLoader.getResourceAsStream("5x7.flf"), text)
+                        art.split("\n").toTypedArray()
+                    } catch (e : ArrayIndexOutOfBoundsException) {
+                        null
                     }
+                }
+
+                var x = player.tileX()
+                var y = player.tileY()
+                val text = convert(arg[0])
+                if (text != null) {
+                    for (line in text) {
+                        for (char in line) {
+                            if (char == '#') {
+                                Call.setTile(world.tile(x, y), Blocks.scrapWall, Team.sharded, 0)
+                            }
+                            x++
+                        }
+                        y--
+                        x = player.tileX()
+                    }
+                } else {
+                    err("command.char.unsupported")
                 }
             }
         }
@@ -665,7 +540,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             for (a in 0 until netServer.clientCommands.commandList.size) {
                 val command = netServer.clientCommands.commandList[a]
                 if (Permission.check(player, command.text)) {
-                    val description = if (clientCommands.commandList.find { a -> a.text == command.text } != null) {
+                    val description = if (clientCommands.commandList.find { node -> node.text == command.text } != null) {
                         bundle["command.description." + command.text]
                     } else {
                         command.description

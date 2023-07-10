@@ -1462,7 +1462,7 @@ object Event {
 
     private fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData, isConnected : Boolean) {
         val oldLevel = target.level
-        val oldExp = target.exp
+        var result = 0
         val time = target.currentPlayTime.toInt()
 
         val bundle = Bundle(target.languageTag)
@@ -1483,6 +1483,7 @@ object Event {
             }
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
+            result = target.currentExp + score
             if (isConnected) p.sendMessage(bundle["event.exp.earn.victory", target.currentExp + score])
         } else if (p.team() != Team.derelict) {
             val score : Int = if (state.rules.attackMode) {
@@ -1506,6 +1507,7 @@ object Event {
             }
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
+            result = target.currentExp + score
             if (isConnected) p.sendMessage(message)
         }
 
@@ -1519,7 +1521,7 @@ object Event {
                 database.queue(target)
             }
         }
-        if (isConnected) p.sendMessage(bundle["event.exp.current", target.exp, target.exp - oldExp, target.level, target.level - oldLevel])
+        if (isConnected) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
     }
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {
