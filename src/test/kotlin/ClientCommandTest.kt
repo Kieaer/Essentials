@@ -1,14 +1,14 @@
-import PluginTest.clientCommand
-import PluginTest.createPlayer
-import PluginTest.err
-import PluginTest.leavePlayer
-import PluginTest.loadGame
-import PluginTest.loadPlugin
-import PluginTest.log
-import PluginTest.newPlayer
-import PluginTest.path
-import PluginTest.player
-import PluginTest.setPermission
+import PluginTest.Companion.clientCommand
+import PluginTest.Companion.createPlayer
+import PluginTest.Companion.err
+import PluginTest.Companion.leavePlayer
+import PluginTest.Companion.loadGame
+import PluginTest.Companion.loadPlugin
+import PluginTest.Companion.log
+import PluginTest.Companion.newPlayer
+import PluginTest.Companion.path
+import PluginTest.Companion.player
+import PluginTest.Companion.setPermission
 import arc.Events
 import essentials.DB
 import essentials.Event
@@ -33,7 +33,7 @@ class ClientCommandTest {
     companion object {
         @AfterClass
         @JvmStatic
-        fun shutdown() {
+        fun client_shutdown() {
             path.child("mods/Essentials").deleteDirectory()
             path.child("maps").deleteDirectory()
         }
@@ -53,7 +53,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun changemap() {
+    fun client_changemap() {
         // Require admin or above permission
         setPermission("owner", true)
 
@@ -80,7 +80,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun changename() {
+    fun client_changename() {
         // Require admin or above permission
         setPermission("owner", true)
 
@@ -108,7 +108,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun changepw() {
+    fun client_changepw() {
         // Require user or above permission
         setPermission("user", true)
 
@@ -123,7 +123,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun chat() {
+    fun client_chat() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -143,7 +143,7 @@ class ClientCommandTest {
         leavePlayer(dummy.first)
     }
 
-    fun chars() {
+    fun client_chars() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -151,7 +151,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun color() {
+    fun client_color() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -167,7 +167,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun broadcast() {
+    fun client_broadcast() {
         // Require owner permission
         setPermission("owner", true)
 
@@ -187,7 +187,7 @@ class ClientCommandTest {
         connectType = true
     }
 
-    fun discord() {
+    fun client_discord() {
         // Require user or above permission
         setPermission("user", true)
 
@@ -197,7 +197,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun dps() {
+    fun client_dps() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -223,7 +223,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun effect() {
+    fun client_effect() {
         // Require user or above permission
         setPermission("user", true)
         playerData.exp = 100000
@@ -252,7 +252,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun exp() {
+    fun client_exp() {
         // Require owner permission
         setPermission("owner", true)
 
@@ -363,7 +363,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun fillitems() {
+    fun client_fillitems() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -387,7 +387,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun freeze() {
+    fun client_freeze() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -433,7 +433,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun gg() {
+    fun client_gg() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -472,7 +472,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun god() {
+    fun client_god() {
         // Require admin or above permission
         setPermission("admin", true)
 
@@ -499,7 +499,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun help() {
+    fun client_help() {
         // Test permission
         setPermission("visitor", true)
 
@@ -524,212 +524,212 @@ class ClientCommandTest {
     }
 
     @Test
-    fun hub() {
+    fun client_hub() {
 
     }
 
     @Test
-    fun hud() {
+    fun client_hud() {
 
     }
 
     @Test
-    fun info() {
+    fun client_info() {
 
     }
 
     @Test
-    fun js() {
+    fun client_js() {
 
     }
 
     @Test
-    fun kickall() {
+    fun client_kickall() {
 
     }
 
     @Test
-    fun kill() {
+    fun client_kill() {
 
     }
 
     @Test
-    fun killall() {
+    fun client_killall() {
 
     }
 
     @Test
-    fun killunit() {
+    fun client_killunit() {
 
     }
 
     @Test
-    fun lang() {
+    fun client_lang() {
 
     }
 
     @Test
-    fun log() {
+    fun client_log() {
 
     }
 
     @Test
-    fun login() {
+    fun client_login() {
 
     }
 
     @Test
-    fun maps() {
+    fun client_maps() {
 
     }
 
     @Test
-    fun me() {
+    fun client_me() {
 
     }
 
     @Test
-    fun meme() {
+    fun client_meme() {
 
     }
 
     @Test
-    fun motd() {
+    fun client_motd() {
 
     }
 
     @Test
-    fun mute() {
+    fun client_mute() {
 
     }
 
     @Test
-    fun pause() {
+    fun client_pause() {
 
     }
 
     @Test
-    fun players() {
+    fun client_players() {
 
     }
 
     @Test
-    fun pm() {
+    fun client_pm() {
 
     }
 
     @Test
-    fun ranking() {
+    fun client_ranking() {
 
     }
 
     @Test
-    fun register() {
+    fun client_register() {
 
     }
 
     @Test
-    fun report() {
+    fun client_report() {
 
     }
 
     @Test
-    fun rollback() {
+    fun client_rollback() {
 
     }
 
     @Test
-    fun search() {
+    fun client_search() {
 
     }
 
     @Test
-    fun setitem() {
+    fun client_setitem() {
 
     }
 
     @Test
-    fun setperm() {
+    fun client_setperm() {
 
     }
 
     @Test
-    fun skip() {
+    fun client_skip() {
 
     }
 
     @Test
-    fun spanw() {
+    fun client_spanw() {
 
     }
 
     @Test
-    fun status() {
+    fun client_status() {
 
     }
 
     @Test
-    fun t() {
+    fun client_t() {
 
     }
 
     @Test
-    fun team() {
+    fun client_team() {
 
     }
 
     @Test
-    fun tempban() {
+    fun client_tempban() {
 
     }
 
     @Test
-    fun time() {
+    fun client_time() {
 
     }
 
     @Test
-    fun tp() {
+    fun client_tp() {
 
     }
 
     @Test
-    fun tpp() {
+    fun client_tpp() {
 
     }
 
     @Test
-    fun click_track() {
+    fun client_click_track() {
 
     }
 
     @Test
-    fun unban() {
+    fun client_unban() {
 
     }
 
     @Test
-    fun unmute() {
+    fun client_unmute() {
 
     }
 
     @Test
-    fun url() {
+    fun client_url() {
 
     }
 
     @Test
-    fun weather() {
+    fun client_weather() {
 
     }
 
     @Test
-    fun vote() {
+    fun client_vote() {
 
     }
 
     @Test
-    fun votekick() {
+    fun client_votekick() {
 
     }
 }

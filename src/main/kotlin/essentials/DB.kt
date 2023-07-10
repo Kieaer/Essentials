@@ -5,6 +5,7 @@ import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import mindustry.gen.Playerc
+import org.h2.jdbc.JdbcSQLNonTransientConnectionException
 import org.h2.tools.RunScript
 import org.h2.tools.Server
 import org.hjson.JsonObject
@@ -29,12 +30,13 @@ class DB {
 
     fun open() {
         try {
-            if (Main.root.child("database.db.mv.db").exists()) {
-                if (!Main.root.child("data/h2-1.4.200.jar").exists()) {
+            fun updateLibrary(version : String) {
+                if (!Main.root.child("data/$version.jar").exists()) {
+                    Log.info(Bundle()["event.plugin.db.downloading", version])
                     Main.root.child("data").mkdirs()
-                    URL("https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/h2-1.4.200.jar").openStream().use { b ->
+                    URL("https://repo1.maven.org/maven2/com/h2database/h2/$version/h2-$version.jar").openStream().use { b ->
                         BufferedInputStream(b).use { bis ->
-                            FileOutputStream(Main.root.child("data/h2-1.4.200.jar").absolutePath()).use { fos ->
+                            FileOutputStream(Main.root.child("data/h2-$version.jar").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
                                 var count : Int
                                 while (bis.read(data, 0, 1024).also { count = it } != -1) {
@@ -45,36 +47,75 @@ class DB {
                     }
                 }
 
+                Log.info(Bundle()["event.plugin.db.export"])
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    val cmd = arrayOf("/bin/bash", "-c", "cd ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql")
+                    val cmd = arrayOf("/bin/bash", "-c", "cd ${Main.root.child("data").absolutePath()} && java -cp h2-$version.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql")
                     Runtime.getRuntime().exec(cmd).waitFor()
                 } else {
-                    Runtime.getRuntime().exec("cmd /c cd /D ${Main.root.child("data").absolutePath()} && java -cp h2-1.4.200.jar org.h2.tools.Script -url jdbc:h2:../database.db -user sa -script script.sql").waitFor()
+                    val cmd = arrayOf("cmd", "/c", "cd /D ${Main.root.child("data").absolutePath()} && java -cp h2-$version.jar org.h2.tools.Script -url jdbc:h2:../database -user sa -script script.sql")
+                    Runtime.getRuntime().exec(cmd).waitFor()
                 }
-
-                Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.mv.db"))
-                Config.database = Main.root.child("database").absolutePath()
-                Config.save()
             }
 
-            isRemote = !Config.database.equals(Main.root.child("database").absolutePath(), false)
-            if (!isRemote) {
-                try {
-                    dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Config.database).start()
-                    Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
-                } catch (e : Exception) {
-                    Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
-                    Log.info(Bundle()["event.database.remote"])
+            fun connectServer() {
+                isRemote = !Config.database.equals(Main.root.child("database").absolutePath(), false)
+                if (!isRemote) {
+                    try {
+                        dbServer = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-ifNotExists", "-key", "db", Config.database).start()
+                        db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
+                    } catch (e : Exception) {
+                        db = Database.connect("jdbc:h2:tcp://127.0.0.1:9092/db", "org.h2.Driver", "sa", "")
+                        Log.info(Bundle()["event.database.remote"])
+                    }
+                } else {
+                    db = Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
                 }
+            }
+
+            var migrateVersion = if (Main.root.child("data/migrateVersion.txt").exists()) {
+                Main.root.child("data/migrateVersion.txt").readString().toInt()
             } else {
-                Database.connect("jdbc:h2:tcp://${Config.database}:9092/db", "org.h2.Driver", "sa", "")
+                0
+            }
+
+            if (Main.root.child("database.db.mv.db").exists()) {
+                updateLibrary("1.4.200")
+
+                Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.mv.db"))
+                migrateVersion = 0
+            }
+
+            connectServer()
+
+            try {
+                transaction {
+                    connection.commit()
+                }
+            } catch (e : JdbcSQLNonTransientConnectionException) {
+                close()
+                updateLibrary("2.1.214")
+
+                Main.root.child("database.mv.db").moveTo(Main.root.child("old-database-v2.mv.db"))
+                migrateVersion = 1
+                connectServer()
             }
 
             if (Main.root.child("data/script.sql").exists()) {
-                RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath(), "-options", "FROM_1X")
+                Log.info(Bundle()["event.plugin.db.updating"])
+                when (migrateVersion) {
+                    0 -> RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath(), "-options", "FROM_1X")
+                    1 -> RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath())
+                }
+
+                Main.root.child("data/script_backup.sql").delete()
                 Main.root.child("data/script.sql").moveTo(Main.root.child("data/script_backup.sql"))
+
+                close()
+                connectServer()
             }
+
+            Main.root.child("data/migrateVersion.txt").writeString("1")
 
             transaction {
                 if (!connection.isClosed) {
@@ -183,34 +224,38 @@ class DB {
                             }
                         }
 
-                        val sql = """
-                            UPDATE player SET "duplicateName" = null;
-                            SELECT * FROM player t1 WHERE EXISTS (
-                                SELECT 1
-                                FROM player t2
-                                WHERE t2.name = t1.name
-                                GROUP BY t2.name
-                                HAVING COUNT(*) > 1
-                                AND MIN(t2."firstPlayDate") <> t1."firstPlayDate"
-                            )
-                        """.trimIndent()
+                        if (!Main.root.child("data/isDuplicateNameChecked.txt").exists()) {
+                            val sql = """
+                                UPDATE player SET "duplicateName" = null;
+                                SELECT * FROM player t1 WHERE EXISTS (
+                                    SELECT 1
+                                    FROM player t2
+                                    WHERE t2.name = t1.name
+                                    GROUP BY t2.name
+                                    HAVING COUNT(*) > 1
+                                    AND MIN(t2."firstPlayDate") <> t1."firstPlayDate"
+                                )
+                            """.trimIndent()
 
-                        exec(sql) { rs ->
-                            while (rs.next()) {
-                                val data = get(rs.getString("uuid"))
-                                if (data != null) {
-                                    try {
-                                        if (rs.getString("duplicateName") == "null") {
-                                            data.duplicateName = data.name
+                            exec(sql) { rs ->
+                                while (rs.next()) {
+                                    val data = get(rs.getString("uuid"))
+                                    if (data != null) {
+                                        try {
+                                            if (rs.getString("duplicateName") == "null") {
+                                                data.duplicateName = data.name
+                                            }
+                                        } catch (e : ParseException) {
+                                            if (data.duplicateName == null) {
+                                                data.duplicateName = data.name
+                                            }
                                         }
-                                    } catch (e : ParseException) {
-                                        if (data.duplicateName == null) {
-                                            data.duplicateName = data.name
-                                        }
+                                        update(data.uuid, data)
                                     }
-                                    update(data.uuid, data)
                                 }
                             }
+
+                            Main.root.child("data/isDuplicateNameChecked.txt").writeString("Yes! No more time spent checking player name duplicates on plugin startup lol")
                         }
                     }
                 } else {
@@ -712,6 +757,7 @@ class DB {
     }
 
     fun close() {
+        dbServer?.stop()
         TransactionManager.closeAndUnregister(db)
     }
 }

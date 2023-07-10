@@ -215,7 +215,6 @@ class Main: Plugin() {
                 Config.save()
                 database.close()
                 webServer.stop()
-                if (database.dbServer != null) database.dbServer!!.stop()
                 if (Config.webServer) webServer.stop()
             }
         })
@@ -259,7 +258,7 @@ class Main: Plugin() {
                 handler.removeCommand(command.asString())
             }
         } else {
-            root.child("bannedCommands.txt").writeString("")
+            root.child("bannedCommands.txt").writeString("[]")
         }
     }
 
@@ -272,7 +271,7 @@ class Main: Plugin() {
                 handler.removeCommand(command.asString())
             }
         } else {
-            root.child("bannedCommands.txt").writeString("")
+            root.child("bannedCommands.txt").writeString("[]")
         }
     }
 

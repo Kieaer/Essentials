@@ -2,7 +2,6 @@ package essentials
 
 import arc.Core
 import arc.func.Prov
-import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
@@ -34,7 +33,6 @@ import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
-import kotlin.math.abs
 
 object Trigger {
     private var order = 0
@@ -122,7 +120,39 @@ object Trigger {
             }
 
             if (state.rules.pvp) {
-                pvpMatch(player)
+                if (Event.pvpPlayer.containsKey(player.uuid())) {
+                    player.team(Event.pvpPlayer.get(player.uuid()))
+                } else if (Event.pvpSpectors.contains(player.uuid()) || Permission.check(player, "pvp.spector")) {
+                    player.team(Team.derelict)
+                } else if (Config.pvpAutoTeam) {
+                    fun winPercentage(team : Team) : Double {
+                        var players = arrayOf<Pair<Team, Double>>()
+                        database.players.forEach {
+                            var rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
+                            players += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
+                        }
+
+                        val targetTeam = players.filter { it.first == team }
+                        val rate = targetTeam.map { it.second }
+                        return rate.average()
+                    }
+
+                    val teamRate = mutableMapOf<Team, Double>()
+                    var teams = arrayOf<Pair<Team, Int>>()
+                    for (a in state.teams.active) {
+                        val rate = winPercentage(a.team)
+                        teamRate[a.team] = rate
+                        teams += Pair(a.team, a.players.size)
+                    }
+
+                    val teamSorted = teams.toList().sortedByDescending { it.second }
+                    val rateSorted = teamRate.toList().sortedWith(compareBy { it.second })
+                    if ((teamSorted.first().second - teamSorted.last().second) >= 3) {
+                        player.team(teamSorted.last().first)
+                    } else {
+                        player.team(rateSorted.last().first)
+                    }
+                }
             }
 
             if (Event.voting) {
@@ -147,45 +177,6 @@ object Trigger {
             database.players.add(data)
             player.sendMessage(message.toString())
         }
-    }
-
-    fun pvpMatch(player : Playerc) : Team {
-        if (Event.pvpPlayer.containsKey(player.uuid())) {
-            player.team(Event.pvpPlayer.get(player.uuid()))
-        } else if (Event.pvpSpectors.contains(player.uuid()) || Permission.check(player, "pvp.spector")) {
-            player.team(Team.derelict)
-        } else if (Groups.player.size() > state.teams.active.size && Config.pvpAutoTeam) {
-            var teamStatus = arrayOf<Triple<Team, String, Double>>()
-            val teams = mutableMapOf<Team, Double>()
-            val teamPlayers = ObjectMap<Team, Int>()
-            database.players.forEach {
-                teamStatus += (Triple(it.player.team(), it.name, (it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount))))
-            }
-
-            fun winPercentage(team : Team) : Double {
-                val players = teamStatus.filter { it.first == team }
-                val winPercentages = players.map { it.third }
-                if (winPercentages.isEmpty()) {
-                    return 0.0
-                }
-                return winPercentages.average()
-            }
-
-            for (a in state.teams.active) {
-                teams[a.team] = winPercentage(a.team)
-                teamPlayers.put(a.team, a.players.size)
-            }
-
-            val rate = teams.toList().sortedWith(compareBy { it.second })
-
-            if (abs(teamPlayers.sortedByDescending { a -> a.value }.first().value - teamPlayers.get(rate.last().first)) > 3) {
-                player.team(rate.first().first)
-            } else {
-                player.team(rate.last().first)
-            }
-        }
-
-        return player.team()
     }
 
     fun createPlayer(player : Playerc, id : String?, password : String?) {

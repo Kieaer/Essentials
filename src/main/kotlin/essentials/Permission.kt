@@ -180,7 +180,7 @@ object Permission {
             if (main.get(name).asObject().has("inheritance")) {
                 var inheritance = main.get(name).asObject().getString("inheritance", null)
                 while (inheritance != null) {
-                    main.get(inheritance).asObject()["permission"].asArray().forEach { value ->
+                    for (value in main.get(inheritance).asObject()["permission"].asArray()) {
                         if (!value.asString().contains("*")) {
                             main.get(name).asObject().get("permission").asArray().add(value.asString())
                         }
@@ -206,6 +206,7 @@ object Permission {
                 }
             } else {
                 c.permission = b.getString("group", default)
+                // todo 멀티스레드 netserver iterator 오류
                 c.name = b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName)
                 c.player.admin(b.getBoolean("admin", false))
                 c.player.name(b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName))

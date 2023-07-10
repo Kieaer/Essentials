@@ -1832,27 +1832,28 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     [#DEA82A]${bundle["command.status.pvp"]}[]
                 """.trimIndent())
 
-                var teamStatus = arrayOf<Triple<Team, String, Int>>()
-                val teams = mutableMapOf<Team, Double>()
-                database.players.forEach {
-                    teamStatus += (Triple(it.player.team(), it.name, if (it.pvpVictoriesCount != 0) (it.pvpVictoriesCount / (it.pvpVictoriesCount + it.pvpDefeatCount)) * 100 else 0))
-                }
-
                 fun winPercentage(team : Team) : Double {
-                    val teamPlayers = teamStatus.filter { it.first == team }
-                    val winPercentages = teamPlayers.map { it.third }
-                    if (winPercentages.isEmpty()) {
-                        return 0.0
+                    var players = arrayOf<Pair<Team, Double>>()
+                    database.players.forEach {
+                        var rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
+                        players += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
                     }
-                    return winPercentages.average()
+
+                    val targetTeam = players.filter { it.first == team }
+                    val rate = targetTeam.map { it.second }
+                    return rate.average()
                 }
 
+                val teamRate = mutableMapOf<Team, Double>()
+                var teams = arrayOf<Pair<Team, Int>>()
                 for (a in state.teams.active) {
-                    teams[a.team] = winPercentage(a.team)
+                    val rate : Double = winPercentage(a.team)
+                    teamRate[a.team] = rate
+                    teams += Pair(a.team, a.players.size)
                 }
 
-                teams.forEach {
-                    message.appendLine("${it.key.coloredName()} : ${round(it.value)}%")
+                teamRate.forEach {
+                    message.appendLine("${it.key.coloredName()} : ${round(it.value * 100).toInt()}%")
                 }
 
                 data.lastSentMessage = message.toString().dropLast(1)
