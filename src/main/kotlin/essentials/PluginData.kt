@@ -149,19 +149,19 @@ object PluginData {
 
     fun load() {
         try {
-            if (transaction { DB.Data.selectAll().empty() }) {
-                save(true)
-            } else {
-                warpZones = Seq<WarpZone>()
-                warpBlocks = Seq<WarpBlock>()
-                warpCounts = Seq<WarpCount>()
-                warpTotals = Seq<WarpTotal>()
-                blacklist = Seq<Pattern>()
-                banned = Seq<Banned>()
-                status = ObjectMap<String, String>()
+            transaction {
+                if (DB.Data.selectAll().firstOrNull() == null) {
+                    save(true)
+                } else {
+                    warpZones = Seq<WarpZone>()
+                    warpBlocks = Seq<WarpBlock>()
+                    warpCounts = Seq<WarpCount>()
+                    warpTotals = Seq<WarpTotal>()
+                    blacklist = Seq<Pattern>()
+                    banned = Seq<Banned>()
+                    status = ObjectMap<String, String>()
 
-                transaction {
-                    if (!DB.Data.selectAll().empty()) {
+                    if (DB.Data.selectAll().firstOrNull() != null) {
                         DB.Data.selectAll().first().run {
                             val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
 
@@ -204,7 +204,7 @@ object PluginData {
                                 changed = true
                             }
                         }
-                    } else if (DB.Data.selectAll().empty()) {
+                    } else {
                         DB.Data.insert {
                             it[data] = lastMemory
                         }

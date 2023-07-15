@@ -38,6 +38,9 @@ import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.lang.Thread.sleep
@@ -160,7 +163,33 @@ object Event {
                 }
 
                 PluginData.warpZones.forEach { two ->
-                    if (two.click && it.tile.x > two.startTile.x && it.tile.x < two.finishTile.x && it.tile.y > two.startTile.y && it.tile.y < two.finishTile.y) {
+                    if (
+                        two.click
+                        &&
+                        if (two.startTile.x > two.finishTile.x) {
+                            two.startTile.x < it.tile.x
+                        } else {
+                            two.finishTile.x > it.tile.x
+                        }
+                        &&
+                        if (two.startTile.x > two.finishTile.x) {
+                            two.finishTile.x < it.tile.x
+                        } else {
+                            two.startTile.x < it.tile.x
+                        }
+                        &&
+                        if (two.startTile.y > two.finishTile.y) {
+                            two.startTile.y > it.tile.y
+                        } else {
+                            two.finishTile.y < it.tile.y
+                        }
+                        &&
+                        if (two.startTile.y > two.finishTile.y) {
+                            two.finishTile.y < it.tile.y
+                        } else {
+                            two.startTile.y < it.tile.y
+                        }
+                    ) {
                         Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(it.player.con(), two.ip, two.port)
                         return@forEach
@@ -212,38 +241,41 @@ object Event {
                     }
                 }
 
+                if (data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {
+                    data.status.put("hub_first", "${it.tile.x},${it.tile.y}")
+                    data.status.put("hub_second", "true")
+                    data.player.sendMessage(Bundle(data.languageTag)["command.hub.zone.next", "${it.tile.x},${it.tile.y}"])
+                } else if (data.status.containsKey("hub_first") && data.status.containsKey("hub_second")) {
+                    val x = data.status.get("hub_first").split(",")[0].toInt()
+                    val y = data.status.get("hub_first").split(",")[1].toInt()
+                    val ip = data.status.get("hub_ip")
+                    val port = data.status.get("hub_port").toInt()
+
+                    val bundle = Bundle(data.languageTag)
+                    val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
+                    val menu = Menus.registerMenu { player, option ->
+                        val touch = when (option) {
+                            0 -> true
+                            else -> false
+                        }
+                        PluginData.warpZones.add(PluginData.WarpZone(state.map.plainName(), world.tile(x, y).pos(), it.tile.pos(), touch, ip, port))
+                        player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
+                        PluginData.save(false)
+                        PluginData.changed = true
+                    }
+
+                    Call.menu(data.player.con(), menu, bundle["command.hub.zone.title"], bundle["command.hub.zone.message"], options)
+
+                    data.status.remove("hub_first")
+                    data.status.remove("hub_second")
+                    data.status.remove("hub_ip")
+                    data.status.remove("hub_port")
+
+                }
+
                 database.players.forEach { two ->
                     if (two.tracking) {
                         Call.effect(two.player.con(), Fx.bigShockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
-                    }
-
-                    if (two.status.containsKey("hub_first") && !two.status.containsKey("hub_second")) {
-                        two.status.put("hub_first", "${it.tile.x},${it.tile.y}")
-                        two.status.put("hub_second", "true")
-                        two.player.sendMessage(Bundle(two.languageTag)["command.hub.zone.next", "${it.tile.x},${it.tile.y}"])
-                    } else if (two.status.containsKey("hub_first") && two.status.containsKey("hub_second")) {
-                        val x = two.status.get("hub_first").split(",")[0].toInt()
-                        val y = two.status.get("hub_first").split(",")[1].toInt()
-                        val ip = two.status.get("hub_ip")
-                        val port = two.status.get("hub_port").toInt()
-
-                        val bundle = Bundle(two.languageTag)
-                        val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
-                        val menu = Menus.registerMenu { player, option ->
-                            val touch = when (option) {
-                                0 -> true
-                                else -> false
-                            }
-                            PluginData.warpZones.add(PluginData.WarpZone(state.map.plainName(), world.tile(x, y).pos(), it.tile.pos(), touch, ip, port))
-                            player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
-                        }
-
-                        Call.menu(two.player.con(), menu, bundle["command.hub.zone.title"], bundle["command.hub.zone.message"], options)
-
-                        two.status.remove("hub_first")
-                        two.status.remove("hub_second")
-                        two.status.remove("hub_ip")
-                        two.status.remove("hub_port")
                     }
                 }
             }
@@ -927,6 +959,7 @@ object Event {
                                 }
                             }
                         }
+                        effectList.clear()
                         milsCount = 0
                     } else {
                         milsCount++
@@ -1287,14 +1320,24 @@ object Event {
                     }
 
                     Main.daemon.submit(Thread {
-                        val data = database.getAll()
+                        transaction {
+                            DB.Player.select { DB.Player.banTime eq null }.run {
+                                for (data in this) {
+                                    val banTime = data[DB.Player.banTime]
+                                    val uuid = data[DB.Player.uuid]
+                                    val name = data[DB.Player.name]
 
-                        data.forEach {
-                            if (it.banTime != null && LocalDateTime.now().isAfter(LocalDateTime.parse(it.banTime))) {
-                                Core.app.post { netServer.admins.unbanPlayerID(it.uuid) }
-                                it.banTime = null
-                                database.update(it.uuid, it)
-                                Events.fire(PlayerTempUnbanned(it.name))
+                                    if (LocalDateTime.now().isAfter(LocalDateTime.parse(banTime))) {
+                                        val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
+                                        json.removeAll { a -> a.asObject().get("id").asString() == uuid }
+                                        Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
+
+                                        DB.Player.update({ DB.Player.uuid eq uuid }) { it ->
+                                            it[DB.Player.banTime] = null
+                                        }
+                                        Events.fire(PlayerTempUnbanned(name))
+                                    }
+                                }
                             }
                         }
                     })

@@ -203,23 +203,49 @@ object Trigger {
         fun caculateCenter(startTile : Tile, endTile : Tile) : Pair<Int, Int> {
             data class Point(val x : Int, val y : Int)
 
-            data class Tile(val coordinates : Point, val areaValue : Double)
+            data class Tile(val coordinates : Point, val areaValue : Float)
 
             fun calculateAreaValue(x : Int, y : Int) : Double {
                 return (x + y) / 2.0
             }
 
             fun findMedianCoordinates(startPoint : mindustry.world.Tile, endPoint : mindustry.world.Tile) : Pair<Int, Int> {
-                val regionWidth = endPoint.x - startPoint.x
-                val regionHeight = endPoint.y - startPoint.y
+                val regionWidth = if (endPoint.x > startPoint.x) endPoint.x - startPoint.x else startPoint.x - endPoint.x
+                val regionHeight = if (endPoint.y > startPoint.y) endPoint.y - startPoint.y else startPoint.y - endPoint.y
                 val totalTiles = regionWidth * regionHeight
                 val tiles = mutableListOf<Tile>()
 
-                for (y in startPoint.y until endPoint.y) {
-                    for (x in startPoint.x until endPoint.x) {
-                        val areaValue = calculateAreaValue(x, y)
-                        val tile = Tile(Point(x, y), areaValue)
-                        tiles.add(tile)
+                if (endPoint.y > startPoint.y) {
+                    for (y in startPoint.y until endPoint.y) {
+                        if (endPoint.x > startPoint.x) {
+                            for (x in startPoint.x until endPoint.x) {
+                                val areaValue = calculateAreaValue(x, y)
+                                val tile = Tile(Point(x, y), areaValue.toFloat())
+                                tiles.add(tile)
+                            }
+                        } else {
+                            for (x in endPoint.x until startPoint.x) {
+                                val areaValue = calculateAreaValue(x, y)
+                                val tile = Tile(Point(x, y), areaValue.toFloat())
+                                tiles.add(tile)
+                            }
+                        }
+                    }
+                } else {
+                    for (y in endPoint.y until startPoint.y) {
+                        if (endPoint.x > startPoint.x) {
+                            for (x in startPoint.x until endPoint.x) {
+                                val areaValue = calculateAreaValue(x, y)
+                                val tile = Tile(Point(x, y), areaValue.toFloat())
+                                tiles.add(tile)
+                            }
+                        } else {
+                            for (x in endPoint.x until startPoint.x) {
+                                val areaValue = calculateAreaValue(x, y)
+                                val tile = Tile(Point(x, y), areaValue.toFloat())
+                                tiles.add(tile)
+                            }
+                        }
                     }
                 }
 
@@ -375,6 +401,7 @@ object Trigger {
                                     }
                                 }
 
+                                // todo 중앙 정렬 안됨
                                 if (alive) {
                                     for (a in Groups.player) {
                                         memory.add(a to Triple("[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}", (center.first * 8).toFloat(), (center.second * 8).toFloat()))

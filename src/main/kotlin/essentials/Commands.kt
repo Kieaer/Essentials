@@ -540,9 +540,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             for (a in 0 until netServer.clientCommands.commandList.size) {
                 val command = netServer.clientCommands.commandList[a]
                 if (Permission.check(player, command.text)) {
-                    val description = if (clientCommands.commandList.find { node -> node.text == command.text } != null) {
+                    val description = try {
                         bundle["command.description." + command.text]
-                    } else {
+                    } catch (_ : MissingResourceException) {
                         command.description
                     }
                     temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- $description\n")
@@ -590,6 +590,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     ip = arg[1]
                 }
+            } else if (type != "set" && type != "reset" && ip.isBlank()) {
+                err("command.hub.address.invalid")
+                return
             }
 
             when (type) {
@@ -601,6 +604,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         PluginData.status.remove("hubMode")
                         send("command.hub.mode.off")
                     }
+                    PluginData.save(false)
+                    PluginData.changed = true
                 }
 
                 "zone" -> {
@@ -620,6 +625,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val t : Tile = player.tileOn()
                     PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.build.tileX(), t.build.tileY(), t.block().name, t.block().size, ip, port, arg[2]))
                     send("command.hub.block.added", "$x:$y", ip)
+                    PluginData.save(false)
+                    PluginData.changed = true
                 }
 
                 "count" -> {
@@ -628,29 +635,35 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     } else {
                         PluginData.warpCounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 1))
                         send("command.hub.count", "$x:$y", ip)
+                        PluginData.save(false)
+                        PluginData.changed = true
                     }
                 }
 
                 "total" -> {
                     PluginData.warpTotals.add(PluginData.WarpTotal(name, world.tile(x, y).pos(), 0, 1))
                     send("command.hub.total", "$x:$y")
+                    PluginData.save(false)
+                    PluginData.changed = true
                 }
 
                 "remove" -> {
                     PluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
                     PluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
                     send("command.hub.removed", ip, port)
+                    PluginData.save(false)
+                    PluginData.changed = true
                 }
 
                 "reset" -> {
                     PluginData.warpTotals.clear()
                     PluginData.warpCounts.clear()
+                    PluginData.save(false)
+                    PluginData.changed = true
                 }
 
                 else -> send("command.hub.help")
             }
-            PluginData.save(false)
-            PluginData.changed = true
         }
 
         fun hud() {
@@ -1249,7 +1262,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             for (page in 0..pages) {
                 val build = StringBuilder()
                 for (a in 6 * page until (6 * (page + 1)).coerceAtMost(database.players.size)) {
-                    build.append("[gray]${database.players.get(a).entityid} ${database.players.get(a).name}")
+                    build.append("ID: [gray]${database.players.get(a).entityid} ${database.players.get(a).player.coloredName()}\n")
                 }
 
                 val options = arrayOf(
@@ -1494,7 +1507,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
             }
-            worldHistory.removeAll { a -> a.player.contains(arg[0]) }
             state.set(GameState.State.playing)
         }
 
