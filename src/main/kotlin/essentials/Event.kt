@@ -49,6 +49,7 @@ import java.net.UnknownHostException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -155,7 +156,10 @@ object Event {
                             database.players.forEach { data ->
                                 data.player.sendMessage(Bundle(data.languageTag)["event.tap.server", it.player.plainName(), two.description])
                             }
-                            Log.info(Bundle()["log.warp.move.block", it.player.plainName(), Strings.stripColors(two.description), two.ip, two.port.toString()])
+                            val format = NumberFormat.getNumberInstance(Locale.US)
+                            format.isGroupingUsed = false
+
+                            Log.info(Bundle()["log.warp.move.block", it.player.plainName(), Strings.stripColors(two.description), two.ip, format.format(two.port)])
                             Call.connect(it.player.con(), two.ip, two.port)
                         }
                         return@forEach
