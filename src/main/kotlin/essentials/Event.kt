@@ -18,6 +18,7 @@ import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.Main.Companion.database
+import essentials.CustomEvents.*
 import mindustry.Vars.*
 import mindustry.content.*
 import mindustry.core.NetServer
@@ -151,7 +152,7 @@ object Event {
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
                 PluginData.warpBlocks.forEach { two ->
-                    if (it.tile.block().name == two.tileName && it.tile.build.tileX() == two.x && it.tile.build.tileY() == two.y) {
+                    if (two.mapName == state.map.name() && it.tile.block().name == two.tileName && it.tile.build.tileX() == two.x && it.tile.build.tileY() == two.y) {
                         if (two.online) {
                             database.players.forEach { data ->
                                 data.player.sendMessage(Bundle(data.languageTag)["event.tap.server", it.player.plainName(), two.description])
@@ -168,6 +169,8 @@ object Event {
 
                 PluginData.warpZones.forEach { two ->
                     if (
+                        two.mapName == state.map.name()
+                        &&
                         two.click
                         &&
                         if (two.startTile.x > two.finishTile.x) {
@@ -896,7 +899,7 @@ object Event {
                     }
 
                     PluginData.warpZones.forEach { two ->
-                        if (!two.click && it.player.unit().tileX() > two.startTile.x && it.player.unit().tileX() < two.finishTile.x && it.player.unit().tileY() > two.startTile.y && it.player.unit().tileY() < two.finishTile.y) {
+                        if (two.mapName == state.map.name() && !two.click && it.player.unit().tileX() > two.startTile.x && it.player.unit().tileX() < two.finishTile.x && it.player.unit().tileY() > two.startTile.y && it.player.unit().tileY() < two.finishTile.y) {
                             Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                             Call.connect(it.player.con(), two.ip, two.port)
                             return@forEach

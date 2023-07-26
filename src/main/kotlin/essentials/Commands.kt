@@ -22,6 +22,7 @@ import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
+import essentials.CustomEvents.*
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Weathers
