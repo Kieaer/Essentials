@@ -678,45 +678,60 @@ object Event {
         }
 
         Events.on(ConnectPacketEvent::class.java) {
+            var kickReason = ""
             val isIDBanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("id").asString() == it.packet.uuid }
             val isIPbanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("ip").asArray().find { b -> b.asString() == it.connection.address } != null }
 
-            if (isIDBanned != null || isIPbanned != null) {
-                Call.kick(it.connection, Packets.KickReason.banned)
-                Log.info(Bundle()["event.player.banned", it.packet.name, if (isIPbanned != null) "IP (${it.connection.address})" else "UUID (${it.packet.uuid})"])
-                return@on
-            }
-
-            log(LogType.Player, "${it.packet.name} (${it.packet.uuid}, ${it.connection.address}) connected.")
-
-            if (Config.blockNewUser && netServer.admins.getInfo(it.packet.uuid) == null) {
+            if (isIDBanned != null) {
+                it.connection.kick(Packets.KickReason.banned)
+                kickReason = "banned.id"
+            } else if (isIPbanned != null) {
+                it.connection.kick(Packets.KickReason.banned)
+                kickReason = "banned.ip"
+            } else if (findPlayerData(it.packet.uuid) != null) {
+                it.connection.kick(Bundle(it.packet.locale)["event.player.exists"])
+            } else if (Config.blockNewUser && netServer.admins.getInfo(it.packet.uuid) == null) {
                 it.connection.kick(Bundle(it.packet.locale)["event.player.new.blocked"], 0L)
-                return@on
-            }
-
-            if (!Config.allowMobile && it.connection.mobile) {
+                kickReason = "newuser"
+            } else if (!Config.allowMobile && it.connection.mobile) {
                 it.connection.kick(Bundle(it.packet.locale)["event.player.not.allow.mobile"], 0L)
-            }
-
-            // 닉네임이 블랙리스트에 등록되어 있는지 확인
-            PluginData.blacklist.forEach { pattern ->
-                if (pattern.matcher(it.packet.name).matches()) it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
-            }
-
-            if (Config.fixedName) {
-                if (it.packet.name.length > 32) it.connection.kick(Bundle(it.packet.locale)["event.player.name.long"], 0L)
-                if (nameRegex.matcher(it.packet.name).matches()) it.connection.kick(Bundle(it.packet.locale)["event.player.name.not.allow"], 0L)
-            }
-
-            if (Config.minimalName && it.packet.name.length < 4) it.connection.kick(Bundle(it.packet.locale)["event.player.name.short"], 0L)
-
-            if (Config.antiVPN) {
+                kickReason = "mobile"
+            } else if (Config.fixedName) {
+                if (it.packet.name.length > 32) {
+                    it.connection.kick(Bundle(it.packet.locale)["event.player.name.long"], 0L)
+                    kickReason = "name.long"
+                }
+                if (nameRegex.matcher(it.packet.name).matches()) {
+                    it.connection.kick(Bundle(it.packet.locale)["event.player.name.not.allow"], 0L)
+                    kickReason = "name.regex"
+                }
+            } else if (Config.minimalName && it.packet.name.length < 4) {
+                it.connection.kick(Bundle(it.packet.locale)["event.player.name.short"], 0L)
+                kickReason = "name.short"
+            } else if (Config.antiVPN) {
                 PluginData.vpnList.forEach { text ->
                     val match = IpAddressMatcher(text)
                     if (match.matches(it.connection.address)) {
                         it.connection.kick(Bundle(it.packet.locale)["anti-grief.vpn"])
+                        kickReason = "vpn"
+                        return@forEach
                     }
                 }
+            } else {
+                // 닉네임이 블랙리스트에 등록되어 있는지 확인
+                PluginData.blacklist.forEach { pattern ->
+                    if (pattern.matcher(it.packet.name).matches()) {
+                        it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
+                        kickReason = "blacklisted"
+                        return@forEach
+                    }
+                }
+            }
+
+            if (kickReason.isEmpty()) {
+                log(LogType.Player, "${it.packet.name} (${it.packet.uuid}, ${it.connection.address}) connected.")
+            } else {
+                Log.info(Bundle()["event.player.kick.reason.$kickReason"])
             }
         }
 
