@@ -147,7 +147,7 @@ object Trigger {
 
                     val teamSorted = teams.toList().sortedByDescending { it.second }
                     val rateSorted = teamRate.toList().sortedWith(compareBy { it.second })
-                    if ((teamSorted.first().second - teamSorted.last().second) >= 3) {
+                    if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
                         player.team(teamSorted.last().first)
                     } else {
                         player.team(rateSorted.last().first)
