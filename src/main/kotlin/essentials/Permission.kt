@@ -10,14 +10,14 @@ import java.util.*
 
 object Permission {
     private var main = JsonObject()
-    private var user = JsonArray()
-    private var default = if (Config.authType == Config.AuthType.None) "user" else "visitor"
-    private val mainFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
-    private val userFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
+    var user = JsonArray()
+    var default = if (Config.authType == Config.AuthType.None) "user" else "visitor"
+    val mainFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
+    val userFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
 
     val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
-    private val comment = """
+    val comment = """
         ${bundle["permission.wiki"]}
         ${bundle["permission.sort"]}
         ${bundle["permission.notice"]}

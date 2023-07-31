@@ -15,6 +15,7 @@ import arc.util.Strings
 import arc.util.Threads.sleep
 import arc.util.Tmp
 import com.github.lalyos.jfiglet.FigletFont
+import essentials.CustomEvents.*
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
@@ -22,7 +23,6 @@ import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
-import essentials.CustomEvents.*
 import mindustry.Vars.*
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -48,6 +48,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.requests.GatewayIntent
 import org.hjson.JsonArray
 import org.hjson.JsonObject
+import org.hjson.JsonValue
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -317,7 +318,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     Discord.queue(player)
                 }
-                send("command.discord.pin", number)
+                send("command.discord.pin", number.toString().replace(",", ""))
             } else {
                 send("command.discord.already")
             }
@@ -2284,6 +2285,32 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 if (data != null) {
                     data.permission = arg[1]
                     database.queue(data)
+
+                    for (it in JsonValue.readHjson(Permission.userFile.reader()).asArray()) {
+                        if (it.asObject().get("uuid").asString() == data.uuid) {
+                            it.asObject().set("group", arg[1])
+                            Permission.userFile.writeString(Permission.user.setComment(Permission.comment).toString(Stringify.HJSON_COMMENTS))
+                            Log.info(bundle["command.setperm.console"])
+                            continue
+                        }
+                    }
+
+                    var exists = false
+                    for (it in JsonValue.readHjson(Permission.userFile.reader()).asArray()) {
+                        if (it.asObject().get("uuid").asString() == data.uuid) {
+                            exists = true
+                            continue
+                        }
+                    }
+
+                    if (!exists) {
+                        val json = JsonObject()
+                        json.set("uuid", data.uuid)
+                        json.set("group", arg[1])
+                        Permission.user.add(json)
+                        Permission.userFile.writeString(Permission.user.setComment(Permission.comment).toString(Stringify.HJSON_COMMENTS))
+                        Log.info(bundle["command.setperm.console"])
+                    }
                 } else {
                     Log.info(stripColors(bundle["player.not.registered"]))
                 }
@@ -2370,15 +2397,18 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         override fun onMessageReceived(event : MessageReceivedEvent) {
             if (event.channel.id == Config.channelToken && !event.author.isBot) {
                 if (event.message.contentStripped.toIntOrNull() != null) {
-                    if (pin.findKey(event.message.contentStripped, true) != null) {
+                    if (pin.containsValue(event.message.contentStripped, true)) {
                         val data = database[pin.findKey(event.message.contentStripped.toInt(), true)]
                         data?.discord = event.author.id
                         pin.remove(pin.findKey(event.message.contentStripped.toInt(), true))
+                        event.message.reply(Bundle()["event.discord.auth.success"]).queue()
+                    } else {
+
                     }
                 } else if (Core.settings.getInt("port") == port) {
                     with(event.message.contentStripped) {
                         when {
-                            equals("!help", true) -> {
+                            this.equals("!help", true) -> {
                                 val message = """
                                     ``!help`` ${Bundle()["event.discord.help.help"]}
                                     ``!ping`` ${Bundle()["event.discord.help.ping"]}
@@ -2389,7 +2419,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 }
                             }
 
-                            equals("!ping", true) -> {
+                            this.equals("!ping", true) -> {
                                 val start = System.currentTimeMillis()
                                 event.message.reply("pong!").queue { ping ->
                                     val end = System.currentTimeMillis()
@@ -2399,7 +2429,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 }
                             }
 
-                            startsWith("!auth", true) -> {
+                            this.startsWith("!auth", true) -> {
                                 val arg = event.message.contentStripped.replace("!auth ", "").split(" ")
                                 if (arg.size == 1) {
                                     try {
