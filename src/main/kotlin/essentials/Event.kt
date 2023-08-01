@@ -675,6 +675,8 @@ object Event {
             for (data in database.players) {
                 data.currentPlayTime = 0
             }
+
+            resetVote()
         }
 
         Events.on(ConnectPacketEvent::class.java) {
