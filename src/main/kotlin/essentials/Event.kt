@@ -444,7 +444,6 @@ object Event {
                 database.players.forEach { a ->
                     if (voteTargetUUID != a.uuid) a.player.sendMessage(Bundle(a.languageTag)["command.vote.canceled"])
                 }
-
                 resetVote()
             }
 
@@ -1545,67 +1544,56 @@ object Event {
     }
 
     private fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData, isConnected : Boolean) {
-        val oldLevel = target.level
-        var result = 0
-        val time = target.currentPlayTime.toInt()
+        if (PluginData.playtime < 300L) {
+            val oldLevel = target.level
+            val result : Int
+            val time = target.currentPlayTime.toInt()
 
-        val bundle = Bundle(target.languageTag)
-        var coreitem = 0
-        state.stats.coreItemCount.forEach {
-            coreitem += it.value
-        }
-        val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
-        val erekirPvP = if (state.planet == Planets.erekir) 5000 else 0
+            val bundle = Bundle(target.languageTag)
+            var coreitem = 0
+            state.stats.coreItemCount.forEach {
+                coreitem += it.value
+            }
+            val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
+            val erekirPvP = if (state.planet == Planets.erekir) 5000 else 0
 
-        if (winner == p.team()) {
-            val score : Int = if (state.rules.attackMode) {
-                (time + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
-            } else if (state.rules.pvp) {
-                time + erekirPvP + 5000
+            val score = if (winner == p.team()) {
+                if (state.rules.attackMode) {
+                    (time + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                } else if (state.rules.pvp) {
+                    time + erekirPvP + 5000
+                } else {
+                    0
+                }
+            } else if (p.team() != Team.derelict) {
+                if (state.rules.attackMode) {
+                    time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                } else if (state.rules.waves) {
+                    state.wave * 150
+                } else if (state.rules.pvp) {
+                    time + 5000
+                } else {
+                    0
+                }
             } else {
                 0
             }
 
             target.exp = target.exp + ((score * target.expMultiplier).toInt())
             result = target.currentExp + score
-            if (isConnected) p.sendMessage(bundle["event.exp.earn.victory", target.currentExp + score])
-        } else if (p.team() != Team.derelict) {
-            val score : Int = if (state.rules.attackMode) {
-                time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
-            } else if (state.rules.waves) {
-                state.wave * 150
-            } else if (state.rules.pvp) {
-                time + 5000
-            } else {
-                0
-            }
 
-            val message = if (state.rules.attackMode) {
-                bundle["event.exp.earn.defeat", target.currentExp + score, (time + enemyBuildingDestroyed + erekirAttack) - state.stats.buildingsDeconstructed]
-            } else if (state.rules.waves) {
-                bundle["event.exp.earn.wave", target.currentExp + score, state.wave]
-            } else if (state.rules.pvp) {
-                bundle["event.exp.earn.defeat", target.currentExp + score, (time + 5000)]
-            } else {
-                ""
-            }
+            Commands.Exp[target]
+            target.currentExp = 0
 
-            target.exp = target.exp + ((score * target.expMultiplier).toInt())
-            result = target.currentExp + score
-            if (isConnected) p.sendMessage(message)
+            if (!isConnected) {
+                if (target.oldUUID != null) {
+                    target.uuid = target.oldUUID!!
+                    target.oldUUID = null
+                    database.queue(target)
+                }
+            }
+            if (isConnected) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
         }
-
-        Commands.Exp[target]
-        target.currentExp = 0
-
-        if (!isConnected) {
-            if (target.oldUUID != null) {
-                target.uuid = target.oldUUID!!
-                target.oldUUID = null
-                database.queue(target)
-            }
-        }
-        if (isConnected) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
     }
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {
